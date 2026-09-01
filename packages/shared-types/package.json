@@ -1,0 +1,19 @@
+{
+  "name": "@cricapp/shared-types",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "main": "src/index.js",
+  "types": "src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.js",
+      "default": "./src/index.js"
+    }
+  },
+  "scripts": {
+    "lint": "node --check src/schema.js src/redis.js src/index.js",
+    "test": "node --test test/redis.test.js"
+  }
+}

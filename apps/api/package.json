@@ -1,0 +1,9 @@
+{
+  "name": "@cricapp/api",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "lint": "node -e \"console.log('api: not scaffolded yet')\"",
+    "test": "node -e \"console.log('api: no tests yet')\""
+  }
+}

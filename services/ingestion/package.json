@@ -1,0 +1,14 @@
+{
+  "name": "@cricapp/ingestion",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "lint": "node --check src/schemas.js src/redis.js src/normalize.js src/diff.js src/index.js",
+    "test": "node --test test/normalize.test.js test/diff.test.js",
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "@cricapp/shared-types": "*"
+  }
+}
