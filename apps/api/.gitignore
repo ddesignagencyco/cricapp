@@ -25,6 +25,3 @@ Thumbs.db
 .idea/
 .vscode/*
 !.vscode/extensions.json
-
-# opencode (contains API keys)
-opencode.json

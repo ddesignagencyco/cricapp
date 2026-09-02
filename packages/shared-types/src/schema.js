@@ -56,3 +56,20 @@ export const EVENT_TYPES = Object.freeze({
   WICKET: 'wicket',
   MILESTONE: 'milestone',
 });
+
+export const PSL = Object.freeze({
+  TOURNAMENT_ID: 'sr:tournament:14931',
+  DEFAULT_SEASON_ID: 'sr:season:140552',
+});
+
+export const PSL_SEASONS = Object.freeze([
+  { id: 'sr:season:114833', name: 'Pakistan Super League 2024', year: '2024' },
+  { id: 'sr:season:129023', name: 'Pakistan Super League 2025', year: '2025' },
+  { id: 'sr:season:140552', name: 'Pakistan Super League 2026', year: '2026' },
+]);
+
+export const PSL_LEADER_CATEGORIES = Object.freeze({
+  BATTING: 'batting',
+  BOWLING: 'bowling',
+  FIELDING: 'fielding',
+});

@@ -144,3 +144,96 @@ function mapStatus(rawStatus) {
   }
   return 'upcoming';
 }
+
+const ROLE_MAP = {
+  batsman: 'batsman',
+  bowler: 'bowler',
+  all_rounder: 'all_rounder',
+  wicketkeeper: 'wicketkeeper',
+};
+
+function abbrOf(name) {
+  return name
+    ?.split(/\s+/)
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase();
+}
+
+function parseFullName(name) {
+  const trimmed = (name || '').trim();
+  const idx = trimmed.indexOf(',');
+  if (idx === -1) return { fullName: trimmed, last: trimmed };
+  const last = trimmed.slice(0, idx).trim();
+  const rest = trimmed.slice(idx + 1).trim();
+  return { fullName: `${rest} ${last}`.trim(), last };
+}
+
+/**
+ * Normalize a Sportradar lineups payload into teams + players for the read API.
+ * Produces: { teams, players } where teams carry a roster reference via teamId,
+ * and players carry teamId + parsed role/flags.
+ */
+export function normalizeLineups(raw) {
+  const sportEvent = raw?.sport_event ?? {};
+  const competitors = sportEvent.competitors ?? [];
+
+  const lineupByQualifier = new Map(
+    (raw?.lineups ?? []).map((l) => [l.team, l]),
+  );
+
+  const teams = [];
+  const players = [];
+
+  for (const comp of competitors) {
+    const qualifier = comp.qualifier === 'away' ? 'away' : 'home';
+    const lineup = lineupByQualifier.get(qualifier);
+    const team = {
+      id: comp.id,
+      name: comp.name ?? comp.abbreviation ?? 'Unknown',
+      abbr: comp.abbreviation ?? abbrOf(comp.name) ?? 'TBD',
+      country: comp.country ?? null,
+      logoUrl: null,
+    };
+    teams.push(team);
+
+    const manager = lineup?.manager;
+    if (manager?.id) {
+      players.push({
+        id: manager.id,
+        fullName: parseFullName(manager.name).fullName,
+        shortName: manager.name,
+        teamId: team.id,
+        birth: null,
+        nationality: manager.country_code ?? null,
+        role: 'manager',
+        battingStyle: null,
+        bowlingStyle: null,
+        profileUrl: null,
+      });
+    }
+
+    for (const p of lineup?.starting_lineup ?? []) {
+      const parsed = parseFullName(p.name);
+      players.push({
+        id: p.id,
+        fullName: parsed.fullName,
+        shortName: p.name,
+        teamId: team.id,
+        birth: p.date_of_birth ?? null,
+        nationality: p.nationality ?? p.country_code ?? null,
+        role:
+          p.type && ROLE_MAP[p.type]
+            ? ROLE_MAP[p.type]
+            : p.is_wicketkeeper
+              ? 'wicketkeeper'
+              : 'player',
+        battingStyle: null,
+        bowlingStyle: null,
+        profileUrl: null,
+      });
+    }
+  }
+
+  return { teams, players };
+}

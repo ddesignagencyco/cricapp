@@ -1,0 +1,138 @@
+// Prisma schema for @cricapp/api
+// Models mirror the existing `matches` table (created by services/ingestion
+// data/init.sql) and add team / player data persisted by ingestion.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Match {
+  matchId        String   @id @map("match_id")
+  status         String
+  teams          Json
+  teamNames      Json     @map("team_names")
+  tournament     String?
+  venue          String?
+  scheduled      String?
+  currentInnings Json?    @map("current_innings")
+  lastEvent      Json     @map("last_event")
+  displayScore   String?  @map("display_score")
+  matchStatus    String?  @map("match_status")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([scheduled])
+  @@index([tournament])
+  @@map("matches")
+}
+
+model Team {
+  id        String    @id
+  name      String
+  abbr      String
+  country   String?
+  logoUrl   String?   @map("logo_url")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  players   Player[]
+
+  @@index([abbr])
+  @@map("teams")
+}
+
+model Player {
+  id          String    @id
+  fullName    String    @map("full_name")
+  shortName   String?   @map("short_name")
+  teamId      String?   @map("team_id")
+  birth       String?
+  nationality String?
+  battingStyle String?  @map("batting_style")
+  bowlingStyle String?  @map("bowling_style")
+  role        String?
+  profileUrl  String?   @map("profile_url")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  team        Team?     @relation(fields: [teamId], references: [id])
+
+  @@index([teamId])
+  @@map("players")
+}
+
+// --- PSL records -----------------------------------------------------------
+// Owned by the ingestion service (services/ingestion). The API reads them via
+// Prisma. Season ids are Sportradar ids (e.g. sr:season:140552 for PSL 2026).
+
+model PslStanding {
+  id           Int     @id @default(autoincrement())
+  seasonId     String  @map("season_id")
+  teamId       String  @map("team_id")
+  teamName     String  @map("team_name")
+  teamAbbr     String  @map("team_abbr")
+  rank         Int
+  played       Int     @default(0)
+  won          Int     @default(0)
+  lost         Int     @default(0)
+  tied         Int     @default(0)
+  noResult     Int     @default(0) @map("no_result")
+  points       Int     @default(0)
+  netRunRate   Float   @default(0) @map("net_run_rate")
+  runsFor      Int     @default(0) @map("runs_for")
+  runsAgainst  Int     @default(0) @map("runs_against")
+  oversFor     Float   @default(0) @map("overs_for")
+  oversAgainst Float   @default(0) @map("overs_against")
+  change       Int     @default(0)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@unique([seasonId, teamId])
+  @@index([seasonId, rank])
+  @@map("psl_standings")
+}
+
+model PslFixture {
+  matchId      String   @id @map("match_id")
+  seasonId     String   @map("season_id")
+  status       String?
+  scheduled    String?
+  homeTeamId   String?  @map("home_team_id")
+  homeTeamName String?  @map("home_team_name")
+  homeTeamAbbr String?  @map("home_team_abbr")
+  awayTeamId   String?  @map("away_team_id")
+  awayTeamName String?  @map("away_team_name")
+  awayTeamAbbr String?  @map("away_team_abbr")
+  venue        String?
+  resultText   String?  @map("result_text")
+  round        String?
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([seasonId])
+  @@index([scheduled])
+  @@map("psl_fixtures")
+}
+
+model PslLeader {
+  id         Int    @id @default(autoincrement())
+  seasonId   String @map("season_id")
+  category   String
+  stat       String
+  rank       Int
+  playerId   String @map("player_id")
+  playerName String @map("player_name")
+  teamAbbr   String? @map("team_abbr")
+  teamName   String? @map("team_name")
+  value      Float  @default(0)
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@unique([seasonId, category, stat, playerId])
+  @@index([seasonId, category, stat, rank])
+  @@map("psl_leaders")
+}
