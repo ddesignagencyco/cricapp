@@ -1,5 +1,5 @@
 {
-  "name": "pak-criczone",
+  "name": "@cricapp/web",
   "private": true,
   "version": "1.0.0",
   "type": "module",
