@@ -1,0 +1,200 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #07111F;
+  --color-secondary: #0A1728;
+  --color-card: #0D1B2A;
+  --color-elevated: #122238;
+  --color-accent: #00C2FF;
+  --color-accent2: #00E676;
+  --color-gold: #FFD166;
+  --color-mtext: #F5F7FA;
+  --color-stext: #94A3B8;
+  --color-lborder: #1E334A;
+  --color-danger: #FF4D6D;
+  --color-shadow: #000;
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+/* Light theme overrides */
+.light {
+  --color-primary: #F8FAFC;
+  --color-secondary: #F1F5F9;
+  --color-card: #FFFFFF;
+  --color-elevated: #F1F5F9;
+  --color-accent: #0284C7;
+  --color-accent2: #059669;
+  --color-gold: #B45309;
+  --color-mtext: #0F172A;
+  --color-stext: #64748B;
+  --color-lborder: #E2E8F0;
+  --color-danger: #E11D48;
+  --color-shadow: #0F172A;
+}
+
+* {
+  border-color: var(--color-lborder);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-primary);
+  color: var(--color-mtext);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-primary);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-lborder);
+  border-radius: 5px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-stext);
+}
+
+/* Utility classes */
+.text-accent-grad {
+  background: linear-gradient(135deg, #07111F 0%, #0D1B2A 55%, #003B5C 100%);
+}
+.light .text-accent-grad {
+  background: linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 55%, #BAE6FD 100%);
+}
+
+.hero-grad {
+  background-image:
+    linear-gradient(rgba(4, 10, 20, 0.68), rgba(4, 10, 20, 0.68)),
+    url('/banner2.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+.light .hero-grad {
+  background-image:
+    linear-gradient(rgba(4, 10, 20, 0.68), rgba(4, 10, 20, 0.68)),
+    url('/banner2.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.hero-title {
+  color: #F5F7FA;
+}
+.hero-lead {
+  color: #CBD5E1;
+}
+
+.hero-content .tone-neutral,
+.hero-content [data-hero-neutral] {
+  color: #E2E8F0;
+  background: rgba(148, 163, 184, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.25);
+}
+
+.shadow-card-dark {
+  box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.3);
+}
+.light .shadow-card-dark {
+  box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.08);
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--color-elevated);
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.08),
+    transparent
+  );
+  animation: shimmer 1.5s infinite;
+}
+.light .skeleton::after {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(0, 0, 0, 0.06),
+    transparent
+  );
+}
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes pulse-live {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(0, 230, 118, 0.6);
+  }
+  50% {
+    opacity: 0.7;
+    box-shadow: 0 0 0 6px rgba(0, 230, 118, 0);
+  }
+}
+.live-pulse {
+  animation: pulse-live 1.6s infinite;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.fade-in {
+  animation: fade-in 0.35s ease-out both;
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.slide-up {
+  animation: slide-up 0.4s ease-out both;
+}
