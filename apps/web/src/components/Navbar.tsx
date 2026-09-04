@@ -10,13 +10,13 @@ import { useTheme } from './ThemeProvider';
 
 const navItems = [
   { to: '/', label: 'Home' },
-  { to: '/streams', label: 'Stream' },
+  // { to: '/streams', label: 'Stream' }, // TODO: re-enable later
   { to: '/matches', label: 'Matches' },
   { to: '/psl', label: 'PSL' },
   { to: '/teams', label: 'Teams' },
   { to: '/players', label: 'Players' },
   { to: '/stats', label: 'Stats' },
-  { to: '/news', label: 'News' },
+  // { to: '/news', label: 'News' }, // TODO: re-enable later
 ];
 
 export default function Navbar() {

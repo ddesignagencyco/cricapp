@@ -52,7 +52,7 @@ export default async function PSLPage() {
             <div className="mb-4 flex items-center gap-2">
               <Crown size={18} className="text-gold" />
               <span className="text-xs font-bold uppercase tracking-widest text-slate-300">
-                Season • 2026
+                Season • 
               </span>
             </div>
             <h1 className="hero-title text-4xl font-black tracking-tight sm:text-5xl">

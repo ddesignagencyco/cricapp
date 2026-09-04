@@ -1,15 +1,15 @@
 import Link from 'next/link';
-import { ArrowRight, Eye } from 'lucide-react';
+import { Flame, Target, Zap } from 'lucide-react';
 import MatchCard from '../components/MatchCard';
 import SectionHeader from '../components/SectionHeader';
-import LiveIndicator from '../components/LiveIndicator';
 import AdBanner from '../components/AdBanner';
+import LiveMatchesCarousel from '../components/LiveMatchesCarousel';
+import CricketHero from '../components/CricketHero';
 import { getInitials } from '../utils/helpers';
 import { fetchMatches } from '../services/matches';
 import { fetchNews } from '../services/news';
-import { fetchStreams } from '../services/streams';
-import { fetchPslStandings } from '../services/psl';
-import { fetchPslSquads } from '../services/psl';
+import { fetchPslLeaders } from '../services/psl';
+import { fetchTeams } from '../services/teams';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,66 +18,36 @@ export const metadata = {
   description: 'Live cricket scores, fixtures, teams, players and statistics.',
 };
 
+const statMeta: Record<string, { label: string; tone: string }> = {
+  top_runs: { label: 'Most Runs', tone: 'text-accent' },
+  top_wickets: { label: 'Most Wickets', tone: 'text-accent2' },
+  top_sixes: { label: 'Most Sixes', tone: 'text-gold' },
+  top_fours: { label: 'Most Fours', tone: 'text-accent2' },
+};
+
 export default async function HomePage() {
-  const [allMatches, newsList, streams, standings, pslSquads] = await Promise.all([
+  const [allMatches, newsList, leaders, teams] = await Promise.all([
     fetchMatches(),
     fetchNews(),
-    fetchStreams(),
-    fetchPslStandings(),
-    fetchPslSquads(),
+    fetchPslLeaders(),
+    fetchTeams(),
   ]);
 
   const live = (allMatches || []).filter((m) => m.status === 'live');
   const upcoming = (allMatches || []).filter((m) => m.status === 'upcoming').slice(0, 4);
-  const featured = live[0] || null;
 
-  const pslTeams = pslSquads || [];
+  const wickets = (leaders || []).find((g) => g.category === 'bowling' && g.stat === 'top_wickets');
+  const runs = (leaders || []).find((g) => g.category === 'batting' && g.stat === 'top_runs');
+  const leaderPanels = [runs, wickets].filter(Boolean);
 
-  const standingsRows = (standings as any)?.value || standings || [];
+  const topTeams = (teams || []).slice(0, 6);
 
   return (
     <div className="min-h-screen">
-      <section className="relative overflow-hidden">
-        <div className="hero-grad absolute inset-0" />
-        <div className="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full bg-accent/10 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-32 -left-24 h-96 w-96 rounded-full bg-accent2/10 blur-3xl" />
+      <CricketHero />
 
-        <div className="hero-content relative mx-auto max-w-7xl px-4 pb-14 pt-14 sm:px-6 sm:pt-20">
-          <div className="mb-10 max-w-3xl">
-            <h1 className="hero-title text-4xl font-black leading-tight tracking-tight sm:text-6xl">
-              EVERY BALL. <span className="text-accent">LIVE.</span>
-            </h1>
-            <p className="hero-lead mt-4 max-w-xl text-base sm:text-lg">
-              Live scores, match updates, PSL fixtures, teams and player statistics.
-            </p>
-          </div>
-
-          {featured ? (
-            <MatchCard match={featured} />
-          ) : (
-            <div className="rounded-3xl bg-card/60 p-10 text-center ring-1 ring-lborder">
-              <p className="text-stext">No live matches at the moment.</p>
-              <Link href="/matches" className="mt-3 inline-block text-sm font-semibold text-accent hover:text-accent2">
-                See incoming matches <ArrowRight size={14} className="inline" />
-              </Link>
-            </div>
-          )}
-        </div>
-      </section>
-
-      <section className="mx-auto mt-10 max-w-7xl px-4 pb-12 sm:px-6">
-        <SectionHeader title="Live Matches" subtitle="Match Centre" icon="zap" to="/matches" actionLabel="View all" />
-        {live.length > 0 ? (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            {live.slice(0, 4).map((m) => (
-              <MatchCard key={m.matchId} match={m} />
-            ))}
-          </div>
-        ) : (
-          <div className="rounded-2xl bg-card px-6 py-8 text-center text-stext ring-1 ring-lborder">
-            No matches live right now — check back soon.
-          </div>
-        )}
+      <section className="mx-auto mt-14 max-w-7xl px-4 pb-12 sm:px-6">
+        <LiveMatchesCarousel matches={live} />
       </section>
 
       <section className="mx-auto max-w-7xl px-4 pb-12 sm:px-6">
@@ -89,69 +59,23 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {streams.length > 0 && (
+      {leaderPanels.length > 0 && (
         <section className="mx-auto max-w-7xl px-4 pb-12 sm:px-6">
-          <SectionHeader title="Watch Live" subtitle="Live Streaming" icon="video" to="/streams" actionLabel="All streams" />
+          <SectionHeader title="Season Leaders" subtitle="Top Performers" icon="trophy" to="/stats" actionLabel="All stats" />
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            {streams.slice(0, 2).map((s) => (
-              <Link
-                key={s.id}
-                href="/streams"
-                className="group relative flex min-h-[140px] flex-col justify-between overflow-hidden rounded-2xl ring-1 ring-lborder transition-all duration-300 hover:-translate-y-0.5 hover:ring-accent/40"
-              >
-                <div
-                  className={`absolute inset-0 bg-cover bg-center ${s.image ? '' : `bg-gradient-to-br ${s.theme || 'from-cyan-700 to-blue-900'}`}`}
-                  style={s.image ? { backgroundImage: `url(${s.image})` } : undefined}
-                />
-                <div className="pointer-events-none absolute inset-0 bg-black/40 transition-colors group-hover:bg-black/25" />
-                <div className="relative z-10 p-5">
-                  <div className="flex items-center justify-between gap-2">
-                    <LiveIndicator label="Live" />
-                    <span className="flex items-center gap-1.5 rounded-full bg-black/40 px-3 py-1 text-xs font-bold text-white backdrop-blur-sm">
-                      <Eye size={13} className="text-accent2" /> {s.viewers?.toLocaleString()} watching
-                    </span>
-                  </div>
-                  <h3 className="hero-title mt-4 line-clamp-2 text-lg font-bold leading-snug sm:text-xl">{s.title}</h3>
-                  <p className="mt-1 text-sm text-slate-300">
-                    {s.host}{s.coHost ? ` & ${s.coHost}` : ''}
-                  </p>
-                </div>
-              </Link>
+            {leaderPanels.map((g) => (
+              <LeaderPanel key={g.stat} group={g} />
             ))}
           </div>
         </section>
       )}
 
       <section className="mx-auto max-w-7xl px-4 pb-12 sm:px-6">
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-          <div className="lg:col-span-2">
-            <SectionHeader title="PSL 2026" subtitle="Pakistan Super League" icon="trophy" to="/psl" actionLabel="Explore PSL" />
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-              {pslTeams.slice(0, 6).map((team) => (
-                <PSLTeamCard key={team.teamId} team={team} />
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <SectionHeader title="Points Table" subtitle="PSL Standings" icon="trophy" to="/points-table" actionLabel="Full table" />
-            <div className="space-y-3 rounded-2xl bg-card p-5 ring-1 ring-lborder">
-              {standingsRows.slice(0, 6).map((row, i) => (
-                <div key={row.teamId || i} className="flex items-center gap-3">
-                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-elevated font-mono text-xs font-bold text-accent">
-                    {i + 1}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-mtext">{row.teamName || '—'}</p>
-                    <p className="text-xs text-stext">P{row.played} W{row.won} L{row.lost}</p>
-                  </div>
-                  <span className="font-mono text-base font-bold tabular-nums text-mtext">
-                    {row.points}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
+        <SectionHeader title="Cricket Teams" subtitle="All Franchises" icon="users" to="/teams" actionLabel="All teams" />
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+          {topTeams.map((team) => (
+            <TeamQuickCard key={team.id} team={team} />
+          ))}
         </div>
       </section>
 
@@ -162,11 +86,11 @@ export default async function HomePage() {
       <section className="mx-auto max-w-7xl px-4 pb-6 sm:px-6">
         <SectionHeader title="Latest News" subtitle="Reports & Updates" icon="newspaper" to="/news" actionLabel="All news" />
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-4">
-          {newsList.slice(0, 4).map((item) => (
+          {newsList.slice(0, 4).map((item, i) => (
             <Link
               key={item.id}
               href={`/news/${item.id}`}
-              className="group overflow-hidden rounded-2xl bg-card ring-1 ring-lborder transition-all duration-300 hover:-translate-y-0.5 hover:bg-elevated hover:ring-accent/30"
+              className={`group overflow-hidden rounded-2xl bg-card ring-1 ring-lborder transition-all duration-300 hover:-translate-y-0.5 hover:bg-elevated hover:ring-accent/30 ${i === 0 ? 'hidden' : ''}`}
             >
               <div className={`relative h-32 overflow-hidden ${item.image ? '' : `bg-gradient-to-br ${item.imageGradient || 'from-slate-600 to-slate-800'}`}`}>
                 {item.image && (
@@ -192,12 +116,52 @@ export default async function HomePage() {
   );
 }
 
-function PSLTeamCard({ team }: { team: { teamId: string; teamName: string; teamAbbr: string } }) {
-  const name = team.teamName || '';
-  const code = team.teamAbbr || '';
+function LeaderPanel({ group }: { group: any }) {
+  const meta = statMeta[group.stat] || { label: group.stat.replace(/_/g, ' '), tone: 'text-accent' };
+  const StatIcon = group.stat.includes('wicket') || group.stat.includes('maiden') || group.stat.includes('dot')
+    ? Target : group.stat.includes('six') || group.stat.includes('four') ? Flame : Zap;
+  const entries = [...(group.entries || [])]
+    .sort((a, b) => (a.rank ?? 999) - (b.rank ?? 999))
+    .slice(0, 4);
+
+  return (
+    <div className="rounded-2xl bg-card p-5 ring-1 ring-lborder">
+      <div className="mb-4 flex items-center gap-2">
+        <StatIcon size={16} className="text-accent2" />
+        <h3 className="text-sm font-bold uppercase tracking-widest text-mtext">{meta.label}</h3>
+      </div>
+      <div className="space-y-3">
+        {entries.map((row, i) => (
+          <Link
+            key={row.playerId || i}
+            href={`/players/${row.playerId}`}
+            className="flex items-center gap-3 rounded-sm p-2 transition-colors hover:bg-elevated"
+          >
+            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-elevated font-mono text-xs font-bold text-accent">
+              {i + 1}
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold text-mtext">{row.playerName}</p>
+              <p className="truncate text-xs text-stext">
+                {row.teamName} ({row.teamAbbr})
+              </p>
+            </div>
+            <span className={`font-mono text-base font-bold tabular-nums ${meta.tone}`}>
+              {row.value}
+            </span>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TeamQuickCard({ team }: { team: any }) {
+  const name = team.name || '';
+  const code = team.abbr || '';
   return (
     <Link
-      href={`/teams/${team.teamId}`}
+      href={`/teams/${team.id}`}
       className="group rounded-2xl bg-card p-4 ring-1 ring-lborder transition-all duration-300 hover:-translate-y-0.5 hover:bg-elevated hover:ring-accent/30"
     >
       <div className="flex items-center gap-2">

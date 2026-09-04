@@ -42,12 +42,26 @@ export default function MatchCard({ match, compact = false, showVenue = true }: 
   return (
     <Link
       href={`/matches/${match.matchId}`}
-      className="group block rounded-sm bg-card p-4 ring-1 ring-lborder transition-all duration-300 hover:-translate-y-0.5 hover:bg-elevated hover:ring-accent/30"
+      className="group flex h-full flex-col rounded-sm bg-card p-4 ring-1 ring-lborder transition-all duration-300 hover:-translate-y-0.5 hover:bg-elevated hover:ring-accent/30"
     >
-      <div className="mb-3 flex items-center justify-between gap-2">
-        <span className="truncate text-[11px] font-semibold uppercase tracking-wider text-stext">
-          {match.tournament || 'Cricket'}
-        </span>
+      <div className="mb-3 flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <span className="block truncate text-[11px] font-semibold uppercase tracking-wider text-stext">
+            {match.tournament || 'Cricket'}
+          </span>
+          {showVenue && !isUpcoming && !compact && (
+            <span className="mt-0.5 flex h-[15px] items-center gap-1 truncate text-[10px] text-stext/80">
+              {match.venue ? (
+                <>
+                  <MapPin size={11} className="shrink-0" />
+                  <span className="truncate">{match.venue}</span>
+                </>
+              ) : (
+                <span>{'\u00A0'}</span>
+              )}
+            </span>
+          )}
+        </div>
         {isLive ? (
           <LiveIndicator />
         ) : (
@@ -55,7 +69,7 @@ export default function MatchCard({ match, compact = false, showVenue = true }: 
         )}
       </div>
 
-      <div className="space-y-3">
+      <div className="flex flex-1 flex-col justify-center space-y-3">
         <div className="flex items-center gap-3">
           <TeamCode code={homeCode} name={homeName} />
           <div className="min-w-0 flex-1">
@@ -107,12 +121,6 @@ export default function MatchCard({ match, compact = false, showVenue = true }: 
           </div>
         ) : (
           <p className="truncate text-xs font-medium text-gold">{match.matchStatus || 'Completed'}</p>
-        )}
-        {showVenue && match.venue && !isUpcoming && !compact && (
-          <p className="mt-1 flex items-center gap-1 truncate text-[11px] text-stext">
-            <MapPin size={12} />
-            {match.venue}
-          </p>
         )}
       </div>
     </Link>
