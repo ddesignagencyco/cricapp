@@ -1,0 +1,95 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: cricapp-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-cricapp}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-cricapp}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./services/ingestion/data/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cricapp}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - cricapp
+
+  redis:
+    image: redis:7-alpine
+    container_name: cricapp-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - cricapp
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: cricapp-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      API_PORT: 3001
+      DATABASE_URL: postgresql://${POSTGRES_USER:-cricapp}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-cricapp}
+      REDIS_URL: redis://redis:6379
+      API_KEY: ${API_KEY}
+      CORS_ORIGINS: ${CORS_ORIGINS:-*}
+      RATE_LIMIT_TTL: ${RATE_LIMIT_TTL:-60}
+      RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-100}
+    ports:
+      - "${API_PORT:-3001}:3001"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3001/api"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - cricapp
+
+  ingestion:
+    build:
+      context: .
+      dockerfile: services/ingestion/Dockerfile
+    container_name: cricapp-ingestion
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-cricapp}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-cricapp}
+      REDIS_URL: redis://redis:6379
+      SPORTRADAR_API_KEY: ${SPORTRADAR_API_KEY}
+      POLL_INTERVAL_MS: ${POLL_INTERVAL_MS:-30000}
+      PSL_SEASONS: ${PSL_SEASONS:-}
+      PSL_SYNC_INTERVAL_MS: ${PSL_SYNC_INTERVAL_MS:-}
+    networks:
+      - cricapp
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  cricapp:
+    driver: bridge

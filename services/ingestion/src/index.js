@@ -3,6 +3,7 @@ import db, { shutdown as shutdownDb } from './db.js';
 import redis, { shutdown as shutdownRedis } from './redis.js';
 import { pollOnce } from './poll.js';
 import { syncPsAll } from './pslSync.js';
+import { createLogger } from './logger.js';
 
 export { computeRunRate, normalizeMatch, normalizeLineups } from './normalize.js';
 export { diffMatch } from './diff.js';
@@ -10,14 +11,15 @@ export { saveMatch, saveTeamsPlayers, publishMatchState, publishEvents } from '.
 export { pollOnce } from './poll.js';
 export { syncPsAll } from './pslSync.js';
 
+const log = createLogger('main');
 const POLL_INTERVAL_MS = Number(process.env.POLL_INTERVAL_MS || 30000);
 
 async function ping() {
   await db.query('SELECT 1');
-  console.log('postgres connected');
+  log.info('postgres connected');
 
   await redis.ping();
-  console.log('redis connected');
+  log.info('redis connected');
 }
 
 async function syncPsOnStart() {
@@ -27,7 +29,7 @@ async function syncPsOnStart() {
   if (syncInterval) {
     setInterval(() => {
       syncPsAll(seasonFilter).catch((err) =>
-        console.error('[psl] periodic sync failed', err.message),
+        log.error('psl periodic sync failed', { error: err.message }),
       );
     }, Number(syncInterval));
   }
@@ -37,16 +39,16 @@ async function pollLoop() {
   while (true) {
     try {
       const count = await pollOnce();
-      if (count > 0) console.log(`[ingest] polled ${count} live match(es)`);
+      if (count > 0) log.info('polled live matches', { count });
     } catch (err) {
-      console.error('[ingest] poll cycle failed', err.message);
+      log.error('poll cycle failed', { error: err.message });
     }
     await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
   }
 }
 
 async function shutdown() {
-  console.log('shutting down...');
+  log.info('shutting down...');
   await shutdownRedis();
   await shutdownDb();
   process.exit(0);
@@ -55,7 +57,10 @@ async function shutdown() {
 process.on('SIGINT', shutdown);
 process.on('SIGTERM', shutdown);
 
-console.log(`cricapp ingestion — provider=${PROVIDERS.SPORTRADAR}; interval=${POLL_INTERVAL_MS}ms`);
+log.info('starting ingestion service', {
+  provider: PROVIDERS.SPORTRADAR,
+  pollIntervalMs: POLL_INTERVAL_MS,
+});
 
 ping()
   .then(async () => {
@@ -63,6 +68,6 @@ ping()
     return pollLoop();
   })
   .catch((err) => {
-    console.error('failed to start ingestion service', err);
+    log.error('failed to start ingestion service', { error: err.message, stack: err.stack });
     process.exit(1);
   });
