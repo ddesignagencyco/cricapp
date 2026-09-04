@@ -92,7 +92,7 @@ export default function MatchCard({ match, compact = false, showVenue = true }: 
       <div className="mt-3 border-t border-lborder pt-3">
         {isLive ? (
           <p className="truncate text-xs font-medium text-accent">
-            {battingCode} {inn?.runs ?? 0}/{inn?.wickets ?? 0} ({inn?.overs ?? 0} ov \u00B7 RR {inn?.runRate ?? 0})
+            {battingCode} {inn?.runs ?? 0}/{inn?.wickets ?? 0} ({inn?.overs ?? 0} ov · RR {inn?.runRate ?? 0})
           </p>
         ) : isUpcoming ? (
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-stext">
