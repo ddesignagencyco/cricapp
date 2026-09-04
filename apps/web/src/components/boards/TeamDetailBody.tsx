@@ -39,7 +39,7 @@ export default function TeamDetailBody({ team, players, matches }: Props) {
   );
 
   return (
-    <div className="mx-auto max-w-6xl space-y-3 px-4 py-8 sm:px-6">
+    <div className="mx-auto max-w-7xl space-y-3 px-4 py-8 sm:px-6">
       <nav className="flex items-center gap-1.5 text-xs text-stext">
         <Link href="/teams" className="hover:text-accent">Teams</Link>
         <span>/</span>
