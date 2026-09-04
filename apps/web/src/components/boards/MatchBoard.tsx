@@ -23,17 +23,6 @@ export default function MatchBoard({ matches }: Props) {
     []
   );
 
-  const allTeamOptions = useMemo(() => {
-    const map = new Map();
-    (matches || []).forEach((m) => {
-      (m.teamNames || []).forEach((name: string, i: number) => {
-        const code = m.teams?.[i];
-        if (name && code) map.set(code.toLowerCase(), { value: code, label: name });
-      });
-    });
-    return Array.from(map.values());
-  }, [matches]);
-
   const filtered = useMemo(() => {
     let list = matches || [];
     list = list.filter((m) => m.status === tab);
