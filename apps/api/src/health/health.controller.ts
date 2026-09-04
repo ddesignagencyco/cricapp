@@ -13,6 +13,32 @@ export class HealthController {
     private readonly redis: RedisService,
   ) {}
 
+  @Get('health/json')
+  @ApiOperation({ summary: 'Health check (JSON)' })
+  @ApiResponse({ status: 200 })
+  async healthJson() {
+    const checks = await Promise.allSettled([
+      this.checkApi(),
+      this.checkPostgres(),
+      this.checkRedis(),
+    ]);
+
+    const results = checks.map((r, i) => {
+      const name = ['api', 'postgres', 'redis'][i];
+      if (r.status === 'fulfilled') return { name, ...r.value };
+      return { name, status: 'unhealthy', message: r.reason?.message ?? 'Unknown error' };
+    });
+
+    const allHealthy = results.every((r) => r.status === 'healthy');
+
+    return {
+      status: allHealthy ? 'healthy' : 'degraded',
+      timestamp: new Date().toISOString(),
+      version: process.env.npm_package_version ?? '0.0.0',
+      services: Object.fromEntries(results.map((r) => [r.name, { status: r.status, message: r.message }])),
+    };
+  }
+
   @Get()
   @ApiOperation({ summary: 'API health status', description: 'Returns an HTML page showing the health of the API and its dependencies.' })
   @ApiResponse({ status: 200, description: 'Health status page.' })

@@ -1,15 +1,16 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, Logger } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module.js';
 
 async function bootstrap() {
+  const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
 
   app.setGlobalPrefix('api');
 
   app.enableCors({
-    origin: true,
+    origin: process.env.CORS_ORIGINS?.split(',') ?? true,
     credentials: true,
   });
 
@@ -36,12 +37,12 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);
 
+  app.enableShutdownHooks();
+
   const port = parseInt(process.env.API_PORT ?? '3001', 10);
   await app.listen(port);
-  // eslint-disable-next-line no-console
-  console.log(`@cricapp/api listening on http://localhost:${port}/api`);
-  // eslint-disable-next-line no-console
-  console.log(`Swagger UI: http://localhost:${port}/docs`);
+  logger.log(`@cricapp/api listening on http://localhost:${port}/api`);
+  logger.log(`Swagger UI: http://localhost:${port}/docs`);
 }
 
 void bootstrap();
