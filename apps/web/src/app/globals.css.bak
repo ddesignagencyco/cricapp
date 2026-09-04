@@ -5,8 +5,8 @@
   --color-secondary: #0A1728;
   --color-card: #0D1B2A;
   --color-elevated: #122238;
-  --color-accent: #22C55E;
-  --color-accent2: #4ADE80;
+  --color-accent: #00C2FF;
+  --color-accent2: #00E676;
   --color-gold: #FFD166;
   --color-mtext: #F5F7FA;
   --color-stext: #94A3B8;
@@ -35,8 +35,8 @@
   --color-secondary: #F1F5F9;
   --color-card: #FFFFFF;
   --color-elevated: #F1F5F9;
-  --color-accent: #15803D;
-  --color-accent2: #16A34A;
+  --color-accent: #0284C7;
+  --color-accent2: #059669;
   --color-gold: #B45309;
   --color-mtext: #0F172A;
   --color-stext: #64748B;
@@ -79,10 +79,10 @@ body {
 
 /* Utility classes */
 .text-accent-grad {
-  background: linear-gradient(135deg, #07111F 0%, #0D1B2A 55%, #064E3B 100%);
+  background: linear-gradient(135deg, #07111F 0%, #0D1B2A 55%, #003B5C 100%);
 }
 .light .text-accent-grad {
-  background: linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 55%, #BBF7D0 100%);
+  background: linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 55%, #BAE6FD 100%);
 }
 
 .hero-grad {
