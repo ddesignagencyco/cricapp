@@ -150,8 +150,8 @@ export default function MatchDetailBody({ match }: Props) {
               <h3 className="mb-4 text-lg font-bold text-mtext">Live Score</h3>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <InfoStat label="Score" value={`${battingCode || '—'} ${match.displayScore || '—'}`} big />
-                <InfoStat label="Overs" value={inn?.overs != null ? String(inn.overs) : '—'} />
-                <InfoStat label="Run Rate" value={inn?.runRate != null ? String(inn.runRate) : '—'} />
+                <InfoStat label="Overs" value={inn?.overs !== null ? String(inn.overs) : '—'} />
+                <InfoStat label="Run Rate" value={inn?.runRate !== null ? String(inn.runRate) : '—'} />
               </div>
               {match.lastEvent && (
                 <p className="mt-4 text-xs text-stext">
