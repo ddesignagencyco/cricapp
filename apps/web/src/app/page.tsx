@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowRight, Calendar, Eye, Trophy, Users, Zap } from 'lucide-react';
+import { ArrowRight, Eye } from 'lucide-react';
 import MatchCard from '../components/MatchCard';
 import SectionHeader from '../components/SectionHeader';
 import LiveIndicator from '../components/LiveIndicator';
@@ -17,13 +17,6 @@ export const metadata = {
   title: 'Live Scores & Cricket Hub',
   description: 'Live cricket scores, fixtures, teams, players and statistics.',
 };
-
-const quickLinks = [
-  { label: 'Live Scores', to: '/live', icon: Zap },
-  { label: 'Points Table', to: '/points-table', icon: Trophy },
-  { label: 'Teams', to: '/teams', icon: Users },
-  { label: 'Match Centre', to: '/matches', icon: Calendar },
-];
 
 export default async function HomePage() {
   const [allMatches, newsList, streams, standings, pslSquads] = await Promise.all([
@@ -51,27 +44,12 @@ export default async function HomePage() {
 
         <div className="hero-content relative mx-auto max-w-7xl px-4 pb-14 pt-14 sm:px-6 sm:pt-20">
           <div className="mb-10 max-w-3xl">
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 ring-1 ring-inset ring-accent/25">
-              <LiveIndicator label="Live Cricket" />
-            </div>
             <h1 className="hero-title text-4xl font-black leading-tight tracking-tight sm:text-6xl">
-              CRICKET <span className="text-accent">LIVE</span>
+              EVERY BALL. <span className="text-accent">LIVE.</span>
             </h1>
             <p className="hero-lead mt-4 max-w-xl text-base sm:text-lg">
               Live scores, match updates, PSL fixtures, teams and player statistics.
             </p>
-            <div className="mt-7 flex flex-wrap gap-3">
-              {quickLinks.map((q) => (
-                <Link
-                  key={q.label}
-                  href={q.to}
-                  className="inline-flex items-center gap-2 rounded-xl bg-card px-4 py-2.5 text-sm font-semibold text-mtext ring-1 ring-lborder transition-all hover:-translate-y-0.5 hover:bg-elevated hover:ring-accent/40"
-                >
-                  <q.icon size={15} className="text-accent" />
-                  {q.label}
-                </Link>
-              ))}
-            </div>
           </div>
 
           {featured ? (
@@ -88,7 +66,7 @@ export default async function HomePage() {
       </section>
 
       <section className="mx-auto mt-10 max-w-7xl px-4 pb-12 sm:px-6">
-        <SectionHeader title="Live Matches" subtitle="Match Centre" icon="zap" to="/live" actionLabel="View all" />
+        <SectionHeader title="Live Matches" subtitle="Match Centre" icon="zap" to="/matches" actionLabel="View all" />
         {live.length > 0 ? (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {live.slice(0, 4).map((m) => (

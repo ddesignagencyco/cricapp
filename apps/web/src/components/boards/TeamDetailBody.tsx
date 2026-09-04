@@ -8,7 +8,6 @@ import PlayerCard from '../PlayerCard';
 import Badge from '../Badge';
 import Tabs from '../Tabs';
 import EmptyState from '../EmptyState';
-import FavoriteButton from '../FavoriteButton';
 import { getInitials } from '../../utils/helpers';
 
 const teamTabs = [
@@ -72,10 +71,6 @@ export default function TeamDetailBody({ team, players, matches }: Props) {
                 <MapPin size={14} /> {team.country}
               </p>
             )}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <FavoriteButton id={team.id} type="team" />
           </div>
         </div>
       </header>

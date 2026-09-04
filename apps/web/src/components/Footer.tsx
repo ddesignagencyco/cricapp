@@ -8,13 +8,11 @@ const footerCols = [
   {
     title: 'Cricket',
     links: [
-      { label: 'Live Scores', to: '/live' },
-      { label: 'Live Streams', to: '/streams' },
       { label: 'Matches', to: '/matches' },
+      { label: 'Live Streams', to: '/streams' },
       { label: 'Points Table', to: '/points-table' },
       { label: 'Statistics', to: '/stats' },
       { label: 'News', to: '/news' },
-      { label: 'Favorites', to: '/favorites' },
     ],
   },
   {
@@ -89,20 +87,6 @@ export default function Footer() {
             </div>
           ))}
         </div>
-
-        <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t border-lborder pt-6 text-xs text-stext sm:flex-row">
-          <p>
-            \u00A9 2026 PAK CRICZONE. All rights reserved. Sample and mock score data for demonstration only.
-          </p>
-          <div className="flex gap-4">
-            <Link href="/privacy" className="hover:text-accent">Privacy</Link>
-            <Link href="/terms" className="hover:text-accent">Terms</Link>
-            <Link href="/contact" className="hover:text-accent">Contact</Link>
-          </div>
-        </div>
-        <p className="mt-4 text-center text-[11px] text-stext/60">
-          Developed by <span className="font-semibold text-stext/80">D Design Agency</span>
-        </p>
       </div>
     </footer>
   );

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import {
-  Activity, Clock, Eye, Globe, Plus, Radio, Signal, Star, ThumbsUp, User, Video, Zap,
+  Activity, Clock, Eye, Globe, Radio, Signal, Star, ThumbsUp, User, Video, Zap,
 } from 'lucide-react';
 import Badge from '../Badge';
 import LiveIndicator from '../LiveIndicator';
@@ -38,7 +38,6 @@ export default function LiveStreamsBoard({ streams }: Props) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [viewerMap, setViewerMap] = useState<Record<string, number>>({});
   const [chat, setChat] = useState<any[]>([]);
-  const [message, setMessage] = useState('');
 
   const live = (streams || []).filter((s) => s.status === 'live');
   const searchable = live.length > 0 ? live : streams || [];
@@ -141,7 +140,7 @@ export default function LiveStreamsBoard({ streams }: Props) {
               viewerMap={viewerMap}
               onSelect={(id: string) => setActiveId(id)}
             />
-            <LiveChat chat={chat} message={message} setMessage={setMessage} />
+            <LiveChat chat={chat} />
           </div>
         </div>
       )}
@@ -233,7 +232,7 @@ function StreamList({ streams, featuredId, viewerMap, onSelect }: { streams: any
   );
 }
 
-function LiveChat({ chat, message, setMessage }: { chat: any[]; message: string; setMessage: (v: string) => void }) {
+function LiveChat({ chat }: { chat: any[] }) {
   const messages = chat || [];
   return (
     <div className="overflow-hidden rounded-2xl bg-card ring-1 ring-lborder">
@@ -259,23 +258,6 @@ function LiveChat({ chat, message, setMessage }: { chat: any[]; message: string;
             <span className="shrink-0 text-[10px] text-stext">{m.time}</span>
           </div>
         ))}
-      </div>
-      <div className="border-t border-lborder p-3">
-        <div className="flex gap-2">
-          <input
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder="Say something…"
-            className="min-w-0 flex-1 rounded-lg bg-elevated px-3 py-2 text-sm text-mtext placeholder:text-stext ring-1 ring-lborder focus:ring-accent/40 focus:outline-none"
-          />
-          <button
-            type="button"
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-accent text-white"
-            aria-label="Send message"
-          >
-            <Plus size={16} />
-          </button>
-        </div>
       </div>
     </div>
   );

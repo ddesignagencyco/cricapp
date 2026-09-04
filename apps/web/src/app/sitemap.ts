@@ -8,7 +8,6 @@ const baseUrl = 'https://pakcriczone.com';
 
 const staticRoutes = [
   '',
-  '/live',
   '/matches',
   '/psl',
   '/teams',
@@ -17,7 +16,6 @@ const staticRoutes = [
   '/stats',
   '/news',
   '/streams',
-  '/favorites',
   '/about',
   '/contact',
   '/privacy',

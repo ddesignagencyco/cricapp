@@ -8,7 +8,6 @@ import StatCard from '../StatCard';
 import Tabs from '../Tabs';
 import MatchCard from '../MatchCard';
 import EmptyState from '../EmptyState';
-import FavoriteButton from '../FavoriteButton';
 import { getInitials } from '../../utils/helpers';
 
 const playerTabs = [
@@ -52,7 +51,6 @@ export default function PlayerDetailBody({ player }: Props) {
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-2xl font-black tracking-tight sm:text-3xl">{name}</h1>
-              <FavoriteButton id={player.id} type="player" size={20} />
             </div>
             {nickname && nickname !== name && (
               <p className="mt-0.5 text-sm text-stext">{nickname}</p>

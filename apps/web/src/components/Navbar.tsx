@@ -3,22 +3,20 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Bell, Menu, Moon, Search, Star, Sun, X } from 'lucide-react';
+import { Bell, Menu, Moon, Search, Sun, X } from 'lucide-react';
 import Logo from './Logo';
 import SearchBar from './SearchBar';
 import { useTheme } from './ThemeProvider';
 
 const navItems = [
   { to: '/', label: 'Home' },
-  { to: '/live', label: 'Live' },
-  { to: '/streams', label: 'Watch' },
+  { to: '/streams', label: 'Stream' },
   { to: '/matches', label: 'Matches' },
   { to: '/psl', label: 'PSL' },
-  { to: '/news', label: 'News' },
   { to: '/teams', label: 'Teams' },
   { to: '/players', label: 'Players' },
   { to: '/stats', label: 'Stats' },
-  { to: '/favorites', label: 'Favorites', icon: Star },
+  { to: '/news', label: 'News' },
 ];
 
 export default function Navbar() {
