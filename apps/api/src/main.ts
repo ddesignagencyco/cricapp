@@ -29,10 +29,14 @@ async function bootstrap() {
     )
     .setVersion('0.1.0')
     .addTag('matches', 'Live, upcoming and completed matches')
-    .addTag('teams', 'Team profiles and rosters')
+    .addTag('teams', 'Team profiles, rosters, schedules and results')
     .addTag('players', 'Player profiles and search')
     .addTag('live', 'Server-Sent Events for live match updates')
     .addTag('psl', 'Pakistan Super League records (standings, schedule, leaders, squads)')
+    .addTag('tours', 'Cricket tours')
+    .addTag('tournaments', 'Tournaments, seasons and tournament results')
+    .addTag('schedules', 'Daily schedules and results')
+    .addTag('head-to-head', 'Team versus team meetings')
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);

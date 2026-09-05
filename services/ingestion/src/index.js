@@ -3,6 +3,7 @@ import db, { shutdown as shutdownDb } from './db.js';
 import redis, { shutdown as shutdownRedis } from './redis.js';
 import { pollOnce } from './poll.js';
 import { syncPsAll } from './pslSync.js';
+import { startReferenceSync } from './refSync.js';
 import { createLogger } from './logger.js';
 
 export { computeRunRate, normalizeMatch, normalizeLineups } from './normalize.js';
@@ -65,6 +66,34 @@ log.info('starting ingestion service', {
 ping()
   .then(async () => {
     await syncPsOnStart();
+    startReferenceSync({
+      matchIds: (process.env.REF_SYNC_MATCH_IDS || '')
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean),
+      teamIds: (process.env.REF_SYNC_TEAM_IDS || '')
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean),
+      playerIds: (process.env.REF_SYNC_PLAYER_IDS || '')
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean),
+      tournamentIds: (process.env.REF_SYNC_TOURNAMENT_IDS || '')
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean),
+      pairIds: (process.env.REF_SYNC_PAIR_IDS || '')
+        .split(';')
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .map((p) => p.split('::')),
+      delay: Number(process.env.REF_SYNC_DELAY_MS || 500),
+      timelineLimit: Number(process.env.REF_SYNC_MATCH_LIMIT || 20),
+      seasonLimit: Number(process.env.REF_SYNC_SEASON_LIMIT || 10),
+      teamLimit: Number(process.env.REF_SYNC_TEAMS_LIMIT || 10),
+      lineupLimit: Number(process.env.REF_SYNC_LINEUP_LIMIT || 20),
+    }).catch((err) => log.error('reference sync start failed', { error: err.message }));
     return pollLoop();
   })
   .catch((err) => {

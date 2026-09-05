@@ -109,4 +109,17 @@ export class MatchesService {
     }
     return this.toSummary(row);
   }
+
+  async getTimeline(matchId: string): Promise<{ matchId: string; payload: Record<string, unknown> }> {
+    const row = await this.prisma.matchTimeline.findUnique({
+      where: { matchId },
+    });
+    if (!row) {
+      throw new NotFoundException(`Timeline for match ${matchId} not found`);
+    }
+    return {
+      matchId: row.matchId,
+      payload: row.payload as Record<string, unknown>,
+    };
+  }
 }

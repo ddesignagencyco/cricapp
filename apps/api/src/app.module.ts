@@ -11,6 +11,10 @@ import { PlayersModule } from './players/players.module.js';
 import { LiveModule } from './live/live.module.js';
 import { HealthModule } from './health/health.module.js';
 import { PslModule } from './psl/psl.module.js';
+import { ToursModule } from './tours/tours.module.js';
+import { TournamentsModule } from './tournaments/tournaments.module.js';
+import { SchedulesModule } from './schedules/schedules.module.js';
+import { HeadToHeadModule } from './head-to-head/head-to-head.module.js';
 import { ApiKeyGuard } from './auth/api-key.guard.js';
 import { RequestLogger } from './common/request-logger.middleware.js';
 
@@ -37,6 +41,10 @@ import { RequestLogger } from './common/request-logger.middleware.js';
     PlayersModule,
     LiveModule,
     PslModule,
+    ToursModule,
+    TournamentsModule,
+    SchedulesModule,
+    HeadToHeadModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ApiKeyGuard },

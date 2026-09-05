@@ -52,6 +52,18 @@ export class PlayerProfileDto {
   @ApiPropertyOptional()
   profileUrl: string | null;
 
+  @ApiPropertyOptional({ description: 'Country code from provider profile.' })
+  countryCode: string | null;
+
+  @ApiPropertyOptional({ description: 'Jersey number.' })
+  jerseyNumber: number | null;
+
+  @ApiPropertyOptional({ description: 'Height in cm.' })
+  height: number | null;
+
+  @ApiPropertyOptional({ description: 'Full provider profile payload (team history, per-format stats).' })
+  providerProfile: Record<string, unknown> | null;
+
   @ApiPropertyOptional({ type: TeamSummaryDto })
   team: TeamSummaryDto | null;
 
