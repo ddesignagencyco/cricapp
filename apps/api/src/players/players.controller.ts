@@ -54,7 +54,7 @@ export class PlayersController {
   @ApiOperation({ summary: 'Get a player profile', description: 'Player bio, team and recent matches.' })
   @ApiParam({ name: 'playerId', description: 'Provider player id (e.g. sr:player:1246946).' })
   @ApiQuery({ name: 'recent', required: false, description: 'Number of recent matches to include (max 20).' })
-  @ApiResponse({ status: 200, description: 'The player profile.' })
+  @ApiResponse({ status: 200, description: 'The player profile.', type: PlayerProfileDto })
   @ApiResponse({ status: 404, description: 'Player not found.' })
   async profile(
     @Param('playerId') playerId: string,

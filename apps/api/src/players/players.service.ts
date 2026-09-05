@@ -13,6 +13,10 @@ export interface PlayerProfileDto {
   birth: string | null;
   nationality: string | null;
   profileUrl: string | null;
+  countryCode: string | null;
+  jerseyNumber: number | null;
+  height: number | null;
+  providerProfile: Record<string, unknown> | null;
   team: TeamSummary | null;
   recentMatches: Array<{
     matchId: string;
@@ -37,6 +41,9 @@ export class PlayersService {
     if (!player) {
       throw new NotFoundException(`Player ${playerId} not found`);
     }
+    const profile = await this.prisma.playerProfile.findUnique({
+      where: { playerId },
+    });
 
     let team: TeamSummary | null = null;
     if (player.team) {
@@ -46,6 +53,7 @@ export class PlayersService {
         abbr: player.team.abbr,
         country: player.team.country,
         logoUrl: player.team.logoUrl,
+        manager: player.team.manager,
       };
     }
 
@@ -83,6 +91,12 @@ export class PlayersService {
       birth: player.birth,
       nationality: player.nationality,
       profileUrl: player.profileUrl,
+      countryCode: player.countryCode ?? null,
+      jerseyNumber: player.jerseyNumber ?? null,
+      height: player.height ?? null,
+      providerProfile: profile
+        ? (profile.payload as Record<string, unknown>)
+        : null,
       team,
       recentMatches: recent,
     };

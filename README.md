@@ -147,9 +147,12 @@ Interactive docs: **http://localhost:3001/docs** (Swagger). Health dashboard: **
 | `GET` | `/api/matches` | List matches (filter by `status` / `tournament`, paginated) |
 | `GET` | `/api/matches/live` | Current live matches (Redis first, Postgres fallback) |
 | `GET` | `/api/matches/:matchId` | Single match by Sportradar id (e.g. `sr:match:66650320`) |
+| `GET` | `/api/matches/:matchId/timeline` | Ball-by-ball match timeline (raw provider payload) |
 | `GET` | `/api/teams` | All teams |
 | `GET` | `/api/teams/:idOrAbbr` | Team profile (by id or abbreviation, e.g. `ENG`) |
 | `GET` | `/api/teams/:idOrAbbr/players` | Team roster |
+| `GET` | `/api/teams/:idOrAbbr/schedule` | Upcoming matches for a team |
+| `GET` | `/api/teams/:idOrAbbr/results` | Completed matches for a team |
 | `GET` | `/api/players` | Search players (`?q=name&team=ENG`) |
 | `GET` | `/api/players/:playerId` | Player profile (optionally `?recent=N`, max 20) |
 | `GET` | `/api/psl/seasons` | Available PSL seasons |
@@ -157,6 +160,14 @@ Interactive docs: **http://localhost:3001/docs** (Swagger). Health dashboard: **
 | `GET` | `/api/psl/schedule` | PSL fixtures |
 | `GET` | `/api/psl/leaders` | PSL statistical leaders |
 | `GET` | `/api/psl/squads` | PSL team squads |
+| `GET` | `/api/tours` | All cricket tours |
+| `GET` | `/api/tournaments` | All tournaments / competitions |
+| `GET` | `/api/tournaments/:tournamentId` | Tournament record (incl. current season) |
+| `GET` | `/api/tournaments/:tournamentId/seasons` | Seasons for a tournament |
+| `GET` | `/api/tournaments/:id/results` | Results for a tournament or season id |
+| `GET` | `/api/schedules/:date` | Daily schedule (`YYYY-MM-DD`) |
+| `GET` | `/api/schedules/:date/results` | Daily results (`YYYY-MM-DD`) |
+| `GET` | `/api/head-to-head/:teamA/:teamB` | Previous & upcoming meetings between two teams |
 | `SSE` | `/api/matches/live/stream` | Stream **all** live match updates (Server-Sent Events) |
 | `SSE` | `/api/matches/:matchId/stream` | Stream updates for a **single** match |
 
@@ -180,6 +191,16 @@ Interactive docs: **http://localhost:3001/docs** (Swagger). Health dashboard: **
 | `POLL_INTERVAL_MS` | Live-match poll frequency (default `30000`) |
 | `PSL_SEASONS` | Restrict PSL sync, comma-separated years/ids (default: all) |
 | `PSL_SYNC_INTERVAL_MS` | Optional periodic PSL re-sync (e.g. `3600000` = hourly) |
+| `REFERENCE_SYNC_INTERVAL_MS` | Reference sync period (default `3600000`; `0` disables). Targets are auto-derived from ingested data (tournaments' current seasons, match records without timelines, existing head-to-head pairs) so no ids need configuring |
+| `REF_SYNC_DELAY_MS` | Inter-request delay for reference sync (default `500`) |
+| `REF_SYNC_MATCH_LIMIT` | Max matches auto-synced for timelines/lineups per cycle (default `20`) |
+| `REF_SYNC_SEASON_LIMIT` | Max tournament results/seasons auto-synced per cycle (default `10`) |
+| `REF_SYNC_TEAMS_LIMIT` | Max teams auto-synced for profiles/schedules per cycle (default `10`) |
+| `REF_SYNC_TEAM_IDS` | Extra team ids for team profile / schedule / results sync (optional) |
+| `REF_SYNC_PLAYER_IDS` | Extra player ids for player profile sync (optional) |
+| `REF_SYNC_MATCH_IDS` | Extra match ids for timeline sync (optional) |
+| `REF_SYNC_TOURNAMENT_IDS` | Extra tournament ids for season sync (optional) |
+| `REF_SYNC_PAIR_IDS` | Extra team pairs for head-to-head sync (`a::b;a2::b2`) |
 
 ---
 

@@ -15,6 +15,7 @@ import {
 import { MatchesService } from './matches.service.js';
 import type { MatchSummary as MatchSummaryResponse } from './matches.service.js';
 import { MatchSummaryDto } from './dto/match-summary.dto.js';
+import { MatchTimelineDto } from './dto/match-timeline.dto.js';
 import { ListMatchesQuery } from './dto/list-matches.query.js';
 
 @ApiTags('matches')
@@ -24,7 +25,7 @@ export class MatchesController {
 
   @Get()
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
-  @ApiOperation({ summary: 'List matches', description: 'Filter by status and/or tournament with pagination.' })
+  @ApiOperation({ summary: 'List matches', description: 'All matches (live, upcoming, completed, cancelled) with status/tournament filters and pagination. Use ?status=upcoming, ?status=live, ?status=completed or ?status=cancelled.' })
   @ApiResponse({ status: 200, description: 'Matching match summaries.', type: [MatchSummaryDto] })
   async list(@Query() query: ListMatchesQuery): Promise<MatchSummaryResponse[]> {
     return this.matchesService.list(query);
@@ -35,6 +36,15 @@ export class MatchesController {
   @ApiResponse({ status: 200, description: 'Live match summaries.', type: [MatchSummaryDto] })
   async listLive(): Promise<MatchSummaryResponse[]> {
     return this.matchesService.listLive();
+  }
+
+  @Get(':matchId/timeline')
+  @ApiOperation({ summary: 'Match timeline', description: 'Ball-by-ball timeline for a match. Requires the ingestion service to have synced it.' })
+  @ApiParam({ name: 'matchId', description: 'Provider match id (e.g. sr:match:66650320).' })
+  @ApiResponse({ status: 200, description: 'The match timeline payload.', type: MatchTimelineDto })
+  @ApiResponse({ status: 404, description: 'Timeline not found.' })
+  async timeline(@Param('matchId') matchId: string) {
+    return this.matchesService.getTimeline(matchId);
   }
 
   @Get(':matchId')

@@ -6,9 +6,10 @@ const LANG = 'en';
 const REQUEST_TIMEOUT_MS = Number(process.env.SPORTRADAR_TIMEOUT_MS || 15000);
 const MAX_RETRIES = Number(process.env.SPORTRADAR_MAX_RETRIES || 3);
 
-async function fetchJson(path, attempt = 0) {
+async function fetchJson(path, options = {}, attempt = 0) {
   const url = `${BASE_URL}/cricket-${ACCESS_LEVEL}2/${LANG}/${path}`;
   const params = new URLSearchParams({ api_key: API_KEY });
+  if (options.since) params.set('since', options.since);
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
@@ -30,7 +31,7 @@ async function fetchJson(path, attempt = 0) {
   if (res.status === 429 && attempt < MAX_RETRIES) {
     const retryAfter = Number(res.headers.get('retry-after') || 1) * 1000 || 1000;
     await new Promise((r) => setTimeout(r, retryAfter));
-    return fetchJson(path, attempt + 1);
+    return fetchJson(path, options, attempt + 1);
   }
 
   if (!res.ok) {
@@ -81,5 +82,65 @@ export async function fetchTournamentInfo(tournamentId) {
 
 export async function fetchSeasonSquad(seasonId, teamId) {
   const data = await fetchJson(`tournaments/${seasonId}/teams/${teamId}/squads.json`);
+  return data;
+}
+
+export async function fetchDailySchedule(date) {
+  const data = await fetchJson(`schedules/${date}/schedule.json`);
+  return data;
+}
+
+export async function fetchDailyResults(date) {
+  const data = await fetchJson(`schedules/${date}/results.json`);
+  return data;
+}
+
+export async function fetchMatchTimeline(matchId) {
+  const data = await fetchJson(`matches/${matchId}/timeline.json`);
+  return data;
+}
+
+export async function fetchMatchTimelineDelta(matchId, since) {
+  const data = await fetchJson(`matches/${matchId}/timeline/delta.json`, { since });
+  return data;
+}
+
+export async function fetchPlayerProfile(playerId) {
+  const data = await fetchJson(`players/${playerId}/profile.json`);
+  return data;
+}
+
+export async function fetchTeamProfile(teamId) {
+  const data = await fetchJson(`teams/${teamId}/profile.json`);
+  return data;
+}
+
+export async function fetchTeamResults(teamId) {
+  const data = await fetchJson(`teams/${teamId}/results.json`);
+  return data;
+}
+
+export async function fetchTeamSchedule(teamId) {
+  const data = await fetchJson(`teams/${teamId}/schedule.json`);
+  return data;
+}
+
+export async function fetchTeamVersusTeam(teamId, teamId2) {
+  const data = await fetchJson(`teams/${teamId}/versus/${teamId2}/matches.json`);
+  return data;
+}
+
+export async function fetchTours() {
+  const data = await fetchJson('tours.json');
+  return data;
+}
+
+export async function fetchTournaments() {
+  const data = await fetchJson('tournaments.json');
+  return data;
+}
+
+export async function fetchTournamentResults(tournamentOrSeasonId) {
+  const data = await fetchJson(`tournaments/${tournamentOrSeasonId}/results.json`);
   return data;
 }

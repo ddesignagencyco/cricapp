@@ -1,4 +1,4 @@
-/** @typedef {'upcoming' | 'live' | 'completed'} MatchStatus */
+/** @typedef {'upcoming' | 'live' | 'completed' | 'cancelled'} MatchStatus */
 /** @typedef {'runs' | 'wicket' | 'none'} LastEventType */
 
 /**
@@ -47,6 +47,7 @@ export const MATCH_STATUS = Object.freeze({
   UPCOMING: 'upcoming',
   LIVE: 'live',
   COMPLETED: 'completed',
+  CANCELLED: 'cancelled',
 });
 
 export const EVENT_TYPES = Object.freeze({

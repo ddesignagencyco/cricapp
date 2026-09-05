@@ -4,8 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "lint": "node --check src/schemas.js src/redis.js src/db.js src/store.js src/sportradar.js src/poll.js src/normalize.js src/diff.js src/psl.js src/pslSync.js src/index.js",
-    "test": "node --test test/normalize.test.js test/diff.test.js test/psl.test.js",
+    "lint": "node --check src/schemas.js src/redis.js src/db.js src/store.js src/sportradar.js src/poll.js src/normalize.js src/diff.js src/psl.js src/pslSync.js src/reference.js src/refSync.js src/index.js",
+    "test": "node --test test/normalize.test.js test/diff.test.js test/psl.test.js test/reference.test.js",
     "start": "node --env-file-if-exists=.env src/index.js"
   },
   "dependencies": {

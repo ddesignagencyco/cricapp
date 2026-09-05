@@ -3,6 +3,7 @@ import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { TeamsService } from './teams.service.js';
 import type { TeamSummary, PlayerSummaryDto as PlayerSummary } from './teams.service.js';
 import { TeamSummaryDto, PlayerSummaryDto } from './dto/team.dto.js';
+import { SportEventRecordDto } from '../common/dto/sport-event-record.dto.js';
 
 @ApiTags('teams')
 @Controller('teams')
@@ -32,5 +33,23 @@ export class TeamsController {
   @ApiResponse({ status: 404, description: 'Team not found.' })
   async roster(@Param('idOrAbbr') idOrAbbr: string): Promise<PlayerSummary[]> {
     return this.teamsService.getRoster(idOrAbbr);
+  }
+
+  @Get(':idOrAbbr/schedule')
+  @ApiOperation({ summary: 'Team schedule', description: 'Upcoming matches for a team.' })
+  @ApiParam({ name: 'idOrAbbr', description: 'Team id or abbreviation.' })
+  @ApiResponse({ status: 200, description: 'Upcoming matches.', type: [SportEventRecordDto] })
+  @ApiResponse({ status: 404, description: 'Team not found.' })
+  async schedule(@Param('idOrAbbr') idOrAbbr: string) {
+    return this.teamsService.getSchedule(idOrAbbr);
+  }
+
+  @Get(':idOrAbbr/results')
+  @ApiOperation({ summary: 'Team results', description: 'Completed matches for a team.' })
+  @ApiParam({ name: 'idOrAbbr', description: 'Team id or abbreviation.' })
+  @ApiResponse({ status: 200, description: 'Completed matches.', type: [SportEventRecordDto] })
+  @ApiResponse({ status: 404, description: 'Team not found.' })
+  async results(@Param('idOrAbbr') idOrAbbr: string) {
+    return this.teamsService.getResults(idOrAbbr);
   }
 }
