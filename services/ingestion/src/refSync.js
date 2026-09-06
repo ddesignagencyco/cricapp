@@ -53,6 +53,8 @@ import {
   listMatchesForRosterlessTeams,
 } from './store.js';
 import { createLogger } from './logger.js';
+import { shouldSync, markSynced, REF_CADENCE } from './refState.js';
+import { getCallStats } from './sportradar.js';
 
 const log = createLogger('ref');
 const warn = log.warn;
@@ -111,16 +113,16 @@ export async function syncDaily({ date = isoDate(), schedule = true, results = t
 }
 
 /**
- * Sync a rolling window of daily schedules/results ending today.
+ * Daily schedule/results for a rolling window, gated per date so each day is
+ * only re-fetched when its stamp is stale.
  */
-export async function syncDailyWindow(days = 3) {
-  const out = [];
+async function syncDailyWindowStale(days = 3) {
   for (let i = days - 1; i >= 0; i -= 1) {
     const d = new Date();
     d.setDate(d.getDate() - i);
-    out.push(await syncDaily({ date: isoDate(d) }));
+    const date = isoDate(d);
+    await runStale('daily', date, REF_CADENCE.daily, () => syncDaily({ date }), 500);
   }
-  return out;
 }
 
 export async function syncMatchTimeline(matchId) {
@@ -214,10 +216,9 @@ export async function syncTournamentResults(tournamentOrSeasonId, { persist = tr
 
 /**
  * Sync all reference/statistics endpoints. Targets are auto-derived from what
- * has already been ingested (tournaments' current_season, sport_event_records,
- * head_to_head) so no ids are hardcoded. Individual failures are logged and
- * skipped so one bad upstream call doesn't abort the rest. Optional env
- * overrides (REF_SYNC_*) simply add to the derived target sets.
+ * has already been ingested and each fetch is gated by a per-target staleness
+ * stamp (Redis), so a cycle only fetches what is actually due — static lists
+ * are refreshed weekly, slow data every few hours, and timelines/lineups once.
  */
 export async function refSyncAll(options = {}) {
   const {
@@ -233,39 +234,37 @@ export async function refSyncAll(options = {}) {
     lineupLimit = 20,
   } = options;
 
-  await safeRun(syncTourList);
-  await safeRun(syncTournamentList);
+  await runStale('tours', null, REF_CADENCE.tours, syncTourList);
+  await runStale('tournaments', null, REF_CADENCE.tournaments, syncTournamentList);
   await safeRun(backfillTours);
-  await safeRun(() => syncDailyWindow(3));
+  await syncDailyWindowStale(3);
 
   // Tournament results/seasons: derive targets from the synced tournament
   // list's `current_season` (active years only) instead of hardcoded ids.
   const derivedSeasonIds = await listActiveSeasonIds({ limit: seasonLimit });
   for (const id of [...new Set([...derivedSeasonIds, ...tournamentIds])]) {
-    await safeRun(() => syncTournamentResults(id), delay);
+    await runStale('seasonResults', id, REF_CADENCE.seasonResults, () => syncTournamentResults(id), delay);
   }
 
   const derivedTournamentIds = await listActiveTournamentIds({ limit: seasonLimit });
   for (const id of [...new Set([...derivedTournamentIds, ...tournamentIds])]) {
-    await safeRun(() => syncTournamentSeasonsFor(id), delay);
+    await runStale('tournamentSeasons', id, REF_CADENCE.tournamentSeasons, () => syncTournamentSeasonsFor(id), delay);
   }
 
   // Materialize per-team schedule/results from the match records we already
   // have, so every team has schedule + results regardless of profile sync.
-  await safeRun(materializeTeamEvents, delay);
+  await safeRun(materializeTeamEvents);
 
   // Team profiles + schedules/results: env-configured teams are refreshed
-  // every cycle; teams without a profile yet are auto-derived so every team
-  // gets covered progressively.
-  for (const id of teamIds) {
-    await safeRun(() => syncTeamProfile(id), delay);
-    await safeRun(() => syncTeamMatches(id), delay);
-  }
-
-  const derivedTeamIds = await listTeamsWithoutSync({ limit: teamLimit });
-  for (const id of derivedTeamIds) {
-    await safeRun(() => syncTeamProfile(id), delay);
-    await safeRun(() => syncTeamMatches(id), delay);
+  // when stale, and teams without a profile yet are auto-derived so every
+  // team gets covered progressively.
+  const allTeamIds = [
+    ...new Set([...teamIds, ...(await listTeamsWithoutSync({ limit: teamLimit }))]),
+  ];
+  for (const id of allTeamIds) {
+    await runStale('teamProfile', id, REF_CADENCE.teamProfile, () => syncTeamProfile(id), delay);
+    await runStale('teamSchedule', id, REF_CADENCE.teamSchedule, () => syncTeamMatches(id, { schedule: true, results: false }), delay);
+    await runStale('teamResults', id, REF_CADENCE.teamResults, () => syncTeamMatches(id, { schedule: false, results: true }), delay);
   }
 
   // Head-to-head: keep existing pairs fresh, plus any env-configured pairs.
@@ -276,29 +275,30 @@ export async function refSyncAll(options = {}) {
     ).values(),
   ];
   for (const [a, b] of allPairs) {
-    await safeRun(() => syncHeadToHead(a, b), delay);
+    await runStale('headToHead', `${a}::${b}`, REF_CADENCE.headToHead, () => syncHeadToHead(a, b), delay);
   }
 
   // Timelines: auto-derive match ids that still lack a timeline (most recent
-  // first), plus any env-configured ones. Lineups for the same matches fill
-  // the players table so team rosters are populated for any team (not just
-  // PSL squads).
+  // first), plus any env-configured ones. Each is fetched once ever.
   const derivedMatchIds = await listEventIdsWithoutTimeline({ limit: timelineLimit });
   for (const id of [...new Set([...derivedMatchIds, ...matchIds])]) {
-    await safeRun(() => syncMatchTimeline(id), delay);
-    await safeRun(() => syncMatchLineups(id), delay);
+    await runStale('timeline', id, REF_CADENCE.timeline, () => syncMatchTimeline(id), delay);
   }
 
-  // Rosters: fetch lineups for matches whose teams still have no players, so
-  // /teams/:id/players is populated for every team over time.
+  // Rosters: fetch lineups once per match for matches whose teams still have
+  // no players — the single source of lineup data (timeline loop no longer
+  // double-fetches them).
   const rosterMatchIds = await listMatchesForRosterlessTeams({ limit: lineupLimit });
   for (const id of rosterMatchIds) {
-    await safeRun(() => syncMatchLineups(id), delay);
+    await runStale('lineups', id, REF_CADENCE.lineups, () => syncMatchLineups(id), delay);
   }
 
   for (const id of playerIds) {
-    await safeRun(() => syncPlayerProfile(id), delay);
+    await runStale('playerProfile', id, REF_CADENCE.playerProfile, () => syncPlayerProfile(id), delay);
   }
+
+  const s = getCallStats();
+  log.info('reference sync cycle complete', { calls: s.calls, retries: s.retries });
 }
 
 async function safeRun(fn, delay = 0) {
@@ -309,6 +309,19 @@ async function safeRun(fn, delay = 0) {
     warn(`reference sync step failed: ${err.message}`);
     return null;
   }
+}
+
+/**
+ * Fetch a step only when its Redis staleness key has expired, stamping the key
+ * on success so already-fresh targets are skipped on subsequent cycles.
+ */
+async function runStale(category, id, cadenceMs, fn, delay = 0) {
+  if (!(await shouldSync(category, id))) return null;
+  const result = await safeRun(fn, delay);
+  if (result !== null) {
+    await markSynced(category, id, cadenceMs);
+  }
+  return result;
 }
 
 /**

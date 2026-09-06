@@ -13,7 +13,8 @@ export { pollOnce } from './poll.js';
 export { syncPsAll } from './pslSync.js';
 
 const log = createLogger('main');
-const POLL_INTERVAL_MS = Number(process.env.POLL_INTERVAL_MS || 30000);
+const POLL_INTERVAL_LIVE_MS = Number(process.env.POLL_INTERVAL_LIVE_MS || 15000);
+const POLL_INTERVAL_IDLE_MS = Number(process.env.POLL_INTERVAL_IDLE_MS || 60000);
 
 async function ping() {
   await db.query('SELECT 1');
@@ -37,14 +38,15 @@ async function syncPsOnStart() {
 }
 
 async function pollLoop() {
-  while (true) {
+  let liveCount = 0;
+  for (;;) {
     try {
-      const count = await pollOnce();
-      if (count > 0) log.info('polled live matches', { count });
+      liveCount = await pollOnce();
     } catch (err) {
       log.error('poll cycle failed', { error: err.message });
     }
-    await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
+    const delay = liveCount > 0 ? POLL_INTERVAL_LIVE_MS : POLL_INTERVAL_IDLE_MS;
+    await new Promise((r) => setTimeout(r, delay));
   }
 }
 
@@ -60,7 +62,7 @@ process.on('SIGTERM', shutdown);
 
 log.info('starting ingestion service', {
   provider: PROVIDERS.SPORTRADAR,
-  pollIntervalMs: POLL_INTERVAL_MS,
+  pollIntervalMs: { live: POLL_INTERVAL_LIVE_MS, idle: POLL_INTERVAL_IDLE_MS },
 });
 
 ping()

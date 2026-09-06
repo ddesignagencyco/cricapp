@@ -6,10 +6,48 @@ const LANG = 'en';
 const REQUEST_TIMEOUT_MS = Number(process.env.SPORTRADAR_TIMEOUT_MS || 15000);
 const MAX_RETRIES = Number(process.env.SPORTRADAR_MAX_RETRIES || 3);
 
+// Self-throttle to a token bucket at RATE_QPS so we stay under the provider
+// quota and stop paying the 429 multiply-by-4 penalty. Trial tier is 1 QPS;
+// raise SPORTRADAR_QPS for higher purchased tiers.
+const RATE_QPS = Number(process.env.SPORTRADAR_QPS || 1);
+
+let capacity = Math.max(RATE_QPS, 1);
+let lastRefill = Date.now();
+
+const stats = { calls: 0, retries: 0, throttledMs: 0, lastError: null };
+
+export function getCallStats() {
+  return { ...stats };
+}
+
+function sleep(ms) {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+async function acquireToken() {
+  const started = Date.now();
+  for (;;) {
+    const now = Date.now();
+    capacity = Math.min(
+      Math.max(RATE_QPS, 1),
+      capacity + ((now - lastRefill) / 1000) * RATE_QPS,
+    );
+    lastRefill = now;
+    if (capacity >= 1) {
+      capacity -= 1;
+      stats.throttledMs += now - started;
+      return;
+    }
+    await sleep(50);
+  }
+}
+
 async function fetchJson(path, options = {}, attempt = 0) {
   const url = `${BASE_URL}/cricket-${ACCESS_LEVEL}2/${LANG}/${path}`;
   const params = new URLSearchParams({ api_key: API_KEY });
   if (options.since) params.set('since', options.since);
+
+  await acquireToken();
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
@@ -28,13 +66,19 @@ async function fetchJson(path, options = {}, attempt = 0) {
   }
   clearTimeout(timer);
 
+  stats.calls += 1;
+
   if (res.status === 429 && attempt < MAX_RETRIES) {
-    const retryAfter = Number(res.headers.get('retry-after') || 1) * 1000 || 1000;
-    await new Promise((r) => setTimeout(r, retryAfter));
+    stats.retries += 1;
+    const retryAfterMs = (Number(res.headers.get('retry-after') || 0) || 1) * 1000;
+    const backoffMs = retryAfterMs * 2 ** attempt;
+    const jitter = 0.5 + Math.random() * 0.5;
+    await sleep(Math.round(backoffMs * jitter));
     return fetchJson(path, options, attempt + 1);
   }
 
   if (!res.ok) {
+    stats.lastError = `${res.status}: ${url}`;
     throw new Error(`sportradar request failed (${res.status}): ${url}`);
   }
   return res.json();
