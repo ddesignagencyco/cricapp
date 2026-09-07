@@ -91,8 +91,8 @@ body {
 
 .hero-grad {
   background-image:
-    linear-gradient(rgba(4, 10, 20, 0.68), rgba(4, 10, 20, 0.68)),
-    url('/banner2.jpg');
+    /* linear-gradient(rgba(4, 10, 20, 0.68), rgba(4, 10, 20, 0.68)), */
+    url('/banner.png');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -100,8 +100,8 @@ body {
 
 .light .hero-grad {
   background-image:
-    linear-gradient(rgba(4, 10, 20, 0.68), rgba(4, 10, 20, 0.68)),
-    url('/banner2.jpg');
+    /* linear-gradient(rgba(4, 10, 20, 0.68), rgba(4, 10, 20, 0.68)), */
+    url('/banner.png');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -124,8 +124,8 @@ body {
 
 .hero-grad-home {
   background-image:
-    linear-gradient(rgba(4, 10, 20, 0.55), rgba(4, 10, 20, 0.55)),
-    url('/banner.jpg');
+    /* linear-gradient(rgba(4, 10, 20, 0.55), rgba(4, 10, 20, 0.55)), */
+    url('/banner.png');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -133,8 +133,8 @@ body {
 
 .light .hero-grad-home {
   background-image:
-    linear-gradient(rgba(4, 10, 20, 0.55), rgba(4, 10, 20, 0.55)),
-    url('/banner.jpg');
+    /* linear-gradient(rgba(4, 10, 20, 0.55), rgba(4, 10, 20, 0.55)), */
+    url('/banner.png');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;

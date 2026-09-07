@@ -47,7 +47,7 @@ export const streams: Stream[] = [
     embedId: null,
     embedUrl: null,
     theme: 'from-indigo-700 to-purple-900',
-    image: '/banner.jpg',
+    image: '/banner.png',
     status: 'live',
     viewers: 26,
     peakViewers: 18400,
