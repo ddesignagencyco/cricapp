@@ -1,19 +1,47 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { Search, Users } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { ChevronLeft, ChevronRight, Loader2, Search, Users } from 'lucide-react';
 import TeamCard from '../TeamCard';
 import EmptyState from '../EmptyState';
+import { fetchTeams } from '../../services/teams';
 
-interface Props {
-  teams: any[];
-}
-
-export default function TeamsDirectory({ teams }: Props) {
+export default function TeamsDirectory() {
   const [search, setSearch] = useState('');
 
+  const [displayTeams, setDisplayTeams] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    const loadTeams = async () => {
+      setLoading(true);
+      try {
+        const limit = 12;
+        const offset = page * limit;
+        const data = await fetchTeams({ limit, offset });
+        if (mounted) {
+          setDisplayTeams(data || []);
+          setHasMore((data?.length || 0) === limit);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+    loadTeams();
+    return () => { mounted = false; };
+  }, [page]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [search]);
+
   const filtered = useMemo(() => {
-    let list = teams || [];
+    let list = displayTeams || [];
     const q = search.toLowerCase().trim();
     if (q) {
       list = list.filter(
@@ -25,7 +53,7 @@ export default function TeamsDirectory({ teams }: Props) {
       );
     }
     return list;
-  }, [teams, search]);
+  }, [displayTeams, search]);
 
   return (
     <>
@@ -54,7 +82,11 @@ export default function TeamsDirectory({ teams }: Props) {
         </div>
       </div>
 
-      {filtered.length > 0 ? (
+      {loading && filtered.length === 0 ? (
+        <div className="flex justify-center p-12">
+          <Loader2 className="animate-spin text-accent" size={32} />
+        </div>
+      ) : filtered.length > 0 ? (
         <>
           <p className="mb-4 text-xs text-stext">
             Showing {filtered.length} team{filtered.length === 1 ? '' : 's'}
@@ -63,6 +95,30 @@ export default function TeamsDirectory({ teams }: Props) {
             {filtered.map((t) => (
               <TeamCard key={t.id} team={t} />
             ))}
+          </div>
+          <div className="mt-10 flex items-center justify-center gap-6">
+            <button
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+              disabled={page === 0 || loading}
+              className="group flex items-center gap-1.5 rounded-full border border-lborder bg-card px-5 py-2.5 text-sm font-semibold text-text shadow-sm transition-all hover:border-accent/40 hover:bg-elevated hover:text-accent disabled:pointer-events-none disabled:opacity-40"
+            >
+              <ChevronLeft size={16} className="transition-transform group-hover:-translate-x-0.5" />
+              Previous
+            </button>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-stext">Page</span>
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-accent/10 text-sm font-bold text-accent">
+                {page + 1}
+              </span>
+            </div>
+            <button
+              onClick={() => setPage((p) => p + 1)}
+              disabled={!hasMore || loading}
+              className="group flex items-center gap-1.5 rounded-full border border-lborder bg-card px-5 py-2.5 text-sm font-semibold text-text shadow-sm transition-all hover:border-accent/40 hover:bg-elevated hover:text-accent disabled:pointer-events-none disabled:opacity-40"
+            >
+              Next
+              <ChevronRight size={16} className="transition-transform group-hover:translate-x-0.5" />
+            </button>
           </div>
         </>
       ) : (

@@ -1,8 +1,10 @@
 import { apiGet } from './api/client';
 import { TournamentApi, TournamentSeason, SportEventRecord } from '../types/index';
 
-export function fetchTournaments(): Promise<TournamentApi[]> {
-  return apiGet('/tournaments');
+export function fetchTournaments(
+  params: Record<string, string | number | boolean | undefined | null> = {}
+): Promise<TournamentApi[]> {
+  return apiGet('/tournaments', params);
 }
 
 export function fetchTournamentById(tournamentId: string): Promise<TournamentApi | null> {
