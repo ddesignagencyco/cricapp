@@ -59,8 +59,12 @@ export class TournamentsService {
     };
   }
 
-  async list(): Promise<TournamentSummary[]> {
+  async list(params?: { limit?: number; offset?: number }): Promise<TournamentSummary[]> {
+    const limit = Math.min(params?.limit ?? 50, 100);
+    const offset = params?.offset ?? 0;
     const rows = await this.prisma.tournament.findMany({
+      take: limit,
+      skip: offset,
       orderBy: [{ name: 'asc' }],
     });
     return rows.map((t) => this.toSummary(t));
@@ -76,9 +80,13 @@ export class TournamentsService {
     return this.toSummary(row);
   }
 
-  async seasons(tournamentId: string): Promise<TournamentSeasonSummary[]> {
+  async seasons(tournamentId: string, params?: { limit?: number; offset?: number }): Promise<TournamentSeasonSummary[]> {
+    const limit = Math.min(params?.limit ?? 50, 100);
+    const offset = params?.offset ?? 0;
     const rows = await this.prisma.tournamentSeason.findMany({
       where: { tournamentId },
+      take: limit,
+      skip: offset,
       orderBy: [{ startDate: 'desc' }],
     });
     return rows.map((s) => ({
@@ -91,9 +99,13 @@ export class TournamentsService {
     }));
   }
 
-  async results(tournamentOrSeasonId: string): Promise<SportEventRecordSummary[]> {
+  async results(tournamentOrSeasonId: string, params?: { limit?: number; offset?: number }): Promise<SportEventRecordSummary[]> {
+    const limit = Math.min(params?.limit ?? 50, 100);
+    const offset = params?.offset ?? 0;
     const rows = await this.prisma.sportEventRecord.findMany({
       where: { kind: 'tournament_results', scopeKey: tournamentOrSeasonId },
+      take: limit,
+      skip: offset,
       orderBy: [{ scheduled: 'asc' }],
     });
     return rows.map((r) => this.toSportEvent(r));
