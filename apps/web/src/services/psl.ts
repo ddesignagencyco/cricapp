@@ -1,38 +1,39 @@
 import { apiGet } from './api/client';
+import { demoPslSeasons, demoPslStandings, demoPslSchedule, demoPslLeaders, demoPslSquads } from '../data/demo';
 
-async function asArray(promise: Promise<any>): Promise<any[]> {
+async function asArray(promise: Promise<any>, demo: any[]): Promise<any[]> {
   const data = await promise;
-  if (Array.isArray(data)) return data;
-  if (data && Array.isArray(data.value)) return data.value;
-  return data ?? [];
+  if (Array.isArray(data) && data.length > 0) return data;
+  if (data && Array.isArray(data.value) && data.value.length > 0) return data.value;
+  return demo;
 }
 
-export async function fetchPslSeasons(
+export function fetchPslSeasons(
   params: Record<string, string | number | boolean | undefined | null> = {}
 ): Promise<any[]> {
-  return asArray(apiGet('/psl/seasons', params));
+  return asArray(apiGet('/psl/seasons', params), demoPslSeasons);
 }
 
-export async function fetchPslStandings(
+export function fetchPslStandings(
   params: Record<string, string | number | boolean | undefined | null> = {}
 ): Promise<any[]> {
-  return asArray(apiGet('/psl/standings', params));
+  return asArray(apiGet('/psl/standings', params), demoPslStandings);
 }
 
-export async function fetchPslSchedule(
+export function fetchPslSchedule(
   params: Record<string, string | number | boolean | undefined | null> = {}
 ): Promise<any[]> {
-  return asArray(apiGet('/psl/schedule', params));
+  return asArray(apiGet('/psl/schedule', params), demoPslSchedule);
 }
 
-export async function fetchPslLeaders(
+export function fetchPslLeaders(
   params: Record<string, string | number | boolean | undefined | null> = {}
 ): Promise<any[]> {
-  return asArray(apiGet('/psl/leaders', params));
+  return asArray(apiGet('/psl/leaders', params), demoPslLeaders);
 }
 
-export async function fetchPslSquads(
+export function fetchPslSquads(
   params: Record<string, string | number | boolean | undefined | null> = {}
 ): Promise<any[]> {
-  return asArray(apiGet('/psl/squads', params));
+  return asArray(apiGet('/psl/squads', params), demoPslSquads);
 }

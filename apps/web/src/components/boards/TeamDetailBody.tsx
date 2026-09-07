@@ -2,27 +2,29 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { CalendarDays, MapPin, Shield, User } from 'lucide-react';
+import { CalendarDays, MapPin, Shield, Swords, User } from 'lucide-react';
 import MatchCard from '../MatchCard';
 import PlayerCard from '../PlayerCard';
-import Badge from '../Badge';
 import Tabs from '../Tabs';
 import EmptyState from '../EmptyState';
+import TeamHeadToHead from './TeamHeadToHead';
 import { getInitials } from '../../utils/helpers';
 
 const teamTabs = [
   { key: 'overview', label: 'Overview', icon: Shield },
   { key: 'matches', label: 'Matches', icon: CalendarDays },
   { key: 'squad', label: 'Squad', icon: User },
+  { key: 'h2h', label: 'Head to Head', icon: Swords },
 ];
 
 interface Props {
   team: any;
   players: any[];
   matches: any[];
+  allTeams?: any[];
 }
 
-export default function TeamDetailBody({ team, players, matches }: Props) {
+export default function TeamDetailBody({ team, players, matches, allTeams = [] }: Props) {
   const [tab, setTab] = useState('overview');
 
   if (!team) {
@@ -115,6 +117,12 @@ export default function TeamDetailBody({ team, players, matches }: Props) {
           ) : (
             <EmptyState title="No players" message="Squad information is not available yet." />
           )}
+        </div>
+      )}
+
+      {tab === 'h2h' && (
+        <div className="fade-in pt-5">
+          <TeamHeadToHead team={team} allTeams={allTeams} teamMatches={teamMatches} />
         </div>
       )}
     </div>

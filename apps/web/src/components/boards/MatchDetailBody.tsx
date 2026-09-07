@@ -2,12 +2,13 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { BarChart3, Calendar, Clock, MapPin, Users } from 'lucide-react';
+import { BarChart3, Calendar, Clock, MapPin, Trophy, Users } from 'lucide-react';
 import Badge from '../Badge';
 import LiveIndicator from '../LiveIndicator';
 import Tabs from '../Tabs';
 import EmptyState from '../EmptyState';
 import ShareButton from '../ShareButton';
+import HeadToHeadWidget from '../HeadToHeadWidget';
 import { formatScheduled } from '../../utils/helpers';
 
 const detailTabs = [
@@ -15,12 +16,23 @@ const detailTabs = [
   { key: 'info', label: 'Match Info', icon: MapPin },
 ];
 
+const completedTabs = [
+  { key: 'info', label: 'Match Info', icon: MapPin },
+  { key: 'result', label: 'Result', icon: Trophy },
+];
+
 interface Props {
   match: any;
+  headToHead?: any;
 }
 
-export default function MatchDetailBody({ match }: Props) {
-  const [tab, setTab] = useState('live');
+export default function MatchDetailBody({ match, headToHead }: Props) {
+  const isLive = match?.status === 'live';
+  const isUpcoming = match?.status === 'upcoming';
+  const isCompleted = match?.status === 'completed';
+
+  const [tab, setTab] = useState(isCompleted ? 'info' : 'live');
+  const activeTabs = isCompleted ? completedTabs : detailTabs;
 
   if (!match) {
     return (
@@ -30,33 +42,56 @@ export default function MatchDetailBody({ match }: Props) {
     );
   }
 
-  const isLive = match.status === 'live';
-  const isUpcoming = match.status === 'upcoming';
-
   const codes = match.teams || [];
   const names = match.teamNames || [];
   const homeCode = codes[0] || '';
   const awayCode = codes[1] || '';
-  const homeName = names[0] || homeCode;
-  const awayName = names[1] || awayCode;
+  const homeName = (names[0] && !names[0].startsWith('sr:')) ? names[0] : homeCode || 'Team A';
+  const awayName = (names[1] && !names[1].startsWith('sr:')) ? names[1] : awayCode || 'Team B';
 
   const inn = match.currentInnings;
   const battingCode = inn?.battingTeam;
   const battingIsHome = battingCode === homeCode;
+  const hasInnings = inn && (inn.runs > 0 || inn.wickets > 0 || inn.overs > 0);
 
-  const homeScore = isUpcoming || (isLive && battingIsHome) ? match.displayScore : '';
-  const awayScore = isUpcoming || (isLive && !battingIsHome) ? match.displayScore : '';
-  const homeOvers = homeScore ? inn?.overs : '';
-  const awayOvers = awayScore ? inn?.overs : '';
+  let homeScore = '';
+  let awayScore = '';
+  let homeOvers: string | number = '';
+  let awayOvers: string | number = '';
+
+  if (isUpcoming) {
+    homeScore = '';
+    awayScore = '';
+  } else if (isLive && hasInnings) {
+    if (battingIsHome) {
+      homeScore = match.displayScore || '';
+      homeOvers = inn.overs;
+    } else {
+      awayScore = match.displayScore || '';
+      awayOvers = inn.overs;
+    }
+  } else if (isCompleted && match.displayScore) {
+    if (battingIsHome) {
+      homeScore = match.displayScore;
+      homeOvers = inn?.overs ?? '';
+    } else if (battingCode) {
+      awayScore = match.displayScore;
+      awayOvers = inn?.overs ?? '';
+    }
+  }
 
   const { date, time } = formatScheduled(match.scheduled);
+
+  const breadcrumbName = isCompleted
+    ? `${homeName} vs ${awayName}`
+    : match.matchId?.replace(/^sr:match:/, 'Match #') || 'Match';
 
   return (
     <div className="mx-auto max-w-6xl space-y-3 px-4 py-8 sm:px-6">
       <nav className="flex items-center gap-1.5 text-xs text-stext">
         <Link href="/matches" className="hover:text-accent">Matches</Link>
         <span>/</span>
-        <span className="text-mtext">{match.matchId || 'Match'}</span>
+        <span className="text-mtext truncate max-w-[200px] sm:max-w-none">{breadcrumbName}</span>
       </nav>
 
       <header className="rounded-3xl bg-card p-6 ring-1 ring-lborder">
@@ -102,13 +137,13 @@ export default function MatchDetailBody({ match }: Props) {
           />
         </div>
 
-        {!isUpcoming && (
+        {hasInnings && (
           <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-lborder pt-4 text-xs text-stext">
             <span className="flex items-center gap-1.5">
-              <BarChart3 size={14} /> {battingCode || '—'} {inn?.runs ?? 0}/{inn?.wickets ?? 0}
+              <BarChart3 size={14} /> {battingCode || '—'} {inn.runs}/{inn.wickets}
             </span>
             <span className="flex items-center gap-1.5">
-              <Users size={14} /> {inn?.overs ?? 0} ov · RR {inn?.runRate ?? 0}
+              <Users size={14} /> {inn.overs} ov · RR {inn.runRate}
             </span>
             {match.lastEvent?.type && match.lastEvent.type !== 'none' && (
               <span className="flex items-center gap-1.5">
@@ -139,52 +174,74 @@ export default function MatchDetailBody({ match }: Props) {
         )}
       </header>
 
-      <div className="mt-6">
-        <Tabs tabs={detailTabs} active={tab} onChange={setTab} />
+      <div className="mt-4">
+        <Tabs tabs={activeTabs} active={tab} onChange={setTab} />
       </div>
 
-      <div className="fade-in space-y-6 pt-5">
-        {tab === 'live' &&
-          (isLive ? (
-            <div className="rounded-3xl bg-secondary p-6 ring-1 ring-lborder">
-              <h3 className="mb-4 text-lg font-bold text-mtext">Live Score</h3>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <InfoStat label="Score" value={`${battingCode || '—'} ${match.displayScore || '—'}`} big />
-                <InfoStat label="Overs" value={inn?.overs !== null ? String(inn.overs) : '—'} />
-                <InfoStat label="Run Rate" value={inn?.runRate !== null ? String(inn.runRate) : '—'} />
+      <div className="mt-4 grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2 fade-in space-y-6 pt-3">
+          {tab === 'live' &&
+            (isLive && hasInnings ? (
+              <div className="rounded-3xl bg-secondary p-6 ring-1 ring-lborder">
+                <h3 className="mb-4 text-lg font-bold text-mtext">Live Score</h3>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                  <InfoStat label="Score" value={`${battingCode || '—'} ${match.displayScore || '—'}`} big />
+                  <InfoStat label="Overs" value={String(inn.overs)} />
+                  <InfoStat label="Run Rate" value={String(inn.runRate)} />
+                </div>
+                {match.lastEvent && (
+                  <p className="mt-4 text-xs text-stext">
+                    Last ball: over {match.lastEvent.over}, {match.lastEvent.runs} run
+                    {match.lastEvent.runs === 1 ? '' : 's'} · {match.lastEvent.type}
+                  </p>
+                )}
               </div>
-              {match.lastEvent && (
-                <p className="mt-4 text-xs text-stext">
-                  Last ball: over {match.lastEvent.over}, {match.lastEvent.runs} run
-                  {match.lastEvent.runs === 1 ? '' : 's'} · {match.lastEvent.type}
-                </p>
+            ) : isUpcoming ? (
+              <EmptyState
+                title="This match hasn't started yet"
+                message={`${homeName} vs ${awayName}${date ? ` on ${date}` : ''}${time ? ` at ${time}` : ''}.`}
+              />
+            ) : (
+              <EmptyState
+                title={isCompleted ? 'Match Completed' : 'Match Status'}
+                message={match.matchStatus || (isCompleted ? 'This match has finished.' : 'No live data available.')}
+              />
+            ))}
+
+          {tab === 'info' && (
+            <div className="rounded-2xl bg-card p-6 ring-1 ring-lborder">
+              <h3 className="mb-4 text-sm font-bold uppercase tracking-widest text-stext">Match Details</h3>
+              <InfoRow label="Tournament" value={match.tournament || '—'} />
+              <InfoRow label="Status" value={`${match.matchStatus || match.status || '—'}`} cap />
+              <InfoRow label="Home" value={homeName} />
+              <InfoRow label="Away" value={awayName} />
+              {date && <InfoRow label="Date" value={date} />}
+              {time && <InfoRow label="Time" value={time} />}
+              <InfoRow label="Venue" value={match.venue || 'TBA'} />
+            </div>
+          )}
+
+          {tab === 'result' && isCompleted && (
+            <div className="rounded-2xl bg-card p-6 ring-1 ring-lborder">
+              <h3 className="mb-4 text-sm font-bold uppercase tracking-widest text-stext">Match Result</h3>
+              {match.matchStatus ? (
+                <p className="text-base font-semibold text-accent">{match.matchStatus}</p>
+              ) : (
+                <p className="text-sm text-stext">Result information is not available for this fixture.</p>
+              )}
+              {match.displayScore && (
+                <div className="mt-4 rounded-xl bg-elevated p-4 ring-1 ring-lborder">
+                  <p className="text-[11px] font-bold uppercase tracking-widest text-stext mb-2">Final Score</p>
+                  <p className="font-mono text-2xl font-black tabular-nums text-mtext">{match.displayScore}</p>
+                </div>
               )}
             </div>
-          ) : isUpcoming ? (
-            <EmptyState
-              title="This match hasn't started yet"
-              message={`${homeName} vs ${awayName}${date ? ` on ${date}` : ''}${time ? ` at ${time}` : ''}.`}
-            />
-          ) : (
-            <EmptyState
-              title="Match completed"
-              message={`${match.matchStatus || 'This match has finished.'} Full scorecards are not available for this fixture.`}
-            />
-          ))}
+          )}
+        </div>
 
-        {tab === 'info' && (
-          <div className="rounded-2xl bg-card p-6 ring-1 ring-lborder">
-            <h3 className="mb-4 text-sm font-bold uppercase tracking-widest text-stext">Match Details</h3>
-            <InfoRow label="Match ID" value={match.matchId} />
-            <InfoRow label="Tournament" value={match.tournament} />
-            <InfoRow label="Status" value={`${match.status} · ${match.matchStatus || ''}`} cap />
-            <InfoRow label="Home" value={`${homeName} (${homeCode})`} />
-            <InfoRow label="Away" value={`${awayName} (${awayCode})`} />
-            {date && <InfoRow label="Date" value={date} />}
-            {time && <InfoRow label="Time" value={time} />}
-            <InfoRow label="Venue" value={match.venue || 'TBA'} />
-          </div>
-        )}
+        <aside className="lg:col-span-1 mt-3">
+          <HeadToHeadWidget data={headToHead || null} />
+        </aside>
       </div>
     </div>
   );

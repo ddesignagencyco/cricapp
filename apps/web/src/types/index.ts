@@ -273,3 +273,51 @@ export interface FilterDef {
   value: string;
   options: FilterOption[];
 }
+
+export interface Tour {
+  id: string;
+  name: string;
+  category?: any;
+  sport?: any;
+  [key: string]: any;
+}
+
+export interface TournamentApi {
+  id: string;
+  name: string;
+  type?: string;
+  gender?: string;
+  category?: any;
+  currentSeason?: any;
+  sport?: any;
+  tourId?: string;
+  parentId?: string;
+  [key: string]: any;
+}
+
+export interface TournamentSeason {
+  id: string;
+  tournamentId: string;
+  name?: string;
+  year?: string;
+  startDate?: string;
+  endDate?: string;
+  [key: string]: any;
+}
+
+export interface SportEventRecord {
+  kind: string;
+  scopeKey: string;
+  eventId: string;
+  status?: string;
+  scheduled?: string;
+  payload: any;
+  [key: string]: any;
+}
+
+export interface HeadToHead {
+  teamAId: string;
+  teamBId: string;
+  payload: any;
+  [key: string]: any;
+}

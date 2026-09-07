@@ -1,8 +1,9 @@
 import Link from 'next/link';
-import { ArrowRight, Crown, Trophy } from 'lucide-react';
 import SectionHeader from '../../components/SectionHeader';
 import Badge from '../../components/Badge';
 import PointsTable from '../../components/PointsTable';
+import { PSLLeaderCard } from '../../components/PSLLeaderCard';
+import { PSLHeroBadge } from '../../components/PSLHeroBadge';
 import { getInitials, formatScheduled } from '../../utils/helpers';
 import { fetchPslStandings } from '../../services/psl';
 import { fetchPslLeaders } from '../../services/psl';
@@ -49,12 +50,7 @@ export default async function PSLPage() {
 
         <div className="hero-content relative mx-auto max-w-7xl px-4 py-14 sm:px-6">
           <div className="max-w-2xl">
-            <div className="mb-4 flex items-center gap-2">
-              <Crown size={18} className="text-gold" />
-              <span className="text-xs font-bold uppercase tracking-widest text-slate-300">
-                Season • 
-              </span>
-            </div>
+            <PSLHeroBadge />
             <h1 className="hero-title text-4xl font-black tracking-tight sm:text-5xl">
               PAKISTAN <span className="text-accent">SUPER LEAGUE</span>
             </h1>
@@ -78,9 +74,9 @@ export default async function PSLPage() {
 
           <div>
             <SectionHeader title="Top Performers" subtitle="This Season" icon="zap" to="/stats" actionLabel="Full stats" />
-            <LeaderCard title="Most Runs" rows={topRunsList} accent="accent2" />
+            <PSLLeaderCard title="Most Runs" rows={topRunsList} accent="accent2" />
             <div className="mt-4">
-              <LeaderCard title="Most Wickets" rows={topWicketsList} accent="accent" />
+              <PSLLeaderCard title="Most Wickets" rows={topWicketsList} accent="accent" />
             </div>
           </div>
         </div>
@@ -150,36 +146,6 @@ export default async function PSLPage() {
           </div>
         )}
       </section>
-    </div>
-  );
-}
-
-function LeaderCard({ title, rows, accent }: { title: string; rows: { playerId: string; playerName: string; teamAbbr: string; value: string | number }[]; accent: string }) {
-  return (
-    <div className="rounded-2xl bg-card p-5 ring-1 ring-lborder">
-      <p className="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-stext">
-        <Trophy size={13} /> {title}
-      </p>
-      {rows.length > 0 ? (
-        <div className="space-y-2.5">
-          {rows.map((r) => (
-            <div key={r.playerId} className="flex items-center gap-3">
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-mtext">{r.playerName}</p>
-                <p className="truncate text-xs text-stext">{r.teamAbbr}</p>
-              </div>
-              <span className={`font-mono text-lg font-bold tabular-nums ${accent === 'accent2' ? 'text-accent2' : 'text-accent'}`}>
-                {r.value}
-              </span>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <p className="text-xs text-stext">No data yet.</p>
-      )}
-      <Link href="/stats" className="mt-4 flex items-center gap-1 text-sm font-semibold text-accent transition-colors hover:text-accent2">
-        Full statistics <ArrowRight size={14} />
-      </Link>
     </div>
   );
 }

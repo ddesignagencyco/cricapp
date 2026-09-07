@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import TeamDetailBody from '../../../components/boards/TeamDetailBody';
-import { fetchTeamById, fetchTeamRoster } from '../../../services/teams';
+import { fetchTeamById, fetchTeamRoster, fetchTeams } from '../../../services/teams';
 import { fetchMatches } from '../../../services/matches';
 
 export const dynamic = 'force-dynamic';
@@ -19,13 +19,21 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
 export default async function TeamDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [team, roster, matches] = await Promise.all([
+  const [team, roster, matches, allTeams] = await Promise.all([
     fetchTeamById(id),
     fetchTeamRoster(id),
     fetchMatches(),
+    fetchTeams(),
   ]);
   if (!team) {
     return notFound();
   }
-  return <TeamDetailBody team={team} players={roster || []} matches={matches || []} />;
+  return (
+    <TeamDetailBody
+      team={team}
+      players={roster || []}
+      matches={matches || []}
+      allTeams={allTeams || []}
+    />
+  );
 }

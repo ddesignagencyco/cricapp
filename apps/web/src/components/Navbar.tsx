@@ -3,27 +3,37 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Bell, Menu, Moon, Search, Sun, X } from 'lucide-react';
+import { Bell, ChevronDown, Menu, Moon, Search, Sun, X } from 'lucide-react';
 import Logo from './Logo';
 import SearchBar from './SearchBar';
 import { useTheme } from './ThemeProvider';
 
-const navItems = [
+const primaryItems = [
   { to: '/', label: 'Home' },
   // { to: '/streams', label: 'Stream' }, // TODO: re-enable later
   { to: '/matches', label: 'Matches' },
   { to: '/psl', label: 'PSL' },
   { to: '/teams', label: 'Teams' },
+  { to: '/schedules', label: 'Schedule' },
+];
+
+const moreItems = [
   { to: '/players', label: 'Players' },
+  { to: '/tours', label: 'Tours' },
+  { to: '/tournaments', label: 'Tournaments' },
   { to: '/stats', label: 'Stats' },
-  // { to: '/news', label: 'News' }, // TODO: re-enable later
+  { to: '/points-table', label: 'Points Table' },
+  { to: '/streams', label: 'Live Streams' },
 ];
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
+  const moreRef = useRef<HTMLDivElement>(null);
+  const closeMoreTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pathname = usePathname();
   const { theme, toggle, mounted } = useTheme();
 
@@ -31,6 +41,7 @@ export default function Navbar() {
     setMobileOpen(false);
     setSearchOpen(false);
     setNotifOpen(false);
+    setMoreOpen(false);
   }, [pathname]);
 
   useEffect(() => {
@@ -43,7 +54,28 @@ export default function Navbar() {
     return () => document.removeEventListener('mousedown', onClick);
   }, []);
 
+  useEffect(
+    () => () => {
+      if (closeMoreTimer.current) clearTimeout(closeMoreTimer.current);
+    },
+    []
+  );
+
+  const openMore = () => {
+    if (closeMoreTimer.current) {
+      clearTimeout(closeMoreTimer.current);
+      closeMoreTimer.current = null;
+    }
+    setMoreOpen(true);
+  };
+
+  const scheduleCloseMore = () => {
+    if (closeMoreTimer.current) clearTimeout(closeMoreTimer.current);
+    closeMoreTimer.current = setTimeout(() => setMoreOpen(false), 150);
+  };
+
   const isActive = (to: string) => (to === '/' ? pathname === '/' : pathname.startsWith(to));
+  const moreActive = moreItems.some((item) => isActive(item.to));
 
   return (
     <header className="sticky top-0 z-40 border-b border-lborder bg-primary/90 backdrop-blur-md">
@@ -51,7 +83,7 @@ export default function Navbar() {
         <Logo />
 
         <div className="hidden items-center gap-1 lg:flex">
-          {navItems.map((item) => (
+          {primaryItems.map((item) => (
             <Link
               key={item.to}
               href={item.to}
@@ -64,6 +96,44 @@ export default function Navbar() {
               {item.label}
             </Link>
           ))}
+
+          <div
+            className="relative"
+            ref={moreRef}
+            onMouseEnter={openMore}
+            onMouseLeave={scheduleCloseMore}
+          >
+            <button
+              type="button"
+              onClick={() => setMoreOpen((o) => !o)}
+              className={`flex items-center gap-1 px-3 py-2 text-sm font-medium transition-colors ${
+                moreActive || moreOpen
+                  ? 'text-accent after:absolute after:inset-x-2 after:-bottom-1 after:h-0.5 after:rounded-full after:bg-accent'
+                  : 'text-stext hover:text-mtext'
+              }`}
+            >
+              More
+              <ChevronDown size={15} className={`transition-transform ${moreOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {moreOpen && (
+              <div className="absolute right-0 top-full z-40 mt-2 w-56 rounded-2xl bg-elevated p-2 shadow-xl shadow-shadow/40 ring-1 ring-lborder">
+                {moreItems.map((item) => (
+                  <Link
+                    key={item.to}
+                    href={item.to}
+                    onMouseEnter={openMore}
+                    className={`block rounded-xl px-3 py-2 text-sm font-medium transition-colors ${
+                      isActive(item.to)
+                        ? 'bg-accent/15 text-accent'
+                        : 'text-stext hover:bg-card hover:text-mtext'
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="flex items-center gap-1.5">
@@ -162,7 +232,25 @@ export default function Navbar() {
         <div className="border-t border-lborder bg-secondary lg:hidden">
           <div className="mx-auto max-w-7xl px-4 py-3">
             <div className="grid grid-cols-2 gap-1.5">
-              {navItems.map((item) => (
+              {primaryItems.map((item) => (
+                <Link
+                  key={item.to}
+                  href={item.to}
+                  className={`rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${
+                    isActive(item.to)
+                      ? 'bg-accent/15 text-accent ring-1 ring-inset ring-accent/25'
+                      : 'text-stext hover:bg-card hover:text-mtext'
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </div>
+            <p className="mt-4 px-1 text-[11px] font-bold uppercase tracking-widest text-stext">
+              More
+            </p>
+            <div className="mt-1.5 grid grid-cols-2 gap-1.5">
+              {moreItems.map((item) => (
                 <Link
                   key={item.to}
                   href={item.to}
