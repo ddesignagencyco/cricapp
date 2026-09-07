@@ -31,7 +31,7 @@
 
 /* Light theme overrides */
 .light {
-  --color-primary: #F8FAFC;
+  --color-primary: #FFFFFF;
   --color-secondary: #F1F5F9;
   --color-card: #FFFFFF;
   --color-elevated: #F1F5F9;
@@ -66,13 +66,16 @@ body {
   width: 10px;
   height: 10px;
 }
+
 ::-webkit-scrollbar-track {
   background: var(--color-primary);
 }
+
 ::-webkit-scrollbar-thumb {
   background: var(--color-lborder);
   border-radius: 5px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-stext);
 }
@@ -81,6 +84,7 @@ body {
 .text-accent-grad {
   background: linear-gradient(135deg, #07111F 0%, #0D1B2A 55%, #064E3B 100%);
 }
+
 .light .text-accent-grad {
   background: linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 55%, #BBF7D0 100%);
 }
@@ -93,6 +97,7 @@ body {
   background-position: center;
   background-repeat: no-repeat;
 }
+
 .light .hero-grad {
   background-image:
     linear-gradient(rgba(4, 10, 20, 0.68), rgba(4, 10, 20, 0.68)),
@@ -105,6 +110,7 @@ body {
 .hero-title {
   color: #F5F7FA;
 }
+
 .hero-lead {
   color: #CBD5E1;
 }
@@ -124,6 +130,7 @@ body {
   background-position: center;
   background-repeat: no-repeat;
 }
+
 .light .hero-grad-home {
   background-image:
     linear-gradient(rgba(4, 10, 20, 0.55), rgba(4, 10, 20, 0.55)),
@@ -136,6 +143,7 @@ body {
 .shadow-card-dark {
   box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.3);
 }
+
 .light .shadow-card-dark {
   box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.08);
 }
@@ -147,6 +155,7 @@ body {
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -157,27 +166,26 @@ body {
   overflow: hidden;
   background: var(--color-elevated);
 }
+
 .skeleton::after {
   content: "";
   position: absolute;
   inset: 0;
   transform: translateX(-100%);
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.08),
-    transparent
-  );
+  background: linear-gradient(90deg,
+      transparent,
+      rgba(255, 255, 255, 0.08),
+      transparent);
   animation: shimmer 1.5s infinite;
 }
+
 .light .skeleton::after {
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(0, 0, 0, 0.06),
-    transparent
-  );
+  background: linear-gradient(90deg,
+      transparent,
+      rgba(0, 0, 0, 0.06),
+      transparent);
 }
+
 @keyframes shimmer {
   100% {
     transform: translateX(100%);
@@ -185,16 +193,19 @@ body {
 }
 
 @keyframes pulse-live {
+
   0%,
   100% {
     opacity: 1;
     box-shadow: 0 0 0 0 rgba(0, 230, 118, 0.6);
   }
+
   50% {
     opacity: 0.7;
     box-shadow: 0 0 0 6px rgba(0, 230, 118, 0);
   }
 }
+
 .live-pulse {
   animation: pulse-live 1.6s infinite;
 }
@@ -204,17 +215,20 @@ body {
     transform: scale(1);
     opacity: 0.85;
   }
+
   70%,
   100% {
     transform: scale(3.4);
     opacity: 0;
   }
 }
+
 .live-ping {
   animation: live-ping 1.4s cubic-bezier(0, 0, 0.2, 1) infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   .live-ping,
   .live-pulse {
     animation: none;
@@ -226,11 +240,13 @@ body {
     opacity: 0;
     transform: translateY(8px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
+
 .fade-in {
   animation: fade-in 0.35s ease-out both;
 }
@@ -240,11 +256,13 @@ body {
     opacity: 0;
     transform: translateY(16px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
+
 .slide-up {
   animation: slide-up 0.4s ease-out both;
 }

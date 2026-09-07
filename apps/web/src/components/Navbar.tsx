@@ -78,7 +78,7 @@ export default function Navbar() {
   const moreActive = moreItems.some((item) => isActive(item.to));
 
   return (
-    <header className="sticky top-0 z-40 border-b border-lborder bg-primary/90 backdrop-blur-md">
+    <header className="sticky top-0 z-40 border-b border-lborder bg-primary backdrop-blur-md">
       <nav className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
         <Logo />
 
@@ -87,11 +87,10 @@ export default function Navbar() {
             <Link
               key={item.to}
               href={item.to}
-              className={`relative px-3 py-2 text-sm font-medium transition-colors ${
-                isActive(item.to)
-                  ? 'text-accent after:absolute after:inset-x-2 after:-bottom-1 after:h-0.5 after:rounded-full after:bg-accent'
-                  : 'text-stext hover:text-mtext'
-              }`}
+              className={`relative px-3 py-2 text-sm font-medium transition-colors ${isActive(item.to)
+                ? 'text-accent after:absolute after:inset-x-2 after:-bottom-1 after:h-0.5 after:rounded-full after:bg-accent'
+                : 'text-stext hover:text-mtext'
+                }`}
             >
               {item.label}
             </Link>
@@ -106,27 +105,25 @@ export default function Navbar() {
             <button
               type="button"
               onClick={() => setMoreOpen((o) => !o)}
-              className={`flex items-center gap-1 px-3 py-2 text-sm font-medium transition-colors ${
-                moreActive || moreOpen
-                  ? 'text-accent after:absolute after:inset-x-2 after:-bottom-1 after:h-0.5 after:rounded-full after:bg-accent'
-                  : 'text-stext hover:text-mtext'
-              }`}
+              className={`flex items-center gap-1 px-3 py-2 text-sm font-medium transition-colors ${moreActive || moreOpen
+                ? 'text-accent after:absolute after:inset-x-2 after:-bottom-1 after:h-0.5 after:rounded-full after:bg-accent'
+                : 'text-stext hover:text-mtext'
+                }`}
             >
               More
               <ChevronDown size={15} className={`transition-transform ${moreOpen ? 'rotate-180' : ''}`} />
             </button>
             {moreOpen && (
-              <div className="absolute right-0 top-full z-40 mt-2 w-56 rounded-2xl bg-elevated p-2 shadow-xl shadow-shadow/40 ring-1 ring-lborder">
+              <div className="absolute right-0 top-full z-40 mt-3 w-56 rounded-2xl bg-primary p-2 shadow-xl shadow-shadow/40 ring-1 ring-lborder">
                 {moreItems.map((item) => (
                   <Link
                     key={item.to}
                     href={item.to}
                     onMouseEnter={openMore}
-                    className={`block rounded-xl px-3 py-2 text-sm font-medium transition-colors ${
-                      isActive(item.to)
-                        ? 'bg-accent/15 text-accent'
-                        : 'text-stext hover:bg-card hover:text-mtext'
-                    }`}
+                    className={`block rounded-xl px-3 py-2 text-sm font-medium transition-colors ${isActive(item.to)
+                      ? 'bg-accent/15 text-accent'
+                      : 'text-stext hover:bg-card hover:text-mtext'
+                      }`}
                   >
                     {item.label}
                   </Link>
@@ -186,13 +183,12 @@ export default function Navbar() {
                       className="flex items-start gap-3 rounded-xl px-2 py-2.5 transition-colors hover:bg-card"
                     >
                       <span
-                        className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${
-                          n.dot === 'live'
-                            ? 'bg-accent2'
-                            : n.dot === 'upcoming'
-                              ? 'bg-accent'
-                              : 'bg-stext'
-                        }`}
+                        className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${n.dot === 'live'
+                          ? 'bg-accent2'
+                          : n.dot === 'upcoming'
+                            ? 'bg-accent'
+                            : 'bg-stext'
+                          }`}
                       />
                       <div className="min-w-0">
                         <p className="truncate text-sm font-semibold text-mtext">{n.t}</p>
@@ -236,11 +232,10 @@ export default function Navbar() {
                 <Link
                   key={item.to}
                   href={item.to}
-                  className={`rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${
-                    isActive(item.to)
-                      ? 'bg-accent/15 text-accent ring-1 ring-inset ring-accent/25'
-                      : 'text-stext hover:bg-card hover:text-mtext'
-                  }`}
+                  className={`rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${isActive(item.to)
+                    ? 'bg-accent/15 text-accent ring-1 ring-inset ring-accent/25'
+                    : 'text-stext hover:bg-card hover:text-mtext'
+                    }`}
                 >
                   {item.label}
                 </Link>
@@ -254,11 +249,10 @@ export default function Navbar() {
                 <Link
                   key={item.to}
                   href={item.to}
-                  className={`rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${
-                    isActive(item.to)
-                      ? 'bg-accent/15 text-accent ring-1 ring-inset ring-accent/25'
-                      : 'text-stext hover:bg-card hover:text-mtext'
-                  }`}
+                  className={`rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${isActive(item.to)
+                    ? 'bg-accent/15 text-accent ring-1 ring-inset ring-accent/25'
+                    : 'text-stext hover:bg-card hover:text-mtext'
+                    }`}
                 >
                   {item.label}
                 </Link>

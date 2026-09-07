@@ -1,20 +1,11 @@
 import { apiGet } from './api/client';
-import { HeadToHead } from '../types/index';
-import { getDemoHeadToHead } from '../data/demo';
+import { HeadToHeadDto } from '../types/index';
 
 export async function fetchHeadToHead(
   teamAId: string,
   teamBId: string
-): Promise<HeadToHead | null> {
-  const data = await apiGet(`/head-to-head/${teamAId}/${teamBId}`);
-  if (data && data.payload && data.payload.last_meetings) return data;
-  const jitter: Array<[string, string]> = [
-    [teamAId, teamBId],
-    [teamBId, teamAId],
-  ];
-  for (const [a, b] of jitter) {
-    const demo = getDemoHeadToHead(a, b);
-    if (demo) return demo;
-  }
-  return null;
+): Promise<HeadToHeadDto | null> {
+  // Sort IDs so order doesn't matter (if backend requires it)
+  const [a, b] = [teamAId, teamBId].sort();
+  return apiGet(`/head-to-head/${a}/${b}`);
 }

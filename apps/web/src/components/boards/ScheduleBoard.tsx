@@ -167,7 +167,7 @@ export default function ScheduleBoard({ date, schedule, results, onDateChange }:
       </div>
 
       {events.length > 0 ? (
-        <div className="fade-in space-y-3">
+        <div className="fade-in grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {events.map((record) => (
             <ScheduleCard key={record.eventId} record={record} />
           ))}
@@ -186,6 +186,24 @@ export default function ScheduleBoard({ date, schedule, results, onDateChange }:
   );
 }
 
+function TeamCode({ code, name }: { code: string; name: string }) {
+  const label = (name || code || '??').replace(/^(\w)\w*\s?(\w)?.*$/, '$1$2').toUpperCase() || (code || '??').slice(0, 2).toUpperCase();
+
+  let hash = 0;
+  for (let i = 0; i < code.length; i++) hash = code.charCodeAt(i) + ((hash << 5) - hash);
+  const hue = Math.abs(hash % 360);
+
+  return (
+    <span
+      className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/10 text-[12px] font-black tracking-tight text-white shadow-sm"
+      style={{ backgroundImage: `linear-gradient(135deg, hsl(${hue}, 80%, 60%), hsl(${(hue + 40) % 360}, 90%, 40%))` }}
+      title={name}
+    >
+      {label}
+    </span>
+  );
+}
+
 function ScheduleCard({ record }: { record: any }) {
   const { homeName, awayName, homeAbbr, awayAbbr } = getEventTeams(record);
   const venue = getEventVenue(record);
@@ -198,74 +216,69 @@ function ScheduleCard({ record }: { record: any }) {
   const isLive = eventStatus.status === 'live' || eventStatus.status === 'inprogress';
 
   return (
-    <div className="rounded-2xl bg-card p-4 ring-1 ring-lborder transition-all duration-200 hover:bg-elevated">
-      <div className="flex flex-wrap items-center gap-2 mb-3">
-        {tournament && (
-          <span className="truncate text-[11px] font-semibold uppercase tracking-wider text-accent">
+    <div className="flex h-full flex-col justify-between rounded-2xl bg-card p-5 ring-1 ring-lborder transition-all duration-300 hover:-translate-y-1 hover:bg-elevated hover:shadow-lg">
+      <div className="flex items-center justify-between gap-2 mb-4">
+        {tournament ? (
+          <span className="min-w-0 flex-1 truncate text-[11px] font-bold uppercase tracking-widest text-accent" title={tournament}>
             {tournament}
           </span>
-        )}
-        {isLive ? (
-          <LiveIndicator />
-        ) : isCompleted ? (
-          <Badge tone="completed">Completed</Badge>
-        ) : (
-          <Badge tone="upcoming">Scheduled</Badge>
-        )}
-        {record.round && (
-          <Badge tone="neutral">{record.round.replace(/_/g, ' ')}</Badge>
-        )}
+        ) : <span className="flex-1" />}
+        <div className="shrink-0">
+          {/* {isLive ? (
+            <LiveIndicator />
+          ) : isCompleted ? (
+            <Badge tone="completed">Completed</Badge>
+          ) : (
+            <Badge tone="upcoming">Scheduled</Badge>
+          )} */}
+        </div>
       </div>
 
-      <div className="flex items-center gap-4">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-3">
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full border-2 border-accent bg-primary text-[12px] font-extrabold text-accent">
-              {homeAbbr.slice(0, 2).toUpperCase() || '??'}
-            </span>
-            <p className="truncate text-sm font-semibold text-mtext">{homeName}</p>
-          </div>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 flex-1 flex-col items-center justify-center text-center">
+          <TeamCode code={homeAbbr} name={homeName} />
+          <p className="mt-2 w-full truncate text-[13px] font-bold text-mtext" title={homeName}>{homeName}</p>
         </div>
-        <span className="shrink-0 text-xs font-bold text-stext">vs</span>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-3">
-            <p className="truncate text-right text-sm font-semibold text-mtext">{awayName}</p>
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full border-2 border-accent bg-primary text-[12px] font-extrabold text-accent">
-              {awayAbbr.slice(0, 2).toUpperCase() || '??'}
-            </span>
-          </div>
+
+        <div className="flex shrink-0 flex-col items-center justify-center px-1">
+          <span className="rounded-full bg-elevated px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-stext">VS</span>
+        </div>
+
+        <div className="flex min-w-0 flex-1 flex-col items-center justify-center text-center">
+          <TeamCode code={awayAbbr} name={awayName} />
+          <p className="mt-2 w-full truncate text-[13px] font-bold text-mtext" title={awayName}>{awayName}</p>
         </div>
       </div>
 
       {displayScore && (
-        <p className="mt-2 text-center font-mono text-sm font-bold text-mtext">
+        <p className="mt-3 text-center font-mono text-[16px] font-black text-mtext">
           {displayScore}
         </p>
       )}
 
       {eventStatus.result && (
-        <p className="mt-1 text-center text-xs font-medium text-gold">
+        <p className="mt-1 text-center text-[11px] font-semibold text-gold">
           {eventStatus.result}
         </p>
       )}
 
-      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-stext">
+      <div className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 border-t border-lborder/60 pt-3 text-[11px] font-semibold text-stext">
         {date && (
-          <span className="flex items-center gap-1">
-            <Calendar size={12} />
+          <span className="flex items-center gap-1.5">
+            <Calendar size={13} />
             {date}
           </span>
         )}
         {time && (
-          <span className="flex items-center gap-1">
-            <Clock size={12} />
+          <span className="flex items-center gap-1.5">
+            <Clock size={13} />
             {time}
           </span>
         )}
         {venue && (
-          <span className="flex items-center gap-1">
-            <MapPin size={12} />
-            {venue}
+          <span className="flex items-center gap-1.5 truncate max-w-[120px]" title={venue}>
+            <MapPin size={13} className="shrink-0" />
+            <span className="truncate">{venue}</span>
           </span>
         )}
       </div>

@@ -11,7 +11,7 @@ export const metadata = {
 export default async function PointsTablePage() {
   const standings = await fetchPslStandings();
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
       <PointsTableBoard standings={standings || []} />
     </div>
   );

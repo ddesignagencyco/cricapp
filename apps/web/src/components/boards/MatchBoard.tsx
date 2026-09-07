@@ -1,44 +1,64 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { CalendarDays } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { CalendarDays, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import MatchCard from '../MatchCard';
 import Tabs from '../Tabs';
 import EmptyState from '../EmptyState';
+import { fetchMatches } from '../../services/matches';
 
 interface Props {
-  matches: any[];
+  initialMatches?: any[];
 }
 
-export default function MatchBoard({ matches }: Props) {
+export default function MatchBoard({ initialMatches = [] }: Props) {
   const [tab, setTab] = useState('live');
   const [team, setTeam] = useState('');
+  
+  const [displayMatches, setDisplayMatches] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    const loadMatches = async () => {
+      setLoading(true);
+      try {
+        const limit = 12;
+        const offset = page * limit;
+        const data = await fetchMatches({ status: tab, limit, offset });
+        if (mounted) {
+          setDisplayMatches(data);
+          setHasMore(data.length === limit);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+    loadMatches();
+    return () => { mounted = false; };
+  }, [tab, page]);
+
+  const filtered = useMemo(() => {
+    let list = displayMatches || [];
+    if (team) {
+      list = list.filter((m) => (m.teams || []).some((c: string) => c.toLowerCase() === team.toLowerCase()));
+    }
+    return list;
+  }, [displayMatches, team]);
 
   const tabs = useMemo(
     () => [
       { key: 'live', label: 'Live' },
       { key: 'upcoming', label: 'Upcoming' },
       { key: 'completed', label: 'Completed' },
+      { key: 'cancelled', label: 'Cancelled' },
     ],
     []
   );
-
-  const filtered = useMemo(() => {
-    let list = matches || [];
-    list = list.filter((m) => m.status === tab);
-    if (team) {
-      list = list.filter((m) => (m.teams || []).some((c: string) => c.toLowerCase() === team.toLowerCase()));
-    }
-    return list;
-  }, [matches, tab, team]);
-
-  const counts = useMemo(() => {
-    const c: Record<string, number> = { live: 0, upcoming: 0, completed: 0 };
-    (matches || []).forEach((m) => {
-      c[m.status] = (c[m.status] || 0) + 1;
-    });
-    return c;
-  }, [matches]);
 
   return (
     <>
@@ -57,17 +77,50 @@ export default function MatchBoard({ matches }: Props) {
 
       <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
         <Tabs
-          tabs={tabs.map((t) => ({ ...t, count: counts[t.key] || 0 }))}
+          tabs={tabs}
           active={tab}
-          onChange={setTab}
+          onChange={(newTab) => {
+            setTab(newTab);
+            setPage(0);
+          }}
         />
       </div>
 
       {filtered.length > 0 ? (
-        <div className="fade-in grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((m) => (
-            <MatchCard key={m.matchId} match={m} />
-          ))}
+        <>
+          <div className="fade-in grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {filtered.map((m) => (
+              <MatchCard key={m.matchId} match={m} />
+            ))}
+          </div>
+          <div className="mt-10 flex items-center justify-center gap-6">
+            <button
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+              disabled={page === 0 || loading}
+              className="group flex items-center gap-1.5 rounded-full border border-lborder bg-card px-5 py-2.5 text-sm font-semibold text-text shadow-sm transition-all hover:border-accent/40 hover:bg-elevated hover:text-accent disabled:pointer-events-none disabled:opacity-40"
+            >
+              <ChevronLeft size={16} className="transition-transform group-hover:-translate-x-0.5" />
+              Previous
+            </button>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-stext">Page</span>
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-accent/10 text-sm font-bold text-accent">
+                {page + 1}
+              </span>
+            </div>
+            <button
+              onClick={() => setPage((p) => p + 1)}
+              disabled={!hasMore || loading}
+              className="group flex items-center gap-1.5 rounded-full border border-lborder bg-card px-5 py-2.5 text-sm font-semibold text-text shadow-sm transition-all hover:border-accent/40 hover:bg-elevated hover:text-accent disabled:pointer-events-none disabled:opacity-40"
+            >
+              Next
+              <ChevronRight size={16} className="transition-transform group-hover:translate-x-0.5" />
+            </button>
+          </div>
+        </>
+      ) : loading ? (
+        <div className="flex justify-center p-12">
+          <Loader2 className="animate-spin text-accent" size={32} />
         </div>
       ) : (
         <EmptyState

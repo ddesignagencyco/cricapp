@@ -34,6 +34,7 @@ export default function StatsBoard({ leaders = [] }: Props) {
   const [tab, setTab] = useState('batting');
 
   const grouped = leaders.filter((g) => g.category === tab);
+  console.log("grouped::", grouped)
 
   return (
     <>
@@ -127,9 +128,8 @@ function LeaderSection({ stat, entries }: { stat: string; entries: any[] }) {
               >
                 <td className="px-4 py-2.5 align-middle font-mono">
                   <span
-                    className={`grid h-6 w-6 place-items-center rounded-sm text-[11px] font-black ${
-                      i < 3 ? `bg-accent/15 text-accent` : 'bg-elevated text-stext'
-                    }`}
+                    className={`grid h-6 w-6 place-items-center rounded-sm text-[11px] font-black ${i < 3 ? `bg-accent/15 text-accent` : 'bg-elevated text-stext'
+                      }`}
                   >
                     {i + 1}
                   </span>

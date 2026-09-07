@@ -15,28 +15,17 @@ const iconMap: Record<string, React.ComponentType<{ size?: number; strokeWidth?:
 
 interface SectionHeaderProps {
   title: string;
-  subtitle?: string;
-  icon?: string;
   to?: string;
   actionLabel?: string;
   onAction?: () => void;
 }
 
 export default function SectionHeader({
-  title, subtitle, icon, to, actionLabel, onAction,
+  title, to, actionLabel, onAction,
 }: SectionHeaderProps) {
-  const Icon = typeof icon === 'string' ? iconMap[icon] : null;
   return (
     <div className="mb-6 flex items-end justify-between gap-4">
       <div>
-        {Icon && (
-          <div className="mb-2 flex items-center gap-2 text-accent">
-            <Icon size={18} strokeWidth={2.2} />
-            {subtitle && (
-              <span className="text-xs font-semibold uppercase tracking-widest text-stext">{subtitle}</span>
-            )}
-          </div>
-        )}
         <h2 className="text-xl font-bold tracking-tight text-mtext sm:text-2xl">{title}</h2>
       </div>
       {to && (

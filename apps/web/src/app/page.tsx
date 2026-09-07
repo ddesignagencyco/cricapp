@@ -19,15 +19,16 @@ export const metadata = {
 };
 
 export default async function HomePage() {
-  const [allMatches, newsList, leaders, teams] = await Promise.all([
-    fetchMatches(),
+  const [liveMatches, upcomingMatches, newsList, leaders, teams] = await Promise.all([
+    fetchMatches({ status: 'live', limit: 10 }),
+    fetchMatches({ status: 'upcoming', limit: 4 }),
     fetchNews(),
     fetchPslLeaders(),
     fetchTeams(),
   ]);
 
-  const live = (allMatches || []).filter((m) => m.status === 'live');
-  const upcoming = (allMatches || []).filter((m) => m.status === 'upcoming').slice(0, 4);
+  const live = liveMatches || [];
+  const upcoming = (upcomingMatches || []).slice(0, 4);
 
   const wickets = (leaders || []).find((g) => g.category === 'bowling' && g.stat === 'top_wickets');
   const runs = (leaders || []).find((g) => g.category === 'batting' && g.stat === 'top_runs');
@@ -44,7 +45,7 @@ export default async function HomePage() {
       </section>
 
       <section className="mx-auto max-w-7xl px-4 pb-12 sm:px-6">
-        <SectionHeader title="Upcoming Matches" subtitle="Fixtures" icon="calendar" />
+        <SectionHeader title="Upcoming Matches" />
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
           {upcoming.map((m) => (
             <MatchCard key={m.matchId} match={m} compact />
@@ -54,7 +55,7 @@ export default async function HomePage() {
 
       {leaderPanels.length > 0 && (
         <section className="mx-auto max-w-7xl px-4 pb-12 sm:px-6">
-          <SectionHeader title="Season Leaders" subtitle="Top Performers" icon="trophy" to="/stats" actionLabel="All stats" />
+          <SectionHeader title="Season Leaders" to="/stats" actionLabel="All stats" />
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {leaderPanels.map((g) => (
               <LeaderPanel key={g.stat} group={g} />
@@ -64,7 +65,7 @@ export default async function HomePage() {
       )}
 
       <section className="mx-auto max-w-7xl px-4 pb-12 sm:px-6">
-        <SectionHeader title="Cricket Teams" subtitle="All Franchises" icon="users" to="/teams" actionLabel="All teams" />
+        <SectionHeader title="Cricket Teams" to="/teams" actionLabel="All teams" />
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
           {topTeams.map((team) => (
             <TeamQuickCard key={team.id} team={team} />
@@ -77,7 +78,7 @@ export default async function HomePage() {
       </section>
 
       <section className="mx-auto max-w-7xl px-4 pb-6 sm:px-6">
-        <SectionHeader title="Latest News" subtitle="Reports & Updates" icon="newspaper" to="/news" actionLabel="All news" />
+        <SectionHeader title="Latest News" to="/news" actionLabel="All news" />
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-4">
           {newsList.slice(0, 4).map((item, i) => (
             <Link
@@ -103,6 +104,7 @@ export default async function HomePage() {
               </div>
             </Link>
           ))}
+
         </div>
       </section>
     </div>
@@ -112,22 +114,30 @@ export default async function HomePage() {
 function TeamQuickCard({ team }: { team: any }) {
   const name = team.name || '';
   const code = team.abbr || '';
+
+  let hash = 0;
+  for (let i = 0; i < code.length; i++) hash = code.charCodeAt(i) + ((hash << 5) - hash);
+  const hue = Math.abs(hash % 360);
   return (
     <Link
       href={`/teams/${team.id}`}
-      className="group rounded-2xl bg-card p-4 ring-1 ring-lborder transition-all duration-300 hover:-translate-y-0.5 hover:bg-elevated hover:ring-accent/30"
+      className="group flex flex-col items-center justify-center rounded-2xl bg-card p-5 text-center ring-1 ring-lborder transition-all duration-300 hover:-translate-y-1 hover:bg-elevated hover:ring-accent/30 hover:shadow-lg"
     >
-      <div className="flex items-center gap-2">
-        <span className="grid h-8 w-8 place-items-center rounded-full border-2 border-accent bg-primary text-xs font-extrabold text-accent">
+      {team.logoUrl ? (
+        <img
+          src={team.logoUrl}
+          alt={name}
+          className="relative h-12 w-12 shrink-0 rounded-full border border-white/10 bg-primary object-cover shadow-sm transition-transform duration-300 group-hover:scale-105"
+        />
+      ) : (
+        <span
+          className="grid h-12 w-12 shrink-0 place-items-center rounded-full border border-white/10 text-sm font-bold tracking-wider text-white shadow-sm transition-transform duration-300 group-hover:scale-105"
+          style={{ backgroundImage: `linear-gradient(135deg, hsl(${hue}, 80%, 60%), hsl(${(hue + 40) % 360}, 90%, 40%))` }}
+        >
           {getInitials(name || code)}
         </span>
-        <div className="min-w-0">
-          <p className="truncate text-sm font-bold text-mtext">{name}</p>
-          <p className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-stext">
-            {code}
-          </p>
-        </div>
-      </div>
+      )}
+      <p className="mt-3 w-full truncate text-[14px] font-semibold text-mtext group-hover:text-accent transition-colors">{name}</p>
     </Link>
   );
 }

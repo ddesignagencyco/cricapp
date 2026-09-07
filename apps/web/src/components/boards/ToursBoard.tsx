@@ -123,11 +123,10 @@ export default function ToursBoard({ tours }: Props) {
             <button
               type="button"
               onClick={() => setCountryFilter('all')}
-              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold transition-colors ${
-                countryFilter === 'all'
-                  ? 'bg-accent/15 text-accent ring-1 ring-inset ring-accent/25'
-                  : 'bg-elevated text-stext ring-1 ring-lborder hover:text-mtext'
-              }`}
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold transition-colors ${countryFilter === 'all'
+                ? 'bg-accent/15 text-accent ring-1 ring-inset ring-accent/25'
+                : 'bg-elevated text-stext ring-1 ring-lborder hover:text-mtext'
+                }`}
             >
               <MapPin size={11} className="text-accent" />
               All Countries
@@ -137,11 +136,10 @@ export default function ToursBoard({ tours }: Props) {
                 key={cat}
                 type="button"
                 onClick={() => setCountryFilter(countryFilter === cat ? 'all' : cat)}
-                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold transition-colors ${
-                  countryFilter === cat
-                    ? 'bg-accent/15 text-accent ring-1 ring-inset ring-accent/25'
-                    : 'bg-elevated text-stext ring-1 ring-lborder hover:text-mtext'
-                }`}
+                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold transition-colors ${countryFilter === cat
+                  ? 'bg-accent/15 text-accent ring-1 ring-inset ring-accent/25'
+                  : 'bg-elevated text-stext ring-1 ring-lborder hover:text-mtext'
+                  }`}
               >
                 <MapPin size={11} />
                 {cat}
@@ -159,11 +157,10 @@ export default function ToursBoard({ tours }: Props) {
                 key={sport}
                 type="button"
                 onClick={() => setSportFilter(sportFilter === sport ? 'all' : sport)}
-                className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
-                  sportFilter === sport
-                    ? 'bg-accent2/15 text-accent2 ring-1 ring-inset ring-accent2/25'
-                    : 'bg-elevated text-stext ring-1 ring-lborder hover:text-mtext'
-                }`}
+                className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${sportFilter === sport
+                  ? 'bg-accent2/15 text-accent2 ring-1 ring-inset ring-accent2/25'
+                  : 'bg-elevated text-stext ring-1 ring-lborder hover:text-mtext'
+                  }`}
               >
                 {sport}
               </button>

@@ -13,7 +13,7 @@ export default function PageLayout({
   showSidebar = true,
   wide = false,
 }: PageLayoutProps) {
-  const maxWide = wide ? 'max-w-6xl' : 'max-w-7xl';
+  const maxWide = wide ? 'w-full' : 'w-full';
   return (
     <div className="min-h-screen">
       {hero}

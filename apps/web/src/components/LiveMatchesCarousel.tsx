@@ -8,13 +8,11 @@ import MatchCard from './MatchCard';
 interface LiveMatchesCarouselProps {
   matches: any[];
   title?: string;
-  subtitle?: string;
 }
 
 export default function LiveMatchesCarousel({
   matches,
   title = 'Live Matches',
-  subtitle = 'Match Centre',
 }: LiveMatchesCarouselProps) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const [index, setIndex] = useState(0);
@@ -51,10 +49,6 @@ export default function LiveMatchesCarousel({
     <div>
       <div className="mb-6 flex items-end justify-between gap-4">
         <div>
-          <div className="mb-2 flex items-center gap-2 text-accent">
-            <Zap size={18} strokeWidth={2.2} />
-            <span className="text-xs font-semibold uppercase tracking-widest text-stext">{subtitle}</span>
-          </div>
           <h2 className="text-xl font-bold tracking-tight text-mtext sm:text-2xl">{title}</h2>
         </div>
 

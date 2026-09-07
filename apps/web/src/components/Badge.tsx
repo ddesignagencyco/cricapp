@@ -6,6 +6,7 @@ const styles: Record<string, string> = {
   live: 'bg-accent2/15 text-accent2 ring-accent2/30',
   upcoming: 'bg-accent/15 text-accent ring-accent/30',
   completed: 'bg-gold/15 text-gold ring-gold/30',
+  cancelled: 'bg-stext/15 text-stext ring-stext/30',
   error: 'bg-danger/15 text-danger ring-danger/30',
   neutral: 'bg-stext/15 text-stext ring-stext/30',
   gold: 'bg-gold/15 text-gold ring-gold/30',
