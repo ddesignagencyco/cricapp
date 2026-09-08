@@ -37,6 +37,14 @@ async function bootstrap() {
     .addTag('tournaments', 'Tournaments, seasons and tournament results')
     .addTag('schedules', 'Daily schedules and results')
     .addTag('head-to-head', 'Team versus team meetings')
+    .addTag('auth', 'Signup, login and current user profile')
+    .addTag('news', 'Admin-managed news articles and categories')
+    .addTag('streams', 'Live stream metadata')
+    .addTag('sharing', 'Share links with OG meta')
+    .addTag('favorites', 'User favorites / bookmarks')
+    .addTag('comments', 'Comments and reactions')
+    .addTag('notifications', 'FCM device registration and notification preferences')
+    .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);
