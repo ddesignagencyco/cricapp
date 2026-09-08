@@ -9,6 +9,10 @@ import {
   type LastEvent,
 } from '@cricapp/shared-types';
 import type { Match } from '@prisma/client';
+import {
+  createPaginatedResponse,
+  getPaginationOffset,
+} from '../common/pagination/pagination.util.js';
 
 export type MatchSummary = Pick<
   CanonicalMatch,
@@ -51,39 +55,43 @@ export class MatchesService {
   async list(params: {
     status?: string;
     tournament?: string;
+    page?: number;
     limit?: number;
     offset?: number;
-  }): Promise<MatchSummary[]> {
-    const status = params.status;
-    const limit = Math.min(params.limit ?? 50, 100);
-    const offset = params.offset ?? 0;
+  }) {
+    const { page, limit, skip } = getPaginationOffset(params.page, params.limit, params.offset);
 
-    const rows = await this.prisma.match.findMany({
-      where: {
-        ...(status ? { status } : {}),
-        ...(params.tournament
-          ? { tournament: { contains: params.tournament, mode: 'insensitive' } }
-          : {}),
-      },
-      orderBy: [{ scheduled: 'asc' }],
-      take: limit,
-      skip: offset,
-    });
+    const where: any = {};
+    if (params.status) where.status = params.status;
+    if (params.tournament) where.tournament = { contains: params.tournament, mode: 'insensitive' };
 
-    return rows.map((r) => this.toSummary(r));
+    const [rows, total] = await Promise.all([
+      this.prisma.match.findMany({
+        where,
+        orderBy: [{ scheduled: 'asc' }],
+        take: limit,
+        skip,
+      }),
+      this.prisma.match.count({ where }),
+    ]);
+
+    return createPaginatedResponse(rows.map((r) => this.toSummary(r)), total, page, limit);
   }
 
-  async listLive(): Promise<MatchSummary[]> {
-    // Prefer the live set in Redis (cheap) but fall back to Postgres.
+  async listLive() {
     const liveIds = await this.redis.smembers(redisKeys.liveMatches());
     let summaries: MatchSummary[] = [];
     if (liveIds.length > 0) {
       summaries = await this.getMany(liveIds);
     }
     if (summaries.length === 0) {
-      summaries = await this.list({ status: MATCH_STATUS.LIVE });
+      const rows = await this.prisma.match.findMany({
+        where: { status: MATCH_STATUS.LIVE },
+        orderBy: [{ scheduled: 'asc' }],
+      });
+      summaries = rows.map((r) => this.toSummary(r));
     }
-    return summaries;
+    return { data: summaries };
   }
 
   async getMany(matchIds: string[]): Promise<MatchSummary[]> {
@@ -95,7 +103,6 @@ export class MatchesService {
   }
 
   async getById(matchId: string): Promise<MatchSummary> {
-    // Live cache first for hot reads.
     const cached = await this.redis.get<MatchSummary>(
       redisKeys.matchState(matchId),
     );

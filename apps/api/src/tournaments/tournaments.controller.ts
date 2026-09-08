@@ -1,13 +1,7 @@
 import { Controller, Get, Param, Query, UsePipes, ValidationPipe } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
-import {
-  TournamentsService,
-  type SportEventRecordSummary,
-  type TournamentSeasonSummary,
-  type TournamentSummary,
-} from './tournaments.service.js';
-import { TournamentDto, TournamentSeasonDto } from './dto/tournament.dto.js';
-import { SportEventRecordDto } from '../common/dto/sport-event-record.dto.js';
+import { TournamentsService } from './tournaments.service.js';
+import { TournamentDto } from './dto/tournament.dto.js';
 import { PaginationQuery } from '../common/dto/pagination.query.js';
 
 @ApiTags('tournaments')
@@ -17,9 +11,9 @@ export class TournamentsController {
 
   @Get()
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
-  @ApiOperation({ summary: 'List tournaments / competitions' })
-  @ApiResponse({ status: 200, description: 'All tournaments.', type: [TournamentDto] })
-  list(@Query() query: PaginationQuery): Promise<TournamentSummary[]> {
+  @ApiOperation({ summary: 'List tournaments / competitions (paginated)' })
+  @ApiResponse({ status: 200, description: 'Paginated tournaments.' })
+  list(@Query() query: PaginationQuery) {
     return this.tournamentsService.list(query);
   }
 
@@ -28,31 +22,31 @@ export class TournamentsController {
   @ApiParam({ name: 'tournamentId', description: 'Tournament id (e.g. sr:tournament:14931).' })
   @ApiResponse({ status: 200, description: 'Tournament record.', type: TournamentDto })
   @ApiResponse({ status: 404, description: 'Tournament not found.' })
-  byId(@Param('tournamentId') tournamentId: string): Promise<TournamentSummary> {
+  byId(@Param('tournamentId') tournamentId: string) {
     return this.tournamentsService.getById(tournamentId);
   }
 
   @Get(':tournamentId/seasons')
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
-  @ApiOperation({ summary: 'List seasons for a tournament' })
+  @ApiOperation({ summary: 'List seasons for a tournament (paginated)' })
   @ApiParam({ name: 'tournamentId', description: 'Tournament id.' })
-  @ApiResponse({ status: 200, description: 'Seasons for the tournament.', type: [TournamentSeasonDto] })
+  @ApiResponse({ status: 200, description: 'Paginated seasons for the tournament.' })
   seasons(
     @Param('tournamentId') tournamentId: string,
     @Query() query: PaginationQuery,
-  ): Promise<TournamentSeasonSummary[]> {
+  ) {
     return this.tournamentsService.seasons(tournamentId, query);
   }
 
   @Get(':tournamentOrSeasonId/results')
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
-  @ApiOperation({ summary: 'Results for a tournament or season', description: 'Every completed match within the given tournament or season, returning the full Sportradar sport_event payload.' })
-  @ApiParam({ name: 'tournamentOrSeasonId', description: 'Tournament or season id (e.g. sr:tournament:2472, sr:season:140552).' })
-  @ApiResponse({ status: 200, description: 'Match results.', type: [SportEventRecordDto] })
+  @ApiOperation({ summary: 'Results for a tournament or season (paginated)', description: 'Every completed match within the given tournament or season.' })
+  @ApiParam({ name: 'tournamentOrSeasonId', description: 'Tournament or season id.' })
+  @ApiResponse({ status: 200, description: 'Paginated match results.' })
   results(
     @Param('tournamentOrSeasonId') id: string,
     @Query() query: PaginationQuery,
-  ): Promise<SportEventRecordSummary[]> {
+  ) {
     return this.tournamentsService.results(id, query);
   }
 }

@@ -4,6 +4,10 @@ import { RedisService } from '../redis/redis.service.js';
 import { redisKeys } from '@cricapp/shared-types';
 import type { PslStanding, PslFixture } from '@prisma/client';
 import {
+  getPaginationOffset,
+  createPaginatedResponse,
+} from '../common/pagination/pagination.util.js';
+import {
   DEFAULT_PSL_SEASON_ID,
   PSL_SEASONS_LIST,
   resolveSeason,
@@ -54,37 +58,64 @@ export class PslService {
     return PSL_SEASONS_LIST;
   }
 
-  async standings(season?: string): Promise<PslStanding[]> {
+  async standings(season?: string, query?: { page?: number; limit?: number; offset?: number }) {
     const seasonId = resolveSeason(season).id;
     const cached = await this.redis.get<PslStanding[]>(
       redisKeys.pslStandings(seasonId),
     );
-    if (cached) return cached;
-    return this.prisma.pslStanding.findMany({
-      where: { seasonId },
-      orderBy: [{ rank: 'asc' }],
-    });
+    if (cached) {
+      return this.paginate(cached, query);
+    }
+
+    const { page, limit, skip } = getPaginationOffset(query?.page, query?.limit ?? 100, query?.offset);
+    const [rows, total] = await Promise.all([
+      this.prisma.pslStanding.findMany({
+        where: { seasonId },
+        orderBy: [{ rank: 'asc' }],
+        take: limit,
+        skip,
+      }),
+      this.prisma.pslStanding.count({ where: { seasonId } }),
+    ]);
+
+    return createPaginatedResponse(rows, total, page, limit);
   }
 
-  async fixtures(season?: string): Promise<PslFixture[]> {
+  async fixtures(season?: string, query?: { page?: number; limit?: number; offset?: number }) {
     const seasonId = resolveSeason(season).id;
     const cached = await this.redis.get<PslFixture[]>(
       redisKeys.pslFixtures(seasonId),
     );
-    if (cached) return cached;
-    return this.prisma.pslFixture.findMany({
-      where: { seasonId },
-      orderBy: [{ scheduled: 'asc' }],
-    });
+    if (cached) {
+      return this.paginate(cached, query);
+    }
+
+    const { page, limit, skip } = getPaginationOffset(query?.page, query?.limit ?? 100, query?.offset);
+    const [rows, total] = await Promise.all([
+      this.prisma.pslFixture.findMany({
+        where: { seasonId },
+        orderBy: [{ scheduled: 'asc' }],
+        take: limit,
+        skip,
+      }),
+      this.prisma.pslFixture.count({ where: { seasonId } }),
+    ]);
+
+    return createPaginatedResponse(rows, total, page, limit);
   }
 
-  async leaders(season?: string): Promise<PslLeaderGroup[]> {
+  async leaders(season?: string, query?: { page?: number; limit?: number; offset?: number }) {
     const seasonId = resolveSeason(season).id;
     const cached = await this.redis.get<PslLeaderGroup[]>(
       redisKeys.pslLeaders(seasonId),
     );
-    if (cached) return cached;
-    return this.leadersFromDb(seasonId);
+    if (cached) {
+      return this.paginate(cached, query);
+    }
+
+    const { page, limit, skip } = getPaginationOffset(query?.page, query?.limit ?? 100, query?.offset);
+    const groups = await this.leadersFromDb(seasonId);
+    return this.paginate(groups, { page, limit, offset: skip });
   }
 
   private async leadersFromDb(seasonId: string): Promise<PslLeaderGroup[]> {
@@ -110,18 +141,20 @@ export class PslService {
     return [...groups.values()];
   }
 
-  async squads(season?: string): Promise<PslSquad[]> {
+  async squads(season?: string, query?: { page?: number; limit?: number; offset?: number }) {
     const seasonId = resolveSeason(season).id;
     const cached = await this.redis.get<PslSquad[]>(
       redisKeys.pslSquads(seasonId),
     );
-    if (cached) return cached;
-    return this.squadsFromDb(seasonId);
+    if (cached) {
+      return this.paginate(cached, query);
+    }
+
+    const squads = await this.squadsFromDb(seasonId);
+    return this.paginate(squads, query);
   }
 
   private async squadsFromDb(seasonId: string): Promise<PslSquad[]> {
-    // Squads are stored via the shared teams/players tables. Enumerate the
-    // teams that belong to the season (from standings) and load their rosters.
     const standings = await this.prisma.pslStanding.findMany({
       where: { seasonId },
     });
@@ -159,5 +192,11 @@ export class PslService {
 
   defaultSeasonId(): string {
     return DEFAULT_PSL_SEASON_ID;
+  }
+
+  private paginate<T>(items: T[], query?: { page?: number; limit?: number; offset?: number }) {
+    const { page, limit, skip } = getPaginationOffset(query?.page, query?.limit ?? 100, query?.offset);
+    const data = items.slice(skip, skip + limit);
+    return createPaginatedResponse(data, items.length, page, limit);
   }
 }

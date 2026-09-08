@@ -1,5 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import {
+  getPaginationOffset,
+  createPaginatedResponse,
+} from '../common/pagination/pagination.util.js';
 
 export interface TeamSummary {
   id: string;
@@ -49,15 +53,19 @@ export class TeamsService {
     };
   }
 
-  async list(params?: { limit?: number; offset?: number }): Promise<TeamSummary[]> {
-    const limit = Math.min(params?.limit ?? 50, 100);
-    const offset = params?.offset ?? 0;
-    const teams = await this.prisma.team.findMany({
-      take: limit,
-      skip: offset,
-      orderBy: [{ name: 'asc' }],
-    });
-    return teams.map((t) => this.toSummary(t));
+  async list(params?: { page?: number; limit?: number; offset?: number }) {
+    const { page, limit, skip } = getPaginationOffset(params?.page, params?.limit, params?.offset);
+
+    const [rows, total] = await Promise.all([
+      this.prisma.team.findMany({
+        take: limit,
+        skip,
+        orderBy: [{ name: 'asc' }],
+      }),
+      this.prisma.team.count(),
+    ]);
+
+    return createPaginatedResponse(rows.map((t) => this.toSummary(t)), total, page, limit);
   }
 
   private async findTeam(idOrAbbr: string) {
@@ -76,40 +84,51 @@ export class TeamsService {
     return this.toSummary(team);
   }
 
-  async getRoster(idOrAbbr: string, params?: { limit?: number; offset?: number }): Promise<PlayerSummaryDto[]> {
+  async getRoster(idOrAbbr: string, params?: { page?: number; limit?: number; offset?: number }) {
     const team = await this.getProfile(idOrAbbr);
-    const limit = Math.min(params?.limit ?? 50, 100);
-    const offset = params?.offset ?? 0;
-    const players = await this.prisma.player.findMany({
-      where: { teamId: team.id },
-      take: limit,
-      skip: offset,
-      orderBy: [{ fullName: 'asc' }],
-    });
-    return players.map((p) => ({
+    const { page, limit, skip } = getPaginationOffset(params?.page, params?.limit, params?.offset);
+
+    const [rows, total] = await Promise.all([
+      this.prisma.player.findMany({
+        where: { teamId: team.id },
+        take: limit,
+        skip,
+        orderBy: [{ fullName: 'asc' }],
+      }),
+      this.prisma.player.count({ where: { teamId: team.id } }),
+    ]);
+
+    const mapped = rows.map((p) => ({
       id: p.id,
       fullName: p.fullName,
       shortName: p.shortName,
       role: p.role,
       nationality: p.nationality,
     }));
+
+    return createPaginatedResponse(mapped, total, page, limit);
   }
 
   private async getEvents(
     idOrAbbr: string,
     kind: 'team_schedule' | 'team_results',
-    params?: { limit?: number; offset?: number },
-  ): Promise<SportEventRecordSummary[]> {
+    params?: { page?: number; limit?: number; offset?: number },
+  ) {
     const team = await this.getProfile(idOrAbbr);
-    const limit = Math.min(params?.limit ?? 50, 100);
-    const offset = params?.offset ?? 0;
-    const rows = await this.prisma.sportEventRecord.findMany({
-      where: { kind, scopeKey: team.id },
-      take: limit,
-      skip: offset,
-      orderBy: [{ scheduled: 'asc' }],
-    });
-    return rows.map((r) => ({
+    const { page, limit, skip } = getPaginationOffset(params?.page, params?.limit, params?.offset);
+    const where = { kind, scopeKey: team.id };
+
+    const [rows, total] = await Promise.all([
+      this.prisma.sportEventRecord.findMany({
+        where,
+        take: limit,
+        skip,
+        orderBy: [{ scheduled: 'asc' }],
+      }),
+      this.prisma.sportEventRecord.count({ where }),
+    ]);
+
+    const mapped = rows.map((r) => ({
       kind: r.kind,
       scopeKey: r.scopeKey,
       eventId: r.eventId,
@@ -117,13 +136,15 @@ export class TeamsService {
       scheduled: r.scheduled,
       payload: r.payload as Record<string, unknown>,
     }));
+
+    return createPaginatedResponse(mapped, total, page, limit);
   }
 
-  async getSchedule(idOrAbbr: string, params?: { limit?: number; offset?: number }): Promise<SportEventRecordSummary[]> {
+  async getSchedule(idOrAbbr: string, params?: { page?: number; limit?: number; offset?: number }) {
     return this.getEvents(idOrAbbr, 'team_schedule', params);
   }
 
-  async getResults(idOrAbbr: string, params?: { limit?: number; offset?: number }): Promise<SportEventRecordSummary[]> {
+  async getResults(idOrAbbr: string, params?: { page?: number; limit?: number; offset?: number }) {
     return this.getEvents(idOrAbbr, 'team_results', params);
   }
 }

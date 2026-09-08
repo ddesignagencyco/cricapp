@@ -4,7 +4,18 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class PaginationQuery {
   @ApiPropertyOptional({
-    default: 50,
+    default: 1,
+    minimum: 1,
+    description: 'Current page number (1-indexed).',
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number;
+
+  @ApiPropertyOptional({
+    default: 20,
     maximum: 100,
     description: 'Number of records to return.',
   })
@@ -17,7 +28,7 @@ export class PaginationQuery {
 
   @ApiPropertyOptional({
     default: 0,
-    description: 'Number of records to skip (pagination offset).',
+    description: '(Deprecated) Number of records to skip. Prefer `page`.',
   })
   @IsOptional()
   @Type(() => Number)
