@@ -9,6 +9,7 @@ import Tabs from '../Tabs';
 import EmptyState from '../EmptyState';
 import TeamHeadToHead from './TeamHeadToHead';
 import { getInitials } from '../../utils/helpers';
+import TeamLogo from '../TeamLogo';
 
 const teamTabs = [
   { key: 'overview', label: 'Overview', icon: Shield },
@@ -57,7 +58,8 @@ export default function TeamDetailBody({ team, players, matches, allTeams = [] }
               className="h-20 w-20 shrink-0 rounded-full border-2 border-accent object-cover"
             />
           ) : (
-            <TeamMark name={team.name} code={code} />
+            <TeamLogo teamId={team.teamId} name={team.name} code={code} size="xl" link={false} />
+            // <TeamMark name={team.name} code={code} />
           )}
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
