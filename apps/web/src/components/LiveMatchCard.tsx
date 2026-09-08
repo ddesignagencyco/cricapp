@@ -16,8 +16,8 @@ export default function LiveMatchCard({ match }: Props) {
   const bowler = match.bowler;
 
   return (
-    <div className="relative overflow-hidden rounded-sm bg-card ring-1 ring-lborder">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent/60 to-transparent" />
+    <div className="relative overflow-hidden rounded-2xl bg-card ring-1 ring-lborder shadow-lg transition-all duration-300 hover:shadow-xl hover:ring-accent/40 hover:-translate-y-1">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-accent2 via-accent to-accent2 opacity-80" />
 
       <div className="flex items-center justify-between gap-3 px-5 pt-5">
         <div>

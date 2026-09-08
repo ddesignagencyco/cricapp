@@ -1,89 +1,48 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Bell, ChevronDown, Menu, Moon, Search, Sun, X } from 'lucide-react';
+import { Bell, Menu, Moon, Search, Sun, X } from 'lucide-react';
 import Logo from './Logo';
 import SearchBar from './SearchBar';
 import { useTheme } from './ThemeProvider';
 
-const primaryItems = [
+const navItems = [
   { to: '/', label: 'Home' },
-  // { to: '/streams', label: 'Stream' }, // TODO: re-enable later
   { to: '/matches', label: 'Matches' },
   { to: '/psl', label: 'PSL' },
   { to: '/teams', label: 'Teams' },
   { to: '/schedules', label: 'Schedule' },
-];
-
-const moreItems = [
   { to: '/players', label: 'Players' },
   { to: '/tours', label: 'Tours' },
   { to: '/tournaments', label: 'Tournaments' },
   { to: '/stats', label: 'Stats' },
   { to: '/points-table', label: 'Points Table' },
-  { to: '/streams', label: 'Live Streams' },
+  // { to: '/streams', label: 'Live Streams' }, // TODO: re-enable later
+  // { to: '/news', label: 'News' }, // TODO: re-enable later
 ];
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [notifOpen, setNotifOpen] = useState(false);
-  const [moreOpen, setMoreOpen] = useState(false);
-  const notifRef = useRef<HTMLDivElement>(null);
-  const moreRef = useRef<HTMLDivElement>(null);
-  const closeMoreTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pathname = usePathname();
   const { theme, toggle, mounted } = useTheme();
 
   useEffect(() => {
     setMobileOpen(false);
     setSearchOpen(false);
-    setNotifOpen(false);
-    setMoreOpen(false);
   }, [pathname]);
 
-  useEffect(() => {
-    const onClick = (e: MouseEvent) => {
-      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
-        setNotifOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', onClick);
-    return () => document.removeEventListener('mousedown', onClick);
-  }, []);
-
-  useEffect(
-    () => () => {
-      if (closeMoreTimer.current) clearTimeout(closeMoreTimer.current);
-    },
-    []
-  );
-
-  const openMore = () => {
-    if (closeMoreTimer.current) {
-      clearTimeout(closeMoreTimer.current);
-      closeMoreTimer.current = null;
-    }
-    setMoreOpen(true);
-  };
-
-  const scheduleCloseMore = () => {
-    if (closeMoreTimer.current) clearTimeout(closeMoreTimer.current);
-    closeMoreTimer.current = setTimeout(() => setMoreOpen(false), 150);
-  };
-
   const isActive = (to: string) => (to === '/' ? pathname === '/' : pathname.startsWith(to));
-  const moreActive = moreItems.some((item) => isActive(item.to));
 
   return (
     <header className="sticky top-0 z-40 border-b border-lborder bg-primary backdrop-blur-md">
       <nav className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
-        <Logo />
+        <Logo size="lg" />
 
         <div className="hidden items-center gap-1 lg:flex">
-          {primaryItems.map((item) => (
+          {navItems.map((item) => (
             <Link
               key={item.to}
               href={item.to}
@@ -95,42 +54,6 @@ export default function Navbar() {
               {item.label}
             </Link>
           ))}
-
-          <div
-            className="relative"
-            ref={moreRef}
-            onMouseEnter={openMore}
-            onMouseLeave={scheduleCloseMore}
-          >
-            <button
-              type="button"
-              onClick={() => setMoreOpen((o) => !o)}
-              className={`flex items-center gap-1 px-3 py-2 text-sm font-medium transition-colors ${moreActive || moreOpen
-                ? 'text-accent after:absolute after:inset-x-2 after:-bottom-1 after:h-0.5 after:rounded-full after:bg-accent'
-                : 'text-stext hover:text-mtext'
-                }`}
-            >
-              More
-              <ChevronDown size={15} className={`transition-transform ${moreOpen ? 'rotate-180' : ''}`} />
-            </button>
-            {moreOpen && (
-              <div className="absolute right-0 top-full z-40 mt-3 w-56 rounded-2xl bg-primary p-2 shadow-xl shadow-shadow/40 ring-1 ring-lborder">
-                {moreItems.map((item) => (
-                  <Link
-                    key={item.to}
-                    href={item.to}
-                    onMouseEnter={openMore}
-                    className={`block rounded-xl px-3 py-2 text-sm font-medium transition-colors ${isActive(item.to)
-                      ? 'bg-accent/15 text-accent'
-                      : 'text-stext hover:bg-card hover:text-mtext'
-                      }`}
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
         </div>
 
         <div className="flex items-center gap-1.5">
@@ -154,59 +77,6 @@ export default function Navbar() {
             <Search size={18} />
           </button>
 
-          <div className="relative" ref={notifRef}>
-            <button
-              type="button"
-              onClick={() => setNotifOpen((n) => !n)}
-              className="relative grid h-9 w-9 place-items-center rounded-lg text-stext transition-colors hover:bg-card hover:text-mtext"
-              aria-label="Notifications"
-            >
-              <Bell size={18} />
-              <span className="absolute right-1.5 top-1.5 grid h-4 w-4 place-items-center rounded-full bg-danger text-[9px] font-bold text-white">
-                3
-              </span>
-            </button>
-            {notifOpen && (
-              <>
-                <div className="fixed inset-0 z-30" onClick={() => setNotifOpen(false)} />
-                <div className="absolute right-0 top-full z-40 mt-2 w-72 rounded-2xl bg-elevated p-3 shadow-xl shadow-shadow/40 ring-1 ring-lborder">
-                  <p className="mb-2 px-1 text-[11px] font-bold uppercase tracking-widest text-stext">
-                    Notifications
-                  </p>
-                  {[
-                    { t: 'Match starting soon', d: 'LQ vs PZ at Gaddafi Stadium \u00B7 Today 7:00 PM', dot: 'upcoming' },
-                    { t: 'Fakhar Zaman 50!', d: 'Half-century for Lahore Qalandars opener', dot: 'live' },
-                    { t: 'Results updated', d: 'Peshawar Zalmi won by 41 runs', dot: 'done' },
-                  ].map((n, i) => (
-                    <div
-                      key={i}
-                      className="flex items-start gap-3 rounded-xl px-2 py-2.5 transition-colors hover:bg-card"
-                    >
-                      <span
-                        className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${n.dot === 'live'
-                          ? 'bg-accent2'
-                          : n.dot === 'upcoming'
-                            ? 'bg-accent'
-                            : 'bg-stext'
-                          }`}
-                      />
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-mtext">{n.t}</p>
-                        <p className="truncate text-xs text-stext">{n.d}</p>
-                      </div>
-                    </div>
-                  ))}
-                  <button
-                    type="button"
-                    className="mt-2 w-full rounded-lg bg-card py-2 text-xs font-semibold text-accent transition-colors hover:text-accent2"
-                  >
-                    View all notifications
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-
           <button
             type="button"
             onClick={() => setMobileOpen((m) => !m)}
@@ -228,24 +98,7 @@ export default function Navbar() {
         <div className="border-t border-lborder bg-secondary lg:hidden">
           <div className="mx-auto max-w-7xl px-4 py-3">
             <div className="grid grid-cols-2 gap-1.5">
-              {primaryItems.map((item) => (
-                <Link
-                  key={item.to}
-                  href={item.to}
-                  className={`rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${isActive(item.to)
-                    ? 'bg-accent/15 text-accent ring-1 ring-inset ring-accent/25'
-                    : 'text-stext hover:bg-card hover:text-mtext'
-                    }`}
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </div>
-            <p className="mt-4 px-1 text-[11px] font-bold uppercase tracking-widest text-stext">
-              More
-            </p>
-            <div className="mt-1.5 grid grid-cols-2 gap-1.5">
-              {moreItems.map((item) => (
+              {navItems.map((item) => (
                 <Link
                   key={item.to}
                   href={item.to}

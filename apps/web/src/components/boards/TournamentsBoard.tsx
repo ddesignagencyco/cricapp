@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Calendar, ChevronLeft, ChevronRight, Filter, Loader2, MapPin, Search, Trophy, X } from 'lucide-react';
 import EmptyState from '../EmptyState';
-import MatchesEmbed from '../MatchesEmbed';
 import { fetchTournaments } from '../../services/tournaments';
 
 function getCategoryName(cat: any): string {
@@ -286,9 +285,6 @@ export default function TournamentsBoard({ initialCountry }: Props) {
         </div>
       </div>
 
-      <section className="mt-4">
-        <MatchesEmbed />
-      </section>
     </>
   );
 }
@@ -306,11 +302,11 @@ function TournamentCard({ tournament }: { tournament: any }) {
   return (
     <Link
       href={`/tournaments/${tournament.id}`}
-      className="group block rounded-2xl bg-card p-5 ring-1 ring-lborder transition-all duration-300 hover:-translate-y-0.5 hover:bg-elevated hover:ring-accent/30"
+      className="group flex h-48 flex-col overflow-hidden rounded-2xl bg-card p-5 ring-1 ring-lborder transition-all duration-300 hover:-translate-y-1 hover:bg-elevated hover:ring-accent/40 hover:shadow-lg"
     >
-      <div className="mb-3 flex items-start justify-between gap-3">
+      <div className="mb-3 flex items-start justify-between gap-3 shrink-0">
         <div className="min-w-0 flex-1">
-          <h3 className="line-clamp-2 text-base font-bold text-mtext group-hover:text-accent">
+          <h3 className="line-clamp-2 text-base font-bold text-mtext group-hover:text-accent transition-colors" title={tournament.name}>
             {tournament.name}
           </h3>
         </div>
@@ -320,7 +316,8 @@ function TournamentCard({ tournament }: { tournament: any }) {
           </span>
         )}
       </div>
-      <div className="flex flex-wrap items-center gap-2 text-xs text-stext">
+
+      <div className="flex flex-wrap items-center gap-2 text-xs text-stext shrink-0">
         {format && (
           <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 font-semibold text-accent ring-1 ring-inset ring-accent/20">
             {format.replace('_', ' ')}
@@ -334,17 +331,20 @@ function TournamentCard({ tournament }: { tournament: any }) {
         {category && (
           <span className="inline-flex items-center gap-1 rounded-full bg-elevated px-2 py-0.5 ring-1 ring-lborder">
             <MapPin size={11} className="text-accent" />
-            {category}
+            <span className="truncate max-w-[80px]">{category}</span>
           </span>
         )}
       </div>
-      {season && (
-        <p className="mt-3 flex items-center gap-1.5 text-xs text-stext">
-          <Calendar size={12} className="shrink-0 text-stext/60" />
-          <span className="truncate">{season}</span>
-        </p>
-      )}
-      {dateRange && <p className="mt-1 text-[11px] text-stext/70">{dateRange}</p>}
+
+      <div className="mt-auto pt-3 border-t border-lborder/50 shrink-0">
+        {season && (
+          <p className="flex items-center gap-1.5 text-xs text-stext">
+            <Calendar size={12} className="shrink-0 text-stext/60" />
+            <span className="truncate">{season}</span>
+          </p>
+        )}
+        {dateRange && <p className="mt-1.5 truncate text-[11px] font-medium text-stext/70">{dateRange}</p>}
+      </div>
     </Link>
   );
 }

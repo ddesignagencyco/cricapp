@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { getInitials, getTeam } from '../utils/helpers';
+import { getInitials, getTeam, getPslLogo } from '../utils/helpers';
 
 interface TeamLogoProps {
   teamId?: string;
@@ -18,33 +18,37 @@ export default function TeamLogo({ teamId, name, code, color, size = 'md', class
   const displayName = name || team?.name || code || '';
   const accent = color || team?.colors?.primary || '#00C2FF';
   const initials = getInitials(displayName);
-  const logo = team?.logo || null;
+  const pslLogo = getPslLogo(code || '') || getPslLogo(teamId || '');
+  const logo = team?.logo || pslLogo || null;
   const sizes: Record<string, string> = {
-    xs: 'h-8 w-8',
-    sm: 'h-10 w-10',
-    md: 'h-14 w-14',
-    lg: 'h-20 w-20',
-    xl: 'h-28 w-28',
+    xs: 'h-6 w-6 text-[10px]',
+    sm: 'h-8 w-8 text-xs',
+    md: 'h-11 w-11 text-sm',
+    lg: 'h-16 w-16 text-xl',
+    xl: 'h-24 w-24 text-3xl',
   };
-  const border = 'border-2';
-  const cls = `relative grid shrink-0 place-items-center overflow-hidden rounded-full ${sizes[size]} ${className}`;
+  const cls = `group relative shrink-0 ${sizes[size]} ${className}`;
 
-  const inner = logo ? (
-    <img
-      src={logo}
-      alt={displayName}
-      title={displayName}
-      className={`h-full w-full rounded-full object-cover ${border}`}
-      style={{ borderColor: accent }}
-    />
-  ) : (
-    <span
-      className={`grid h-full w-full place-items-center rounded-full font-extrabold tracking-tight ${border}`}
-      style={{ color: accent, borderColor: accent }}
-      title={displayName}
-    >
-      {initials}
-    </span>
+  const inner = (
+    <div className="relative h-full w-full transition-transform duration-500 group-hover:scale-105">
+      {logo ? (
+        <img
+          src={logo}
+          alt={displayName}
+          title={displayName}
+          className="relative h-full w-full rounded-full border border-white/10 bg-white object-contain p-0.5"
+          style={{ borderColor: accent }}
+        />
+      ) : (
+        <span
+          className="relative grid h-full w-full place-items-center rounded-full border-2 border-white/20 font-black tracking-tighter text-white shadow-lg"
+          style={{ backgroundImage: `linear-gradient(135deg, ${accent}, #111)` }}
+          title={displayName}
+        >
+          {initials}
+        </span>
+      )}
+    </div>
   );
 
   if (!link || !teamId) {

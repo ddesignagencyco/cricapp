@@ -6,6 +6,7 @@ import EmptyState from '../EmptyState';
 import Tabs from '../Tabs';
 import LiveIndicator from '../LiveIndicator';
 import Badge from '../Badge';
+import { getPslLogo } from '../../utils/helpers';
 
 function toISODate(d: Date): string {
   const y = d.getFullYear();
@@ -187,11 +188,23 @@ export default function ScheduleBoard({ date, schedule, results, onDateChange }:
 }
 
 function TeamCode({ code, name }: { code: string; name: string }) {
+  const pslLogo = getPslLogo(code);
   const label = (name || code || '??').replace(/^(\w)\w*\s?(\w)?.*$/, '$1$2').toUpperCase() || (code || '??').slice(0, 2).toUpperCase();
 
   let hash = 0;
   for (let i = 0; i < code.length; i++) hash = code.charCodeAt(i) + ((hash << 5) - hash);
   const hue = Math.abs(hash % 360);
+
+  if (pslLogo) {
+    return (
+      <img
+        src={pslLogo}
+        alt={name}
+        title={name}
+        className="h-10 w-10 shrink-0 rounded-full border border-white/10 bg-white object-contain p-0.5"
+      />
+    );
+  }
 
   return (
     <span

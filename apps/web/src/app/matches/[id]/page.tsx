@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const names = match.teamNames || [];
   const title = `${names[0] || match.teams?.[0] || 'Team A'} vs ${names[1] || match.teams?.[1] || 'Team B'}`;
   return {
-    title: `${title} — ${match.matchStatus || match.status || 'Match'}`,
+    title: `${title} — ${match.status || 'Match'}`,
     description: `${match.tournament || 'Cricket'} • ${match.displayScore || 'Full score details'}`,
   };
 }

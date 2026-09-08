@@ -1,23 +1,46 @@
 'use client';
 
 import Link from 'next/link';
-import Badge from './Badge';
-import { getInitials } from '../utils/helpers';
+import { getInitials } from '../../utils/helpers';
+import Badge from '../Badge';
 
-interface RecentResultCardProps {
-  match: any;
+interface RecentResultsProps {
+  matches: any[];
 }
 
-export default function RecentResultCard({ match }: RecentResultCardProps) {
+export default function RecentResults({ matches }: RecentResultsProps) {
+  if (!matches.length) return null;
+
+  return (
+    <section className="mx-auto max-w-7xl px-4 pb-10 sm:px-6">
+      <div className="mb-5 flex items-end justify-between gap-4">
+        <h2 className="text-xl font-bold tracking-tight text-mtext sm:text-2xl">Recent Results</h2>
+        <Link
+          href="/matches?tab=completed"
+          className="shrink-0 whitespace-nowrap text-sm font-semibold text-accent transition-colors hover:text-accent2"
+        >
+          View all results
+        </Link>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        {matches.map((m: any) => (
+          <ResultCard key={m.matchId || m.id} match={m} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ResultCard({ match }: { match: any }) {
   const teams = match.teams;
   const isObj = teams && typeof teams === 'object' && !Array.isArray(teams);
   const home = isObj ? teams.home : null;
   const away = isObj ? teams.away : null;
-
-  const homeCode = (home?.code || (Array.isArray(teams) ? teams[0] : '')).replace(/^sr:competitor:/, '');
-  const awayCode = (away?.code || (Array.isArray(teams) ? teams[1] : '')).replace(/^sr:competitor:/, '');
-  const homeName = (home?.name || match.teamNames?.[0] || homeCode || 'TBD').replace(/^sr:competitor:/, '');
-  const awayName = (away?.name || match.teamNames?.[1] || awayCode || 'TBD').replace(/^sr:competitor:/, '');
+  const homeCode = home?.code || (Array.isArray(teams) ? teams[0] : '');
+  const awayCode = away?.code || (Array.isArray(teams) ? teams[1] : '');
+  const homeName = home?.name || homeCode;
+  const awayName = away?.name || awayCode;
   const homeScore = home?.score || '';
   const awayScore = away?.score || '';
   const homeOvers = home?.overs || '';
@@ -26,17 +49,6 @@ export default function RecentResultCard({ match }: RecentResultCardProps) {
   const result = match.result || '';
   const tournament = match.tournamentName || match.tournament || '';
   const venue = match.venue || '';
-  const date = match.date || '';
-  const playerOfMatch = match.playerOfMatch || '';
-
-  const rawDate = match.date || match.scheduled || '';
-  let dateLabel = date;
-  if (rawDate) {
-    const d = new Date(rawDate);
-    if (!Number.isNaN(d.getTime())) {
-      dateLabel = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-    }
-  }
 
   return (
     <Link
@@ -65,36 +77,16 @@ export default function RecentResultCard({ match }: RecentResultCardProps) {
       {result && (
         <div className="mt-3 border-t border-lborder/50 pt-2.5">
           <p className="text-[11px] font-bold text-gold">{result}</p>
-          {playerOfMatch && (
-            <p className="mt-1 text-[10px] text-stext">
-              Player of the Match: <span className="font-semibold text-mtext">{playerOfMatch}</span>
-            </p>
-          )}
         </div>
       )}
-
-      <div className="mt-2 flex items-center gap-2 text-[10px] text-stext">
-        <span>{dateLabel}</span>
-        {venue && <span className="truncate">• {venue.split(',')[0]}</span>}
-      </div>
     </Link>
   );
 }
 
 function ScoreRow({ code, name, score, overs }: { code: string; name: string; score: string; overs: string }) {
-  let hash = 0;
-  for (let i = 0; i < code.length; i++) hash = code.charCodeAt(i) + ((hash << 5) - hash);
-  const hue = Math.abs(hash % 360);
-
   return (
     <div className="flex items-center gap-2.5">
-      <span
-        className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-white/10 text-[9px] font-black text-white"
-        style={{ backgroundImage: `linear-gradient(135deg, hsl(${hue}, 70%, 50%), hsl(${(hue + 40) % 360}, 80%, 35%))` }}
-        title={name}
-      >
-        {getInitials(name || code)}
-      </span>
+      <TeamBadge code={code} name={name} />
       <div className="min-w-0 flex-1">
         <p className="truncate text-xs font-semibold text-mtext">{name}</p>
       </div>
@@ -103,5 +95,21 @@ function ScoreRow({ code, name, score, overs }: { code: string; name: string; sc
         {overs && <p className="font-mono text-[10px] text-stext">({overs} ov)</p>}
       </div>
     </div>
+  );
+}
+
+function TeamBadge({ code, name }: { code: string; name: string }) {
+  let hash = 0;
+  for (let i = 0; i < code.length; i++) hash = code.charCodeAt(i) + ((hash << 5) - hash);
+  const hue = Math.abs(hash % 360);
+
+  return (
+    <span
+      className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-white/10 text-[9px] font-black text-white"
+      style={{ backgroundImage: `linear-gradient(135deg, hsl(${hue}, 70%, 50%), hsl(${(hue + 40) % 360}, 80%, 35%))` }}
+      title={name}
+    >
+      {getInitials(name || code)}
+    </span>
   );
 }

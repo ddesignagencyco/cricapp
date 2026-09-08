@@ -2,9 +2,10 @@ import Link from 'next/link';
 import SectionHeader from '../../components/SectionHeader';
 import Badge from '../../components/Badge';
 import PointsTable from '../../components/PointsTable';
+import TeamLogo from '../../components/TeamLogo';
 import { PSLLeaderCard } from '../../components/PSLLeaderCard';
 import { PSLHeroBadge } from '../../components/PSLHeroBadge';
-import { getInitials, formatScheduled } from '../../utils/helpers';
+import { formatScheduled } from '../../utils/helpers';
 import { fetchPslStandings } from '../../services/psl';
 import { fetchPslLeaders } from '../../services/psl';
 import { fetchPslSchedule } from '../../services/psl';
@@ -68,7 +69,7 @@ export default async function PSLPage() {
       <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           <div className="lg:col-span-2">
-            <SectionHeader title="Points Table" subtitle="Standings" to="/points-table" actionLabel="Full table" />
+            <SectionHeader title="Points Table" subtitle="Standings" icon="trophy" to="/points-table" actionLabel="Full table" />
             <PointsTable rows={pointsRows} />
           </div>
 
@@ -83,19 +84,17 @@ export default async function PSLPage() {
       </section>
 
       <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
-        <SectionHeader title="The Franchises" subtitle="PSL Teams" icon="trophy" to="/teams" actionLabel="All teams" />
+        <SectionHeader title="The Franchises" subtitle="PSL Teams" icon="users" to="/teams" actionLabel="All teams" />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {squads.map((s) => (
             <Link
               key={s.teamId}
               href={`/teams/${s.teamId}`}
-              className="group rounded-2xl bg-card p-5 ring-1 ring-lborder transition-all duration-300 hover:-translate-y-0.5 hover:bg-elevated hover:ring-accent/30"
+              className="group flex flex-col items-center justify-center rounded-2xl bg-card p-6 text-center ring-1 ring-lborder transition-all duration-300 hover:-translate-y-1 hover:bg-elevated hover:ring-accent/30 hover:shadow-lg"
             >
-              <span className="grid h-12 w-12 place-items-center rounded-full border-2 border-accent bg-primary text-sm font-extrabold text-accent">
-                {getInitials(s.teamName || s.teamAbbr)}
-              </span>
-              <h3 className="mt-3 text-base font-bold text-mtext">{s.teamName}</h3>
-              <p className="text-xs font-semibold uppercase tracking-wider text-stext">
+              <TeamLogo teamId={s.teamId} name={s.teamName} code={s.teamAbbr} size="lg" link={false} />
+              <h3 className="mt-4 text-base font-bold text-mtext group-hover:text-accent transition-colors">{s.teamName}</h3>
+              <p className="mt-1 text-xs font-semibold uppercase tracking-wider text-stext">
                 {s.teamAbbr} • {s.players?.length || 0} players
               </p>
             </Link>
@@ -105,17 +104,25 @@ export default async function PSLPage() {
 
       {playoffs.length > 0 && (
         <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
-          <SectionHeader title="Playoff Race" subtitle="Road to the Final" />
+          <SectionHeader title="Playoff Race" subtitle="Road to the Final" icon="video" />
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {playoffs.map((m) => (
-              <div key={m.matchId} className="rounded-2xl bg-card p-4 ring-1 ring-lborder">
+              <div key={m.matchId} className="rounded-2xl bg-card p-5 ring-1 ring-lborder shadow-sm">
                 <Badge tone="qualified">{roundLabels[m.round] || m.round}</Badge>
-                <div className="mt-3 space-y-1.5 text-sm">
-                  <p className="font-semibold text-mtext">{m.homeTeamName}</p>
-                  <p className="text-stext">vs</p>
-                  <p className="font-semibold text-mtext">{m.awayTeamName}</p>
+                <div className="mt-4 flex flex-col gap-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    <TeamLogo code={m.homeTeamAbbr} size="xs" link={false} />
+                    <p className="font-semibold text-mtext truncate">{m.homeTeamName}</p>
+                  </div>
+                  <p className="text-[10px] font-black italic text-stext/50 px-8">VS</p>
+                  <div className="flex items-center gap-2">
+                    <TeamLogo code={m.awayTeamAbbr} size="xs" link={false} />
+                    <p className="font-semibold text-mtext truncate">{m.awayTeamName}</p>
+                  </div>
                 </div>
-                <p className="mt-3 text-[11px] text-stext">{formatScheduled(m.scheduled).date}</p>
+                <p className="mt-4 border-t border-lborder/50 pt-3 text-xs font-medium text-stext">
+                  {formatScheduled(m.scheduled).date}
+                </p>
               </div>
             ))}
           </div>
@@ -127,15 +134,21 @@ export default async function PSLPage() {
         {regular.length > 0 ? (
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             {regular.slice(0, 20).map((m) => (
-              <div key={m.matchId} className="flex items-center justify-between gap-3 rounded-2xl bg-card px-4 py-3 ring-1 ring-lborder">
-                <div className="flex items-center gap-3 text-sm">
-                  <span className="font-semibold text-mtext">{m.homeTeamAbbr}</span>
-                  <span className="text-stext">vs</span>
-                  <span className="font-semibold text-mtext">{m.awayTeamAbbr}</span>
+              <div key={m.matchId} className="group flex items-center justify-between gap-3 rounded-2xl bg-card px-5 py-4 ring-1 ring-lborder transition-all hover:bg-elevated hover:shadow-md">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    <TeamLogo code={m.homeTeamAbbr} size="xs" link={false} />
+                    <span className="font-bold text-mtext">{m.homeTeamAbbr}</span>
+                  </div>
+                  <span className="text-[10px] font-black italic text-stext/50">VS</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-mtext">{m.awayTeamAbbr}</span>
+                    <TeamLogo code={m.awayTeamAbbr} size="xs" link={false} />
+                  </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-[11px] uppercase tracking-wider text-stext">{m.status}</p>
-                  <p className="text-[11px] text-stext">{formatScheduled(m.scheduled).date}</p>
+                  <p className="text-[11px] font-bold uppercase tracking-widest text-accent/80">{m.status}</p>
+                  <p className="mt-0.5 text-xs font-medium text-stext">{formatScheduled(m.scheduled).date}</p>
                 </div>
               </div>
             ))}

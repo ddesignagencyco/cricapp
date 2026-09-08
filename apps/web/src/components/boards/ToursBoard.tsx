@@ -4,7 +4,6 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Activity, MapPin, Search, Trophy, X } from 'lucide-react';
 import EmptyState from '../EmptyState';
-import MatchesEmbed from '../MatchesEmbed';
 
 function getCountryName(cat: any): string {
   if (!cat) return '';
@@ -186,10 +185,6 @@ export default function ToursBoard({ tours }: Props) {
           message={search ? 'No tours match your search. Try a different query.' : 'Tours will appear once reference data syncs.'}
         />
       )}
-
-      <section className="mt-10">
-        <MatchesEmbed title="Featured Matches" />
-      </section>
     </>
   );
 }

@@ -1,4 +1,3 @@
-import { teams } from '../data/teams';
 import type { Team, BattingRow, BowlingRow } from '../types/index';
 
 interface MappedBattingRow {
@@ -28,12 +27,11 @@ interface ScheduledDate {
 }
 
 export function teamColor(teamId: string): string {
-  const t: Team | undefined = teams.find((x: Team) => x.id === teamId);
-  return t?.colors?.primary || '#00C2FF';
+  return '#00C2FF';
 }
 
 export function getTeam(teamId: string): Team | undefined {
-  return teams.find((t: Team) => t.id === teamId);
+  return undefined;
 }
 
 export function formatNumber(n: number | string): string {
@@ -111,4 +109,21 @@ export function getInitials(name: string): string {
     return `${words[0][0]}${words[1][0]}`.toUpperCase();
   }
   return words[0]?.slice(0, 2).toUpperCase() || 'XX';
+}
+
+const pslLogos: Record<string, string> = {
+  isl: 'https://psl-t20.com/wp-content/uploads/2016/01/psl-islamabad-united.png',
+  hyd: 'https://psl-t20.com/wp-content/uploads/2026/03/Hyderabad-Kingsmen-logo-1.png',
+  kki: 'https://psl-t20.com/wp-content/uploads/2017/02/psl-karachi-kings.png',
+  lqa: 'https://psl-t20.com/wp-content/uploads/2016/01/psl-lahore-qalandars.png',
+  mus: 'https://psl-t20.com/wp-content/uploads/2019/01/psl-multan-sultan.png',
+  pza: 'https://psl-t20.com/wp-content/uploads/2016/01/psl-peshawar-zalmi.png',
+  qgl: 'https://psl-t20.com/wp-content/uploads/2017/02/psl-quetta-gladiators.png',
+  raw: 'https://psl-t20.com/wp-content/uploads/2026/03/Rawalpindiz-Logo.png'
+};
+
+export function getPslLogo(codeOrId: string): string | null {
+  if (!codeOrId) return null;
+  const key = codeOrId.toLowerCase();
+  return pslLogos[key] || null;
 }

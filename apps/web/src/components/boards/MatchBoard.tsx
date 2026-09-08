@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { CalendarDays, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import MatchCard from '../MatchCard';
 import Tabs from '../Tabs';
@@ -12,7 +13,11 @@ interface Props {
 }
 
 export default function MatchBoard({ initialMatches = [] }: Props) {
-  const [tab, setTab] = useState('live');
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const tab = searchParams.get('tab') || 'upcoming';
   const [team, setTeam] = useState('');
   
   const [displayMatches, setDisplayMatches] = useState<any[]>([]);
@@ -52,13 +57,20 @@ export default function MatchBoard({ initialMatches = [] }: Props) {
 
   const tabs = useMemo(
     () => [
-      { key: 'live', label: 'Live' },
       { key: 'upcoming', label: 'Upcoming' },
+      { key: 'live', label: 'Live' },
       { key: 'completed', label: 'Completed' },
       { key: 'cancelled', label: 'Cancelled' },
     ],
     []
   );
+
+  const handleTabChange = (newTab: string) => {
+    setPage(0);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('tab', newTab);
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+  };
 
   return (
     <>
@@ -71,7 +83,7 @@ export default function MatchBoard({ initialMatches = [] }: Props) {
         </div>
         <h1 className="mt-1 text-3xl font-black tracking-tight sm:text-4xl">Matches</h1>
         <p className="mt-2 text-sm text-stext">
-          Browse live, upcoming and completed fixtures across PSL 2026 and international cricket.
+          Browse live, upcoming, and completed matches across domestic and international cricket.
         </p>
       </header>
 
@@ -79,10 +91,7 @@ export default function MatchBoard({ initialMatches = [] }: Props) {
         <Tabs
           tabs={tabs}
           active={tab}
-          onChange={(newTab) => {
-            setTab(newTab);
-            setPage(0);
-          }}
+          onChange={handleTabChange}
         />
       </div>
 

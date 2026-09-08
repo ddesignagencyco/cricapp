@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { getInitials } from '../utils/helpers';
+import ColorIcon from './ColorIcon';
 import { PointsRow } from '../types';
 
 interface PointsTableProps {
@@ -76,12 +76,5 @@ export default function PointsTable({ rows = [], favoriteTeamId }: PointsTablePr
 }
 
 function TeamMark({ name, code }: { name: string; code: string }) {
-  return (
-    <span
-      className="grid h-9 w-9 shrink-0 place-items-center rounded-full border-2 border-accent bg-primary text-xs font-extrabold text-accent"
-      title={name}
-    >
-      {getInitials(name || code)}
-    </span>
-  );
+  return <ColorIcon label={name || code} size={36} />;
 }

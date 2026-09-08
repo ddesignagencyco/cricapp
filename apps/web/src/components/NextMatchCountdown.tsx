@@ -37,10 +37,12 @@ export default function NextMatchCountdown({ match }: NextMatchCountdownProps) {
   const isObj = teams && typeof teams === 'object' && !Array.isArray(teams);
   const home = isObj ? teams.home : null;
   const away = isObj ? teams.away : null;
-  const homeName = home?.name || (Array.isArray(teams) ? teams[0] : '');
-  const awayName = away?.name || (Array.isArray(teams) ? teams[1] : '');
-  const homeCode = home?.code || '';
-  const awayCode = away?.code || '';
+  const homeCode = home?.code || (Array.isArray(teams) ? teams[0] : '');
+  const awayCode = away?.code || (Array.isArray(teams) ? teams[1] : '');
+  const homeName = home?.name || (match.teamNames?.[0] ?? homeCode) || 'TBD';
+  const awayName = away?.name || (match.teamNames?.[1] ?? awayCode) || 'TBD';
+  const cleanHomeCode = (homeCode || homeName).replace(/^sr:competitor:/, '');
+  const cleanAwayCode = (awayCode || awayName).replace(/^sr:competitor:/, '');
 
   const venue = match.venue || '';
   const scheduled = match.scheduled || `${match.date}T${match.time || '00:00'}:00`;
@@ -64,19 +66,19 @@ export default function NextMatchCountdown({ match }: NextMatchCountdownProps) {
               NEXT MATCH
             </span>
             <div className="flex items-center gap-3">
-              <TeamLogoLarge code={homeCode} name={homeName} />
+              <TeamLogoLarge code={cleanHomeCode} name={homeName} />
               <div>
                 <p className="text-sm font-bold text-mtext">{homeName}</p>
-                <p className="text-[11px] uppercase tracking-wider text-stext">{homeCode}</p>
+                <p className="text-[11px] uppercase tracking-wider text-stext">{cleanHomeCode}</p>
               </div>
             </div>
             <span className="text-xs font-bold text-stext">vs</span>
             <div className="flex items-center gap-3">
               <div className="text-right">
                 <p className="text-sm font-bold text-mtext">{awayName}</p>
-                <p className="text-[11px] uppercase tracking-wider text-stext">{awayCode}</p>
+                <p className="text-[11px] uppercase tracking-wider text-stext">{cleanAwayCode}</p>
               </div>
-              <TeamLogoLarge code={awayCode} name={awayName} />
+              <TeamLogoLarge code={cleanAwayCode} name={awayName} />
             </div>
           </div>
 

@@ -8,6 +8,7 @@ import LiveIndicator from '../LiveIndicator';
 import Tabs from '../Tabs';
 import EmptyState from '../EmptyState';
 import HeadToHeadWidget from '../HeadToHeadWidget';
+import TeamLogo from '../TeamLogo';
 import { formatScheduled } from '../../utils/helpers';
 
 const detailTabs = [
@@ -89,12 +90,13 @@ export default function MatchDetailBody({ match, headToHead }: Props) {
   return (
     <div className="mx-auto max-w-7xl space-y-3 px-4 py-8 sm:px-6">
       <nav className="flex items-center gap-1.5 text-xs text-stext">
-        <Link href="/matches" className="hover:text-accent">Matches</Link>
+        <Link href="/matches" className="hover:text-accent transition-colors">Matches</Link>
         <span>/</span>
-        <span className="text-mtext truncate max-w-[200px] sm:max-w-none">{breadcrumbName}</span>
+        <span className="text-mtext truncate max-w-[200px] sm:max-w-none font-medium">{breadcrumbName}</span>
       </nav>
 
-      <header className="rounded-3xl bg-card p-6 ring-1 ring-lborder">
+      <header className="relative overflow-hidden rounded-3xl bg-card p-6 ring-1 ring-lborder shadow-lg transition-all hover:shadow-xl">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-accent2 via-accent to-accent2 opacity-80" />
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
             <Badge tone="upcoming">{match.tournament || 'Match'}</Badge>
@@ -206,8 +208,8 @@ export default function MatchDetailBody({ match, headToHead }: Props) {
               />
             ) : (
               <EmptyState
-                title={isCompleted ? 'Match Completed' : isCancelled ? 'Match Cancelled' : 'Match Status'}
-                message={match.matchStatus || (isCompleted || isCancelled ? 'This match has finished or was cancelled.' : 'No live data available.')}
+                title="No Live Data"
+                message={match.status || (isCompleted || isCancelled ? 'This match has finished or was cancelled.' : 'No live data available.')}
               />
             ))}
 
@@ -215,7 +217,7 @@ export default function MatchDetailBody({ match, headToHead }: Props) {
             <div className="rounded-2xl bg-card p-6 ring-1 ring-lborder">
               <h3 className="mb-4 text-sm font-bold uppercase tracking-widest text-stext">Match Details</h3>
               <InfoRow label="Tournament" value={match.tournament || '—'} />
-              <InfoRow label="Status" value={`${match.matchStatus || match.status || '—'}`} cap />
+              <InfoRow label="Status" value={`${match.status || '—'}`} cap />
               <InfoRow label="Home" value={homeName} />
               <InfoRow label="Away" value={awayName} />
               {date && <InfoRow label="Date" value={date} />}
@@ -250,16 +252,16 @@ export default function MatchDetailBody({ match, headToHead }: Props) {
 function TeamSide({ code, name, score, overs, align }: { code: string; name: string; score: string; overs: string | number; align: string }) {
   const right = align === 'right';
   return (
-    <div className={`flex min-w-0 items-center gap-2 sm:gap-4 ${right ? 'flex-row-reverse justify-end text-right' : 'justify-start text-left'}`}>
-      <TeamCode code={code} name={name} />
+    <div className={`flex min-w-0 items-center gap-3 sm:gap-5 ${right ? 'flex-row-reverse justify-end text-right' : 'justify-start text-left'}`}>
+      <TeamLogo code={code} name={name} size="md" className="h-12 w-12 sm:h-16 sm:w-16" link={false} />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[13px] font-bold text-mtext sm:text-lg">{name}</p>
+        <p className="truncate text-sm font-black text-mtext sm:text-xl tracking-tight">{name}</p>
         {score ? (
-          <div className={`mt-0.5 flex flex-wrap items-baseline gap-x-2 gap-y-0 ${right ? 'justify-end' : 'justify-start'}`}>
-            <span className="font-mono text-[17px] font-black tabular-nums leading-tight text-mtext sm:text-3xl">
+          <div className={`mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-0 ${right ? 'justify-end' : 'justify-start'}`}>
+            <span className="font-mono text-2xl font-black tabular-nums leading-tight text-accent sm:text-4xl tracking-tighter">
               {score}
             </span>
-            {overs && <span className="font-mono text-[10px] text-stext sm:text-xs">{overs} ov</span>}
+            {overs && <span className="font-mono text-[11px] font-bold text-stext sm:text-sm">{overs} ov</span>}
           </div>
         ) : (
           <p className="text-sm text-stext">—</p>
@@ -269,19 +271,11 @@ function TeamSide({ code, name, score, overs, align }: { code: string; name: str
   );
 }
 
-function TeamCode({ code, name }: { code: string; name: string }) {
-  return (
-    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border-2 border-accent bg-primary text-xs font-extrabold tracking-tight text-accent sm:h-14 sm:w-14 sm:text-sm" title={name}>
-      {(name || code || '??').replace(/^(\w)\w*\s?(\w)?.*$/, '$1$2').toUpperCase() || (code || '??').slice(0, 2).toUpperCase()}
-    </span>
-  );
-}
-
 function InfoStat({ label, value, big = false }: { label: string; value: string; big?: boolean }) {
   return (
-    <div className="rounded-2xl bg-card p-4 ring-1 ring-lborder">
+    <div className="rounded-2xl bg-card p-5 ring-1 ring-lborder shadow-sm">
       <p className="text-[11px] font-bold uppercase tracking-widest text-stext">{label}</p>
-      <p className={`font-mono font-black tabular-nums text-mtext ${big ? 'text-3xl' : 'text-2xl'}`}>{value}</p>
+      <p className={`mt-1 font-mono font-black tabular-nums tracking-tighter text-accent ${big ? 'text-4xl' : 'text-3xl'}`}>{value}</p>
     </div>
   );
 }

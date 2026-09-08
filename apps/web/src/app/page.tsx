@@ -3,15 +3,15 @@ import MatchCard from '../components/MatchCard';
 import SectionHeader from '../components/SectionHeader';
 import MatchTickerBar from '../components/MatchTickerBar';
 import CricketHero from '../components/CricketHero';
-import NextMatchCountdown from '../components/NextMatchCountdown';
 import PslSpotlight from '../components/PslSpotlight';
 import RecentResultCard from '../components/RecentResultCard';
 import Newsletter from '../components/Newsletter';
+import TeamLogo from '../components/TeamLogo';
 import { LeaderPanel } from '../components/HomeLeaderPanel';
 import { getInitials } from '../utils/helpers';
 import { fetchMatches } from '../services/matches';
 import { fetchNews } from '../services/news';
-import { fetchPslLeaders } from '../services/psl';
+import { fetchPslLeaders, fetchPslStandings } from '../services/psl';
 import { fetchTeams } from '../services/teams';
 
 export const dynamic = 'force-dynamic';
@@ -22,23 +22,59 @@ export const metadata = {
 };
 
 export default async function HomePage() {
-  const [liveMatches, upcomingMatches, completedMatches, allMatches, newsList, leaders, teams] =
+  const [liveMatches, upcomingMatches, completedMatches, allMatches, newsList, leaders, teams, standings] =
     await Promise.all([
       fetchMatches({ status: 'live', limit: 10 }),
-      fetchMatches({ status: 'upcoming', limit: 4 }),
-      fetchMatches({ status: 'completed', limit: 3 }),
+      fetchMatches({ status: 'upcoming', limit: 20 }),
+      fetchMatches({ status: 'completed', limit: 60 }),
       fetchMatches({ limit: 20 }),
       fetchNews(),
       fetchPslLeaders(),
       fetchTeams(),
+      fetchPslStandings(),
     ]);
 
   const live = liveMatches || [];
   const upcoming = (upcomingMatches || []).slice(0, 4);
-  const completed = (completedMatches || []).slice(0, 3);
+  const completedAll = (completedMatches || [])
+    .filter((m: any) => m && (m.scheduled || m.date))
+    .sort(
+      (a: any, b: any) =>
+        new Date(b.scheduled || b.date).getTime() - new Date(a.scheduled || a.date).getTime()
+    );
+  const completed = completedAll.slice(0, 3);
   const all = allMatches || [];
 
-  const tickerMatches = [...live, ...all.filter((m: any) => m.status !== 'live').slice(0, 8)];
+  const now = Date.now();
+  const dayStart = new Date();
+  dayStart.setHours(0, 0, 0, 0);
+  const tomorrowStart = new Date(dayStart);
+  tomorrowStart.setDate(tomorrowStart.getDate() + 1);
+  const tomorrowEnd = new Date(tomorrowStart);
+  tomorrowEnd.setDate(tomorrowEnd.getDate() + 1);
+
+  const upcomingFuture = (upcomingMatches || []).filter((m: any) => {
+    const s = new Date(m.scheduled || m.date).getTime();
+    return !Number.isNaN(s) && s >= now;
+  });
+  const nextDayUpcoming = upcomingFuture.filter((m: any) => {
+    const s = new Date(m.scheduled || m.date).getTime();
+    return s < tomorrowEnd.getTime();
+  });
+  const fallbackUpcoming = nextDayUpcoming.length > 0 ? nextDayUpcoming : upcomingFuture;
+
+  const todayCompleted = (completedMatches || []).filter((m: any) => {
+    const s = new Date(m.scheduled || m.date).getTime();
+    return !Number.isNaN(s) && s >= dayStart.getTime() && s < tomorrowStart.getTime();
+  });
+
+  const recentCompleted = todayCompleted.length > 0 ? todayCompleted : completedAll;
+
+  const tickerMatches = [
+    ...live.slice(0, 6),
+    ...recentCompleted.slice(0, 4),
+    ...fallbackUpcoming.slice(0, 6),
+  ];
 
   const nextUpcoming = (upcomingMatches || [])[0] || null;
 
@@ -48,19 +84,7 @@ export default async function HomePage() {
 
   const topTeams = (teams || []).slice(0, 6);
 
-  const pslStandings = (teams || [])
-    .filter((t: any) => !['england', 'australia', 'india', 'new-zealand', 'south-africa'].includes(t.id))
-    .sort((a: any, b: any) => (a.position || 99) - (b.position || 99))
-    .map((t: any) => ({
-      teamId: t.id,
-      teamName: t.name,
-      teamAbbr: t.shortName || t.code,
-      played: t.matches || 0,
-      won: t.wins || 0,
-      lost: t.losses || 0,
-      netRunRate: parseFloat(t.nrr) || 0,
-      points: t.points || 0,
-    }));
+  const pslStandings = [...(standings || [])].sort((a: any, b: any) => (a.rank ?? 999) - (b.rank ?? 999));
 
   const newsForHero = newsList.length > 0 ? newsList[0] : null;
 
@@ -81,10 +105,8 @@ export default async function HomePage() {
 
       <CricketHero match={nextUpcoming || all[0]} />
 
-      {nextUpcoming && <NextMatchCountdown match={nextUpcoming} />}
-
-      <section className="mx-auto max-w-7xl px-4 pb-12 sm:px-6">
-        <SectionHeader title="Upcoming Matches" to="/matches" actionLabel="View all matches" />
+      <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6 mt-8">
+        <SectionHeader title="Upcoming Matches" subtitle="Don't miss the upcoming action" icon="calendar" to="/matches" actionLabel="View all matches" />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {upcoming.map((m: any) => (
             <MatchCard key={m.matchId || m.id} match={m} compact />
@@ -105,8 +127,8 @@ export default async function HomePage() {
       } />
 
       {leaderPanels.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 pb-12 sm:px-6">
-          <SectionHeader title="Season Leaders" to="/stats" actionLabel="All stats" />
+        <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6">
+          <SectionHeader title="Season Leaders" subtitle="Top performers of the tournament" icon="zap" to="/stats" actionLabel="All stats" />
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {leaderPanels.map((g: any) => (
               <LeaderPanel key={g.stat} group={g} />
@@ -115,8 +137,8 @@ export default async function HomePage() {
         </section>
       )}
 
-      <section className="mx-auto max-w-7xl px-4 pb-12 sm:px-6">
-        <SectionHeader title="Popular Teams" to="/teams" actionLabel="View all teams" />
+      <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6">
+        <SectionHeader title="Popular Teams" subtitle="Fan favorites across the globe" icon="users" to="/teams" actionLabel="View all teams" />
         <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 lg:grid-cols-6">
           {topTeams.map((team: any) => (
             <TeamQuickCard key={team.id} team={team} />
@@ -125,8 +147,8 @@ export default async function HomePage() {
       </section>
 
       {completed.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 pb-12 sm:px-6">
-          <SectionHeader title="Recent Results" to="/matches" actionLabel="View all results" />
+        <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6">
+          <SectionHeader title="Recent Results" subtitle="Latest match outcomes" icon="trophy" to="/matches?tab=completed" actionLabel="View all results" />
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             {completed.map((m: any) => (
               <RecentResultCard key={m.matchId || m.id} match={m} />
@@ -136,8 +158,8 @@ export default async function HomePage() {
       )}
 
       {newsList.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 pb-12 sm:px-6">
-          <SectionHeader title="Latest News" to="/news" actionLabel="All news" />
+        <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6">
+          <SectionHeader title="Latest News" subtitle="Stay updated with the cricket world" icon="newspaper" to="/news" actionLabel="All news" />
 
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.2fr_1fr]">
             {/* Featured article */}
@@ -219,28 +241,12 @@ function TeamQuickCard({ team }: { team: any }) {
   const name = team.name || '';
   const code = team.shortName || team.abbr || team.code || '';
 
-  let hash = 0;
-  for (let i = 0; i < code.length; i++) hash = code.charCodeAt(i) + ((hash << 5) - hash);
-  const hue = Math.abs(hash % 360);
   return (
     <Link
       href={`/teams/${team.id}`}
       className="group flex flex-col items-center justify-center rounded-xl bg-card p-5 text-center ring-1 ring-lborder transition-all duration-300 hover:-translate-y-1 hover:bg-elevated hover:ring-accent/30 hover:shadow-lg"
     >
-      {team.logo ? (
-        <img
-          src={team.logo}
-          alt={name}
-          className="relative h-14 w-14 shrink-0 rounded-full border-2 border-white/10 bg-primary object-cover shadow-sm transition-transform duration-300 group-hover:scale-105"
-        />
-      ) : (
-        <span
-          className="grid h-14 w-14 shrink-0 place-items-center rounded-full border-2 border-white/10 text-base font-bold tracking-wider text-white shadow-sm transition-transform duration-300 group-hover:scale-105"
-          style={{ backgroundImage: `linear-gradient(135deg, hsl(${hue}, 80%, 60%), hsl(${(hue + 40) % 360}, 90%, 40%))` }}
-        >
-          {getInitials(name || code)}
-        </span>
-      )}
+      <TeamLogo teamId={team.id} name={name} code={code} size="md" link={false} />
       <p className="mt-3 w-full truncate text-[13px] font-semibold text-mtext group-hover:text-accent transition-colors">{name}</p>
       <p className="text-[10px] font-bold uppercase tracking-wider text-stext">{code}</p>
     </Link>

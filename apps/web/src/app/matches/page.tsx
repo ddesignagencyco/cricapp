@@ -3,7 +3,7 @@ import MatchBoard from '../../components/boards/MatchBoard';
 export const metadata = {
   title: 'Matches',
   description:
-    'Browse live, upcoming and completed fixtures across PSL 2026 and international cricket.',
+    'Browse live, upcoming, and completed matches across domestic and international cricket.',
 };
 
 export const dynamic = 'force-dynamic';

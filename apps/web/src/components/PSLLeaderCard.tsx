@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { ArrowRight, Trophy } from 'lucide-react';
+import ColorIcon from './ColorIcon';
 
 export function PSLLeaderCard({ title, rows, accent }: { title: string; rows: { playerId: string; playerName: string; teamAbbr: string; value: string | number }[]; accent: string }) {
   return (
@@ -13,6 +14,7 @@ export function PSLLeaderCard({ title, rows, accent }: { title: string; rows: { 
         <div className="space-y-2.5">
           {rows.map((r) => (
             <div key={r.playerId} className="flex items-center gap-3">
+              <ColorIcon label={r.playerName} size={34} />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold text-mtext">{r.playerName}</p>
                 <p className="truncate text-xs text-stext">{r.teamAbbr}</p>
