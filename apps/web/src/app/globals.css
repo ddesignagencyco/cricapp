@@ -266,3 +266,19 @@ body {
 .slide-up {
   animation: slide-up 0.4s ease-out both;
 }
+
+/* Ticker scrollbar hide */
+.ticker-scroll {
+  scroll-behavior: smooth;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.ticker-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* Countdown digit flip */
+.countdown-digit {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
