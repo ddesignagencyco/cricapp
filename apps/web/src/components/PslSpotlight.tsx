@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { Calendar, MapPin, Trophy, Users, ChevronRight } from 'lucide-react';
 import ColorIcon from './ColorIcon';
+import TeamLogo from './TeamLogo';
 
 interface PslSpotlightProps {
   standings?: any[];
@@ -25,7 +26,7 @@ export default function PslSpotlight({ standings = [], nextFixture }: PslSpotlig
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* PSL Spotlight */}
         <div className="rounded-xl bg-card ring-1 ring-lborder overflow-hidden">
-         
+
 
           <div className="p-5">
             <div className="flex flex-wrap items-center gap-4 text-[11px] font-bold text-stext">
@@ -98,7 +99,7 @@ export default function PslSpotlight({ standings = [], nextFixture }: PslSpotlig
                       <td className="px-4 py-2.5 text-center font-mono text-xs text-stext">{i + 1}</td>
                       <td className="px-4 py-2.5">
                         <div className="flex items-center gap-2">
-                          <ColorIcon label={row.teamName || row.teamAbbr} size={26} />
+                          <TeamLogo teamId={row.teamId} name={row.teamName} code={row.teamAbbr} size="md" link={false} />
                           <span className="text-xs font-semibold text-mtext">{row.teamName}</span>
                           <span className="text-[10px] uppercase text-stext">{row.teamAbbr}</span>
                         </div>

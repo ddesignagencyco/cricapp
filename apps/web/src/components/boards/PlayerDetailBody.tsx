@@ -9,6 +9,7 @@ import Tabs from '../Tabs';
 import MatchCard from '../MatchCard';
 import EmptyState from '../EmptyState';
 import { getInitials } from '../../utils/helpers';
+import TeamLogo from '../TeamLogo';
 
 const playerTabs = [
   { key: 'profile', label: 'Profile' },
@@ -73,8 +74,8 @@ export default function PlayerDetailBody({ player }: Props) {
               {team.logoUrl ? (
                 <img src={team.logoUrl} alt={team.name} className="h-12 w-12 rounded-full border-2 border-accent object-cover" />
               ) : (
-                <span className="grid h-12 w-12 place-items-center rounded-full border-2 border-accent bg-primary text-sm font-extrabold text-accent">
-                  {getInitials(team.name || team.abbr)}
+                <span className="grid place-items-center rounded-full border-2 border-accent bg-primary text-sm font-extrabold text-accent">
+                  <TeamLogo teamId={team.id} name={team.name} code={team.abbr} size="lg" link={false} />
                 </span>
               )}
               <div>

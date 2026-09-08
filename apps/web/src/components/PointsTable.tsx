@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import ColorIcon from './ColorIcon';
 import { PointsRow } from '../types';
+import TeamLogo from './TeamLogo';
 
 interface PointsTableProps {
   rows?: PointsRow[];
@@ -45,7 +46,7 @@ export default function PointsTable({ rows = [], favoriteTeamId }: PointsTablePr
                       href={`/teams/${row.teamId}`}
                       className="flex items-center gap-2.5 hover:text-accent"
                     >
-                      <TeamMark name={row.teamName} code={row.teamAbbr} />
+                       <TeamLogo teamId={row.teamId} name={row.teamName} code={row.teamAbbr} size="md" link={false} />
                       <span className="font-semibold">{row.teamName}</span>
                       <span className="text-[11px] uppercase tracking-wider text-stext">
                         {row.teamAbbr}
