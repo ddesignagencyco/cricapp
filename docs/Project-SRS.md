@@ -1,0 +1,198 @@
+PAKISTAN-FIRST SPORTS PLATFORM
+Product, Technology & Development Brief
+Live Cricket • Sports News • AI Predictions • Odds Intelligence • Stats • Interactive Tools
+Reference direction: CREX-style sports utility with deeper Pakistan and PSL coverage
+Prepared for Development Team Review
+August 2026
+ 
+1. Executive Summary
+We plan to build a Pakistan-first cricket and sports information platform inspired by the functional depth of CREX, but with its own product identity. The platform should combine real-time scores, sports news, fixtures, player and team statistics, Pakistan and PSL coverage, AI-based match intelligence, odds comparison, analytical tools, and personalized alerts.
+The first market is Pakistan. Cricket should be the primary sport at launch. The architecture, however, must be designed so football, hockey, esports, MMA and other sports can be added later without rebuilding the core platform.
+2. Product Objectives
+•	Acquire Pakistan search traffic through cricket news, live scores, PSL coverage, schedules, statistics and evergreen tools.
+•	Create repeat daily usage through live match centres, score updates, predictions, alerts and personalized follow features.
+•	Build a structured sports database around matches, players, teams, series, venues, rankings and historical statistics.
+•	Differentiate through Pakistan-first coverage, English and Urdu content, AI match intelligence and interactive tools.
+•	Keep editorial content, sports data, prediction models and odds data technically separated so each can scale independently.
+•	Build a mobile-first, fast-loading product suitable for users on a wide range of devices and network conditions.
+3. Core Product Modules
+Module	Purpose	Launch Priority
+Live Scores & Match Centre	Ball-by-ball scores, scorecards, commentary, squads and match information	P0
+Sports News	Breaking news, analysis, Pakistan cricket, PSL, international and Urdu content	P0
+Schedule & Results	Today, upcoming, finished matches, series and date-based pages	P0
+Pakistan & PSL Hubs	Deep local coverage, squads, news, fixtures, tables, stats and teams	P0
+Players / Teams / Series	Structured entity pages and historical statistics	P1
+AI Prediction Centre	Pre-match and live probabilities, score projections and model explanations	P1
+Odds Intelligence	Odds comparison, movement, implied probability and model-vs-market analytics	P1/P2
+Interactive Tools	Calculators, simulators, comparisons and cricket analysis utilities	P1
+Personalization	Follow teams/players/matches, alerts, For You feed and notifications	P2
+Other Sports	Football and additional sports after cricket product-market fit	P3
+4. Information Architecture & Main Navigation
+Recommended primary navigation:
+Live  |  News  |  Predictions  |  Schedule  |  PSL  |  Pakistan  |  Stats  |  Tools
+Secondary / More menu: Teams, Players, Series, Rankings, Odds, Fantasy, Videos.
+Recommended mobile bottom navigation: Home | Live | Predict | News | More.
+5. Live Scores & Match Centre
+Each match must have a permanent, SEO-friendly URL and a live page that updates without full-page refresh.
+•	Match header: teams, score, overs, target, status, venue and match phase.
+•	Tabs: Live, Scorecard, Commentary, Squads, Stats, Points Table, News and Match Info.
+•	Current batters and bowler, partnership, current run rate, required run rate, last wicket and recent overs.
+•	Full batting and bowling scorecards, fall of wickets, extras, powerplays and playing XI.
+•	Ball-by-ball commentary and over summaries.
+•	Series and tournament context, standings and related articles.
+•	Live updates delivered through WebSocket or Server-Sent Events where practical.
+6. News & Editorial System
+•	Categories: Breaking News, Pakistan Cricket, PSL, International, Match News, Analysis, Features, Records, Interviews and Explainers.
+•	English and Urdu publishing support from the beginning. Urdu should have native headlines and editing, not only automatic translation.
+•	Every article should support associations with players, teams, matches and series.
+•	Author profiles, publication dates, update dates, editorial policy and correction policy are required.
+•	CMS should support breaking/featured toggles, SEO fields, hero images, related entities, push notification draft and social copy.
+7. Pakistan & PSL Strategy
+Pakistan and PSL should receive deeper coverage than international competitors. These hubs are core acquisition assets.
+•	Pakistan hub: live matches, schedule, results, squad, rankings, player statistics, records, selection news, injuries and domestic cricket.
+•	PSL hub: live scores, schedule, points table, teams, squads, statistics, records, venues and news.
+•	Dedicated pages for every PSL team and major Pakistan player.
+•	Coverage of Pakistan domestic competitions should be added as data availability permits.
+•	Event-driven content clusters should be created around every major Pakistan match.
+8. AI Prediction Centre
+Predictions should be generated by statistical / machine-learning models using structured sports data. A language model may explain the results, but it should not invent probabilities or statistics.
+8.1 Pre-Match Predictions
+•	Match winner probability with confidence/calibration information.
+•	Projected first-innings or final score range.
+•	Top batter and top wicket-taker probabilities.
+•	Playing XI probability based on squad availability and reliable reporting.
+•	Pitch, venue and weather impact analysis.
+•	Toss-adjusted prediction after the toss.
+8.2 Live Predictions
+•	Win probability updated during the match.
+•	Probability history chart showing changes by over or major event.
+•	Live projected score range.
+•	Match momentum and pressure index.
+•	Partnership projection and wicket-risk estimates where model quality supports them.
+•	A 'Why did the prediction change?' explanation based on measurable match factors.
+8.3 Prediction Transparency
+•	Store every prediction with timestamp, model version and inputs available at that time.
+•	Maintain a public prediction-performance page.
+•	Report accuracy by format and confidence band.
+•	Do not silently remove incorrect predictions.
+•	Avoid unsupported accuracy claims.
+9. Odds Intelligence & Odds Checker
+Odds data should be treated as a separate data domain from editorial and prediction data. Only licensed or otherwise authorized feeds should be used. All displayed prices must carry source and update timestamps.
+•	Compare available prices across supported sources for the same market.
+•	Highlight best displayed price without implying guaranteed profit.
+•	Track opening price, current price and percentage movement.
+•	Show odds history charts.
+•	Convert decimal, fractional and American odds.
+•	Calculate implied probability and bookmaker margin where appropriate.
+•	Compare model probability with market-implied probability as analytical information.
+•	Allow optional significant-movement alerts.
+•	Plan age controls, regional compliance, advertising restrictions and responsible-use messaging before public release.
+10. Interactive User Tools
+Net Run Rate Calculator	Required Run Rate Calculator	Current Run Rate Calculator
+DLS Calculator	Batting Strike Rate Calculator	Batting Average Calculator
+Bowling Average Calculator	Bowling Economy Calculator	Follow-On Calculator
+Player Comparison	Team Comparison	Head-to-Head Analyzer
+Match Simulator	What-If Match Simulator	AI Score Predictor
+AI Win Predictor	Odds Converter	Implied Probability Calculator
+Fantasy Points / Informational XI Tool		
+11. Cricket AI Assistant
+Future conversational interface should answer questions from our structured database rather than relying on model memory.
+Recommended flow:
+User Question → Intent Detection → Sports Database / Stats Query → Verified Result → AI Explanation → User
+•	Examples: player comparisons, recent form, head-to-head records, qualification scenarios and explanations of live probability changes.
+•	Every statistical answer should be traceable to stored sports data.
+•	The assistant should state when data is unavailable rather than fabricate an answer.
+12. Data Architecture
+The platform should maintain four logical data domains:
+Domain	Examples
+Sports Data	Matches, innings, balls, players, teams, series, venues, standings, rankings and statistics.
+Editorial Data	Articles, authors, categories, tags, languages, images and entity associations.
+Prediction Data	Features, model versions, probabilities, simulations, confidence, timestamps and outcomes.
+Odds Data	Sources, markets, selections, prices, timestamps, movement and historical snapshots.
+13. Recommended Technical Architecture
+Suggested stack: Next.js + React + TypeScript for frontend, NestJS/Node.js for backend services, PostgreSQL for permanent data, Redis for live/cache workloads, Meilisearch initially for internal search, and Cloudflare/CDN infrastructure for caching and protection.
+Licensed Sports Data Provider(s)
+↓ Data Ingestion Workers / Webhooks / Polling
+Redis for live state + PostgreSQL for durable sports data
+↓
+Backend API / API Gateway
+↓
+Next.js Web / PWA + Admin CMS + Prediction Service + Notification Service
+14. Suggested Core Database Entities
+users, authors, articles, categories, tags, players, teams, venues, series, seasons, matches, innings, overs, balls, scorecards, player_stats, team_stats, rankings, standings, article_players, article_teams, article_matches, article_series, prediction_runs, prediction_features, prediction_results, odds_sources, odds_markets, odds_snapshots, followers and notifications.
+15. SEO & URL Requirements
+•	/cricket-news/{slug}
+•	/live-cricket-score/{match-slug}
+•	/player/{player-slug}
+•	/team/{team-slug}
+•	/series/{series-slug}
+•	/psl/{section}
+•	/predictions/{match-slug}
+•	/odds/{match-slug}
+•	/tools/{tool-slug}
+•	/ur/... for Urdu content where appropriate.
+Technical SEO requirements include server-rendered indexable content, canonical URLs, XML sitemaps, Google News sitemap, Article/NewsArticle structured data, breadcrumbs, author pages, hreflang for language variants, clean internal linking and strong Core Web Vitals.
+16. Performance & Mobile Requirements
+•	Design mobile-first at common widths such as 360, 390 and 412 px.
+•	Live score updates must not require complete page reloads.
+•	Use CDN caching, optimized WebP/AVIF images and lazy loading.
+•	Keep third-party JavaScript minimal.
+•	Server-render important score, fixture and editorial content for discoverability and first-load performance.
+•	Build the web product as a PWA before investing heavily in native applications.
+17. Admin / CMS Requirements
+•	Article and breaking-news management.
+•	English/Urdu content workflows.
+•	Player, team, match and series entity management.
+•	Live API health and data-mapping dashboard.
+•	Prediction model monitoring and prediction-history review.
+•	Odds feed health, source mapping and stale-price alerts.
+•	Push notification management.
+•	SEO fields, redirects, sitemap controls and indexing diagnostics.
+•	Analytics: live users, top matches, top articles, search traffic, Discover traffic and user retention.
+18. Development Phases
+Phase	Focus	Main Deliverables	Priority
+Phase 0	Architecture	Final requirements, data-provider tests, URL model, database schema, UI system	Critical
+Phase 1	Content Foundation	Homepage, news, CMS, Pakistan, PSL, search, authors, SEO	P0
+Phase 2	Live Cricket	Fixtures, results, live score, match centre, scorecards, commentary, squads	P0
+Phase 3	Sports Database	Players, teams, series, venues, rankings, points tables, historical stats	P1
+Phase 4	AI Intelligence	Pre-match prediction, live win probability, score projection, model tracking	P1
+Phase 5	Tools & Odds	Calculators, simulations, odds comparison, movement and probability tools	P1/P2
+Phase 6	Retention	Accounts, follows, alerts, PWA notifications, For You feed	P2
+Phase 7	Expansion	Urdu depth, domestic cricket, football and additional sports	P3
+19. Development Principles / Non-Negotiables
+•	Do not scrape or copy CREX. It is a functional reference only.
+•	Do not begin implementation until the sports entity model and URL architecture are approved.
+•	Do not make frontend clients call third-party sports APIs directly.
+•	Do not let an LLM generate unverified scores, statistics or prediction probabilities.
+•	Every live data item and odds snapshot must have a timestamp and source lineage internally.
+•	Prediction outputs must be reproducible by storing model version and input snapshot.
+•	Build API-provider abstraction so a provider can be changed or supplemented later.
+•	All major pages must be responsive, indexable, fast and usable without unnecessary client-side dependencies.
+•	The initial release should remain cricket-first and Pakistan-first.
+20. Questions for Development Team Review
+1.	Which proposed stack would the team keep or change, and why?
+2.	Which cricket data providers should we test first for Pakistan, PSL and domestic coverage?
+3.	Can the proposed backend support live WebSocket/SSE updates at high concurrent traffic?
+4.	How should we structure provider abstraction and fallback if a live feed fails?
+5.	What is the recommended database model for ball-by-ball data and historical statistics?
+6.	Should prediction services run as separate Python services while the main backend remains Node/NestJS?
+7.	How should prediction models be versioned, monitored and recalibrated?
+8.	Which odds-feed integrations are technically and commercially feasible for the intended markets?
+9.	What compliance or age-gating components are required before releasing odds-related features?
+10.	What should be included in MVP versus postponed to Phase 2/3 to control cost and launch time?
+11.	What hosting architecture and monthly infrastructure budget does the team recommend at 10K, 100K and 1M monthly users?
+12.	What is the estimated development timeline, team size and cost for each phase?
+21. Requested Output From Dev Team
+After reviewing this brief, please return:
+•	Technical feasibility assessment.
+•	Recommended final technology stack.
+•	Data-provider recommendation and estimated API costs.
+•	System architecture diagram.
+•	Database/entity model proposal.
+•	MVP feature list and exclusions.
+•	Phase-by-phase timeline.
+•	Development team/resource requirement.
+•	Estimated development and monthly infrastructure costs.
+•	Key technical risks, compliance dependencies and proposed mitigations.
+22. MVP Acceptance Summary
+The first production release should be considered successful when users can quickly discover Pakistan/PSL news, view today's and upcoming matches, open a reliable live match centre, browse structured teams/players/series, use the first prediction features, and navigate a fast mobile-first experience with a technically sound SEO foundation. Odds intelligence and advanced simulations may be released progressively once feed quality, model validation and compliance requirements are confirmed.

@@ -1,6 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service.js';
+import {
+  getPaginationOffset,
+  createPaginatedResponse,
+} from '../common/pagination/pagination.util.js';
 import type { TeamSummary } from '../teams/teams.service.js';
 
 export interface PlayerProfileDto {
@@ -32,6 +36,41 @@ export interface PlayerProfileDto {
 @Injectable()
 export class PlayersService {
   constructor(private readonly prisma: PrismaService) {}
+
+  async search(params?: { q?: string; team?: string; page?: number; limit?: number; offset?: number }) {
+    const { page, limit, skip } = getPaginationOffset(params?.page, params?.limit, params?.offset);
+
+    const where: any = {};
+    if (params?.q) {
+      where.OR = [
+        { fullName: { contains: params.q, mode: 'insensitive' } },
+        { shortName: { contains: params.q, mode: 'insensitive' } },
+      ];
+    }
+    if (params?.team) {
+      where.team = { abbr: params.team };
+    }
+
+    const [rows, total] = await Promise.all([
+      this.prisma.player.findMany({
+        where,
+        take: limit,
+        skip,
+        orderBy: [{ fullName: 'asc' }],
+        select: {
+          id: true,
+          fullName: true,
+          shortName: true,
+          role: true,
+          nationality: true,
+          team: { select: { id: true, name: true, abbr: true } },
+        },
+      }),
+      this.prisma.player.count({ where }),
+    ]);
+
+    return createPaginatedResponse(rows, total, page, limit);
+  }
 
   async getProfile(playerId: string, opts: { recent?: number } = {}): Promise<PlayerProfileDto> {
     const player = await this.prisma.player.findUnique({

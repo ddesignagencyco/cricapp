@@ -1,5 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import {
+  getPaginationOffset,
+  createPaginatedResponse,
+} from '../common/pagination/pagination.util.js';
 
 export interface SportEventRecordSummary {
   kind: string;
@@ -32,19 +36,37 @@ export class SchedulesService {
     };
   }
 
-  async dailySchedule(date: string): Promise<SportEventRecordSummary[]> {
-    const rows = await this.prisma.sportEventRecord.findMany({
-      where: { kind: 'daily_schedule', scopeKey: date },
-      orderBy: [{ scheduled: 'asc' }],
-    });
-    return rows.map((r) => this.toSummary(r));
+  async dailySchedule(date: string, params?: { page?: number; limit?: number; offset?: number }) {
+    const { page, limit, skip } = getPaginationOffset(params?.page, params?.limit, params?.offset);
+    const where = { kind: 'daily_schedule' as const, scopeKey: date };
+
+    const [rows, total] = await Promise.all([
+      this.prisma.sportEventRecord.findMany({
+        where,
+        orderBy: [{ scheduled: 'asc' }],
+        skip,
+        take: limit,
+      }),
+      this.prisma.sportEventRecord.count({ where }),
+    ]);
+
+    return createPaginatedResponse(rows.map((r) => this.toSummary(r)), total, page, limit);
   }
 
-  async dailyResults(date: string): Promise<SportEventRecordSummary[]> {
-    const rows = await this.prisma.sportEventRecord.findMany({
-      where: { kind: 'daily_results', scopeKey: date },
-      orderBy: [{ scheduled: 'asc' }],
-    });
-    return rows.map((r) => this.toSummary(r));
+  async dailyResults(date: string, params?: { page?: number; limit?: number; offset?: number }) {
+    const { page, limit, skip } = getPaginationOffset(params?.page, params?.limit, params?.offset);
+    const where = { kind: 'daily_results' as const, scopeKey: date };
+
+    const [rows, total] = await Promise.all([
+      this.prisma.sportEventRecord.findMany({
+        where,
+        orderBy: [{ scheduled: 'asc' }],
+        skip,
+        take: limit,
+      }),
+      this.prisma.sportEventRecord.count({ where }),
+    ]);
+
+    return createPaginatedResponse(rows.map((r) => this.toSummary(r)), total, page, limit);
   }
 }

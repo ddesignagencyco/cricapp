@@ -28,3 +28,7 @@ Thumbs.db
 
 # opencode (contains API keys)
 opencode.json
+
+# Scripts with hardcoded credentials (use .example.js templates)
+scripts/seed-admin.js
+scripts/test-smtp.js

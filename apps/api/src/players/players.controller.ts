@@ -5,48 +5,29 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Controller, Get, Param, Query, UsePipes, ValidationPipe } from '@nestjs/common';
 import { PlayersService } from './players.service.js';
 import { PlayerProfileDto as PlayerProfileResponse } from './players.service.js';
 import { PlayerProfileDto } from './dto/player-profile.dto.js';
-import { PrismaService } from '../prisma/prisma.service.js';
+import { SearchPlayersQuery } from './dto/search-players.query.js';
 
 @ApiTags('players')
 @Controller('players')
 export class PlayersController {
-  constructor(
-    private readonly playersService: PlayersService,
-    private readonly prisma: PrismaService,
-  ) {}
+  constructor(private readonly playersService: PlayersService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Search players', description: 'By name query and/or team abbreviation.' })
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+  @ApiOperation({ summary: 'Search players (paginated)', description: 'By name query and/or team abbreviation.' })
   @ApiQuery({ name: 'q', required: false, description: 'Name substring query.' })
   @ApiQuery({ name: 'team', required: false, description: 'Team abbreviation filter.' })
-  @ApiResponse({ status: 200, description: 'Matching players.' })
-  async search(@Query('q') query?: string, @Query('team') teamAbbr?: string) {
-    return this.prisma.player.findMany({
-      where: {
-        ...(query
-          ? {
-              OR: [
-                { fullName: { contains: query, mode: 'insensitive' } },
-                { shortName: { contains: query, mode: 'insensitive' } },
-              ],
-            }
-          : {}),
-        ...(teamAbbr ? { team: { abbr: teamAbbr } } : {}),
-      },
-      take: 50,
-      orderBy: [{ fullName: 'asc' }],
-      select: {
-        id: true,
-        fullName: true,
-        shortName: true,
-        role: true,
-        nationality: true,
-        team: { select: { id: true, name: true, abbr: true } },
-      },
+  @ApiResponse({ status: 200, description: 'Paginated matching players.' })
+  async search(@Query() query: SearchPlayersQuery) {
+    return this.playersService.search({
+      q: query.q,
+      team: query.team,
+      page: query.page,
+      limit: query.limit,
     });
   }
 

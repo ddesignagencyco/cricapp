@@ -1,13 +1,7 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Query, UsePipes, ValidationPipe } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { PslService, type PslLeaderGroup, type PslSquad } from './psl.service.js';
-import {
-  PslFixtureDto,
-  PslLeaderGroupDto,
-  PslSquadDto,
-  PslStandingDto,
-} from './dto/psl.dto.js';
-import { PslSeasonDto } from './dto/psl-season.dto.js';
+import { PslService } from './psl.service.js';
+import { PslQuery } from './dto/psl.query.js';
 
 @ApiTags('psl')
 @Controller('psl')
@@ -16,40 +10,52 @@ export class PslController {
 
   @Get('seasons')
   @ApiOperation({ summary: 'List available PSL seasons' })
-  @ApiResponse({ status: 200, description: 'Available PSL seasons.', type: [PslSeasonDto] })
-  seasons(): PslSeasonDto[] {
+  @ApiResponse({ status: 200, description: 'Available PSL seasons.' })
+  seasons() {
     return this.pslService.seasons();
   }
 
   @Get('standings')
-  @ApiOperation({ summary: 'PSL points table' })
-  @ApiQuery({ name: 'season', required: false, description: 'Season id or year (e.g. sr:season:140552 or 2026). Defaults to latest.' })
-  @ApiResponse({ status: 200, description: 'PSL standings for the season.', type: [PslStandingDto] })
-  standings(@Query('season') season?: string) {
-    return this.pslService.standings(season);
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+  @ApiOperation({ summary: 'PSL points table (paginated)' })
+  @ApiQuery({ name: 'season', required: false, description: 'Season id or year. Defaults to latest.' })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
+  @ApiResponse({ status: 200, description: 'Paginated PSL standings.' })
+  standings(@Query() query: PslQuery) {
+    return this.pslService.standings(query.season, query);
   }
 
   @Get('schedule')
-  @ApiOperation({ summary: 'PSL fixtures / schedule' })
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+  @ApiOperation({ summary: 'PSL fixtures / schedule (paginated)' })
   @ApiQuery({ name: 'season', required: false, description: 'Season id or year. Defaults to latest.' })
-  @ApiResponse({ status: 200, description: 'PSL fixtures for the season.', type: [PslFixtureDto] })
-  schedule(@Query('season') season?: string) {
-    return this.pslService.fixtures(season);
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
+  @ApiResponse({ status: 200, description: 'Paginated PSL fixtures.' })
+  schedule(@Query() query: PslQuery) {
+    return this.pslService.fixtures(query.season, query);
   }
 
   @Get('leaders')
-  @ApiOperation({ summary: 'PSL statistical leaders' })
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+  @ApiOperation({ summary: 'PSL statistical leaders (paginated)' })
   @ApiQuery({ name: 'season', required: false, description: 'Season id or year. Defaults to latest.' })
-  @ApiResponse({ status: 200, description: 'PSL leaders grouped by category/stat.', type: [PslLeaderGroupDto] })
-  leaders(@Query('season') season?: string): Promise<PslLeaderGroup[]> {
-    return this.pslService.leaders(season);
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
+  @ApiResponse({ status: 200, description: 'Paginated PSL leaders.' })
+  leaders(@Query() query: PslQuery) {
+    return this.pslService.leaders(query.season, query);
   }
 
   @Get('squads')
-  @ApiOperation({ summary: 'PSL team squads / rosters' })
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+  @ApiOperation({ summary: 'PSL team squads / rosters (paginated)' })
   @ApiQuery({ name: 'season', required: false, description: 'Season id or year. Defaults to latest.' })
-  @ApiResponse({ status: 200, description: 'PSL squads for the season.', type: [PslSquadDto] })
-  squads(@Query('season') season?: string): Promise<PslSquad[]> {
-    return this.pslService.squads(season);
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
+  @ApiResponse({ status: 200, description: 'Paginated PSL squads.' })
+  squads(@Query() query: PslQuery) {
+    return this.pslService.squads(query.season, query);
   }
 }

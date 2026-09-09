@@ -1,5 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import {
+  getPaginationOffset,
+  createPaginatedResponse,
+} from '../common/pagination/pagination.util.js';
 
 export interface TournamentSummary {
   id: string;
@@ -59,15 +63,19 @@ export class TournamentsService {
     };
   }
 
-  async list(params?: { limit?: number; offset?: number }): Promise<TournamentSummary[]> {
-    const limit = Math.min(params?.limit ?? 50, 100);
-    const offset = params?.offset ?? 0;
-    const rows = await this.prisma.tournament.findMany({
-      take: limit,
-      skip: offset,
-      orderBy: [{ name: 'asc' }],
-    });
-    return rows.map((t) => this.toSummary(t));
+  async list(params?: { page?: number; limit?: number; offset?: number }) {
+    const { page, limit, skip } = getPaginationOffset(params?.page, params?.limit, params?.offset);
+
+    const [rows, total] = await Promise.all([
+      this.prisma.tournament.findMany({
+        take: limit,
+        skip,
+        orderBy: [{ name: 'asc' }],
+      }),
+      this.prisma.tournament.count(),
+    ]);
+
+    return createPaginatedResponse(rows.map((t) => this.toSummary(t)), total, page, limit);
   }
 
   async getById(tournamentId: string): Promise<TournamentSummary> {
@@ -80,16 +88,21 @@ export class TournamentsService {
     return this.toSummary(row);
   }
 
-  async seasons(tournamentId: string, params?: { limit?: number; offset?: number }): Promise<TournamentSeasonSummary[]> {
-    const limit = Math.min(params?.limit ?? 50, 100);
-    const offset = params?.offset ?? 0;
-    const rows = await this.prisma.tournamentSeason.findMany({
-      where: { tournamentId },
-      take: limit,
-      skip: offset,
-      orderBy: [{ startDate: 'desc' }],
-    });
-    return rows.map((s) => ({
+  async seasons(tournamentId: string, params?: { page?: number; limit?: number; offset?: number }) {
+    const { page, limit, skip } = getPaginationOffset(params?.page, params?.limit, params?.offset);
+    const where = { tournamentId };
+
+    const [rows, total] = await Promise.all([
+      this.prisma.tournamentSeason.findMany({
+        where,
+        take: limit,
+        skip,
+        orderBy: [{ startDate: 'desc' }],
+      }),
+      this.prisma.tournamentSeason.count({ where }),
+    ]);
+
+    const mapped = rows.map((s) => ({
       id: s.id,
       tournamentId: s.tournamentId,
       name: s.name,
@@ -97,35 +110,33 @@ export class TournamentsService {
       startDate: s.startDate,
       endDate: s.endDate,
     }));
+
+    return createPaginatedResponse(mapped, total, page, limit);
   }
 
-  async results(tournamentOrSeasonId: string, params?: { limit?: number; offset?: number }): Promise<SportEventRecordSummary[]> {
-    const limit = Math.min(params?.limit ?? 50, 100);
-    const offset = params?.offset ?? 0;
-    const rows = await this.prisma.sportEventRecord.findMany({
-      where: { kind: 'tournament_results', scopeKey: tournamentOrSeasonId },
-      take: limit,
-      skip: offset,
-      orderBy: [{ scheduled: 'asc' }],
-    });
-    return rows.map((r) => this.toSportEvent(r));
-  }
+  async results(tournamentOrSeasonId: string, params?: { page?: number; limit?: number; offset?: number }) {
+    const { page, limit, skip } = getPaginationOffset(params?.page, params?.limit, params?.offset);
+    const where = { kind: 'tournament_results' as const, scopeKey: tournamentOrSeasonId };
 
-  private toSportEvent(row: {
-    kind: string;
-    scopeKey: string;
-    eventId: string;
-    status: string | null;
-    scheduled: string | null;
-    payload: unknown;
-  }): SportEventRecordSummary {
-    return {
-      kind: row.kind,
-      scopeKey: row.scopeKey,
-      eventId: row.eventId,
-      status: row.status,
-      scheduled: row.scheduled,
-      payload: row.payload as Record<string, unknown>,
-    };
+    const [rows, total] = await Promise.all([
+      this.prisma.sportEventRecord.findMany({
+        where,
+        take: limit,
+        skip,
+        orderBy: [{ scheduled: 'asc' }],
+      }),
+      this.prisma.sportEventRecord.count({ where }),
+    ]);
+
+    const mapped = rows.map((r) => ({
+      kind: r.kind,
+      scopeKey: r.scopeKey,
+      eventId: r.eventId,
+      status: r.status,
+      scheduled: r.scheduled,
+      payload: r.payload as Record<string, unknown>,
+    }));
+
+    return createPaginatedResponse(mapped, total, page, limit);
   }
 }
