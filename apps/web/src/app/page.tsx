@@ -154,10 +154,10 @@ export default async function HomePage() {
                       {typeof newsList[0].tag === 'string' && newsList[0].tag
                         ? newsList[0].tag
                         : typeof newsList[0].category === 'string'
-                        ? newsList[0].category
-                        : typeof newsList[0].category === 'object' && newsList[0].category && 'name' in newsList[0].category
-                        ? String((newsList[0].category as any).name)
-                        : 'News'}
+                          ? newsList[0].category
+                          : typeof newsList[0].category === 'object' && newsList[0].category && 'name' in newsList[0].category
+                            ? String((newsList[0].category as any).name)
+                            : 'News'}
                     </span>
                   </div>
                 </div>
@@ -168,7 +168,7 @@ export default async function HomePage() {
                 </div>
               </Link>
             )}
-              <div className="flex flex-col gap-2.5">
+            <div className="flex flex-col gap-2.5">
               {newsList.slice(1, 5).map((item) => (
                 <Link
                   key={item.id}
@@ -187,10 +187,10 @@ export default async function HomePage() {
                       {typeof item.tag === 'string' && item.tag
                         ? item.tag
                         : typeof item.category === 'string'
-                        ? item.category
-                        : typeof item.category === 'object' && item.category && 'name' in item.category
-                        ? String((item.category as any).name)
-                        : 'News'}
+                          ? item.category
+                          : typeof item.category === 'object' && item.category && 'name' in item.category
+                            ? String((item.category as any).name)
+                            : 'News'}
                     </span>
                     <h4 className="mt-1 line-clamp-2 text-sm font-bold leading-snug text-mtext group-hover:text-accent">{item.title}</h4>
                     <p className="mt-1 text-[11px] text-stext">{item.date} • {item.readTime}</p>
