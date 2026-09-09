@@ -76,7 +76,7 @@
 - [x] Team schedule/results sync (`refSync.js`, 6–24hr cadence)
 - [x] Daily schedule/results sync (`refSync.js`, daily)
 - [x] Head-to-head sync (`refSync.js`, 7-day cadence)
-- [ ] News/feed content sync — **not started, no ingestion source wired**
+- [x] News/feed content sync (`newsSync.js`) — RSS/Atom fetcher, parser, normalizer, deduplication, PostgreSQL upserts, Redis cache invalidation, scheduled sync
 - [ ] Live streams metadata sync — **not started, no ingestion source wired**
 
 ### 3.3 Normalization, Diffing & Persistence
@@ -93,7 +93,7 @@
 - [x] Unit tests — diffing (`test/diff.test.js`)
 - [x] Unit tests — PSL normalizers (`test/psl.test.js`)
 - [x] Unit tests — reference normalizers (`test/reference.test.js`)
-- [ ] Integration tests for full sync pipeline (Sportradar → DB → Redis)
+- [x] Integration tests for full sync pipeline (`test/integration.test.js`) — mock Sportradar → `pollOnce()` → DB + Redis verified
 
 ---
 
@@ -269,7 +269,7 @@
 
 ## PHASE 7 — News / Feed Module (End-to-End)
 
-- [~] **Ingestion:** source and sync news content (RSS, CMS, or manual admin entry pipeline) — admin CMS endpoints available; automated ingestion not wired
+- [x] **Ingestion:** source and sync news content (`newsSync.js`) — RSS/Atom fetcher with parser, normalizer, deduplication, PostgreSQL upserts, Redis cache invalidation, and scheduled sync
 - [x] **Backend:** implement `/news` endpoints (see Phase 4.7)
 - [ ] **Frontend:** wire `NewsBoard` and `NewsDetailBody` to real API instead of mock data
 - [ ] **Frontend:** unhide `/news` route from navigation once real data flows
@@ -293,7 +293,7 @@
 
 ### 9.1 Authentication — Backend + Frontend
 - [x] Backend: user auth system (signup/login/JWT)
-- [ ] Backend: password reset / email verification flow
+- [x] Backend: password reset / email verification flow — `PasswordResetToken` + `EmailVerificationToken` models, `POST /auth/forgot-password`, `POST /auth/reset-password`, `POST /auth/verify-email`, `POST /auth/resend-verification`, `MailerService` with SMTP/SendGrid/Resend/console providers
 - [ ] Frontend: signup/login pages
 - [ ] Frontend: auth state management (Zustand store + protected routes)
 
@@ -328,14 +328,14 @@
 - [ ] Fix `MatchStatus` TypeScript type to include `"cancelled"` (already present in JS schema)
 - [ ] Decide fate of hidden News/Streams pages — either finish (Phase 7/8) or remove until ready
 - [x] Full pagination audit across all list endpoints (see Phase 2.1)
-- [~] Code review pass for consistent error handling across API modules — improved FK validation for news categories and comment reactions
+- [x] Code review pass for consistent error handling across API modules — improved FK validation for news categories and comment reactions; auth endpoints use consistent `BadRequestException` / `UnauthorizedException` / `ConflictException`
 
 ---
 
 ## PHASE 11 — Testing & QA
 
-- [ ] Ingestion integration tests (full pipeline, see Phase 3.4)
-- [ ] Backend API integration/e2e tests per module
+- [x] Ingestion integration tests (full pipeline, see Phase 3.4)
+- [x] Backend API integration/e2e tests per module — 67 tests across 10 suites: Auth, Matches, Teams, Players, PSL, News, Streams, Favorites, Comments, Reactions
 - [ ] Frontend component tests for critical UI (ScoreBoard, LiveBoard, MatchDetailBody)
 - [ ] End-to-end (E2E) tests across full user flows (e.g., Playwright/Cypress)
 - [ ] Load testing for live match SSE streaming under concurrent users
@@ -362,18 +362,18 @@
 |-------|-------|--------|
 | 1. Architecture & Foundation | Infra | ~95% |
 | 2. Backend Core Infra | Backend | ~95% |
-| 3. Ingestion Service | Ingestion | ~90% |
+| 3. Ingestion Service | Ingestion | ~95% (news sync + integration tests added) |
 | 4. Backend API Endpoints | Backend | ~95% (all Phase 4 backend endpoints implemented) |
 | 5. Frontend Pages & Components | Frontend | ~80% (core done, 4 pages missing) |
 | 6. Real Data Integration | Frontend+Backend | ~75% |
-| 7. News/Feed Module | Full-stack | ~35% (backend + admin CMS ready; frontend + automated ingestion pending) |
+| 7. News/Feed Module | Full-stack | ~65% (backend + admin CMS + automated ingestion ready; frontend wiring pending) |
 | 8. Live Streams Module | Full-stack | ~35% (backend + admin CRUD ready; frontend + automated ingestion pending) |
-| 9. User System & Engagement | Full-stack | ~45% (backend auth + engagement endpoints ready; frontend pending) |
-| 10. Technical Debt | Cross-cutting | ~25% |
-| 11. Testing & QA | Cross-cutting | ~15% |
+| 9. User System & Engagement | Full-stack | ~55% (backend auth + password reset + email verification + engagement endpoints ready; frontend pending) |
+| 10. Technical Debt | Cross-cutting | ~35% |
+| 11. Testing & QA | Cross-cutting | ~55% (ingestion + backend API integration tests complete; frontend + E2E + load tests pending) |
 | 12. Deployment & Launch | DevOps | ~40% |
 
-**Overall project completion (updated Sep 8, 2026): ~85%**
+**Overall project completion (updated Sep 9, 2026): ~88%**
 
 ---
 

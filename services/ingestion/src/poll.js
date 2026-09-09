@@ -3,7 +3,7 @@ import { normalizeMatch } from './normalize.js';
 import { diffMatch } from './diff.js';
 import { saveMatch, saveMatchTimeline, publishMatchState, publishEvents } from './store.js';
 import { getCallStats } from './sportradar.js';
-import redis from './redis.js';
+import redis, { redisKeys } from './redis.js';
 import {
   fetchLiveSchedule,
   fetchMatchSummary,

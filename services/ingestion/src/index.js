@@ -4,6 +4,7 @@ import redis, { shutdown as shutdownRedis } from './redis.js';
 import { pollOnce } from './poll.js';
 import { syncPsAll } from './pslSync.js';
 import { startReferenceSync } from './refSync.js';
+import { startNewsSync } from './newsSync.js';
 import { createLogger } from './logger.js';
 
 export { computeRunRate, normalizeMatch, normalizeLineups } from './normalize.js';
@@ -68,6 +69,7 @@ log.info('starting ingestion service', {
 ping()
   .then(async () => {
     await syncPsOnStart();
+    startNewsSync().catch((err) => log.error('news sync start failed', { error: err.message }));
     startReferenceSync({
       matchIds: (process.env.REF_SYNC_MATCH_IDS || '')
         .split(',')

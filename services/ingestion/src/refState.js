@@ -27,6 +27,8 @@ export const REF_CADENCE = Object.freeze({
   // One-shot syncs (retry if the key expired, otherwise skip forever).
   timeline: 365 * 24 * 3600e3,
   lineups: 30 * 24 * 3600e3,
+  // News feeds: refresh hourly.
+  news: 1 * 3600e3,
 });
 
 function key(category, id) {

@@ -1,7 +1,7 @@
 import { Controller, Get, Query, UsePipes, ValidationPipe } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { PslService } from './psl.service.js';
-import { PaginationQuery } from '../common/dto/pagination.query.js';
+import { PslQuery } from './dto/psl.query.js';
 
 @ApiTags('psl')
 @Controller('psl')
@@ -22,7 +22,7 @@ export class PslController {
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
   @ApiResponse({ status: 200, description: 'Paginated PSL standings.' })
-  standings(@Query() query: PaginationQuery & { season?: string }) {
+  standings(@Query() query: PslQuery) {
     return this.pslService.standings(query.season, query);
   }
 
@@ -33,7 +33,7 @@ export class PslController {
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
   @ApiResponse({ status: 200, description: 'Paginated PSL fixtures.' })
-  schedule(@Query() query: PaginationQuery & { season?: string }) {
+  schedule(@Query() query: PslQuery) {
     return this.pslService.fixtures(query.season, query);
   }
 
@@ -44,7 +44,7 @@ export class PslController {
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
   @ApiResponse({ status: 200, description: 'Paginated PSL leaders.' })
-  leaders(@Query() query: PaginationQuery & { season?: string }) {
+  leaders(@Query() query: PslQuery) {
     return this.pslService.leaders(query.season, query);
   }
 
@@ -55,7 +55,7 @@ export class PslController {
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
   @ApiResponse({ status: 200, description: 'Paginated PSL squads.' })
-  squads(@Query() query: PaginationQuery & { season?: string }) {
+  squads(@Query() query: PslQuery) {
     return this.pslService.squads(query.season, query);
   }
 }
