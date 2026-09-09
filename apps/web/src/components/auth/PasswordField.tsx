@@ -18,10 +18,12 @@ export default function PasswordField({ id, label, name, value, onChange, autoCo
   const errorId = `${id}-error`;
 
   return (
-    <div>
-      <label htmlFor={id} className="mb-1 block text-xs font-semibold text-mtext">{label}</label>
+    <div className="space-y-1.5">
+      <label htmlFor={id} className="block text-xs font-bold uppercase tracking-wider text-stext">
+        {label}
+      </label>
       <div className="relative">
-        <Lock size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-stext" />
+        <Lock size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-stext" />
         <input
           id={id}
           name={name}
@@ -33,18 +35,18 @@ export default function PasswordField({ id, label, name, value, onChange, autoCo
           required
           aria-invalid={Boolean(error)}
           aria-describedby={error ? errorId : undefined}
-          className="w-full rounded bg-elevated py-2.5 pl-9 pr-10 text-sm text-mtext ring-1 ring-lborder outline-none transition focus:ring-2 focus:ring-accent/60"
+          className="w-full rounded-2xl border border-lborder bg-secondary/80 py-3 pl-10 pr-11 text-sm text-mtext outline-none transition-all placeholder:text-stext/50 focus:border-accent focus:bg-card focus:ring-2 focus:ring-accent/20"
         />
         <button
           type="button"
           onClick={() => setVisible((current) => !current)}
-          className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-1 text-stext hover:text-mtext focus:outline-none focus:ring-2 focus:ring-accent/60"
+          className="absolute right-3 top-1/2 -translate-y-1/2 rounded-xl p-1 text-stext hover:text-mtext hover:bg-elevated transition-colors focus:outline-none"
           aria-label={visible ? 'Hide password' : 'Show password'}
         >
-          {visible ? <EyeOff size={15} /> : <Eye size={15} />}
+          {visible ? <EyeOff size={16} /> : <Eye size={16} />}
         </button>
       </div>
-      {error && <p id={errorId} className="mt-1 text-xs text-danger">{error}</p>}
+      {error && <p id={errorId} className="text-xs font-semibold text-danger">{error}</p>}
     </div>
   );
 }

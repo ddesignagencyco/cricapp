@@ -36,7 +36,8 @@ interface FieldErrors {
   token?: string;
 }
 
-const inputClass = 'w-full rounded bg-elevated py-2.5 pl-9 pr-3 text-sm text-mtext ring-1 ring-lborder outline-none transition focus:ring-2 focus:ring-accent/60';
+const inputClass =
+  'w-full rounded-2xl border border-lborder bg-secondary/80 py-3 pl-10 pr-4 text-sm text-mtext outline-none transition-all placeholder:text-stext/50 focus:border-accent focus:bg-card focus:ring-2 focus:ring-accent/20';
 
 function errorMessage(error: unknown): string {
   if (error instanceof ApiError) return error.message;
@@ -53,7 +54,17 @@ function slugFromName(name: string, email: string): string {
   return slug.length >= 3 ? slug : `fan${slug}`.slice(0, 24);
 }
 
-function TextField({ id, label, name, type, value, onChange, autoComplete, error, placeholder }: {
+function TextField({
+  id,
+  label,
+  name,
+  type,
+  value,
+  onChange,
+  autoComplete,
+  error,
+  placeholder,
+}: {
   id: string;
   label: string;
   name: string;
@@ -66,13 +77,31 @@ function TextField({ id, label, name, type, value, onChange, autoComplete, error
 }) {
   const errorId = `${id}-error`;
   return (
-    <div>
-      <label htmlFor={id} className="mb-1 block text-xs font-semibold text-mtext">{label}</label>
+    <div className="space-y-1.5">
+      <label htmlFor={id} className="block text-xs font-bold uppercase tracking-wider text-stext">
+        {label}
+      </label>
       <div className="relative">
-        {type === 'email' ? <Mail size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-stext" /> : <User size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-stext" />}
-        <input id={id} name={name} type={type} value={value} onChange={(event) => onChange(event.target.value)} autoComplete={autoComplete} placeholder={placeholder} required aria-invalid={Boolean(error)} aria-describedby={error ? errorId : undefined} className={inputClass} />
+        {type === 'email' ? (
+          <Mail size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-stext" />
+        ) : (
+          <User size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-stext" />
+        )}
+        <input
+          id={id}
+          name={name}
+          type={type}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          autoComplete={autoComplete}
+          placeholder={placeholder}
+          required
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? errorId : undefined}
+          className={inputClass}
+        />
       </div>
-      {error && <p id={errorId} className="mt-1 text-xs text-danger">{error}</p>}
+      {error && <p id={errorId} className="text-xs font-semibold text-danger">{error}</p>}
     </div>
   );
 }
@@ -190,12 +219,48 @@ export default function AuthForm({ mode, token = '', tokenId = '' }: AuthFormPro
         {tokenId && <TextField id="reset-code" label="Email code (optional)" name="code" type="text" value={code} onChange={setCode} autoComplete="one-time-code" placeholder="4-digit code" />}
         {errors.token && <FormMessage message={errors.token} />}
       </>}
-      {mode === 'register' && <label className="flex items-start gap-2 text-xs text-stext"><input type="checkbox" checked={terms} onChange={(event) => setTerms(event.target.checked)} className="mt-0.5 h-3.5 w-3.5 rounded border-lborder accent-accent" /> <span>I agree to the <Link href="/terms" className="text-accent hover:text-accent2">Terms of Service</Link>.</span></label>}
+      {mode === 'register' && (
+        <label className="flex items-start gap-2 text-xs text-stext cursor-pointer">
+          <input
+            type="checkbox"
+            checked={terms}
+            onChange={(event) => setTerms(event.target.checked)}
+            className="mt-0.5 h-4 w-4 rounded border-lborder accent-accent cursor-pointer"
+          />
+          <span>
+            I agree to the{' '}
+            <Link href="/terms" className="font-semibold text-accent hover:text-accent2">
+              Terms of Service
+            </Link>{' '}
+            and Privacy Policy.
+          </span>
+        </label>
+      )}
       {errors.terms && <FormMessage message={errors.terms} />}
-      {mode === 'login' && <div className="flex justify-end"><Link href="/forgot-password" className="text-xs font-semibold text-accent hover:text-accent2">Forgot password?</Link></div>}
+      {mode === 'login' && (
+        <div className="flex justify-end">
+          <Link href="/forgot-password" className="text-xs font-semibold text-accent hover:text-accent2">
+            Forgot password?
+          </Link>
+        </div>
+      )}
       <FormMessage message={message} />
       <FormMessage message={success} tone="success" />
-      <button type="submit" disabled={loading} className="w-full rounded bg-accent px-4 py-2.5 text-sm font-bold text-white transition hover:bg-accent2 disabled:cursor-not-allowed disabled:opacity-60">{loading ? 'Please wait…' : mode === 'login' ? 'Sign in' : mode === 'register' ? 'Create account' : mode === 'forgot' ? 'Send reset link' : 'Reset password'}</button>
+      <button
+        type="submit"
+        disabled={loading}
+        className="w-full rounded-2xl bg-accent py-3 text-sm font-black text-white shadow-lg shadow-accent/25 transition-all hover:bg-accent2 hover:shadow-xl hover:shadow-accent/35 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
+      >
+        {loading
+          ? 'Please wait…'
+          : mode === 'login'
+          ? 'Sign in to Account'
+          : mode === 'register'
+          ? 'Create Free Account'
+          : mode === 'forgot'
+          ? 'Send Reset Link'
+          : 'Reset Password'}
+      </button>
     </form>
   );
 }
