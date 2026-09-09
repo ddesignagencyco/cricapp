@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { AtSign, Camera, Mail, Video, Download } from 'lucide-react';
 import Logo from './Logo';
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 const footerCols = [
   {
     title: 'Cricket',
@@ -13,8 +15,6 @@ const footerCols = [
       { label: 'Teams', to: '/teams' },
       { label: 'Players', to: '/players' },
       { label: 'Live Streams', to: '/streams' },
-      { label: 'Points Table', to: '/points-table' },
-      { label: 'Statistics', to: '/stats' },
       { label: 'News', to: '/news' },
     ],
   },
@@ -26,7 +26,6 @@ const footerCols = [
       { label: 'Schedule', to: '/matches' },
       { label: 'News', to: '/news' },
       { label: 'Results', to: '/matches' },
-      { label: 'Standings', to: '/points-table' },
     ],
   },
   {
@@ -36,8 +35,6 @@ const footerCols = [
       { label: 'Contact', to: '/contact' },
       { label: 'Privacy Policy', to: '/privacy' },
       { label: 'Terms of Service', to: '/terms' },
-      { label: 'Cookie Policy', to: '/privacy' },
-      { label: 'Advertise', to: '/about' },
     ],
   },
 ];
@@ -124,7 +121,7 @@ export default function Footer() {
       <div className="border-t border-lborder">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6">
           <p className="text-xs text-stext">
-            &copy; {new Date().getFullYear()} PakCricZone. All rights reserved.
+            &copy; {CURRENT_YEAR} PakCricZone. All rights reserved.
           </p>
           <p className="text-xs text-stext">
             Cricket Brings Us Together ❤

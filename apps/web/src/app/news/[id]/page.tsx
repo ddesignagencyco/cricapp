@@ -1,9 +1,5 @@
 import NewsDetailBody from '../../../components/boards/NewsDetailBody';
-import { fetchNews, fetchNewsById, news } from '../../../services/news';
-
-export function generateStaticParams() {
-  return news.map((n) => ({ id: n.id }));
-}
+import { fetchNews, fetchNewsById } from '../../../services/news';
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

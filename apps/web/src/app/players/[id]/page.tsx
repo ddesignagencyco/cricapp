@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import PlayerDetailBody from '../../../components/boards/PlayerDetailBody';
 import { fetchPlayerById } from '../../../services/players';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600;
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

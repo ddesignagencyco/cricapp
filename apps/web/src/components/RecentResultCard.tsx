@@ -34,16 +34,16 @@ export default function RecentResultCard({ match }: RecentResultCardProps) {
   if (rawDate) {
     const d = new Date(rawDate);
     if (!Number.isNaN(d.getTime())) {
-      dateLabel = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+      dateLabel = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     }
   }
 
   return (
     <Link
       href={`/matches/${match.matchId || match.id}`}
-      className="group flex h-full flex-col rounded-xl bg-card p-4 ring-1 ring-lborder transition-all duration-300 hover:-translate-y-0.5 hover:bg-elevated hover:ring-accent/30"
+      className="group flex h-full flex-col rounded-2xl bg-card p-4 ring-1 ring-lborder transition-all duration-300 hover:-translate-y-0.5 hover:bg-elevated hover:ring-accent/30"
     >
-      <div className="mb-3 flex items-start justify-between gap-2">
+      <div className="mb-4 flex items-start justify-between gap-2">
         <div className="min-w-0">
           <span className="block truncate text-[10px] font-bold uppercase tracking-wider text-stext">
             {tournament}
@@ -57,7 +57,7 @@ export default function RecentResultCard({ match }: RecentResultCardProps) {
         <Badge tone="completed">RESULT</Badge>
       </div>
 
-      <div className="flex-1 space-y-2.5">
+      <div className="flex-1 space-y-3">
         <ScoreRow code={homeCode} name={homeName} score={homeScore} overs={homeOvers} />
         <ScoreRow code={awayCode} name={awayName} score={awayScore} overs={awayOvers} />
       </div>
@@ -73,7 +73,7 @@ export default function RecentResultCard({ match }: RecentResultCardProps) {
         </div>
       )}
 
-      <div className="mt-2 flex items-center gap-2 text-[10px] text-stext">
+      <div className="mt-3 flex items-center gap-2 text-[10px] text-stext">
         <span>{dateLabel}</span>
         {venue && <span className="truncate">• {venue.split(',')[0]}</span>}
       </div>

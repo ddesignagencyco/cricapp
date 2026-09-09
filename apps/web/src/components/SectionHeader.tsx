@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Calendar, CalendarDays, Newspaper, Trophy, Users, Video, Zap } from 'lucide-react';
+import { Calendar, CalendarDays, Newspaper, Trophy, Users, Video, Zap, TrendingUp, MapPin } from 'lucide-react';
 
 const iconMap: Record<string, React.ComponentType<{ size?: number; strokeWidth?: number }>> = {
   calendar: Calendar,
@@ -11,6 +11,8 @@ const iconMap: Record<string, React.ComponentType<{ size?: number; strokeWidth?:
   users: Users,
   video: Video,
   zap: Zap,
+  trendingup: TrendingUp,
+  mappin: MapPin,
 };
 
 interface SectionHeaderProps {
@@ -35,12 +37,12 @@ export default function SectionHeader({
           </div>
         )}
         <div>
-          <h2 className="text-xl font-bold tracking-tight text-mtext sm:text-2xl">{title}</h2>
-          {subtitle && <p className="mt-0.5 text-sm text-stext">{subtitle}</p>}
+          <h2 className="text-lg font-bold tracking-tight text-mtext sm:text-xl">{title}</h2>
+          {subtitle && <p className="mt-0.5 text-xs text-stext sm:text-sm">{subtitle}</p>}
         </div>
       </div>
       {to && (
-        <Link href={to} className="group flex shrink-0 items-center gap-1.5 whitespace-nowrap text-sm font-semibold text-accent transition-all duration-300 hover:text-accent2">
+        <Link href={to} className="group flex shrink-0 items-center gap-1.5 whitespace-nowrap text-xs font-semibold text-accent transition-all duration-300 hover:text-accent2 sm:text-sm">
           {actionLabel || 'View all'}
           <span className="transition-transform group-hover:translate-x-1">&rarr;</span>
         </Link>
@@ -49,7 +51,7 @@ export default function SectionHeader({
         <button
           type="button"
           onClick={onAction}
-          className="group flex shrink-0 items-center gap-1.5 whitespace-nowrap text-sm font-semibold text-accent transition-all duration-300 hover:text-accent2"
+          className="group flex shrink-0 items-center gap-1.5 whitespace-nowrap text-xs font-semibold text-accent transition-all duration-300 hover:text-accent2 sm:text-sm"
         >
           {actionLabel || 'View all'}
           <span className="transition-transform group-hover:translate-x-1">&rarr;</span>

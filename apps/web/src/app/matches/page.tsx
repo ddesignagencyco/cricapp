@@ -6,7 +6,7 @@ export const metadata = {
     'Browse live, upcoming, and completed matches across domestic and international cricket.',
 };
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 30;
 
 export default function MatchesPage() {
   return (

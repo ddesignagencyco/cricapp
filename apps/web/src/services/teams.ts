@@ -1,24 +1,36 @@
-import { apiGet } from './api/client';
-import { Team, SportEventRecord } from '../types/index';
+import { apiGet, extractPage } from './api/client';
+import type { Team, Player, SportEventRecord } from '../types/index';
 
-export function fetchTeams(
+export async function fetchTeams(
   params: Record<string, string | number | boolean | undefined | null> = {}
-): Promise<Team[] | null> {
-  return apiGet('/teams', params);
+): Promise<Team[]> {
+  const res = await apiGet('/teams', params);
+  return extractPage<Team>(res).items;
 }
 
-export function fetchTeamById(idOrAbbr: string): Promise<Team | null> {
+export async function fetchTeamsPage(
+  params: Record<string, string | number | boolean | undefined | null> = {}
+): Promise<{ items: Team[]; total: number }> {
+  const res = await apiGet('/teams', params);
+  const { items, meta } = extractPage<Team>(res);
+  return { items, total: meta.total };
+}
+
+export async function fetchTeamById(idOrAbbr: string): Promise<Team | null> {
   return apiGet(`/teams/${idOrAbbr}`);
 }
 
-export function fetchTeamRoster(idOrAbbr: string): Promise<any> {
-  return apiGet(`/teams/${idOrAbbr}/players`);
+export async function fetchTeamRoster(idOrAbbr: string): Promise<Player[]> {
+  const res = await apiGet(`/teams/${idOrAbbr}/players`);
+  return extractPage<Player>(res).items;
 }
 
-export function fetchTeamSchedule(idOrAbbr: string): Promise<SportEventRecord[]> {
-  return apiGet(`/teams/${idOrAbbr}/schedule`);
+export async function fetchTeamSchedule(idOrAbbr: string): Promise<SportEventRecord[]> {
+  const res = await apiGet(`/teams/${idOrAbbr}/schedule`);
+  return extractPage<SportEventRecord>(res).items;
 }
 
-export function fetchTeamResults(idOrAbbr: string): Promise<SportEventRecord[]> {
-  return apiGet(`/teams/${idOrAbbr}/results`);
+export async function fetchTeamResults(idOrAbbr: string): Promise<SportEventRecord[]> {
+  const res = await apiGet(`/teams/${idOrAbbr}/results`);
+  return extractPage<SportEventRecord>(res).items;
 }

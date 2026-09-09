@@ -1,20 +1,31 @@
-import { apiGet } from './api/client';
-import { TournamentApi, TournamentSeason, SportEventRecord } from '../types/index';
+import { apiGet, extractPage } from './api/client';
+import type { TournamentApi, TournamentSeason, SportEventRecord } from '../types/index';
 
-export function fetchTournaments(
+export async function fetchTournaments(
   params: Record<string, string | number | boolean | undefined | null> = {}
 ): Promise<TournamentApi[]> {
-  return apiGet('/tournaments', params);
+  const res = await apiGet('/tournaments', params);
+  return extractPage<TournamentApi>(res).items;
 }
 
-export function fetchTournamentById(tournamentId: string): Promise<TournamentApi | null> {
+export async function fetchTournamentsPage(
+  params: Record<string, string | number | boolean | undefined | null> = {}
+): Promise<{ items: TournamentApi[]; total: number }> {
+  const res = await apiGet('/tournaments', params);
+  const { items, meta } = extractPage<TournamentApi>(res);
+  return { items, total: meta.total };
+}
+
+export async function fetchTournamentById(tournamentId: string): Promise<TournamentApi | null> {
   return apiGet(`/tournaments/${tournamentId}`);
 }
 
-export function fetchTournamentSeasons(tournamentId: string): Promise<TournamentSeason[]> {
-  return apiGet(`/tournaments/${tournamentId}/seasons`);
+export async function fetchTournamentSeasons(tournamentId: string): Promise<TournamentSeason[]> {
+  const res = await apiGet(`/tournaments/${tournamentId}/seasons`);
+  return extractPage<TournamentSeason>(res).items;
 }
 
-export function fetchTournamentResults(tournamentOrSeasonId: string): Promise<SportEventRecord[]> {
-  return apiGet(`/tournaments/${tournamentOrSeasonId}/results`);
+export async function fetchTournamentResults(tournamentOrSeasonId: string): Promise<SportEventRecord[]> {
+  const res = await apiGet(`/tournaments/${tournamentOrSeasonId}/results`);
+  return extractPage<SportEventRecord>(res).items;
 }

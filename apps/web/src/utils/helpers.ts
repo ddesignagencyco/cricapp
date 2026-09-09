@@ -1,4 +1,4 @@
-import type { Team, BattingRow, BowlingRow } from '../types/index';
+import type { BattingRow, BowlingRow } from '../types/index';
 
 interface MappedBattingRow {
   id?: string;
@@ -24,14 +24,6 @@ interface MappedBowlingRow {
 interface ScheduledDate {
   date: string;
   time: string;
-}
-
-export function teamColor(teamId: string): string {
-  return '#00C2FF';
-}
-
-export function getTeam(teamId: string): Team | undefined {
-  return undefined;
 }
 
 export function formatNumber(n: number | string): string {

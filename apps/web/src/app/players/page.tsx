@@ -1,7 +1,7 @@
 import PlayerDirectory from '../../components/boards/PlayerDirectory';
 import { fetchPlayers } from '../../services/players';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600;
 
 export const metadata = {
   title: 'Players',

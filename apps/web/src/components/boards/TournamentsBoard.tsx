@@ -2,99 +2,61 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Calendar, ChevronLeft, ChevronRight, Filter, Loader2, MapPin, Search, Trophy, X } from 'lucide-react';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { Calendar, Filter, Loader2, MapPin, Search, Trophy, X } from 'lucide-react';
+import { str } from '../../utils/extract';
+import type { TournamentApi } from '../../types/index';
+import { fetchTournamentsPage } from '../../services/tournaments';
 import EmptyState from '../EmptyState';
-import { fetchTournaments } from '../../services/tournaments';
+import Pagination from '../Pagination';
 
-function getCategoryName(cat: any): string {
-  if (!cat) return '';
-  if (typeof cat === 'string') return cat;
-  return cat.name || cat.country || '';
-}
-
-function getFormat(type: any): string {
-  if (!type) return '';
-  if (typeof type === 'string') return type.toUpperCase();
-  if (typeof type === 'object') return type.name ? String(type.name).toUpperCase() : '';
-  return String(type).toUpperCase();
-}
-
-function getSeasonYear(cs: any): number | null {
-  if (!cs) return null;
-  if (typeof cs === 'number') return cs;
-  if (typeof cs === 'string') {
-    const n = parseInt(cs, 10);
-    return Number.isNaN(n) ? null : n;
-  }
-  const raw = cs.year || cs.name;
-  if (typeof raw === 'string') {
-    const m = raw.match(/(19|20)\d{2}/);
-    if (m) return parseInt(m[0], 10);
-  }
-  return typeof raw === 'number' ? raw : null;
-}
-
-function getSeasonDates(cs: any): { start?: string; end?: string } {
-  if (!cs) return {};
-  if (typeof cs !== 'object') return {};
-  return {
-    start: cs.start_date || cs.startDate,
-    end: cs.end_date || cs.endDate,
-  };
-}
-
-function formatSeasonLabel(cs: any): string {
-  if (!cs) return '';
-  if (typeof cs === 'string') return cs;
-  return cs.name || (cs.year ? String(cs.year) : '');
-}
+const LIMIT = 20;
 
 interface Props {
   initialCountry?: string;
 }
 
 export default function TournamentsBoard({ initialCountry }: Props) {
-  const [search, setSearch] = useState('');
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const page = Math.max(1, Number(searchParams.get('page')) || 1);
+
+  const [tournaments, setTournaments] = useState<TournamentApi[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [localSearch, setLocalSearch] = useState('');
   const [formatFilter, setFormatFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState(initialCountry || 'all');
 
-  const [displayTournaments, setDisplayTournaments] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [page, setPage] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
-
   useEffect(() => {
-    let mounted = true;
-    const loadTournaments = async () => {
-      setLoading(true);
-      try {
-        const limit = 10;
-        const offset = page * limit;
-        const data = await fetchTournaments({ limit, offset });
-        if (mounted) {
-          setDisplayTournaments(data || []);
-          setHasMore((data?.length || 0) === limit);
+    let cancelled = false;
+    setLoading(true);
+    fetchTournamentsPage({ limit: LIMIT, page })
+      .then(({ items, total: t }) => {
+        if (!cancelled) {
+          setTournaments(items);
+          setTotal(t);
+          setLoading(false);
         }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    };
-    loadTournaments();
-    return () => { mounted = false; };
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setTournaments([]);
+          setTotal(0);
+          setLoading(false);
+        }
+      });
+    return () => { cancelled = true; };
   }, [page]);
 
-  useEffect(() => {
-    setPage(0);
-  }, [search, formatFilter, categoryFilter]);
-
-  const tournaments = displayTournaments;
+  const totalPages = Math.max(1, Math.ceil((total || 0) / LIMIT));
 
   const formats = useMemo(() => {
     const map = new Map<string, number>();
-    (tournaments || []).forEach((t) => {
-      const f = getFormat(t.type) || 'Other';
+    tournaments.forEach((t) => {
+      const f = str(t.type).toUpperCase() || 'Other';
       map.set(f, (map.get(f) || 0) + 1);
     });
     return [...map.entries()].sort((a, b) => b[1] - a[1]);
@@ -102,34 +64,44 @@ export default function TournamentsBoard({ initialCountry }: Props) {
 
   const categories = useMemo(() => {
     const map = new Map<string, number>();
-    (tournaments || []).forEach((t) => {
-      const c = getCategoryName(t.category) || 'International';
+    tournaments.forEach((t) => {
+      const c = str(t.category) || 'International';
       map.set(c, (map.get(c) || 0) + 1);
     });
     return [...map.entries()].sort((a, b) => b[1] - a[1]);
   }, [tournaments]);
 
   const filtered = useMemo(() => {
-    let list = tournaments || [];
-    const q = search.toLowerCase().trim();
+    let list = tournaments;
+    const q = localSearch.toLowerCase().trim();
     if (q) {
       list = list.filter(
         (t) =>
           (t.name || '').toLowerCase().includes(q) ||
-          getCategoryName(t.category).toLowerCase().includes(q) ||
-          getFormat(t.type).toLowerCase().includes(q)
+          str(t.category).toLowerCase().includes(q) ||
+          str(t.type).toLowerCase().includes(q)
       );
     }
     if (formatFilter !== 'all') {
-      list = list.filter((t) => getFormat(t.type) === formatFilter);
+      list = list.filter((t) => str(t.type).toUpperCase() === formatFilter);
     }
     if (categoryFilter !== 'all') {
-      list = list.filter((t) => getCategoryName(t.category) === categoryFilter);
+      list = list.filter((t) => str(t.category) === categoryFilter);
     }
     return list;
-  }, [tournaments, search, formatFilter, categoryFilter]);
+  }, [tournaments, localSearch, formatFilter, categoryFilter]);
 
   const activeFilters = formatFilter !== 'all' || categoryFilter !== 'all';
+
+  const handlePageChange = (p: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (p <= 1) {
+      params.delete('page');
+    } else {
+      params.set('page', String(p));
+    }
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+  };
 
   return (
     <>
@@ -150,8 +122,8 @@ export default function TournamentsBoard({ initialCountry }: Props) {
         <div className="flex items-center gap-2 rounded-xl bg-card px-3.5 py-3 ring-1 ring-lborder focus-within:ring-accent/50">
           <Search size={17} className="shrink-0 text-stext" />
           <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            value={localSearch}
+            onChange={(e) => setLocalSearch(e.target.value)}
             placeholder="Search tournaments by name, format or country..."
             className="w-full bg-transparent text-sm text-mtext placeholder:text-stext focus:outline-none"
           />
@@ -165,10 +137,7 @@ export default function TournamentsBoard({ initialCountry }: Props) {
           {activeFilters && (
             <button
               type="button"
-              onClick={() => {
-                setFormatFilter('all');
-                setCategoryFilter('all');
-              }}
+              onClick={() => { setFormatFilter('all'); setCategoryFilter('all'); }}
               className="ml-auto flex items-center gap-1 text-[11px] font-bold text-accent hover:underline"
             >
               <X size={12} /> Clear all
@@ -227,77 +196,53 @@ export default function TournamentsBoard({ initialCountry }: Props) {
       </div>
 
       <div className="mb-8">
-        <div className="lg:col-span-2">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-            <p className="text-xs text-stext">
-              {filtered.length} tournament{filtered.length === 1 ? '' : 's'}
-            </p>
-          </div>
-
-          {loading && filtered.length === 0 ? (
-            <div className="flex justify-center p-12">
-              <Loader2 className="animate-spin text-accent" size={32} />
-            </div>
-          ) : filtered.length > 0 ? (
-            <>
-              <div className="fade-in grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {filtered.map((tournament) => (
-                  <TournamentCard key={tournament.id} tournament={tournament} />
-                ))}
-              </div>
-              <div className="mt-10 flex items-center justify-center gap-6">
-                <button
-                  onClick={() => setPage((p) => Math.max(0, p - 1))}
-                  disabled={page === 0 || loading}
-                  className="group flex items-center gap-1.5 rounded-full border border-lborder bg-card px-5 py-2.5 text-sm font-semibold text-text shadow-sm transition-all hover:border-accent/40 hover:bg-elevated hover:text-accent disabled:pointer-events-none disabled:opacity-40"
-                >
-                  <ChevronLeft size={16} className="transition-transform group-hover:-translate-x-0.5" />
-                  Previous
-                </button>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-stext">Page</span>
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-accent/10 text-sm font-bold text-accent">
-                    {page + 1}
-                  </span>
-                </div>
-                <button
-                  onClick={() => setPage((p) => p + 1)}
-                  disabled={!hasMore || loading}
-                  className="group flex items-center gap-1.5 rounded-full border border-lborder bg-card px-5 py-2.5 text-sm font-semibold text-text shadow-sm transition-all hover:border-accent/40 hover:bg-elevated hover:text-accent disabled:pointer-events-none disabled:opacity-40"
-                >
-                  Next
-                  <ChevronRight size={16} className="transition-transform group-hover:translate-x-0.5" />
-                </button>
-              </div>
-            </>
-          ) : (
-            <EmptyState
-              title="No tournaments found"
-              message={
-                search
-                  ? 'No tournaments match your search. Try a different query.'
-                  : activeFilters
-                    ? 'Nothing in this slot. Try clearing filters.'
-                    : 'Tournaments will appear once reference data syncs.'
-              }
-            />
-          )}
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs text-stext">
+            {filtered.length} tournament{filtered.length === 1 ? '' : 's'}
+          </p>
         </div>
-      </div>
 
+        {loading ? (
+          <div className="flex justify-center p-12">
+            <Loader2 className="animate-spin text-accent" size={32} />
+          </div>
+        ) : filtered.length > 0 ? (
+          <>
+            <div className="fade-in grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {filtered.map((tournament) => (
+                <TournamentCard key={tournament.id} tournament={tournament} />
+              ))}
+            </div>
+            <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
+          </>
+        ) : (
+          <EmptyState
+            title="No tournaments found"
+            message={
+              localSearch
+                ? 'No tournaments match your search. Try a different query.'
+                : activeFilters
+                  ? 'Nothing in this slot. Try clearing filters.'
+                  : 'Tournaments will appear once reference data syncs.'
+            }
+          />
+        )}
+      </div>
     </>
   );
 }
 
-function TournamentCard({ tournament }: { tournament: any }) {
-  const category = getCategoryName(tournament.category) || 'International';
-  const season = formatSeasonLabel(tournament.currentSeason);
-  const format = getFormat(tournament.type);
+function TournamentCard({ tournament }: { tournament: TournamentApi }) {
+  const category = str(tournament.category) || 'International';
+  const season = str(tournament.currentSeason);
+  const format = str(tournament.type).toUpperCase();
   const gender = tournament.gender || '';
-  const { start, end } = getSeasonDates(tournament.currentSeason);
-  const seasonYear = getSeasonYear(tournament.currentSeason);
-
-  const dateRange = start && end ? `${start} → ${end}` : start || end || '';
+  const cs = tournament.currentSeason as Record<string, unknown> | undefined;
+  const startDate = cs?.start_date || cs?.startDate;
+  const endDate = cs?.end_date || cs?.endDate;
+  const dateRange = startDate && endDate ? `${startDate} → ${endDate}` : startDate || endDate ? String(startDate || endDate) : '';
+  const rawYear = cs?.year || cs?.name;
+  const seasonYear = typeof rawYear === 'number' ? rawYear : typeof rawYear === 'string' ? (rawYear.match(/(19|20)\d{2}/) || [])[0] || null : null;
 
   return (
     <Link

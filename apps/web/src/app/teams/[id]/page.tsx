@@ -3,7 +3,7 @@ import TeamDetailBody from '../../../components/boards/TeamDetailBody';
 import { fetchTeamById, fetchTeamRoster, fetchTeams } from '../../../services/teams';
 import { fetchMatches } from '../../../services/matches';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600;
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

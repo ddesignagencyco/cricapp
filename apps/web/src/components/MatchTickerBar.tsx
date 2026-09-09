@@ -172,7 +172,7 @@ function TickerCard({ match }: { match: any }) {
         {venue ? (
           <span className="min-w-0 truncate" title={venue}>{venue.split(',')[0]}</span>
         ) : (
-          <span className="truncate font-semibold text-stext/80">{scheduleTime(match)}</span>
+          <span suppressHydrationWarning className="truncate font-semibold text-stext/80">{scheduleTime(match)}</span>
         )}
         <span className="ml-auto shrink-0 font-semibold text-accent2">{formatShortDate(match)}</span>
       </div>
@@ -180,7 +180,7 @@ function TickerCard({ match }: { match: any }) {
   );
 }
 
-function TeamRow({ name, label, score, showDash }: { name: string; label: string; score: string; showDash?: boolean }) {
+function TeamRow({ name, label: _label, score, showDash }: { name: string; label: string; score: string; showDash?: boolean }) {
   return (
     <div className="flex items-center gap-2">
       <TeamMini label={name} />
@@ -201,7 +201,7 @@ function formatShortDate(match: any): string {
   if (!raw) return '';
   const d = new Date(raw);
   if (Number.isNaN(d.getTime())) return raw;
-  return d.toLocaleDateString(undefined, {
+  return d.toLocaleDateString('en-US', {
     weekday: 'short',
     day: 'numeric',
     month: 'short',
@@ -213,7 +213,7 @@ function scheduleTime(match: any): string {
   if (!raw) return '';
   const d = new Date(raw);
   if (Number.isNaN(d.getTime())) return '';
-  return d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 }
 
 function TeamMini({ label }: { label: string }) {

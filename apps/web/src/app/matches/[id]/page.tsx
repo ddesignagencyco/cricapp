@@ -1,15 +1,16 @@
 import { notFound } from 'next/navigation';
+import type { Team } from '../../../types/index';
 import MatchDetailBody from '../../../components/boards/MatchDetailBody';
 import { fetchMatchById } from '../../../services/matches';
 import { fetchTeams } from '../../../services/teams';
 import { fetchHeadToHead } from '../../../services/headToHead';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 30;
 
-function resolveTeamId(raw: string, teams: any[]): string {
+function resolveTeamId(raw: string, teams: Team[]): string {
   if (!raw) return '';
   if (raw.startsWith('sr:competitor:')) return raw;
-  const t = (teams || []).find(
+  const t = teams.find(
     (x) =>
       (x.abbr || '').toLowerCase() === raw.toLowerCase() ||
       (x.id || '').toLowerCase() === raw.toLowerCase()
@@ -24,7 +25,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     return { title: 'Match not found' };
   }
   const names = match.teamNames || [];
-  const title = `${names[0] || match.teams?.[0] || 'Team A'} vs ${names[1] || match.teams?.[1] || 'Team B'}`;
+  const title = `${names[0] || match.teams?.home?.name || 'Team A'} vs ${names[1] || match.teams?.away?.name || 'Team B'}`;
   return {
     title: `${title} — ${match.status || 'Match'}`,
     description: `${match.tournament || 'Cricket'} • ${match.displayScore || 'Full score details'}`,
@@ -39,11 +40,12 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
   }
 
   const [teams] = await Promise.all([fetchTeams()]);
-  const codes: string[] = match.teams || [];
-  const teamAId = resolveTeamId(codes[0], teams || []);
-  const teamBId = resolveTeamId(codes[1], teams || []);
+  const homeCode = match.teams?.home?.code || match.home?.code || '';
+  const awayCode = match.teams?.away?.code || match.away?.code || '';
+  const teamAId = resolveTeamId(homeCode, teams || []);
+  const teamBId = resolveTeamId(awayCode, teams || []);
 
-  let headToHead: any = null;
+  let headToHead = null;
   if (teamAId && teamBId) {
     try {
       headToHead = await fetchHeadToHead(teamAId, teamBId);

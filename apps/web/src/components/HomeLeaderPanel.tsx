@@ -1,8 +1,6 @@
 'use client';
 
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { ChevronRight, Flame, Target, Zap } from 'lucide-react';
+import { Flame, Target, Zap } from 'lucide-react';
 import { getInitials } from '../utils/helpers';
 
 const statMeta: Record<string, { label: string; tone: string }> = {
@@ -13,7 +11,6 @@ const statMeta: Record<string, { label: string; tone: string }> = {
 };
 
 export function LeaderPanel({ group }: { group: any }) {
-  const router = useRouter();
   const meta = statMeta[group.stat] || { label: group.stat.replace(/_/g, ' '), tone: 'text-accent' };
   const StatIcon = group.stat.includes('wicket') || group.stat.includes('maiden') || group.stat.includes('dot')
     ? Target : group.stat.includes('six') || group.stat.includes('four') ? Flame : Zap;
@@ -30,9 +27,7 @@ export function LeaderPanel({ group }: { group: any }) {
           <StatIcon size={15} className="text-accent2" />
           <h3 className="text-sm font-bold text-mtext">{meta.label}</h3>
         </div>
-        <span className="text-[10px] font-black uppercase tracking-wide text-accent">
-          Top 5
-        </span>
+        <span className="text-[10px] font-black uppercase tracking-wide text-accent">Top 5</span>
       </div>
 
       <div className="overflow-x-auto">
@@ -52,8 +47,7 @@ export function LeaderPanel({ group }: { group: any }) {
             {entries.map((row, i) => (
               <tr
                 key={row.playerId || i}
-                onClick={() => router.push(`/players/${row.playerId}`)}
-                className="border-b border-lborder/30 transition-colors last:border-0 hover:bg-elevated/60 cursor-pointer"
+                className="border-b border-lborder/30 transition-colors last:border-0 hover:bg-elevated/60"
               >
                 <td className="px-4 py-2.5 text-center font-mono text-xs text-stext">{i + 1}</td>
                 <td className="px-4 py-2.5">
@@ -75,15 +69,6 @@ export function LeaderPanel({ group }: { group: any }) {
             ))}
           </tbody>
         </table>
-      </div>
-
-      <div className="border-t border-lborder px-5 py-2.5">
-        <Link
-          href="/stats"
-          className="inline-flex items-center gap-1 text-xs font-semibold text-accent transition-colors hover:text-accent2"
-        >
-          View all <ChevronRight size={13} />
-        </Link>
       </div>
     </div>
   );

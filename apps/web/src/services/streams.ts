@@ -1,17 +1,40 @@
-import { streams } from '../data/streams';
-import { Stream } from '../types/index';
+import { apiGet, extractPage } from './api/client';
+import type { Stream } from '../types/index';
 
-export function fetchStreams(
+function mapStreamItem(item: Record<string, unknown>): Stream {
+  return {
+    id: item.id as string,
+    title: item.title as string,
+    shortTitle: item.title as string,
+    status: item.status as string,
+    matchId: (item.matchId as string) || undefined,
+    embedType: undefined,
+    embedId: undefined,
+    embedUrl: (item.streamUrl as string) || undefined,
+    image: (item.thumbnailUrl as string) || undefined,
+    theme: undefined,
+    language: undefined,
+    quality: undefined,
+    host: (item.provider as string) || undefined,
+    coHost: undefined,
+    viewers: undefined,
+    chatSample: undefined,
+    startedAt: (item.startedAt as string) || undefined,
+    tags: undefined,
+    description: undefined,
+    ...item,
+  };
+}
+
+export async function fetchStreams(
   { status, matchId }: { status?: string; matchId?: string } = {}
-): Stream[] {
-  let list = streams;
-  if (status) list = list.filter((s) => s.status === status);
-  if (matchId) list = list.filter((s) => s.matchId === matchId);
-  return list;
+): Promise<Stream[]> {
+  const res = await apiGet('/streams', { status, matchId });
+  return extractPage<Record<string, unknown>>(res).items.map(mapStreamItem);
 }
 
-export function fetchStreamById(id: string): Stream | null {
-  return streams.find((s) => s.id === id) || null;
+export async function fetchStreamById(id: string): Promise<Stream | null> {
+  const item = await apiGet<Record<string, unknown>>(`/streams/${id}`);
+  if (!item) return null;
+  return mapStreamItem(item);
 }
-
-export { streams };

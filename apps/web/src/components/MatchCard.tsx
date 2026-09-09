@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { Calendar, Clock, MapPin } from 'lucide-react';
 import Badge from './Badge';
-import LiveIndicator from './LiveIndicator';
 import { formatScheduled, getPslLogo } from '../utils/helpers';
 
 interface MatchCardProps {

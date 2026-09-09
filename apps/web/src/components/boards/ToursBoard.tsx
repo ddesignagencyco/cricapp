@@ -3,25 +3,8 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Activity, MapPin, Search, Trophy, X } from 'lucide-react';
+import { str } from '../../utils/extract';
 import EmptyState from '../EmptyState';
-
-function getCountryName(cat: any): string {
-  if (!cat) return '';
-  if (typeof cat === 'string') return cat;
-  return cat.name || cat.country || cat.id || '';
-}
-
-function getSportName(sport: any): string {
-  if (!sport) return '';
-  if (typeof sport === 'string') return sport;
-  return sport.name || sport.id || '';
-}
-
-function getCountryCode(cat: any): string {
-  if (!cat) return '';
-  if (typeof cat === 'string') return cat;
-  return cat.country_code || '';
-}
 
 interface Props {
   tours: any[];
@@ -35,7 +18,7 @@ export default function ToursBoard({ tours }: Props) {
   const categories = useMemo(() => {
     const map = new Map<string, number>();
     (tours || []).forEach((t) => {
-      const c = getCountryName(t.category) || 'International';
+      const c = str(t.category) || 'International';
       map.set(c, (map.get(c) || 0) + 1);
     });
     return [...map.entries()].sort((a, b) => b[1] - a[1]);
@@ -44,7 +27,7 @@ export default function ToursBoard({ tours }: Props) {
   const sports = useMemo(() => {
     const map = new Map<string, number>();
     (tours || []).forEach((t) => {
-      const s = getSportName(t.sport) || 'Cricket';
+      const s = str(t.sport) || 'Cricket';
       map.set(s, (map.get(s) || 0) + 1);
     });
     return [...map.entries()].sort((a, b) => b[1] - a[1]);
@@ -57,15 +40,15 @@ export default function ToursBoard({ tours }: Props) {
       list = list.filter(
         (t) =>
           (t.name || '').toLowerCase().includes(q) ||
-          getCountryName(t.category).toLowerCase().includes(q) ||
-          getSportName(t.sport).toLowerCase().includes(q)
+          str(t.category).toLowerCase().includes(q) ||
+          str(t.sport).toLowerCase().includes(q)
       );
     }
     if (countryFilter !== 'all') {
-      list = list.filter((t) => getCountryName(t.category) === countryFilter);
+      list = list.filter((t) => str(t.category) === countryFilter);
     }
     if (sportFilter !== 'all') {
-      list = list.filter((t) => getSportName(t.sport) === sportFilter);
+      list = list.filter((t) => str(t.sport) === sportFilter);
     }
     return list;
   }, [tours, search, countryFilter, sportFilter]);
@@ -190,9 +173,9 @@ export default function ToursBoard({ tours }: Props) {
 }
 
 function TourCard({ tour }: { tour: any }) {
-  const country = getCountryName(tour.category) || 'International';
-  const sport = getSportName(tour.sport) || 'Cricket';
-  const code = getCountryCode(tour.category);
+  const country = str(tour.category) || 'International';
+  const sport = str(tour.sport) || 'Cricket';
+  const code = typeof tour.category === 'object' && tour.category?.country_code ? tour.category.country_code : '';
   const countryParam = encodeURIComponent(country);
 
   return (

@@ -8,7 +8,6 @@ import PlayerCard from '../PlayerCard';
 import Tabs from '../Tabs';
 import EmptyState from '../EmptyState';
 import TeamHeadToHead from './TeamHeadToHead';
-import { getInitials } from '../../utils/helpers';
 import TeamLogo from '../TeamLogo';
 
 const teamTabs = [
@@ -128,14 +127,6 @@ export default function TeamDetailBody({ team, players, matches, allTeams = [] }
         </div>
       )}
     </div>
-  );
-}
-
-function TeamMark({ name, code }: { name: string; code: string }) {
-  return (
-    <span className="grid h-20 w-20 shrink-0 place-items-center rounded-full border-2 border-accent bg-primary text-2xl font-extrabold tracking-tight text-accent" title={name}>
-      {getInitials(name || code)}
-    </span>
   );
 }
 

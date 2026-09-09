@@ -1,6 +1,7 @@
-import { apiGet } from './api/client';
-import { Tour } from '../types/index';
+import { apiGet, extractPage } from './api/client';
+import type { Tour } from '../types/index';
 
-export function fetchTours(): Promise<Tour[]> {
-  return apiGet('/tours');
+export async function fetchTours(): Promise<Tour[]> {
+  const res = await apiGet('/tours');
+  return extractPage<Tour>(res).items;
 }

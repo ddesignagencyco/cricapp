@@ -45,13 +45,13 @@ export default function LiveStreamsBoard({ streams }: Props) {
   const featuredId = featured ? featured.id : null;
   const prevFeaturedId = useRef(featuredId);
 
-  if (prevFeaturedId.current !== featuredId) {
-    prevFeaturedId.current = featuredId;
-    if (featuredId && featured) {
+  useEffect(() => {
+    if (prevFeaturedId.current !== featuredId && featuredId && featured) {
+      prevFeaturedId.current = featuredId;
       setViewerMap({ [featuredId]: featured.viewers || 0 });
       setChat(featured.chatSample || []);
     }
-  }
+  }, [featuredId, featured]);
 
   useEffect(() => {
     if (!featuredId) return;
@@ -62,7 +62,6 @@ export default function LiveStreamsBoard({ streams }: Props) {
       }));
     }, 2500);
     return () => clearInterval(tick);
-     
   }, [featuredId]);
 
   return (
@@ -192,7 +191,7 @@ function StreamPlayer({ stream, viewers }: { stream: any; viewers: number }) {
   );
 }
 
-function StreamList({ streams, featuredId, viewerMap, onSelect }: { streams: any[]; featuredId: string; viewerMap: Record<string, number>; onSelect: (id: string) => void }) {
+function StreamList({ streams, featuredId, viewerMap, onSelect }: { streams: any[]; featuredId: string; viewerMap: Record<string, number>; onSelect: (_id: string) => void }) {
   return (
     <div className="rounded-2xl bg-card p-4 ring-1 ring-lborder">
       <div className="mb-3 flex items-center gap-2">

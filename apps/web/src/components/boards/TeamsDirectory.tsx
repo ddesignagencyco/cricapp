@@ -1,59 +1,84 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, Loader2, Search, Users } from 'lucide-react';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { Loader2, Search, Users } from 'lucide-react';
+import type { Team } from '../../types/index';
+import { fetchTeamsPage } from '../../services/teams';
 import TeamCard from '../TeamCard';
 import EmptyState from '../EmptyState';
-import { fetchTeams } from '../../services/teams';
+import Pagination from '../Pagination';
+
+const LIMIT = 20;
 
 export default function TeamsDirectory() {
-  const [search, setSearch] = useState('');
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
-  const [displayTeams, setDisplayTeams] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [page, setPage] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
+  const page = Math.max(1, Number(searchParams.get('page')) || 1);
+  const search = searchParams.get('search') || '';
+
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [localSearch, setLocalSearch] = useState(search);
 
   useEffect(() => {
-    let mounted = true;
-    const loadTeams = async () => {
-      setLoading(true);
-      try {
-        const limit = 12;
-        const offset = page * limit;
-        const data = await fetchTeams({ limit, offset });
-        if (mounted) {
-          setDisplayTeams(data || []);
-          setHasMore((data?.length || 0) === limit);
+    let cancelled = false;
+    setLoading(true);
+    fetchTeamsPage({ limit: LIMIT, page })
+      .then(({ items, total: t }) => {
+        if (!cancelled) {
+          setTeams(items);
+          setTotal(t);
+          setLoading(false);
         }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    };
-    loadTeams();
-    return () => { mounted = false; };
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setTeams([]);
+          setTotal(0);
+          setLoading(false);
+        }
+      });
+    return () => { cancelled = true; };
   }, [page]);
 
-  useEffect(() => {
-    setPage(0);
-  }, [search]);
+  const totalPages = Math.max(1, Math.ceil((total || 0) / LIMIT));
 
   const filtered = useMemo(() => {
-    let list = displayTeams || [];
-    const q = search.toLowerCase().trim();
-    if (q) {
-      list = list.filter(
-        (t) =>
-          (t.name || '').toLowerCase().includes(q) ||
-          (t.abbr || t.code || '').toLowerCase().includes(q) ||
-          (t.country || '').toLowerCase().includes(q) ||
-          (t.city || '').toLowerCase().includes(q)
-      );
+    const q = localSearch.toLowerCase().trim();
+    if (!q) return teams;
+    return teams.filter(
+      (t) =>
+        (t.name || '').toLowerCase().includes(q) ||
+        (t.abbr || t.code || '').toLowerCase().includes(q) ||
+        (t.country || '').toLowerCase().includes(q) ||
+        (t.city || '').toLowerCase().includes(q)
+    );
+  }, [teams, localSearch]);
+
+  const handleSearchSubmit = (value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value) {
+      params.set('search', value);
+    } else {
+      params.delete('search');
     }
-    return list;
-  }, [displayTeams, search]);
+    params.delete('page');
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+
+  const handlePageChange = (p: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (p <= 1) {
+      params.delete('page');
+    } else {
+      params.set('page', String(p));
+    }
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+  };
 
   return (
     <>
@@ -74,52 +99,30 @@ export default function TeamsDirectory() {
         <div className="flex items-center gap-2 rounded-xl bg-card px-3.5 py-3 ring-1 ring-lborder focus-within:ring-accent/50">
           <Search size={17} className="shrink-0 text-stext" />
           <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search teams by name, code or country…"
+            value={localSearch}
+            onChange={(e) => setLocalSearch(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleSearchSubmit(localSearch); }}
+            placeholder="Search teams by name, code or country..."
             className="w-full bg-transparent text-sm text-mtext placeholder:text-stext focus:outline-none"
           />
         </div>
       </div>
 
-      {loading && filtered.length === 0 ? (
+      {loading ? (
         <div className="flex justify-center p-12">
           <Loader2 className="animate-spin text-accent" size={32} />
         </div>
       ) : filtered.length > 0 ? (
         <>
           <p className="mb-4 text-xs text-stext">
-            Showing {filtered.length} team{filtered.length === 1 ? '' : 's'}
+            Showing {filtered.length} of {total} team{total === 1 ? '' : 's'}
           </p>
           <div className="fade-in grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {filtered.map((t) => (
               <TeamCard key={t.id} team={t} />
             ))}
           </div>
-          <div className="mt-10 flex items-center justify-center gap-6">
-            <button
-              onClick={() => setPage((p) => Math.max(0, p - 1))}
-              disabled={page === 0 || loading}
-              className="group flex items-center gap-1.5 rounded-full border border-lborder bg-card px-5 py-2.5 text-sm font-semibold text-text shadow-sm transition-all hover:border-accent/40 hover:bg-elevated hover:text-accent disabled:pointer-events-none disabled:opacity-40"
-            >
-              <ChevronLeft size={16} className="transition-transform group-hover:-translate-x-0.5" />
-              Previous
-            </button>
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-stext">Page</span>
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-accent/10 text-sm font-bold text-accent">
-                {page + 1}
-              </span>
-            </div>
-            <button
-              onClick={() => setPage((p) => p + 1)}
-              disabled={!hasMore || loading}
-              className="group flex items-center gap-1.5 rounded-full border border-lborder bg-card px-5 py-2.5 text-sm font-semibold text-text shadow-sm transition-all hover:border-accent/40 hover:bg-elevated hover:text-accent disabled:pointer-events-none disabled:opacity-40"
-            >
-              Next
-              <ChevronRight size={16} className="transition-transform group-hover:translate-x-0.5" />
-            </button>
-          </div>
+          <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
         </>
       ) : (
         <EmptyState

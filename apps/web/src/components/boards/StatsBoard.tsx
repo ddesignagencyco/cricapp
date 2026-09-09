@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { BarChart3, Target, Flame, Gauge, Trophy, Zap } from 'lucide-react';
+import { BarChart3, Target, Flame, Trophy, Zap } from 'lucide-react';
 import Tabs from '../Tabs';
 import EmptyState from '../EmptyState';
 
@@ -28,13 +28,13 @@ const statLabels: Record<string, string> = {
 
 interface Props {
   leaders?: any[];
+  season?: string;
 }
 
-export default function StatsBoard({ leaders = [] }: Props) {
+export default function StatsBoard({ leaders = [], season }: Props) {
   const [tab, setTab] = useState('batting');
 
   const grouped = leaders.filter((g) => g.category === tab);
-  console.log("grouped::", grouped)
 
   return (
     <>
@@ -42,12 +42,12 @@ export default function StatsBoard({ leaders = [] }: Props) {
         <div className="flex items-center gap-2 text-accent">
           <BarChart3 size={18} />
           <span className="text-xs font-bold uppercase tracking-widest text-stext">
-            PSL Season Leaders
+            {season ? `Season ${season} Leaders` : 'Season Leaders'}
           </span>
         </div>
         <h1 className="mt-1 text-3xl font-black tracking-tight sm:text-4xl">Statistics</h1>
         <p className="mt-2 max-w-2xl text-sm text-stext">
-          The best of the season — runs, wickets, strike rates and more across every franchise.
+          The best of the season — runs, wickets, strike rates and more.
         </p>
       </header>
 
@@ -73,7 +73,6 @@ function LeaderSection({ stat, entries }: { stat: string; entries: any[] }) {
   const Icon = stat.includes('runs') ? Zap : stat.includes('wicket') || stat.includes('maiden') || stat.includes('dot') ? Target : stat.includes('six') || stat.includes('four') ? Flame : Trophy;
   const rows = [...entries].sort((a, b) => (a.rank ?? 999) - (b.rank ?? 999)).slice(0, 10);
   const leader = rows[0];
-  const medals = ['text-gold', 'text-stext', 'text-[#CD7F32]'];
 
   return (
     <section>

@@ -1,13 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { Calendar, MapPin, Trophy, Users, ChevronRight } from 'lucide-react';
-import ColorIcon from './ColorIcon';
+import { Calendar, MapPin, Users, ChevronRight, Trophy, TrendingUp } from 'lucide-react';
 import TeamLogo from './TeamLogo';
 
 interface PslSpotlightProps {
   standings?: any[];
-  nextFixture?: any;
 }
 
 const PSL_DATA = {
@@ -19,17 +17,32 @@ const PSL_DATA = {
     'The biggest cricketing festival in Pakistan returns with more thrills, bigger rivalries and world-class talent.',
 };
 
-export default function PslSpotlight({ standings = [], nextFixture }: PslSpotlightProps) {
+export default function PslSpotlight({ standings = [] }: PslSpotlightProps) {
   const rows = standings.slice(0, 5);
   return (
     <section className="mx-auto max-w-7xl px-4 pb-12 sm:px-6">
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[0.9fr_1.1fr]">
         {/* PSL Spotlight */}
-        <div className="rounded-xl bg-card ring-1 ring-lborder overflow-hidden">
+        <div className="overflow-hidden rounded-2xl bg-card ring-1 ring-lborder">
+          <div className="relative overflow-hidden">
+            <img
+              src="/banner2.png"
+              alt="PSL 2026"
+              className="h-44 w-full object-cover sm:h-52"
+              loading="lazy"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+            <div className="absolute bottom-0 left-0 p-4 sm:p-5">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/90 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
+                <Trophy size={11} />
+                Pakistan Super League
+              </span>
+              <h3 className="mt-2 text-xl font-black text-white sm:text-2xl">{PSL_DATA.season}</h3>
+            </div>
+          </div>
 
-
-          <div className="p-5">
-            <div className="flex flex-wrap items-center gap-4 text-[11px] font-bold text-stext">
+          <div className="p-4 sm:p-5">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] font-bold text-stext">
               <span className="flex items-center gap-1.5">
                 <Calendar size={12} className="text-accent/70" />
                 {PSL_DATA.dates}
@@ -44,35 +57,28 @@ export default function PslSpotlight({ standings = [], nextFixture }: PslSpotlig
               </span>
             </div>
 
-            <p className="mt-3 text-sm leading-relaxed text-stext">{PSL_DATA.description}</p>
+            <p className="mt-3 max-w-xl text-sm leading-relaxed text-stext">{PSL_DATA.description}</p>
 
-            <div className="mt-4 overflow-hidden rounded-lg ring-1 ring-lborder">
-              <img
-                src="/banner2.png"
-                alt="PSL 2026"
-                className="h-44 w-full object-cover"
-                loading="lazy"
-              />
+            <div className="mt-4">
+              <Link
+                href="/psl"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-accent/10 px-4 py-2 text-xs font-semibold text-accent transition-colors hover:bg-accent/20"
+              >
+                View tournament <ChevronRight size={14} />
+              </Link>
             </div>
-
-            <Link
-              href="/psl"
-              className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-accent transition-colors hover:text-accent2"
-            >
-              View tournament <ChevronRight size={14} />
-            </Link>
           </div>
         </div>
 
         {/* PSL Points Table */}
-        <div className="rounded-xl bg-card ring-1 ring-lborder overflow-hidden">
-          <div className="flex items-center justify-between border-b border-lborder px-5 py-3">
-            <h3 className="text-sm font-bold text-mtext">PSL 2026 Points Table</h3>
-            <Link
-              href="/points-table"
-              className="text-xs font-semibold text-accent transition-colors hover:text-accent2"
-            >
-              View full table &rarr;
+        <div className="overflow-hidden rounded-2xl bg-card ring-1 ring-lborder">
+          <div className="flex items-center justify-between border-b border-lborder px-4 py-3 sm:px-5">
+            <div className="flex items-center gap-2">
+              <TrendingUp size={15} className="text-accent" />
+              <h3 className="text-sm font-bold text-mtext">Points Table</h3>
+            </div>
+            <Link href="/psl" className="text-[10px] font-bold uppercase tracking-wide text-accent hover:text-accent2">
+              Full table
             </Link>
           </div>
 
@@ -84,8 +90,8 @@ export default function PslSpotlight({ standings = [], nextFixture }: PslSpotlig
                   <th className="px-4 py-2.5">Team</th>
                   <th className="px-4 py-2.5 text-center">P</th>
                   <th className="px-4 py-2.5 text-center">W</th>
-                  <th className="px-4 py-2.5 text-center">L</th>
-                  <th className="px-4 py-2.5 text-center">NRR</th>
+                  <th className="hidden px-4 py-2.5 text-center sm:table-cell">L</th>
+                  <th className="hidden px-4 py-2.5 text-center sm:table-cell">NRR</th>
                   <th className="px-4 py-2.5 text-center">PTS</th>
                 </tr>
               </thead>
@@ -106,8 +112,8 @@ export default function PslSpotlight({ standings = [], nextFixture }: PslSpotlig
                       </td>
                       <td className="px-4 py-2.5 text-center font-mono text-xs text-stext">{row.played ?? 0}</td>
                       <td className="px-4 py-2.5 text-center font-mono text-xs text-accent2">{row.won ?? 0}</td>
-                      <td className="px-4 py-2.5 text-center font-mono text-xs text-danger">{row.lost ?? 0}</td>
-                      <td className={`px-4 py-2.5 text-center font-mono text-xs ${(row.netRunRate ?? 0) >= 0 ? 'text-accent2' : 'text-danger'}`}>
+                      <td className="hidden px-4 py-2.5 text-center font-mono text-xs text-danger sm:table-cell">{row.lost ?? 0}</td>
+                      <td className={`hidden px-4 py-2.5 text-center font-mono text-xs sm:table-cell ${(row.netRunRate ?? 0) >= 0 ? 'text-accent2' : 'text-danger'}`}>
                         {row.netRunRate ?? 0}
                       </td>
                       <td className="px-4 py-2.5 text-center font-mono text-xs font-bold text-mtext">{row.points ?? 0}</td>

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { getInitials, getTeam, getPslLogo } from '../utils/helpers';
+import { getInitials, getPslLogo } from '../utils/helpers';
 
 interface TeamLogoProps {
   teamId?: string;
@@ -14,12 +14,11 @@ interface TeamLogoProps {
 }
 
 export default function TeamLogo({ teamId, name, code, color, size = 'md', className = '', link = true }: TeamLogoProps) {
-  const team = teamId ? getTeam(teamId) : null;
-  const displayName = name || team?.name || code || '';
-  const accent = color || team?.colors?.primary || '#00C2FF';
+  const displayName = name || code || '';
+  const accent = color || '#00C2FF';
   const initials = getInitials(displayName);
   const pslLogo = getPslLogo(code || '') || getPslLogo(teamId || '');
-  const logo = team?.logo || pslLogo || null;
+  const logo = pslLogo || null;
   const sizes: Record<string, string> = {
     xs: 'h-6 w-6 text-[10px]',
     sm: 'h-8 w-8 text-xs',

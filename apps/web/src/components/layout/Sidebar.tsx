@@ -1,13 +1,12 @@
-'use client';
-
 import Link from 'next/link';
 import { ArrowUpRight, CalendarDays } from 'lucide-react';
 import { fetchNews } from '../../services/news';
 import { formatScheduled } from '../../utils/helpers';
 import AdBanner from '../AdBanner';
 
-export default function Sidebar() {
-  const latest = fetchNews().slice(0, 5);
+export default async function Sidebar() {
+  const allNews = await fetchNews();
+  const latest = allNews.slice(0, 5);
   return (
     <aside className="space-y-6">
       <section className="rounded-2xl bg-card p-5 ring-1 ring-lborder">

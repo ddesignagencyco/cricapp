@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import ColorIcon from './ColorIcon';
 import { PointsRow } from '../types';
 import TeamLogo from './TeamLogo';
 
@@ -11,7 +10,15 @@ interface PointsTableProps {
 }
 
 export default function PointsTable({ rows = [], favoriteTeamId }: PointsTableProps) {
-  if (!rows.length) return null;
+  if (!rows.length) {
+    return (
+      <div className="rounded-2xl bg-card px-6 py-10 text-center ring-1 ring-lborder">
+        <p className="text-sm font-semibold text-mtext">No standings available</p>
+        <p className="mt-1 text-xs text-stext">Points table will appear once matches are played.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="overflow-hidden rounded-2xl bg-card ring-1 ring-lborder">
       <div className="overflow-x-auto">
@@ -74,8 +81,4 @@ export default function PointsTable({ rows = [], favoriteTeamId }: PointsTablePr
       </div>
     </div>
   );
-}
-
-function TeamMark({ name, code }: { name: string; code: string }) {
-  return <ColorIcon label={name || code} size={36} />;
 }

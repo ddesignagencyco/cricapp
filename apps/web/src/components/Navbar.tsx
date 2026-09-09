@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Bell, Menu, Moon, Search, Sun, X } from 'lucide-react';
+import { Menu, Moon, Search, Sun, User, X } from 'lucide-react';
 import Logo from './Logo';
 import SearchBar from './SearchBar';
 import { useTheme } from './ThemeProvider';
@@ -11,16 +11,12 @@ import { useTheme } from './ThemeProvider';
 const navItems = [
   { to: '/', label: 'Home' },
   { to: '/matches', label: 'Matches' },
-  { to: '/psl', label: 'PSL' },
-  { to: '/teams', label: 'Teams' },
   { to: '/schedules', label: 'Schedule' },
+  { to: '/teams', label: 'Teams' },
   { to: '/players', label: 'Players' },
+  { to: '/psl', label: 'PSL' },
   { to: '/tours', label: 'Tours' },
   { to: '/tournaments', label: 'Tournaments' },
-  { to: '/stats', label: 'Stats' },
-  { to: '/points-table', label: 'Points Table' },
-  // { to: '/streams', label: 'Live Streams' }, // TODO: re-enable later
-  // { to: '/news', label: 'News' }, // TODO: re-enable later
 ];
 
 export default function Navbar() {
@@ -76,6 +72,18 @@ export default function Navbar() {
           >
             <Search size={18} />
           </button>
+
+          <Link
+            href="/signin"
+            className={`grid h-9 w-9 place-items-center rounded-lg transition-colors hover:bg-card hover:text-mtext ${
+              pathname.startsWith('/signin') || pathname.startsWith('/signup')
+                ? 'text-accent'
+                : 'text-stext'
+            }`}
+            aria-label="Sign in"
+          >
+            <User size={18} />
+          </Link>
 
           <button
             type="button"

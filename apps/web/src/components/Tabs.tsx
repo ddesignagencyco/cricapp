@@ -6,7 +6,7 @@ import type { TabItem } from '../types/index';
 interface TabsProps {
   tabs: TabItem[];
   active: string;
-  onChange: (key: string) => void;
+  onChange: (_key: string) => void;
   className?: string;
   size?: string;
 }

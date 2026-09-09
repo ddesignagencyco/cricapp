@@ -1,7 +1,7 @@
 import ToursBoard from '../../components/boards/ToursBoard';
 import { fetchTours } from '../../services/tours';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600;
 
 export const metadata = {
   title: 'Tours',

@@ -12,7 +12,6 @@ const staticRoutes = [
   '/psl',
   '/teams',
   '/players',
-  '/points-table',
   '/stats',
   '/news',
   '/streams',
@@ -24,12 +23,12 @@ const staticRoutes = [
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date().toISOString();
-  const [matches, teams, players] = await Promise.all([
+  const [matches, teams, players, news] = await Promise.all([
     fetchMatches().catch(() => []),
     fetchTeams().catch(() => []),
     fetchPlayers().catch(() => []),
+    fetchNews().catch(() => []),
   ]);
-  const news = fetchNews();
 
   const entries = staticRoutes.map((route) => ({
     url: `${baseUrl}${route}`,
