@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { CalendarDays, Loader2 } from 'lucide-react';
+import { CalendarDays } from 'lucide-react';
 import type { Match } from '../../types/index';
 import { fetchMatchesPage } from '../../services/matches';
 import MatchCard from '../MatchCard';
@@ -72,46 +72,72 @@ export default function MatchBoard() {
   };
 
   return (
-    <>
-      <header className="mb-8">
-        <div className="flex items-center gap-2 text-accent">
-          <CalendarDays size={18} />
-          <span className="text-xs font-bold uppercase tracking-widest text-stext">
-            Fixtures & Results
-          </span>
-        </div>
-        <h1 className="mt-1 text-3xl font-black tracking-tight sm:text-4xl">Matches</h1>
-        <p className="mt-2 text-sm text-stext">
-          Browse live, upcoming, and completed matches across domestic and international cricket.
-        </p>
-      </header>
+    <div className="space-y-8">
+      {/* Editorial Header Banner */}
+      <div className="relative overflow-hidden rounded-3xl border border-lborder bg-gradient-to-br from-card via-card to-elevated p-6 shadow-sm sm:p-8">
+        <div className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-accent/5 blur-3xl pointer-events-none" />
 
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
+        <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <div className="max-w-2xl">
+            <div className="inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-accent border border-accent/20">
+              <CalendarDays size={13} />
+              <span>Fixtures & Results</span>
+            </div>
+            <h1 className="mt-3 text-3xl font-black tracking-tight text-mtext sm:text-4xl">
+              Cricket Matches
+            </h1>
+            <p className="mt-2 text-sm leading-relaxed text-stext sm:text-base">
+              Explore live ball-by-ball scorecards, upcoming international and league fixtures, and verified past results.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 rounded-2xl border border-lborder bg-secondary/80 px-4 py-2.5 backdrop-blur-md">
+              <div className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
+              <div className="text-xs">
+                <span className="font-black text-mtext">{total}</span>{' '}
+                <span className="text-stext capitalize">{tab} Matches</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs & Status Header */}
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-lborder/80 pb-4">
         <Tabs tabs={TABS} active={tab} onChange={handleTabChange} />
+
+        <div className="text-xs font-semibold text-stext">
+          <span>Page {page} of {totalPages}</span>
+        </div>
       </div>
 
       {loading ? (
-        <div className="flex justify-center p-12">
-          <Loader2 className="animate-spin text-accent" size={32} />
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={i}
+              className="h-64 animate-pulse rounded-3xl border border-lborder bg-card p-5"
+            />
+          ))}
         </div>
       ) : matches.length > 0 ? (
         <>
-          <p className="mb-4 text-xs text-stext">
-            Showing {matches.length} of {total} match{total === 1 ? '' : 'es'}
-          </p>
-          <div className="fade-in grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="fade-in grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {matches.map((m) => (
               <MatchCard key={m.matchId || m.id} match={m} />
             ))}
           </div>
-          <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
+          <div className="pt-6">
+            <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
+          </div>
         </>
       ) : (
         <EmptyState
           title={`No ${tab} matches found`}
-          message="Try switching to a different status tab."
+          message="Try switching to a different status tab or check back later for scheduled fixtures."
         />
       )}
-    </>
+    </div>
   );
 }

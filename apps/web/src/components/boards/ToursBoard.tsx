@@ -56,36 +56,56 @@ export default function ToursBoard({ tours }: Props) {
   const activeFilters = countryFilter !== 'all' || sportFilter !== 'all';
 
   return (
-    <>
-      <header className="mb-6">
-        <div className="flex items-center gap-2 text-accent">
-          <Trophy size={18} />
-          <span className="text-xs font-bold uppercase tracking-widest text-stext">
-            Cricket Tours by Country
-          </span>
-        </div>
-        <h1 className="mt-1 text-3xl font-black tracking-tight sm:text-4xl">Tours</h1>
-        <p className="mt-2 text-sm text-stext">
-          Browse international and domestic cricket tours by country and category.
-        </p>
-      </header>
+    <div className="space-y-8">
+      {/* Header Banner */}
+      <div className="relative overflow-hidden rounded-3xl border border-lborder bg-gradient-to-br from-card via-card to-elevated p-6 shadow-sm sm:p-8">
+        <div className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-accent/5 blur-3xl pointer-events-none" />
 
-      <div className="mb-6 max-w-xl">
-        <div className="flex items-center gap-2 rounded-xl bg-card px-3.5 py-3 ring-1 ring-lborder focus-within:ring-accent/50">
-          <Search size={17} className="shrink-0 text-stext" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search tours by name or country..."
-            className="w-full bg-transparent text-sm text-mtext placeholder:text-stext focus:outline-none"
-          />
+        <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <div className="max-w-2xl">
+            <div className="inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-accent border border-accent/20">
+              <Trophy size={13} />
+              <span>International & Bilateral Series</span>
+            </div>
+            <h1 className="mt-3 text-3xl font-black tracking-tight text-mtext sm:text-4xl">
+              Cricket Tours & Series
+            </h1>
+            <p className="mt-2 text-sm leading-relaxed text-stext sm:text-base">
+              Explore ongoing and scheduled global bilateral tours, test matches, ODI series, and domestic championship visits worldwide.
+            </p>
+          </div>
+
+          {/* Quick Count Badge */}
+          <div className="flex items-center gap-3 rounded-2xl border border-lborder/80 bg-secondary/80 px-5 py-3.5 shadow-inner">
+            <div className="grid h-11 w-11 place-items-center rounded-xl bg-accent text-white shadow-sm">
+              <Trophy size={20} />
+            </div>
+            <div>
+              <div className="text-2xl font-black text-mtext">{tours.length}</div>
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-stext">
+                Active Tours
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="mb-8 rounded-2xl bg-card p-4 ring-1 ring-lborder">
-        <div className="mb-3 flex items-center gap-2">
-          <MapPin size={14} className="text-accent" />
-          <span className="text-xs font-bold uppercase tracking-widest text-stext">Browse by Country</span>
+      {/* Search & Country Filter Box */}
+      <div className="space-y-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="relative flex-1 max-w-md">
+            <Search
+              size={16}
+              className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-stext"
+            />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search tours by series name, country, or category…"
+              className="w-full rounded-2xl border border-lborder bg-card py-2.5 pl-10 pr-4 text-xs text-mtext outline-none transition focus:border-accent focus:bg-elevated focus:ring-2 focus:ring-accent/20"
+            />
+          </div>
+
           {activeFilters && (
             <button
               type="button"
@@ -93,82 +113,78 @@ export default function ToursBoard({ tours }: Props) {
                 setCountryFilter('all');
                 setSportFilter('all');
               }}
-              className="ml-auto flex items-center gap-1 text-[11px] font-bold text-accent hover:underline"
+              className="flex items-center gap-1.5 rounded-xl border border-lborder bg-card px-3.5 py-2 text-xs font-bold text-accent transition-colors hover:bg-secondary cursor-pointer"
             >
-              <X size={12} /> Clear all
+              <X size={13} />
+              <span>Clear filters</span>
             </button>
           )}
         </div>
 
+        {/* Country Filter Chips */}
         {categories.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5 overflow-x-auto pb-1">
             <button
               type="button"
               onClick={() => setCountryFilter('all')}
-              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold transition-colors ${countryFilter === 'all'
-                ? 'bg-accent/15 text-accent ring-1 ring-inset ring-accent/25'
-                : 'bg-elevated text-stext ring-1 ring-lborder hover:text-mtext'
-                }`}
+              className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+                countryFilter === 'all'
+                  ? 'bg-accent text-white shadow-md shadow-accent/20'
+                  : 'border border-lborder bg-card text-stext hover:text-mtext hover:bg-secondary'
+              }`}
             >
-              <MapPin size={11} className="text-accent" />
-              All Countries
+              All Regions
             </button>
-            {categories.slice(0, 12).map(([cat, count]) => (
+            {categories.slice(0, 14).map(([cat, count]) => (
               <button
                 key={cat}
                 type="button"
                 onClick={() => setCountryFilter(countryFilter === cat ? 'all' : cat)}
-                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold transition-colors ${countryFilter === cat
-                  ? 'bg-accent/15 text-accent ring-1 ring-inset ring-accent/25'
-                  : 'bg-elevated text-stext ring-1 ring-lborder hover:text-mtext'
-                  }`}
+                className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+                  countryFilter === cat
+                    ? 'bg-accent text-white shadow-md shadow-accent/20'
+                    : 'border border-lborder bg-card text-stext hover:text-mtext hover:bg-secondary'
+                }`}
               >
-                <MapPin size={11} />
-                {cat}
-                <span className="text-stext/60">({count})</span>
-              </button>
-            ))}
-          </div>
-        )}
-
-        {sports.length > 0 && (
-          <div className="mt-3 flex flex-wrap items-center gap-1.5">
-            <Activity size={13} className="text-stext/70" />
-            {sports.map(([sport]) => (
-              <button
-                key={sport}
-                type="button"
-                onClick={() => setSportFilter(sportFilter === sport ? 'all' : sport)}
-                className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${sportFilter === sport
-                  ? 'bg-accent2/15 text-accent2 ring-1 ring-inset ring-accent2/25'
-                  : 'bg-elevated text-stext ring-1 ring-lborder hover:text-mtext'
+                <span>{cat}</span>
+                <span
+                  className={`rounded-md px-1.5 py-0.2 text-[10px] font-semibold ${
+                    countryFilter === cat ? 'bg-white/20 text-white' : 'bg-secondary text-stext'
                   }`}
-              >
-                {sport}
+                >
+                  {count}
+                </span>
               </button>
             ))}
           </div>
         )}
       </div>
 
+      {/* Showing count */}
+      <div className="flex items-center justify-between text-xs text-stext">
+        <p>
+          Showing <span className="font-bold text-mtext">{filtered.length}</span> of {tours.length} tour{tours.length === 1 ? '' : 's'}
+        </p>
+      </div>
+
+      {/* Grid Content */}
       {filtered.length > 0 ? (
-        <>
-          <p className="mb-4 text-xs text-stext">
-            Showing {filtered.length} tour{filtered.length === 1 ? '' : 's'}
-          </p>
-          <div className="fade-in grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {filtered.map((tour) => (
-              <TourCard key={tour.id} tour={tour} />
-            ))}
-          </div>
-        </>
+        <div className="fade-in grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {filtered.map((tour) => (
+            <TourCard key={tour.id} tour={tour} />
+          ))}
+        </div>
       ) : (
         <EmptyState
-          title="No tours found"
-          message={search ? 'No tours match your search. Try a different query.' : 'Tours will appear once reference data syncs.'}
+          title="No cricket tours found"
+          message={
+            search || activeFilters
+              ? 'No tours match your current filter parameters. Try clearing your filters.'
+              : 'Tours reference data will appear once synced.'
+          }
         />
       )}
-    </>
+    </div>
   );
 }
 
@@ -179,30 +195,46 @@ function TourCard({ tour }: { tour: any }) {
   const countryParam = encodeURIComponent(country);
 
   return (
-    <div className="group rounded-2xl bg-card p-5 ring-1 ring-lborder transition-all duration-300 hover:-translate-y-0.5 hover:bg-elevated hover:ring-accent/30">
-      <div className="mb-3 flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          {code && <p className="text-[10px] font-bold uppercase tracking-widest text-stext/70">{code}</p>}
-          <h3 className="line-clamp-2 text-base font-bold text-mtext group-hover:text-accent">
-            {tour.name}
-          </h3>
+    <div className="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-lborder bg-card p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-accent/50 hover:bg-elevated hover:shadow-xl hover:shadow-accent/10">
+      <div>
+        {/* Top Header */}
+        <div className="flex items-center justify-between gap-2">
+          <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-stext border border-lborder/60">
+            <MapPin size={10} className="text-accent" />
+            {country}
+          </span>
+          {code && (
+            <span className="font-mono text-xs font-black uppercase tracking-widest text-accent">
+              {code}
+            </span>
+          )}
+        </div>
+
+        {/* Tour Title */}
+        <div className="mt-4 flex items-start gap-3">
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-accent/10 text-accent ring-1 ring-accent/20 group-hover:scale-105 transition-transform">
+            <Trophy size={18} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h3 className="line-clamp-2 text-base font-bold leading-snug text-mtext transition-colors group-hover:text-accent">
+              {tour.name}
+            </h3>
+            <p className="mt-1 text-xs font-medium text-stext">{sport}</p>
+          </div>
         </div>
       </div>
-      <div className="flex flex-wrap items-center gap-2 text-xs text-stext">
-        <span className="inline-flex items-center gap-1 rounded-full bg-elevated px-2 py-0.5 ring-1 ring-lborder">
-          <MapPin size={11} className="text-accent" />
-          {country}
-        </span>
-        <span className="inline-flex items-center gap-1 rounded-full bg-elevated px-2 py-0.5 ring-1 ring-lborder">
-          {sport}
-        </span>
+
+      {/* Card Action Footer */}
+      <div className="mt-6 flex items-center justify-between border-t border-lborder/60 pt-3 text-xs">
+        <span className="text-[11px] font-semibold text-stext">Series Hub</span>
+        <Link
+          href={`/tournaments?country=${countryParam}`}
+          className="inline-flex items-center gap-1 font-bold text-accent transition-transform duration-300 group-hover:translate-x-1 hover:underline"
+        >
+          <span>Tournaments</span>
+          <span>→</span>
+        </Link>
       </div>
-      <Link
-        href={`/tournaments?country=${countryParam}`}
-        className="mt-3 inline-flex items-center gap-1 text-[11px] font-bold text-accent hover:underline"
-      >
-        View {country} tournaments →
-      </Link>
     </div>
   );
 }

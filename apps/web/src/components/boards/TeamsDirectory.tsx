@@ -81,55 +81,93 @@ export default function TeamsDirectory() {
   };
 
   return (
-    <>
-      <header className="mb-8">
-        <div className="flex items-center gap-2 text-accent">
-          <Users size={18} />
-          <span className="text-xs font-bold uppercase tracking-widest text-stext">
-            All Teams
-          </span>
-        </div>
-        <h1 className="mt-1 text-3xl font-black tracking-tight sm:text-4xl">Teams</h1>
-        <p className="mt-2 text-sm text-stext">
-          Browse every cricket team and their squads.
-        </p>
-      </header>
+    <div className="space-y-8">
+      {/* Header Banner */}
+      <div className="relative overflow-hidden rounded-3xl border border-lborder bg-gradient-to-br from-card via-card to-elevated p-6 shadow-sm sm:p-8">
+        <div className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-accent/5 blur-3xl pointer-events-none" />
 
-      <div className="mb-6 max-w-xl">
-        <div className="flex items-center gap-2 rounded-xl bg-card px-3.5 py-3 ring-1 ring-lborder focus-within:ring-accent/50">
-          <Search size={17} className="shrink-0 text-stext" />
-          <input
-            value={localSearch}
-            onChange={(e) => setLocalSearch(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') handleSearchSubmit(localSearch); }}
-            placeholder="Search teams by name, code or country..."
-            className="w-full bg-transparent text-sm text-mtext placeholder:text-stext focus:outline-none"
-          />
+        <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <div className="max-w-2xl">
+            <div className="inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-accent border border-accent/20">
+              <Users size={13} />
+              <span>Global Cricket Directory</span>
+            </div>
+            <h1 className="mt-3 text-3xl font-black tracking-tight text-mtext sm:text-4xl">
+              Cricket Teams & Clubs
+            </h1>
+            <p className="mt-2 text-sm leading-relaxed text-stext sm:text-base">
+              Explore national squads, franchise teams, PSL franchises, and domestic rosters with comprehensive player squads and match fixtures.
+            </p>
+          </div>
+
+          {/* Quick Count Badge */}
+          <div className="flex items-center gap-3 rounded-2xl border border-lborder/80 bg-secondary/80 px-5 py-3.5 shadow-inner">
+            <div className="grid h-11 w-11 place-items-center rounded-xl bg-accent text-white shadow-sm">
+              <Users size={20} />
+            </div>
+            <div>
+              <div className="text-2xl font-black text-mtext">{total || teams.length}</div>
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-stext">
+                Registered Teams
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
+      {/* Search and Filter Row */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative flex-1 max-w-md">
+          <Search
+            size={16}
+            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-stext"
+          />
+          <input
+            value={localSearch}
+            onChange={(e) => setLocalSearch(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleSearchSubmit(localSearch);
+            }}
+            placeholder="Search teams by name, abbreviation or country..."
+            className="w-full rounded-2xl border border-lborder bg-card py-2.5 pl-10 pr-4 text-xs text-mtext outline-none transition focus:border-accent focus:bg-elevated focus:ring-2 focus:ring-accent/20"
+          />
+        </div>
+
+        <div className="flex items-center gap-2 text-xs text-stext">
+          <span>Showing</span>
+          <span className="font-bold text-mtext">{filtered.length}</span>
+          <span>of {total} teams</span>
+        </div>
+      </div>
+
+      {/* Grid Content */}
       {loading ? (
-        <div className="flex justify-center p-12">
+        <div className="flex min-h-[320px] flex-col items-center justify-center gap-3 rounded-3xl border border-lborder bg-card p-12 text-center">
           <Loader2 className="animate-spin text-accent" size={32} />
+          <p className="text-xs font-semibold text-stext">Loading cricket teams…</p>
         </div>
       ) : filtered.length > 0 ? (
         <>
-          <p className="mb-4 text-xs text-stext">
-            Showing {filtered.length} of {total} team{total === 1 ? '' : 's'}
-          </p>
           <div className="fade-in grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {filtered.map((t) => (
               <TeamCard key={t.id} team={t} />
             ))}
           </div>
-          <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
+
+          <div className="pt-4">
+            <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
+          </div>
         </>
       ) : (
         <EmptyState
-          title="No teams found"
-          message="No teams match your search. Try a different query."
+          title="No cricket teams found"
+          message={
+            localSearch
+              ? `No teams match "${localSearch}". Try searching for another name or clear your search.`
+              : 'No teams currently registered in this directory.'
+          }
         />
       )}
-    </>
+    </div>
   );
 }

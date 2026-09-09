@@ -5,6 +5,8 @@ import ScrollToTop from '../components/ScrollToTop';
 import ScrollTopButton from '../components/ScrollTopButton';
 import JsonLd from './json-ld';
 import ThemeProvider from '../components/ThemeProvider';
+import AuthProvider from '../components/AuthProvider';
+import { Toaster } from 'react-hot-toast';
 
 export const metadata = {
   title: {
@@ -63,10 +65,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}
         />
         <ThemeProvider>
-          <Navbar />
-          <main className="min-h-screen flex-1">{children}</main>
-          <Footer />
-          <ScrollTopButton />
+          <AuthProvider>
+            <Navbar />
+            <main className="min-h-screen flex-1">{children}</main>
+            <Footer />
+            <ScrollTopButton />
+            <Toaster position="top-center" toastOptions={{ duration: 3500 }} />
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

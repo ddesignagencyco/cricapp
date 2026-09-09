@@ -9,6 +9,9 @@ import Tabs from '../Tabs';
 import EmptyState from '../EmptyState';
 import TeamHeadToHead from './TeamHeadToHead';
 import TeamLogo from '../TeamLogo';
+import Badge from '../Badge';
+import FavoriteButton from '../FavoriteButton';
+import ShareButton from '../ShareButton';
 
 const teamTabs = [
   { key: 'overview', label: 'Overview', icon: Shield },
@@ -48,32 +51,72 @@ export default function TeamDetailBody({ team, players, matches, allTeams = [] }
         <span className="text-mtext">{team.name}</span>
       </nav>
 
-      <header className="relative overflow-hidden rounded-3xl bg-card p-6 ring-1 ring-lborder sm:p-8">
-        <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
-          {team.logoUrl ? (
-            <img
-              src={team.logoUrl}
-              alt={team.name}
-              className="h-20 w-20 shrink-0 rounded-full border-2 border-accent object-cover"
+      <header className="relative overflow-hidden rounded-3xl border border-lborder bg-gradient-to-br from-card via-card to-elevated p-6 shadow-md sm:p-8">
+        <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-accent/5 blur-3xl" />
+
+        <div className="relative flex items-center justify-between border-b border-lborder/60 pb-4">
+          <div className="flex items-center gap-2">
+            <span className="rounded-full bg-accent/10 px-3 py-1 text-xs font-black uppercase tracking-wider text-accent border border-accent/20">
+              {team.country || 'Cricket Team'}
+            </span>
+            {code && (
+              <span className="rounded-full bg-secondary px-2.5 py-1 text-[11px] font-mono font-bold uppercase tracking-wider text-stext border border-lborder/60">
+                {code}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <FavoriteButton targetType="team" targetId={team.id || code} compact />
+            <ShareButton
+              type="team"
+              id={team.id || code}
+              fallbackTitle={team.name}
+              compact
             />
-          ) : (
-            <TeamLogo teamId={team.teamId} name={team.name} code={code} size="xl" link={false} />
-            // <TeamMark name={team.name} code={code} />
-          )}
+          </div>
+        </div>
+
+        <div className="relative mt-6 flex flex-col gap-6 sm:flex-row sm:items-center">
+          <div className="relative group">
+            <div className="absolute -inset-1 rounded-3xl bg-accent/20 blur-md group-hover:bg-accent/30 transition-all" />
+            <div className="relative">
+              {team.logoUrl ? (
+                <img
+                  src={team.logoUrl}
+                  alt={team.name}
+                  className="h-20 w-20 shrink-0 rounded-3xl border-2 border-accent/30 bg-white object-contain p-1.5 shadow-lg shadow-black/20"
+                />
+              ) : (
+                <TeamLogo teamId={team.teamId} name={team.name} code={code} size="xl" link={false} />
+              )}
+            </div>
+          </div>
+
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-2xl font-black tracking-tight sm:text-3xl">{team.name}</h1>
+              <h1 className="text-2xl font-black tracking-tight text-mtext sm:text-4xl">{team.name}</h1>
             </div>
             {code && (
-              <p className="mt-1 text-sm font-semibold uppercase tracking-wider text-stext">
-                {code}
+              <p className="mt-1 font-mono text-xs font-bold uppercase tracking-widest text-accent">
+                {code} • Franchise Squad
               </p>
             )}
             {team.country && (
-              <p className="mt-1 flex items-center gap-1.5 text-sm text-stext">
-                <MapPin size={14} /> {team.country}
+              <p className="mt-1.5 flex items-center gap-1.5 text-sm text-stext">
+                <MapPin size={14} className="text-accent" /> {team.country}
               </p>
             )}
+          </div>
+
+          <div className="flex shrink-0 items-center gap-3">
+            <div className="rounded-2xl border border-lborder bg-secondary/80 px-4 py-3 text-center backdrop-blur-sm">
+              <p className="font-mono text-xl font-black text-accent">{players?.length || 0}</p>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-stext">Squad Size</p>
+            </div>
+            <div className="rounded-2xl border border-lborder bg-secondary/80 px-4 py-3 text-center backdrop-blur-sm">
+              <p className="font-mono text-xl font-black text-mtext">{teamMatches?.length || 0}</p>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-stext">Matches</p>
+            </div>
           </div>
         </div>
       </header>

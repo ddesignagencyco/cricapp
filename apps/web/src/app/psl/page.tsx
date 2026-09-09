@@ -27,9 +27,10 @@ const roundLabels: Record<string, string> = {
   final: 'Final',
 };
 
-export default async function PSLPage({ searchParams }: { searchParams: Promise<{ season?: string }> }) {
+export default async function PSLPage({ searchParams }: { searchParams: Promise<{ season?: string | string[] }> }) {
   const params = await searchParams;
-  const selectedSeason = params.season || '';
+  const rawSeason = Array.isArray(params.season) ? params.season[params.season.length - 1] : params.season;
+  const selectedSeason = rawSeason || '';
 
   const seasons = await fetchPslSeasons();
   const latestSeason = seasons[seasons.length - 1];

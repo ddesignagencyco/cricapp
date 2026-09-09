@@ -1,132 +1,165 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Search, Users, Shield, Calendar, Trophy, Loader2 } from 'lucide-react';
+import { Calendar, Loader2, Search, Shield, Trophy, UserRound } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import toast from 'react-hot-toast';
 import { searchAll } from '../../services/search';
-import TeamLogo from '../TeamLogo';
+import type { Match, SearchResults } from '../../types/index';
 import EmptyState from '../EmptyState';
+import TeamLogo from '../TeamLogo';
 
-const SectionIcon = ({ type }: { type: string }) => {
-  const cls = 'text-accent';
-  if (type === 'players') return <Users size={16} className={cls} />;
-  if (type === 'teams') return <Shield size={16} className={cls} />;
-  if (type === 'matches') return <Calendar size={16} className={cls} />;
-  return <Trophy size={16} className={cls} />;
-};
+function initials(name?: string | null): string {
+  if (!name || typeof name !== 'string') return '??';
+  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || '??';
+}
+
+function strVal(v: unknown): string {
+  if (typeof v === 'string') return v;
+  if (v && typeof v === 'object') {
+    const o = v as Record<string, unknown>;
+    return (typeof o.name === 'string' ? o.name : typeof o.title === 'string' ? o.title : '') || '';
+  }
+  return '';
+}
+
+function matchTitle(match: Match): string {
+  const home = match.teams?.home?.name || (match.teamNames && match.teamNames[0]) || 'Match';
+  const away = match.teams?.away?.name || (match.teamNames && match.teamNames[1]) || '';
+  if (away) return `${home} vs ${away}`;
+  return home || match.tournament || 'Match';
+}
+
+function matchSubtitle(match: Match): string {
+  const tour = strVal(match.tournamentName || match.tournament);
+  const venue = strVal(match.venue || match.city);
+  return [tour, match.status, venue].filter(Boolean).join(' · ');
+}
+
+function tournamentSubtitle(item: any): string {
+  const category = strVal(item.category);
+  const gender = strVal(item.gender);
+  const type = strVal(item.type);
+  return [category, gender, type].filter(Boolean).join(' · ');
+}
 
 export default function SearchResultsBody() {
   const searchParams = useSearchParams();
-  const q = searchParams.get('q') || '';
-  const [results, setResults] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+  const pathname = usePathname();
+  const initialQ = searchParams.get('q') || '';
 
+  const [inputVal, setInputVal] = useState(initialQ);
+  const [debouncedQuery, setDebouncedQuery] = useState(initialQ);
+  const [results, setResults] = useState<SearchResults | null>(null);
+  const [loading, setLoading] = useState(Boolean(initialQ.trim()));
+
+  // Sync URL query if navigation happens externally
   useEffect(() => {
-    if (!q.trim()) {
+    setInputVal(initialQ);
+    setDebouncedQuery(initialQ);
+  }, [initialQ]);
+
+  // Debounce input changes by 300ms
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedQuery(inputVal.trim());
+      // Update URL query string without reloading page
+      const params = new URLSearchParams(searchParams.toString());
+      if (inputVal.trim()) {
+        params.set('q', inputVal.trim());
+      } else {
+        params.delete('q');
+      }
+      const qs = params.toString();
+      router.replace(`${pathname}${qs ? `?${qs}` : ''}`, { scroll: false });
+    }, 300);
+
+    return () => window.clearTimeout(timer);
+  }, [inputVal, pathname, router, searchParams]);
+
+  // Search when debounced query changes
+  useEffect(() => {
+    if (!debouncedQuery) {
       setResults(null);
       setLoading(false);
       return;
     }
     setLoading(true);
-    searchAll(q).then((res) => {
-      setResults(res);
-      setLoading(false);
-    });
-  }, [q]);
+    searchAll(debouncedQuery)
+      .then(setResults)
+      .catch(() => {
+        setResults(null);
+        toast.error('Search is temporarily unavailable.');
+      })
+      .finally(() => setLoading(false));
+  }, [debouncedQuery]);
 
-  const groups = results
-    ? [
-        { key: 'players', label: 'Players', items: results.players, to: (r: any) => `/players/${r.id}`, render: (r: any) => ({ title: r.name, sub: `${r.teamName} • ${r.role}` }) },
-        { key: 'teams', label: 'Teams', items: results.teams, to: (r: any) => `/teams/${r.id}`, render: (r: any) => ({ title: r.name, sub: `${r.shortName} • ${r.city}` }) },
-        { key: 'matches', label: 'Matches', items: results.matches, to: (r: any) => `/matches/${r.id}`, render: (r: any) => ({ title: `${r.label}`, sub: `${r.tournament} • ${r.status}` }) },
-        { key: 'tournaments', label: 'Tournaments', items: results.tournaments, to: () => '/psl', render: (r: any) => ({ title: r.name, sub: `${r.shortName} • ${r.format}` }) },
-      ].filter((g) => g.items.length > 0)
-    : [];
-
-  const totalResults = groups.reduce((sum, g) => sum + g.items.length, 0);
+  const total = results ? results.players.length + results.teams.length + results.matches.length + results.tournaments.length : 0;
 
   return (
-    <>
-      <header className="mb-8">
+    <div className="w-full">
+      <header className="mb-8 border-b border-lborder pb-6">
         <div className="flex items-center gap-2 text-accent">
-          <Search size={18} />
-          <span className="text-xs font-bold uppercase tracking-widest text-stext">Search</span>
+          <Search size={17} />
+          <span className="text-xs font-bold uppercase tracking-widest text-stext">Search Archive</span>
         </div>
-        <h1 className="mt-1 text-3xl font-black tracking-tight sm:text-4xl">
-          {q ? <>Results for &ldquo;{q}&rdquo;</> : 'Search'}
+        <h1 className="mt-2 text-2xl font-black tracking-tight text-mtext sm:text-4xl">
+          {debouncedQuery ? <>Results for “{debouncedQuery}”</> : 'Search PakCricZone'}
         </h1>
-        {results && (
+        {debouncedQuery && results && (
           <p className="mt-2 text-sm text-stext">
-            {totalResults} result{totalResults !== 1 ? 's' : ''} found
+            {total} result{total === 1 ? '' : 's'} found
           </p>
         )}
+
+        {/* Live debounced search input directly on /search page */}
+        <div className="mt-6 max-w-2xl">
+          <div className="flex items-center gap-3 rounded-2xl border border-lborder bg-card px-4 py-3 shadow-sm ring-1 ring-black/5 focus-within:border-accent/60 focus-within:ring-2 focus-within:ring-accent/20 transition-all">
+            <Search size={18} className="shrink-0 text-accent" />
+            <input
+              type="search"
+              value={inputVal}
+              onChange={(e) => setInputVal(e.target.value)}
+              placeholder="Search players, teams, matches or tournaments…"
+              className="w-full bg-transparent text-sm sm:text-base text-mtext placeholder:text-stext/70 outline-none"
+            />
+            {inputVal && (
+              <button
+                type="button"
+                onClick={() => setInputVal('')}
+                className="rounded-lg p-1 text-stext hover:bg-elevated hover:text-mtext text-xs font-semibold"
+                aria-label="Clear search"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+        </div>
       </header>
 
-      {loading && (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 size={28} className="animate-spin text-accent" />
+      {loading && <div className="flex justify-center py-20"><Loader2 size={26} className="animate-spin text-accent" /></div>}
+      {!loading && !debouncedQuery && <EmptyState title="Start searching" icon={Search} message="Search players, teams, matches and tournaments." />}
+      {!loading && debouncedQuery && results && total === 0 && <EmptyState title="No results found" icon={Search} message={`We couldn't find anything matching “${debouncedQuery}”.`} />}
+      {!loading && results && total > 0 && (
+        <div className="space-y-8">
+          <SearchSection title="Players" icon={<UserRound size={16} />} items={results.players} render={(item) => <SearchCard key={item.id} href={`/players/${item.id}`} title={item.name} subtitle={[item.teamName, item.role].filter(Boolean).join(' · ')} icon={<span className="grid h-9 w-9 place-items-center rounded-full bg-elevated text-xs font-bold text-accent">{initials(item.name)}</span>} />} />
+          <SearchSection title="Teams" icon={<Shield size={16} />} items={results.teams} render={(item) => <SearchCard key={item.id} href={`/teams/${item.id}`} title={item.name} subtitle={[item.code || item.shortName, item.country || item.city].filter(Boolean).join(' · ')} icon={<TeamLogo teamId={item.id} name={item.name} code={item.code || item.shortName} size="sm" link={false} />} />} />
+          <SearchSection title="Matches" icon={<Calendar size={16} />} items={results.matches} render={(item) => <SearchCard key={item.matchId || item.id} href={`/matches/${item.matchId || item.id}`} title={matchTitle(item)} subtitle={matchSubtitle(item)} icon={<Calendar size={18} />} />} />
+          <SearchSection title="Tournaments" icon={<Trophy size={16} />} items={results.tournaments} render={(item) => <SearchCard key={item.id} href={`/tournaments/${item.id}`} title={item.name} subtitle={tournamentSubtitle(item)} icon={<Trophy size={18} />} />} />
         </div>
       )}
-
-      {!loading && !q && (
-        <EmptyState
-          title="Start searching"
-          icon={Search}
-          message="Type a player name, team, match or tournament to find results."
-        />
-      )}
-
-      {!loading && q && groups.length === 0 && (
-        <EmptyState
-          title="No results found"
-          icon={Search}
-          message={`We couldn't find anything matching "${q}". Try a different search term.`}
-        />
-      )}
-
-      {!loading && groups.length > 0 && (
-        <div className="space-y-10">
-          {groups.map((group) => (
-            <section key={group.key}>
-              <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-mtext">
-                <SectionIcon type={group.key} /> {group.label}
-                <span className="ml-2 rounded-full bg-elevated px-2.5 py-0.5 text-xs font-semibold text-stext">
-                  {group.items.length}
-                </span>
-              </h2>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {group.items.map((item: any) => {
-                  const { title, sub } = group.render(item);
-                  return (
-                    <Link
-                      key={item.id}
-                      href={group.to(item)}
-                      className="group flex items-center gap-3 rounded-xl bg-card px-4 py-3 ring-1 ring-lborder transition-all hover:-translate-y-0.5 hover:bg-elevated hover:ring-accent/30"
-                    >
-                      {group.key === 'teams' ? (
-                        <TeamLogo teamId={item.id} size="sm" />
-                      ) : group.key === 'players' ? (
-                        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-elevated text-xs font-bold text-accent ring-1 ring-lborder">
-                          {item.name.split(' ').map((w: string) => w[0]).slice(0, 2).join('')}
-                        </div>
-                      ) : (
-                        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-elevated text-accent ring-1 ring-lborder">
-                          <SectionIcon type={group.key} />
-                        </div>
-                      )}
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-bold text-mtext group-hover:text-accent">{title}</p>
-                        <p className="truncate text-xs text-stext">{sub}</p>
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            </section>
-          ))}
-        </div>
-      )}
-    </>
+    </div>
   );
+}
+
+function SearchSection<T>({ title, icon, items, render }: { title: string; icon: ReactNode; items: T[]; render: (_item: T) => ReactNode }) {
+  if (!items.length) return null;
+  return <section><h2 className="mb-3 flex items-center gap-2 text-base font-bold text-mtext">{icon}{title}<span className="rounded bg-elevated px-2 py-0.5 text-xs font-semibold text-stext">{items.length}</span></h2><div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">{items.map(render)}</div></section>;
+}
+
+function SearchCard({ href, title, subtitle, icon }: { href: string; title: string; subtitle: string; icon: ReactNode }) {
+  return <Link href={href} className="group flex items-center gap-3 rounded bg-card px-3.5 py-3 ring-1 ring-lborder transition hover:-translate-y-0.5 hover:bg-elevated hover:ring-accent/30"> <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-elevated text-accent">{icon}</span><span className="min-w-0"><span className="block truncate text-sm font-semibold text-mtext group-hover:text-accent">{title}</span><span className="block truncate text-xs text-stext">{subtitle || 'PakCricZone'}</span></span></Link>;
 }

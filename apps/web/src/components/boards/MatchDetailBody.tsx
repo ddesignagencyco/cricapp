@@ -9,6 +9,9 @@ import Tabs from '../Tabs';
 import EmptyState from '../EmptyState';
 import HeadToHeadWidget from '../HeadToHeadWidget';
 import TeamLogo from '../TeamLogo';
+import FavoriteButton from '../FavoriteButton';
+import ShareButton from '../ShareButton';
+import CommentsSection from '../CommentsSection';
 import { formatScheduled } from '../../utils/helpers';
 
 const detailTabs = [
@@ -95,26 +98,51 @@ export default function MatchDetailBody({ match, headToHead }: Props) {
         <span className="text-mtext truncate max-w-[200px] sm:max-w-none font-medium">{breadcrumbName}</span>
       </nav>
 
-      <header className="relative overflow-hidden rounded-3xl bg-card p-6 ring-1 ring-lborder shadow-lg transition-all hover:shadow-xl">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-accent2 via-accent to-accent2 opacity-80" />
-        <div className="flex flex-wrap items-center justify-between gap-3">
+      <header className="relative overflow-hidden rounded-3xl border border-lborder bg-gradient-to-br from-card via-card to-elevated p-6 shadow-md transition-all sm:p-8">
+        {/* Ambient background glow */}
+        <div className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-accent/5 blur-3xl" />
+        <div className="pointer-events-none absolute -left-20 -bottom-20 h-72 w-72 rounded-full bg-accent/5 blur-3xl" />
+        {isLive && (
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-red-500 via-amber-500 to-red-500 animate-pulse" />
+        )}
+
+        {/* Top Badges & Actions */}
+        <div className="relative flex flex-wrap items-center justify-between gap-3 border-b border-lborder/60 pb-4">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge tone="upcoming">{match.tournament || 'Match'}</Badge>
+            <span className="rounded-full bg-accent/10 px-3 py-1 text-xs font-black uppercase tracking-wider text-accent border border-accent/20">
+              {match.tournament || 'Match Fixture'}
+            </span>
+            {match.format && (
+              <span className="rounded-full bg-secondary px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-stext border border-lborder/60">
+                {match.format}
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-2">
             {isLive ? (
               <LiveIndicator />
             ) : isUpcoming ? (
-              <Badge tone="upcoming">Upcoming</Badge>
+              <span className="rounded-full bg-accent/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-accent border border-accent/20">Upcoming</span>
             ) : isCancelled ? (
-              <Badge tone="cancelled">Cancelled</Badge>
+              <span className="rounded-full bg-stext/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-stext border border-lborder/60">Cancelled</span>
             ) : (
-              <Badge tone="completed">Completed</Badge>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-amber-500 border border-amber-500/20">
+                <Trophy size={13} />
+                Completed
+              </span>
             )}
+            <FavoriteButton targetType="match" targetId={match.id || match.matchId} compact />
+            <ShareButton
+              type="match"
+              id={match.id || match.matchId}
+              fallbackTitle={`${homeName} vs ${awayName}`}
+              compact
+            />
           </div>
         </div>
 
-        <div className="mt-4 flex items-center justify-between gap-2 sm:grid sm:grid-cols-[1fr_auto_1fr] sm:gap-6">
+        {/* Big Stadium Scoreboard Matchup */}
+        <div className="relative mt-6 flex flex-col gap-6 sm:grid sm:grid-cols-[1fr_auto_1fr] sm:items-center sm:gap-8">
           <div className="flex min-w-0 flex-1 justify-start">
             <TeamSide
               code={homeCode}
@@ -125,10 +153,15 @@ export default function MatchDetailBody({ match, headToHead }: Props) {
             />
           </div>
 
-          <div className="flex shrink-0 justify-center">
-            <div className="rounded-full bg-elevated px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-stext sm:px-4 sm:py-1.5 sm:text-xs">
-              vs
+          <div className="flex shrink-0 flex-col items-center justify-center">
+            <div className="grid h-12 w-12 place-items-center rounded-2xl border border-lborder bg-secondary shadow-inner">
+              <span className="font-mono text-xs font-black italic tracking-wider text-stext">VS</span>
             </div>
+            {match.round && (
+              <span className="mt-2 text-[10px] font-bold uppercase tracking-widest text-stext/80">
+                {match.round}
+              </span>
+            )}
           </div>
 
           <div className="flex min-w-0 flex-1 justify-end">
@@ -142,37 +175,43 @@ export default function MatchDetailBody({ match, headToHead }: Props) {
           </div>
         </div>
 
+        {/* Live innings detail ticker */}
         {hasInnings && (
-          <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-lborder pt-4 text-xs text-stext">
-            <span className="flex items-center gap-1.5">
-              <BarChart3 size={14} /> {battingCode || '—'} {inn.runs}/{inn.wickets}
-            </span>
-            <span className="flex items-center gap-1.5">
-              <Users size={14} /> {inn.overs} ov · RR {inn.runRate}
-            </span>
-            {match.lastEvent?.type && match.lastEvent.type !== 'none' && (
+          <div className="relative mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-secondary/80 p-3.5 border border-lborder/60 text-xs font-semibold text-stext">
+            <div className="flex items-center gap-3">
+              <span className="flex items-center gap-1.5 text-mtext">
+                <BarChart3 size={15} className="text-accent" />
+                <span className="font-bold text-accent">{battingCode || 'Batting'}</span> {inn.runs}/{inn.wickets}
+              </span>
+              <span>·</span>
               <span className="flex items-center gap-1.5">
+                <Users size={14} className="text-accent" /> {inn.overs} ov (RR {inn.runRate})
+              </span>
+            </div>
+            {match.lastEvent?.type && match.lastEvent.type !== 'none' && (
+              <span className="rounded-lg bg-card px-2.5 py-1 text-[11px] font-bold text-mtext border border-lborder/60">
                 Last: {match.lastEvent.type} +{match.lastEvent.runs ?? 0}
               </span>
             )}
           </div>
         )}
 
-        {(date || time) && (
-          <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-lborder pt-4 text-xs text-stext">
+        {/* Matchday Meta Footer */}
+        {(date || time || match.venue) && (
+          <div className="relative mt-5 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-lborder/60 pt-4 text-xs font-medium text-stext">
             {date && (
               <span className="flex items-center gap-1.5">
-                <Calendar size={14} /> {date}
+                <Calendar size={13} className="text-accent" /> {date}
               </span>
             )}
             {time && (
               <span className="flex items-center gap-1.5">
-                <Clock size={14} /> {time}
+                <Clock size={13} className="text-accent" /> {time}
               </span>
             )}
             {match.venue && (
               <span className="flex items-center gap-1.5">
-                <MapPin size={14} /> {match.venue}
+                <MapPin size={13} className="text-accent" /> {match.venue}
               </span>
             )}
           </div>
@@ -244,6 +283,10 @@ export default function MatchDetailBody({ match, headToHead }: Props) {
         <aside className="lg:col-span-1 mt-3">
           <HeadToHeadWidget data={headToHead || null} />
         </aside>
+      </div>
+
+      <div className="mt-8">
+        <CommentsSection targetType="match" targetId={match.id || match.matchId} />
       </div>
     </div>
   );

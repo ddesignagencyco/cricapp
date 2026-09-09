@@ -8,8 +8,10 @@ import StatCard from '../StatCard';
 import Tabs from '../Tabs';
 import MatchCard from '../MatchCard';
 import EmptyState from '../EmptyState';
-import { getInitials } from '../../utils/helpers';
 import TeamLogo from '../TeamLogo';
+import FavoriteButton from '../FavoriteButton';
+import ShareButton from '../ShareButton';
+import { getInitials } from '../../utils/helpers';
 
 const playerTabs = [
   { key: 'profile', label: 'Profile' },
@@ -44,45 +46,82 @@ export default function PlayerDetailBody({ player }: Props) {
         <span className="text-mtext">{name}</span>
       </nav>
 
-      <header className="rounded-3xl bg-card p-6 ring-1 ring-lborder sm:p-8">
-        <div className="flex flex-col gap-6 md:flex-row md:items-center">
-          <div className="grid h-24 w-24 shrink-0 place-items-center rounded-3xl bg-elevated text-3xl font-black text-accent ring-1 ring-lborder">
-            {initials}
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-2xl font-black tracking-tight sm:text-3xl">{name}</h1>
-            </div>
-            {nickname && nickname !== name && (
-              <p className="mt-0.5 text-sm text-stext">{nickname}</p>
+      <header className="relative overflow-hidden rounded-3xl border border-lborder bg-gradient-to-br from-card via-card to-elevated p-6 shadow-md sm:p-8">
+        <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-accent/5 blur-3xl" />
+
+        <div className="relative flex items-center justify-between border-b border-lborder/60 pb-4">
+          <div className="flex items-center gap-2">
+            <span className="rounded-full bg-accent/10 px-3 py-1 text-xs font-black uppercase tracking-wider text-accent border border-accent/20">
+              {player.role || 'Player Profile'}
+            </span>
+            {player.nationality && (
+              <span className="rounded-full bg-secondary px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-stext border border-lborder/60">
+                {player.nationality}
+              </span>
             )}
-            <p className="mt-1 text-sm text-stext">
-              {[player.role, player.nationality].filter(Boolean).join(' • ')}
-            </p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {player.role && <Badge tone="neutral">{player.role}</Badge>}
-              {player.battingStyle && <Badge tone="neutral">{player.battingStyle}</Badge>}
-              {player.bowlingStyle && <Badge tone="neutral">{player.bowlingStyle}</Badge>}
+          </div>
+          <div className="flex items-center gap-2">
+            <FavoriteButton targetType="player" targetId={player.id} compact />
+            <ShareButton
+              type="player"
+              id={player.id}
+              fallbackTitle={name}
+              compact
+            />
+          </div>
+        </div>
+
+        <div className="relative mt-6 flex flex-col gap-6 md:flex-row md:items-center">
+          <div className="relative group">
+            <div className="absolute -inset-1 rounded-3xl bg-accent/20 blur-md group-hover:bg-accent/30 transition-all" />
+            <div className="relative grid h-24 w-24 shrink-0 place-items-center rounded-3xl border-2 border-accent/40 bg-gradient-to-br from-secondary to-elevated text-3xl font-black text-accent shadow-lg shadow-black/20">
+              {initials}
             </div>
           </div>
 
-          {team && (
-            <Link
-              href={`/teams/${team.id}`}
-              className="group flex shrink-0 items-center gap-3 rounded-2xl bg-elevated px-4 py-3 transition-colors hover:bg-card"
-            >
-              {team.logoUrl ? (
-                <img src={team.logoUrl} alt={team.name} className="h-12 w-12 rounded-full border-2 border-accent object-cover" />
-              ) : (
-                <span className="grid place-items-center rounded-full border-2 border-accent bg-primary text-sm font-extrabold text-accent">
-                  <TeamLogo teamId={team.id} name={team.name} code={team.abbr} size="lg" link={false} />
-                </span>
-              )}
-              <div>
-                <p className="text-xs text-stext">Team</p>
-                <p className="text-sm font-bold text-mtext group-hover:text-accent">{team.name} ({team.abbr})</p>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-2xl font-black tracking-tight text-mtext sm:text-4xl">{name}</h1>
+            </div>
+            {nickname && nickname !== name && (
+              <p className="mt-1 font-mono text-xs font-bold text-accent tracking-wider uppercase">{nickname}</p>
+            )}
+            <p className="mt-1 text-sm text-stext">
+              {[player.role, player.nationality, player.birth ? `Born ${player.birth}` : null].filter(Boolean).join(' • ')}
+            </p>
+            {(player.battingStyle || player.bowlingStyle) && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {player.battingStyle && (
+                  <span className="rounded-xl border border-lborder/80 bg-secondary px-3 py-1 text-xs font-semibold text-mtext">
+                    Batting: <span className="text-accent">{player.battingStyle}</span>
+                  </span>
+                )}
+                {player.bowlingStyle && (
+                  <span className="rounded-xl border border-lborder/80 bg-secondary px-3 py-1 text-xs font-semibold text-mtext">
+                    Bowling: <span className="text-accent">{player.bowlingStyle}</span>
+                  </span>
+                )}
               </div>
-            </Link>
+            )}
+          </div>
+
+          {team && (
+            <div className="flex shrink-0 items-center">
+              <Link
+                href={`/teams/${team.id}`}
+                className="group flex items-center gap-3 rounded-2xl border border-lborder/80 bg-secondary/80 px-4 py-3 transition-all hover:border-accent/40 hover:bg-elevated cursor-pointer shadow-sm"
+              >
+                {team.logoUrl ? (
+                  <img src={team.logoUrl} alt={team.name} className="h-11 w-11 rounded-full border border-white/10 bg-white object-contain p-0.5" />
+                ) : (
+                  <TeamLogo teamId={team.id} name={team.name} code={team.abbr} size="sm" link={false} />
+                )}
+                <div>
+                  <p className="text-[10px] uppercase font-bold text-stext tracking-wider">Franchise</p>
+                  <p className="text-xs font-black text-mtext group-hover:text-accent transition-colors">{team.abbr || team.name}</p>
+                </div>
+              </Link>
+            </div>
           )}
         </div>
       </header>

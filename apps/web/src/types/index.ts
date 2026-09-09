@@ -210,6 +210,7 @@ export interface NewsArticle {
   type: string;
   date: string;
   tag?: string;
+  tags?: string[];
   author: string;
   readTime: string;
   excerpt: string;
@@ -330,7 +331,7 @@ export interface SearchResults {
   players: Player[];
   teams: Team[];
   matches: Match[];
-  tournaments: Tournament[];
+  tournaments: TournamentApi[];
 }
 
 /* ─── PSL ─────────────────────────────────────────────────── */

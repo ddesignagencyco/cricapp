@@ -74,77 +74,153 @@ export default function ScheduleBoard({
   const activeMeta = tab === 'schedule' ? scheduleMeta : resultsMeta;
   const onPageChange = tab === 'schedule' ? onSchedulePageChange : onResultsPageChange;
 
-  const prevDate = () => {
+  const jumpDay = (offset: number) => {
     const d = new Date(date + 'T00:00:00');
-    d.setDate(d.getDate() - 1);
+    d.setDate(d.getDate() + offset);
     onDateChange(toISODate(d));
   };
 
-  const nextDate = () => {
-    const d = new Date(date + 'T00:00:00');
-    d.setDate(d.getDate() + 1);
-    onDateChange(toISODate(d));
-  };
-
+  const prevDate = () => jumpDay(-1);
+  const nextDate = () => jumpDay(1);
   const goToToday = () => onDateChange(toISODate(new Date()));
 
+  const isToday = date === toISODate(new Date());
+
   return (
-    <>
-      <header className="mb-8">
-        <div className="flex items-center gap-2 text-accent">
-          <Calendar size={18} />
-          <span className="text-xs font-bold uppercase tracking-widest text-stext">Daily Schedule</span>
-        </div>
-        <h1 className="mt-1 text-3xl font-black tracking-tight sm:text-4xl">Schedule</h1>
-        <p className="mt-2 text-sm text-stext">All matches scheduled or completed on any given day.</p>
-      </header>
+    <div className="space-y-8">
+      {/* Header Banner */}
+      <div className="relative overflow-hidden rounded-3xl border border-lborder bg-gradient-to-br from-card via-card to-elevated p-6 shadow-sm sm:p-8">
+        <div className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-accent/5 blur-3xl pointer-events-none" />
 
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <button type="button" onClick={prevDate} className="grid h-9 w-9 place-items-center rounded-lg bg-card text-stext ring-1 ring-lborder transition-colors hover:bg-elevated hover:text-mtext" aria-label="Previous day">
-            <ChevronLeft size={18} />
-          </button>
-          <div className="min-w-[180px] text-center">
-            <p className="text-sm font-bold text-mtext">{formatDateDisplay(date)}</p>
-            {date === toISODate(new Date()) && <p className="text-[11px] font-semibold text-accent">Today</p>}
+        <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <div className="max-w-2xl">
+            <div className="inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-accent border border-accent/20">
+              <Calendar size={13} />
+              <span>Fixtures & Match Results</span>
+            </div>
+            <h1 className="mt-3 text-3xl font-black tracking-tight text-mtext sm:text-4xl">
+              Cricket Match Schedule
+            </h1>
+            <p className="mt-2 text-sm leading-relaxed text-stext sm:text-base">
+              Real-time daily schedule, live cricket scorecards, upcoming international fixtures, and verified match results.
+            </p>
           </div>
-          <button type="button" onClick={nextDate} className="grid h-9 w-9 place-items-center rounded-lg bg-card text-stext ring-1 ring-lborder transition-colors hover:bg-elevated hover:text-mtext" aria-label="Next day">
-            <ChevronRight size={18} />
-          </button>
-          {date !== toISODate(new Date()) && (
-            <button type="button" onClick={goToToday} className="rounded-lg bg-accent/15 px-3 py-1.5 text-xs font-semibold text-accent ring-1 ring-inset ring-accent/25 transition-colors hover:bg-accent/25">
-              Today
-            </button>
-          )}
+
+          {/* Quick Date Control Card */}
+          <div className="flex flex-col items-start sm:items-end gap-3">
+            <div className="flex items-center gap-2 rounded-2xl border border-lborder bg-secondary/80 p-1.5 shadow-inner backdrop-blur-md">
+              <button
+                type="button"
+                onClick={prevDate}
+                className="grid h-9 w-9 place-items-center rounded-xl bg-card text-stext shadow-sm transition-all hover:bg-elevated hover:text-accent cursor-pointer"
+                title="Previous day"
+              >
+                <ChevronLeft size={18} />
+              </button>
+
+              <label className="relative flex flex-col items-center justify-center px-3 min-w-[170px] cursor-pointer group">
+                <p className="text-xs font-black text-mtext sm:text-sm tracking-tight group-hover:text-accent transition-colors">
+                  {formatDateDisplay(date)}
+                </p>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-accent">
+                  {isToday ? "Today's Fixtures" : 'Match Day'}
+                </span>
+                <input
+                  type="date"
+                  value={date}
+                  onChange={(e) => e.target.value && onDateChange(e.target.value)}
+                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                  title="Select custom date"
+                />
+              </label>
+
+              <button
+                type="button"
+                onClick={nextDate}
+                className="grid h-9 w-9 place-items-center rounded-xl bg-card text-stext shadow-sm transition-all hover:bg-elevated hover:text-accent cursor-pointer"
+                title="Next day"
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
+
+            {/* Quick jump pills & calendar button */}
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => jumpDay(-1)}
+                className="rounded-xl border border-lborder bg-card px-3 py-1 text-[11px] font-bold text-stext hover:text-mtext hover:bg-secondary transition-all cursor-pointer shadow-xs"
+              >
+                Yesterday
+              </button>
+              <button
+                type="button"
+                onClick={goToToday}
+                className={`rounded-xl px-3 py-1 text-[11px] font-bold transition-all cursor-pointer ${
+                  isToday
+                    ? 'bg-accent text-white shadow-md shadow-accent/20'
+                    : 'border border-lborder bg-card text-accent hover:bg-accent/15'
+                }`}
+              >
+                Today
+              </button>
+              <button
+                type="button"
+                onClick={() => jumpDay(1)}
+                className="rounded-xl border border-lborder bg-card px-3 py-1 text-[11px] font-bold text-stext hover:text-mtext hover:bg-secondary transition-all cursor-pointer shadow-xs"
+              >
+                Tomorrow
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="mb-5">
+      {/* Tabs Row */}
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-lborder/80 pb-4">
         <Tabs tabs={tabs} active={tab} onChange={onTabChange} />
+
+        <div className="text-xs font-semibold text-stext">
+          <span>{activeMeta.total || events.length} matches found</span>
+        </div>
       </div>
 
+      {/* Content Grid */}
       {loading ? (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-52 animate-pulse rounded-2xl bg-card ring-1 ring-lborder" />
+            <div
+              key={i}
+              className="h-64 animate-pulse rounded-3xl border border-lborder bg-card p-5"
+            />
           ))}
         </div>
       ) : events.length > 0 ? (
         <>
-          <div className="fade-in grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="fade-in grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {events.map((record) => (
               <ScheduleCard key={record.eventId} record={record} />
             ))}
           </div>
-          <Pagination page={activeMeta.page} totalPages={activeMeta.totalPages} onPageChange={onPageChange} />
+          <div className="pt-6">
+            <Pagination
+              page={activeMeta.page}
+              totalPages={activeMeta.totalPages}
+              onPageChange={onPageChange}
+            />
+          </div>
         </>
       ) : (
         <EmptyState
-          title={`No ${tab === 'schedule' ? 'scheduled' : 'completed'} matches`}
-          message={tab === 'schedule' ? 'No matches are scheduled for this date.' : 'No matches were completed on this date.'}
+          title={`No ${tab === 'schedule' ? 'scheduled' : 'completed'} matches on this date`}
+          message={
+            tab === 'schedule'
+              ? `No cricket matches are scheduled for ${formatDateDisplay(date)}. Use the date picker above to check upcoming fixtures.`
+              : `No match results recorded for ${formatDateDisplay(date)}. Try checking previous days.`
+          }
         />
       )}
-    </>
+    </div>
   );
 }
 
@@ -204,64 +280,118 @@ function ScheduleCard({ record }: { record: SportEventRecord }) {
   const { date: eventDate, time } = formatScheduled(record.scheduled);
 
   return (
-    <div className="flex h-full flex-col justify-between rounded-2xl bg-card p-5 ring-1 ring-lborder transition-all duration-300 hover:-translate-y-1 hover:bg-elevated hover:shadow-lg">
-      <div className="mb-4 space-y-2">
-        <div className="flex items-center justify-between gap-2">
-          {tournamentName ? <span className="min-w-0 flex-1 truncate text-[11px] font-bold uppercase tracking-widest text-accent" title={tournamentName}>{tournamentName}</span> : <span className="flex-1" />}
-          <div className="flex items-center gap-1.5">
-            {format && <span className="shrink-0 rounded-full bg-elevated px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-stext">{format}</span>}
-            {gender && <span className="shrink-0 rounded-full bg-elevated px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-stext">{gender === 'male' ? 'M' : gender === 'female' ? 'W' : gender}</span>}
-            {isLive && <span className="shrink-0 rounded-full bg-red-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-red-400">Live</span>}
+    <div className="group relative flex h-full flex-col justify-between overflow-hidden rounded-3xl border border-lborder bg-card p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-accent/50 hover:bg-elevated hover:shadow-xl hover:shadow-accent/10">
+      <div>
+        {/* Tournament & Badges Row */}
+        <div className="mb-4 flex items-center justify-between gap-2">
+          {tournamentName ? (
+            <span
+              className="min-w-0 flex-1 truncate text-xs font-bold uppercase tracking-wider text-accent"
+              title={tournamentName}
+            >
+              {tournamentName}
+            </span>
+          ) : (
+            <span className="flex-1" />
+          )}
+
+          <div className="flex items-center gap-1.5 shrink-0">
+            {format && (
+              <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-accent border border-accent/20">
+                {format}
+              </span>
+            )}
+            {isLive ? (
+              <span className="flex items-center gap-1 rounded-full bg-red-500/15 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-red-500 ring-1 ring-red-500/30 animate-pulse">
+                <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
+                Live
+              </span>
+            ) : matchStatus ? (
+              <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-stext border border-lborder/60">
+                {matchStatus}
+              </span>
+            ) : null}
           </div>
         </div>
-        {(seasonLabel || category) && (
-          <div className="flex items-center gap-2 text-[10px] font-semibold text-stext">
-            {seasonLabel && <span>{seasonLabel}</span>}
-            {seasonLabel && category && <span aria-hidden="true">|</span>}
-            {category && <span>{category}</span>}
+
+        {/* Head-to-Head Visual Matchup */}
+        <div className="my-3 flex items-center justify-between gap-2">
+          {/* Home Side */}
+          <div className="flex min-w-0 flex-1 flex-col items-center text-center">
+            <div className="relative mb-2">
+              <TeamCode code={homeAbbr} name={homeName} />
+            </div>
+            <p className="w-full truncate text-xs font-bold text-mtext group-hover:text-accent transition-colors" title={homeName}>
+              {homeName}
+            </p>
+          </div>
+
+          {/* Center VS / Score Emblem */}
+          <div className="flex shrink-0 flex-col items-center justify-center px-2">
+            <span className="rounded-full border border-lborder bg-secondary px-3 py-1 font-mono text-[11px] font-black tracking-wider text-mtext">
+              {displayScore || 'VS'}
+            </span>
+            {round && <span className="mt-1 text-[9px] font-semibold uppercase text-stext/80">{round}</span>}
+          </div>
+
+          {/* Away Side */}
+          <div className="flex min-w-0 flex-1 flex-col items-center text-center">
+            <div className="relative mb-2">
+              <TeamCode code={awayAbbr} name={awayName} />
+            </div>
+            <p className="w-full truncate text-xs font-bold text-mtext group-hover:text-accent transition-colors" title={awayName}>
+              {awayName}
+            </p>
+          </div>
+        </div>
+
+        {/* Winner / Status Callout */}
+        {winnerName ? (
+          <div className="mt-3 rounded-xl bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 text-center">
+            <p className="text-xs font-bold text-amber-500 truncate">{winnerName} won</p>
+          </div>
+        ) : result ? (
+          <div className="mt-3 rounded-xl bg-accent/10 border border-accent/20 px-3 py-1.5 text-center">
+            <p className="text-xs font-bold text-accent truncate">{result}</p>
+          </div>
+        ) : null}
+
+        {/* Innings Breakdown Preview */}
+        {scores.length > 0 && (
+          <div className="mt-3 divide-y divide-lborder/60 rounded-xl bg-secondary/60 p-2.5 text-[11px]">
+            {scores.map((s, i) => (
+              <div key={i} className="flex items-center justify-between py-1 font-semibold text-mtext">
+                <span className="text-stext">{(s.type as string) || `Innings ${i + 1}`}</span>
+                <span className="font-mono">{String(s.home_score ?? '-')} - {String(s.away_score ?? '-')}</span>
+              </div>
+            ))}
           </div>
         )}
       </div>
 
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex min-w-0 flex-1 flex-col items-center justify-center text-center">
-          <TeamCode code={homeAbbr} name={homeName} />
-          <p className="mt-2 w-full truncate text-[13px] font-bold text-mtext" title={homeName}>{homeName}</p>
+      {/* Fixture Meta Footer */}
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-2 border-t border-lborder/60 pt-3 text-[11px] text-stext">
+        <div className="flex items-center gap-3">
+          {eventDate && (
+            <span className="flex items-center gap-1 font-medium">
+              <Calendar size={12} className="text-accent" />
+              {eventDate}
+            </span>
+          )}
+          {time && (
+            <span className="flex items-center gap-1">
+              <Clock size={12} />
+              {time}
+            </span>
+          )}
         </div>
-        <div className="flex shrink-0 flex-col items-center justify-center px-1">
-          <span className="rounded-full bg-elevated px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-stext">{displayScore || 'VS'}</span>
-          {round && <span className="mt-1 text-[9px] font-semibold text-stext">{round}</span>}
-        </div>
-        <div className="flex min-w-0 flex-1 flex-col items-center justify-center text-center">
-          <TeamCode code={awayAbbr} name={awayName} />
-          <p className="mt-2 w-full truncate text-[13px] font-bold text-mtext" title={awayName}>{awayName}</p>
-        </div>
-      </div>
 
-      {displayScore && <p className="mt-3 text-center font-mono text-[16px] font-black text-mtext">{displayScore}</p>}
-
-      {scores.length > 0 && (
-        <div className="mt-3 rounded-lg bg-elevated/50 px-3 py-2">
-          <p className="mb-1.5 text-[9px] font-bold uppercase tracking-widest text-stext">Innings</p>
-          <div className="space-y-1">
-            {scores.map((s, i) => (
-              <div key={i} className="flex items-center justify-between text-[11px] font-semibold text-mtext">
-                <span className="text-stext">{(s.type as string) || `Innings ${i + 1}`}</span>
-                <span>{String(s.home_score ?? '-')} vs {String(s.away_score ?? '-')}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {winnerName && <p className="mt-2 text-center text-[11px] font-bold text-gold">{winnerName} won</p>}
-      {result && !winnerName && <p className="mt-2 text-center text-[11px] font-semibold text-gold">{result}</p>}
-      {matchStatus && matchStatus !== result && <p className="mt-1 text-center text-[10px] font-semibold capitalize text-stext">{matchStatus}</p>}
-
-      <div className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 border-t border-lborder/60 pt-3 text-[11px] font-semibold text-stext">
-        {eventDate && <span className="flex items-center gap-1.5"><Calendar size={13} />{eventDate}</span>}
-        {time && <span className="flex items-center gap-1.5"><Clock size={13} />{time}</span>}
-        {location && <span className="flex items-center gap-1.5 truncate max-w-[150px]" title={location}><MapPin size={13} className="shrink-0" /><span className="truncate">{location}</span></span>}
+        {location && (
+          <span className="flex items-center gap-1 truncate max-w-[140px]" title={location}>
+            <MapPin size={11} className="text-accent shrink-0" />
+            <span className="truncate">{location}</span>
+          </span>
+        )}
       </div>
     </div>
   );

@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Menu, Moon, Search, Sun, User, X } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { LayoutDashboard, LogOut, Menu, Moon, Search, ShieldCheck, Sun, User, UserRound, X } from 'lucide-react';
 import Logo from './Logo';
 import SearchBar from './SearchBar';
 import { useTheme } from './ThemeProvider';
+import { useAuth } from './AuthProvider';
 
 const navItems = [
   { to: '/', label: 'Home' },
@@ -17,18 +18,38 @@ const navItems = [
   { to: '/psl', label: 'PSL' },
   { to: '/tours', label: 'Tours' },
   { to: '/tournaments', label: 'Tournaments' },
+  { to: '/news', label: 'News' },
 ];
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
+  const router = useRouter();
   const { theme, toggle, mounted } = useTheme();
+  const { user, isAdmin, isAuthenticated, logout } = useAuth();
 
   useEffect(() => {
     setMobileOpen(false);
     setSearchOpen(false);
+    setMenuOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    };
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, []);
+
+  const handleLogout = () => {
+    logout();
+    setMenuOpen(false);
+    router.push('/');
+  };
 
   const isActive = (to: string) => (to === '/' ? pathname === '/' : pathname.startsWith(to));
 
@@ -72,18 +93,59 @@ export default function Navbar() {
           >
             <Search size={18} />
           </button>
-
-          <Link
-            href="/signin"
-            className={`grid h-9 w-9 place-items-center rounded-lg transition-colors hover:bg-card hover:text-mtext ${
-              pathname.startsWith('/signin') || pathname.startsWith('/signup')
+          {isAuthenticated && user ? (
+            <div ref={menuRef} className="relative">
+              <button
+                type="button"
+                onClick={() => setMenuOpen((s) => !s)}
+                className="flex items-center gap-2 rounded-lg py-1 pl-1 pr-2 transition-colors hover:bg-card"
+                aria-label="Account menu"
+                aria-expanded={menuOpen}
+              >
+                <span className="grid h-7 w-7 place-items-center rounded-full bg-accent/15 text-[11px] font-bold text-accent ring-1 ring-accent/25">
+                  {(user.displayName || user.username || user.email).slice(0, 2).toUpperCase()}
+                </span>
+                <span className="hidden max-w-24 truncate text-xs font-semibold text-mtext sm:block">
+                  {user.displayName || user.username}
+                </span>
+              </button>
+              {menuOpen && (
+                <div className="absolute right-0 top-full z-50 mt-2 w-52 overflow-hidden rounded bg-elevated py-1 shadow-xl ring-1 ring-lborder">
+                  <div className="border-b border-lborder px-3.5 py-2.5">
+                    <p className="truncate text-sm font-semibold text-mtext">{user.displayName || user.username}</p>
+                    <p className="truncate text-xs text-stext">{user.email}</p>
+                    {isAdmin && (
+                      <span className="mt-1.5 inline-flex items-center gap-1 rounded bg-accent/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-accent">
+                        <ShieldCheck size={10} /> Admin
+                      </span>
+                    )}
+                  </div>
+                  {isAdmin && (
+                    <Link href="/admin" className="flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-stext hover:bg-card hover:text-mtext">
+                      <LayoutDashboard size={15} /> CMS Dashboard
+                    </Link>
+                  )}
+                  <Link href="/favorites" className="flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-stext hover:bg-card hover:text-mtext">
+                    <UserRound size={15} /> My Favorites
+                  </Link>
+                  <button type="button" onClick={handleLogout} className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-sm text-danger hover:bg-card">
+                    <LogOut size={15} /> Sign out
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <Link
+              href="/login"
+              className={`grid h-9 w-9 place-items-center rounded-lg transition-colors hover:bg-card hover:text-mtext ${pathname.startsWith('/login') || pathname.startsWith('/register')
                 ? 'text-accent'
                 : 'text-stext'
-            }`}
-            aria-label="Sign in"
-          >
-            <User size={18} />
-          </Link>
+                }`}
+              aria-label="Sign in"
+            >
+              <User size={18} />
+            </Link>
+          )}
 
           <button
             type="button"
@@ -96,11 +158,7 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {searchOpen && (
-        <div className="border-t border-lborder bg-primary/95 px-4 pb-4 pt-3 backdrop-blur-md">
-          <SearchBar autoFocus onDone={() => setSearchOpen(false)} />
-        </div>
-      )}
+      {searchOpen && <SearchBar autoFocus onDone={() => setSearchOpen(false)} />}
 
       {mobileOpen && (
         <div className="border-t border-lborder bg-secondary lg:hidden">
@@ -118,6 +176,11 @@ export default function Navbar() {
                   {item.label}
                 </Link>
               ))}
+              {isAuthenticated && isAdmin && (
+                <Link href="/admin" className="rounded-xl bg-accent/15 px-4 py-3 text-sm font-semibold text-accent ring-1 ring-inset ring-accent/25">
+                  CMS Dashboard
+                </Link>
+              )}
             </div>
           </div>
         </div>

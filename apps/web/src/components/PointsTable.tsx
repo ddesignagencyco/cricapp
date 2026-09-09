@@ -53,7 +53,7 @@ export default function PointsTable({ rows = [], favoriteTeamId }: PointsTablePr
                       href={`/teams/${row.teamId}`}
                       className="flex items-center gap-2.5 hover:text-accent"
                     >
-                       <TeamLogo teamId={row.teamId} name={row.teamName} code={row.teamAbbr} size="md" link={false} />
+                      <TeamLogo teamId={row.teamId} name={row.teamName} code={row.teamAbbr} size="md" link={false} />
                       <span className="font-semibold">{row.teamName}</span>
                       <span className="text-[11px] uppercase tracking-wider text-stext">
                         {row.teamAbbr}
@@ -64,9 +64,8 @@ export default function PointsTable({ rows = [], favoriteTeamId }: PointsTablePr
                   <td className="px-4 py-3 text-center font-mono text-accent2">{row.won}</td>
                   <td className="px-4 py-3 text-center font-mono text-danger">{row.lost}</td>
                   <td
-                    className={`px-4 py-3 text-right font-mono ${
-                      row.netRunRate >= 0 ? 'text-accent2' : 'text-danger'
-                    }`}
+                    className={`px-4 py-3 text-right font-mono ${row.netRunRate >= 0 ? 'text-accent2' : 'text-danger'
+                      }`}
                   >
                     {row.netRunRate}
                   </td>

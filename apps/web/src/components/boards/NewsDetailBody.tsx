@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowRight, Calendar, Clock, Newspaper, User } from 'lucide-
 import Badge from '../Badge';
 import AdBanner from '../AdBanner';
 import ShareButton from '../ShareButton';
+import CommentsSection from '../CommentsSection';
 
 const categoryTone: Record<string, string> = {
   'Match Report': 'live',
@@ -35,6 +36,11 @@ export default function NewsDetailBody({ item, related = [] }: Props) {
 
   const paragraphs = (item.content || '').split('\n\n').filter(Boolean);
 
+  const categoryName = typeof item.category === 'string'
+    ? item.category
+    : (item.category && typeof item.category === 'object' && 'name' in item.category ? String((item.category as any).name) : '');
+  const badgeLabel = (typeof item.tag === 'string' && item.tag) ? item.tag : categoryName;
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
       <nav className="mb-6 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-stext" aria-label="Breadcrumb">
@@ -49,7 +55,9 @@ export default function NewsDetailBody({ item, related = [] }: Props) {
         <article className="min-w-0 lg:col-span-2">
           <header className="mb-8">
             <div className="flex flex-wrap items-center gap-2">
-              <Badge tone={categoryTone[item.category] || 'neutral'}>{item.tag || item.category}</Badge>
+              {badgeLabel && (
+                <Badge tone={categoryTone[categoryName] || 'neutral'}>{badgeLabel}</Badge>
+              )}
               {item.type === 'featured' && <Badge tone="live">Featured</Badge>}
             </div>
             <h1 className="mt-4 text-3xl font-black leading-tight tracking-tight text-mtext sm:text-5xl">
@@ -68,7 +76,7 @@ export default function NewsDetailBody({ item, related = [] }: Props) {
               <span className="flex items-center gap-1.5">
                 <Clock size={14} /> {item.readTime}
               </span>
-              <ShareButton title={item.title} text={item.excerpt} className="ml-auto" />
+              <ShareButton type="news" id={item.id} fallbackTitle={item.title} compact className="ml-auto" />
             </div>
           </header>
 
@@ -104,6 +112,10 @@ export default function NewsDetailBody({ item, related = [] }: Props) {
               <span className="flex items-center gap-1.5 text-xs text-stext">
                 <Newspaper size={14} /> PAK CRICZONE Newsroom
               </span>
+            </div>
+
+            <div className="mt-12">
+              <CommentsSection targetType="news" targetId={item.id} />
             </div>
           </div>
         </article>

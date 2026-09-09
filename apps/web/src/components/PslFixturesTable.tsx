@@ -60,12 +60,11 @@ export default function PslFixturesTable({ matches }: Props) {
                       {time && <span className="ml-1 text-stext/60">{time}</span>}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
-                        m.status === 'closed' ? 'bg-accent2/15 text-accent2' :
-                        m.status === 'live' ? 'bg-red-500/20 text-red-400' :
-                        m.status === 'cancelled' ? 'bg-danger/15 text-danger' :
-                        'bg-elevated text-stext'
-                      }`}>
+                      <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${m.status === 'closed' ? 'bg-accent2/15 text-accent2' :
+                          m.status === 'live' ? 'bg-red-500/20 text-red-400' :
+                            m.status === 'cancelled' ? 'bg-danger/15 text-danger' :
+                              'bg-elevated text-stext'
+                        }`}>
                         {m.status}
                       </span>
                     </td>
