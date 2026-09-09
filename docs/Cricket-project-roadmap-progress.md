@@ -195,8 +195,8 @@
 ### 5.2 Missing Frontend Pages (Backend endpoints already exist)
 - [ ] `/head-to-head` or `/matches/[id]/head-to-head` — dedicated head-to-head comparison page
 - [ ] `/teams/[id]/schedule` or tab — team schedule/results dedicated view
-- [ ] `/schedules/[date]` — daily schedule/results dedicated page
-- [ ] `/tours` — tours listing/detail page
+- [x] `/schedules/[date]` — daily schedule/results dedicated page
+- [x] `/tours` — tours listing/detail page
 
 ### 5.3 Reusable Board Components — Frontend
 - [x] `HomeHero`
@@ -258,10 +258,10 @@
 - [x] Players (directory, detail) — connected to real API
 - [x] PSL (standings, fixtures, leaders, squads) — connected to real API
 - [x] Search (matches) — connected to real API
-- [ ] Search (teams) — currently mock data, connect to real API
-- [ ] Search (players) — currently mock data, connect to real API
-- [ ] Search (tournaments) — currently mock data, connect to real API
-- [ ] Tournaments page — currently mock data, connect to real API (backend endpoint already exists)
+- [x] Search (teams) — currently mock data, connect to real API
+- [x] Search (players) — currently mock data, connect to real API
+- [x] Search (tournaments) — currently mock data, connect to real API
+- [x] Tournaments page — currently mock data, connect to real API (backend endpoint already exists)
 - [x] News — real backend API exists (Phase 4.7 complete)
 - [x] Streams — real backend API exists (Phase 4.8 complete)
 
@@ -271,8 +271,8 @@
 
 - [x] **Ingestion:** source and sync news content (`newsSync.js`) — RSS/Atom fetcher with parser, normalizer, deduplication, PostgreSQL upserts, Redis cache invalidation, and scheduled sync
 - [x] **Backend:** implement `/news` endpoints (see Phase 4.7)
-- [ ] **Frontend:** wire `NewsBoard` and `NewsDetailBody` to real API instead of mock data
-- [ ] **Frontend:** unhide `/news` route from navigation once real data flows
+- [x] **Frontend:** wire `NewsBoard` and `NewsDetailBody` to real API instead of mock data
+- [x] **Frontend:** unhide `/news` route from navigation once real data flows
 - [ ] QA: verify pagination, empty states, and image handling for articles
 
 ---
@@ -281,7 +281,7 @@
 
 - [~] **Ingestion:** source live stream metadata/links (provider integration or manual admin entry) — admin endpoints available; automated ingestion not wired
 - [x] **Backend:** implement `/streams` endpoints (see Phase 4.8)
-- [ ] **Frontend:** wire `LiveStreamsBoard` to real API instead of mock data
+- [x] **Frontend:** wire `LiveStreamsBoard` to real API instead of mock data
 - [ ] **Frontend:** unhide `/streams` route from navigation once real data flows
 - [ ] Legal/licensing check for stream embedding (confirm rights before going live)
 
@@ -294,8 +294,8 @@
 ### 9.1 Authentication — Backend + Frontend
 - [x] Backend: user auth system (signup/login/JWT)
 - [x] Backend: password reset / email verification flow — `PasswordResetToken` + `EmailVerificationToken` models, `POST /auth/forgot-password`, `POST /auth/reset-password`, `POST /auth/verify-email`, `POST /auth/resend-verification`, `MailerService` with SMTP/SendGrid/Resend/console providers
-- [ ] Frontend: signup/login pages
-- [ ] Frontend: auth state management (Zustand store + protected routes)
+- [x] Frontend: signup/login pages
+- [x] Frontend: auth state management (Zustand store + protected routes)
 
 ### 9.2 User Accounts/Profiles — Backend + Frontend
 - [x] Backend: user profile DB model + endpoints (Phase 2.1)
@@ -303,17 +303,17 @@
 
 ### 9.3 Favorites/Bookmarks — Backend + Frontend
 - [x] Backend: endpoints (see Phase 4.10)
-- [ ] Frontend: "favorite" toggle UI on Team/Player/Match cards
-- [ ] Frontend: "My Favorites" dashboard page
+- [x] Frontend: "favorite" toggle UI on Team/Player/Match cards
+- [x] Frontend: "My Favorites" dashboard page
 
 ### 9.4 Comments/Reactions — Backend + Frontend
 - [x] Backend: endpoints (see Phase 4.11)
-- [ ] Frontend: comment thread UI on match/news detail pages
-- [ ] Frontend: reaction buttons (like/emoji) UI
+- [x] Frontend: comment thread UI on match/news detail pages
+- [x] Frontend: reaction buttons (like/emoji) UI
 
 ### 9.5 Social Sharing — Backend + Frontend
 - [x] Backend: share-link endpoint (see Phase 4.12)
-- [ ] Frontend: wire existing `ShareButton` component to backend/share APIs
+- [x] Frontend: wire existing `ShareButton` component to backend/share APIs
 
 ### 9.6 Push Notifications — Backend + Frontend
 - [x] Backend: notification system (see Phase 4.9)
@@ -324,7 +324,7 @@
 
 ## PHASE 10 — Technical Debt & Code Quality
 
-- [ ] Remove legacy `cricketApi.ts` service layer; consolidate on new `services/*.ts` pattern
+- [x] Remove legacy `cricketApi.ts` service layer; consolidate on new `services/*.ts` pattern
 - [ ] Fix `MatchStatus` TypeScript type to include `"cancelled"` (already present in JS schema)
 - [ ] Decide fate of hidden News/Streams pages — either finish (Phase 7/8) or remove until ready
 - [x] Full pagination audit across all list endpoints (see Phase 2.1)
