@@ -67,5 +67,56 @@ export class UserProfileDto {
   isAdmin: boolean;
 
   @ApiProperty()
+  emailVerified: boolean;
+
+  @ApiProperty()
   createdAt: Date;
+}
+
+export class ForgotPasswordDto {
+  @ApiProperty({ example: 'user@example.com' })
+  @IsEmail()
+  email: string;
+}
+
+export class ResetPasswordDto {
+  @ApiProperty({ example: 'token-id-uuid' })
+  @IsString()
+  tokenId: string;
+
+  @ApiPropertyOptional({ example: 'reset-secret-uuid', description: 'Long token from email link. Provide this OR code.' })
+  @IsOptional()
+  @IsString()
+  token?: string;
+
+  @ApiPropertyOptional({ example: '4829', description: '4-digit code from email. Provide this OR token.' })
+  @IsOptional()
+  @IsString()
+  code?: string;
+
+  @ApiProperty({ example: 'newpassword123' })
+  @IsString()
+  @MinLength(6)
+  password: string;
+}
+
+export class VerifyEmailDto {
+  @ApiProperty({ example: 'token-id-uuid' })
+  @IsString()
+  tokenId: string;
+
+  @ApiProperty({ example: 'verify-secret-uuid' })
+  @IsString()
+  token: string;
+}
+
+export class ResendVerificationDto {
+  @ApiProperty({ example: 'user@example.com' })
+  @IsEmail()
+  email: string;
+}
+
+export class MessageResponseDto {
+  @ApiProperty()
+  message: string;
 }

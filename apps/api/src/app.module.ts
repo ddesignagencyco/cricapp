@@ -22,7 +22,6 @@ import { SharingModule } from './sharing/sharing.module.js';
 import { FavoritesModule } from './favorites/favorites.module.js';
 import { CommentsModule } from './comments/comments.module.js';
 import { NotificationsModule } from './notifications/notifications.module.js';
-import { ApiKeyGuard } from './auth/api-key.guard.js';
 import { RequestLogger } from './common/request-logger.middleware.js';
 
 @Module({
@@ -61,7 +60,6 @@ import { RequestLogger } from './common/request-logger.middleware.js';
     NotificationsModule,
   ],
   providers: [
-    { provide: APP_GUARD, useClass: ApiKeyGuard },
     { provide: APP_GUARD, useClass: ThrottlerGuard },
   ],
 })
