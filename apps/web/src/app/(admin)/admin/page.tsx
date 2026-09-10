@@ -137,14 +137,6 @@ export default function AdminDashboard() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span
-              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider"
-              style={{ background: 'rgba(0, 191, 255, 0.12)', color: 'var(--admin-accent)' }}
-            >
-              <Activity size={12} className="animate-pulse" /> Live CMS Engine
-            </span>
-          </div>
           <h1 className="text-xl font-bold tracking-tight sm:text-2xl" style={{ color: 'var(--admin-text)' }}>
             Welcome back, {userName.split(' ')[0]}
           </h1>
