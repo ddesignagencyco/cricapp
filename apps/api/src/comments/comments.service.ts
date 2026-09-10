@@ -13,7 +13,7 @@ export class CommentsService {
   async listComments(userId: string | null, query: CommentListQuery) {
     const { page, limit, skip } = getPaginationOffset(query.page, query.limit, query.offset);
 
-    const where = { targetType: query.targetType, targetId: query.targetId };
+    const where: any = { targetType: query.targetType, targetId: query.targetId, status: 'approved' };
 
     const [rows, total] = await Promise.all([
       this.prisma.comment.findMany({
@@ -93,5 +93,18 @@ export class CommentsService {
     }
 
     return { counts, emojis: Object.keys(counts) };
+  }
+
+  async reportComment(userId: string, commentId: string, reason: string) {
+    const comment = await this.prisma.comment.findUnique({ where: { id: commentId } });
+    if (!comment) throw new NotFoundException('Comment not found');
+
+    return this.prisma.commentReport.create({
+      data: {
+        commentId,
+        reporterId: userId,
+        reason,
+      },
+    });
   }
 }

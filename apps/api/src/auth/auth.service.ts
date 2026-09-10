@@ -67,6 +67,35 @@ export class AuthService {
     };
   }
 
+  async updateProfile(userId: string, dto: { displayName?: string; avatarUrl?: string; username?: string }) {
+    if (dto.username) {
+      const taken = await this.prisma.user.findFirst({
+        where: { username: dto.username, id: { not: userId } },
+      });
+      if (taken) throw new ConflictException('Username already taken');
+    }
+
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...(dto.displayName !== undefined && { displayName: dto.displayName }),
+        ...(dto.avatarUrl !== undefined && { avatarUrl: dto.avatarUrl }),
+        ...(dto.username !== undefined && { username: dto.username }),
+      },
+    });
+
+    return {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      displayName: user.displayName,
+      avatarUrl: user.avatarUrl,
+      isAdmin: user.isAdmin,
+      emailVerified: user.emailVerified,
+      createdAt: user.createdAt,
+    };
+  }
+
   /* ------------------------------------------------------------------ */
   /* Password Reset                                                     */
   /* ------------------------------------------------------------------ */

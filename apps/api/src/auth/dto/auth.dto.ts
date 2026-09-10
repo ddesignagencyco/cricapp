@@ -120,3 +120,22 @@ export class MessageResponseDto {
   @ApiProperty()
   message: string;
 }
+
+export class UpdateProfileDto {
+  @ApiPropertyOptional({ example: 'John Doe' })
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  displayName?: string;
+
+  @ApiPropertyOptional({ example: 'https://cdn.example.com/avatar.jpg' })
+  @IsOptional()
+  @IsString()
+  avatarUrl?: string;
+
+  @ApiPropertyOptional({ example: 'johndoe' })
+  @IsOptional()
+  @IsString()
+  @MinLength(3)
+  username?: string;
+}

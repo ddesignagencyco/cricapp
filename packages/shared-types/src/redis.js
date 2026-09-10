@@ -9,6 +9,7 @@ export const redisKeys = {
   pslSquads: (seasonId) => `psl:${seasonId}:squads`,
   newsList: () => 'news:list',
   newsArticle: (id) => `news:article:${id}`,
+  ingestionHeartbeat: () => 'ingestion:heartbeat',
 };
 
 export const REDIS_TTL = {

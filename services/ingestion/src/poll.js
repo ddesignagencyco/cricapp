@@ -86,6 +86,13 @@ export async function pollOnce() {
     }
   }
 
+  await redis.set(
+    'ingestion:heartbeat',
+    JSON.stringify({ ts: Date.now(), liveCount: liveIds.length }),
+    'EX',
+    120,
+  );
+
   const s = getCallStats();
   console.log(`[ingest] poll cycle: live=${liveIds.length} calls=${s.calls} retries=${s.retries}`);
   return liveIds.length;

@@ -6,6 +6,7 @@ import { AppModule } from '../app.module.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { RedisService } from '../redis/redis.service.js';
 import { ConfigService } from '@nestjs/config';
+import { MailerService } from '../mailer/mailer.service.js';
 
 class MockRedisService {
   async get<T = unknown>(): Promise<T | null> { return null; }
@@ -31,6 +32,12 @@ class MockRedisService {
   }
 }
 
+class MockMailerService {
+  async sendMail(): Promise<void> {
+    // No-op: don't hit real email APIs in tests
+  }
+}
+
 describe('AuthModule forgot-password with Resend (live)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
@@ -49,13 +56,15 @@ describe('AuthModule forgot-password with Resend (live)', () => {
             RATE_LIMIT_MAX: 1000,
             EMAIL_PROVIDER: 'resend',
             EMAIL_FROM: 'onboarding@resend.dev',
-            RESEND_API_KEY: process.env.RESEND_API_KEY || 'dummy-key-for-ci',
+            RESEND_API_KEY: 'test-key',
           };
           return key in overrides ? overrides[key] : fallback;
         },
       })
       .overrideProvider(RedisService)
       .useClass(MockRedisService)
+      .overrideProvider(MailerService)
+      .useClass(MockMailerService)
       .compile();
 
     app = moduleFixture.createNestApplication();
@@ -74,7 +83,7 @@ describe('AuthModule forgot-password with Resend (live)', () => {
 
   const TEST_EMAIL = 'test@resend.dev';
 
-  it('POST /auth/forgot-password — creates token and sends real email via Resend', async () => {
+  it('POST /auth/forgot-password — creates token and sends email (mailer mocked)', async () => {
     const user = await prisma.user.create({
       data: { email: TEST_EMAIL, username: 'testuser', passwordHash: 'not-used' },
     });
