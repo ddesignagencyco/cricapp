@@ -20,6 +20,11 @@ jobs:
       - name: Install
         run: npm ci
 
+      - name: Generate Prisma client
+        run: npm run prisma:generate --workspace @cricapp/api
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/cricapp
+
       - name: Lint
         run: npm run lint
 
