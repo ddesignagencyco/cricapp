@@ -73,7 +73,7 @@ export default function TeamsPage() {
                           ) : (
                             <TeamBadge code={badgeLabel} />
                           )}
-                          <span className="font-bold" style={{ color: 'var(--admin-text)' }}>{t.name}</span>
+                          <span style={{ color: 'var(--admin-text)' }}>{t.name}</span>
                         </div>
                       </td>
                       <td className="px-4 py-2.5 font-mono font-bold" style={{ color: 'var(--admin-text)' }}>{code || '—'}</td>

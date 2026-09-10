@@ -97,7 +97,7 @@ export default function RichTextEditor({ value, onChange, placeholder }: RichTex
   });
 
   return (
-    <div className="tiptap-editor overflow-hidden rounded-xl" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
+    <div className="tiptap-editor overflow-hidden rounded-lg" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-0.5 border-b p-2" style={{ borderColor: 'var(--admin-border)', background: 'var(--admin-input-bg)' }}>
         <button type="button" onClick={() => editor.chain().focus().toggleBold().run()}

@@ -78,8 +78,8 @@ export default function PlayersPage() {
                             {getInitials(p.fullName || p.name)}
                           </span>
                           <div>
-                            <p className="font-bold text-xs" style={{ color: 'var(--admin-text)' }}>{p.name}</p>
-                            {p.fullName && p.fullName !== p.name && <p className="text-xs" style={{ color: 'var(--admin-text-muted)' }}>{p.fullName}</p>}
+                            <p className="font-extrabold text-sm leading-tight" style={{ color: 'var(--admin-text)' }}>{p.name}</p>
+                            {p.fullName && p.fullName !== p.name && <p className="text-xs font-medium" style={{ color: 'var(--admin-text-muted)' }}>{p.fullName}</p>}
                           </div>
                         </div>
                       </td>

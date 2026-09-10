@@ -14,6 +14,32 @@
   --color-danger: #FF4D6D;
   --color-shadow: #000;
 
+  /* Semantic Design Tokens (Dark Default) */
+  --color-background: #07111F;
+  --color-surface: #0D1B2A;
+  --color-surface-elevated: #122238;
+  --color-surface-muted: #0A1728;
+
+  --color-text-primary: #F5F7FA;
+  --color-text-secondary: #94A3B8;
+  --color-text-muted: #64748B;
+
+  --color-border: #1E334A;
+  --color-border-strong: #2D4A6B;
+
+  --color-brand: #00BFFF;
+  --color-brand-hover: #38BDF8;
+  --color-brand-fg: #FFFFFF;
+  --color-focus-ring: #00BFFF;
+
+  --color-success: #10B981;
+  --color-success-soft: rgba(16, 185, 129, 0.14);
+  --color-warning: #FFD166;
+  --color-warning-soft: rgba(255, 209, 102, 0.14);
+  --color-danger-soft: rgba(255, 77, 109, 0.14);
+  --color-info: #00BFFF;
+  --color-info-soft: rgba(0, 191, 255, 0.14);
+
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
@@ -34,15 +60,41 @@
   --color-primary: #FFFFFF;
   --color-secondary: #F1F5F9;
   --color-card: #FFFFFF;
-  --color-elevated: #F1F5F9;
+  --color-elevated: #F8FAFC;
   --color-accent: #0284C7;
   --color-accent2: #38BDF8;
   --color-gold: #B45309;
   --color-mtext: #0F172A;
-  --color-stext: #64748B;
+  --color-stext: #475569;
   --color-lborder: #E2E8F0;
   --color-danger: #E11D48;
   --color-shadow: #0F172A;
+
+  /* Semantic Design Tokens (Light Mode) */
+  --color-background: #FFFFFF;
+  --color-surface: #FFFFFF;
+  --color-surface-elevated: #F8FAFC;
+  --color-surface-muted: #F1F5F9;
+
+  --color-text-primary: #0F172A;
+  --color-text-secondary: #475569;
+  --color-text-muted: #64748B;
+
+  --color-border: #E2E8F0;
+  --color-border-strong: #CBD5E1;
+
+  --color-brand: #0284C7;
+  --color-brand-hover: #0369A1;
+  --color-brand-fg: #FFFFFF;
+  --color-focus-ring: #0284C7;
+
+  --color-success: #10B981;
+  --color-success-soft: rgba(16, 185, 129, 0.12);
+  --color-warning: #B45309;
+  --color-warning-soft: rgba(180, 83, 9, 0.12);
+  --color-danger-soft: rgba(225, 29, 72, 0.12);
+  --color-info: #0284C7;
+  --color-info-soft: rgba(2, 132, 199, 0.12);
 }
 
 * {
@@ -284,69 +336,71 @@ body {
 }
 
 /* ============================
-   Admin Panel Theme Variables
+   Semantic Root Variables & Aliases
+   (Single Source of Truth for Public & Admin)
    ============================ */
 :root {
-  --admin-bg: #f0f2f5;
-  --admin-surface: #ffffff;
-  --admin-sidebar: #1a1f36;
-  --admin-sidebar-hover: rgba(255,255,255,0.1);
-  --admin-sidebar-active: #0066cc;
-  --admin-card: #ffffff;
-  --admin-card-hover: #f9fafb;
-  --admin-border: #e5e7eb;
-  --admin-border-light: #f3f4f6;
-  --admin-text: #111827;
-  --admin-text-secondary: #374151;
-  --admin-text-muted: #6b7280;
-  --admin-accent: #0066cc;
-  --admin-accent-hover: #0055aa;
-  --admin-success: #059669;
-  --admin-success-bg: #ecfdf5;
-  --admin-info: #0284c7;
-  --admin-info-bg: #e0f2fe;
-  --admin-warning: #d97706;
-  --admin-warning-bg: #fffbeb;
-  --admin-danger: #dc2626;
-  --admin-danger-bg: #fef2f2;
-  --admin-input-bg: #f9fafb;
-  --admin-table-header: #f9fafb;
-  --admin-table-row-hover: #f0f4f8;
-  --admin-shadow: 0 1px 3px rgba(0,0,0,0.06);
-  --admin-shadow-lg: 0 4px 12px rgba(0,0,0,0.08);
-  --admin-topbar: #ffffff;
+  /* Common semantic variables mapped to Tailwind theme tokens */
+  --background: var(--color-background);
+  --surface: var(--color-surface);
+  --surface-elevated: var(--color-surface-elevated);
+  --surface-muted: var(--color-surface-muted);
+
+  --text-primary: var(--color-text-primary);
+  --text-secondary: var(--color-text-secondary);
+  --text-muted: var(--color-text-muted);
+
+  --border: var(--color-border);
+  --border-strong: var(--color-border-strong);
+
+  --primary: var(--color-brand);
+  --primary-hover: var(--color-brand-hover);
+  --primary-foreground: var(--color-brand-fg);
+  --focus-ring: var(--color-focus-ring);
+
+  --success: var(--color-success);
+  --success-soft: var(--color-success-soft);
+  --warning: var(--color-warning);
+  --warning-soft: var(--color-warning-soft);
+  --danger: var(--color-danger);
+  --danger-soft: var(--color-danger-soft);
+  --info: var(--color-info);
+  --info-soft: var(--color-info-soft);
+
+  /* Admin Aliases: 100% synchronized with master semantic variables */
+  --admin-bg: var(--color-background);
+  --admin-surface: var(--color-surface-muted);
+  --admin-sidebar: #060E1A;
+  --admin-sidebar-hover: rgba(255, 255, 255, 0.08);
+  --admin-sidebar-active: var(--color-brand);
+  --admin-card: var(--color-surface);
+  --admin-card-hover: var(--color-surface-elevated);
+  --admin-border: var(--color-border);
+  --admin-border-light: var(--color-surface-elevated);
+  --admin-text: var(--color-text-primary);
+  --admin-text-secondary: var(--color-text-secondary);
+  --admin-text-muted: var(--color-text-muted);
+  --admin-accent: var(--color-brand);
+  --admin-accent-hover: var(--color-brand-hover);
+  --admin-success: var(--color-success);
+  --admin-success-bg: var(--color-success-soft);
+  --admin-info: var(--color-info);
+  --admin-info-bg: var(--color-info-soft);
+  --admin-warning: var(--color-warning);
+  --admin-warning-bg: var(--color-warning-soft);
+  --admin-danger: var(--color-danger);
+  --admin-danger-bg: var(--color-danger-soft);
+  --admin-input-bg: var(--color-surface-muted);
+  --admin-table-header: var(--color-surface-muted);
+  --admin-table-row-hover: var(--color-surface-elevated);
+  --admin-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  --admin-shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.45);
+  --admin-topbar: var(--color-background);
 }
 
-/* Dark mode overrides for admin */
-html:not(.light) {
-  --admin-bg: #0c111b;
-  --admin-surface: #151c2c;
-  --admin-sidebar: #080c15;
-  --admin-sidebar-hover: rgba(255,255,255,0.05);
-  --admin-sidebar-active: #3b82f6;
-  --admin-card: #151c2c;
-  --admin-card-hover: #1a2236;
-  --admin-border: #1e293b;
-  --admin-border-light: #1a2236;
-  --admin-text: #e2e8f0;
-  --admin-text-secondary: #cbd5e1;
-  --admin-text-muted: #94a3b8;
-  --admin-accent: #3b82f6;
-  --admin-accent-hover: #2563eb;
-  --admin-success: #10b981;
-  --admin-success-bg: rgba(16,185,129,0.12);
-  --admin-info: #38bdf8;
-  --admin-info-bg: rgba(56,189,248,0.12);
-  --admin-warning: #f59e0b;
-  --admin-warning-bg: rgba(245,158,11,0.12);
-  --admin-danger: #ef4444;
-  --admin-danger-bg: rgba(239,68,68,0.12);
-  --admin-input-bg: #1a2236;
-  --admin-table-header: #111827;
-  --admin-table-row-hover: #1a2236;
-  --admin-shadow: 0 1px 3px rgba(0,0,0,0.24);
-  --admin-shadow-lg: 0 4px 12px rgba(0,0,0,0.32);
-  --admin-topbar: #0c111b;
+.light {
+  --admin-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+  --admin-shadow-lg: 0 4px 14px rgba(15, 23, 42, 0.08);
 }
 
 /* TipTap Editor Styles */
@@ -420,3 +474,16 @@ html:not(.light) {
   border-radius: 0.15rem;
   padding: 0.1rem 0.2rem;
 }
+
+/* Preserves spaces, line breaks, and empty lines saved from the editor */
+.tiptap-content {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.tiptap-content p {
+  min-height: 1.5rem;
+}
+.tiptap-content p:empty::before,
+.tiptap-content p > br:only-child::before {
+  content: "\00a0";
+}

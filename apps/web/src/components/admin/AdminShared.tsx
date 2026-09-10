@@ -218,32 +218,36 @@ export function ErrorState({
 
 /* ─── Status Badge ─────────────────────────────────────────── */
 
-const STATUS_STYLES: Record<string, { bg: string; fg: string; label: string }> = {
-  live:        { bg: 'var(--admin-danger-bg)',  fg: 'var(--admin-danger)',  label: 'Live' },
-  upcoming:    { bg: 'var(--admin-info-bg)',    fg: 'var(--admin-info)',    label: 'Upcoming' },
-  completed:   { bg: 'var(--admin-success-bg)', fg: 'var(--admin-success)', label: 'Completed' },
-  published:   { bg: 'var(--admin-success-bg)', fg: 'var(--admin-success)', label: 'Published' },
-  draft:       { bg: 'var(--admin-warning-bg)', fg: 'var(--admin-warning)', label: 'Draft' },
-  cancelled:   { bg: 'var(--admin-input-bg)',   fg: 'var(--admin-text-muted)', label: 'Cancelled' },
-  abandoned:   { bg: 'var(--admin-input-bg)',   fg: 'var(--admin-text-muted)', label: 'Abandoned' },
-  postponed:   { bg: 'var(--admin-warning-bg)', fg: 'var(--admin-warning)', label: 'Postponed' },
-  active:      { bg: 'var(--admin-success-bg)', fg: 'var(--admin-success)', label: 'Active' },
-  inactive:    { bg: 'var(--admin-input-bg)',   fg: 'var(--admin-text-muted)', label: 'Inactive' },
-  pending:     { bg: 'var(--admin-warning-bg)', fg: 'var(--admin-warning)', label: 'Pending' },
-  approved:    { bg: 'var(--admin-success-bg)', fg: 'var(--admin-success)', label: 'Approved' },
-  rejected:    { bg: 'var(--admin-danger-bg)',  fg: 'var(--admin-danger)',  label: 'Rejected' },
-  in_review:   { bg: 'var(--admin-info-bg)',    fg: 'var(--admin-info)',    label: 'In Review' },
-  scheduled:   { bg: 'var(--admin-info-bg)',    fg: 'var(--admin-info)',    label: 'Scheduled' },
+const STATUS_MAP: Record<string, { label: string; tone: string }> = {
+  live:        { label: 'Live', tone: 'live' },
+  upcoming:    { label: 'Upcoming', tone: 'upcoming' },
+  completed:   { label: 'Completed', tone: 'completed' },
+  published:   { label: 'Published', tone: 'published' },
+  draft:       { label: 'Draft', tone: 'draft' },
+  cancelled:   { label: 'Cancelled', tone: 'cancelled' },
+  abandoned:   { label: 'Abandoned', tone: 'abandoned' },
+  postponed:   { label: 'Postponed', tone: 'postponed' },
+  active:      { label: 'Active', tone: 'active' },
+  inactive:    { label: 'Inactive', tone: 'inactive' },
+  pending:     { label: 'Pending', tone: 'pending' },
+  approved:    { label: 'Approved', tone: 'approved' },
+  rejected:    { label: 'Rejected', tone: 'rejected' },
+  in_review:   { label: 'In Review', tone: 'in_review' },
+  scheduled:   { label: 'Scheduled', tone: 'scheduled' },
 };
 
 export function StatusBadge({ status }: { status: string }) {
-  const s = STATUS_STYLES[status] || STATUS_STYLES.draft;
+  const norm = (status || '').toLowerCase().trim();
+  const info = STATUS_MAP[norm] || { label: status || 'Draft', tone: 'neutral' };
   return (
     <span
-      className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold uppercase tracking-wider"
-      style={{ background: s.bg, color: s.fg }}
+      className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide leading-none"
+      style={{
+        background: `var(--color-${info.tone === 'live' || info.tone === 'rejected' ? 'danger' : info.tone === 'completed' || info.tone === 'published' || info.tone === 'active' || info.tone === 'approved' ? 'success' : info.tone === 'draft' || info.tone === 'pending' || info.tone === 'scheduled' || info.tone === 'postponed' ? 'warning' : info.tone === 'upcoming' || info.tone === 'in_review' ? 'info' : 'surface-muted'}-soft)`,
+        color: `var(--color-${info.tone === 'live' || info.tone === 'rejected' ? 'danger' : info.tone === 'completed' || info.tone === 'published' || info.tone === 'active' || info.tone === 'approved' ? 'success' : info.tone === 'draft' || info.tone === 'pending' || info.tone === 'scheduled' || info.tone === 'postponed' ? 'warning' : info.tone === 'upcoming' || info.tone === 'in_review' ? 'info' : 'text-muted'})`,
+      }}
     >
-      {s.label}
+      {info.label}
     </span>
   );
 }

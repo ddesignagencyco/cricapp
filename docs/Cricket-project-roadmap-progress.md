@@ -193,7 +193,7 @@
 - [~] `/streams` — built but uses mock data, hidden from nav
 
 ### 5.2 Missing Frontend Pages (Backend endpoints already exist)
-- [ ] `/head-to-head` or `/matches/[id]/head-to-head` — dedicated head-to-head comparison page
+- [x] `/head-to-head` or `/matches/[id]/head-to-head` — dedicated head-to-head comparison page
 - [ ] `/teams/[id]/schedule` or tab — team schedule/results dedicated view
 - [x] `/schedules/[date]` — daily schedule/results dedicated page
 - [x] `/tours` — tours listing/detail page
@@ -258,12 +258,12 @@
 - [x] Players (directory, detail) — connected to real API
 - [x] PSL (standings, fixtures, leaders, squads) — connected to real API
 - [x] Search (matches) — connected to real API
-- [x] Search (teams) — currently mock data, connect to real API
-- [x] Search (players) — currently mock data, connect to real API
-- [x] Search (tournaments) — currently mock data, connect to real API
-- [x] Tournaments page — currently mock data, connect to real API (backend endpoint already exists)
+- [x] Search (teams) — connected to real API
+- [x] Search (players) — connected to real API
+- [x] Search (tournaments) — connected to real API
+- [x] Tournaments page — connected to real API (backend endpoint already exists)
 - [x] News — real backend API exists (Phase 4.7 complete)
-- [x] Streams — real backend API exists (Phase 4.8 complete)
+- [x] Streams — real backend API exists, but not implement yet (Phase 4.8 complete)
 
 ---
 
@@ -324,8 +324,8 @@
 
 ## PHASE 10 — Technical Debt & Code Quality
 
-- [x] Remove legacy `cricketApi.ts` service layer; consolidate on new `services/*.ts` pattern
-- [ ] Fix `MatchStatus` TypeScript type to include `"cancelled"` (already present in JS schema)
+- [ ] Remove legacy `cricketApi.ts` service layer; consolidate on new `services/*.ts` pattern
+- [x] Fix `MatchStatus` TypeScript type to include `"cancelled"` (already present in JS schema)
 - [ ] Decide fate of hidden News/Streams pages — either finish (Phase 7/8) or remove until ready
 - [x] Full pagination audit across all list endpoints (see Phase 2.1)
 - [x] Code review pass for consistent error handling across API modules — improved FK validation for news categories and comment reactions; auth endpoints use consistent `BadRequestException` / `UnauthorizedException` / `ConflictException`
@@ -336,7 +336,7 @@
 
 - [x] Ingestion integration tests (full pipeline, see Phase 3.4)
 - [x] Backend API integration/e2e tests per module — 67 tests across 10 suites: Auth, Matches, Teams, Players, PSL, News, Streams, Favorites, Comments, Reactions
-- [ ] Frontend component tests for critical UI (ScoreBoard, LiveBoard, MatchDetailBody)
+- [x] Frontend component tests for critical UI (ScoreBoard, LiveBoard, MatchDetailBody)
 - [ ] End-to-end (E2E) tests across full user flows (e.g., Playwright/Cypress)
 - [ ] Load testing for live match SSE streaming under concurrent users
 - [ ] Manual QA pass against SRS requirements checklist

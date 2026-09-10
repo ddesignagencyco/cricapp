@@ -98,7 +98,7 @@ export default function NewsDetailBody({ item, related = [] }: Props) {
 
           <div className="mt-10">
             <div
-              className="prose prose-sm max-w-none text-base leading-8 text-mtext/90
+              className="prose prose-sm max-w-none text-base leading-8 text-mtext/90 tiptap-content
                 prose-p:my-4 prose-p:leading-8
                 prose-a:text-accent prose-a:no-underline hover:prose-a:underline
                 prose-strong:text-mtext prose-strong:font-semibold

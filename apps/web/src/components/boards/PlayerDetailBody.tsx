@@ -72,11 +72,31 @@ export default function PlayerDetailBody({ player }: Props) {
         </div>
 
         <div className="relative mt-6 flex flex-col gap-6 md:flex-row md:items-center">
-          <div className="relative group">
-            <div className="absolute -inset-1 rounded-3xl bg-accent/20 blur-md group-hover:bg-accent/30 transition-all" />
-            <div className="relative grid h-24 w-24 shrink-0 place-items-center rounded-3xl border-2 border-accent/40 bg-gradient-to-br from-secondary to-elevated text-3xl font-black text-accent shadow-lg shadow-black/20">
-              {initials}
-            </div>
+          <div className="relative group shrink-0">
+            <div className="absolute -inset-1.5 rounded-full bg-accent/20 blur-md group-hover:bg-accent/35 transition-all" />
+            {player.profileUrl ? (
+              <img
+                src={player.profileUrl}
+                alt={name}
+                className="relative h-24 w-24 rounded-full border-2 border-accent/40 bg-card object-cover shadow-xl"
+              />
+            ) : (
+              (() => {
+                let hash = 0;
+                for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+                const hue = Math.abs(hash % 360);
+                return (
+                  <div
+                    className="relative grid h-24 w-24 place-items-center rounded-full border-2 border-white/20 text-3xl font-black text-white shadow-2xl tracking-tight"
+                    style={{
+                      backgroundImage: `linear-gradient(135deg, hsl(${hue}, 75%, 50%), hsl(${(hue + 40) % 360}, 85%, 35%))`,
+                    }}
+                  >
+                    {initials}
+                  </div>
+                );
+              })()
+            )}
           </div>
 
           <div className="min-w-0 flex-1">

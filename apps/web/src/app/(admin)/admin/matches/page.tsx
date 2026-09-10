@@ -48,11 +48,28 @@ export default function MatchesPage() {
   const getTeamInfo = (m: Match) => {
     const teams = m.teams;
     const isObj = teams && typeof teams === 'object' && !Array.isArray(teams);
+    const names = m.teamNames || [];
+
+    const rawHomeCode = isObj ? teams.home?.code : Array.isArray(teams) ? teams[0] : '';
+    const rawAwayCode = isObj ? teams.away?.code : Array.isArray(teams) ? teams[1] : '';
+
+    const homeName =
+      (names[0] && !names[0].startsWith('sr:'))
+        ? names[0]
+        : (isObj && teams.home?.name && !teams.home.name.startsWith('sr:'))
+        ? teams.home.name
+        : (rawHomeCode || 'TBA').replace(/^sr:competitor:/, 'Team ');
+
+    const awayName =
+      (names[1] && !names[1].startsWith('sr:'))
+        ? names[1]
+        : (isObj && teams.away?.name && !teams.away.name.startsWith('sr:'))
+        ? teams.away.name
+        : (rawAwayCode || 'TBA').replace(/^sr:competitor:/, 'Team ');
+
     return {
-      homeCode: isObj ? teams.home?.code : Array.isArray(teams) ? teams[0] : '',
-      awayCode: isObj ? teams.away?.code : Array.isArray(teams) ? teams[1] : '',
-      homeName: isObj ? teams.home?.name : '',
-      awayName: isObj ? teams.away?.name : '',
+      homeName,
+      awayName,
     };
   };
 
@@ -87,32 +104,34 @@ export default function MatchesPage() {
             <table className="w-full text-left text-xs">
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--admin-border)', background: 'var(--admin-table-header)' }}>
-                  <th className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Status</th>
                   <th className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Teams</th>
                   <th className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Score</th>
                   <th className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Tournament</th>
                   <th className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Venue</th>
                   <th className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Date</th>
+                  <th className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-right" style={{ color: 'var(--admin-text-secondary)' }}>Status</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((m) => {
                   const t = getTeamInfo(m);
                   const inn = m.currentInnings;
-                  const homeLabel = t.homeName || t.homeCode || 'TBA';
-                  const awayLabel = t.awayName || t.awayCode || 'TBA';
+                  const homeLabel = t.homeName;
+                  const awayLabel = t.awayName;
                   return (
                     <tr key={m.matchId || m.id} style={{ borderBottom: '1px solid var(--admin-border)' }}
                       onMouseEnter={(e) => e.currentTarget.style.background = 'var(--admin-table-row-hover)'}
                       onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
-                      <td className="px-4 py-2.5"><StatusBadge status={m.status} /></td>
                       <td className="px-4 py-2.5">
-                        <div className="flex items-center gap-1.5">
-                          <TeamBadge code={homeLabel} />
-                          <span className="font-bold" style={{ color: 'var(--admin-text)' }}>{homeLabel}</span>
-                          <span style={{ color: 'var(--admin-text-muted)' }}>vs</span>
-                          <TeamBadge code={awayLabel} />
-                          <span className="font-bold" style={{ color: 'var(--admin-text)' }}>{awayLabel}</span>
+                        <div className="flex flex-col gap-1.5 py-0.5">
+                          <div className="flex items-center gap-2">
+                            <TeamBadge code={homeLabel} />
+                            <span className="font-bold text-xs" style={{ color: 'var(--admin-text)' }}>{homeLabel}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <TeamBadge code={awayLabel} />
+                            <span className="font-bold text-xs" style={{ color: 'var(--admin-text)' }}>{awayLabel}</span>
+                          </div>
                         </div>
                       </td>
                       <td className="px-4 py-2.5 font-mono font-bold" style={{ color: 'var(--admin-text)' }}>
@@ -123,6 +142,7 @@ export default function MatchesPage() {
                       <td className="px-4 py-2.5 font-mono" style={{ color: 'var(--admin-text-muted)' }}>
                         {m.scheduled ? new Date(m.scheduled).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}
                       </td>
+                      <td className="px-4 py-2.5 text-right"><StatusBadge status={m.status} /></td>
                     </tr>
                   );
                 })}

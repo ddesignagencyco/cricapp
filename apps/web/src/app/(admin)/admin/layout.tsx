@@ -13,7 +13,6 @@ import {
   Newspaper,
   MessageSquare,
   Image as ImageIcon,
-  Megaphone,
   Settings,
   ShieldAlert,
   Loader2,
@@ -37,7 +36,6 @@ const adminNav = [
   { to: '/admin/tournaments', label: 'Tournaments', icon: Newspaper },
   { to: '/admin/media', label: 'Media Library', icon: ImageIcon },
   { to: '/admin/comments', label: 'Comments', icon: MessageSquare },
-  { to: '/admin/advertisements', label: 'Ads & Revenue', icon: Megaphone },
   { to: '/admin/users', label: 'Users', icon: UserCircle },
   { to: '/admin/settings', label: 'Settings', icon: Settings },
 ];
@@ -99,11 +97,11 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
   const sidebar = (
     <div className="flex h-full flex-col" style={{ width: 220, minWidth: 220, background: 'var(--admin-sidebar)' }}>
-      <div className="flex items-center gap-2.5 px-5 py-5" style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-        <div className="grid h-9 w-9 place-items-center rounded-lg text-sm font-black text-white" style={{ background: 'var(--admin-sidebar-active)' }}>PC</div>
+      <div className="flex h-14 items-center gap-2.5 px-4" style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
+        <div className="grid h-8 w-8 place-items-center rounded-lg text-xs font-black text-white" style={{ background: 'var(--color-brand)' }}>PC</div>
         <div>
-          <p className="text-sm font-bold text-white leading-tight">PAK CRICZONE</p>
-          <p className="text-xs uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.5)' }}>CMS Admin</p>
+          <p className="text-xs font-bold text-white leading-tight">PAK CRICZONE</p>
+          <p className="text-[10px] uppercase tracking-wider text-slate-400">CMS Admin</p>
         </div>
       </div>
 
@@ -117,8 +115,8 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
               href={item.to}
               className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors"
               style={{
-                background: active ? 'var(--admin-sidebar-active)' : 'transparent',
-                color: active ? '#fff' : 'rgba(255,255,255,0.6)',
+                background: active ? 'var(--color-brand)' : 'transparent',
+                color: active ? '#FFFFFF' : '#94A3B8',
               }}
             >
               <Icon size={16} />
@@ -128,23 +126,13 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         })}
       </nav>
 
-      <div className="px-3 py-3" style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-        <div className="flex items-center gap-2.5 rounded-lg px-3 py-2">
-          <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-xs font-bold text-white" style={{ background: 'var(--admin-sidebar-active)' }}>
-            {userInitials}
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-xs font-semibold text-white">{userName}</p>
-            <p className="truncate text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>{user?.isAdmin ? 'Administrator' : 'Editor'}</p>
-          </div>
-        </div>
+      <div className="px-3 py-3" style={{ borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
         <button
           type="button"
           onClick={() => { logout(); router.push('/'); }}
-          className="mt-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-[13px] transition-colors"
-          style={{ color: 'rgba(255,255,255,0.5)' }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--admin-sidebar-hover)'; e.currentTarget.style.color = '#fff'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.5)'; }}
+          className="mt-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-[13px] transition-colors text-slate-400 hover:text-white"
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
         >
           <LogOut size={15} />
           Logout
@@ -156,7 +144,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen" style={{ background: 'var(--admin-bg)' }}>
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex flex-col fixed inset-y-0 left-0 z-30" style={{ background: 'var(--admin-sidebar)' }}>
+      <aside className="hidden lg:flex flex-col fixed inset-y-0 left-0 z-30" style={{ background: 'var(--admin-sidebar)', borderRight: '1px solid var(--admin-border)' }}>
         {sidebar}
       </aside>
 

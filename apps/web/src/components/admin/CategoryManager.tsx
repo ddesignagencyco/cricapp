@@ -96,7 +96,7 @@ export default function CategoryManager() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[300px_1fr]">
+      <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[300px_1fr]">
         {/* Create Form */}
         <div className="rounded-lg p-4" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
           <div className="flex items-center gap-2 mb-3 pb-3" style={{ borderBottom: '1px solid var(--admin-border)' }}>
