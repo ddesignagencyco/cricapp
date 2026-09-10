@@ -2,7 +2,8 @@
 
 import type { ReactNode } from 'react';
 import Link from 'next/link';
-import { Flame } from 'lucide-react';
+import Image from 'next/image';
+import { Activity, BarChart3, Bell, Trophy } from 'lucide-react';
 
 interface AuthShellProps {
   title: string;
@@ -11,41 +12,99 @@ interface AuthShellProps {
   footer?: ReactNode;
 }
 
+const HIGHLIGHTS = [
+  { icon: Activity, title: 'Live ball-by-ball scores', text: 'Follow every over as it happens with real-time scorecards.' },
+  { icon: Trophy, title: 'PSL 2026 hub', text: 'Fixtures, standings and squads for all six franchises.' },
+  { icon: BarChart3, title: 'Deep player stats', text: 'Career records, form guides and head-to-head numbers.' },
+  { icon: Bell, title: 'Match reminders', text: 'Never miss a Pakistan game or a title decider again.' },
+];
+
+function BrandLockup() {
+  return (
+    <Link href="/" className="inline-flex items-center gap-2.5" aria-label="PAK CRICZONE home">
+      <span className="text-xl font-black tracking-tight sm:text-2xl">
+        <span className="text-white">PAK CRIC</span>
+        <span className="text-accent2">ZONE</span>
+      </span>
+    </Link>
+  );
+}
+
 export default function AuthShell({ title, subtitle, children, footer }: AuthShellProps) {
   return (
-    <div className="relative mx-auto flex min-h-[calc(100vh-8rem)] max-w-7xl items-center justify-center px-4 py-12 sm:px-6">
-      {/* Background ambient lighting */}
-      <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[480px] w-[480px] rounded-full bg-accent/10 blur-[120px]" />
-      <div className="pointer-events-none absolute right-1/4 top-1/4 h-[300px] w-[300px] rounded-full bg-emerald-500/10 blur-[100px]" />
+    <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-10">
+      <div className="grid min-w-0 overflow-hidden rounded-2xl bg-card ring-1 ring-lborder shadow-card-dark lg:grid-cols-2">
+        {/* Visual panel */}
+        <aside className="relative h-44 overflow-hidden sm:h-56 lg:h-auto lg:min-h-[640px]">
+          <Image
+            src="/banner2.jpg"
+            alt=""
+            aria-hidden="true"
+            fill
+            sizes="(min-width: 1024px) 50vw, 100vw"
+            className="object-cover"
+            priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#04101d] via-[#04101d]/80 to-[#04101d]/30" />
+          <div className="absolute inset-0 bg-accent/10 mix-blend-overlay" />
 
-      <div className="relative w-full max-w-md">
-        {/* Brand Header */}
-        <div className="mb-6 text-center">
-          <Link href="/" className="inline-flex items-center gap-2 group">
-            <div className="grid h-10 w-10 place-items-center rounded-2xl bg-accent text-white shadow-lg shadow-accent/30 group-hover:scale-105 transition-transform">
-              <Flame size={20} />
+          <div className="relative flex h-full flex-col justify-between p-5 sm:p-7 lg:p-9">
+            <div className="flex items-center justify-between gap-3">
+              <BrandLockup />
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white/90 ring-1 ring-white/20">
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="live-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400" />
+                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                </span>
+                Live
+              </span>
             </div>
-            <div className="text-xl font-black tracking-tight text-left">
-              <span className="text-mtext">PAK CRIC</span>
-              <span className="text-accent">ZONE</span>
+
+            <div className="hidden lg:block">
+              <h2 className="text-3xl font-black leading-tight tracking-tight text-white">
+                Every Run. Every Ball.
+                <span className="block text-accent2">Live.</span>
+              </h2>
+              <p className="mt-3 max-w-sm text-sm leading-relaxed text-white/70">
+                Join thousands of fans tracking Pakistan cricket and the PSL on PAK CRICZONE.
+              </p>
+
+              <ul className="mt-7 space-y-4">
+                {HIGHLIGHTS.map(({ icon: Icon, title: heading, text }) => (
+                  <li key={heading} className="flex gap-3">
+                    <span className="grid h-8 w-8 shrink-0 place-items-center rounded bg-white/10 text-accent2 ring-1 ring-white/15">
+                      <Icon size={15} />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold uppercase tracking-wider text-white">{heading}</p>
+                      <p className="mt-0.5 text-xs leading-relaxed text-white/60">{text}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
             </div>
-          </Link>
-          <h1 className="mt-4 text-2xl font-black tracking-tight text-mtext sm:text-3xl">{title}</h1>
-          <p className="mt-1.5 text-xs text-stext sm:text-sm">{subtitle}</p>
-        </div>
 
-        {/* Card Container */}
-        <div className="relative overflow-hidden rounded-3xl border border-lborder bg-gradient-to-b from-card via-card to-elevated p-6 shadow-xl sm:p-8 backdrop-blur-md">
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-accent via-emerald-500 to-accent opacity-80" />
-          {children}
-        </div>
-
-        {/* Footer Link */}
-        {footer && (
-          <div className="mt-6 text-center text-xs text-stext sm:text-sm">
-            {footer}
+            <p className="hidden text-[11px] font-semibold uppercase tracking-wider text-white/50 lg:block">
+              Live scores · PSL 2026 · Teams · Player stats
+            </p>
           </div>
-        )}
+        </aside>
+
+        {/* Form panel */}
+        <section className="flex min-w-0 flex-col justify-center p-6 sm:p-9 lg:p-12">
+          <div className="mx-auto min-w-0 w-full max-w-md">
+            <h1 className="text-2xl font-black tracking-tight text-mtext sm:text-3xl">{title}</h1>
+            <p className="mt-2 text-xs leading-relaxed text-stext sm:text-sm">{subtitle}</p>
+
+            <div className="mt-7">{children}</div>
+
+            {footer && (
+              <div className="mt-6 border-t border-lborder pt-5 text-center text-xs text-stext sm:text-sm">
+                {footer}
+              </div>
+            )}
+          </div>
+        </section>
       </div>
     </div>
   );

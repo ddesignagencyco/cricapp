@@ -1,11 +1,8 @@
 'use client';
 
-import { useState } from 'react';
 import { Mail } from 'lucide-react';
 
 export default function Newsletter() {
-  const [email, setEmail] = useState('');
-
   return (
     <section className="mx-auto max-w-7xl px-4 pb-12 sm:px-6">
       <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-accent/15 via-card to-accent2/10 ring-1 ring-lborder">
@@ -25,16 +22,17 @@ export default function Newsletter() {
           <div className="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
             <input
               type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email address"
-              className="min-w-0 flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm text-mtext ring-1 ring-lborder placeholder:text-stext/60 focus:outline-none focus:ring-2 focus:ring-accent/50 sm:w-64"
+              disabled
+              aria-label="Newsletter email"
+              placeholder="Newsletter coming soon"
+              className="min-w-0 flex-1 cursor-not-allowed rounded bg-primary px-4 py-2.5 text-sm text-stext ring-1 ring-lborder opacity-70 sm:w-64"
             />
             <button
               type="button"
-              className="shrink-0 rounded-lg bg-accent px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-accent2"
+              disabled
+              className="shrink-0 cursor-not-allowed rounded bg-elevated px-5 py-2.5 text-sm font-medium text-stext opacity-70"
             >
-              Subscribe
+              Coming soon
             </button>
           </div>
         </div>

@@ -9,13 +9,12 @@ import {
   MapPin,
   Shield,
   Trash2,
-  Trophy,
   UserRound,
   ArrowRight,
   Sparkles,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { listFavorites, removeFavorite, type FavoriteItem, type FavoriteTarget } from '../../services/favorites';
+import { listFavorites, removeFavorite, type FavoriteItem } from '../../services/favorites';
 import { fetchTeamById } from '../../services/teams';
 import { fetchPlayerById } from '../../services/players';
 import { fetchMatchById } from '../../services/matches';
@@ -169,7 +168,7 @@ export default function FavoritesPage() {
         </p>
         <Link
           href="/login?returnTo=/favorites"
-          className="mt-6 inline-flex items-center gap-2 rounded-xl bg-accent px-6 py-3 text-sm font-bold text-white shadow-lg shadow-accent/20 transition-all hover:bg-accent2 hover:shadow-xl"
+          className="btn-brand mt-6 inline-flex items-center gap-2 rounded-md px-6 py-3 text-sm font-semibold shadow-sm transition-colors"
         >
           Sign In Now
           <ArrowRight size={16} />
@@ -349,7 +348,7 @@ function TabButton({
       onClick={onClick}
       className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all ${
         active
-          ? 'bg-accent text-white shadow-sm'
+          ? 'btn-brand shadow-sm'
           : 'bg-secondary text-stext hover:bg-elevated hover:text-mtext'
       }`}
     >
@@ -371,7 +370,7 @@ function TabButton({
 function FavoriteTeamCard({
   fav,
   team,
-  loading,
+  loading: _loading,
   isBusy,
   onRemove,
 }: {
@@ -386,7 +385,7 @@ function FavoriteTeamCard({
   const country = team?.country || team?.city || 'Cricket Club';
 
   return (
-    <div className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-lborder bg-card p-5 transition-all duration-300 hover:-translate-y-1 hover:border-accent/40 hover:shadow-xl">
+    <div className="group relative flex flex-col justify-between overflow-hidden rounded-md border border-lborder bg-card p-5 transition-colors hover:border-accent/40 hover:bg-elevated">
       <div>
         <div className="flex items-center justify-between gap-2 pb-3">
           <Badge tone="neutral">Team</Badge>
@@ -440,7 +439,7 @@ function FavoriteTeamCard({
 function FavoritePlayerCard({
   fav,
   player,
-  loading,
+  loading: _loading,
   isBusy,
   onRemove,
 }: {
@@ -457,7 +456,7 @@ function FavoritePlayerCard({
   const initials = getInitials(name);
 
   return (
-    <div className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-lborder bg-card p-5 transition-all duration-300 hover:-translate-y-1 hover:border-accent/40 hover:shadow-xl">
+    <div className="group relative flex flex-col justify-between overflow-hidden rounded-md border border-lborder bg-card p-5 transition-colors hover:border-accent/40 hover:bg-elevated">
       <div>
         <div className="flex items-center justify-between gap-2 pb-3">
           <Badge tone="neutral">{role}</Badge>
@@ -513,7 +512,7 @@ function FavoritePlayerCard({
 function FavoriteMatchCard({
   fav,
   match,
-  loading,
+  loading: _loading,
   isBusy,
   onRemove,
 }: {
@@ -540,7 +539,7 @@ function FavoriteMatchCard({
   const tone = isLive ? 'live' : isUpcoming ? 'upcoming' : isCompleted ? 'completed' : 'neutral';
 
   return (
-    <div className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-lborder bg-card p-5 transition-all duration-300 hover:-translate-y-1 hover:border-accent/40 hover:shadow-xl">
+    <div className="group relative flex flex-col justify-between overflow-hidden rounded-md border border-lborder bg-card p-5 transition-colors hover:border-accent/40 hover:bg-elevated">
       <div>
         <div className="flex items-center justify-between gap-2 pb-3">
           <Badge tone={tone}>{status}</Badge>

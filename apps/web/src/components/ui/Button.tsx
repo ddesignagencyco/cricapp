@@ -42,11 +42,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         case 'primary':
           return {
             className:
-              'bg-accent text-white shadow-sm transition-all duration-150 hover:brightness-110 active:brightness-95 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2',
-            inlineStyle: {
-              background: 'var(--color-brand)',
-              color: '#FFFFFF',
-            },
+              'btn-brand shadow-sm transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2',
           };
         case 'secondary':
           return {
@@ -80,7 +76,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         case 'destructive':
           return {
             className:
-              'text-white shadow-sm transition-all duration-150 hover:brightness-110 active:brightness-95 focus-visible:ring-2 focus-visible:ring-danger',
+              'text-white shadow-sm transition-all duration-150 hover:brightness-95 active:brightness-90 focus-visible:ring-2 focus-visible:ring-danger',
             inlineStyle: {
               background: 'var(--color-danger)',
               color: '#FFFFFF',

@@ -232,7 +232,10 @@ export default function AuthForm({ mode, token = '', tokenId = '' }: AuthFormPro
             <Link href="/terms" className="font-semibold text-accent hover:text-accent2">
               Terms of Service
             </Link>{' '}
-            and Privacy Policy.
+            and{' '}
+            <Link href="/privacy" className="font-semibold text-accent hover:text-accent2">
+              Privacy Policy
+            </Link>.
           </span>
         </label>
       )}
@@ -249,7 +252,7 @@ export default function AuthForm({ mode, token = '', tokenId = '' }: AuthFormPro
       <button
         type="submit"
         disabled={loading}
-        className="w-full rounded-2xl bg-accent py-3 text-sm font-black text-white shadow-lg shadow-accent/25 transition-all hover:bg-accent2 hover:shadow-xl hover:shadow-accent/35 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
+        className="btn-brand w-full rounded py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-card disabled:cursor-not-allowed disabled:opacity-60"
       >
         {loading
           ? 'Please wait…'

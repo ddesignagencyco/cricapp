@@ -1,4 +1,4 @@
-import { apiGet, extractPage } from './api/client';
+import { apiGet, apiGetOptional, extractPage } from './api/client';
 import type { Team, Player, SportEventRecord } from '../types/index';
 
 export async function fetchTeams(
@@ -17,7 +17,7 @@ export async function fetchTeamsPage(
 }
 
 export async function fetchTeamById(idOrAbbr: string): Promise<Team | null> {
-  return apiGet(`/teams/${idOrAbbr}`);
+  return apiGetOptional(`/teams/${idOrAbbr}`);
 }
 
 export async function fetchTeamRoster(idOrAbbr: string): Promise<Player[]> {

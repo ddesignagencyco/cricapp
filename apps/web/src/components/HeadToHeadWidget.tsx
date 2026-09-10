@@ -46,7 +46,6 @@ function parseH2H(data: HeadToHead | null): {
   const empty = { meetings: [], teamA: { id: '', name: '', abbr: '' }, teamB: { id: '', name: '', abbr: '' } };
   if (!data || !data.payload) return empty;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const payload = data.payload as Record<string, any>;
   const comps: any[] = payload.competitors || [];
   const teamA = comps.find((c: any) => c.id === data.teamAId) || comps[0] || {};

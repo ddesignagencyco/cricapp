@@ -5,6 +5,7 @@ import AuthShell from '../../../components/auth/AuthShell';
 export const metadata = {
   title: 'Forgot password',
   description: 'Request a PakCricZone password reset link.',
+  robots: { index: false, follow: false },
 };
 
 export default function ForgotPasswordPage() {

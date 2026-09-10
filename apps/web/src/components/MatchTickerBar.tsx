@@ -3,7 +3,7 @@
 import { useRef } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight, Radio } from 'lucide-react';
-import Badge from './Badge';
+import Badge, { normalizeStatus } from './Badge';
 import { getInitials } from '../utils/helpers';
 
 interface MatchTickerBarProps {
@@ -114,8 +114,9 @@ function TickerCard({ match }: { match: any }) {
   const result = match.result || '';
   const venue = match.venue || '';
 
-  const badgeLabel = isLive ? 'LIVE' : isCompleted ? 'RESULT' : 'UPCOMING';
-  const badgeTone = isLive ? 'live' : isCompleted ? 'completed' : 'upcoming';
+  const normalizedStatus = normalizeStatus(status);
+  const badgeLabel = isCompleted ? 'RESULT' : normalizedStatus.label.toUpperCase();
+  const badgeTone = normalizedStatus.tone;
 
   const innings = match.currentInnings;
   const overs = innings && innings.overs !== null ? innings.overs : '';

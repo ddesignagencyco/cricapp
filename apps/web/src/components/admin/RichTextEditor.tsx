@@ -62,7 +62,7 @@ export default function RichTextEditor({ value, onChange, placeholder }: RichTex
     if (editor && value !== editor.getHTML()) {
       editor.commands.setContent(value || '', { emitUpdate: false });
     }
-  }, [value]);
+  }, [editor, value]);
 
   const setLink = useCallback(() => {
     if (!editor) return;

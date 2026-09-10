@@ -1,4 +1,4 @@
-import { apiGet, extractPage } from './api/client';
+import { apiGet, apiGetOptional, extractPage } from './api/client';
 import type { Match } from '../types/index';
 
 export interface MatchTimeline {
@@ -27,7 +27,7 @@ export async function fetchLiveMatches(): Promise<Match[]> {
 }
 
 export async function fetchMatchById(id: string): Promise<Match | null> {
-  return apiGet(`/matches/${id}`);
+  return apiGetOptional(`/matches/${id}`);
 }
 
 export async function fetchMatchTimeline(id: string): Promise<MatchTimeline | null> {

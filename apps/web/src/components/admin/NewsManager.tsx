@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   FileEdit,
   FilePlus2,
@@ -22,30 +22,56 @@ import {
   type NewsArticleAdmin,
   type NewsCategory,
 } from '../../services/newsAdmin';
-import { AdminInput, AdminSelect, ConfirmDialog } from './AdminShared';
+import { AdminInput, AdminSelect, ConfirmDialog, ErrorState } from './AdminShared';
+import Pagination from './AdminPagination';
+
+const PAGE_SIZE = 20;
 
 export default function NewsManager() {
   const [articles, setArticles] = useState<NewsArticleAdmin[]>([]);
   const [categories, setCategories] = useState<NewsCategory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [query, setQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
   const [filterStatus, setFilterStatus] = useState<'all' | 'published' | 'draft'>('all');
   const [busyId, setBusyId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<NewsArticleAdmin | null>(null);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
-  const load = () => {
+  const load = useCallback(() => {
     setLoading(true);
+    setError('');
     Promise.all([
-      fetchNewsAdmin({ limit: 100 }),
+      fetchNewsAdmin({
+        limit: PAGE_SIZE,
+        page,
+        q: query.trim() || undefined,
+        category: filterCategory === 'all' ? undefined : filterCategory,
+      }),
       fetchNewsCategories().catch(() => [] as NewsCategory[]),
     ])
-      .then(([res, cats]) => { setArticles(res.items); setCategories(cats); })
-      .catch(() => { setArticles([]); })
+      .then(([res, cats]) => {
+        setArticles(res.items);
+        setTotal(res.total);
+        setTotalPages(Math.max(1, res.totalPages));
+        setCategories(cats);
+      })
+      .catch(() => {
+        setArticles([]);
+        setError('Could not load articles. Check the API connection and try again.');
+      })
       .finally(() => setLoading(false));
-  };
+  }, [filterCategory, page, query]);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    const timer = window.setTimeout(load, 300);
+    return () => window.clearTimeout(timer);
+  }, [load]);
+
+  useEffect(() => { setPage(1); }, [query, filterCategory, filterStatus]);
 
   const togglePublish = async (article: NewsArticleAdmin) => {
     setBusyId(article.id);
@@ -66,6 +92,7 @@ export default function NewsManager() {
     try {
       await deleteNews(deleteTarget.id);
       setArticles((list) => list.filter((a) => a.id !== deleteTarget.id));
+      setTotal((current) => Math.max(0, current - 1));
       toast.success('Article deleted.');
     } catch {
       toast.error('Could not delete article.');
@@ -78,9 +105,8 @@ export default function NewsManager() {
   const filtered = articles.filter((a) => {
     const q = query.toLowerCase().trim();
     const matchesQuery = !q || a.title.toLowerCase().includes(q) || (a.summary || '').toLowerCase().includes(q) || (a.author || '').toLowerCase().includes(q);
-    const matchesCategory = filterCategory === 'all' || a.categoryId === filterCategory;
     const matchesStatus = filterStatus === 'all' || (filterStatus === 'published' ? a.isPublished : !a.isPublished);
-    return matchesQuery && matchesCategory && matchesStatus;
+    return matchesQuery && matchesStatus;
   });
 
   return (
@@ -118,7 +144,7 @@ export default function NewsManager() {
         <div className="flex items-center gap-2">
           <AdminSelect value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)}>
             <option value="all">All Categories</option>
-            {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            {categories.map((c) => <option key={c.id} value={c.slug}>{c.name}</option>)}
           </AdminSelect>
           <AdminSelect value={filterStatus} onChange={(e) => setFilterStatus(e.target.value as any)}>
             <option value="all">All Status</option>
@@ -133,6 +159,8 @@ export default function NewsManager() {
         <div className="flex min-h-[200px] items-center justify-center rounded-lg" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
           <Loader2 size={20} className="animate-spin" style={{ color: 'var(--admin-accent)' }} />
         </div>
+      ) : error ? (
+        <ErrorState message={error} onRetry={load} />
       ) : filtered.length === 0 ? (
         <div className="rounded-lg border border-dashed p-10 text-center" style={{ borderColor: 'var(--admin-border)', background: 'var(--admin-card)' }}>
           <FileText size={28} className="mx-auto mb-2" style={{ color: 'var(--admin-text-muted)' }} />
@@ -216,6 +244,15 @@ export default function NewsManager() {
                 ))}
               </tbody>
             </table>
+          </div>
+          <div className="border-t px-4 py-3" style={{ borderColor: 'var(--admin-border)' }}>
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              total={total}
+              limit={PAGE_SIZE}
+              onPageChange={setPage}
+            />
           </div>
         </div>
       )}

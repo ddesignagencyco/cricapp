@@ -5,6 +5,7 @@ import AuthShell from '../../../components/auth/AuthShell';
 export const metadata = {
   title: 'Login',
   description: 'Sign in to follow matches, teams and cricket updates.',
+  robots: { index: false, follow: false },
 };
 
 export default function LoginPage() {

@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { BarChart3, Calendar, Clock, MapPin, Trophy, Users } from 'lucide-react';
-import Badge from '../Badge';
 import LiveIndicator from '../LiveIndicator';
 import Tabs from '../Tabs';
 import EmptyState from '../EmptyState';

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import NewsEditor from '../../../../../../components/admin/NewsEditor';
 
 export const metadata: Metadata = {
@@ -8,5 +9,5 @@ export const metadata: Metadata = {
 
 export default async function AdminEditArticlePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  return <NewsEditor mode="edit" id={id} />;
+  return <Suspense fallback={null}><NewsEditor mode="edit" id={id} /></Suspense>;
 }

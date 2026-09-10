@@ -37,7 +37,7 @@ export default function Tabs({ tabs, active, onChange, className = '', size = 'm
             {Icon && <Icon size={size === 'sm' ? 14 : 16} strokeWidth={2.2} />}
             {tab.label}
             {typeof tab.count === 'number' && (
-              <span className={`rounded-full px-1.5 text-xs font-bold ${isActive ? 'bg-accent text-primary' : 'bg-elevated text-stext'}`}>
+              <span className={`rounded-full px-1.5 text-xs font-medium ${isActive ? 'bg-[var(--color-brand)] text-white' : 'bg-elevated text-stext'}`}>
                 {tab.count}
               </span>
             )}

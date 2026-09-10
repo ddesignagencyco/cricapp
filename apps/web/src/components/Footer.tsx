@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { AtSign, Camera, Mail, Video, Download } from 'lucide-react';
+import { Download } from 'lucide-react';
 import Logo from './Logo';
 
 const CURRENT_YEAR = new Date().getFullYear();
@@ -39,13 +39,6 @@ const footerCols = [
   },
 ];
 
-const socials = [
-  { icon: Video, label: 'Watch', href: '#' },
-  { icon: Camera, label: 'Photos', href: '#' },
-  { icon: AtSign, label: 'X', href: '#' },
-  { icon: Mail, label: 'Mail', href: '#' },
-];
-
 export default function Footer() {
   return (
     <footer className="mt-16 border-t border-lborder bg-secondary">
@@ -56,19 +49,6 @@ export default function Footer() {
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-stext">
               Every Run. Every Ball. Live. Your home for cricket live scores, PSL fixtures, teams, players and in-depth analysis.
             </p>
-            <div className="mt-5 flex gap-2">
-              {socials.map((s) => (
-                <a
-                  key={s.label}
-                  href={s.href}
-                  onClick={(e) => e.preventDefault()}
-                  aria-label={s.label}
-                  className="grid h-9 w-9 place-items-center rounded-lg bg-card text-stext ring-1 ring-lborder transition-colors hover:text-accent hover:ring-accent/40"
-                >
-                  <s.icon size={16} />
-                </a>
-              ))}
-            </div>
           </div>
 
           {footerCols.map((col) => (
@@ -101,17 +81,19 @@ export default function Footer() {
             <div className="flex gap-2">
               <button
                 type="button"
-                className="inline-flex items-center gap-1.5 rounded-lg bg-card px-3 py-2 text-xs font-semibold text-mtext ring-1 ring-lborder transition-colors hover:bg-elevated"
+                disabled
+                className="inline-flex cursor-not-allowed items-center gap-1.5 rounded bg-card px-3 py-2 text-xs font-medium text-stext ring-1 ring-lborder opacity-70"
               >
                 <Download size={13} />
-                App Store
+                App Store soon
               </button>
               <button
                 type="button"
-                className="inline-flex items-center gap-1.5 rounded-lg bg-card px-3 py-2 text-xs font-semibold text-mtext ring-1 ring-lborder transition-colors hover:bg-elevated"
+                disabled
+                className="inline-flex cursor-not-allowed items-center gap-1.5 rounded bg-card px-3 py-2 text-xs font-medium text-stext ring-1 ring-lborder opacity-70"
               >
                 <Download size={13} />
-                Google Play
+                Google Play soon
               </button>
             </div>
           </div>

@@ -1,4 +1,4 @@
-import { apiGet, extractPage } from './api/client';
+import { apiGet, apiGetOptional, extractPage } from './api/client';
 import type { NewsArticle } from '../types/index';
 
 function formatNewsDate(val: unknown): string {
@@ -18,9 +18,22 @@ function formatNewsDate(val: unknown): string {
 
 function calculateReadTime(content: unknown): string {
   if (typeof content !== 'string' || !content.trim()) return '2 min read';
-  const words = content.trim().split(/\s+/).length;
+  const words = stripHtml(content).trim().split(/\s+/).length;
   const minutes = Math.max(1, Math.round(words / 180));
   return `${minutes} min read`;
+}
+
+function stripHtml(value: string): string {
+  return value
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function mapNewsItem(item: Record<string, unknown>): NewsArticle {
@@ -39,6 +52,8 @@ function mapNewsItem(item: Record<string, unknown>): NewsArticle {
   const rawDate = (item.publishedAt as string) || (item.createdAt as string) || '';
   const dateFormatted = formatNewsDate(rawDate);
   const contentStr = (item.content as string) || '';
+  const summary = stripHtml((item.summary as string) || '');
+  const plainContent = stripHtml(contentStr);
 
   return {
     ...item,
@@ -52,7 +67,7 @@ function mapNewsItem(item: Record<string, unknown>): NewsArticle {
     tags: tags,
     author: (item.author as string) || 'Editorial Team',
     readTime: calculateReadTime(contentStr),
-    excerpt: (item.summary as string) || (contentStr ? contentStr.slice(0, 160) + '…' : ''),
+    excerpt: summary || (plainContent ? `${plainContent.slice(0, 160)}${plainContent.length > 160 ? '…' : ''}` : ''),
     content: contentStr,
     image: (item.imageUrl as string) || undefined,
     imageGradient: undefined,
@@ -64,12 +79,28 @@ export async function fetchNews(
   { category, tag, q, limit = 50 }: { category?: string; tag?: string; q?: string; limit?: number } = {}
 ): Promise<NewsArticle[]> {
   const res = await apiGet('/news', { category, tag, q, limit });
-  return extractPage<Record<string, unknown>>(res).items.map(mapNewsItem);
+  return extractPage<Record<string, unknown>>(res).items
+    .filter((item) => item.isPublished === true)
+    .map(mapNewsItem);
+}
+
+export async function fetchNewsPage(
+  { category, tag, q, page = 1, limit = 12 }: { category?: string; tag?: string; q?: string; page?: number; limit?: number } = {}
+): Promise<{ items: NewsArticle[]; total: number; totalPages: number }> {
+  const res = await apiGet('/news', { category, tag, q, page, limit });
+  const { items, meta } = extractPage<Record<string, unknown>>(res);
+  const published = items.filter((item) => item.isPublished === true);
+  const visibleTotal = Math.max(0, meta.total - (items.length - published.length));
+  return {
+    items: published.map(mapNewsItem),
+    total: visibleTotal,
+    totalPages: Math.max(1, Math.ceil(visibleTotal / limit)),
+  };
 }
 
 export async function fetchNewsById(idOrSlug: string): Promise<NewsArticle | null> {
-  const item = await apiGet<Record<string, unknown>>(`/news/${idOrSlug}`);
-  if (!item) return null;
+  const item = await apiGetOptional<Record<string, unknown>>(`/news/${idOrSlug}`);
+  if (!item || item.isPublished !== true) return null;
   return mapNewsItem(item);
 }
 

@@ -53,6 +53,26 @@ export async function fetchNewsAdmin(
   return { items, total: meta.total, totalPages: meta.totalPages };
 }
 
+/** The API caps `limit` at 100, so larger sets must be collected page by page. */
+export async function fetchAllNewsAdmin(
+  params: NewsAdminListParams = {},
+  maxPages = 20
+): Promise<NewsArticleAdmin[]> {
+  const limit = 100;
+  const all: NewsArticleAdmin[] = [];
+  let page = 1;
+  let totalPages = 1;
+
+  do {
+    const res = await fetchNewsAdmin({ ...params, page, limit });
+    all.push(...res.items);
+    totalPages = res.totalPages || 1;
+    page += 1;
+  } while (page <= totalPages && page <= maxPages);
+
+  return all;
+}
+
 export function fetchNewsCategories(): Promise<NewsCategory[]> {
   return apiGet<NewsCategory[]>('/news/categories');
 }

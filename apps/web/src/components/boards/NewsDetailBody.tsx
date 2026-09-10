@@ -6,6 +6,7 @@ import Badge from '../Badge';
 import AdBanner from '../AdBanner';
 import ShareButton from '../ShareButton';
 import CommentsSection from '../CommentsSection';
+import { sanitizeArticleHtml } from '../../utils/sanitizeHtml';
 
 const categoryTone: Record<string, string> = {
   'Match Report': 'live',
@@ -33,6 +34,7 @@ export default function NewsDetailBody({ item, related = [] }: Props) {
       </div>
     );
   }
+  const safeContent = sanitizeArticleHtml(item.content || '');
 
   const categoryName = typeof item.category === 'string'
     ? item.category
@@ -113,7 +115,7 @@ export default function NewsDetailBody({ item, related = [] }: Props) {
                 prose-code:bg-secondary prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm
                 prose-pre:bg-secondary prose-pre:p-4 prose-pre:rounded-xl
                 prose-hr:border-lborder prose-hr:my-8"
-              dangerouslySetInnerHTML={{ __html: item.content || '' }}
+              dangerouslySetInnerHTML={{ __html: safeContent }}
             />
 
             <div className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-lborder pt-6">

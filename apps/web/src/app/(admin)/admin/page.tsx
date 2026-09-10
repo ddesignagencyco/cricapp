@@ -13,13 +13,8 @@ import {
   Newspaper,
   CheckCircle2,
   Database,
-  Flame,
   Globe2,
   MessageSquare,
-  Sparkles,
-  Zap,
-  TrendingUp,
-  Clock,
   ShieldCheck,
 } from 'lucide-react';
 import { useAuth } from '../../../components/AuthProvider';
@@ -28,7 +23,6 @@ import { fetchNewsAdmin } from '../../../services/newsAdmin';
 import { fetchTeamsPage } from '../../../services/teams';
 import { fetchPlayersPage } from '../../../services/players';
 import { fetchTournamentsPage } from '../../../services/tournaments';
-import { listComments, type CommentItem } from '../../../services/comments';
 import type { Match } from '../../../types';
 import Pagination from '../../../components/admin/AdminPagination';
 import { LoadingState, StatusBadge } from '../../../components/admin/AdminShared';
@@ -52,12 +46,10 @@ export default function AdminDashboard() {
     teams: 0,
     players: 0,
     tournaments: 0,
-    comments: 0,
   });
 
-  // Recent articles & comments
+  // Recent articles
   const [recentArticles, setRecentArticles] = useState<any[]>([]);
-  const [recentComments, setRecentComments] = useState<CommentItem[]>([]);
 
   const loadMatches = useCallback((p: number) => {
     fetchMatchesPage({ limit: 5, page: p })
@@ -81,8 +73,7 @@ export default function AdminDashboard() {
       fetchTeamsPage({ limit: 1 }),
       fetchPlayersPage({ limit: 1 }),
       fetchTournamentsPage({ limit: 1 }),
-      listComments('news', '', 1, 5),
-    ]).then(([newsRes, matchRes, liveRes, teamRes, playerRes, tourRes, commentRes]) => {
+    ]).then(([newsRes, matchRes, liveRes, teamRes, playerRes, tourRes]) => {
       if (newsRes.status === 'fulfilled') {
         setRecentArticles(newsRes.value.items || []);
         setCounts((c) => ({ ...c, articles: newsRes.value.total || 0 }));
@@ -104,10 +95,6 @@ export default function AdminDashboard() {
       }
       if (tourRes.status === 'fulfilled') {
         setCounts((c) => ({ ...c, tournaments: tourRes.value.total || 0 }));
-      }
-      if (commentRes.status === 'fulfilled') {
-        setRecentComments(commentRes.value.items || []);
-        setCounts((c) => ({ ...c, comments: commentRes.value.total || 0 }));
       }
       setLoading(false);
     });
@@ -216,8 +203,8 @@ export default function AdminDashboard() {
         />
         <MetricCard
           label="Comments"
-          value={counts.comments.toLocaleString()}
-          sub="Fan discussions"
+          value="Unavailable"
+          sub="Admin feed API required"
           icon={<MessageSquare size={14} />}
           accentColor="var(--admin-accent)"
           accentBg="var(--admin-info-bg)"
@@ -455,30 +442,9 @@ export default function AdminDashboard() {
               </div>
               <Link href="/admin/comments" className="text-xs font-bold" style={{ color: 'var(--admin-accent)' }}>View all →</Link>
             </div>
-            <div>
-              {recentComments.length === 0 ? (
-                <p className="px-4 py-6 text-center text-xs" style={{ color: 'var(--admin-text-muted)' }}>No recent comments</p>
-              ) : recentComments.slice(0, 4).map((c) => (
-                <div key={c.id} className="flex items-start gap-2.5 px-4 py-2.5" style={{ borderBottom: '1px solid var(--admin-border)' }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = 'var(--admin-table-row-hover)'}
-                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
-                  <div className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded text-[10px] font-bold" style={{ background: 'var(--admin-info-bg)', color: 'var(--admin-accent)' }}>
-                    {getInitials(c.user?.displayName || c.user?.username || 'U')}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-semibold truncate" style={{ color: 'var(--admin-text)' }}>
-                      {c.user?.displayName || c.user?.username || 'User'}
-                    </p>
-                    <p className="text-xs line-clamp-1 mt-0.5" style={{ color: 'var(--admin-text-secondary)' }}>
-                      {c.body}
-                    </p>
-                    <p className="text-[10px] mt-0.5" style={{ color: 'var(--admin-text-muted)' }}>
-                      {new Date(c.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <p className="px-4 py-6 text-center text-xs" style={{ color: 'var(--admin-text-muted)' }}>
+              The backend does not provide an admin-wide comment feed.
+            </p>
           </div>
         </div>
       </div>

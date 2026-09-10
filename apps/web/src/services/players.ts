@@ -1,4 +1,4 @@
-import { apiGet, extractPage } from './api/client';
+import { apiGet, apiGetOptional, extractPage } from './api/client';
 import type { Player } from '../types/index';
 
 export async function fetchPlayers(
@@ -22,5 +22,5 @@ export async function fetchPlayersByTeam(teamAbbr: string): Promise<Player[]> {
 }
 
 export async function fetchPlayerById(playerId: string): Promise<Player | null> {
-  return apiGet(`/players/${playerId}`, { recent: true });
+  return apiGetOptional(`/players/${playerId}`, { recent: true });
 }

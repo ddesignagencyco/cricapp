@@ -1,5 +1,6 @@
 import NewsDetailBody from '../../../components/boards/NewsDetailBody';
 import { fetchNews, fetchNewsById } from '../../../services/news';
+import { notFound } from 'next/navigation';
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -19,8 +20,7 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ id:
     fetchNewsById(id),
     fetchNews(),
   ]);
-  const related = item
-    ? allNews.filter((n) => n.id !== item.id).slice(0, 3)
-    : [];
+  if (!item) notFound();
+  const related = allNews.filter((n) => n.id !== item.id).slice(0, 3);
   return <NewsDetailBody item={item} related={related} />;
 }

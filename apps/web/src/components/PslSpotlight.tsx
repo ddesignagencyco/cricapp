@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { Calendar, MapPin, Users, ChevronRight, Trophy, TrendingUp } from 'lucide-react';
 import TeamLogo from './TeamLogo';
 
@@ -25,11 +26,13 @@ export default function PslSpotlight({ standings = [] }: PslSpotlightProps) {
         {/* PSL Spotlight */}
         <div className="overflow-hidden rounded-2xl bg-card ring-1 ring-lborder">
           <div className="relative overflow-hidden">
-            <img
+            <Image
               src="/banner2.png"
               alt="PSL 2026"
+              width={1024}
+              height={576}
+              sizes="(min-width: 1024px) 45vw, 100vw"
               className="h-44 w-full object-cover sm:h-52"
-              loading="lazy"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
             <div className="absolute bottom-0 left-0 p-4 sm:p-5">

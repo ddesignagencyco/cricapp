@@ -143,7 +143,7 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
             <button
               type="submit"
               disabled={submitting || !body.trim()}
-              className="inline-flex items-center gap-2 rounded bg-accent px-4 py-2 text-xs font-bold text-white transition hover:bg-accent2 disabled:opacity-60"
+              className="btn-brand inline-flex items-center gap-2 rounded px-4 py-2 text-xs font-bold transition-colors disabled:opacity-60"
             >
               {submitting ? <Loader2 size={13} className="animate-spin" /> : <Flame size={13} />}
               Post comment

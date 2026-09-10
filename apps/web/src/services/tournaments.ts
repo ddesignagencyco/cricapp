@@ -1,4 +1,4 @@
-import { apiGet, extractPage } from './api/client';
+import { apiGet, apiGetOptional, extractPage } from './api/client';
 import type { TournamentApi, TournamentSeason, SportEventRecord } from '../types/index';
 
 export async function fetchTournaments(
@@ -17,7 +17,7 @@ export async function fetchTournamentsPage(
 }
 
 export async function fetchTournamentById(tournamentId: string): Promise<TournamentApi | null> {
-  return apiGet(`/tournaments/${tournamentId}`);
+  return apiGetOptional(`/tournaments/${tournamentId}`);
 }
 
 export async function fetchTournamentSeasons(tournamentId: string): Promise<TournamentSeason[]> {

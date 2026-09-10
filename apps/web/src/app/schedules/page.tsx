@@ -1,4 +1,5 @@
 import SchedulesPageClient from './SchedulesPageClient';
+import { toKarachiISODate } from '../../utils/helpers';
 
 export const revalidate = 60;
 
@@ -7,15 +8,8 @@ export const metadata = {
   description: 'Daily cricket schedule and results.',
 };
 
-function toISODate(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
-
 export default async function SchedulesPage() {
-  const today = toISODate(new Date());
+  const today = toKarachiISODate();
   return (
     <SchedulesPageClient initialDate={today} />
   );

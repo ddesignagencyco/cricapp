@@ -7,6 +7,7 @@ import type { Team } from '../../types/index';
 import { fetchTeamsPage } from '../../services/teams';
 import TeamCard from '../TeamCard';
 import EmptyState from '../EmptyState';
+import ErrorState from '../ErrorState';
 import Pagination from '../Pagination';
 
 const LIMIT = 20;
@@ -22,11 +23,14 @@ export default function TeamsDirectory() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
   const [localSearch, setLocalSearch] = useState(search);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
+    setError(false);
     fetchTeamsPage({ limit: LIMIT, page })
       .then(({ items, total: t }) => {
         if (!cancelled) {
@@ -39,11 +43,12 @@ export default function TeamsDirectory() {
         if (!cancelled) {
           setTeams([]);
           setTotal(0);
+          setError(true);
           setLoading(false);
         }
       });
     return () => { cancelled = true; };
-  }, [page]);
+  }, [page, retryKey]);
 
   const totalPages = Math.max(1, Math.ceil((total || 0) / LIMIT));
 
@@ -102,7 +107,7 @@ export default function TeamsDirectory() {
 
           {/* Quick Count Badge */}
           <div className="flex items-center gap-3 rounded-2xl border border-lborder/80 bg-secondary/80 px-5 py-3.5 shadow-inner">
-            <div className="grid h-11 w-11 place-items-center rounded-xl bg-accent text-white shadow-sm">
+            <div className="grid h-11 w-11 place-items-center rounded-md bg-[var(--color-brand)] text-white">
               <Users size={20} />
             </div>
             <div>
@@ -142,20 +147,23 @@ export default function TeamsDirectory() {
 
       {/* Grid Content */}
       {loading ? (
-        <div className="flex min-h-[320px] flex-col items-center justify-center gap-3 rounded-3xl border border-lborder bg-card p-12 text-center">
-          <Loader2 className="animate-spin text-accent" size={32} />
-          <p className="text-xs font-semibold text-stext">Loading cricket teams…</p>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="h-[74px] animate-pulse rounded-md border border-lborder bg-card" />
+          ))}
         </div>
+      ) : error ? (
+        <ErrorState message="Teams are temporarily unavailable." onRetry={() => setRetryKey((key) => key + 1)} />
       ) : filtered.length > 0 ? (
         <>
-          <div className="fade-in grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+          <div className="fade-in grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {filtered.map((t) => (
               <TeamCard key={t.id} team={t} />
             ))}
           </div>
 
           <div className="pt-4">
-            <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
+            <Pagination page={page} totalPages={totalPages} total={total} limit={LIMIT} onPageChange={handlePageChange} />
           </div>
         </>
       ) : (

@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { CalendarDays } from 'lucide-react';
 import type { Match } from '../../types/index';
 import { fetchMatchesPage } from '../../services/matches';
 import MatchCard from '../MatchCard';
 import Tabs from '../Tabs';
 import EmptyState from '../EmptyState';
+import ErrorState from '../ErrorState';
 import Pagination from '../Pagination';
 
 const LIMIT = 20;
@@ -30,10 +30,13 @@ export default function MatchBoard() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
+    setError(false);
     fetchMatchesPage({ status: tab, limit: LIMIT, page })
       .then(({ items, total: t }) => {
         if (!cancelled) {
@@ -46,11 +49,12 @@ export default function MatchBoard() {
         if (!cancelled) {
           setMatches([]);
           setTotal(0);
+          setError(true);
           setLoading(false);
         }
       });
     return () => { cancelled = true; };
-  }, [tab, page]);
+  }, [tab, page, retryKey]);
 
   const totalPages = Math.max(1, Math.ceil((total || 0) / LIMIT));
 
@@ -72,65 +76,46 @@ export default function MatchBoard() {
   };
 
   return (
-    <div className="space-y-8">
-      {/* Editorial Header Banner */}
-      <div className="relative overflow-hidden rounded-3xl border border-lborder bg-gradient-to-br from-card via-card to-elevated p-6 shadow-sm sm:p-8">
-        <div className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-accent/5 blur-3xl pointer-events-none" />
-
-        <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-          <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-accent border border-accent/20">
-              <CalendarDays size={13} />
-              <span>Fixtures & Results</span>
-            </div>
-            <h1 className="mt-3 text-3xl font-black tracking-tight text-mtext sm:text-4xl">
-              Cricket Matches
-            </h1>
-            <p className="mt-2 text-sm leading-relaxed text-stext sm:text-base">
-              Explore live ball-by-ball scorecards, upcoming international and league fixtures, and verified past results.
+    <div className="space-y-5">
+      <header>
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wider text-accent">Fixtures & results</p>
+            <h1 className="mt-1 text-2xl font-semibold text-mtext">Cricket Matches</h1>
+            <p className="mt-1 max-w-2xl text-sm text-stext">
+              Live scorecards, upcoming fixtures and verified results.
             </p>
           </div>
-
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 rounded-2xl border border-lborder bg-secondary/80 px-4 py-2.5 backdrop-blur-md">
-              <div className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
-              <div className="text-xs">
-                <span className="font-black text-mtext">{total}</span>{' '}
-                <span className="text-stext capitalize">{tab} Matches</span>
-              </div>
-            </div>
-          </div>
+          <p className="text-xs text-stext">
+            <span className="font-semibold text-mtext">{total}</span> {tab}
+          </p>
         </div>
-      </div>
+      </header>
 
-      {/* Tabs & Status Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-lborder/80 pb-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-lborder pb-3">
         <Tabs tabs={TABS} active={tab} onChange={handleTabChange} />
-
-        <div className="text-xs font-semibold text-stext">
-          <span>Page {page} of {totalPages}</span>
-        </div>
+        <p className="text-xs text-stext">Page {page} of {totalPages}</p>
       </div>
 
       {loading ? (
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
             <div
               key={i}
-              className="h-64 animate-pulse rounded-3xl border border-lborder bg-card p-5"
+              className="h-36 animate-pulse rounded-md border border-lborder bg-card"
             />
           ))}
         </div>
+      ) : error ? (
+        <ErrorState message="Matches are temporarily unavailable." onRetry={() => setRetryKey((key) => key + 1)} />
       ) : matches.length > 0 ? (
         <>
-          <div className="fade-in grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="fade-in grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {matches.map((m) => (
               <MatchCard key={m.matchId || m.id} match={m} />
             ))}
           </div>
-          <div className="pt-6">
-            <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
-          </div>
+          <Pagination page={page} totalPages={totalPages} total={total} limit={LIMIT} onPageChange={handlePageChange} />
         </>
       ) : (
         <EmptyState

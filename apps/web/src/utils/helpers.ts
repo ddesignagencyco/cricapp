@@ -26,6 +26,19 @@ interface ScheduledDate {
   time: string;
 }
 
+export const APP_TIME_ZONE = 'Asia/Karachi';
+
+export function toKarachiISODate(date = new Date()): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: APP_TIME_ZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date);
+  const value = (type: Intl.DateTimeFormatPartTypes) => parts.find((part) => part.type === type)?.value || '';
+  return `${value('year')}-${value('month')}-${value('day')}`;
+}
+
 export function formatNumber(n: number | string): string {
   return Number(n || 0).toLocaleString('en-US');
 }
@@ -39,12 +52,9 @@ export function formatScheduled(iso: string | undefined): ScheduledDate {
   if (!iso) return { date: '', time: '' };
   const d: Date = new Date(iso);
   if (Number.isNaN(d.getTime())) return { date: '', time: '' };
-  const y: number = d.getFullYear();
-  const m: string = String(d.getMonth() + 1).padStart(2, '0');
-  const day: string = String(d.getDate()).padStart(2, '0');
   return {
-    date: `${y}-${m}-${day}`,
-    time: d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }),
+    date: toKarachiISODate(d),
+    time: d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: APP_TIME_ZONE }),
   };
 }
 

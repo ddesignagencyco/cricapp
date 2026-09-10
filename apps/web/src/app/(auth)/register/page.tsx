@@ -5,6 +5,7 @@ import AuthShell from '../../../components/auth/AuthShell';
 export const metadata = {
   title: 'Register',
   description: 'Create your PakCricZone account.',
+  robots: { index: false, follow: false },
 };
 
 export default function RegisterPage() {

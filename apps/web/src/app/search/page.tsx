@@ -9,7 +9,7 @@ export const metadata = {
 export default function SearchPage() {
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-      <Suspense fallback={null}>
+      <Suspense fallback={<div className="h-40 rounded border border-lborder bg-card skeleton" aria-label="Loading search" />}>
         <SearchResultsBody />
       </Suspense>
     </div>

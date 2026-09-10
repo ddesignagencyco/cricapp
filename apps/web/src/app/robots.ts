@@ -5,7 +5,17 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/api/', '/_next/'],
+      disallow: [
+        '/api/',
+        '/_next/',
+        '/admin/',
+        '/login',
+        '/register',
+        '/forgot-password',
+        '/reset-password',
+        '/verify-email',
+        '/favorites',
+      ],
     },
     sitemap: 'https://pakcriczone.com/sitemap.xml',
   };

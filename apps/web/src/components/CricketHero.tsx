@@ -42,7 +42,7 @@ export default function CricketHero({ match: _match }: CricketHeroProps) {
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <Link
                 href="/matches"
-                className="group inline-flex items-center gap-2.5 rounded-xl bg-accent px-7 py-3.5 text-sm font-bold text-white shadow-lg shadow-accent/30 transition-all hover:bg-accent2 hover:shadow-xl hover:shadow-accent/40 hover:-translate-y-0.5"
+                className="btn-brand group inline-flex items-center gap-2.5 rounded-md px-7 py-3.5 text-sm font-semibold shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
               >
                 <Eye size={17} />
                 View Matches
@@ -50,7 +50,7 @@ export default function CricketHero({ match: _match }: CricketHeroProps) {
               </Link>
               <Link
                 href="/teams"
-                className="inline-flex items-center gap-2.5 rounded-xl bg-white/10 px-7 py-3.5 text-sm font-bold text-white ring-1 ring-white/25 backdrop-blur-sm transition-all hover:bg-white/20 hover:-translate-y-0.5"
+                className="inline-flex items-center gap-2.5 rounded-md bg-white/10 px-7 py-3.5 text-sm font-semibold text-white ring-1 ring-white/25 transition-colors hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
               >
                 <Users size={17} />
                 Explore Teams
@@ -69,14 +69,14 @@ export default function CricketHero({ match: _match }: CricketHeroProps) {
               <Link
                 key={item.label}
                 href={item.href}
-                className="group flex flex-col items-start gap-2 rounded-xl bg-white/5 p-4 ring-1 ring-white/10 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:bg-white/10 hover:ring-white/25 hover:shadow-lg"
+                className="group flex flex-col items-start gap-2 rounded-md bg-black/65 p-4 ring-1 ring-white/15 backdrop-blur-md transition-colors hover:bg-black/75 hover:ring-white/30"
               >
-                <div className={`grid h-9 w-9 place-items-center rounded-lg bg-gradient-to-br ${item.color}`}>
+                <div className={`grid h-9 w-9 place-items-center rounded-md bg-gradient-to-br ${item.color}`}>
                   <item.icon size={18} className={item.iconColor} />
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-white group-hover:text-accent transition-colors">{item.label}</p>
-                  <p className="text-xs text-white/50">{item.sub}</p>
+                  <p className="text-sm font-semibold text-white transition-colors group-hover:text-accent">{item.label}</p>
+                  <p className="text-xs text-white/75">{item.sub}</p>
                 </div>
               </Link>
             ))}

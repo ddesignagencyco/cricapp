@@ -74,10 +74,20 @@ export default async function PSLPage({ searchParams }: { searchParams: Promise<
             <p className="hero-lead mt-4 max-w-xl text-sm leading-relaxed text-slate-300 sm:text-base">
               Six franchises, one mission. Follow the PSL with fixtures, tables and player stats.
             </p>
-            <div className="mt-5 flex flex-wrap gap-3">
-              <Badge tone="neutral">T20</Badge>
-              {seasonLabel && <Badge tone="neutral">{seasonLabel}</Badge>}
-              {pointsRows.length > 0 && <Badge tone="live">{pointsRows.length} Teams</Badge>}
+            <div className="mt-5 flex flex-wrap items-center gap-2.5">
+              <span className="inline-flex items-center rounded-md border border-white/25 bg-white/10 px-3.5 py-1.5 text-sm font-semibold tracking-wide text-white">
+                T20
+              </span>
+              {seasonLabel && (
+                <span className="inline-flex items-center rounded-md border border-white/25 bg-white/10 px-3.5 py-1.5 text-sm font-semibold tracking-wide text-white">
+                  {seasonLabel}
+                </span>
+              )}
+              {pointsRows.length > 0 && (
+                <span className="inline-flex items-center rounded-md border border-accent/40 bg-accent/20 px-3.5 py-1.5 text-sm font-semibold tracking-wide text-accent">
+                  {pointsRows.length} Teams
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -108,7 +118,7 @@ export default async function PSLPage({ searchParams }: { searchParams: Promise<
               <Link
                 key={s.teamId}
                 href={`/teams/${s.teamId}`}
-                className="group flex flex-col items-center justify-center rounded-2xl bg-card p-6 text-center ring-1 ring-lborder transition-all duration-300 hover:-translate-y-1 hover:bg-elevated hover:ring-accent/30 hover:shadow-lg"
+                className="group flex flex-col items-center justify-center rounded-md bg-card p-6 text-center ring-1 ring-lborder transition-colors hover:bg-elevated hover:ring-accent/30"
               >
                 <TeamLogo teamId={s.teamId} name={s.teamName} code={s.teamAbbr} size="lg" link={false} />
                 <h3 className="mt-4 text-base font-bold text-mtext group-hover:text-accent transition-colors">{s.teamName}</h3>

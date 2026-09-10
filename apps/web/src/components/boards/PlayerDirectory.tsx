@@ -2,9 +2,10 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { Loader2, Search, Users } from 'lucide-react';
+import { Search, Users } from 'lucide-react';
 import PlayerCard from '../PlayerCard';
 import EmptyState from '../EmptyState';
+import ErrorState from '../ErrorState';
 import Pagination from '../Pagination';
 import { fetchPlayersPage } from '../../services/players';
 import type { Player } from '../../types/index';
@@ -39,6 +40,8 @@ export default function PlayerDirectory({ initialPlayers = [], initialTotal = 0 
     Math.max(1, Math.ceil((initialTotal || initialPlayers.length) / LIMIT))
   );
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
   const [localSearch, setLocalSearch] = useState(search);
   const [roleFilter, setRoleFilter] = useState('all');
 
@@ -46,6 +49,7 @@ export default function PlayerDirectory({ initialPlayers = [], initialTotal = 0 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
+    setError(false);
 
     fetchPlayersPage({
       limit: LIMIT,
@@ -64,6 +68,7 @@ export default function PlayerDirectory({ initialPlayers = [], initialTotal = 0 
         if (!cancelled) {
           setPlayers([]);
           setTotal(0);
+          setError(true);
           setLoading(false);
         }
       });
@@ -71,7 +76,7 @@ export default function PlayerDirectory({ initialPlayers = [], initialTotal = 0 
     return () => {
       cancelled = true;
     };
-  }, [page, search]);
+  }, [page, search, retryKey]);
 
   const roles = useMemo(() => {
     const set = new Set<string>();
@@ -112,39 +117,35 @@ export default function PlayerDirectory({ initialPlayers = [], initialTotal = 0 
   };
 
   return (
-    <div className="space-y-8">
-      {/* Header Banner */}
-      <div className="relative overflow-hidden rounded-3xl border border-lborder bg-gradient-to-br from-card via-card to-elevated p-6 shadow-sm sm:p-8">
-        <div className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-accent/5 blur-3xl pointer-events-none" />
-
-        <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+    <div className="space-y-5">
+      <header className="rounded-md border border-lborder bg-card p-5 sm:p-6">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-accent border border-accent/20">
+            <div className="inline-flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-accent">
               <Users size={13} />
               <span>International & League Athletes</span>
             </div>
-            <h1 className="mt-3 text-3xl font-black tracking-tight text-mtext sm:text-4xl">
+            <h1 className="mt-2 text-2xl font-semibold text-mtext">
               Cricket Players Directory
             </h1>
-            <p className="mt-2 text-sm leading-relaxed text-stext sm:text-base">
+            <p className="mt-1 max-w-2xl text-sm leading-relaxed text-stext">
               Explore profiles, batting & bowling styles, career statistics, and team affiliations for world-class cricketers and emerging stars.
             </p>
           </div>
 
-          {/* Quick Stats Pill */}
-          <div className="flex items-center gap-3 rounded-2xl border border-lborder/80 bg-secondary/80 px-5 py-3.5 shadow-inner">
-            <div className="grid h-11 w-11 place-items-center rounded-xl bg-accent text-white shadow-sm">
-              <Users size={20} />
+          <div className="flex items-center gap-3 rounded-md border border-lborder bg-secondary px-4 py-3">
+            <div className="btn-brand grid h-9 w-9 place-items-center rounded-md">
+              <Users size={18} />
             </div>
             <div>
-              <div className="text-2xl font-black text-mtext">{total}</div>
-              <div className="text-xs font-semibold uppercase tracking-wider text-stext">
+              <div className="text-lg font-semibold leading-none text-mtext">{total}</div>
+              <div className="mt-1 text-xs font-medium uppercase tracking-wider text-stext">
                 Total Athletes
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </header>
 
       {/* Search & Role Filters */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -160,7 +161,7 @@ export default function PlayerDirectory({ initialPlayers = [], initialTotal = 0 
               if (e.key === 'Enter') handleSearchSubmit(localSearch);
             }}
             placeholder="Search players by name, team, role, nationality…"
-            className="w-full rounded-2xl border border-lborder bg-card py-2.5 pl-10 pr-4 text-xs text-mtext outline-none transition focus:border-accent focus:bg-elevated focus:ring-2 focus:ring-accent/20"
+            className="w-full rounded-md border border-lborder bg-card py-2.5 pl-10 pr-4 text-sm text-mtext outline-none transition-colors focus:border-accent focus:bg-elevated focus:ring-2 focus:ring-accent/20"
           />
         </div>
 
@@ -172,9 +173,9 @@ export default function PlayerDirectory({ initialPlayers = [], initialTotal = 0 
                 key={r}
                 type="button"
                 onClick={() => setRoleFilter(r)}
-                className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+                className={`rounded px-3 py-1.5 text-xs font-medium transition-colors ${
                   roleFilter === r
-                    ? 'bg-accent text-white shadow-md shadow-accent/20'
+                    ? 'btn-brand'
                     : 'border border-lborder bg-card text-stext hover:text-mtext hover:bg-secondary'
                 }`}
               >
@@ -195,20 +196,23 @@ export default function PlayerDirectory({ initialPlayers = [], initialTotal = 0 
 
       {/* Grid Content */}
       {loading ? (
-        <div className="flex min-h-[320px] flex-col items-center justify-center gap-3 rounded-3xl border border-lborder bg-card p-12 text-center">
-          <Loader2 className="animate-spin text-accent" size={32} />
-          <p className="text-xs font-semibold text-stext">Loading athletes…</p>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 9 }).map((_, i) => (
+            <div key={i} className="h-[78px] animate-pulse rounded-md border border-lborder bg-card" />
+          ))}
         </div>
+      ) : error ? (
+        <ErrorState message="Players are temporarily unavailable." onRetry={() => setRetryKey((key) => key + 1)} />
       ) : filtered.length > 0 ? (
         <>
-          <div className="fade-in grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="fade-in grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {filtered.map((p) => (
               <PlayerCard key={p.id} player={p} />
             ))}
           </div>
 
-          <div className="pt-6">
-            <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
+          <div className="pt-4">
+            <Pagination page={page} totalPages={totalPages} total={total} limit={LIMIT} onPageChange={handlePageChange} />
           </div>
         </>
       ) : (

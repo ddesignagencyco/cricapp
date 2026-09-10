@@ -28,7 +28,7 @@ import { useTheme } from '../../../components/ThemeProvider';
 
 const adminNav = [
   { to: '/admin', label: 'Overview', icon: LayoutDashboard },
-  { to: '/admin/articles', label: 'Articles', icon: FileText },
+  { to: '/admin/news', label: 'Articles', icon: FileText },
   { to: '/admin/categories', label: 'Categories', icon: Tag },
   { to: '/admin/matches', label: 'Matches', icon: Trophy },
   { to: '/admin/teams', label: 'Teams', icon: Users },
@@ -113,6 +113,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             <Link
               key={item.to}
               href={item.to}
+              aria-current={active ? 'page' : undefined}
               className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors"
               style={{
                 background: active ? 'var(--color-brand)' : 'transparent',
@@ -143,6 +144,12 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-screen" style={{ background: 'var(--admin-bg)' }}>
+      <a
+        href="#admin-content"
+        className="btn-brand fixed left-3 top-3 z-[60] -translate-y-20 rounded px-3 py-2 text-sm font-medium focus:translate-y-0"
+      >
+        Skip to content
+      </a>
       {/* Desktop sidebar */}
       <aside className="hidden lg:flex flex-col fixed inset-y-0 left-0 z-30" style={{ background: 'var(--admin-sidebar)', borderRight: '1px solid var(--admin-border)' }}>
         {sidebar}
@@ -150,14 +157,21 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
       {/* Mobile overlay */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-40 lg:hidden" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={() => setMobileOpen(false)} />
+        <button
+          type="button"
+          className="fixed inset-0 z-40 lg:hidden"
+          style={{ background: 'rgba(0,0,0,0.5)' }}
+          onClick={() => setMobileOpen(false)}
+          aria-label="Close navigation"
+        />
       )}
 
       {/* Mobile sidebar */}
       <div className={`fixed inset-y-0 left-0 z-50 transform transition-transform duration-200 lg:hidden ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="relative">
           <button type="button" onClick={() => setMobileOpen(false)}
-            className="absolute right-2 top-3 z-10 grid h-8 w-8 place-items-center rounded-lg text-white/60 hover:text-white">
+            className="absolute right-2 top-3 z-10 grid h-8 w-8 place-items-center rounded-lg text-white/60 hover:text-white"
+            aria-label="Close navigation">
             <X size={18} />
           </button>
           {sidebar}
@@ -169,7 +183,8 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         {/* Top bar */}
         <header className="sticky top-0 z-20 flex h-14 items-center gap-4 px-4 sm:px-6" style={{ background: 'var(--admin-topbar)', borderBottom: '1px solid var(--admin-border)' }}>
           <button type="button" onClick={() => setMobileOpen(true)}
-            className="grid h-9 w-9 place-items-center rounded-lg lg:hidden" style={{ color: 'var(--admin-text-secondary)' }}>
+            className="grid h-9 w-9 place-items-center rounded-lg lg:hidden" style={{ color: 'var(--admin-text-secondary)' }}
+            aria-label="Open navigation" aria-expanded={mobileOpen}>
             <Menu size={18} />
           </button>
 
@@ -184,13 +199,15 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--admin-input-bg)'; }}
             onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
             title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
           >
             {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
           </button>
 
           <a href="/" target="_blank"
             className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors"
-            style={{ border: '1px solid var(--admin-border)', color: 'var(--admin-text-secondary)' }}>
+            style={{ border: '1px solid var(--admin-border)', color: 'var(--admin-text-secondary)' }}
+            rel="noopener noreferrer">
             <Eye size={14} />
             View site
           </a>
@@ -206,7 +223,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        <main className="flex-1 p-4 sm:p-6">{children}</main>
+        <main id="admin-content" className="flex-1 p-4 sm:p-6">{children}</main>
       </div>
     </div>
   );

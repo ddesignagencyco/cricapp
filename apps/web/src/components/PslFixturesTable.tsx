@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import TeamLogo from './TeamLogo';
 import Pagination from './Pagination';
+import { StatusBadge } from './Badge';
 import { formatScheduled, cap } from '../utils/helpers';
 import type { PslSchedule } from '../types/index';
 
@@ -60,13 +61,7 @@ export default function PslFixturesTable({ matches }: Props) {
                       {time && <span className="ml-1 text-stext/60">{time}</span>}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-bold uppercase tracking-wider ${m.status === 'closed' ? 'bg-accent2/15 text-accent2' :
-                          m.status === 'live' ? 'bg-red-500/20 text-red-400' :
-                            m.status === 'cancelled' ? 'bg-danger/15 text-danger' :
-                              'bg-elevated text-stext'
-                        }`}>
-                        {m.status}
-                      </span>
+                      <StatusBadge status={m.status} />
                     </td>
                   </tr>
                 );
@@ -75,7 +70,7 @@ export default function PslFixturesTable({ matches }: Props) {
           </table>
         </div>
       </div>
-      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+      <Pagination page={page} totalPages={totalPages} total={matches.length} limit={PAGE_SIZE} onPageChange={setPage} />
     </>
   );
 }

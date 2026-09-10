@@ -8,9 +8,9 @@ interface LogoProps {
 }
 
 export default function Logo({ to = '/', size = 'md' }: LogoProps) {
-  const textSize = size === 'lg' ? 'text-2xl' : 'text-xl';
+  const textSize = size === 'lg' ? 'text-xl sm:text-2xl' : 'text-xl';
   return (
-    <Link href={to} className="group flex items-center gap-2.5" aria-label="PAK CRICZONE home">
+    <Link href={to} className="group flex shrink-0 items-center gap-2.5 whitespace-nowrap" aria-label="PAK CRICZONE home">
       <span className={`${textSize} font-black tracking-tight`}>
         <span className="text-mtext">PAK CRIC</span>
         <span className="text-accent">ZONE</span>

@@ -38,7 +38,7 @@ export default function PslSeasonFilter({ seasons, activeSeasonId }: Props) {
             onClick={() => setSeason(s.id)}
             disabled={active}
             className={`rounded-full px-4 py-1.5 text-xs font-bold transition-all ${active
-                ? 'bg-accent text-white shadow-md shadow-accent/25 cursor-default'
+                ? 'btn-brand cursor-default'
                 : 'bg-card text-stext ring-1 ring-lborder hover:bg-elevated hover:text-mtext'
               }`}
           >

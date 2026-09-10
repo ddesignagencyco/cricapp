@@ -1,5 +1,3 @@
-'use client';
-
 import React from 'react';
 
 const toneStyles: Record<string, { bg: string; fg: string; ring: string }> = {
@@ -27,6 +25,34 @@ const toneStyles: Record<string, { bg: string; fg: string; ring: string }> = {
   eliminated: { bg: 'var(--color-danger-soft)', fg: 'var(--color-danger)', ring: 'var(--color-danger)' },
 };
 
+const statusLabels: Record<string, string> = {
+  live: 'Live',
+  upcoming: 'Upcoming',
+  completed: 'Completed',
+  closed: 'Completed',
+  ended: 'Completed',
+  cancelled: 'Cancelled',
+  postponed: 'Postponed',
+  abandoned: 'Abandoned',
+  published: 'Published',
+  draft: 'Draft',
+  in_review: 'In Review',
+  scheduled: 'Scheduled',
+  pending: 'Pending',
+  approved: 'Approved',
+  rejected: 'Rejected',
+  active: 'Active',
+  inactive: 'Inactive',
+};
+
+export function normalizeStatus(status?: string | null): { label: string; tone: string } {
+  const normalized = (status || '').trim().toLowerCase().replace(/[\s-]+/g, '_');
+  return {
+    label: statusLabels[normalized] || (status?.trim() || 'Unknown'),
+    tone: normalized in toneStyles ? normalized : 'neutral',
+  };
+}
+
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   children: React.ReactNode;
   tone?: string;
@@ -49,4 +75,9 @@ export default function Badge({ children, tone = 'neutral', className = '', styl
       {children}
     </span>
   );
+}
+
+export function StatusBadge({ status, className = '' }: { status?: string | null; className?: string }) {
+  const { label, tone } = normalizeStatus(status);
+  return <Badge tone={tone} className={className}>{label}</Badge>;
 }

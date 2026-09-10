@@ -3,18 +3,22 @@ import { fetchMatches } from '../services/matches';
 import { fetchTeams } from '../services/teams';
 import { fetchPlayers } from '../services/players';
 import { fetchNews } from '../services/news';
+import { fetchTournaments } from '../services/tournaments';
 
 const baseUrl = 'https://pakcriczone.com';
 
 const staticRoutes = [
   '',
   '/matches',
+  '/schedules',
   '/psl',
   '/teams',
   '/players',
   '/stats',
   '/news',
   '/streams',
+  '/tours',
+  '/tournaments',
   '/about',
   '/contact',
   '/privacy',
@@ -23,11 +27,12 @@ const staticRoutes = [
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date().toISOString();
-  const [matches, teams, players, news] = await Promise.all([
+  const [matches, teams, players, news, tournaments] = await Promise.all([
     fetchMatches().catch(() => []),
     fetchTeams().catch(() => []),
     fetchPlayers().catch(() => []),
     fetchNews().catch(() => []),
+    fetchTournaments().catch(() => []),
   ]);
 
   const entries = staticRoutes.map((route) => ({
@@ -58,9 +63,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
-  const otherEntries = (news && news.length > 0)
-    ? [{ url: `${baseUrl}/news`, lastModified: now, changeFrequency: 'daily' as MetadataRoute.Sitemap[number]['changeFrequency'], priority: 0.6 }]
-    : [];
+  const newsEntries = (news || []).map((article) => ({
+    url: `${baseUrl}/news/${article.slug || article.id}`,
+    lastModified: now,
+    changeFrequency: 'weekly' as MetadataRoute.Sitemap[number]['changeFrequency'],
+    priority: 0.6,
+  }));
 
-  return [...entries, ...matchEntries, ...teamEntries, ...playerEntries, ...otherEntries];
+  const tournamentEntries = (tournaments || []).map((tournament) => ({
+    url: `${baseUrl}/tournaments/${tournament.id}`,
+    lastModified: now,
+    changeFrequency: 'weekly' as MetadataRoute.Sitemap[number]['changeFrequency'],
+    priority: 0.6,
+  }));
+
+  return [...entries, ...matchEntries, ...teamEntries, ...playerEntries, ...newsEntries, ...tournamentEntries];
 }

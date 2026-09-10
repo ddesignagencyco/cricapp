@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ArrowLeft,
   Loader2,
@@ -11,7 +12,7 @@ import {
   User,
   Globe,
   ImageIcon,
-  Sparkles,
+  X,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
@@ -39,8 +40,7 @@ interface FormState {
   author: string;
   source: string;
   categoryId: string;
-  tagsText: string;
-  isPublished: boolean;
+  tags: string[];
 }
 
 const emptyForm: FormState = {
@@ -51,20 +51,26 @@ const emptyForm: FormState = {
   author: '',
   source: '',
   categoryId: '',
-  tagsText: '',
-  isPublished: false,
+  tags: [],
 };
 
 export default function NewsEditor({ mode, id }: NewsEditorProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [form, setForm] = useState<FormState>(emptyForm);
   const [categories, setCategories] = useState<NewsCategory[]>([]);
   const [newCategory, setNewCategory] = useState('');
   const [showAddCat, setShowAddCat] = useState(false);
   const [loading, setLoading] = useState(mode === 'edit');
   const [saving, setSaving] = useState(false);
+  const [tagDraft, setTagDraft] = useState('');
 
   useEffect(() => {
     fetchNewsCategories().then(setCategories).catch(() => setCategories([]));
+    const initialCategory = searchParams.get('category');
+    if (mode === 'create' && initialCategory) {
+      setForm((current) => ({ ...current, categoryId: initialCategory }));
+    }
     if (mode === 'edit' && id) {
       fetchNewsArticle(id)
         .then((article) => {
@@ -76,17 +82,51 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
             author: article.author || '',
             source: article.source || '',
             categoryId: article.categoryId || '',
-            tagsText: (article.tags || []).join(', '),
-            isPublished: article.isPublished,
+            tags: (article.tags || []).filter(Boolean),
           });
         })
         .catch(() => toast.error('Could not load the article.'))
         .finally(() => setLoading(false));
     }
-  }, [mode, id]);
+  }, [id, mode, searchParams]);
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
+
+  const addTags = (raw: string) => {
+    const incoming = raw
+      .split(',')
+      .map((tag) => tag.trim())
+      .filter(Boolean);
+    if (incoming.length === 0) return;
+    setForm((f) => {
+      const existing = new Set(f.tags.map((tag) => tag.toLowerCase()));
+      const merged = [...f.tags];
+      for (const tag of incoming) {
+        if (!existing.has(tag.toLowerCase())) {
+          existing.add(tag.toLowerCase());
+          merged.push(tag);
+        }
+      }
+      return { ...f, tags: merged };
+    });
+    setTagDraft('');
+  };
+
+  const removeTag = (tag: string) =>
+    setForm((f) => ({ ...f, tags: f.tags.filter((t) => t !== tag) }));
+
+  const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      addTags(tagDraft);
+      return;
+    }
+    if (e.key === 'Backspace' && !tagDraft && form.tags.length > 0) {
+      e.preventDefault();
+      removeTag(form.tags[form.tags.length - 1]);
+    }
+  };
 
   const handleAddCategory = () => {
     const name = newCategory.trim();
@@ -111,7 +151,7 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
       title: form.title.trim(),
       content: form.content.trim(),
       isPublished: publish,
-      tags: form.tagsText.split(',').map((t) => t.trim()).filter(Boolean),
+      tags: form.tags,
     };
     if (form.summary.trim()) payload.summary = form.summary.trim();
     if (form.imageUrl.trim()) payload.imageUrl = form.imageUrl.trim();
@@ -127,15 +167,16 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
         await updateNews(id, payload);
         toast.success(publish ? 'Article updated!' : 'Draft updated.');
       }
-      window.location.href = '/admin/news';
-    } catch (err: any) {
+      router.push('/admin/news');
+    } catch (err: unknown) {
       let errMsg = 'Could not save the article.';
-      if (err?.body && typeof err.body === 'object') {
-        const b = err.body;
+      const error = err && typeof err === 'object' ? err as Record<string, unknown> : null;
+      if (error?.body && typeof error.body === 'object') {
+        const b = error.body as Record<string, unknown>;
         if (Array.isArray(b.message)) errMsg = b.message.join('; ');
         else if (typeof b.message === 'string') errMsg = b.message;
         else if (typeof b.error === 'string') errMsg = b.error;
-      } else if (err?.message) errMsg = err.message;
+      } else if (typeof error?.message === 'string') errMsg = error.message;
       toast.error(errMsg, { duration: 5000 });
     } finally {
       setSaving(false);
@@ -235,26 +276,6 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
 
         {/* Right: Metadata */}
         <div className="space-y-4">
-          {/* Publishing */}
-          <div className="rounded-lg p-4" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
-            <h3 className="text-xs font-bold uppercase tracking-wider mb-3 flex items-center gap-1.5" style={{ color: 'var(--admin-text)' }}>
-              <Sparkles size={12} style={{ color: 'var(--admin-accent)' }} />
-              Publishing
-            </h3>
-            <label className="flex items-start gap-2 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={form.isPublished}
-                onChange={(e) => set('isPublished', e.target.checked)}
-                className="mt-0.5"
-              />
-              <div>
-                <span className="text-xs font-semibold" style={{ color: 'var(--admin-text)' }}>Make Live</span>
-                <p className="text-xs" style={{ color: 'var(--admin-text-muted)' }}>Uncheck to save as draft.</p>
-              </div>
-            </label>
-          </div>
-
           {/* Category */}
           <div className="rounded-lg p-4" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
             <div className="flex items-center justify-between mb-2">
@@ -310,8 +331,63 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
               </div>
             </div>
             <div>
-              <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--admin-text-secondary)' }}>Tags (comma separated)</label>
-              <AdminInput type="text" value={form.tagsText} onChange={(e) => set('tagsText', e.target.value)} placeholder="Babar Azam, PSL 10" />
+              <label htmlFor="article-tags" className="block text-xs font-semibold mb-1" style={{ color: 'var(--admin-text-secondary)' }}>
+                Tags
+              </label>
+              {form.tags.length > 0 && (
+                <ul className="mb-2 flex flex-wrap gap-1.5">
+                  {form.tags.map((tag) => (
+                    <li key={tag}>
+                      <span
+                        className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-medium"
+                        style={{
+                          background: 'var(--admin-input-bg)',
+                          color: 'var(--admin-text)',
+                          border: '1px solid var(--admin-border)',
+                        }}
+                      >
+                        {tag}
+                        <button
+                          type="button"
+                          onClick={() => removeTag(tag)}
+                          aria-label={`Remove tag ${tag}`}
+                          className="grid h-4 w-4 place-items-center rounded transition-colors hover:bg-rose-500/15 hover:text-rose-500"
+                          style={{ color: 'var(--admin-text-muted)' }}
+                        >
+                          <X size={11} />
+                        </button>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <div className="flex gap-1.5">
+                <AdminInput
+                  id="article-tags"
+                  type="text"
+                  value={tagDraft}
+                  onChange={(e) => setTagDraft(e.target.value)}
+                  onKeyDown={handleTagKeyDown}
+                  placeholder="Type a tag and press Enter"
+                  aria-describedby="article-tags-help"
+                />
+                <button
+                  type="button"
+                  onClick={() => addTags(tagDraft)}
+                  disabled={!tagDraft.trim()}
+                  className="shrink-0 rounded-md px-2.5 text-xs font-semibold disabled:opacity-50"
+                  style={{
+                    background: 'var(--admin-input-bg)',
+                    color: 'var(--admin-accent)',
+                    border: '1px solid var(--admin-border)',
+                  }}
+                >
+                  Add
+                </button>
+              </div>
+              <p id="article-tags-help" className="mt-1 text-xs" style={{ color: 'var(--admin-text-muted)' }}>
+                Press Enter or comma to add. Backspace removes the last tag.
+              </p>
             </div>
           </div>
         </div>

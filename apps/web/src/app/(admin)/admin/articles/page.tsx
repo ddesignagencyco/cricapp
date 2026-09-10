@@ -1,11 +1,5 @@
-import type { Metadata } from 'next';
-import NewsManager from '../../../../components/admin/NewsManager';
-
-export const metadata: Metadata = {
-  title: 'Articles',
-  robots: { index: false, follow: false },
-};
+import { redirect } from 'next/navigation';
 
 export default function AdminArticlesPage() {
-  return <NewsManager />;
+  redirect('/admin/news');
 }

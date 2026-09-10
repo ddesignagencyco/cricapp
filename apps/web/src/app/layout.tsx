@@ -7,6 +7,7 @@ import ClientLayout from '../components/ClientLayout';
 import { Toaster } from 'react-hot-toast';
 
 export const metadata = {
+  metadataBase: new URL('https://pakcriczone.com'),
   title: {
     default: 'PAK CRICZONE — Cricket Live Scores & PSL Hub',
     template: '%s | PAK CRICZONE',

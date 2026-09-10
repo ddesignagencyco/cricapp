@@ -27,8 +27,10 @@
   --color-border: #1E334A;
   --color-border-strong: #2D4A6B;
 
-  --color-brand: #00BFFF;
-  --color-brand-hover: #38BDF8;
+  /* Filled brand surfaces use a deeper sky blue than the bright accent so that
+     solid buttons do not glare against the dark background, and hover darkens. */
+  --color-brand: #0284C7;
+  --color-brand-hover: #0369A1;
   --color-brand-fg: #FFFFFF;
   --color-focus-ring: #00BFFF;
 
@@ -190,6 +192,16 @@ body {
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+}
+
+/* Solid brand button/pill fill. Hover darkens instead of brightening. */
+.btn-brand {
+  background-color: var(--color-brand);
+  color: var(--color-brand-fg);
+}
+
+.btn-brand:hover:not(:disabled) {
+  background-color: var(--color-brand-hover);
 }
 
 .shadow-card-dark {
@@ -486,4 +498,4 @@ body {
 .tiptap-content p:empty::before,
 .tiptap-content p > br:only-child::before {
   content: "\00a0";
-}
+}

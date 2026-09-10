@@ -20,8 +20,8 @@ export interface PageMeta {
 
 export interface RequestOptions extends Omit<RequestInit, 'body'> {
   params?: Record<string, string | number | boolean | undefined | null>;
-  /** Request body (will be JSON-serialized) */
-  body?: unknown;
+  /** Request body. FormData is sent unchanged; all other values are JSON-serialized. */
+  body?: unknown | FormData;
   /** Next.js cache option (server components only) */
   cache?: RequestCache;
   /** Next.js revalidation interval in seconds (server components only) */
@@ -56,6 +56,11 @@ async function handleResponse<T>(res: Response): Promise<T> {
       `API error ${res.status}`;
     throw new ApiError(res.status, message, body);
   }
+  const contentType = res.headers.get('content-type') || '';
+  if (!contentType.includes('application/json')) {
+    const text = await res.text();
+    return (text || undefined) as T;
+  }
   return res.json();
 }
 
@@ -85,15 +90,19 @@ async function request<T>(
 
   const init: RequestInit = {
     method,
-    headers: {
-      'Content-Type': 'application/json',
-      ...customHeaders,
-    },
+    headers: { ...customHeaders },
     ...rest,
   };
 
   if (reqBody !== undefined) {
-    init.body = JSON.stringify(reqBody);
+    if (reqBody instanceof FormData) {
+      init.body = reqBody;
+    } else {
+      init.body = JSON.stringify(reqBody);
+      const headers = new Headers(init.headers);
+      if (!headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
+      init.headers = headers;
+    }
   }
 
   // Next.js caching options (only work in server components)
@@ -114,6 +123,19 @@ export async function apiGet<T = unknown>(
   options?: RequestOptions
 ): Promise<T> {
   return request<T>('GET', path, { ...options, params });
+}
+
+export async function apiGetOptional<T = unknown>(
+  path: string,
+  params?: Record<string, string | number | boolean | undefined | null>,
+  options?: RequestOptions
+): Promise<T | null> {
+  try {
+    return await apiGet<T>(path, params, options);
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return null;
+    throw error;
+  }
 }
 
 export async function apiPost<T = unknown>(

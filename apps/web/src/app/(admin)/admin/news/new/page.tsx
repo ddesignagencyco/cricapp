@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import NewsEditor from '../../../../../components/admin/NewsEditor';
 
 export const metadata: Metadata = {
@@ -7,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function AdminNewArticlePage() {
-  return <NewsEditor mode="create" />;
+  return <Suspense fallback={null}><NewsEditor mode="create" /></Suspense>;
 }

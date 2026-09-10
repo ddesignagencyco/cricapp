@@ -14,7 +14,7 @@ import {
 import toast from 'react-hot-toast';
 import {
   createCategory,
-  fetchNewsAdmin,
+  fetchAllNewsAdmin,
   fetchNewsCategories,
   type NewsArticleAdmin,
   type NewsCategory,
@@ -29,12 +29,17 @@ export default function CategoryManager() {
   const [creating, setCreating] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedCatId, setSelectedCatId] = useState<string | null>(null);
+  const [articlesFailed, setArticlesFailed] = useState(false);
 
   const load = () => {
     setLoading(true);
+    setArticlesFailed(false);
     Promise.all([
       fetchNewsCategories().catch(() => [] as NewsCategory[]),
-      fetchNewsAdmin({ limit: 200 }).then((r) => r.items).catch(() => [] as NewsArticleAdmin[]),
+      fetchAllNewsAdmin().catch(() => {
+        setArticlesFailed(true);
+        return [] as NewsArticleAdmin[];
+      }),
     ])
       .then(([cats, arts]) => { setCategories(cats); setArticles(arts); })
       .finally(() => setLoading(false));
@@ -145,6 +150,15 @@ export default function CategoryManager() {
             </span>
           </div>
 
+          {articlesFailed && !loading && (
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg p-3 text-xs" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-warning-bg)', color: 'var(--admin-warning)' }}>
+              <span>Article counts are unavailable because the articles could not be loaded.</span>
+              <button type="button" onClick={load} className="rounded px-2 py-1 font-semibold" style={{ color: 'var(--admin-accent)' }}>
+                Retry
+              </button>
+            </div>
+          )}
+
           {/* Table */}
           {loading ? (
             <div className="flex min-h-[200px] items-center justify-center rounded-lg" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
@@ -195,12 +209,20 @@ export default function CategoryManager() {
                           <span className="flex items-center gap-1"><Hash size={10} />{c.slug || c.name.toLowerCase().replace(/\s+/g, '-')}</span>
                         </td>
                         <td className="px-4 py-3 text-center">
-                          <span className="rounded-full px-2 py-0.5 text-xs font-bold" style={{ background: 'var(--admin-input-bg)', color: 'var(--admin-text)' }}>{count}</span>
+                          <span className="rounded-full px-2 py-0.5 text-xs font-bold" style={{ background: 'var(--admin-input-bg)', color: 'var(--admin-text)' }}>
+                            {articlesFailed ? '—' : count}
+                          </span>
                         </td>
                         <td className="px-4 py-3 text-center text-xs">
-                          <span style={{ color: 'var(--admin-success)' }}>{published} live</span>
-                          <span className="mx-1" style={{ color: 'var(--admin-text-muted)' }}>·</span>
-                          <span style={{ color: 'var(--admin-text-muted)' }}>{count - published} draft</span>
+                          {articlesFailed ? (
+                            <span style={{ color: 'var(--admin-text-muted)' }}>Unavailable</span>
+                          ) : (
+                            <>
+                              <span style={{ color: 'var(--admin-success)' }}>{published} live</span>
+                              <span className="mx-1" style={{ color: 'var(--admin-text-muted)' }}>·</span>
+                              <span style={{ color: 'var(--admin-text-muted)' }}>{count - published} draft</span>
+                            </>
+                          )}
                         </td>
                         <td className="px-4 py-3 text-right">
                           <button

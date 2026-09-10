@@ -3,11 +3,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { Calendar, Filter, Loader2, MapPin, Search, Trophy, X } from 'lucide-react';
+import { Calendar, ChevronRight, MapPin, Search, Trophy, X } from 'lucide-react';
 import { str } from '../../utils/extract';
 import type { TournamentApi } from '../../types/index';
 import { fetchTournamentsPage } from '../../services/tournaments';
 import EmptyState from '../EmptyState';
+import ErrorState from '../ErrorState';
 import Pagination from '../Pagination';
 
 const LIMIT = 20;
@@ -15,6 +16,13 @@ const LIMIT = 20;
 interface Props {
   initialCountry?: string;
 }
+
+const chipClass = (active: boolean) =>
+  `flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition-colors ${
+    active
+      ? 'btn-brand'
+      : 'border border-lborder bg-card text-stext hover:bg-secondary hover:text-mtext'
+  }`;
 
 export default function TournamentsBoard({ initialCountry }: Props) {
   const router = useRouter();
@@ -26,6 +34,8 @@ export default function TournamentsBoard({ initialCountry }: Props) {
   const [tournaments, setTournaments] = useState<TournamentApi[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
   const [localSearch, setLocalSearch] = useState('');
   const [formatFilter, setFormatFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState(initialCountry || 'all');
@@ -33,6 +43,7 @@ export default function TournamentsBoard({ initialCountry }: Props) {
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
+    setError(false);
     fetchTournamentsPage({ limit: LIMIT, page })
       .then(({ items, total: t }) => {
         if (!cancelled) {
@@ -45,11 +56,14 @@ export default function TournamentsBoard({ initialCountry }: Props) {
         if (!cancelled) {
           setTournaments([]);
           setTotal(0);
+          setError(true);
           setLoading(false);
         }
       });
-    return () => { cancelled = true; };
-  }, [page]);
+    return () => {
+      cancelled = true;
+    };
+  }, [page, retryKey]);
 
   const totalPages = Math.max(1, Math.ceil((total || 0) / LIMIT));
 
@@ -104,44 +118,34 @@ export default function TournamentsBoard({ initialCountry }: Props) {
   };
 
   return (
-    <div className="space-y-8">
-      {/* Header Banner */}
-      <div className="relative overflow-hidden rounded-3xl border border-lborder bg-gradient-to-br from-card via-card to-elevated p-6 shadow-sm sm:p-8">
-        <div className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-accent/5 blur-3xl pointer-events-none" />
-
-        <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+    <div className="space-y-5">
+      <header className="rounded-md border border-lborder bg-card p-5 sm:p-6">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-accent border border-accent/20">
+            <p className="inline-flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-accent">
               <Trophy size={13} />
-              <span>Global Competitions & Leagues</span>
-            </div>
-            <h1 className="mt-3 text-3xl font-black tracking-tight text-mtext sm:text-4xl">
-              Cricket Tournaments
-            </h1>
-            <p className="mt-2 text-sm leading-relaxed text-stext sm:text-base">
-              Explore international ICC trophies, premier T20 leagues (PSL, IPL, BBL), test championships, and prestigious domestic cups.
+              Global competitions & leagues
+            </p>
+            <h1 className="mt-2 text-2xl font-semibold text-mtext">Cricket Tournaments</h1>
+            <p className="mt-1 text-sm leading-relaxed text-stext">
+              International trophies, premier T20 leagues, Test championships and domestic cups.
             </p>
           </div>
-
-          {/* Quick Count Badge */}
-          <div className="flex items-center gap-3 rounded-2xl border border-lborder/80 bg-secondary/80 px-5 py-3.5 shadow-inner">
-            <div className="grid h-11 w-11 place-items-center rounded-xl bg-accent text-white shadow-sm">
-              <Trophy size={20} />
+          <div className="flex items-center gap-3 rounded-md border border-lborder bg-secondary px-4 py-3">
+            <div className="btn-brand grid h-9 w-9 place-items-center rounded-md">
+              <Trophy size={18} />
             </div>
             <div>
-              <div className="text-2xl font-black text-mtext">{total || tournaments.length}</div>
-              <div className="text-xs font-semibold uppercase tracking-wider text-stext">
-                Competitions
-              </div>
+              <p className="text-lg font-semibold leading-none text-mtext">{total || tournaments.length}</p>
+              <p className="mt-1 text-xs font-medium uppercase tracking-wider text-stext">Competitions</p>
             </div>
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* Search & Filters */}
-      <div className="space-y-4">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="relative flex-1 max-w-md">
+      <div className="space-y-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="relative max-w-md flex-1">
             <Search
               size={16}
               className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-stext"
@@ -149,11 +153,10 @@ export default function TournamentsBoard({ initialCountry }: Props) {
             <input
               value={localSearch}
               onChange={(e) => setLocalSearch(e.target.value)}
-              placeholder="Search tournaments by title, format, or country..."
-              className="w-full rounded-2xl border border-lborder bg-card py-2.5 pl-10 pr-4 text-xs text-mtext outline-none transition focus:border-accent focus:bg-elevated focus:ring-2 focus:ring-accent/20"
+              placeholder="Search tournaments by title, format or country…"
+              className="w-full rounded-md border border-lborder bg-card py-2.5 pl-10 pr-4 text-sm text-mtext outline-none transition-colors focus:border-accent focus:bg-elevated focus:ring-2 focus:ring-accent/20"
             />
           </div>
-
           {activeFilters && (
             <button
               type="button"
@@ -161,26 +164,17 @@ export default function TournamentsBoard({ initialCountry }: Props) {
                 setFormatFilter('all');
                 setCategoryFilter('all');
               }}
-              className="flex items-center gap-1.5 rounded-xl border border-lborder bg-card px-3.5 py-2 text-xs font-bold text-accent transition-colors hover:bg-secondary cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded border border-lborder bg-card px-3 py-2 text-xs font-medium text-accent transition-colors hover:bg-secondary"
             >
               <X size={13} />
-              <span>Clear filters</span>
+              Clear filters
             </button>
           )}
         </div>
 
-        {/* Format Chips */}
         {formats.length > 0 && (
-          <div className="flex flex-wrap items-center gap-1.5 overflow-x-auto pb-1">
-            <button
-              type="button"
-              onClick={() => setFormatFilter('all')}
-              className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${
-                formatFilter === 'all'
-                  ? 'bg-accent text-white shadow-md shadow-accent/20'
-                  : 'border border-lborder bg-card text-stext hover:text-mtext hover:bg-secondary'
-              }`}
-            >
+          <div className="flex flex-wrap items-center gap-1.5">
+            <button type="button" onClick={() => setFormatFilter('all')} className={chipClass(formatFilter === 'all')}>
               All Formats
             </button>
             {formats.map(([fmt, count]) => (
@@ -188,37 +182,18 @@ export default function TournamentsBoard({ initialCountry }: Props) {
                 key={fmt}
                 type="button"
                 onClick={() => setFormatFilter(formatFilter === fmt ? 'all' : fmt)}
-                className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${
-                  formatFilter === fmt
-                    ? 'bg-accent text-white shadow-md shadow-accent/20'
-                    : 'border border-lborder bg-card text-stext hover:text-mtext hover:bg-secondary'
-                }`}
+                className={chipClass(formatFilter === fmt)}
               >
                 <span>{fmt.replace(/_/g, ' ')}</span>
-                <span
-                  className={`rounded-md px-1.5 py-0.2 text-xs font-semibold ${
-                    formatFilter === fmt ? 'bg-white/20 text-white' : 'bg-secondary text-stext'
-                  }`}
-                >
-                  {count}
-                </span>
+                <span className={formatFilter === fmt ? 'text-white/80' : 'text-stext'}>{count}</span>
               </button>
             ))}
           </div>
         )}
 
-        {/* Country/Region Chips */}
         {categories.length > 0 && (
-          <div className="flex flex-wrap items-center gap-1.5 overflow-x-auto pb-1">
-            <button
-              type="button"
-              onClick={() => setCategoryFilter('all')}
-              className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${
-                categoryFilter === 'all'
-                  ? 'bg-accent2 text-white shadow-md shadow-accent2/20'
-                  : 'border border-lborder bg-card text-stext hover:text-mtext hover:bg-secondary'
-              }`}
-            >
+          <div className="flex flex-wrap items-center gap-1.5">
+            <button type="button" onClick={() => setCategoryFilter('all')} className={chipClass(categoryFilter === 'all')}>
               All Regions
             </button>
             {categories.slice(0, 12).map(([cat, count]) => (
@@ -226,48 +201,47 @@ export default function TournamentsBoard({ initialCountry }: Props) {
                 key={cat}
                 type="button"
                 onClick={() => setCategoryFilter(categoryFilter === cat ? 'all' : cat)}
-                className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${
-                  categoryFilter === cat
-                    ? 'bg-accent2 text-white shadow-md shadow-accent2/20'
-                    : 'border border-lborder bg-card text-stext hover:text-mtext hover:bg-secondary'
-                }`}
+                className={chipClass(categoryFilter === cat)}
               >
                 <span>{cat}</span>
-                <span
-                  className={`rounded-md px-1.5 py-0.2 text-xs font-semibold ${
-                    categoryFilter === cat ? 'bg-white/20 text-white' : 'bg-secondary text-stext'
-                  }`}
-                >
-                  {count}
-                </span>
+                <span className={categoryFilter === cat ? 'text-white/80' : 'text-stext'}>{count}</span>
               </button>
             ))}
           </div>
         )}
       </div>
 
-      {/* Showing count */}
-      <div className="flex items-center justify-between text-xs text-stext">
-        <p>
-          Showing <span className="font-bold text-mtext">{filtered.length}</span> of {total} competition{total === 1 ? '' : 's'}
-        </p>
-      </div>
+      <p className="text-xs text-stext">
+        Showing <span className="font-semibold text-mtext">{filtered.length}</span> of {total} competition
+        {total === 1 ? '' : 's'}
+      </p>
 
-      {/* Grid Content */}
       {loading ? (
-        <div className="flex min-h-[320px] flex-col items-center justify-center gap-3 rounded-3xl border border-lborder bg-card p-12 text-center">
-          <Loader2 className="animate-spin text-accent" size={32} />
-          <p className="text-xs font-semibold text-stext">Loading cricket tournaments…</p>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 9 }).map((_, i) => (
+            <div key={i} className="h-[78px] animate-pulse rounded-md border border-lborder bg-card" />
+          ))}
         </div>
+      ) : error ? (
+        <ErrorState
+          message="Tournaments are temporarily unavailable."
+          onRetry={() => setRetryKey((key) => key + 1)}
+        />
       ) : filtered.length > 0 ? (
         <>
-          <div className="fade-in grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="fade-in grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {filtered.map((tournament) => (
               <TournamentCard key={tournament.id} tournament={tournament} />
             ))}
           </div>
-          <div className="pt-6">
-            <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
+          <div className="pt-4">
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              total={total}
+              limit={LIMIT}
+              onPageChange={handlePageChange}
+            />
           </div>
         </>
       ) : (
@@ -275,10 +249,10 @@ export default function TournamentsBoard({ initialCountry }: Props) {
           title="No tournaments found"
           message={
             localSearch
-              ? 'No competitions match your search query. Try another term.'
+              ? 'No competitions match your search. Try another term.'
               : activeFilters
-              ? 'No tournaments match these selected filters. Try clearing filters.'
-              : 'Tournaments will appear once data syncs.'
+                ? 'No tournaments match these filters. Try clearing them.'
+                : 'Tournaments will appear once data syncs.'
           }
         />
       )}
@@ -293,67 +267,48 @@ function TournamentCard({ tournament }: { tournament: TournamentApi }) {
   const format = rawFormat ? rawFormat.replace(/_/g, ' ') : 'CRICKET';
   const gender = tournament.gender || '';
   const cs = tournament.currentSeason as Record<string, unknown> | undefined;
-  const startDate = cs?.start_date || cs?.startDate;
-  const endDate = cs?.end_date || cs?.endDate;
-  const dateRange = startDate && endDate ? `${startDate} → ${endDate}` : startDate || endDate ? String(startDate || endDate) : '';
   const rawYear = cs?.year || cs?.name;
-  const seasonYear = typeof rawYear === 'number' ? rawYear : typeof rawYear === 'string' ? (rawYear.match(/(19|20)\d{2}/) || [])[0] || null : null;
+  const seasonYear =
+    typeof rawYear === 'number'
+      ? rawYear
+      : typeof rawYear === 'string'
+        ? (rawYear.match(/(19|20)\d{2}/) || [])[0] || null
+        : null;
 
   return (
     <Link
       href={`/tournaments/${tournament.id}`}
-      className="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-lborder bg-card p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-accent/50 hover:bg-elevated hover:shadow-xl hover:shadow-accent/10"
+      className="group flex items-center gap-3 rounded-md border border-lborder bg-card p-3.5 transition-colors hover:border-accent/50 hover:bg-elevated"
     >
-      <div>
-        {/* Top Badges */}
-        <div className="flex items-center justify-between gap-2">
-          <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-accent border border-accent/20">
+      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-md border border-lborder bg-secondary text-accent">
+        <Trophy size={18} />
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="flex min-w-0 items-center gap-2">
+          <h3 className="min-w-0 truncate text-sm font-semibold text-mtext transition-colors group-hover:text-accent" title={tournament.name}>
+            {tournament.name}
+          </h3>
+          <span className="shrink-0 rounded border border-lborder bg-secondary px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-stext">
             {format}
           </span>
-
-          {seasonYear && (
-            <span className="rounded-full bg-secondary px-2.5 py-0.5 text-xs font-black tracking-wider text-stext border border-lborder/60">
-              {seasonYear}
+        </div>
+        <p className="mt-0.5 flex min-w-0 items-center gap-2 text-xs text-stext">
+          <span className="inline-flex min-w-0 items-center gap-1 truncate">
+            <MapPin size={11} className="shrink-0" />
+            <span className="truncate">
+              {category}
+              {gender ? ` · ${gender}` : ''}
+            </span>
+          </span>
+          {(seasonYear || season) && (
+            <span className="inline-flex shrink-0 items-center gap-1">
+              <Calendar size={11} />
+              {seasonYear || season}
             </span>
           )}
-        </div>
-
-        {/* Tournament Name */}
-        <div className="mt-4 flex items-start gap-3">
-          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-amber-500/10 text-amber-500 ring-1 ring-amber-500/20 group-hover:scale-105 transition-transform">
-            <Trophy size={18} />
-          </div>
-          <div className="min-w-0 flex-1">
-            <h3 className="line-clamp-2 text-base font-bold leading-snug text-mtext transition-colors group-hover:text-accent" title={tournament.name}>
-              {tournament.name}
-            </h3>
-            {category && (
-              <p className="mt-1 flex items-center gap-1 text-xs text-stext font-medium">
-                <MapPin size={11} className="text-accent shrink-0" />
-                <span className="truncate">{category}</span>
-                {gender && <span className="capitalize text-stext/70">· {gender}</span>}
-              </p>
-            )}
-          </div>
-        </div>
+        </p>
       </div>
-
-      {/* Card Action Footer */}
-      <div className="mt-6 flex items-center justify-between border-t border-lborder/60 pt-3 text-xs">
-        {season ? (
-          <span className="flex items-center gap-1 text-xs text-stext truncate max-w-[170px]">
-            <Calendar size={11} className="shrink-0" />
-            <span className="truncate">{season}</span>
-          </span>
-        ) : (
-          <span className="text-xs text-stext">Competition</span>
-        )}
-
-        <span className="inline-flex items-center gap-1 font-bold text-accent transition-transform duration-300 group-hover:translate-x-1">
-          <span>Standings</span>
-          <span>→</span>
-        </span>
-      </div>
+      <ChevronRight size={16} className="shrink-0 text-stext transition-colors group-hover:text-accent" aria-hidden="true" />
     </Link>
   );
 }

@@ -17,7 +17,7 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen flex-1">{children}</main>
+      <main id="main-content" className="min-h-screen flex-1">{children}</main>
       <Footer />
       <ScrollTopButton />
     </>

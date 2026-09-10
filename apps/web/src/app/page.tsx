@@ -1,17 +1,17 @@
 import Link from 'next/link';
+import MatchCard from '../components/MatchCard';
 import MatchCardCompact from '../components/MatchCardCompact';
 import SectionHeader from '../components/SectionHeader';
 import MatchTickerBar from '../components/MatchTickerBar';
 import CricketHero from '../components/CricketHero';
 import PslSpotlight from '../components/PslSpotlight';
 import RecentResultCard from '../components/RecentResultCard';
+import TopPerformers from '../components/TopPerformers';
 import Newsletter from '../components/Newsletter';
-import TeamLogo from '../components/TeamLogo';
 
 import { fetchMatches } from '../services/matches';
 import { fetchNews } from '../services/news';
-import { fetchPslStandings } from '../services/psl';
-import { fetchTeams } from '../services/teams';
+import { fetchPslLeaders, fetchPslStandings } from '../services/psl';
 
 export const revalidate = 60;
 
@@ -30,16 +30,22 @@ export default async function HomePage() {
   const tomorrowEnd = new Date(tomorrowStart);
   tomorrowEnd.setDate(tomorrowEnd.getDate() + 1);
 
-  const [liveMatches, upcomingMatches, completedMatches, allMatches, newsList, teams, standings] =
-    await Promise.all([
+  const results = await Promise.allSettled([
       fetchMatches({ status: 'live', limit: 10 }),
       fetchMatches({ status: 'upcoming', limit: 20 }),
       fetchMatches({ status: 'completed', limit: 60 }),
       fetchMatches({ limit: 20 }),
       fetchNews(),
-      fetchTeams(),
       fetchPslStandings(),
-    ]);
+      fetchPslLeaders(),
+    ] as const);
+  const liveMatches = results[0].status === 'fulfilled' ? results[0].value : [];
+  const upcomingMatches = results[1].status === 'fulfilled' ? results[1].value : [];
+  const completedMatches = results[2].status === 'fulfilled' ? results[2].value : [];
+  const allMatches = results[3].status === 'fulfilled' ? results[3].value : [];
+  const newsList = results[4].status === 'fulfilled' ? results[4].value : [];
+  const standings = results[5].status === 'fulfilled' ? results[5].value : [];
+  const pslLeaders = results[6].status === 'fulfilled' ? results[6].value : [];
 
   const live = liveMatches || [];
   const upcoming = (upcomingMatches || []).slice(0, 5);
@@ -76,7 +82,6 @@ export default async function HomePage() {
   ];
 
   const nextUpcoming = (upcomingMatches || [])[0] || null;
-  const topTeams = (teams || []).slice(0, 6);
   const pslStandings = [...(standings || [])].sort((a: any, b: any) => (a.rank ?? 999) - (b.rank ?? 999));
 
   return (
@@ -84,8 +89,26 @@ export default async function HomePage() {
       <MatchTickerBar matches={tickerMatches} />
       <CricketHero match={nextUpcoming || all[0]} />
 
+      {/* Live Now */}
+      {live.length > 0 && (
+        <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6 mt-8">
+          <SectionHeader
+            title="Live Now"
+            subtitle={`${live.length} match${live.length === 1 ? '' : 'es'} in progress`}
+            icon="zap"
+            to="/matches?tab=live"
+            actionLabel="All live"
+          />
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {live.slice(0, 3).map((m: any) => (
+              <MatchCard key={m.matchId || m.id} match={m} />
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Upcoming Matches */}
-      <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6 mt-8">
+      <section className={`mx-auto max-w-7xl px-4 pb-14 sm:px-6 ${live.length > 0 ? '' : 'mt-8'}`}>
         <SectionHeader title="Upcoming Matches" subtitle="Don't miss the upcoming action" icon="calendar" to="/matches" actionLabel="View all" />
         <div className="grid grid-cols-1 gap-2.5 lg:grid-cols-2">
           {upcoming.length > 0 ? (
@@ -103,22 +126,19 @@ export default async function HomePage() {
       {/* PSL Spotlight */}
       <PslSpotlight standings={pslStandings} />
 
-      {/* Teams */}
-      <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6">
-        <SectionHeader title="Popular Teams" subtitle="Fan favorites across the globe" icon="users" to="/teams" actionLabel="View all" />
-        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-6">
-          {topTeams.map((team: any) => (
-            <Link
-              key={team.id}
-              href={`/teams/${team.id}`}
-              className="group flex min-h-28 flex-col items-center justify-center rounded-2xl bg-card p-3 text-center ring-1 ring-lborder transition-all duration-300 hover:-translate-y-1 hover:bg-elevated hover:ring-accent/30 hover:shadow-lg sm:p-4"
-            >
-              <TeamLogo teamId={team.id} name={team.name} code={team.shortName || team.abbr || team.code} size="md" link={false} />
-              <p className="mt-2 w-full truncate text-xs font-semibold text-mtext transition-colors group-hover:text-accent">{team.name}</p>
-            </Link>
-          ))}
-        </div>
-      </section>
+      {/* PSL Top Performers */}
+      {pslLeaders.length > 0 && (
+        <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6">
+          <SectionHeader
+            title="Top Performers"
+            subtitle="Leading run scorers and wicket takers in the PSL"
+            icon="trendingup"
+            to="/psl"
+            actionLabel="All stats"
+          />
+          <TopPerformers leaders={pslLeaders} />
+        </section>
+      )}
 
       {/* Recent Results */}
       {completed.length > 0 && (
@@ -150,7 +170,7 @@ export default async function HomePage() {
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                   <div className="absolute left-4 top-4">
-                    <span className="inline-block rounded-full bg-accent px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-white">
+                    <span className="inline-block rounded-full bg-[var(--color-brand)] px-3 py-1 text-[10px] font-medium uppercase tracking-wide text-white">
                       {typeof newsList[0].tag === 'string' && newsList[0].tag
                         ? newsList[0].tag
                         : typeof newsList[0].category === 'string'

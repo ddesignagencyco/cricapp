@@ -1,7 +1,8 @@
 'use client';
 
-import { type ReactNode, forwardRef } from 'react';
+import { type ReactNode, forwardRef, useEffect, useRef } from 'react';
 import { Loader2 } from 'lucide-react';
+import { StatusBadge as SharedStatusBadge } from '../Badge';
 
 /* ─── Page Header ──────────────────────────────────────────── */
 
@@ -21,14 +22,14 @@ export function AdminPageHeader({
   actions?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
       <div>
         {(badge || icon) && (
           <div className="flex items-center gap-2 mb-1.5">
             {icon && <span style={{ color: iconColor || 'var(--admin-accent)' }}>{icon}</span>}
             {badge && (
               <span
-                className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold uppercase tracking-wider"
+                className="inline-flex items-center rounded px-2 py-0.5 text-xs font-medium uppercase tracking-wide"
                 style={{ background: 'var(--admin-accent)', color: '#fff' }}
               >
                 {badge}
@@ -36,7 +37,7 @@ export function AdminPageHeader({
             )}
           </div>
         )}
-        <h1 className="text-xl font-bold tracking-tight sm:text-2xl" style={{ color: 'var(--admin-text)' }}>
+        <h1 className="text-2xl font-semibold tracking-tight" style={{ color: 'var(--admin-text)' }}>
           {title}
         </h1>
         {subtitle && (
@@ -45,7 +46,7 @@ export function AdminPageHeader({
           </p>
         )}
       </div>
-      {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
+      {actions && <div className="flex flex-wrap items-center gap-2 sm:justify-end">{actions}</div>}
     </div>
   );
 }
@@ -218,38 +219,8 @@ export function ErrorState({
 
 /* ─── Status Badge ─────────────────────────────────────────── */
 
-const STATUS_MAP: Record<string, { label: string; tone: string }> = {
-  live:        { label: 'Live', tone: 'live' },
-  upcoming:    { label: 'Upcoming', tone: 'upcoming' },
-  completed:   { label: 'Completed', tone: 'completed' },
-  published:   { label: 'Published', tone: 'published' },
-  draft:       { label: 'Draft', tone: 'draft' },
-  cancelled:   { label: 'Cancelled', tone: 'cancelled' },
-  abandoned:   { label: 'Abandoned', tone: 'abandoned' },
-  postponed:   { label: 'Postponed', tone: 'postponed' },
-  active:      { label: 'Active', tone: 'active' },
-  inactive:    { label: 'Inactive', tone: 'inactive' },
-  pending:     { label: 'Pending', tone: 'pending' },
-  approved:    { label: 'Approved', tone: 'approved' },
-  rejected:    { label: 'Rejected', tone: 'rejected' },
-  in_review:   { label: 'In Review', tone: 'in_review' },
-  scheduled:   { label: 'Scheduled', tone: 'scheduled' },
-};
-
 export function StatusBadge({ status }: { status: string }) {
-  const norm = (status || '').toLowerCase().trim();
-  const info = STATUS_MAP[norm] || { label: status || 'Draft', tone: 'neutral' };
-  return (
-    <span
-      className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide leading-none"
-      style={{
-        background: `var(--color-${info.tone === 'live' || info.tone === 'rejected' ? 'danger' : info.tone === 'completed' || info.tone === 'published' || info.tone === 'active' || info.tone === 'approved' ? 'success' : info.tone === 'draft' || info.tone === 'pending' || info.tone === 'scheduled' || info.tone === 'postponed' ? 'warning' : info.tone === 'upcoming' || info.tone === 'in_review' ? 'info' : 'surface-muted'}-soft)`,
-        color: `var(--color-${info.tone === 'live' || info.tone === 'rejected' ? 'danger' : info.tone === 'completed' || info.tone === 'published' || info.tone === 'active' || info.tone === 'approved' ? 'success' : info.tone === 'draft' || info.tone === 'pending' || info.tone === 'scheduled' || info.tone === 'postponed' ? 'warning' : info.tone === 'upcoming' || info.tone === 'in_review' ? 'info' : 'text-muted'})`,
-      }}
-    >
-      {info.label}
-    </span>
-  );
+  return <SharedStatusBadge status={status} />;
 }
 
 /* ─── Confirm Dialog ───────────────────────────────────────── */
@@ -273,6 +244,18 @@ export function ConfirmDialog({
   loading?: boolean;
   danger?: boolean;
 }) {
+  const cancelRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    cancelRef.current?.focus();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !loading) onCancel();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [loading, onCancel, open]);
+
   if (!open) return null;
   return (
     <div
@@ -281,6 +264,7 @@ export function ConfirmDialog({
       role="dialog"
       aria-modal="true"
       aria-labelledby="confirm-dialog-title"
+      aria-describedby="confirm-dialog-description"
     >
       <div
         className="w-full max-w-sm rounded-lg p-5"
@@ -293,11 +277,12 @@ export function ConfirmDialog({
         >
           {title}
         </h3>
-        <p className="mt-2 text-xs" style={{ color: 'var(--admin-text-secondary)' }}>
+        <p id="confirm-dialog-description" className="mt-2 text-xs" style={{ color: 'var(--admin-text-secondary)' }}>
           {message}
         </p>
         <div className="mt-4 flex justify-end gap-2">
           <button
+            ref={cancelRef}
             type="button"
             onClick={onCancel}
             disabled={loading}

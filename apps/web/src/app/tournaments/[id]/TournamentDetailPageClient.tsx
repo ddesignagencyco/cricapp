@@ -1,59 +1,63 @@
 'use client';
 
 import Link from 'next/link';
-import { Calendar, CalendarDays, MapPin, Swords, Trophy } from 'lucide-react';
+import { Calendar, CalendarDays, MapPin, Trophy } from 'lucide-react';
 import EmptyState from '../../../components/EmptyState';
-import Badge from '../../../components/Badge';
+import { StatusBadge } from '../../../components/Badge';
+import { APP_TIME_ZONE } from '../../../utils/helpers';
 
-function getCategoryName(cat: any): string {
+function getCategoryName(cat: unknown): string {
   if (!cat) return '';
   if (typeof cat === 'string') return cat;
-  return cat.name || cat.country || '';
+  const o = cat as Record<string, unknown>;
+  return String(o.name || o.country || '');
 }
 
-function getSeasonName(cs: any): string {
+function getSeasonName(cs: unknown): string {
   if (!cs) return '';
   if (typeof cs === 'string') return cs;
-  return cs.name || cs.year || '';
-}
-
-function getStatusText(status: string | undefined): string {
-  if (!status) return '';
-  const s = String(status);
-  if (s === 'closed' || s === 'ended') return 'Completed';
-  if (s === 'live' || s === 'inprogress') return 'Live';
-  if (s === 'cancelled') return 'Cancelled';
-  return 'Scheduled';
+  const o = cs as Record<string, unknown>;
+  return String(o.name || o.year || '');
 }
 
 function formatScheduled(iso: string | undefined): string {
   if (!iso) return '';
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '';
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  return d.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: APP_TIME_ZONE,
+  });
 }
 
-function getEventTeams(record: any): { homeName: string; awayName: string; homeAbbr: string; awayAbbr: string } {
-  const payload = record?.payload || {};
-  const event = payload.sport_event || payload;
-  const comps = event.competitors || [];
-  const home = comps.find((c: any) => c.qualifier === 'home') || comps[0] || {};
-  const away = comps.find((c: any) => c.qualifier === 'away') || comps[1] || {};
+function getEventTeams(record: Record<string, unknown>): {
+  homeName: string;
+  awayName: string;
+} {
+  const payload = (record.payload || {}) as Record<string, unknown>;
+  const event = (payload.sport_event || payload) as Record<string, unknown>;
+  const comps = (event.competitors || []) as Array<Record<string, unknown>>;
+  const home = comps.find((c) => c.qualifier === 'home') || comps[0] || {};
+  const away = comps.find((c) => c.qualifier === 'away') || comps[1] || {};
   return {
-    homeName: home.name || 'TBD',
-    awayName: away.name || 'TBD',
-    homeAbbr: home.abbreviation || home.id?.slice(-3) || '??',
-    awayAbbr: away.abbreviation || away.id?.slice(-3) || '??',
+    homeName: String(home.name || 'TBD'),
+    awayName: String(away.name || 'TBD'),
   };
 }
 
-function getEventStatus(record: any): { status: string; result?: string; score?: string } {
-  const payload = record?.payload || {};
-  const statusBlock = payload.sport_event_status || {};
+function getEventStatus(record: Record<string, unknown>): {
+  status: string;
+  result?: string;
+  score?: string;
+} {
+  const payload = (record.payload || {}) as Record<string, unknown>;
+  const statusBlock = (payload.sport_event_status || {}) as Record<string, unknown>;
   return {
-    status: statusBlock.status || record.status || '',
-    result: statusBlock.match_result_text || statusBlock.result || '',
-    score: statusBlock.display_score || '',
+    status: String(statusBlock.status || record.status || ''),
+    result: String(statusBlock.match_result_text || statusBlock.result || ''),
+    score: String(statusBlock.display_score || ''),
   };
 }
 
@@ -63,71 +67,91 @@ interface TournamentDetailPageClientProps {
   results: any[];
 }
 
-export default function TournamentDetailPageClient({ tournament, seasons, results }: TournamentDetailPageClientProps) {
+export default function TournamentDetailPageClient({
+  tournament,
+  seasons,
+  results,
+}: TournamentDetailPageClientProps) {
   const category = getCategoryName(tournament.category) || 'International';
   const season = getSeasonName(tournament.currentSeason);
-  const typeRaw: any = tournament.type;
-  const format = typeof typeRaw === 'string' ? typeRaw.toUpperCase() : typeRaw?.name || '';
+  const typeRaw = tournament.type;
+  const format =
+    typeof typeRaw === 'string'
+      ? typeRaw.replace(/_/g, ' ')
+      : typeRaw?.name || '';
 
   return (
-    <div className="mx-auto max-w-7xl space-y-3 px-4 py-8 sm:px-6">
+    <div className="mx-auto max-w-7xl space-y-5 px-4 py-8 sm:px-6">
       <nav className="flex items-center gap-1.5 text-xs text-stext">
-        <Link href="/tournaments" className="hover:text-accent">Tournaments</Link>
+        <Link href="/tournaments" className="hover:text-accent">
+          Tournaments
+        </Link>
         <span>/</span>
         <span className="text-mtext">{tournament.name}</span>
       </nav>
 
-      <header className="rounded-3xl bg-card p-6 ring-1 ring-lborder sm:p-8">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="min-w-0 flex-1">
-            <div className="mb-2 flex flex-wrap items-center gap-2">
-              <div className="flex items-center gap-2 text-accent">
-                <Trophy size={16} />
-                <span className="text-xs font-bold uppercase tracking-widest text-stext">Tournament</span>
-              </div>
-              {format && <Badge tone="qualified">{format}</Badge>}
-              {tournament.gender && (
-                <Badge tone="neutral" className="capitalize">{tournament.gender}</Badge>
-              )}
-            </div>
-            <h1 className="text-2xl font-black tracking-tight sm:text-3xl">{tournament.name}</h1>
-          </div>
+      <header className="rounded-md border border-lborder bg-card p-5 sm:p-6">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="rounded border border-accent/25 bg-accent/10 px-2.5 py-1 text-xs font-medium uppercase tracking-wider text-accent">
+            Tournament
+          </span>
+          {format && (
+            <span className="rounded border border-lborder bg-secondary px-2.5 py-1 text-xs font-medium uppercase tracking-wider text-stext">
+              {format}
+            </span>
+          )}
+          {tournament.gender && (
+            <span className="rounded border border-lborder bg-secondary px-2.5 py-1 text-xs font-medium capitalize text-stext">
+              {tournament.gender}
+            </span>
+          )}
         </div>
 
-        <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-lborder pt-4 text-xs text-stext">
-          {category && (
-            <span className="flex items-center gap-1.5">
-              <MapPin size={14} /> {category}
-            </span>
-          )}
-          {season && (
-            <span className="flex items-center gap-1.5">
-              <CalendarDays size={14} /> {season}
-            </span>
-          )}
-          {tournament.countryCode && (
-            <span className="flex items-center gap-1.5">
-              {tournament.countryCode}
-            </span>
-          )}
+        <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center">
+          <span className="grid h-14 w-14 shrink-0 place-items-center rounded-md border border-lborder bg-secondary text-accent">
+            <Trophy size={22} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-2xl font-semibold text-mtext">{tournament.name}</h1>
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-stext">
+              {category && (
+                <span className="inline-flex items-center gap-1">
+                  <MapPin size={12} /> {category}
+                </span>
+              )}
+              {season && (
+                <span className="inline-flex items-center gap-1">
+                  <CalendarDays size={12} /> {season}
+                </span>
+              )}
+              {tournament.countryCode && <span>{tournament.countryCode}</span>}
+            </div>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <div className="min-w-24 rounded-md border border-lborder bg-secondary px-3.5 py-3 text-center">
+              <p className="font-mono text-lg font-semibold text-accent">{seasons?.length || 0}</p>
+              <p className="text-xs font-medium uppercase tracking-wider text-stext">Seasons</p>
+            </div>
+            <div className="min-w-24 rounded-md border border-lborder bg-secondary px-3.5 py-3 text-center">
+              <p className="font-mono text-lg font-semibold text-mtext">{results?.length || 0}</p>
+              <p className="text-xs font-medium uppercase tracking-wider text-stext">Results</p>
+            </div>
+          </div>
         </div>
       </header>
 
-      <section className="mt-8">
-        <div className="mb-4 flex items-center gap-2">
-          <Calendar size={16} className="text-accent" />
-          <h2 className="text-lg font-bold text-mtext">Seasons</h2>
-        </div>
+      <section>
+        <h2 className="mb-3 text-lg font-semibold text-mtext">Seasons</h2>
         {seasons && seasons.length > 0 ? (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {seasons.map((s) => (
-              <div key={s.id} className="rounded-xl bg-card p-4 ring-1 ring-lborder">
-                <p className="text-sm font-bold text-mtext">{s.name || s.year || s.id}</p>
-                {s.year && <p className="mt-0.5 text-xs text-stext">{s.year}</p>}
+              <div key={s.id} className="rounded-md border border-lborder bg-card p-3.5">
+                <p className="truncate text-sm font-semibold text-mtext">{s.name || s.year || s.id}</p>
                 {(s.startDate || s.endDate) && (
-                  <p className="mt-2 text-[11px] text-stext">
+                  <p className="mt-1 inline-flex items-center gap-1 text-xs text-stext">
+                    <Calendar size={11} />
                     {formatScheduled(s.startDate)}
-                    {s.startDate && s.endDate ? ' — ' : s.endDate ? '' : ''}
+                    {s.startDate && s.endDate ? ' — ' : ''}
                     {formatScheduled(s.endDate)}
                   </p>
                 )}
@@ -135,54 +159,48 @@ export default function TournamentDetailPageClient({ tournament, seasons, result
             ))}
           </div>
         ) : (
-          <EmptyState title="No seasons available" message="Season information is not available for this tournament yet." />
+          <EmptyState
+            title="No seasons available"
+            message="Season information is not available for this tournament yet."
+          />
         )}
       </section>
 
-      <section className="mt-8">
-        <div className="mb-4 flex items-center gap-2">
-          <Swords size={16} className="text-accent2" />
-          <h2 className="text-lg font-bold text-mtext">Results</h2>
-          <span className="text-xs text-stext">({results?.length || 0})</span>
-        </div>
+      <section>
+        <h2 className="mb-3 text-lg font-semibold text-mtext">
+          Results <span className="text-sm font-normal text-stext">({results?.length || 0})</span>
+        </h2>
         {results && results.length > 0 ? (
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             {results.map((record) => {
-              const { homeName, awayName, homeAbbr, awayAbbr } = getEventTeams(record);
+              const { homeName, awayName } = getEventTeams(record);
               const es = getEventStatus(record);
-              const statusText = getStatusText(es.status);
               return (
                 <Link
                   key={record.eventId}
                   href={`/matches/${record.eventId}`}
-                  className="block rounded-xl bg-card p-4 ring-1 ring-lborder transition-all duration-200 hover:bg-elevated"
+                  className="flex flex-col rounded-md border border-lborder bg-card p-3.5 transition-colors hover:border-accent/50 hover:bg-elevated"
                 >
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex min-w-0 flex-1 items-center gap-4">
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold text-mtext">{homeName}</p>
-                        <p className="text-[11px] text-stext">{homeAbbr}</p>
-                      </div>
-                      <span className="shrink-0 text-xs font-bold text-stext">v</span>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-right text-sm font-semibold text-mtext">{awayName}</p>
-                        <p className="text-right text-[11px] text-stext">{awayAbbr}</p>
-                      </div>
-                    </div>
-                    <div className="shrink-0 text-right">
-                      <Badge tone={es.status === 'closed' || es.status === 'ended' ? 'completed' : es.status === 'cancelled' ? 'error' : 'upcoming'}>
-                        {statusText}
-                      </Badge>
-                      {es.result && <p className="mt-1 text-[11px] font-medium text-gold">{es.result}</p>}
-                      {es.score && <p className="mt-0.5 font-mono text-[11px] text-stext">{es.score}</p>}
-                    </div>
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <p className="truncate text-xs font-medium uppercase tracking-wide text-stext">
+                      {formatScheduled(record.scheduled) || 'Match'}
+                    </p>
+                    <StatusBadge status={es.status} />
                   </div>
+                  <p className="truncate text-sm font-semibold text-mtext">{homeName}</p>
+                  <p className="mt-1 truncate text-sm font-semibold text-mtext">{awayName}</p>
+                  {(es.result || es.score) && (
+                    <p className="mt-2 truncate text-xs font-medium text-mtext">{es.result || es.score}</p>
+                  )}
                 </Link>
               );
             })}
           </div>
         ) : (
-          <EmptyState title="No results available" message="Match results for this tournament are not available yet." />
+          <EmptyState
+            title="No results available"
+            message="Match results for this tournament are not available yet."
+          />
         )}
       </section>
     </div>

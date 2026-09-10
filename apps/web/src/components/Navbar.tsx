@@ -41,8 +41,19 @@ export default function Navbar() {
     const onClick = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
     };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setMenuOpen(false);
+        setSearchOpen(false);
+        setMobileOpen(false);
+      }
+    };
     document.addEventListener('mousedown', onClick);
-    return () => document.removeEventListener('mousedown', onClick);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onClick);
+      document.removeEventListener('keydown', onKeyDown);
+    };
   }, []);
 
   const handleLogout = () => {
@@ -55,6 +66,12 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-lborder bg-primary backdrop-blur-md">
+      <a
+        href="#main-content"
+        className="btn-brand fixed left-3 top-3 z-50 -translate-y-20 rounded px-3 py-2 text-sm font-medium focus:translate-y-0"
+      >
+        Skip to content
+      </a>
       <nav className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
         <Logo size="lg" />
 
@@ -63,6 +80,7 @@ export default function Navbar() {
             <Link
               key={item.to}
               href={item.to}
+              aria-current={isActive(item.to) ? 'page' : undefined}
               className={`relative px-3 py-2 text-sm font-medium transition-colors ${isActive(item.to)
                 ? 'text-accent after:absolute after:inset-x-2 after:-bottom-1 after:h-0.5 after:rounded-full after:bg-accent'
                 : 'text-stext hover:text-mtext'
@@ -101,6 +119,7 @@ export default function Navbar() {
                 className="flex items-center gap-2 rounded-lg py-1 pl-1 pr-2 transition-colors hover:bg-card"
                 aria-label="Account menu"
                 aria-expanded={menuOpen}
+                aria-haspopup="menu"
               >
                 {(() => {
                   const displayName = (user.displayName || user.username || user.email || '').trim();
@@ -163,6 +182,8 @@ export default function Navbar() {
             onClick={() => setMobileOpen((m) => !m)}
             className="grid h-9 w-9 place-items-center rounded-lg text-mtext transition-colors hover:bg-card lg:hidden"
             aria-label="Toggle menu"
+            aria-expanded={mobileOpen}
+            aria-controls="mobile-navigation"
           >
             {mobileOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
@@ -172,13 +193,14 @@ export default function Navbar() {
       {searchOpen && <SearchBar autoFocus onDone={() => setSearchOpen(false)} />}
 
       {mobileOpen && (
-        <div className="border-t border-lborder bg-secondary lg:hidden">
+        <div id="mobile-navigation" className="border-t border-lborder bg-secondary lg:hidden">
           <div className="mx-auto max-w-7xl px-4 py-3">
             <div className="grid grid-cols-2 gap-1.5">
               {navItems.map((item) => (
                 <Link
                   key={item.to}
                   href={item.to}
+                  aria-current={isActive(item.to) ? 'page' : undefined}
                   className={`rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${isActive(item.to)
                     ? 'bg-accent/15 text-accent ring-1 ring-inset ring-accent/25'
                     : 'text-stext hover:bg-card hover:text-mtext'
