@@ -9,6 +9,37 @@ on:
 jobs:
   lint-and-test:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: cricapp
+          POSTGRES_PASSWORD: cricapp_test_password
+          POSTGRES_DB: cricapp
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    env:
+      DATABASE_URL: postgresql://cricapp:cricapp_test_password@localhost:5432/cricapp
+      REDIS_URL: redis://localhost:6379
+      EMAIL_PROVIDER: console
+      JWT_SECRET: ci-test-secret-change-me
+
     steps:
       - uses: actions/checkout@v4
 
@@ -22,11 +53,21 @@ jobs:
 
       - name: Generate Prisma client
         run: npm run prisma:generate --workspace @cricapp/api
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/cricapp
+
+      - name: Seed base matches table
+        run: npx prisma db execute --file services/ingestion/data/init.sql --schema apps/api/prisma/schema.prisma
+
+      - name: Sync Prisma schema
+        run: npx prisma db push --schema apps/api/prisma/schema.prisma --accept-data-loss --skip-generate
 
       - name: Lint
         run: npm run lint
 
-      - name: Test
-        run: npm test
+      - name: Test shared-types
+        run: npm run test --workspace @cricapp/shared-types
+
+      - name: Test API
+        run: npm run test --workspace @cricapp/api
+
+      - name: Test ingestion
+        run: npm run test --workspace @cricapp/ingestion
