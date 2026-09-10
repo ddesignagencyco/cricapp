@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Calendar, Clock, MapPin } from 'lucide-react';
-import { StatusBadge } from './Badge';
+import { StatusBadge, BlinkingDot } from './Badge';
 import { formatScheduled, getInitials, getPslLogo } from '../utils/helpers';
 
 interface MatchCardProps {
@@ -96,8 +96,8 @@ export default function MatchCard({ match, compact = false, showVenue = true }: 
 
       <div className="mt-2.5 flex items-center justify-between gap-2 border-t border-lborder pt-2 text-xs text-stext">
         {isLive && inn ? (
-          <p className="min-w-0 truncate font-medium text-accent2">
-            <span className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-accent2 live-pulse align-middle" />
+          <p className="min-w-0 truncate font-medium text-danger">
+            <BlinkingDot className="mr-1.5 align-middle" />
             {inn.overs !== null && inn.overs !== undefined ? `${inn.overs} ov` : 'In play'}
             {inn.runRate !== null && inn.runRate !== undefined ? ` · RR ${inn.runRate}` : ''}
           </p>

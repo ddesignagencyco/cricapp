@@ -17,6 +17,7 @@ import {
   type NewsArticleAdmin,
   type NewsCategory,
 } from '../../services/newsAdmin';
+import { BlinkingDot } from '../Badge';
 
 export default function AdminDashboard() {
   const [articles, setArticles] = useState<NewsArticleAdmin[]>([]);
@@ -153,12 +154,13 @@ export default function AdminDashboard() {
                     </p>
                   </div>
                   <span
-                    className="shrink-0 rounded-full px-2 py-0.5 text-xs font-bold uppercase"
+                    className="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold uppercase"
                     style={{
                       background: a.isPublished ? 'var(--admin-success-bg)' : 'var(--admin-warning-bg)',
                       color: a.isPublished ? 'var(--admin-success)' : 'var(--admin-warning)',
                     }}
                   >
+                    {a.isPublished && <BlinkingDot />}
                     {a.isPublished ? 'Live' : 'Draft'}
                   </span>
                 </div>

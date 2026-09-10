@@ -9,6 +9,7 @@ import TeamCard from '../TeamCard';
 import EmptyState from '../EmptyState';
 import ErrorState from '../ErrorState';
 import Pagination from '../Pagination';
+import AdSlot from '../AdSlot';
 
 const LIMIT = 20;
 
@@ -137,12 +138,6 @@ export default function TeamsDirectory() {
             className="w-full rounded-2xl border border-lborder bg-card py-2.5 pl-10 pr-4 text-xs text-mtext outline-none transition focus:border-accent focus:bg-elevated focus:ring-2 focus:ring-accent/20"
           />
         </div>
-
-        <div className="flex items-center gap-2 text-xs text-stext">
-          <span>Showing</span>
-          <span className="font-bold text-mtext">{filtered.length}</span>
-          <span>of {total} teams</span>
-        </div>
       </div>
 
       {/* Grid Content */}
@@ -161,6 +156,8 @@ export default function TeamsDirectory() {
               <TeamCard key={t.id} team={t} />
             ))}
           </div>
+
+          <AdSlot slot="teams-below-grid" format="leaderboard" className="pt-4" />
 
           <div className="pt-4">
             <Pagination page={page} totalPages={totalPages} total={total} limit={LIMIT} onPageChange={handlePageChange} />

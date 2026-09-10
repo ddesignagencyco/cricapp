@@ -26,6 +26,7 @@ import { fetchTournamentsPage } from '../../../services/tournaments';
 import type { Match } from '../../../types';
 import Pagination from '../../../components/admin/AdminPagination';
 import { LoadingState, StatusBadge } from '../../../components/admin/AdminShared';
+import { BlinkingDot } from '../../../components/Badge';
 import { getInitials } from '../../../utils/helpers';
 
 export default function AdminDashboard() {
@@ -487,9 +488,10 @@ function MetricCard({
         </p>
         {badge && (
           <span
-            className="rounded px-1.5 py-0.5 text-[10px] font-extrabold uppercase animate-pulse"
+            className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase"
             style={{ background: 'var(--admin-danger-bg)', color: 'var(--admin-danger)' }}
           >
+            <BlinkingDot />
             {badge}
           </span>
         )}

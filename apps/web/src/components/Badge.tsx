@@ -1,4 +1,7 @@
 import React from 'react';
+import LiveIndicator, { BlinkingDot } from './LiveIndicator';
+
+export { BlinkingDot };
 
 const toneStyles: Record<string, { bg: string; fg: string; ring: string }> = {
   live: { bg: 'var(--color-danger-soft)', fg: 'var(--color-danger)', ring: 'var(--color-danger)' },
@@ -15,7 +18,7 @@ const toneStyles: Record<string, { bg: string; fg: string; ring: string }> = {
   rejected: { bg: 'var(--color-danger-soft)', fg: 'var(--color-danger)', ring: 'var(--color-danger)' },
   failed: { bg: 'var(--color-danger-soft)', fg: 'var(--color-danger)', ring: 'var(--color-danger)' },
   error: { bg: 'var(--color-danger-soft)', fg: 'var(--color-danger)', ring: 'var(--color-danger)' },
-  cancelled: { bg: 'var(--color-surface-muted)', fg: 'var(--color-text-muted)', ring: 'var(--color-border)' },
+  cancelled: { bg: 'var(--color-danger-soft)', fg: 'var(--color-danger)', ring: 'var(--color-danger)' },
   abandoned: { bg: 'var(--color-surface-muted)', fg: 'var(--color-text-muted)', ring: 'var(--color-border)' },
   inactive: { bg: 'var(--color-surface-muted)', fg: 'var(--color-text-muted)', ring: 'var(--color-border)' },
   neutral: { bg: 'var(--color-surface-muted)', fg: 'var(--color-text-secondary)', ring: 'var(--color-border)' },
@@ -43,13 +46,22 @@ const statusLabels: Record<string, string> = {
   rejected: 'Rejected',
   active: 'Active',
   inactive: 'Inactive',
+  not_started: 'Upcoming',
+};
+
+/** Provider aliases that should inherit another tone's colours. */
+const statusToneAliases: Record<string, string> = {
+  closed: 'completed',
+  ended: 'completed',
+  not_started: 'upcoming',
 };
 
 export function normalizeStatus(status?: string | null): { label: string; tone: string } {
   const normalized = (status || '').trim().toLowerCase().replace(/[\s-]+/g, '_');
+  const tone = statusToneAliases[normalized] || normalized;
   return {
-    label: statusLabels[normalized] || (status?.trim() || 'Unknown'),
-    tone: normalized in toneStyles ? normalized : 'neutral',
+    label: statusLabels[normalized] || statusLabels[tone] || (status?.trim() || 'Unknown'),
+    tone: tone in toneStyles ? tone : 'neutral',
   };
 }
 
@@ -79,5 +91,8 @@ export default function Badge({ children, tone = 'neutral', className = '', styl
 
 export function StatusBadge({ status, className = '' }: { status?: string | null; className?: string }) {
   const { label, tone } = normalizeStatus(status);
+  // Live statuses render the shared live pill so that every "Live" label on the
+  // site is the same element, rather than a badge that merely looks similar.
+  if (tone === 'live') return <LiveIndicator label={label} className={className} />;
   return <Badge tone={tone} className={className}>{label}</Badge>;
 }

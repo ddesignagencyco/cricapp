@@ -7,6 +7,7 @@ import PlayerCard from '../PlayerCard';
 import EmptyState from '../EmptyState';
 import ErrorState from '../ErrorState';
 import Pagination from '../Pagination';
+import AdSlot from '../AdSlot';
 import { fetchPlayersPage } from '../../services/players';
 import type { Player } from '../../types/index';
 
@@ -210,6 +211,8 @@ export default function PlayerDirectory({ initialPlayers = [], initialTotal = 0 
               <PlayerCard key={p.id} player={p} />
             ))}
           </div>
+
+          <AdSlot slot="players-below-grid" format="leaderboard" className="pt-4" />
 
           <div className="pt-4">
             <Pagination page={page} totalPages={totalPages} total={total} limit={LIMIT} onPageChange={handlePageChange} />

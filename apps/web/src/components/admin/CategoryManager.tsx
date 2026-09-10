@@ -20,6 +20,7 @@ import {
   type NewsCategory,
 } from '../../services/newsAdmin';
 import { AdminInput } from './AdminShared';
+import { BlinkingDot } from '../Badge';
 
 export default function CategoryManager() {
   const [categories, setCategories] = useState<NewsCategory[]>([]);
@@ -270,9 +271,10 @@ export default function CategoryManager() {
                         <p className="text-xs" style={{ color: 'var(--admin-text-muted)' }}>{art.author || 'Editorial'} · {art.publishedAt || art.createdAt}</p>
                       </div>
                       <span
-                        className="shrink-0 rounded-full px-2 py-0.5 text-xs font-bold uppercase"
+                        className="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold uppercase"
                         style={{ background: art.isPublished ? 'var(--admin-success-bg)' : 'var(--admin-warning-bg)', color: art.isPublished ? 'var(--admin-success)' : 'var(--admin-warning)' }}
                       >
+                        {art.isPublished && <BlinkingDot />}
                         {art.isPublished ? 'Live' : 'Draft'}
                       </span>
                     </div>

@@ -9,6 +9,7 @@ import Tabs from '../Tabs';
 import EmptyState from '../EmptyState';
 import ErrorState from '../ErrorState';
 import Pagination from '../Pagination';
+import AdSlot from '../AdSlot';
 
 const LIMIT = 20;
 
@@ -115,6 +116,7 @@ export default function MatchBoard() {
               <MatchCard key={m.matchId || m.id} match={m} />
             ))}
           </div>
+          <AdSlot slot="matches-below-grid" format="leaderboard" className="pt-2" />
           <Pagination page={page} totalPages={totalPages} total={total} limit={LIMIT} onPageChange={handlePageChange} />
         </>
       ) : (

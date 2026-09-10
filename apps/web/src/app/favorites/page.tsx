@@ -20,7 +20,7 @@ import { fetchPlayerById } from '../../services/players';
 import { fetchMatchById } from '../../services/matches';
 import { useAuth } from '../../components/AuthProvider';
 import TeamLogo from '../../components/TeamLogo';
-import Badge from '../../components/Badge';
+import Badge, { StatusBadge } from '../../components/Badge';
 import { formatScheduled, getInitials } from '../../utils/helpers';
 import { ConfirmDialog } from '../../components/admin/AdminShared';
 import type { Team, Player, Match } from '../../types/index';
@@ -532,17 +532,11 @@ function FavoriteMatchCard({
   const status = match?.status || 'Match';
   const { date, time } = formatScheduled(match?.scheduled);
 
-  const isLive = match?.status === 'live';
-  const isUpcoming = match?.status === 'upcoming';
-  const isCompleted = match?.status === 'completed';
-
-  const tone = isLive ? 'live' : isUpcoming ? 'upcoming' : isCompleted ? 'completed' : 'neutral';
-
   return (
     <div className="group relative flex flex-col justify-between overflow-hidden rounded-md border border-lborder bg-card p-5 transition-colors hover:border-accent/40 hover:bg-elevated">
       <div>
         <div className="flex items-center justify-between gap-2 pb-3">
-          <Badge tone={tone}>{status}</Badge>
+          <StatusBadge status={status} />
           <button
             type="button"
             onClick={onRemove}

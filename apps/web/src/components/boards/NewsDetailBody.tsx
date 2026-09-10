@@ -3,10 +3,38 @@
 import Link from 'next/link';
 import { ArrowLeft, ArrowRight, Calendar, Clock, Newspaper, Tag, User } from 'lucide-react';
 import Badge from '../Badge';
-import AdBanner from '../AdBanner';
+import AdSlot from '../AdSlot';
 import ShareButton from '../ShareButton';
 import CommentsSection from '../CommentsSection';
 import { sanitizeArticleHtml } from '../../utils/sanitizeHtml';
+
+/**
+ * Splits already-sanitized article HTML at a paragraph boundary near the middle
+ * so a sponsored slot can sit inside the article. Short articles are left whole
+ * so the slot never lands immediately under the heading.
+ */
+function splitAtParagraph(html: string): [string, string] {
+  const parts = html.split('</p>');
+  if (parts.length < 4) return [html, ''];
+  const mid = Math.ceil(parts.length / 2);
+  return [`${parts.slice(0, mid).join('</p>')}</p>`, parts.slice(mid).join('</p>')];
+}
+
+const proseClass = `prose prose-sm max-w-none text-base leading-8 text-mtext/90 tiptap-content
+  prose-p:my-4 prose-p:leading-8
+  prose-a:text-accent prose-a:no-underline hover:prose-a:underline
+  prose-strong:text-mtext prose-strong:font-semibold
+  prose-em:italic
+  prose-blockquote:border-l-accent prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:text-stext
+  prose-img:my-6 prose-img:rounded-xl
+  prose-headings:text-mtext prose-headings:font-bold
+  prose-h2:text-xl prose-h2:mt-8 prose-h2:mb-4
+  prose-h3:text-lg prose-h3:mt-6 prose-h3:mb-3
+  prose-ul:my-4 prose-ol:my-4
+  prose-li:my-1
+  prose-code:bg-secondary prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm
+  prose-pre:bg-secondary prose-pre:p-4 prose-pre:rounded-xl
+  prose-hr:border-lborder prose-hr:my-8`;
 
 const categoryTone: Record<string, string> = {
   'Match Report': 'live',
@@ -35,6 +63,7 @@ export default function NewsDetailBody({ item, related = [] }: Props) {
     );
   }
   const safeContent = sanitizeArticleHtml(item.content || '');
+  const [contentBeforeAd, contentAfterAd] = splitAtParagraph(safeContent);
 
   const categoryName = typeof item.category === 'string'
     ? item.category
@@ -99,24 +128,14 @@ export default function NewsDetailBody({ item, related = [] }: Props) {
           </div>
 
           <div className="mt-10">
-            <div
-              className="prose prose-sm max-w-none text-base leading-8 text-mtext/90 tiptap-content
-                prose-p:my-4 prose-p:leading-8
-                prose-a:text-accent prose-a:no-underline hover:prose-a:underline
-                prose-strong:text-mtext prose-strong:font-semibold
-                prose-em:italic
-                prose-blockquote:border-l-accent prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:text-stext
-                prose-img:my-6 prose-img:rounded-xl
-                prose-headings:text-mtext prose-headings:font-bold
-                prose-h2:text-xl prose-h2:mt-8 prose-h2:mb-4
-                prose-h3:text-lg prose-h3:mt-6 prose-h3:mb-3
-                prose-ul:my-4 prose-ol:my-4
-                prose-li:my-1
-                prose-code:bg-secondary prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm
-                prose-pre:bg-secondary prose-pre:p-4 prose-pre:rounded-xl
-                prose-hr:border-lborder prose-hr:my-8"
-              dangerouslySetInnerHTML={{ __html: safeContent }}
-            />
+            <div className={proseClass} dangerouslySetInnerHTML={{ __html: contentBeforeAd }} />
+
+            {contentAfterAd && (
+              <>
+                <AdSlot slot="news-detail-mid" format="inline" className="my-8" />
+                <div className={proseClass} dangerouslySetInnerHTML={{ __html: contentAfterAd }} />
+              </>
+            )}
 
             <div className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-lborder pt-6">
               <Link href="/news" className="inline-flex items-center gap-1.5 text-sm font-semibold text-accent hover:text-accent2">
@@ -150,12 +169,7 @@ export default function NewsDetailBody({ item, related = [] }: Props) {
 
         <aside className="min-w-0 lg:col-span-1">
           <div className="space-y-8 lg:sticky lg:top-20">
-            <section>
-              <p className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-stext">
-                Sponsored
-              </p>
-              <AdBanner variant="vertical" />
-            </section>
+            <AdSlot slot="news-detail-sidebar" format="rectangle" />
 
             {related.length > 0 && (
               <section>

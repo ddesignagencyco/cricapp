@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Activity, BarChart3, Bell, Trophy } from 'lucide-react';
+import { BlinkingDot } from '../LiveIndicator';
 
 interface AuthShellProps {
   title: string;
@@ -51,11 +52,10 @@ export default function AuthShell({ title, subtitle, children, footer }: AuthShe
           <div className="relative flex h-full flex-col justify-between p-5 sm:p-7 lg:p-9">
             <div className="flex items-center justify-between gap-3">
               <BrandLockup />
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white/90 ring-1 ring-white/20">
-                <span className="relative flex h-1.5 w-1.5">
-                  <span className="live-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400" />
-                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                </span>
+              {/* Sits directly on the photo, so it keeps a legible dark surface
+                  and only shares the blinking dot with the live match badges. */}
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-black/55 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white ring-1 ring-white/25 backdrop-blur-sm">
+                <BlinkingDot className="text-danger" />
                 Live
               </span>
             </div>

@@ -103,6 +103,40 @@ All inspected and modified files are inside `apps/web/`. No API, Prisma, Docker,
 - Tightened filter chips to `rounded` + `text-xs font-medium` and search inputs to `rounded-md` / `text-sm`.
 - Aligned tournament detail with team/player profiles: breadcrumb, compact header with format/gender tags and season/result counts, season tiles, and result rows that reuse `StatusBadge` instead of oversized badges and gold result text. Empty seasons/results remain honest empty states when the API has no records.
 
+### Live indicator consistency
+
+- The homepage ticker rendered its own live pill at `text-xs font-black` while every other status used `<Badge>` at `text-[10px] font-bold`, so "LIVE" appeared visibly larger than "RESULT" in the same carousel.
+- Live was also coloured with `accent2` (green) in several places even though the semantic badge mapping already assigns red (`--color-danger`) to the `live` status.
+- Standardized on the single `LiveIndicator` component for every live pill and retuned it to red with the same padding, radius and typography as `Badge`, so live and non-live statuses are always the same size. It is now used by the ticker, schedule/result cards, match detail and live streams.
+- Recoloured the remaining green live accents to red: the live innings line in `MatchCard`, and the hero "Live cricket" pulse dot. Green `accent2` usage that is unrelated to live status (wins, net run rate, boundaries, viewer counts, link hovers, success messages) was deliberately left unchanged.
+- Added a shared `BlinkingDot` export in `components/Badge.tsx` that inherits the badge text colour, and a `dot` prop on `Badge`. `StatusBadge` now sets it automatically whenever the normalized status is `live`, so every live badge across public pages and the admin panel is fully rounded with a blinking dot from one place.
+- Applied the same treatment to the badges that do not flow through `StatusBadge`: the admin dashboard live-matches metric pill (now a rounded pill with a blinking dot instead of animating the whole pill) and the favorites match card badge.
+- Admin article publish pills ("Live"/"Draft") also received the blinking dot for the published state, but kept their success/warning colours because there "Live" means published rather than a match in progress.
+
+### One reusable live badge
+
+- Two different live treatments still existed: the ticker pill (`LiveIndicator`, an expanding ring) and the status badge dot (`live-pulse`). The badges in "Live Now", the matches Live tab and the schedule therefore looked static next to the ticker even though both claimed to be live.
+- The `live-pulse` keyframe was also still animating a green glow (`rgba(0, 230, 118, …)`) left over from when live was green, and only dipped opacity to 0.7, which is too subtle to read as blinking. It now blinks between full and 25% opacity with no colour of its own.
+- `LiveIndicator` is now the single live badge and owns `BlinkingDot` (an expanding ring plus a blinking core, both in `currentColor`). `Badge` re-exports the dot, and `StatusBadge` returns the `LiveIndicator` pill whenever the normalized status is live, so every live label on the site is literally the same element instead of two lookalikes.
+- Removed the last hand-rolled live dots: the innings line in `MatchCard` and the favorites match badge (now `StatusBadge`). The `dot` prop on `Badge` was dropped since live no longer flows through it, leaving one path.
+- The login artwork pill keeps its own dark translucent surface because it sits directly on a photo where the red-on-red pill lost contrast, but it now uses the shared `BlinkingDot` so the animation matches.
+
+### PSL fixture status colours
+
+- The PSL fixtures table already used `StatusBadge`, but the provider stores finished matches as `closed` rather than `completed`. The label was remapped to "Completed" while the tone stayed `neutral`, so every result looked grey.
+- `normalizeStatus` now aliases `closed`/`ended` to the completed (green) tone and `not_started` to upcoming (blue). Cancelled uses the danger (red) tone instead of muted grey so it is distinguishable from completed at a glance. The same mapping applies anywhere `StatusBadge` is used.
+
+### Sponsored placements
+
+- The previous `AdBanner` component shipped invented advertiser copy ("PSL 2026 Tickets", "Cricket Merchandise") with "Buy Now" buttons that did nothing, which reads as real inventory to a visitor and conflicts with the no-fake-functionality rule. It also used gradients, blur flares and lift-on-hover, all of which the design pass had removed elsewhere.
+- Replaced it with `src/components/AdSlot.tsx`: a single reserved space that carries a "Sponsored" label, states plainly that the space is available, and shows the creative size it is sized for. It is a plain server-safe component with no client boundary and no new dependencies.
+- Each format reserves a fixed height (`leaderboard` 728×90, `inline` 468×120, `rectangle` 300×250) so inserting a real creative later cannot shift the page, and every placement carries a `data-ad-slot` identifier (for example `news-detail-mid`) so an ad script can target positions without further markup changes.
+- Inside news articles the sponsored space sits mid-content: the sanitized article HTML is split at a paragraph boundary near its midpoint, so the slot lands between paragraphs rather than breaking markup. Articles with fewer than three paragraphs render whole and skip the in-article slot so it never appears directly under the heading.
+- Each slot now shows a placeholder creative fetched at its exact dimensions from `picsum.photos`. The URL is seeded from the slot id (`/seed/news-detail-mid/468/120`), so every position gets a different image while the server and client render the same URL — a per-load random URL would mismatch on hydration and flicker. If the image cannot load the slot falls back to the "Ad space available" state, and a corner tag marks it as a placeholder so it is never mistaken for sold inventory.
+- The unit is capped at its creative width and centred, so the dashed frame hugs the image instead of leaving empty gutters in a wider column.
+- The PSL and Tours pages carry three leaderboards each: top (under the season filter / above the directory), middle, and bottom. On Tours the middle one is a grid child spanning the full row after the sixth card, so it breaks on a row boundary in both the two and three column layouts; lists shorter than twelve tours skip it so it cannot land near the end of the results.
+- Other placements: news article sidebar and news listing, homepage (between upcoming matches and the PSL spotlight, and above the newsletter), matches, schedule, teams, players and tournaments listings below the grid, the shared news sidebar, and the live streams page under the player. Listing slots sit inside the results branch, so they are absent from empty and error states.
+
 ## Functional verification
 
 - All 24 sampled public/auth/admin route entries returned HTTP 200 from the local frontend.
@@ -142,6 +176,15 @@ All inspected and modified files are inside `apps/web/`. No API, Prisma, Docker,
 - `apps/web/audit-tours-redesign.png`
 - `apps/web/audit-tournaments-redesign.png`
 - `apps/web/audit-tournament-detail-redesign.png`
+- `apps/web/audit-ads-news-detail.png` (in-article and sidebar sponsored spaces)
+- `apps/web/audit-ads-matches.png` (leaderboard sponsored space above pagination)
+- `apps/web/audit-live-unified-home.png` (ticker and "Live Now" badges rendering the same live pill)
+- `apps/web/audit-live-unified-matches.png` (matches Live tab)
+- `apps/web/audit-live-unified-login.png` (login artwork pill with the shared blinking dot)
+- `apps/web/audit-ads-images-article.png` (468×120 in-article and 300×250 sidebar placeholder creatives)
+- `apps/web/audit-psl-fixtures-status.png` (PSL fixtures table with coloured status badges)
+- `apps/web/audit-ads-psl.png` (PSL top leaderboard)
+- `apps/web/audit-ads-tours.png` (Tours top and mid-list leaderboards)
 
 Authenticated admin dashboard/table screenshots were not fabricated because no admin credentials were supplied. The protected-route screenshots prove the unauthenticated behavior.
 
@@ -156,11 +199,13 @@ Authenticated admin dashboard/table screenshots were not fabricated because no a
 - Teams and tournaments lack backend search/filter parameters; current filtering can only describe the loaded page.
 - Player role filtering, global cross-entity search, batch favorites and API-side PSL fixture pagination need backend support.
 - Contact and newsletter submissions require backend endpoints and remain visibly unavailable.
+- No ad server or sponsorship API exists, so the sponsored placements show placeholder creatives from a third-party image service. Real inventory needs either an ad network script or a backend campaign/creative endpoint; the `data-ad-slot` identifiers are the integration points, and the placeholder image plus its corner tag should be removed at that point.
 
 ## Main files changed
 
 - Shared/API: `src/services/api/client.ts`, detail/news services, `src/components/Badge.tsx`, `Pagination.tsx`, `ErrorState.tsx`, `src/utils/sanitizeHtml.ts`, `src/utils/helpers.ts`.
 - Public: homepage, news, schedule, collection boards, match status components, navbar, footer, logo, newsletter and contact.
+- Sponsored: `src/components/AdSlot.tsx` added; `src/components/AdBanner.tsx` removed and all three of its usages migrated.
 - Auth: shared auth shell/form and auth metadata.
 - Admin: shared header/dialog/pagination, layout, dashboard, comments, article manager/editor and article route redirect.
 - SEO: root metadata, robots and sitemap.

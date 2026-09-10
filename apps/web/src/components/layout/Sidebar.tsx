@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { ArrowUpRight, CalendarDays } from 'lucide-react';
 import { fetchNews } from '../../services/news';
 import { formatScheduled } from '../../utils/helpers';
-import AdBanner from '../AdBanner';
+import AdSlot from '../AdSlot';
 
 export default async function Sidebar() {
   const allNews = await fetchNews();
@@ -44,7 +44,7 @@ export default async function Sidebar() {
         </div>
       </section>
 
-      <AdBanner variant="vertical" />
+      <AdSlot slot="sidebar" format="rectangle" />
     </aside>
   );
 }

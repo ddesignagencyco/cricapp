@@ -10,6 +10,7 @@ import { fetchTournamentsPage } from '../../services/tournaments';
 import EmptyState from '../EmptyState';
 import ErrorState from '../ErrorState';
 import Pagination from '../Pagination';
+import AdSlot from '../AdSlot';
 
 const LIMIT = 20;
 
@@ -234,6 +235,8 @@ export default function TournamentsBoard({ initialCountry }: Props) {
               <TournamentCard key={tournament.id} tournament={tournament} />
             ))}
           </div>
+          <AdSlot slot="tournaments-below-grid" format="leaderboard" className="pt-4" />
+
           <div className="pt-4">
             <Pagination
               page={page}

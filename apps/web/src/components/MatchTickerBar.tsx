@@ -2,8 +2,9 @@
 
 import { useRef } from 'react';
 import Link from 'next/link';
-import { ChevronLeft, ChevronRight, Radio } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Badge, { normalizeStatus } from './Badge';
+import LiveIndicator from './LiveIndicator';
 import { getInitials } from '../utils/helpers';
 
 interface MatchTickerBarProps {
@@ -144,11 +145,11 @@ function TickerCard({ match }: { match: any }) {
           {tournament}
         </span>
         {isLive ? (
-          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-accent2/15 px-2 py-0.5 text-xs font-black uppercase tracking-wider text-accent2">
-            <Radio size={8} className="animate-pulse" /> Live
-          </span>
+          <LiveIndicator label="Live" className="shrink-0" />
         ) : (
-          <Badge tone={badgeTone}>{badgeLabel}</Badge>
+          <Badge tone={badgeTone} className="shrink-0">
+            {badgeLabel}
+          </Badge>
         )}
       </div>
 
@@ -160,7 +161,7 @@ function TickerCard({ match }: { match: any }) {
       {(isLive || isCompleted) && (
         <div className="mt-2 flex h-4 items-center justify-center gap-1.5 overflow-hidden text-xs text-stext">
           {isLive && overs !== '' ? (
-            <span className="shrink-0 font-semibold text-accent2">
+            <span className="shrink-0 font-semibold text-danger">
               {Number(overs)} ov
               {match.currentInnings?.runRate ? ` • RR ${Number(match.currentInnings.runRate).toFixed(2)}` : ''}
             </span>

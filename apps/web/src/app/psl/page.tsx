@@ -6,6 +6,7 @@ import TeamLogo from '../../components/TeamLogo';
 import StatsBoard from '../../components/boards/StatsBoard';
 import PslSeasonFilter from '../../components/PslSeasonFilter';
 import PslFixturesTable from '../../components/PslFixturesTable';
+import AdSlot from '../../components/AdSlot';
 import { formatScheduled } from '../../utils/helpers';
 import { fetchPslStandings, fetchPslLeaders, fetchPslSchedule, fetchPslSquads, fetchPslSeasons } from '../../services/psl';
 
@@ -98,6 +99,10 @@ export default async function PSLPage({ searchParams }: { searchParams: Promise<
         <PslSeasonFilter seasons={seasons} activeSeasonId={activeSeasonId} />
       </section>
 
+      <section className="mx-auto max-w-7xl px-4 pb-4 sm:px-6">
+        <AdSlot slot="psl-top" format="leaderboard" />
+      </section>
+
       {/* Standings */}
       <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
         <SectionHeader title="Points Table" subtitle={seasonLabel ? `${seasonLabel} Standings` : 'Standings'} icon="trophy" />
@@ -107,6 +112,10 @@ export default async function PSLPage({ searchParams }: { searchParams: Promise<
       {/* Full Leaders / Stats */}
       <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
         <StatsBoard leaders={leaders || []} season={seasonLabel} />
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 py-4 sm:px-6">
+        <AdSlot slot="psl-mid" format="leaderboard" />
       </section>
 
       {/* Franchises */}
@@ -175,6 +184,10 @@ export default async function PSLPage({ searchParams }: { searchParams: Promise<
             <p className="mt-1 text-xs text-stext">Schedule will be announced before the season begins.</p>
           </div>
         )}
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 pb-12 sm:px-6">
+        <AdSlot slot="psl-bottom" format="leaderboard" />
       </section>
     </div>
   );

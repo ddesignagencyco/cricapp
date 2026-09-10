@@ -2,6 +2,8 @@
 
 import { Calendar, ChevronLeft, ChevronRight, Clock, MapPin } from 'lucide-react';
 import { StatusBadge } from '../Badge';
+import LiveIndicator from '../LiveIndicator';
+import AdSlot from '../AdSlot';
 import EmptyState from '../EmptyState';
 import ErrorState from '../ErrorState';
 import Pagination from '../Pagination';
@@ -191,6 +193,7 @@ export default function ScheduleBoard({
               <ScheduleCard key={record.eventId} record={record} />
             ))}
           </div>
+          <AdSlot slot="schedule-below-grid" format="leaderboard" className="pt-2" />
           <Pagination
             page={activeMeta.page}
             totalPages={activeMeta.totalPages}
@@ -335,10 +338,7 @@ function ScheduleCard({ record }: { record: SportEventRecord }) {
           {tournamentName || 'Match'}
         </p>
         {isLive ? (
-          <span className="inline-flex shrink-0 items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium text-danger" style={{ background: 'var(--color-danger-soft)' }}>
-            <span className="h-1.5 w-1.5 rounded-full bg-danger live-pulse" />
-            Live
-          </span>
+          <LiveIndicator label="Live" className="shrink-0" />
         ) : matchStatus ? (
           <StatusBadge status={matchStatus} />
         ) : null}

@@ -8,6 +8,7 @@ import PslSpotlight from '../components/PslSpotlight';
 import RecentResultCard from '../components/RecentResultCard';
 import TopPerformers from '../components/TopPerformers';
 import Newsletter from '../components/Newsletter';
+import AdSlot from '../components/AdSlot';
 
 import { fetchMatches } from '../services/matches';
 import { fetchNews } from '../services/news';
@@ -123,6 +124,10 @@ export default async function HomePage() {
         </div>
       </section>
 
+      <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6">
+        <AdSlot slot="home-mid" format="leaderboard" />
+      </section>
+
       {/* PSL Spotlight */}
       <PslSpotlight standings={pslStandings} />
 
@@ -221,6 +226,10 @@ export default async function HomePage() {
           </div>
         </section>
       )}
+
+      <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6">
+        <AdSlot slot="home-footer" format="leaderboard" />
+      </section>
 
       <Newsletter />
     </div>

@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import Badge from '../Badge';
 import LiveIndicator from '../LiveIndicator';
-import AdBanner from '../AdBanner';
+import AdSlot from '../AdSlot';
 import EmptyState from '../EmptyState';
 import { formatDate } from '../../utils/helpers';
 
@@ -127,9 +127,7 @@ export default function LiveStreamsBoard({ streams }: Props) {
               </div>
             </div>
 
-            <div className="rounded-2xl bg-card p-5 ring-1 ring-lborder">
-              <AdBanner variant="horizontal" />
-            </div>
+            <AdSlot slot="streams-below-player" format="leaderboard" />
           </div>
 
           <div className="space-y-4">

@@ -16,6 +16,7 @@ import Badge from '../Badge';
 import Tabs from '../Tabs';
 import EmptyState from '../EmptyState';
 import Pagination from '../Pagination';
+import AdSlot from '../AdSlot';
 import type { NewsArticle } from '../../types';
 
 const categoryTone: Record<string, string> = {
@@ -262,6 +263,7 @@ export default function NewsBoard({
             <ArticleCard key={item.id} item={item} />
           ))}
           </div>
+          <AdSlot slot="news-list-below-grid" format="leaderboard" className="mt-8" />
         </>
       ) : !featured ? (
         <EmptyState

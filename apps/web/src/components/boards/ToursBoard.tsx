@@ -1,10 +1,19 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { ChevronRight, MapPin, Search, Trophy, X } from 'lucide-react';
 import { str } from '../../utils/extract';
 import EmptyState from '../EmptyState';
+import AdSlot from '../AdSlot';
+
+/**
+ * Row index the mid-list sponsored slot follows. Six keeps the break on a row
+ * boundary in both the two and three column layouts, and short lists skip it so
+ * the slot never sits near the end of the results.
+ */
+const MID_SLOT_AFTER_INDEX = 5;
+const MID_SLOT_MIN_RESULTS = 12;
 
 interface Props {
   tours: any[];
@@ -128,8 +137,13 @@ export default function ToursBoard({ tours }: Props) {
 
       {filtered.length > 0 ? (
         <div className="fade-in grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((tour) => (
-            <TourCard key={tour.id} tour={tour} />
+          {filtered.map((tour, index) => (
+            <Fragment key={tour.id}>
+              <TourCard tour={tour} />
+              {index === MID_SLOT_AFTER_INDEX && filtered.length >= MID_SLOT_MIN_RESULTS && (
+                <AdSlot slot="tours-mid-list" format="leaderboard" className="col-span-full py-2" />
+              )}
+            </Fragment>
           ))}
         </div>
       ) : (

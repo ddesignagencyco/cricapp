@@ -22,15 +22,13 @@ export default function CricketHero({ match: _match }: CricketHeroProps) {
           {/* Left content */}
           <div className="max-w-2xl">
             <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-extrabold uppercase tracking-widest text-white shadow-sm backdrop-blur-md">
-              <span className="h-1.5 w-1.5 rounded-full bg-accent2 live-pulse" />
               LIVE CRICKET
             </span>
 
             <h1 className="mt-5 text-4xl font-black leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">
               EVERY BALL{' '}
-              <span className="text-accent relative">
+              <span className="text-red-500 relative">
                 . LIVE
-                <span className="absolute -bottom-1 left-0 h-1 w-full bg-gradient-to-r from-accent to-accent2 rounded-full" />
               </span>
             </h1>
 
