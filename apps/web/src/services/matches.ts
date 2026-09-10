@@ -15,10 +15,10 @@ export async function fetchMatches(
 
 export async function fetchMatchesPage(
   params: Record<string, string | number | boolean | undefined | null> = {}
-): Promise<{ items: Match[]; total: number }> {
+): Promise<{ items: Match[]; total: number; totalPages: number }> {
   const res = await apiGet('/matches', params);
   const { items, meta } = extractPage<Match>(res);
-  return { items, total: meta.total };
+  return { items, total: meta.total, totalPages: meta.totalPages };
 }
 
 export async function fetchLiveMatches(): Promise<Match[]> {

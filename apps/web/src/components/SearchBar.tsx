@@ -18,6 +18,12 @@ function initials(name?: string | null): string {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || '??';
 }
 
+function nameHash(name: string): number {
+  let h = 0;
+  for (let i = 0; i < (name || '').length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
+  return Math.abs(h % 360);
+}
+
 function strVal(v: unknown): string {
   if (typeof v === 'string') return v;
   if (v && typeof v === 'object') {
@@ -120,7 +126,7 @@ export default function SearchBar({ autoFocus = false, onDone }: SearchBarProps)
               className="w-full bg-transparent text-base text-mtext outline-none placeholder:text-stext/70"
             />
           </div>
-          <kbd className="hidden rounded border border-lborder px-1.5 py-0.5 text-[10px] text-stext sm:block">ESC</kbd>
+          <kbd className="hidden rounded border border-lborder px-1.5 py-0.5 text-xs text-stext sm:block">ESC</kbd>
           <button type="button" onClick={() => onDone?.()} className="rounded p-1.5 text-stext hover:bg-card hover:text-mtext" aria-label="Close search">
             <X size={18} />
           </button>
@@ -143,7 +149,7 @@ export default function SearchBar({ autoFocus = false, onDone }: SearchBarProps)
                       key={item.id}
                       title={playerName}
                       subtitle={[item.teamName, item.role].filter(Boolean).join(' · ')}
-                      icon={<span className="grid h-8 w-8 place-items-center rounded-full bg-elevated text-[10px] font-bold text-accent">{initials(playerName)}</span>}
+                       icon={<span className="grid h-8 w-8 place-items-center rounded-full text-[10px] font-bold text-white" style={{ backgroundImage: `linear-gradient(135deg, hsl(${nameHash(playerName)}, 75%, 50%), hsl(${(nameHash(playerName) + 40) % 360}, 85%, 35%))` }}>{initials(playerName)}</span>}
                       onClick={() => go(`/players/${item.id}`)}
                     />
                   );
@@ -168,7 +174,7 @@ function ResultIcon({ type }: { type: 'matches' | 'tournaments' }) {
 
 function ResultGroup<T>({ title, icon, items, render }: { title: string; icon: ReactNode; items: T[]; render: (_item: T) => ReactNode }) {
   if (!items.length) return null;
-  return <section><h2 className="mb-1.5 flex items-center gap-2 px-2 text-[11px] font-bold uppercase tracking-widest text-stext">{icon}{title}<span className="rounded bg-elevated px-1.5 py-0.5 text-[10px]">{items.length}</span></h2><div className="space-y-0.5">{items.map(render)}</div></section>;
+  return <section><h2 className="mb-1.5 flex items-center gap-2 px-2 text-xs font-bold uppercase tracking-widest text-stext">{icon}{title}<span className="rounded bg-elevated px-1.5 py-0.5 text-xs">{items.length}</span></h2><div className="space-y-0.5">{items.map(render)}</div></section>;
 }
 
 function ResultButton({ title, subtitle, icon, onClick }: { title: string; subtitle: string; icon: ReactNode; onClick: () => void }) {

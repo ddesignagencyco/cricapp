@@ -17,7 +17,7 @@ export default function StatCard({ label, value, sub, icon: Icon, tone = 'defaul
   return (
     <div className={`rounded-2xl border-t-2 bg-card p-5 ring-1 ring-lborder transition-transform duration-300 hover:-translate-y-0.5 ${className}`}>
       <div className="flex items-center justify-between">
-        <p className="text-[11px] font-semibold uppercase tracking-widest text-stext">{label}</p>
+        <p className="text-xs font-semibold uppercase tracking-widest text-stext">{label}</p>
         {Icon && (
           <span className="grid h-8 w-8 place-items-center rounded-lg bg-elevated">
             <Icon size={16} className="text-accent" />

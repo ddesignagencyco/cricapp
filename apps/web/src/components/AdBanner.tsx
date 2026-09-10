@@ -52,7 +52,7 @@ export default function AdBanner({ ads = defaultAds, variant = 'horizontal' }: A
                 <Megaphone size={20} />
               </div>
               <div className="flex-1">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-stext">Sponsored</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-stext">Sponsored</p>
                 <h3 className="mt-1 text-base font-bold text-mtext">{ad.title}</h3>
                 <p className="mt-1 text-sm text-stext">{ad.description}</p>
                 <button
@@ -81,11 +81,11 @@ export default function AdBanner({ ads = defaultAds, variant = 'horizontal' }: A
             <Megaphone size={18} className="text-accent" />
             <div className="flex-1">
               <p className="text-xs font-bold text-mtext">{ad.title}</p>
-              <p className="text-[11px] text-stext">{ad.description}</p>
+              <p className="text-xs text-stext">{ad.description}</p>
             </div>
             <button
               type="button"
-              className="shrink-0 rounded-lg bg-card px-3 py-1.5 text-[11px] font-semibold text-accent ring-1 ring-lborder"
+              className="shrink-0 rounded-lg bg-card px-3 py-1.5 text-xs font-semibold text-accent ring-1 ring-lborder"
             >
               {ad.cta}
             </button>

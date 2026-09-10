@@ -24,7 +24,7 @@ export default function PointsTable({ rows = [], favoriteTeamId }: PointsTablePr
       <div className="overflow-x-auto">
         <table className="w-full min-w-[520px] text-left text-sm">
           <thead>
-            <tr className="border-b border-lborder text-[11px] uppercase tracking-wider text-stext">
+            <tr className="border-b border-lborder text-xs uppercase tracking-wider text-stext">
               <th className="px-4 py-3">Pos</th>
               <th className="px-4 py-3">Team</th>
               <th className="px-4 py-3 text-center">P</th>
@@ -55,7 +55,7 @@ export default function PointsTable({ rows = [], favoriteTeamId }: PointsTablePr
                     >
                       <TeamLogo teamId={row.teamId} name={row.teamName} code={row.teamAbbr} size="md" link={false} />
                       <span className="font-semibold">{row.teamName}</span>
-                      <span className="text-[11px] uppercase tracking-wider text-stext">
+                      <span className="text-xs uppercase tracking-wider text-stext">
                         {row.teamAbbr}
                       </span>
                     </Link>

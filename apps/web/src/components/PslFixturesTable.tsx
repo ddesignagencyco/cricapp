@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import TeamLogo from './TeamLogo';
 import Pagination from './Pagination';
-import { formatScheduled } from '../utils/helpers';
+import { formatScheduled, cap } from '../utils/helpers';
 import type { PslSchedule } from '../types/index';
 
 const PAGE_SIZE = 15;
@@ -24,7 +24,7 @@ export default function PslFixturesTable({ matches }: Props) {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-left text-sm">
             <thead>
-              <tr className="border-b border-lborder text-[11px] uppercase tracking-wider text-stext">
+              <tr className="border-b border-lborder text-xs uppercase tracking-wider text-stext">
                 <th className="px-4 py-3 text-center">#</th>
                 <th className="px-4 py-3">Home</th>
                 <th className="px-4 py-3 text-center">vs</th>
@@ -45,14 +45,14 @@ export default function PslFixturesTable({ matches }: Props) {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <TeamLogo code={m.homeTeamAbbr} size="xs" link={false} />
-                        <span className="font-semibold text-mtext">{m.homeTeamName || m.homeTeamAbbr}</span>
+                        <span className="font-bold text-mtext">{cap(m.homeTeamName) || m.homeTeamAbbr}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-center text-[10px] font-black italic text-stext/50">VS</td>
+                    <td className="px-4 py-3 text-center text-xs font-black italic text-stext/50">VS</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <TeamLogo code={m.awayTeamAbbr} size="xs" link={false} />
-                        <span className="font-semibold text-mtext">{m.awayTeamName || m.awayTeamAbbr}</span>
+                        <span className="font-bold text-mtext">{cap(m.awayTeamName) || m.awayTeamAbbr}</span>
                       </div>
                     </td>
                     <td className="px-4 py-3 text-xs text-stext">
@@ -60,7 +60,7 @@ export default function PslFixturesTable({ matches }: Props) {
                       {time && <span className="ml-1 text-stext/60">{time}</span>}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${m.status === 'closed' ? 'bg-accent2/15 text-accent2' :
+                      <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-bold uppercase tracking-wider ${m.status === 'closed' ? 'bg-accent2/15 text-accent2' :
                           m.status === 'live' ? 'bg-red-500/20 text-red-400' :
                             m.status === 'cancelled' ? 'bg-danger/15 text-danger' :
                               'bg-elevated text-stext'

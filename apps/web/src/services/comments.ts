@@ -26,10 +26,10 @@ export async function listComments(
   targetId: string,
   page = 1,
   limit = 20
-): Promise<{ items: CommentItem[]; total: number }> {
+): Promise<{ items: CommentItem[]; total: number; totalPages: number }> {
   const res = await apiGet('/comments', { targetType, targetId, page, limit });
   const { items, meta } = extractPage<CommentItem>(res);
-  return { items, total: meta.total };
+  return { items, total: meta.total, totalPages: meta.totalPages };
 }
 
 export async function createComment(

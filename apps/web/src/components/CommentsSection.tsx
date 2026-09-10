@@ -15,6 +15,7 @@ import {
   type ReactionTarget,
 } from '../services/comments';
 import { useAuth } from './AuthProvider';
+import { ConfirmDialog } from './admin/AdminShared';
 
 interface CommentsSectionProps {
   targetType: CommentTarget;
@@ -31,6 +32,7 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
   const [body, setBody] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<CommentItem | null>(null);
   const [counts, setCounts] = useState<Record<string, number>>({});
 
   const load = useCallback(() => {
@@ -72,18 +74,19 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
     }
   };
 
-  const remove = async (id: string) => {
-    if (!window.confirm('Delete this comment?')) return;
-    setBusyId(id);
+  const remove = async () => {
+    if (!deleteTarget) return;
+    setBusyId(deleteTarget.id);
     try {
-      await deleteComment(id);
-      setComments((list) => list.filter((c) => c.id !== id));
+      await deleteComment(deleteTarget.id);
+      setComments((list) => list.filter((c) => c.id !== deleteTarget.id));
       setTotal((t) => Math.max(0, t - 1));
       toast.success('Comment deleted.');
     } catch {
       toast.error('Could not delete the comment.');
     } finally {
       setBusyId(null);
+      setDeleteTarget(null);
     }
   };
 
@@ -119,7 +122,7 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
               aria-label={`React with ${emoji}`}
             >
               <span>{emoji}</span>
-              {counts[emoji] ? <span className="text-[10px] font-bold text-stext">{counts[emoji]}</span> : null}
+              {counts[emoji] ? <span className="text-xs font-bold text-stext">{counts[emoji]}</span> : null}
             </button>
           ))}
         </div>
@@ -136,7 +139,7 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
             className="w-full resize-none rounded bg-elevated px-3.5 py-2.5 text-sm text-mtext ring-1 ring-lborder outline-none transition focus:ring-2 focus:ring-accent/60"
           />
           <div className="mt-2 flex items-center justify-between">
-            <span className="text-[11px] text-stext">{body.length}/1000</span>
+            <span className="text-xs text-stext">{body.length}/1000</span>
             <button
               type="submit"
               disabled={submitting || !body.trim()}
@@ -166,14 +169,26 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
             <li key={comment.id} className="rounded bg-elevated/60 p-3.5 ring-1 ring-lborder/60">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-2.5">
-                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-accent/15 text-[10px] font-bold text-accent">
-                    {(comment.user?.displayName || comment.user?.username || '??').slice(0, 2).toUpperCase()}
-                  </span>
+                  {(() => {
+                    const displayName = comment.user?.displayName || comment.user?.username || '??';
+                    const raw = (comment.user?.displayName || comment.user?.username || '').trim();
+                    let h = 0;
+                    for (let i = 0; i < raw.length; i++) h = raw.charCodeAt(i) + ((h << 5) - h);
+                    const hue = Math.abs(h % 360);
+                    return (
+                      <span
+                        className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[10px] font-bold text-white"
+                        style={{ backgroundImage: `linear-gradient(135deg, hsl(${hue}, 75%, 50%), hsl(${(hue + 40) % 360}, 85%, 35%))` }}
+                      >
+                        {displayName.slice(0, 2).toUpperCase()}
+                      </span>
+                    );
+                  })()}
                   <div className="min-w-0">
                     <p className="truncate text-xs font-bold text-mtext">
                       {comment.user?.displayName || comment.user?.username || 'User'}
                     </p>
-                    <p className="text-[10px] text-stext">
+                    <p className="text-xs text-stext">
                       {new Date(comment.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} ·{' '}
                       {new Date(comment.createdAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
                     </p>
@@ -182,7 +197,7 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
                 {user?.id === comment.userId && (
                   <button
                     type="button"
-                    onClick={() => remove(comment.id)}
+                    onClick={() => setDeleteTarget(comment)}
                     disabled={busyId === comment.id}
                     className="shrink-0 rounded p-1.5 text-danger hover:bg-card disabled:opacity-50"
                     aria-label="Delete comment"
@@ -196,6 +211,17 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
           ))}
         </ul>
       )}
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title="Delete comment"
+        message="Are you sure you want to delete this comment? This cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={remove}
+        onCancel={() => setDeleteTarget(null)}
+        loading={!!busyId}
+        danger
+      />
     </section>
   );
 }

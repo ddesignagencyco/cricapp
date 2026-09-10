@@ -10,10 +10,10 @@ export async function fetchTeams(
 
 export async function fetchTeamsPage(
   params: Record<string, string | number | boolean | undefined | null> = {}
-): Promise<{ items: Team[]; total: number }> {
+): Promise<{ items: Team[]; total: number; totalPages: number }> {
   const res = await apiGet('/teams', params);
   const { items, meta } = extractPage<Team>(res);
-  return { items, total: meta.total };
+  return { items, total: meta.total, totalPages: meta.totalPages };
 }
 
 export async function fetchTeamById(idOrAbbr: string): Promise<Team | null> {

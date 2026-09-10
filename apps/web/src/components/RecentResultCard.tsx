@@ -45,11 +45,11 @@ export default function RecentResultCard({ match }: RecentResultCardProps) {
     >
       <div className="mb-4 flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <span className="block truncate text-[10px] font-bold uppercase tracking-wider text-stext">
+          <span className="block truncate text-xs font-bold uppercase tracking-wider text-stext">
             {tournament}
           </span>
           {venue && (
-            <span className="mt-0.5 block truncate text-[10px] text-stext">
+            <span className="mt-0.5 block truncate text-xs text-stext">
               {match.matchNumber ? `${match.matchNumber} ` : ''}{match.group || ''}
             </span>
           )}
@@ -64,16 +64,16 @@ export default function RecentResultCard({ match }: RecentResultCardProps) {
 
       {result && (
         <div className="mt-3 border-t border-lborder/50 pt-2.5">
-          <p className="text-[11px] font-bold text-gold">{result}</p>
+          <p className="text-xs font-bold text-gold">{result}</p>
           {playerOfMatch && (
-            <p className="mt-1 text-[10px] text-stext">
+            <p className="mt-1 text-xs text-stext">
               Player of the Match: <span className="font-semibold text-mtext">{playerOfMatch}</span>
             </p>
           )}
         </div>
       )}
 
-      <div className="mt-3 flex items-center gap-2 text-[10px] text-stext">
+      <div className="mt-3 flex items-center gap-2 text-xs text-stext">
         <span>{dateLabel}</span>
         {venue && <span className="truncate">• {venue.split(',')[0]}</span>}
       </div>
@@ -89,7 +89,7 @@ function ScoreRow({ code, name, score, overs }: { code: string; name: string; sc
   return (
     <div className="flex items-center gap-2.5">
       <span
-        className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-white/10 text-[9px] font-black text-white"
+        className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-white/10 text-xs font-black text-white"
         style={{ backgroundImage: `linear-gradient(135deg, hsl(${hue}, 70%, 50%), hsl(${(hue + 40) % 360}, 80%, 35%))` }}
         title={name}
       >
@@ -100,7 +100,7 @@ function ScoreRow({ code, name, score, overs }: { code: string; name: string; sc
       </div>
       <div className="text-right">
         <p className="font-mono text-sm font-bold tabular-nums text-mtext">{score || '—'}</p>
-        {overs && <p className="font-mono text-[10px] text-stext">({overs} ov)</p>}
+        {overs && <p className="font-mono text-xs text-stext">({overs} ov)</p>}
       </div>
     </div>
   );

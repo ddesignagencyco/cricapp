@@ -113,7 +113,7 @@ export default function MatchDetailBody({ match, headToHead }: Props) {
               {match.tournament || 'Match Fixture'}
             </span>
             {match.format && (
-              <span className="rounded-full bg-secondary px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-stext border border-lborder/60">
+              <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-stext border border-lborder/60">
                 {match.format}
               </span>
             )}
@@ -158,7 +158,7 @@ export default function MatchDetailBody({ match, headToHead }: Props) {
               <span className="font-mono text-xs font-black italic tracking-wider text-stext">VS</span>
             </div>
             {match.round && (
-              <span className="mt-2 text-[10px] font-bold uppercase tracking-widest text-stext/80">
+              <span className="mt-2 text-xs font-bold uppercase tracking-widest text-stext/80">
                 {match.round}
               </span>
             )}
@@ -189,7 +189,7 @@ export default function MatchDetailBody({ match, headToHead }: Props) {
               </span>
             </div>
             {match.lastEvent?.type && match.lastEvent.type !== 'none' && (
-              <span className="rounded-lg bg-card px-2.5 py-1 text-[11px] font-bold text-mtext border border-lborder/60">
+              <span className="rounded-lg bg-card px-2.5 py-1 text-xs font-bold text-mtext border border-lborder/60">
                 Last: {match.lastEvent.type} +{match.lastEvent.runs ?? 0}
               </span>
             )}
@@ -270,7 +270,7 @@ export default function MatchDetailBody({ match, headToHead }: Props) {
               <h3 className="mb-4 text-sm font-bold uppercase tracking-widest text-stext">Match Result</h3>
               {match.displayScore ? (
                 <div className="rounded-xl bg-elevated p-4 ring-1 ring-lborder">
-                  <p className="text-[11px] font-bold uppercase tracking-widest text-stext mb-2">Final Score</p>
+                  <p className="text-xs font-bold uppercase tracking-widest text-stext mb-2">Final Score</p>
                   <p className="font-mono text-2xl font-black tabular-nums text-mtext">{match.displayScore}</p>
                 </div>
               ) : (
@@ -304,7 +304,7 @@ function TeamSide({ code, name, score, overs, align }: { code: string; name: str
             <span className="font-mono text-2xl font-black tabular-nums leading-tight text-accent sm:text-4xl tracking-tighter">
               {score}
             </span>
-            {overs && <span className="font-mono text-[11px] font-bold text-stext sm:text-sm">{overs} ov</span>}
+            {overs && <span className="font-mono text-xs font-bold text-stext sm:text-sm">{overs} ov</span>}
           </div>
         ) : (
           <p className="text-sm text-stext">—</p>
@@ -317,7 +317,7 @@ function TeamSide({ code, name, score, overs, align }: { code: string; name: str
 function InfoStat({ label, value, big = false }: { label: string; value: string; big?: boolean }) {
   return (
     <div className="rounded-2xl bg-card p-5 ring-1 ring-lborder shadow-sm">
-      <p className="text-[11px] font-bold uppercase tracking-widest text-stext">{label}</p>
+      <p className="text-xs font-bold uppercase tracking-widest text-stext">{label}</p>
       <p className={`mt-1 font-mono font-black tabular-nums tracking-tighter text-accent ${big ? 'text-4xl' : 'text-3xl'}`}>{value}</p>
     </div>
   );

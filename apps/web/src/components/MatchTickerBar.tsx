@@ -139,11 +139,11 @@ function TickerCard({ match }: { match: any }) {
       className="group flex w-[260px] shrink-0 flex-col overflow-hidden rounded-xl bg-card p-3 ring-1 ring-lborder transition-all hover:bg-elevated hover:ring-accent/30"
     >
       <div className="mb-2 flex items-center justify-between gap-2">
-        <span className="min-w-0 truncate text-[9px] font-bold uppercase tracking-wider text-stext">
+        <span className="min-w-0 truncate text-xs font-bold uppercase tracking-wider text-stext">
           {tournament}
         </span>
         {isLive ? (
-          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-accent2/15 px-2 py-0.5 text-[8px] font-black uppercase tracking-wider text-accent2">
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-accent2/15 px-2 py-0.5 text-xs font-black uppercase tracking-wider text-accent2">
             <Radio size={8} className="animate-pulse" /> Live
           </span>
         ) : (
@@ -157,7 +157,7 @@ function TickerCard({ match }: { match: any }) {
       </div>
 
       {(isLive || isCompleted) && (
-        <div className="mt-2 flex h-4 items-center justify-center gap-1.5 overflow-hidden text-[9px] text-stext">
+        <div className="mt-2 flex h-4 items-center justify-center gap-1.5 overflow-hidden text-xs text-stext">
           {isLive && overs !== '' ? (
             <span className="shrink-0 font-semibold text-accent2">
               {Number(overs)} ov
@@ -168,7 +168,7 @@ function TickerCard({ match }: { match: any }) {
         </div>
       )}
 
-      <div className="mt-2 flex items-center gap-1.5 border-t border-lborder/60 pt-1.5 text-[9px] text-stext">
+      <div className="mt-2 flex items-center gap-1.5 border-t border-lborder/60 pt-1.5 text-xs text-stext">
         {venue ? (
           <span className="min-w-0 truncate" title={venue}>{venue.split(',')[0]}</span>
         ) : (
@@ -224,7 +224,7 @@ function TeamMini({ label }: { label: string }) {
 
   return (
     <span
-      className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-white/10 text-[9px] font-black text-white"
+      className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-white/10 text-xs font-black text-white"
       style={{ backgroundImage: `linear-gradient(135deg, hsl(${hue}, 70%, 50%), hsl(${(hue + 40) % 360}, 80%, 35%))` }}
     >
       {getInitials(label)}

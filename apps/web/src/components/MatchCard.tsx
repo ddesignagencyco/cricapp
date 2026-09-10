@@ -86,7 +86,7 @@ export default function MatchCard({ match, compact = false, showVenue = true }: 
 
         <div className="flex shrink-0 flex-col items-center justify-center px-4">
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-elevated border border-lborder/80 shadow-inner">
-            <span className="text-[10px] font-black italic text-stext/70">VS</span>
+            <span className="text-xs font-black italic text-stext/70">VS</span>
           </div>
         </div>
 

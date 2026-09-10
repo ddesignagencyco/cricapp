@@ -32,7 +32,7 @@ export default async function Sidebar() {
                 <p className="line-clamp-2 text-sm font-semibold text-mtext transition-colors group-hover:text-accent">
                   {item.title}
                 </p>
-                <p className="mt-1 flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-stext">
+                <p className="mt-1 flex items-center gap-1.5 text-xs uppercase tracking-wider text-stext">
                   <CalendarDays size={12} />
                   {formatScheduled(item.date).date} • {item.category}
                 </p>

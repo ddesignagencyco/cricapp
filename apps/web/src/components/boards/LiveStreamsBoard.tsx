@@ -180,7 +180,7 @@ function StreamPlayer({ stream, viewers }: { stream: any; viewers: number }) {
               <Eye size={13} className="text-accent2" />
               {viewers !== null && viewers !== undefined ? viewers.toLocaleString() : 0}
             </div>
-            <div className="absolute inset-x-4 bottom-4 z-10 flex items-center justify-between text-[11px] font-semibold text-white/70">
+            <div className="absolute inset-x-4 bottom-4 z-10 flex items-center justify-between text-xs font-semibold text-white/70">
               <span className="flex items-center gap-1.5"><Signal size={12} /> Stable feed</span>
               <span className="flex items-center gap-1.5"><Globe size={12} /> {stream.language}</span>
             </div>
@@ -217,12 +217,12 @@ function StreamList({ streams, featuredId, viewerMap, onSelect }: { streams: any
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="truncate text-sm font-semibold text-mtext">{s.shortTitle}</span>
-                <span className="flex shrink-0 items-center gap-1 text-[11px] font-bold text-accent2">
+                <span className="flex shrink-0 items-center gap-1 text-xs font-bold text-accent2">
                   <Eye size={12} />
                   {(viewerMap[s.id] ?? s.viewers ?? 0).toLocaleString()}
                 </span>
               </div>
-              <p className="mt-0.5 line-clamp-1 text-[11px] text-stext">{s.host || s.title}</p>
+              <p className="mt-0.5 line-clamp-1 text-xs text-stext">{s.host || s.title}</p>
             </button>
           ))}
         </div>
@@ -240,21 +240,21 @@ function LiveChat({ chat }: { chat: any[] }) {
           <Activity size={15} className="text-accent" />
           <h3 className="text-sm font-bold text-mtext">Live Chat</h3>
         </div>
-        <span className="flex items-center gap-1 text-[11px] font-semibold text-stext">
+        <span className="flex items-center gap-1 text-xs font-semibold text-stext">
           <ThumbsUp size={12} /> {messages.length}
         </span>
       </div>
       <div className="h-64 space-y-3 overflow-y-auto px-4 py-3">
         {messages.map((m: any, i: number) => (
           <div key={i} className="flex items-start gap-2 text-sm">
-            <span className="shrink-0 rounded-md bg-accent/15 px-1.5 py-0.5 text-[11px] font-bold text-accent">
+            <span className="shrink-0 rounded-md bg-accent/15 px-1.5 py-0.5 text-xs font-bold text-accent">
               {m.user.slice(0, 2).toUpperCase()}
             </span>
             <p className="min-w-0 flex-1 text-[13px] leading-snug">
               <span className="font-semibold text-mtext">{m.user}</span>{' '}
               <span className="text-mtext/90">{m.text}</span>
             </p>
-            <span className="shrink-0 text-[10px] text-stext">{m.time}</span>
+            <span className="shrink-0 text-xs text-stext">{m.time}</span>
           </div>
         ))}
       </div>

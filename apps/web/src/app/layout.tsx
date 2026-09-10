@@ -1,11 +1,9 @@
 import './globals.css';
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
 import ScrollToTop from '../components/ScrollToTop';
-import ScrollTopButton from '../components/ScrollTopButton';
 import JsonLd from './json-ld';
 import ThemeProvider from '../components/ThemeProvider';
 import AuthProvider from '../components/AuthProvider';
+import ClientLayout from '../components/ClientLayout';
 import { Toaster } from 'react-hot-toast';
 
 export const metadata = {
@@ -66,10 +64,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
         <ThemeProvider>
           <AuthProvider>
-            <Navbar />
-            <main className="min-h-screen flex-1">{children}</main>
-            <Footer />
-            <ScrollTopButton />
+            <ClientLayout>{children}</ClientLayout>
             <Toaster position="top-center" toastOptions={{ duration: 3500 }} />
           </AuthProvider>
         </ThemeProvider>

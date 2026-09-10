@@ -94,7 +94,7 @@ export default function ScheduleBoard({
 
         <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-accent border border-accent/20">
+            <div className="inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-accent border border-accent/20">
               <Calendar size={13} />
               <span>Fixtures & Match Results</span>
             </div>
@@ -122,7 +122,7 @@ export default function ScheduleBoard({
                 <p className="text-xs font-black text-mtext sm:text-sm tracking-tight group-hover:text-accent transition-colors">
                   {formatDateDisplay(date)}
                 </p>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-accent">
+                <span className="text-xs font-bold uppercase tracking-widest text-accent">
                   {isToday ? "Today's Fixtures" : 'Match Day'}
                 </span>
                 <input
@@ -149,14 +149,14 @@ export default function ScheduleBoard({
               <button
                 type="button"
                 onClick={() => jumpDay(-1)}
-                className="rounded-xl border border-lborder bg-card px-3 py-1 text-[11px] font-bold text-stext hover:text-mtext hover:bg-secondary transition-all cursor-pointer shadow-xs"
+                className="rounded-xl border border-lborder bg-card px-3 py-1 text-xs font-bold text-stext hover:text-mtext hover:bg-secondary transition-all cursor-pointer shadow-xs"
               >
                 Yesterday
               </button>
               <button
                 type="button"
                 onClick={goToToday}
-                className={`rounded-xl px-3 py-1 text-[11px] font-bold transition-all cursor-pointer ${
+                className={`rounded-xl px-3 py-1 text-xs font-bold transition-all cursor-pointer ${
                   isToday
                     ? 'bg-accent text-white shadow-md shadow-accent/20'
                     : 'border border-lborder bg-card text-accent hover:bg-accent/15'
@@ -167,7 +167,7 @@ export default function ScheduleBoard({
               <button
                 type="button"
                 onClick={() => jumpDay(1)}
-                className="rounded-xl border border-lborder bg-card px-3 py-1 text-[11px] font-bold text-stext hover:text-mtext hover:bg-secondary transition-all cursor-pointer shadow-xs"
+                className="rounded-xl border border-lborder bg-card px-3 py-1 text-xs font-bold text-stext hover:text-mtext hover:bg-secondary transition-all cursor-pointer shadow-xs"
               >
                 Tomorrow
               </button>
@@ -297,17 +297,17 @@ function ScheduleCard({ record }: { record: SportEventRecord }) {
 
           <div className="flex items-center gap-1.5 shrink-0">
             {format && (
-              <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-accent border border-accent/20">
+              <span className="rounded-full bg-accent/10 px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-accent border border-accent/20">
                 {format}
               </span>
             )}
             {isLive ? (
-              <span className="flex items-center gap-1 rounded-full bg-red-500/15 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-red-500 ring-1 ring-red-500/30 animate-pulse">
+              <span className="flex items-center gap-1 rounded-full bg-red-500/15 px-2 py-0.5 text-xs font-black uppercase tracking-wider text-red-500 ring-1 ring-red-500/30 animate-pulse">
                 <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
                 Live
               </span>
             ) : matchStatus ? (
-              <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-stext border border-lborder/60">
+              <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-stext border border-lborder/60">
                 {matchStatus}
               </span>
             ) : null}
@@ -328,10 +328,10 @@ function ScheduleCard({ record }: { record: SportEventRecord }) {
 
           {/* Center VS / Score Emblem */}
           <div className="flex shrink-0 flex-col items-center justify-center px-2">
-            <span className="rounded-full border border-lborder bg-secondary px-3 py-1 font-mono text-[11px] font-black tracking-wider text-mtext">
+            <span className="rounded-full border border-lborder bg-secondary px-3 py-1 font-mono text-xs font-black tracking-wider text-mtext">
               {displayScore || 'VS'}
             </span>
-            {round && <span className="mt-1 text-[9px] font-semibold uppercase text-stext/80">{round}</span>}
+            {round && <span className="mt-1 text-xs font-semibold uppercase text-stext/80">{round}</span>}
           </div>
 
           {/* Away Side */}
@@ -358,7 +358,7 @@ function ScheduleCard({ record }: { record: SportEventRecord }) {
 
         {/* Innings Breakdown Preview */}
         {scores.length > 0 && (
-          <div className="mt-3 divide-y divide-lborder/60 rounded-xl bg-secondary/60 p-2.5 text-[11px]">
+          <div className="mt-3 divide-y divide-lborder/60 rounded-xl bg-secondary/60 p-2.5 text-xs">
             {scores.map((s, i) => (
               <div key={i} className="flex items-center justify-between py-1 font-semibold text-mtext">
                 <span className="text-stext">{(s.type as string) || `Innings ${i + 1}`}</span>
@@ -370,7 +370,7 @@ function ScheduleCard({ record }: { record: SportEventRecord }) {
       </div>
 
       {/* Fixture Meta Footer */}
-      <div className="mt-5 flex flex-wrap items-center justify-between gap-2 border-t border-lborder/60 pt-3 text-[11px] text-stext">
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-2 border-t border-lborder/60 pt-3 text-xs text-stext">
         <div className="flex items-center gap-3">
           {eventDate && (
             <span className="flex items-center gap-1 font-medium">

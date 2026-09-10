@@ -44,12 +44,12 @@ export default function TeamCard({ team }: TeamCardProps) {
         {/* Top bar: Country/Type Badge & Abbr Pill */}
         <div className="flex items-center justify-between gap-2">
           {country ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-stext border border-lborder/60">
+            <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-stext border border-lborder/60">
               <Globe size={10} className="text-accent" />
               {country}
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-stext border border-lborder/60">
+            <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-stext border border-lborder/60">
               <Shield size={10} className="text-accent" />
               Cricket Team
             </span>
@@ -103,7 +103,7 @@ export default function TeamCard({ team }: TeamCardProps) {
 
       {/* Card Action Footer */}
       <div className="mt-5 flex items-center justify-between border-t border-lborder/60 pt-3 text-xs">
-        <span className="text-[11px] font-semibold text-stext">View Roster</span>
+        <span className="text-xs font-semibold text-stext">View Roster</span>
         <span className="inline-flex items-center gap-1 font-bold text-accent transition-transform duration-300 group-hover:translate-x-1">
           <span>Explore</span>
           <ArrowRight size={13} />

@@ -16,6 +16,12 @@ function initials(name?: string | null): string {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || '??';
 }
 
+function nameHash(name: string): number {
+  let h = 0;
+  for (let i = 0; i < (name || '').length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
+  return Math.abs(h % 360);
+}
+
 function strVal(v: unknown): string {
   if (typeof v === 'string') return v;
   if (v && typeof v === 'object') {
@@ -145,7 +151,7 @@ export default function SearchResultsBody() {
       {!loading && debouncedQuery && results && total === 0 && <EmptyState title="No results found" icon={Search} message={`We couldn't find anything matching “${debouncedQuery}”.`} />}
       {!loading && results && total > 0 && (
         <div className="space-y-8">
-          <SearchSection title="Players" icon={<UserRound size={16} />} items={results.players} render={(item) => <SearchCard key={item.id} href={`/players/${item.id}`} title={item.name} subtitle={[item.teamName, item.role].filter(Boolean).join(' · ')} icon={<span className="grid h-9 w-9 place-items-center rounded-full bg-elevated text-xs font-bold text-accent">{initials(item.name)}</span>} />} />
+          <SearchSection title="Players" icon={<UserRound size={16} />} items={results.players} render={(item) => <SearchCard key={item.id} href={`/players/${item.id}`} title={item.name} subtitle={[item.teamName, item.role].filter(Boolean).join(' · ')} icon={<span className="grid h-9 w-9 place-items-center rounded-full text-[10px] font-bold text-white" style={{ backgroundImage: `linear-gradient(135deg, hsl(${nameHash(item.name)}, 75%, 50%), hsl(${(nameHash(item.name) + 40) % 360}, 85%, 35%))` }}>{initials(item.name)}</span>} />} />
           <SearchSection title="Teams" icon={<Shield size={16} />} items={results.teams} render={(item) => <SearchCard key={item.id} href={`/teams/${item.id}`} title={item.name} subtitle={[item.code || item.shortName, item.country || item.city].filter(Boolean).join(' · ')} icon={<TeamLogo teamId={item.id} name={item.name} code={item.code || item.shortName} size="sm" link={false} />} />} />
           <SearchSection title="Matches" icon={<Calendar size={16} />} items={results.matches} render={(item) => <SearchCard key={item.matchId || item.id} href={`/matches/${item.matchId || item.id}`} title={matchTitle(item)} subtitle={matchSubtitle(item)} icon={<Calendar size={18} />} />} />
           <SearchSection title="Tournaments" icon={<Trophy size={16} />} items={results.tournaments} render={(item) => <SearchCard key={item.id} href={`/tournaments/${item.id}`} title={item.name} subtitle={tournamentSubtitle(item)} icon={<Trophy size={18} />} />} />

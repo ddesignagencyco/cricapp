@@ -20,7 +20,7 @@ export default function TeamLogo({ teamId, name, code, color, size = 'md', class
   const pslLogo = getPslLogo(code || '') || getPslLogo(teamId || '');
   const logo = pslLogo || null;
   const sizes: Record<string, string> = {
-    xs: 'h-6 w-6 text-[10px]',
+    xs: 'h-6 w-6 text-xs',
     sm: 'h-8 w-8 text-xs',
     md: 'h-11 w-11 text-sm',
     lg: 'h-16 w-16 text-xl',

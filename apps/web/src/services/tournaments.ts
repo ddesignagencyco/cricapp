@@ -10,10 +10,10 @@ export async function fetchTournaments(
 
 export async function fetchTournamentsPage(
   params: Record<string, string | number | boolean | undefined | null> = {}
-): Promise<{ items: TournamentApi[]; total: number }> {
+): Promise<{ items: TournamentApi[]; total: number; totalPages: number }> {
   const res = await apiGet('/tournaments', params);
   const { items, meta } = extractPage<TournamentApi>(res);
-  return { items, total: meta.total };
+  return { items, total: meta.total, totalPages: meta.totalPages };
 }
 
 export async function fetchTournamentById(tournamentId: string): Promise<TournamentApi | null> {

@@ -60,7 +60,7 @@ export default function TeamDetailBody({ team, players, matches, allTeams = [] }
               {team.country || 'Cricket Team'}
             </span>
             {code && (
-              <span className="rounded-full bg-secondary px-2.5 py-1 text-[11px] font-mono font-bold uppercase tracking-wider text-stext border border-lborder/60">
+              <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-mono font-bold uppercase tracking-wider text-stext border border-lborder/60">
                 {code}
               </span>
             )}
@@ -111,11 +111,11 @@ export default function TeamDetailBody({ team, players, matches, allTeams = [] }
           <div className="flex shrink-0 items-center gap-3">
             <div className="rounded-2xl border border-lborder bg-secondary/80 px-4 py-3 text-center backdrop-blur-sm">
               <p className="font-mono text-xl font-black text-accent">{players?.length || 0}</p>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-stext">Squad Size</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-stext">Squad Size</p>
             </div>
             <div className="rounded-2xl border border-lborder bg-secondary/80 px-4 py-3 text-center backdrop-blur-sm">
               <p className="font-mono text-xl font-black text-mtext">{teamMatches?.length || 0}</p>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-stext">Matches</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-stext">Matches</p>
             </div>
           </div>
         </div>
@@ -176,7 +176,7 @@ export default function TeamDetailBody({ team, players, matches, allTeams = [] }
 function InfoStat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl bg-card p-4 ring-1 ring-lborder">
-      <p className="text-[11px] font-bold uppercase tracking-widest text-stext">{label}</p>
+      <p className="text-xs font-bold uppercase tracking-widest text-stext">{label}</p>
       <p className="mt-0.5 truncate text-sm font-semibold text-mtext" title={value}>{value}</p>
     </div>
   );

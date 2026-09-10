@@ -176,7 +176,7 @@ export default function NewsBoard({ items, categories = [] }: Props) {
                   {spotlightTags.slice(0, 3).map((tag) => (
                     <span
                       key={tag}
-                      className="inline-flex items-center gap-1 rounded-md bg-secondary px-2.5 py-1 text-[11px] font-semibold text-stext border border-lborder/70"
+                      className="inline-flex items-center gap-1 rounded-md bg-secondary px-2.5 py-1 text-xs font-semibold text-stext border border-lborder/70"
                     >
                       <TagIcon size={10} className="text-accent" />
                       {tag}
@@ -211,7 +211,7 @@ export default function NewsBoard({ items, categories = [] }: Props) {
                     </span>
                   )}
                   {featured.readTime && (
-                    <span className="flex items-center gap-1 text-[11px]">
+                    <span className="flex items-center gap-1 text-xs">
                       <Clock size={12} />
                       {featured.readTime}
                     </span>
@@ -297,7 +297,7 @@ function ArticleCard({ item }: { item: any }) {
             </Badge>
           )}
           {tags[0] && tags[0] !== catName && (
-            <span className="inline-flex items-center gap-1 rounded-md bg-black/60 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white ring-1 ring-white/20 backdrop-blur-sm">
+            <span className="inline-flex items-center gap-1 rounded-md bg-black/60 px-2 py-0.5 text-xs font-bold uppercase tracking-wide text-white ring-1 ring-white/20 backdrop-blur-sm">
               <TagIcon size={9} className="text-accent" />
               {tags[0]}
             </span>
@@ -322,7 +322,7 @@ function ArticleCard({ item }: { item: any }) {
             {tags.slice(1, 3).map((t) => (
               <span
                 key={t}
-                className="rounded-md bg-secondary px-2 py-0.5 text-[10px] font-medium text-stext border border-lborder/60"
+                className="rounded-md bg-secondary px-2 py-0.5 text-xs font-medium text-stext border border-lborder/60"
               >
                 #{t}
               </span>
@@ -330,7 +330,7 @@ function ArticleCard({ item }: { item: any }) {
           </div>
         )}
 
-        <div className="mt-auto flex items-center justify-between border-t border-lborder/60 pt-4 text-[11px] text-stext">
+        <div className="mt-auto flex items-center justify-between border-t border-lborder/60 pt-4 text-xs text-stext">
           <span className="flex items-center gap-1.5 font-medium">
             <Calendar size={12} className="text-accent" /> {item.date || 'Recent'}
           </span>

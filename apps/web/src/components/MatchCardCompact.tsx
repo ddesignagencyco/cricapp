@@ -43,17 +43,17 @@ export default function MatchCardCompact({ match }: MatchCardCompactProps) {
       className="group block rounded-xl bg-card p-3.5 ring-1 ring-lborder transition-all duration-300 hover:-translate-y-0.5 hover:bg-elevated hover:ring-accent/30 sm:p-4"
     >
       <div className="mb-2.5 flex items-center justify-between gap-3">
-        <p className="min-w-0 truncate text-[11px] font-semibold uppercase tracking-wider text-stext">
+        <p className="min-w-0 truncate text-xs font-semibold uppercase tracking-wider text-stext">
           {tournament || 'Match'}
         </p>
-        <p className="shrink-0 text-[11px] font-medium text-stext">
+        <p className="shrink-0 text-xs font-medium text-stext">
           {date}{time ? ` · ${time}` : ''}
         </p>
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3">
         <TeamCell name={home.name} abbr={home.abbr} align="left" />
-        <span className="shrink-0 rounded-full bg-elevated px-2 py-0.5 text-[9px] font-black italic text-stext ring-1 ring-lborder/50">
+        <span className="shrink-0 rounded-full bg-elevated px-2 py-0.5 text-xs font-black italic text-stext ring-1 ring-lborder/50">
           VS
         </span>
         <TeamCell name={away.name} abbr={away.abbr} align="right" />
@@ -76,7 +76,7 @@ function TeamCell({ name, abbr, align }: { name: string; abbr: string; align: 'l
     />
   ) : (
     <span
-      className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[10px] font-black text-white"
+      className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-xs font-black text-white"
       style={{ backgroundImage: `linear-gradient(135deg, hsl(${hue}, 70%, 50%), hsl(${(hue + 30) % 360}, 90%, 30%))` }}
     >
       {abbr.slice(0, 2)}

@@ -27,13 +27,13 @@ export function LeaderPanel({ group }: { group: any }) {
           <StatIcon size={15} className="text-accent2" />
           <h3 className="text-sm font-bold text-mtext">{meta.label}</h3>
         </div>
-        <span className="text-[10px] font-black uppercase tracking-wide text-accent">Top 5</span>
+        <span className="text-xs font-black uppercase tracking-wide text-accent">Top 5</span>
       </div>
 
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead>
-            <tr className="border-b border-lborder text-[10px] uppercase tracking-wider text-stext">
+            <tr className="border-b border-lborder text-xs uppercase tracking-wider text-stext">
               <th className="px-4 py-2 text-center">#</th>
               <th className="px-4 py-2">Player</th>
               <th className="px-4 py-2">Team</th>
@@ -53,11 +53,11 @@ export function LeaderPanel({ group }: { group: any }) {
                 <td className="px-4 py-2.5">
                   <div className="flex items-center gap-2.5">
                     <PlayerAvatar name={row.playerName} />
-                    <span className="text-xs font-semibold text-mtext">{row.playerName}</span>
+                    <span className="text-xs font-bold text-mtext">{row.playerName}</span>
                   </div>
                 </td>
                 <td className="px-4 py-2.5">
-                  <span className="text-[10px] font-bold uppercase text-stext">{row.teamAbbr}</span>
+                  <span className="text-xs font-bold uppercase text-stext">{row.teamAbbr}</span>
                 </td>
                 <td className="px-4 py-2.5 text-center font-mono text-xs text-stext">{row.matches ?? '—'}</td>
                 <td className="px-4 py-2.5 text-center font-mono text-xs text-stext">{row.innings ?? '—'}</td>
@@ -75,8 +75,12 @@ export function LeaderPanel({ group }: { group: any }) {
 }
 
 function PlayerAvatar({ name }: { name: string }) {
+  let h = 0;
+  for (let i = 0; i < (name || '').length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
+  const hue = Math.abs(h % 360);
   return (
-    <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-elevated text-[9px] font-bold text-accent ring-1 ring-lborder">
+    <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[10px] font-bold text-white"
+      style={{ backgroundImage: `linear-gradient(135deg, hsl(${hue}, 75%, 50%), hsl(${(hue + 40) % 360}, 85%, 35%))` }}>
       {getInitials(name)}
     </span>
   );

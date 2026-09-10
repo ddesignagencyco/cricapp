@@ -91,7 +91,8 @@ export function mapBowling(rows: BowlingRow[] | undefined): MappedBowlingRow[] {
   }));
 }
 
-export function getInitials(name: string): string {
+export function getInitials(name?: string | null): string {
+  if (!name) return '?';
   const stop: Set<string> = new Set(['of', 'and', 'the', '&']);
   const words: string[] = name
     .replace(/['']/g, '')
@@ -100,7 +101,12 @@ export function getInitials(name: string): string {
   if (words.length >= 2) {
     return `${words[0][0]}${words[1][0]}`.toUpperCase();
   }
-  return words[0]?.slice(0, 2).toUpperCase() || 'XX';
+  return words[0]?.slice(0, 2).toUpperCase() || name.slice(0, 2).toUpperCase();
+}
+
+export function cap(s?: string | null): string {
+  if (!s) return '—';
+  return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
 }
 
 const pslLogos: Record<string, string> = {

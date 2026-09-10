@@ -33,7 +33,7 @@ export default function PslSpotlight({ standings = [] }: PslSpotlightProps) {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
             <div className="absolute bottom-0 left-0 p-4 sm:p-5">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/90 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/90 px-3 py-1 text-xs font-bold uppercase tracking-wider text-white">
                 <Trophy size={11} />
                 Pakistan Super League
               </span>
@@ -42,7 +42,7 @@ export default function PslSpotlight({ standings = [] }: PslSpotlightProps) {
           </div>
 
           <div className="p-4 sm:p-5">
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] font-bold text-stext">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-bold text-stext">
               <span className="flex items-center gap-1.5">
                 <Calendar size={12} className="text-accent/70" />
                 {PSL_DATA.dates}
@@ -77,7 +77,7 @@ export default function PslSpotlight({ standings = [] }: PslSpotlightProps) {
               <TrendingUp size={15} className="text-accent" />
               <h3 className="text-sm font-bold text-mtext">Points Table</h3>
             </div>
-            <Link href="/psl" className="text-[10px] font-bold uppercase tracking-wide text-accent hover:text-accent2">
+            <Link href="/psl" className="text-xs font-bold uppercase tracking-wide text-accent hover:text-accent2">
               Full table
             </Link>
           </div>
@@ -85,7 +85,7 @@ export default function PslSpotlight({ standings = [] }: PslSpotlightProps) {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-lborder text-[10px] uppercase tracking-wider text-stext">
+                <tr className="border-b border-lborder text-xs uppercase tracking-wider text-stext">
                   <th className="px-4 py-2.5 text-center">#</th>
                   <th className="px-4 py-2.5">Team</th>
                   <th className="px-4 py-2.5 text-center">P</th>
@@ -107,7 +107,7 @@ export default function PslSpotlight({ standings = [] }: PslSpotlightProps) {
                         <div className="flex items-center gap-2">
                           <TeamLogo teamId={row.teamId} name={row.teamName} code={row.teamAbbr} size="md" link={false} />
                           <span className="text-xs font-semibold text-mtext">{row.teamName}</span>
-                          <span className="text-[10px] uppercase text-stext">{row.teamAbbr}</span>
+                          <span className="text-xs uppercase text-stext">{row.teamAbbr}</span>
                         </div>
                       </td>
                       <td className="px-4 py-2.5 text-center font-mono text-xs text-stext">{row.played ?? 0}</td>

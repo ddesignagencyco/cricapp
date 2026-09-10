@@ -2,21 +2,52 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, type ReactNode } from 'react';
-import { FileText, LayoutDashboard, Loader2, ShieldAlert, Tag } from 'lucide-react';
-import Logo from '../../../components/Logo';
+import { useEffect, useState, type ReactNode } from 'react';
+import {
+  LayoutDashboard,
+  FileText,
+  Tag,
+  Trophy,
+  Users,
+  UserCircle,
+  Newspaper,
+  MessageSquare,
+  Image as ImageIcon,
+  Megaphone,
+  Settings,
+  ShieldAlert,
+  Loader2,
+  Menu,
+  X,
+  LogOut,
+  Eye,
+  Sun,
+  Moon,
+} from 'lucide-react';
 import { useAuth } from '../../../components/AuthProvider';
+import { useTheme } from '../../../components/ThemeProvider';
 
 const adminNav = [
   { to: '/admin', label: 'Overview', icon: LayoutDashboard },
-  { to: '/admin/news', label: 'All Articles', icon: FileText },
+  { to: '/admin/articles', label: 'Articles', icon: FileText },
   { to: '/admin/categories', label: 'Categories', icon: Tag },
+  { to: '/admin/matches', label: 'Matches', icon: Trophy },
+  { to: '/admin/teams', label: 'Teams', icon: Users },
+  { to: '/admin/players', label: 'Players', icon: UserCircle },
+  { to: '/admin/tournaments', label: 'Tournaments', icon: Newspaper },
+  { to: '/admin/media', label: 'Media Library', icon: ImageIcon },
+  { to: '/admin/comments', label: 'Comments', icon: MessageSquare },
+  { to: '/admin/advertisements', label: 'Ads & Revenue', icon: Megaphone },
+  { to: '/admin/users', label: 'Users', icon: UserCircle },
+  { to: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
-  const { isAuthenticated, isAdmin, loading } = useAuth();
+  const { isAuthenticated, isAdmin, loading, user, logout } = useAuth();
+  const { theme, toggle, mounted } = useTheme();
   const pathname = usePathname();
   const router = useRouter();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
@@ -24,67 +55,170 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     }
   }, [loading, isAuthenticated, router]);
 
-  if (loading) {
+  useEffect(() => { setMobileOpen(false); }, [pathname]);
+
+  useEffect(() => {
+    document.body.style.overflow = mobileOpen ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [mobileOpen]);
+
+  if (loading || !mounted) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <Loader2 size={26} className="animate-spin text-accent" />
+      <div className="flex min-h-screen items-center justify-center" style={{ background: 'var(--admin-bg)' }}>
+        <Loader2 size={28} className="animate-spin" style={{ color: 'var(--admin-accent)' }} />
       </div>
     );
   }
 
   if (!isAuthenticated) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <Loader2 size={26} className="animate-spin text-accent" />
+      <div className="flex min-h-screen items-center justify-center" style={{ background: 'var(--admin-bg)' }}>
+        <Loader2 size={28} className="animate-spin" style={{ color: 'var(--admin-accent)' }} />
       </div>
     );
   }
 
   if (!isAdmin) {
     return (
-      <div className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center px-4 text-center">
-        <ShieldAlert size={40} className="text-danger" />
-        <h1 className="mt-4 text-lg font-bold text-mtext">Admin access required</h1>
-        <p className="mt-1 text-sm text-stext">Your account does not have permission to open the CMS.</p>
-        <Link href="/" className="mt-6 rounded bg-accent px-5 py-2.5 text-sm font-bold text-white hover:bg-accent2">
-          Back to homepage
-        </Link>
+      <div className="flex min-h-screen items-center justify-center" style={{ background: 'var(--admin-bg)' }}>
+        <div className="mx-auto max-w-md px-4 text-center">
+          <ShieldAlert size={40} className="mx-auto" style={{ color: 'var(--admin-danger)' }} />
+          <h1 className="mt-4 text-lg font-bold" style={{ color: 'var(--admin-text)' }}>Admin access required</h1>
+          <p className="mt-1 text-sm" style={{ color: 'var(--admin-text-secondary)' }}>Your account does not have permission to open the CMS.</p>
+          <Link href="/" className="mt-6 inline-block rounded-lg px-5 py-2.5 text-sm font-bold text-white" style={{ background: 'var(--admin-accent)' }}>
+            Back to homepage
+          </Link>
+        </div>
       </div>
     );
   }
 
   const isActive = (to: string) => (to === '/admin' ? pathname === '/admin' : pathname.startsWith(to));
+  const userName = user?.displayName || user?.username || 'Admin';
+  const userInitials = userName.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2);
+
+  const sidebar = (
+    <div className="flex h-full flex-col" style={{ width: 220, minWidth: 220, background: 'var(--admin-sidebar)' }}>
+      <div className="flex items-center gap-2.5 px-5 py-5" style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+        <div className="grid h-9 w-9 place-items-center rounded-lg text-sm font-black text-white" style={{ background: 'var(--admin-sidebar-active)' }}>PC</div>
+        <div>
+          <p className="text-sm font-bold text-white leading-tight">PAK CRICZONE</p>
+          <p className="text-xs uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.5)' }}>CMS Admin</p>
+        </div>
+      </div>
+
+      <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-0.5">
+        {adminNav.map((item) => {
+          const Icon = item.icon;
+          const active = isActive(item.to);
+          return (
+            <Link
+              key={item.to}
+              href={item.to}
+              className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors"
+              style={{
+                background: active ? 'var(--admin-sidebar-active)' : 'transparent',
+                color: active ? '#fff' : 'rgba(255,255,255,0.6)',
+              }}
+            >
+              <Icon size={16} />
+              <span>{item.label}</span>
+            </Link>
+          );
+        })}
+      </nav>
+
+      <div className="px-3 py-3" style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+        <div className="flex items-center gap-2.5 rounded-lg px-3 py-2">
+          <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-xs font-bold text-white" style={{ background: 'var(--admin-sidebar-active)' }}>
+            {userInitials}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-xs font-semibold text-white">{userName}</p>
+            <p className="truncate text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>{user?.isAdmin ? 'Administrator' : 'Editor'}</p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => { logout(); router.push('/'); }}
+          className="mt-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-[13px] transition-colors"
+          style={{ color: 'rgba(255,255,255,0.5)' }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--admin-sidebar-hover)'; e.currentTarget.style.color = '#fff'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.5)'; }}
+        >
+          <LogOut size={15} />
+          Logout
+        </button>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[220px_1fr]">
-        <aside className="lg:sticky lg:top-24 lg:self-start">
-          <div className="rounded-2xl border border-lborder bg-card p-2 shadow-sm">
-            <p className="px-3 pt-2 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-stext">
-              Admin Panel
-            </p>
-            <nav className="flex gap-1 overflow-x-auto lg:flex-col lg:overflow-visible">
-              {adminNav.map((item) => {
-                const Icon = item.icon;
-                const active = isActive(item.to);
-                return (
-                  <Link
-                    key={item.to}
-                    href={item.to}
-                    className={`flex shrink-0 items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-xs font-bold transition-all ${active
-                      ? 'bg-accent text-white shadow-md shadow-accent/20'
-                      : 'text-stext hover:bg-secondary hover:text-mtext'
-                      }`}
-                  >
-                    <Icon size={16} />
-                    <span>{item.label}</span>
-                  </Link>
-                );
-              })}
-            </nav>
+    <div className="flex min-h-screen" style={{ background: 'var(--admin-bg)' }}>
+      {/* Desktop sidebar */}
+      <aside className="hidden lg:flex flex-col fixed inset-y-0 left-0 z-30" style={{ background: 'var(--admin-sidebar)' }}>
+        {sidebar}
+      </aside>
+
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-40 lg:hidden" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={() => setMobileOpen(false)} />
+      )}
+
+      {/* Mobile sidebar */}
+      <div className={`fixed inset-y-0 left-0 z-50 transform transition-transform duration-200 lg:hidden ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className="relative">
+          <button type="button" onClick={() => setMobileOpen(false)}
+            className="absolute right-2 top-3 z-10 grid h-8 w-8 place-items-center rounded-lg text-white/60 hover:text-white">
+            <X size={18} />
+          </button>
+          {sidebar}
+        </div>
+      </div>
+
+      {/* Main content */}
+      <div className="flex flex-1 flex-col lg:pl-[220px]">
+        {/* Top bar */}
+        <header className="sticky top-0 z-20 flex h-14 items-center gap-4 px-4 sm:px-6" style={{ background: 'var(--admin-topbar)', borderBottom: '1px solid var(--admin-border)' }}>
+          <button type="button" onClick={() => setMobileOpen(true)}
+            className="grid h-9 w-9 place-items-center rounded-lg lg:hidden" style={{ color: 'var(--admin-text-secondary)' }}>
+            <Menu size={18} />
+          </button>
+
+          <div className="flex-1" />
+
+          {/* Theme toggle */}
+          <button
+            type="button"
+            onClick={toggle}
+            className="grid h-9 w-9 place-items-center rounded-lg transition-colors"
+            style={{ color: 'var(--admin-text-secondary)' }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--admin-input-bg)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+            title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
+          </button>
+
+          <a href="/" target="_blank"
+            className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors"
+            style={{ border: '1px solid var(--admin-border)', color: 'var(--admin-text-secondary)' }}>
+            <Eye size={14} />
+            View site
+          </a>
+
+          <div className="flex items-center gap-2">
+            <div className="grid h-8 w-8 place-items-center rounded-full text-xs font-bold text-white" style={{ background: 'var(--admin-accent)' }}>
+              {userInitials}
+            </div>
+            <div className="hidden sm:block">
+              <p className="text-xs font-semibold" style={{ color: 'var(--admin-text)' }}>{userName}</p>
+              <p className="text-xs" style={{ color: 'var(--admin-text-secondary)' }}>{user?.isAdmin ? 'Administrator' : 'Editor'}</p>
+            </div>
           </div>
-        </aside>
-        <main className="min-w-0">{children}</main>
+        </header>
+
+        <main className="flex-1 p-4 sm:p-6">{children}</main>
       </div>
     </div>
   );

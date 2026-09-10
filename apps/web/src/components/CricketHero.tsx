@@ -21,7 +21,7 @@ export default function CricketHero({ match: _match }: CricketHeroProps) {
         <div className="flex flex-col gap-10 lg:flex-row lg:items-center lg:justify-between">
           {/* Left content */}
           <div className="max-w-2xl">
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-[10px] font-extrabold uppercase tracking-widest text-white shadow-sm backdrop-blur-md">
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-extrabold uppercase tracking-widest text-white shadow-sm backdrop-blur-md">
               <span className="h-1.5 w-1.5 rounded-full bg-accent2 live-pulse" />
               LIVE CRICKET
             </span>
@@ -76,7 +76,7 @@ export default function CricketHero({ match: _match }: CricketHeroProps) {
                 </div>
                 <div>
                   <p className="text-sm font-bold text-white group-hover:text-accent transition-colors">{item.label}</p>
-                  <p className="text-[11px] text-white/50">{item.sub}</p>
+                  <p className="text-xs text-white/50">{item.sub}</p>
                 </div>
               </Link>
             ))}

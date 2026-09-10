@@ -17,6 +17,10 @@ const roleTone: Record<string, string> = {
   'All Rounder': 'upcoming',
   Wicketkeeper: 'playoffs',
   'Wicket-Keeper': 'playoffs',
+  Player: 'upcoming',
+  Manager: 'cancelled',
+  Coach: 'cancelled',
+  Captain: 'gold',
 };
 
 function formatPlayerRole(rawRole: string): string {
@@ -60,7 +64,7 @@ export default function PlayerCard({ player }: PlayerCardProps) {
         <div className="flex items-center justify-between gap-2">
           <Badge tone={tone}>{role}</Badge>
           {nationality && (
-            <span className="flex items-center gap-1 font-mono text-[11px] font-semibold text-stext">
+            <span className="flex items-center gap-1 font-mono text-xs font-semibold text-stext">
               <MapPin size={11} className="text-accent shrink-0" />
               <span className="truncate max-w-[120px]">{nationality}</span>
             </span>
@@ -113,7 +117,7 @@ export default function PlayerCard({ player }: PlayerCardProps) {
 
       {/* Card Action Footer */}
       <div className="mt-5 flex items-center justify-between border-t border-lborder/60 pt-3 text-xs">
-        <span className="text-[11px] font-semibold text-stext">View Profile</span>
+        <span className="text-xs font-semibold text-stext">View Profile</span>
         <span className="inline-flex items-center gap-1 font-bold text-accent transition-transform duration-300 group-hover:translate-x-1">
           <span>Stats</span>
           <ArrowRight size={13} />

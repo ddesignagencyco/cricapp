@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowLeft, ArrowRight, Calendar, Clock, Newspaper, User } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Calendar, Clock, Newspaper, Tag, User } from 'lucide-react';
 import Badge from '../Badge';
 import AdBanner from '../AdBanner';
 import ShareButton from '../ShareButton';
@@ -34,12 +34,9 @@ export default function NewsDetailBody({ item, related = [] }: Props) {
     );
   }
 
-  const paragraphs = (item.content || '').split('\n\n').filter(Boolean);
-
   const categoryName = typeof item.category === 'string'
     ? item.category
     : (item.category && typeof item.category === 'object' && 'name' in item.category ? String((item.category as any).name) : '');
-  const badgeLabel = (typeof item.tag === 'string' && item.tag) ? item.tag : categoryName;
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
@@ -55,10 +52,13 @@ export default function NewsDetailBody({ item, related = [] }: Props) {
         <article className="min-w-0 lg:col-span-2">
           <header className="mb-8">
             <div className="flex flex-wrap items-center gap-2">
-              {badgeLabel && (
-                <Badge tone={categoryTone[categoryName] || 'neutral'}>{badgeLabel}</Badge>
+              {categoryName && (
+                <Badge tone={categoryTone[categoryName] || 'neutral'}>{categoryName}</Badge>
               )}
               {item.type === 'featured' && <Badge tone="live">Featured</Badge>}
+              {Array.isArray(item.tags) && item.tags.slice(0, 3).map((t: string) => (
+                <Badge key={t} tone="neutral">{t}</Badge>
+              ))}
             </div>
             <h1 className="mt-4 text-3xl font-black leading-tight tracking-tight text-mtext sm:text-5xl">
               {item.title}
@@ -97,13 +97,24 @@ export default function NewsDetailBody({ item, related = [] }: Props) {
           </div>
 
           <div className="mt-10">
-            <div className="space-y-6">
-              {paragraphs.map((p, i) => (
-                <p key={i} className="text-base leading-8 text-mtext/90">
-                  {p}
-                </p>
-              ))}
-            </div>
+            <div
+              className="prose prose-sm max-w-none text-base leading-8 text-mtext/90
+                prose-p:my-4 prose-p:leading-8
+                prose-a:text-accent prose-a:no-underline hover:prose-a:underline
+                prose-strong:text-mtext prose-strong:font-semibold
+                prose-em:italic
+                prose-blockquote:border-l-accent prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:text-stext
+                prose-img:my-6 prose-img:rounded-xl
+                prose-headings:text-mtext prose-headings:font-bold
+                prose-h2:text-xl prose-h2:mt-8 prose-h2:mb-4
+                prose-h3:text-lg prose-h3:mt-6 prose-h3:mb-3
+                prose-ul:my-4 prose-ol:my-4
+                prose-li:my-1
+                prose-code:bg-secondary prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm
+                prose-pre:bg-secondary prose-pre:p-4 prose-pre:rounded-xl
+                prose-hr:border-lborder prose-hr:my-8"
+              dangerouslySetInnerHTML={{ __html: item.content || '' }}
+            />
 
             <div className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-lborder pt-6">
               <Link href="/news" className="inline-flex items-center gap-1.5 text-sm font-semibold text-accent hover:text-accent2">
@@ -114,6 +125,21 @@ export default function NewsDetailBody({ item, related = [] }: Props) {
               </span>
             </div>
 
+            {Array.isArray(item.tags) && item.tags.length > 0 && (
+              <div className="mt-6 flex flex-wrap items-center gap-2">
+                <Tag size={14} className="text-stext" />
+                {item.tags.map((t: string) => (
+                  <Link
+                    key={t}
+                    href={`/news?tag=${encodeURIComponent(t)}`}
+                    className="inline-flex items-center gap-1 rounded-full bg-secondary px-3 py-1 text-xs font-medium text-mtext ring-1 ring-lborder transition-colors hover:bg-accent/10 hover:text-accent"
+                  >
+                    #{t}
+                  </Link>
+                ))}
+              </div>
+            )}
+
             <div className="mt-12">
               <CommentsSection targetType="news" targetId={item.id} />
             </div>
@@ -123,7 +149,7 @@ export default function NewsDetailBody({ item, related = [] }: Props) {
         <aside className="min-w-0 lg:col-span-1">
           <div className="space-y-8 lg:sticky lg:top-20">
             <section>
-              <p className="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-stext">
+              <p className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-stext">
                 Sponsored
               </p>
               <AdBanner variant="vertical" />
@@ -164,7 +190,7 @@ export default function NewsDetailBody({ item, related = [] }: Props) {
                         <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-mtext transition-colors group-hover:text-accent">
                           {a.title}
                         </h3>
-                        <div className="mt-1 flex items-center gap-1.5 text-[11px] text-stext">
+                        <div className="mt-1 flex items-center gap-1.5 text-xs text-stext">
                           <Calendar size={11} /> {a.date}
                         </div>
                       </div>

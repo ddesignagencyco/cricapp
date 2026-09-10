@@ -101,14 +101,14 @@ export default function Footer() {
             <div className="flex gap-2">
               <button
                 type="button"
-                className="inline-flex items-center gap-1.5 rounded-lg bg-card px-3 py-2 text-[11px] font-semibold text-mtext ring-1 ring-lborder transition-colors hover:bg-elevated"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-card px-3 py-2 text-xs font-semibold text-mtext ring-1 ring-lborder transition-colors hover:bg-elevated"
               >
                 <Download size={13} />
                 App Store
               </button>
               <button
                 type="button"
-                className="inline-flex items-center gap-1.5 rounded-lg bg-card px-3 py-2 text-[11px] font-semibold text-mtext ring-1 ring-lborder transition-colors hover:bg-elevated"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-card px-3 py-2 text-xs font-semibold text-mtext ring-1 ring-lborder transition-colors hover:bg-elevated"
               >
                 <Download size={13} />
                 Google Play

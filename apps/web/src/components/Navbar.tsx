@@ -102,9 +102,20 @@ export default function Navbar() {
                 aria-label="Account menu"
                 aria-expanded={menuOpen}
               >
-                <span className="grid h-7 w-7 place-items-center rounded-full bg-accent/15 text-[11px] font-bold text-accent ring-1 ring-accent/25">
-                  {(user.displayName || user.username || user.email).slice(0, 2).toUpperCase()}
-                </span>
+                {(() => {
+                  const displayName = (user.displayName || user.username || user.email || '').trim();
+                  let h = 0;
+                  for (let i = 0; i < displayName.length; i++) h = displayName.charCodeAt(i) + ((h << 5) - h);
+                  const hue = Math.abs(h % 360);
+                  return (
+                    <span
+                      className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[10px] font-bold text-white"
+                      style={{ backgroundImage: `linear-gradient(135deg, hsl(${hue}, 75%, 50%), hsl(${(hue + 40) % 360}, 85%, 35%))` }}
+                    >
+                      {displayName.slice(0, 2).toUpperCase()}
+                    </span>
+                  );
+                })()}
                 <span className="hidden max-w-24 truncate text-xs font-semibold text-mtext sm:block">
                   {user.displayName || user.username}
                 </span>
@@ -115,7 +126,7 @@ export default function Navbar() {
                     <p className="truncate text-sm font-semibold text-mtext">{user.displayName || user.username}</p>
                     <p className="truncate text-xs text-stext">{user.email}</p>
                     {isAdmin && (
-                      <span className="mt-1.5 inline-flex items-center gap-1 rounded bg-accent/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-accent">
+                      <span className="mt-1.5 inline-flex items-center gap-1 rounded bg-accent/10 px-1.5 py-0.5 text-xs font-bold uppercase tracking-wide text-accent">
                         <ShieldCheck size={10} /> Admin
                       </span>
                     )}

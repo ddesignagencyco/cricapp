@@ -111,7 +111,7 @@ export default function TournamentsBoard({ initialCountry }: Props) {
 
         <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-accent border border-accent/20">
+            <div className="inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-accent border border-accent/20">
               <Trophy size={13} />
               <span>Global Competitions & Leagues</span>
             </div>
@@ -130,7 +130,7 @@ export default function TournamentsBoard({ initialCountry }: Props) {
             </div>
             <div>
               <div className="text-2xl font-black text-mtext">{total || tournaments.length}</div>
-              <div className="text-[11px] font-semibold uppercase tracking-wider text-stext">
+              <div className="text-xs font-semibold uppercase tracking-wider text-stext">
                 Competitions
               </div>
             </div>
@@ -196,7 +196,7 @@ export default function TournamentsBoard({ initialCountry }: Props) {
               >
                 <span>{fmt.replace(/_/g, ' ')}</span>
                 <span
-                  className={`rounded-md px-1.5 py-0.2 text-[10px] font-semibold ${
+                  className={`rounded-md px-1.5 py-0.2 text-xs font-semibold ${
                     formatFilter === fmt ? 'bg-white/20 text-white' : 'bg-secondary text-stext'
                   }`}
                 >
@@ -234,7 +234,7 @@ export default function TournamentsBoard({ initialCountry }: Props) {
               >
                 <span>{cat}</span>
                 <span
-                  className={`rounded-md px-1.5 py-0.2 text-[10px] font-semibold ${
+                  className={`rounded-md px-1.5 py-0.2 text-xs font-semibold ${
                     categoryFilter === cat ? 'bg-white/20 text-white' : 'bg-secondary text-stext'
                   }`}
                 >
@@ -307,12 +307,12 @@ function TournamentCard({ tournament }: { tournament: TournamentApi }) {
       <div>
         {/* Top Badges */}
         <div className="flex items-center justify-between gap-2">
-          <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-accent border border-accent/20">
+          <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-accent border border-accent/20">
             {format}
           </span>
 
           {seasonYear && (
-            <span className="rounded-full bg-secondary px-2.5 py-0.5 text-[10px] font-black tracking-wider text-stext border border-lborder/60">
+            <span className="rounded-full bg-secondary px-2.5 py-0.5 text-xs font-black tracking-wider text-stext border border-lborder/60">
               {seasonYear}
             </span>
           )}
@@ -341,12 +341,12 @@ function TournamentCard({ tournament }: { tournament: TournamentApi }) {
       {/* Card Action Footer */}
       <div className="mt-6 flex items-center justify-between border-t border-lborder/60 pt-3 text-xs">
         {season ? (
-          <span className="flex items-center gap-1 text-[11px] text-stext truncate max-w-[170px]">
+          <span className="flex items-center gap-1 text-xs text-stext truncate max-w-[170px]">
             <Calendar size={11} className="shrink-0" />
             <span className="truncate">{season}</span>
           </span>
         ) : (
-          <span className="text-[11px] text-stext">Competition</span>
+          <span className="text-xs text-stext">Competition</span>
         )}
 
         <span className="inline-flex items-center gap-1 font-bold text-accent transition-transform duration-300 group-hover:translate-x-1">

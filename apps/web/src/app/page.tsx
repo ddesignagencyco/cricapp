@@ -183,7 +183,7 @@ export default async function HomePage() {
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <span className="inline-block rounded-full bg-accent/15 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-accent">
+                    <span className="inline-block rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-accent">
                       {typeof item.tag === 'string' && item.tag
                         ? item.tag
                         : typeof item.category === 'string'

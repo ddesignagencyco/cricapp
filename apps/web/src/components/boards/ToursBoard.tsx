@@ -63,7 +63,7 @@ export default function ToursBoard({ tours }: Props) {
 
         <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-accent border border-accent/20">
+            <div className="inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-accent border border-accent/20">
               <Trophy size={13} />
               <span>International & Bilateral Series</span>
             </div>
@@ -82,7 +82,7 @@ export default function ToursBoard({ tours }: Props) {
             </div>
             <div>
               <div className="text-2xl font-black text-mtext">{tours.length}</div>
-              <div className="text-[11px] font-semibold uppercase tracking-wider text-stext">
+              <div className="text-xs font-semibold uppercase tracking-wider text-stext">
                 Active Tours
               </div>
             </div>
@@ -148,7 +148,7 @@ export default function ToursBoard({ tours }: Props) {
               >
                 <span>{cat}</span>
                 <span
-                  className={`rounded-md px-1.5 py-0.2 text-[10px] font-semibold ${
+                  className={`rounded-md px-1.5 py-0.2 text-xs font-semibold ${
                     countryFilter === cat ? 'bg-white/20 text-white' : 'bg-secondary text-stext'
                   }`}
                 >
@@ -199,7 +199,7 @@ function TourCard({ tour }: { tour: any }) {
       <div>
         {/* Top Header */}
         <div className="flex items-center justify-between gap-2">
-          <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-stext border border-lborder/60">
+          <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-stext border border-lborder/60">
             <MapPin size={10} className="text-accent" />
             {country}
           </span>
@@ -226,7 +226,7 @@ function TourCard({ tour }: { tour: any }) {
 
       {/* Card Action Footer */}
       <div className="mt-6 flex items-center justify-between border-t border-lborder/60 pt-3 text-xs">
-        <span className="text-[11px] font-semibold text-stext">Series Hub</span>
+        <span className="text-xs font-semibold text-stext">Series Hub</span>
         <Link
           href={`/tournaments?country=${countryParam}`}
           className="inline-flex items-center gap-1 font-bold text-accent transition-transform duration-300 group-hover:translate-x-1 hover:underline"

@@ -366,8 +366,8 @@ export interface PslSquad {
 export interface Tour {
   id: string;
   name: string;
-  category?: string;
-  sport?: string;
+  category?: string | { id?: string; name?: string; country_code?: string };
+  sport?: string | { id?: string; name?: string };
   [key: string]: unknown;
 }
 

@@ -119,7 +119,7 @@ export default function PlayerDirectory({ initialPlayers = [], initialTotal = 0 
 
         <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-accent border border-accent/20">
+            <div className="inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-accent border border-accent/20">
               <Users size={13} />
               <span>International & League Athletes</span>
             </div>
@@ -138,7 +138,7 @@ export default function PlayerDirectory({ initialPlayers = [], initialTotal = 0 
             </div>
             <div>
               <div className="text-2xl font-black text-mtext">{total}</div>
-              <div className="text-[11px] font-semibold uppercase tracking-wider text-stext">
+              <div className="text-xs font-semibold uppercase tracking-wider text-stext">
                 Total Athletes
               </div>
             </div>

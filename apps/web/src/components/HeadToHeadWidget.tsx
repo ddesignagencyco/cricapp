@@ -153,7 +153,7 @@ export default function HeadToHeadWidget({ data }: Props) {
         </div>
         <div className="col-span-1 text-center">
           <p className="font-mono text-2xl font-black text-mtext">{tally.total}</p>
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-stext">meetings</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-stext">meetings</p>
         </div>
         <div className="col-span-2 text-center">
           <Link href={`/teams/${teamB.id}`} className="text-sm font-bold text-mtext hover:text-accent">
@@ -165,21 +165,21 @@ export default function HeadToHeadWidget({ data }: Props) {
       <div className="mt-3 grid grid-cols-3 gap-2 text-center">
         <div className="rounded-xl bg-card p-3 ring-1 ring-lborder">
           <p className="font-mono text-xl font-black text-accent">{tally.aWins}</p>
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-stext">{teamA.abbr} wins</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-stext">{teamA.abbr} wins</p>
         </div>
         <div className="rounded-xl bg-card p-3 ring-1 ring-lborder">
           <p className="font-mono text-xl font-black text-stext">{tally.draws}</p>
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-stext">Draws / NR</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-stext">Draws / NR</p>
         </div>
         <div className="rounded-xl bg-card p-3 ring-1 ring-lborder">
           <p className="font-mono text-xl font-black text-accent2">{tally.bWins}</p>
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-stext">{teamB.abbr} wins</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-stext">{teamB.abbr} wins</p>
         </div>
       </div>
 
       {previous.length > 0 && (
         <div className="mt-5">
-          <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-stext">Recent Meetings</p>
+          <p className="mb-2 text-xs font-bold uppercase tracking-widest text-stext">Recent Meetings</p>
           <ul className="space-y-2">
             {previous.slice(0, 6).map((m) => (
               <MeetingRow key={m.matchId} meeting={m} />
@@ -190,7 +190,7 @@ export default function HeadToHeadWidget({ data }: Props) {
 
       {upcoming.length > 0 && (
         <div className="mt-5">
-          <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-stext">Upcoming</p>
+          <p className="mb-2 text-xs font-bold uppercase tracking-widest text-stext">Upcoming</p>
           <ul className="space-y-2">
             {upcoming.slice(0, 3).map((m) => (
               <MeetingRow key={m.matchId} meeting={m} />
@@ -211,10 +211,10 @@ function MeetingRow({ meeting }: { meeting: ParsedMeeting }) {
       <div className="flex items-center justify-between gap-2">
         <p className="truncate text-xs font-semibold text-mtext">{label}</p>
         {!isUpcoming && meeting.resultText && (
-          <p className="truncate text-[11px] text-gold">{meeting.resultText}</p>
+          <p className="truncate text-xs text-gold">{meeting.resultText}</p>
         )}
       </div>
-      <div className="mt-1 flex items-center justify-between gap-2 text-[11px] text-stext">
+      <div className="mt-1 flex items-center justify-between gap-2 text-xs text-stext">
         <span className="truncate">{meeting.tournament || 'Cricket'}</span>
         <span className="flex shrink-0 items-center gap-1">
           <Calendar size={11} />

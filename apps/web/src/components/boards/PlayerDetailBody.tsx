@@ -55,7 +55,7 @@ export default function PlayerDetailBody({ player }: Props) {
               {player.role || 'Player Profile'}
             </span>
             {player.nationality && (
-              <span className="rounded-full bg-secondary px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-stext border border-lborder/60">
+              <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-stext border border-lborder/60">
                 {player.nationality}
               </span>
             )}
@@ -117,7 +117,7 @@ export default function PlayerDetailBody({ player }: Props) {
                   <TeamLogo teamId={team.id} name={team.name} code={team.abbr} size="sm" link={false} />
                 )}
                 <div>
-                  <p className="text-[10px] uppercase font-bold text-stext tracking-wider">Franchise</p>
+                  <p className="text-xs uppercase font-bold text-stext tracking-wider">Franchise</p>
                   <p className="text-xs font-black text-mtext group-hover:text-accent transition-colors">{team.abbr || team.name}</p>
                 </div>
               </Link>

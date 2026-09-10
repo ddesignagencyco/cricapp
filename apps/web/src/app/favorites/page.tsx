@@ -23,6 +23,7 @@ import { useAuth } from '../../components/AuthProvider';
 import TeamLogo from '../../components/TeamLogo';
 import Badge from '../../components/Badge';
 import { formatScheduled, getInitials } from '../../utils/helpers';
+import { ConfirmDialog } from '../../components/admin/AdminShared';
 import type { Team, Player, Match } from '../../types/index';
 
 interface EnrichedFavorite {
@@ -39,6 +40,7 @@ export default function FavoritesPage() {
   const [enrichedMap, setEnrichedMap] = useState<Record<string, EnrichedFavorite>>({});
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [activeTab, setActiveTab] = useState<'all' | 'team' | 'player' | 'match'>('all');
 
   useEffect(() => {
@@ -112,21 +114,23 @@ export default function FavoritesPage() {
       .finally(() => setLoading(false));
   }, [isAuthenticated]);
 
-  const remove = async (id: string, name?: string) => {
-    setBusyId(id);
+  const remove = async () => {
+    if (!deleteTarget) return;
+    setBusyId(deleteTarget.id);
     try {
-      await removeFavorite(id);
-      setFavorites((list) => list.filter((f) => f.id !== id));
+      await removeFavorite(deleteTarget.id);
+      setFavorites((list) => list.filter((f) => f.id !== deleteTarget.id));
       setEnrichedMap((prev) => {
         const next = { ...prev };
-        delete next[id];
+        delete next[deleteTarget.id];
         return next;
       });
-      toast.success(name ? `Removed "${name}" from favorites.` : 'Removed from favorites.');
+      toast.success(`Removed "${deleteTarget.name}" from favorites.`);
     } catch {
       toast.error('Could not remove from favorites.');
     } finally {
       setBusyId(null);
+      setDeleteTarget(null);
     }
   };
 
@@ -279,7 +283,7 @@ export default function FavoritesPage() {
                   team={data?.team}
                   loading={data?.loading}
                   isBusy={busyId === fav.id}
-                  onRemove={() => remove(fav.id, data?.team?.name || 'Team')}
+                  onRemove={() => setDeleteTarget({ id: fav.id, name: data?.team?.name || 'Team' })}
                 />
               );
             }
@@ -291,7 +295,7 @@ export default function FavoritesPage() {
                   player={data?.player}
                   loading={data?.loading}
                   isBusy={busyId === fav.id}
-                  onRemove={() => remove(fav.id, data?.player?.fullName || data?.player?.name || 'Player')}
+                  onRemove={() => setDeleteTarget({ id: fav.id, name: data?.player?.fullName || data?.player?.name || 'Player' })}
                 />
               );
             }
@@ -303,7 +307,7 @@ export default function FavoritesPage() {
                   match={data?.match}
                   loading={data?.loading}
                   isBusy={busyId === fav.id}
-                  onRemove={() => remove(fav.id, 'Match')}
+                  onRemove={() => setDeleteTarget({ id: fav.id, name: 'Match' })}
                 />
               );
             }
@@ -311,6 +315,17 @@ export default function FavoritesPage() {
           })}
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title="Remove favorite"
+        message={`Are you sure you want to remove "${deleteTarget?.name}" from favorites?`}
+        confirmLabel="Remove"
+        onConfirm={remove}
+        onCancel={() => setDeleteTarget(null)}
+        loading={!!busyId}
+        danger
+      />
     </div>
   );
 }
@@ -459,9 +474,17 @@ function FavoritePlayerCard({
 
         <Link href={`/players/${fav.targetId}`} className="block">
           <div className="flex items-center gap-3.5 pt-1">
-            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full border border-accent/40 bg-elevated text-sm font-black text-accent">
-              {initials}
-            </span>
+            {(() => {
+              let h = 0;
+              for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
+              const hue = Math.abs(h % 360);
+              return (
+                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full text-sm font-black text-white"
+                  style={{ backgroundImage: `linear-gradient(135deg, hsl(${hue}, 75%, 50%), hsl(${(hue + 40) % 360}, 85%, 35%))` }}>
+                  {initials}
+                </span>
+              );
+            })()}
             <div className="min-w-0 flex-1">
               <h3 className="truncate text-base font-bold text-mtext transition-colors group-hover:text-accent">
                 {name}
