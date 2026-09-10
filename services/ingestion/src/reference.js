@@ -152,10 +152,13 @@ export function normalizePlayerProfile(playerId, raw) {
 }
 
 /**
- * Normalize the Tournament Seasons payload `{ seasons: [...] }` into rows.
+ * Normalize the Tournament Seasons payload into rows. Accepts either the raw
+ * `{ seasons: [...] }` envelope or an already-unwrapped array, since
+ * `fetchTournamentSeasons` unwraps the envelope itself.
  */
 export function normalizeTournamentSeasons(tournamentId, raw) {
-  return (raw?.seasons ?? []).map((s) => ({
+  const seasons = Array.isArray(raw) ? raw : (raw?.seasons ?? []);
+  return seasons.map((s) => ({
     id: s.id,
     tournamentId,
     name: s.name ?? null,
