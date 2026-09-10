@@ -91,6 +91,31 @@ describe('NewsModule (integration)', () => {
     await ctx.agent.get(`/news/${create.body.id}`).expect(404);
   });
 
+  it('GET /news — hides unpublished drafts from public list', async () => {
+    await ctx.agent
+      .post('/news')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ title: 'Draft Article', content: 'Body', isPublished: false })
+      .expect(201);
+
+    const res = await ctx.agent.get('/news').expect(200);
+    expect(res.body.data).toEqual([]);
+  });
+
+  it('GET /admin/news — includes drafts for admin', async () => {
+    await ctx.agent
+      .post('/news')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ title: 'Draft Article', content: 'Body', isPublished: false })
+      .expect(201);
+
+    const res = await ctx.agent
+      .get('/admin/news')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    expect(res.body.data).toHaveLength(1);
+  });
+
   it('POST /news — rejects non-admin', async () => {
     const user = await ctx.prisma.user.create({
       data: { email: 'user@example.com', username: 'user', passwordHash: 'not-used', isAdmin: false },

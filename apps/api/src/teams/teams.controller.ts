@@ -2,6 +2,7 @@ import { Controller, Get, Param, Query, UsePipes, ValidationPipe } from '@nestjs
 import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { TeamsService } from './teams.service.js';
 import { TeamSummaryDto } from './dto/team.dto.js';
+import { TextSearchQuery } from '../common/dto/text-search.query.js';
 import { PaginationQuery } from '../common/dto/pagination.query.js';
 
 @ApiTags('teams')
@@ -11,9 +12,9 @@ export class TeamsController {
 
   @Get()
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
-  @ApiOperation({ summary: 'List all teams (paginated)' })
+  @ApiOperation({ summary: 'List all teams (paginated)', description: 'Optional ?q= search by name, abbreviation or country.' })
   @ApiResponse({ status: 200, description: 'Paginated teams.' })
-  async list(@Query() query: PaginationQuery) {
+  async list(@Query() query: TextSearchQuery) {
     return this.teamsService.list(query);
   }
 

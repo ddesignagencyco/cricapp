@@ -24,6 +24,7 @@ class MockRedisService {
       smembers: async () => [],
       sadd: async () => null,
       srem: async () => null,
+      keys: async () => [],
       ping: async () => 'PONG',
     };
   }
@@ -74,13 +75,21 @@ export async function teardownTestApp(ctx: TestContext): Promise<void> {
  */
 export async function cleanDatabase(prisma: PrismaService): Promise<void> {
   const tables = [
+    'notification_logs',
+    'share_stats',
+    'news_article_players',
+    'news_article_teams',
+    'news_article_matches',
+    'news_article_series',
     'reactions',
+    'comment_reports',
     'comments',
     'favorites',
     'devices',
     'email_verification_tokens',
     'password_reset_tokens',
     'news_articles',
+    'authors',
     'news_categories',
     'live_streams',
     'match_timelines',
@@ -101,6 +110,10 @@ export async function cleanDatabase(prisma: PrismaService): Promise<void> {
   ];
 
   for (const table of tables) {
-    await prisma.$executeRawUnsafe(`TRUNCATE TABLE "${table}" CASCADE;`);
+    try {
+      await prisma.$executeRawUnsafe(`TRUNCATE TABLE "${table}" CASCADE;`);
+    } catch {
+      // Table may not exist until scripts/migrate-priorities.js has been applied.
+    }
   }
 }

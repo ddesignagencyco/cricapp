@@ -1,4 +1,5 @@
-import { IsString, IsIn, IsOptional } from 'class-validator';
+import { IsString, IsIn, IsOptional, IsBoolean } from 'class-validator';
+import { Type, Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginationQuery } from '../../common/dto/pagination.query.js';
 
@@ -18,6 +19,12 @@ export class FavoriteListQuery extends PaginationQuery {
   @IsOptional()
   @IsString()
   targetType?: string;
+
+  @ApiPropertyOptional({ description: 'Include expanded target entity details' })
+  @IsOptional()
+  @Transform(({ value }) => value === true || value === 'true')
+  @IsBoolean()
+  expand?: boolean;
 }
 
 export class FavoriteDto {

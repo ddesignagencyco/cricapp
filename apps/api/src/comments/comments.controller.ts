@@ -21,6 +21,7 @@ import {
   ReactionQuery,
   CommentDto,
   ReactionCountsDto,
+  ReportCommentDto,
 } from './dto/comments.dto.js';
 
 @ApiTags('comments')
@@ -83,5 +84,18 @@ export class CommentsController {
     @Body() dto: CreateReactionDto,
   ) {
     return this.commentsService.toggleReaction(req.user.id, dto);
+  }
+
+  @Post('comments/:id/report')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Report a comment' })
+  @ApiResponse({ status: 201, description: 'Comment reported.' })
+  async reportComment(
+    @Request() req: { user: { id: string } },
+    @Param('id') id: string,
+    @Body() dto: ReportCommentDto,
+  ) {
+    return this.commentsService.reportComment(req.user.id, id, dto.reason);
   }
 }

@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { RedisService } from '../redis/redis.service.js';
 import {
@@ -53,6 +54,7 @@ export class MatchesService {
   }
 
   async list(params: {
+    q?: string;
     status?: string;
     tournament?: string;
     page?: number;
@@ -61,7 +63,11 @@ export class MatchesService {
   }) {
     const { page, limit, skip } = getPaginationOffset(params.page, params.limit, params.offset);
 
-    const where: any = {};
+    if (params.q?.trim()) {
+      return this.search(params);
+    }
+
+    const where: Record<string, unknown> = {};
     if (params.status) where.status = params.status;
     if (params.tournament) where.tournament = { contains: params.tournament, mode: 'insensitive' };
 
@@ -75,6 +81,57 @@ export class MatchesService {
       this.prisma.match.count({ where }),
     ]);
 
+    return createPaginatedResponse(rows.map((r) => this.toSummary(r)), total, page, limit);
+  }
+
+  async search(params: {
+    q?: string;
+    status?: string;
+    page?: number;
+    limit?: number;
+    offset?: number;
+  }) {
+    const { page, limit, skip } = getPaginationOffset(params.page, params.limit, params.offset);
+    const pattern = `%${params.q?.trim() ?? ''}%`;
+
+    const statusClause = params.status
+      ? Prisma.sql`AND status = ${params.status}`
+      : Prisma.empty;
+
+    const [rows, countRows] = await Promise.all([
+      this.prisma.$queryRaw<Match[]>(
+        Prisma.sql`
+          SELECT *
+          FROM matches
+          WHERE (
+            tournament ILIKE ${pattern}
+            OR venue ILIKE ${pattern}
+            OR display_score ILIKE ${pattern}
+            OR team_names::text ILIKE ${pattern}
+            OR teams::text ILIKE ${pattern}
+          )
+          ${statusClause}
+          ORDER BY scheduled ASC NULLS LAST
+          LIMIT ${limit} OFFSET ${skip}
+        `,
+      ),
+      this.prisma.$queryRaw<Array<{ count: bigint }>>(
+        Prisma.sql`
+          SELECT COUNT(*)::bigint AS count
+          FROM matches
+          WHERE (
+            tournament ILIKE ${pattern}
+            OR venue ILIKE ${pattern}
+            OR display_score ILIKE ${pattern}
+            OR team_names::text ILIKE ${pattern}
+            OR teams::text ILIKE ${pattern}
+          )
+          ${statusClause}
+        `,
+      ),
+    ]);
+
+    const total = Number(countRows[0]?.count ?? 0);
     return createPaginatedResponse(rows.map((r) => this.toSummary(r)), total, page, limit);
   }
 

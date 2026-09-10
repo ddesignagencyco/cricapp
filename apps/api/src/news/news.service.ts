@@ -8,7 +8,7 @@ import {
   getPaginationOffset,
   createPaginatedResponse,
 } from '../common/pagination/pagination.util.js';
-import type { CreateNewsDto, UpdateNewsDto, NewsListQuery } from './dto/news.dto.js';
+import type { CreateNewsDto, UpdateNewsDto, NewsListQuery, CreateAuthorDto, UpdateAuthorDto } from './dto/news.dto.js';
 
 function slugify(text: string): string {
   return text
@@ -17,28 +17,20 @@ function slugify(text: string): string {
     .replace(/(^-|-$)/g, '');
 }
 
-export interface NewsArticleSummary {
-  id: string;
-  title: string;
-  slug: string;
-  summary: string | null;
-  content: string;
-  imageUrl: string | null;
-  author: string | null;
-  source: string | null;
-  categoryId: string | null;
-  tags: string[] | null;
-  publishedAt: Date | null;
-  isPublished: boolean;
-  createdAt: Date;
-  category: { id: string; name: string; slug: string } | null;
-}
+const articleInclude = {
+  category: true,
+  authorRef: true,
+  linkedPlayers: { select: { playerId: true } },
+  linkedTeams: { select: { teamId: true } },
+  linkedMatches: { select: { matchId: true } },
+  linkedSeries: { select: { tournamentId: true } },
+} as const;
 
 @Injectable()
 export class NewsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private toSummary(row: any): NewsArticleSummary {
+  private toSummary(row: any) {
     return {
       id: row.id,
       title: row.title,
@@ -47,27 +39,57 @@ export class NewsService {
       content: row.content,
       imageUrl: row.imageUrl,
       author: row.author,
+      authorId: row.authorId,
       source: row.source,
       categoryId: row.categoryId,
       tags: row.tags as string[] | null,
+      language: row.language ?? 'en',
+      metaTitle: row.metaTitle,
+      metaDescription: row.metaDescription,
+      canonicalUrl: row.canonicalUrl,
+      isFeatured: row.isFeatured ?? false,
+      isBreaking: row.isBreaking ?? false,
       publishedAt: row.publishedAt,
       isPublished: row.isPublished,
       createdAt: row.createdAt,
       category: row.category
         ? { id: row.category.id, name: row.category.name, slug: row.category.slug }
         : null,
+      authorRef: row.authorRef
+        ? {
+            id: row.authorRef.id,
+            name: row.authorRef.name,
+            slug: row.authorRef.slug,
+            bio: row.authorRef.bio,
+            avatarUrl: row.authorRef.avatarUrl,
+          }
+        : null,
+      playerIds: row.linkedPlayers?.map((p: { playerId: string }) => p.playerId) ?? [],
+      teamIds: row.linkedTeams?.map((t: { teamId: string }) => t.teamId) ?? [],
+      matchIds: row.linkedMatches?.map((m: { matchId: string }) => m.matchId) ?? [],
+      seriesIds: row.linkedSeries?.map((s: { tournamentId: string }) => s.tournamentId) ?? [],
     };
   }
 
-  async list(query: NewsListQuery) {
-    const { page, limit, skip } = getPaginationOffset(query.page, query.limit, query.offset);
-
-    const where: any = {};
+  private buildWhere(query: NewsListQuery, opts?: { includeUnpublished?: boolean }) {
+    const where: Record<string, unknown> = {};
+    if (!opts?.includeUnpublished) {
+      where.isPublished = true;
+    }
     if (query.category) {
       where.category = { slug: query.category };
     }
     if (query.tag) {
       where.tags = { path: [query.tag], not: null };
+    }
+    if (query.language) {
+      where.language = query.language;
+    }
+    if (query.featured === true) {
+      where.isFeatured = true;
+    }
+    if (query.breaking === true) {
+      where.isBreaking = true;
     }
     if (query.q) {
       where.OR = [
@@ -75,12 +97,30 @@ export class NewsService {
         { summary: { contains: query.q, mode: 'insensitive' } },
       ];
     }
+    if (query.playerId) {
+      where.linkedPlayers = { some: { playerId: query.playerId } };
+    }
+    if (query.teamId) {
+      where.linkedTeams = { some: { teamId: query.teamId } };
+    }
+    if (query.matchId) {
+      where.linkedMatches = { some: { matchId: query.matchId } };
+    }
+    if (query.seriesId) {
+      where.linkedSeries = { some: { tournamentId: query.seriesId } };
+    }
+    return where;
+  }
+
+  async list(query: NewsListQuery, opts?: { includeUnpublished?: boolean }) {
+    const { page, limit, skip } = getPaginationOffset(query.page, query.limit, query.offset);
+    const where = this.buildWhere(query, opts);
 
     const [rows, total] = await Promise.all([
       this.prisma.newsArticle.findMany({
         where,
-        include: { category: true },
-        orderBy: { publishedAt: 'desc' },
+        include: articleInclude,
+        orderBy: [{ isBreaking: 'desc' }, { isFeatured: 'desc' }, { publishedAt: 'desc' }],
         skip,
         take: limit,
       }),
@@ -90,10 +130,13 @@ export class NewsService {
     return createPaginatedResponse(rows.map((r) => this.toSummary(r)), total, page, limit);
   }
 
-  async getByIdOrSlug(idOrSlug: string) {
+  async getByIdOrSlug(idOrSlug: string, opts?: { includeUnpublished?: boolean }) {
     const row = await this.prisma.newsArticle.findFirst({
-      where: { OR: [{ id: idOrSlug }, { slug: idOrSlug }] },
-      include: { category: true },
+      where: {
+        OR: [{ id: idOrSlug }, { slug: idOrSlug }],
+        ...(opts?.includeUnpublished ? {} : { isPublished: true }),
+      },
+      include: articleInclude,
     });
     if (!row) throw new NotFoundException(`Article ${idOrSlug} not found`);
     return this.toSummary(row);
@@ -105,30 +148,76 @@ export class NewsService {
     if (!category) throw new BadRequestException(`Category ${categoryId} does not exist`);
   }
 
+  private async validateAuthor(authorId?: string) {
+    if (!authorId) return;
+    const author = await this.prisma.author.findUnique({ where: { id: authorId } });
+    if (!author) throw new BadRequestException(`Author ${authorId} does not exist`);
+  }
+
+  private entityLinkData(dto: CreateNewsDto | UpdateNewsDto) {
+    const data: Record<string, unknown> = {};
+    if (dto.playerIds !== undefined) {
+      data.linkedPlayers = {
+        deleteMany: {},
+        create: dto.playerIds.map((playerId) => ({ playerId })),
+      };
+    }
+    if (dto.teamIds !== undefined) {
+      data.linkedTeams = {
+        deleteMany: {},
+        create: dto.teamIds.map((teamId) => ({ teamId })),
+      };
+    }
+    if (dto.matchIds !== undefined) {
+      data.linkedMatches = {
+        deleteMany: {},
+        create: dto.matchIds.map((matchId) => ({ matchId })),
+      };
+    }
+    if (dto.seriesIds !== undefined) {
+      data.linkedSeries = {
+        deleteMany: {},
+        create: dto.seriesIds.map((tournamentId) => ({ tournamentId })),
+      };
+    }
+    return data;
+  }
+
+  private articleScalars(dto: CreateNewsDto | UpdateNewsDto) {
+    const {
+      playerIds: _p,
+      teamIds: _t,
+      matchIds: _m,
+      seriesIds: _s,
+      ...scalars
+    } = dto as CreateNewsDto;
+    return scalars;
+  }
+
   async create(dto: CreateNewsDto, _userId: string) {
     const slug = slugify(dto.title);
     const existing = await this.prisma.newsArticle.findUnique({ where: { slug } });
     if (existing) throw new BadRequestException('An article with this title already exists');
 
     await this.validateCategory(dto.categoryId);
+    await this.validateAuthor(dto.authorId);
 
     const publishedAt = dto.isPublished ? new Date() : null;
+    const scalars = this.articleScalars(dto);
 
     const row = await this.prisma.newsArticle.create({
       data: {
-        title: dto.title,
+        ...scalars,
         slug,
-        summary: dto.summary,
-        content: dto.content,
-        imageUrl: dto.imageUrl,
-        author: dto.author,
-        source: dto.source,
-        categoryId: dto.categoryId,
-        tags: dto.tags ?? [],
+        language: dto.language ?? 'en',
+        isFeatured: dto.isFeatured ?? false,
+        isBreaking: dto.isBreaking ?? false,
         isPublished: dto.isPublished ?? false,
         publishedAt,
+        tags: dto.tags ?? [],
+        ...this.entityLinkData(dto),
       },
-      include: { category: true },
+      include: articleInclude,
     });
     return this.toSummary(row);
   }
@@ -138,15 +227,18 @@ export class NewsService {
     if (!existing) throw new NotFoundException(`Article ${id} not found`);
 
     await this.validateCategory(dto.categoryId);
+    await this.validateAuthor(dto.authorId);
 
-    const data: any = { ...dto };
+    const scalars = this.articleScalars(dto);
+    const data: Record<string, unknown> = { ...scalars };
     if (dto.title) data.slug = slugify(dto.title);
     if (dto.isPublished && !existing.isPublished) data.publishedAt = new Date();
+    Object.assign(data, this.entityLinkData(dto));
 
     const row = await this.prisma.newsArticle.update({
       where: { id },
       data,
-      include: { category: true },
+      include: articleInclude,
     });
     return this.toSummary(row);
   }
@@ -169,5 +261,30 @@ export class NewsService {
     });
     if (existing) throw new BadRequestException(`Category '${name}' already exists`);
     return this.prisma.newsCategory.create({ data: { name, slug } });
+  }
+
+  async listAuthors() {
+    return this.prisma.author.findMany({ orderBy: { name: 'asc' } });
+  }
+
+  async createAuthor(dto: CreateAuthorDto) {
+    const slug = slugify(dto.name);
+    const existing = await this.prisma.author.findFirst({
+      where: { OR: [{ name: dto.name }, { slug }] },
+    });
+    if (existing) throw new BadRequestException(`Author '${dto.name}' already exists`);
+    return this.prisma.author.create({
+      data: { name: dto.name, slug, bio: dto.bio, avatarUrl: dto.avatarUrl },
+    });
+  }
+
+  async updateAuthor(id: string, dto: UpdateAuthorDto) {
+    const author = await this.prisma.author.findUnique({ where: { id } });
+    if (!author) throw new NotFoundException(`Author ${id} not found`);
+
+    const data: Record<string, unknown> = { ...dto };
+    if (dto.name) data.slug = slugify(dto.name);
+
+    return this.prisma.author.update({ where: { id }, data });
   }
 }

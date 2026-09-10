@@ -77,3 +77,10 @@ export class ReactionCountsDto {
   @ApiProperty({ example: ['🔥', '❤️'] })
   emojis: string[];
 }
+
+export class ReportCommentDto {
+  @ApiProperty({ example: 'spam' })
+  @IsString()
+  @MinLength(1)
+  reason: string;
+}

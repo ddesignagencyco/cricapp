@@ -2,6 +2,7 @@ import { Controller, Get, Param, Query, UsePipes, ValidationPipe } from '@nestjs
 import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { TournamentsService } from './tournaments.service.js';
 import { TournamentDto } from './dto/tournament.dto.js';
+import { TextSearchQuery } from '../common/dto/text-search.query.js';
 import { PaginationQuery } from '../common/dto/pagination.query.js';
 
 @ApiTags('tournaments')
@@ -11,9 +12,9 @@ export class TournamentsController {
 
   @Get()
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
-  @ApiOperation({ summary: 'List tournaments / competitions (paginated)' })
+  @ApiOperation({ summary: 'List tournaments / competitions (paginated)', description: 'Optional ?q= search by name.' })
   @ApiResponse({ status: 200, description: 'Paginated tournaments.' })
-  list(@Query() query: PaginationQuery) {
+  list(@Query() query: TextSearchQuery) {
     return this.tournamentsService.list(query);
   }
 

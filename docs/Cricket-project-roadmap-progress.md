@@ -3,7 +3,7 @@
 > **Purpose:** This file is the single source of truth for project progress. It is structured in phases, each broken into **Frontend**, **Backend**, and **Ingestion** task groups. Check a box (`- [x]`) when that task is verified complete. This file is meant to be read and updated by AI coding agents as well as humans — keep task descriptions atomic and unambiguous so an agent can pick up any unchecked box and know exactly what "done" means.
 >
 > **Baseline source:** Progress Report dated Sep 8, 2026 (Day 8 of development).
-> **Current overall completion (from baseline report):** ~75%
+> **Last updated:** Sep 10, 2026 — backend priorities 1–4 (search, editorial hardening, engagement, ingestion health). Live Sportradar poll paused pending a new API key.
 
 **Legend:**
 - `[x]` = Complete / verified
@@ -38,7 +38,7 @@
 ### 2.1 Backend (`apps/api`)
 - [x] NestJS application bootstrap with TypeScript
 - [x] Prisma ORM integration with PostgreSQL
-- [x] Redis integration (cache + pub/sub for live streaming)
+- [x] Redis clients created in constructor so `LiveService` can subscribe on boot (fixed `subscriber.on` crash)
 - [x] Global API Key auth guard (`x-api-key` header / `api_key` query param)
 - [x] Rate limiting via `ThrottlerGuard` (configurable TTL/limit)
 - [x] Request logging middleware
@@ -50,6 +50,7 @@
 - [x] Pagination audit — all list endpoints now return `{ data, meta }` (Teams, Players, Matches, Tournaments, PSL leaders/squads/standings/schedule, Schedules)
 - [x] User authentication system (JWT-based, for end users — separate from API key guard)
 - [x] User accounts/profiles module (DB models + `/auth` endpoints)
+- [x] `PATCH /auth/me` — update displayName, avatarUrl, username
 
 ---
 
@@ -62,7 +63,7 @@
 - [x] 20+ Sportradar endpoints integrated
 
 ### 3.2 Sync Jobs
-- [x] Live match polling (`poll.js`) — 15s live / 60s idle
+- [x] Live match polling (`poll.js`) — 15s live / 60s idle — **blocked in prod/dev until a fresh Sportradar key (trial 429)**
 - [x] Ball-by-ball timeline sync — delta via `poll.js`, full via `refSync.js`
 - [x] PSL standings sync (`pslSync.js`)
 - [x] PSL fixtures sync (`pslSync.js`)
@@ -77,7 +78,10 @@
 - [x] Daily schedule/results sync (`refSync.js`, daily)
 - [x] Head-to-head sync (`refSync.js`, 7-day cadence)
 - [x] News/feed content sync (`newsSync.js`) — RSS/Atom fetcher, parser, normalizer, deduplication, PostgreSQL upserts, Redis cache invalidation, scheduled sync
-- [ ] Live streams metadata sync — **not started, no ingestion source wired**
+- [~] Live streams metadata sync — `streamsSync.js` upserts from `STREAM_SOURCES` JSON env; no licensed stream provider wired yet
+- [x] Ingestion Redis heartbeat (`ingestion:heartbeat`) written after each poll cycle
+- [x] Startup order: live poll first; PSL and reference sync delayed so 1 QPS quota is not starved
+- [x] Sportradar 429 backoff capped (max 15s) with retry logs
 
 ### 3.3 Normalization, Diffing & Persistence
 - [x] `CanonicalMatch` normalization from raw Sportradar payloads
@@ -101,6 +105,7 @@
 
 ### 4.1 Matches Module — Backend
 - [x] `GET /matches`
+- [x] `GET /matches?q=` text search (teams, tournament, venue, score)
 - [x] `GET /matches/live`
 - [x] `GET /matches/:matchId`
 - [x] `GET /matches/:matchId/timeline`
@@ -109,13 +114,14 @@
 
 ### 4.2 Teams Module — Backend
 - [x] `GET /teams`
+- [x] `GET /teams?q=` text search (name, abbr, country)
 - [x] `GET /teams/:idOrAbbr`
 - [x] `GET /teams/:idOrAbbr/players`
 - [x] `GET /teams/:idOrAbbr/schedule`
 - [x] `GET /teams/:idOrAbbr/results`
 
 ### 4.3 Players Module — Backend
-- [x] `GET /players`
+- [x] `GET /players` (search by `q` / team)
 - [x] `GET /players/:playerId`
 
 ### 4.4 PSL Module — Backend
@@ -128,6 +134,7 @@
 ### 4.5 Tours & Tournaments — Backend
 - [x] `GET /tours`
 - [x] `GET /tournaments`
+- [x] `GET /tournaments?q=` text search by name
 - [x] `GET /tournaments/:tournamentId`
 - [x] `GET /tournaments/:tournamentId/seasons`
 - [x] `GET /tournaments/:tournamentOrSeasonId/results`
@@ -142,6 +149,19 @@
 - [x] `POST/GET/DELETE/PATCH` admin CMS endpoints for news content
 - [x] `GET /news` — list endpoint with pagination/filtering
 - [x] `GET /news/:newsId` — single article detail endpoint (by ID or slug)
+- [x] Public list/detail hide unpublished drafts (`isPublished: true` only)
+- [x] Featured / breaking flags (`isFeatured`, `isBreaking`) + query filters
+- [x] Language field (`en` / `ur`) + `?language=` filter
+- [x] SEO fields on articles (`metaTitle`, `metaDescription`, `canonicalUrl`)
+- [x] Author model + `GET/POST /admin/authors`, `PATCH /admin/authors/:id`
+- [x] Article–entity links (players, teams, matches, series) + query filters
+- [x] `GET /admin/news` includes drafts for CMS
+- [x] Smoke-tested: publish article then fetch by slug and list
+
+### 4.13 Search Module — Backend
+- [x] `GET /search?q=` unified search (`players`, `teams`, `matches`, `tournaments`)
+- [x] Integration tests for `/search` and `/teams?q=`
+- [x] Smoke-tested against running API (`q=lahore` returns Lahore Qalandars)
 
 ### 4.8 Live Streams Module — Backend
 - [x] Design Streams DB schema (stream URL/provider, match link, status, scheduled time)
@@ -153,22 +173,27 @@
 - [x] Device/token registration endpoint (`/devices`)
 - [x] Notification trigger service (match start, wicket, milestone, match end)
 - [x] Notification preferences endpoint (per user/device)
+- [x] Redis live-event bridge (`MatchEventBridgeService`) → FCM
+- [x] Favorite-aware dispatch (match or playing-team favorites)
+- [x] `GET /notifications/history` in-app notification log
+- [ ] End-to-end FCM send with live Firebase credentials (blocked until live poll + FCM env)
 
 ### 4.10 Favorites / Bookmarks — Backend
 - [x] DB schema for user favorites (teams, players, matches)
 - [x] `POST/DELETE /favorites` endpoints
 - [x] `GET /favorites` endpoint (requires auth)
+- [x] `GET /favorites?expand=true` returns nested team/player/match objects
 
 ### 4.11 Comments / Reactions — Backend
 - [x] DB schema for comments + reactions (linked to match/news)
 - [x] `POST /comments` endpoint
 - [x] `GET /comments` endpoint with pagination
 - [x] `POST/GET /reactions` endpoints
-- [ ] Moderation/reporting mechanism (basic)
+- [x] Moderation/reporting — `POST /comments/:id/report`, admin queue, approve/hide/delete
 
 ### 4.12 Social Sharing — Backend
 - [x] Share-link generation endpoint with OG meta support (`/share/:type/:id`)
-- [ ] Share analytics tracking (optional)
+- [x] Share analytics tracking (`share_stats` increment on share link hit; totals in `/admin/analytics`)
 
 ---
 
@@ -267,19 +292,41 @@
 
 ---
 
-## PHASE 7 — News / Feed Module (End-to-End)
+## PHASE 7 — News / Editorial Module (End-to-End)
 
-- [x] **Ingestion:** source and sync news content (`newsSync.js`) — RSS/Atom fetcher with parser, normalizer, deduplication, PostgreSQL upserts, Redis cache invalidation, and scheduled sync
-- [x] **Backend:** implement `/news` endpoints (see Phase 4.7)
-- [ ] **Frontend:** wire `NewsBoard` and `NewsDetailBody` to real API instead of mock data
-- [ ] **Frontend:** unhide `/news` route from navigation once real data flows
-- [ ] QA: verify pagination, empty states, and image handling for articles
+### 7.1 Backend (done)
+- [x] **Ingestion:** RSS/Atom sync (`newsSync.js`) — parser, normalizer, dedup, Postgres upserts, Redis invalidation
+- [x] **Backend:** `/news` public + admin CMS endpoints (see Phase 4.7)
+- [x] Public unpublished-draft filter
+- [x] Featured / breaking / language / SEO fields
+- [x] Author profiles (admin CRUD)
+- [x] Article links to players, teams, matches, series
+- [x] `GET /admin/ingestion-health` (Redis heartbeat, live-set, sync keys)
+
+### 7.2 Editorial remaining — Backend
+- [ ] Production `NEWS_SOURCES` env (RSS list) configured for Pakistan/PSL/international feeds
+- [ ] Seed SRS category set (Breaking, Pakistan Cricket, PSL, International, Match News, Analysis, Features, Records, Interviews, Explainers)
+- [ ] Native Urdu authoring workflow (store `ur` body/headline separately, not auto-translate-only)
+- [ ] Public author pages API (`GET /authors`, `GET /authors/:slug` with article list)
+- [ ] Editorial policy + correction policy content endpoints or static CMS pages
+- [ ] Push-notification draft + social-copy fields on articles
+- [ ] Google News sitemap endpoint
+- [ ] Article JSON-LD / NewsArticle payload helper for frontend
+- [ ] `hreflang` pairs for `en` / `ur` article variants
+
+### 7.3 Editorial remaining — Frontend
+- [ ] Wire `NewsBoard` and `NewsDetailBody` to real API instead of mock data
+- [ ] Unhide `/news` route from navigation once real data flows
+- [ ] Author profile pages
+- [ ] Featured / breaking presentation
+- [ ] Urdu (`/ur/...`) article routes
+- [ ] QA: pagination, empty states, and image handling for articles
 
 ---
 
 ## PHASE 8 — Live Streams Module (End-to-End)
 
-- [~] **Ingestion:** source live stream metadata/links (provider integration or manual admin entry) — admin endpoints available; automated ingestion not wired
+- [~] **Ingestion:** source live stream metadata/links — `streamsSync.js` + admin CRUD; licensed provider not wired
 - [x] **Backend:** implement `/streams` endpoints (see Phase 4.8)
 - [ ] **Frontend:** wire `LiveStreamsBoard` to real API instead of mock data
 - [ ] **Frontend:** unhide `/streams` route from navigation once real data flows
@@ -299,6 +346,7 @@
 
 ### 9.2 User Accounts/Profiles — Backend + Frontend
 - [x] Backend: user profile DB model + endpoints (Phase 2.1)
+- [x] Backend: `PATCH /auth/me` profile update
 - [ ] Frontend: profile page (view/edit)
 
 ### 9.3 Favorites/Bookmarks — Backend + Frontend
@@ -335,7 +383,8 @@
 ## PHASE 11 — Testing & QA
 
 - [x] Ingestion integration tests (full pipeline, see Phase 3.4)
-- [x] Backend API integration/e2e tests per module — 67 tests across 10 suites: Auth, Matches, Teams, Players, PSL, News, Streams, Favorites, Comments, Reactions
+- [x] Backend API integration/e2e tests per module — 79 tests across 12 suites including Search, Auth (`PATCH /auth/me`), News (draft hiding + admin list)
+- [x] Manual API smoke: search, signup + `/auth/me`, publish news + get by slug (Sep 10, 2026)
 - [ ] Frontend component tests for critical UI (ScoreBoard, LiveBoard, MatchDetailBody)
 - [ ] End-to-end (E2E) tests across full user flows (e.g., Playwright/Cypress)
 - [ ] Load testing for live match SSE streaming under concurrent users
@@ -356,24 +405,114 @@
 
 ---
 
+## PHASE 13 — AI Prediction Centre (SRS Phase 4)
+
+> Predictions must come from statistical / ML models on structured sports data. An LLM may explain results but must not invent probabilities.
+
+### 13.1 Schema & storage
+- [ ] `prediction_runs` table (matchId, timestamp, modelVersion, stage: pre_match | live)
+- [ ] `prediction_features` table (input snapshot JSON used for that run)
+- [ ] `prediction_results` table (winner probs, score range, top batter/bowler, XI probs, confidence)
+- [ ] Do not delete or silently overwrite incorrect historical predictions
+
+### 13.2 Pre-match prediction service
+- [ ] Feature extraction from sports DB (form, venue, H2H, squad)
+- [ ] Match winner probability + confidence / calibration band
+- [ ] Projected first-innings or final score range
+- [ ] Top batter and top wicket-taker probabilities
+- [ ] Playing XI probability from squad availability
+- [ ] Pitch / venue / weather impact fields (when data exists)
+- [ ] Toss-adjusted prediction after toss
+
+### 13.3 Live prediction service
+- [ ] Win probability updated during the match
+- [ ] Probability history by over / major event
+- [ ] Live projected score range
+- [ ] Match momentum / pressure index
+- [ ] Partnership projection and wicket-risk (if model quality supports)
+- [ ] Measurable "why did the prediction change?" explanation payload
+
+### 13.4 API
+- [ ] `GET /predictions/:matchId` — latest pre-match + live
+- [ ] `GET /predictions/:matchId/history` — time series of runs
+- [ ] `GET /predictions/performance` — public accuracy by format and confidence band
+- [ ] Admin: model version list + prediction-history review
+
+### 13.5 Frontend (after API)
+- [ ] `/predictions/[match-slug]` page
+- [ ] Probability chart and explanation UI
+- [ ] Public prediction-performance page
+
+---
+
+## PHASE 14 — Odds Intelligence (SRS Phase 5)
+
+> Separate data domain from editorial and predictions. Licensed/authorized feeds only. Every price needs source + timestamp. Compliance before public release.
+
+### 14.1 Schema & ingestion
+- [ ] `odds_sources` table (bookmaker / feed, license status)
+- [ ] `odds_markets` table (match, market type, selections)
+- [ ] `odds_snapshots` table (price, format, implied probability, timestamp)
+- [ ] Licensed odds-feed worker (poll or webhook)
+- [ ] Stale-price detection and alerts
+
+### 14.2 API
+- [ ] `GET /odds/:matchId` — comparison across sources for same market
+- [ ] Best displayed price (no guaranteed-profit language)
+- [ ] Opening vs current price and % movement
+- [ ] Odds history series for charts
+- [ ] Decimal / fractional / American conversion helpers
+- [ ] Implied probability and bookmaker margin
+- [ ] Model-vs-market comparison (joins prediction domain)
+- [ ] Optional significant-movement alert hook
+
+### 14.3 Compliance
+- [ ] Age-gating / regional restriction hooks
+- [ ] Responsible-use messaging payload
+- [ ] Advertising restriction flags before public odds UI
+
+### 14.4 Frontend (after API + compliance)
+- [ ] `/odds/[match-slug]` page
+- [ ] Movement charts and source timestamps
+
+---
+
+## PHASE 15 — Interactive Tools (SRS Phase 5, backend)
+
+- [ ] NRR / required run rate / current run rate calculator APIs
+- [ ] DLS calculator API
+- [ ] Batting strike rate / average; bowling economy / average APIs
+- [ ] Follow-on calculator API
+- [ ] Player comparison and team comparison APIs
+- [ ] Head-to-head analyzer UI (backend `GET /head-to-head` already exists)
+- [ ] Match / what-if simulator
+- [ ] Odds converter + implied probability calculator APIs
+- [ ] Fantasy points / informational XI tool
+- [ ] Frontend `/tools/{tool-slug}` pages
+
+---
+
 ## Progress Summary (update as phases complete)
 
 | Phase | Layer | Status |
 |-------|-------|--------|
 | 1. Architecture & Foundation | Infra | ~95% |
-| 2. Backend Core Infra | Backend | ~95% |
-| 3. Ingestion Service | Ingestion | ~95% (news sync + integration tests added) |
-| 4. Backend API Endpoints | Backend | ~95% (all Phase 4 backend endpoints implemented) |
+| 2. Backend Core Infra | Backend | ~98% (`PATCH /auth/me`, Redis boot fix) |
+| 3. Ingestion Service | Ingestion | ~90% (code complete; **live poll blocked on Sportradar 429 / new key**) |
+| 4. Backend API Endpoints | Backend | ~98% (search, news hardening, notifications, share stats, moderation) |
 | 5. Frontend Pages & Components | Frontend | ~80% (core done, 4 pages missing) |
-| 6. Real Data Integration | Frontend+Backend | ~75% |
-| 7. News/Feed Module | Full-stack | ~65% (backend + admin CMS + automated ingestion ready; frontend wiring pending) |
-| 8. Live Streams Module | Full-stack | ~35% (backend + admin CRUD ready; frontend + automated ingestion pending) |
-| 9. User System & Engagement | Full-stack | ~55% (backend auth + password reset + email verification + engagement endpoints ready; frontend pending) |
+| 6. Real Data Integration | Frontend+Backend | ~80% (backend search ready; frontend still mocks teams/players/tournaments) |
+| 7. News / Editorial | Full-stack | ~75% backend done; remaining = RSS prod config, Urdu depth, sitemaps, **frontend wiring** |
+| 8. Live Streams Module | Full-stack | ~40% (backend + `STREAM_SOURCES` scaffold; frontend + licensing pending) |
+| 9. User System & Engagement | Full-stack | ~60% (backend complete including profile PATCH, history, expand favorites; frontend pending) |
 | 10. Technical Debt | Cross-cutting | ~35% |
-| 11. Testing & QA | Cross-cutting | ~55% (ingestion + backend API integration tests complete; frontend + E2E + load tests pending) |
+| 11. Testing & QA | Cross-cutting | ~60% (79 API tests + smoke: search / auth / news) |
 | 12. Deployment & Launch | DevOps | ~40% |
+| 13. AI Prediction Centre | Backend+ML | **0% — not started** |
+| 14. Odds Intelligence | Backend | **0% — not started** |
+| 15. Interactive Tools | Backend+Frontend | **~5%** (H2H API exists; calculators not started) |
 
-**Overall project completion (updated Sep 9, 2026): ~88%**
+**Overall project completion (updated Sep 10, 2026): sports + editorial backend largely done; next backend domains are Predictions then Odds.**
 
 ---
 

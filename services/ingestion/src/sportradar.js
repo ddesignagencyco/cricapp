@@ -71,9 +71,11 @@ async function fetchJson(path, options = {}, attempt = 0) {
   if (res.status === 429 && attempt < MAX_RETRIES) {
     stats.retries += 1;
     const retryAfterMs = (Number(res.headers.get('retry-after') || 0) || 1) * 1000;
-    const backoffMs = retryAfterMs * 2 ** attempt;
+    const backoffMs = Math.min(15000, retryAfterMs * 2 ** attempt);
     const jitter = 0.5 + Math.random() * 0.5;
-    await sleep(Math.round(backoffMs * jitter));
+    const wait = Math.round(backoffMs * jitter);
+    console.warn(`[sportradar] 429 retry ${attempt + 1}/${MAX_RETRIES} wait=${wait}ms ${path}`);
+    await sleep(wait);
     return fetchJson(path, options, attempt + 1);
   }
 

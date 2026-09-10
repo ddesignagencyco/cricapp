@@ -63,19 +63,29 @@ export class TournamentsService {
     };
   }
 
-  async list(params?: { page?: number; limit?: number; offset?: number }) {
+  async list(params?: { q?: string; page?: number; limit?: number; offset?: number }) {
     const { page, limit, skip } = getPaginationOffset(params?.page, params?.limit, params?.offset);
+
+    const where: Record<string, unknown> = {};
+    if (params?.q) {
+      where.name = { contains: params.q, mode: 'insensitive' };
+    }
 
     const [rows, total] = await Promise.all([
       this.prisma.tournament.findMany({
+        where,
         take: limit,
         skip,
         orderBy: [{ name: 'asc' }],
       }),
-      this.prisma.tournament.count(),
+      this.prisma.tournament.count({ where }),
     ]);
 
     return createPaginatedResponse(rows.map((t) => this.toSummary(t)), total, page, limit);
+  }
+
+  async search(params?: { q?: string; page?: number; limit?: number; offset?: number }) {
+    return this.list(params);
   }
 
   async getById(tournamentId: string): Promise<TournamentSummary> {

@@ -22,6 +22,8 @@ import { SharingModule } from './sharing/sharing.module.js';
 import { FavoritesModule } from './favorites/favorites.module.js';
 import { CommentsModule } from './comments/comments.module.js';
 import { NotificationsModule } from './notifications/notifications.module.js';
+import { AdminModule } from './admin/admin.module.js';
+import { SearchModule } from './search/search.module.js';
 import { RequestLogger } from './common/request-logger.middleware.js';
 
 @Module({
@@ -58,6 +60,8 @@ import { RequestLogger } from './common/request-logger.middleware.js';
     FavoritesModule,
     CommentsModule,
     NotificationsModule,
+    AdminModule,
+    SearchModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
