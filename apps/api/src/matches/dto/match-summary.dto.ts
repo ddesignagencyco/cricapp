@@ -32,7 +32,7 @@ export class MatchSummaryDto {
   @ApiProperty({ description: 'Provider match id.' })
   matchId: string;
 
-  @ApiProperty({ enum: ['upcoming', 'live', 'completed'] })
+  @ApiProperty({ enum: ['upcoming', 'live', 'completed', 'cancelled'] })
   status: string;
 
   @ApiProperty({ type: [String] })

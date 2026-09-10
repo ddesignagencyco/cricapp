@@ -1,5 +1,6 @@
 import { Controller, Get, Logger } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Public } from '../auth/public.decorator.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { RedisService } from '../redis/redis.service.js';
 
@@ -14,6 +15,7 @@ export class HealthController {
   ) {}
 
   @Get('health/json')
+  @Public()
   @ApiOperation({ summary: 'Health check (JSON)' })
   @ApiResponse({ status: 200 })
   async healthJson() {
@@ -40,6 +42,7 @@ export class HealthController {
   }
 
   @Get()
+  @Public()
   @ApiOperation({ summary: 'API health status', description: 'Returns an HTML page showing the health of the API and its dependencies.' })
   @ApiResponse({ status: 200, description: 'Health status page.' })
   async health(): Promise<string> {

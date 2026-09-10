@@ -119,6 +119,9 @@ function normalizeSportradar(raw) {
 
 function mapSportradarStatus(status, matchStatus) {
   const s = `${status} ${matchStatus ?? ''}`.toLowerCase();
+  if (s.includes('cancel') || s.includes('postpon')) {
+    return 'cancelled';
+  }
   if (s.includes('live') || s.includes('inprogress') || s.includes('in progress') || s.includes('innings')) {
     return 'live';
   }
@@ -138,6 +141,7 @@ function mapSportradarStatus(status, matchStatus) {
 
 function mapStatus(rawStatus) {
   const s = (rawStatus || '').toLowerCase();
+  if (s.includes('cancel') || s.includes('postpon')) return 'cancelled';
   if (s.includes('progress') || s.includes('inning') || s.includes('live')) return 'live';
   if (s.includes('complete') || s.includes('won') || s.includes('tied') || s.includes('abandon')) {
     return 'completed';

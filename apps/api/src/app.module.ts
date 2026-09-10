@@ -11,7 +11,19 @@ import { PlayersModule } from './players/players.module.js';
 import { LiveModule } from './live/live.module.js';
 import { HealthModule } from './health/health.module.js';
 import { PslModule } from './psl/psl.module.js';
-import { ApiKeyGuard } from './auth/api-key.guard.js';
+import { ToursModule } from './tours/tours.module.js';
+import { TournamentsModule } from './tournaments/tournaments.module.js';
+import { SchedulesModule } from './schedules/schedules.module.js';
+import { HeadToHeadModule } from './head-to-head/head-to-head.module.js';
+import { AuthModule } from './auth/auth.module.js';
+import { NewsModule } from './news/news.module.js';
+import { StreamsModule } from './streams/streams.module.js';
+import { SharingModule } from './sharing/sharing.module.js';
+import { FavoritesModule } from './favorites/favorites.module.js';
+import { CommentsModule } from './comments/comments.module.js';
+import { NotificationsModule } from './notifications/notifications.module.js';
+import { AdminModule } from './admin/admin.module.js';
+import { SearchModule } from './search/search.module.js';
 import { RequestLogger } from './common/request-logger.middleware.js';
 
 @Module({
@@ -37,9 +49,21 @@ import { RequestLogger } from './common/request-logger.middleware.js';
     PlayersModule,
     LiveModule,
     PslModule,
+    ToursModule,
+    TournamentsModule,
+    SchedulesModule,
+    HeadToHeadModule,
+    AuthModule,
+    NewsModule,
+    StreamsModule,
+    SharingModule,
+    FavoritesModule,
+    CommentsModule,
+    NotificationsModule,
+    AdminModule,
+    SearchModule,
   ],
   providers: [
-    { provide: APP_GUARD, useClass: ApiKeyGuard },
     { provide: APP_GUARD, useClass: ThrottlerGuard },
   ],
 })

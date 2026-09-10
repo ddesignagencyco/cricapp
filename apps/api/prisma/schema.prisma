@@ -38,9 +38,11 @@ model Team {
   abbr      String
   country   String?
   logoUrl   String?   @map("logo_url")
+  manager   String?
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
   players   Player[]
+  linkedArticles NewsArticleTeam[]
 
   @@index([abbr])
   @@map("teams")
@@ -57,9 +59,13 @@ model Player {
   bowlingStyle String?  @map("bowling_style")
   role        String?
   profileUrl  String?   @map("profile_url")
+  countryCode String?   @map("country_code")
+  jerseyNumber Int?     @map("jersey_number")
+  height      Int?
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
   team        Team?     @relation(fields: [teamId], references: [id])
+  linkedArticles NewsArticlePlayer[]
 
   @@index([teamId])
   @@map("players")
@@ -135,4 +141,402 @@ model PslLeader {
   @@unique([seasonId, category, stat, playerId])
   @@index([seasonId, category, stat, rank])
   @@map("psl_leaders")
+}
+
+// --- Reference data & extended Sportradar endpoints ---------------------------
+// Persisted by the ingestion service and read via the API. Where the raw
+// Sportradar payload is deeply nested (timelines, meetings, sport events), the
+// provider payload is stored as JSONB alongside lightweight indexed columns.
+
+// Tour List endpoint -> tours
+model Tour {
+  id        String   @id
+  name      String
+  category  Json?
+  sport     Json?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("tours")
+}
+
+// Tournament List endpoint -> tournaments (with current_season metadata)
+model Tournament {
+  id             String   @id
+  name           String
+  type           String?
+  gender         String?
+  category       Json?
+  currentSeason  Json?    @map("current_season")
+  sport          Json?
+  tourId         String?  @map("tour_id")
+  parentId       String?  @map("parent_id")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  seasons        TournamentSeason[]
+  linkedArticles NewsArticleSeries[]
+
+  @@map("tournaments")
+}
+
+// Tournament Seasons endpoint -> seasons per tournament.
+model TournamentSeason {
+  id           String   @id
+  tournamentId String   @map("tournament_id")
+  name         String?
+  year         String?
+  startDate    String?  @map("start_date")
+  endDate      String?  @map("end_date")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  tournament   Tournament @relation(fields: [tournamentId], references: [id])
+
+  @@index([tournamentId])
+  @@map("tournament_seasons")
+}
+
+// Daily Schedule / Daily Results / Team Schedule / Team Results / Tournament Results
+// all return the same rich `sport_event` shape. Store one row per event, keyed by
+// a "kind" (daily_schedule, daily_results, team_schedule, team_results,
+// tournament_results) and a scope (tournament/season/date id).
+model SportEventRecord {
+  id        Int      @id @default(autoincrement())
+  kind      String
+  scopeKey  String   @map("scope_key")
+  eventId   String   @map("event_id")
+  status    String?
+  scheduled String?
+  payload   Json
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([kind, scopeKey, eventId])
+  @@index([kind, scopeKey])
+  @@map("sport_event_records")
+}
+
+// Match Timeline endpoint -> ball-by-ball timeline for a match (rich nested data).
+model MatchTimeline {
+  matchId   String   @id @map("match_id")
+  payload   Json
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("match_timelines")
+}
+
+// Team Versus Team endpoint -> head-to-head meetings between two teams.
+// Keyed deterministically by the ordered team pair so a single row covers both
+// directions (the Sportradar endpoint accepts either ordering).
+model HeadToHead {
+  teamAId   String   @map("team_a_id")
+  teamBId   String   @map("team_b_id")
+  payload   Json
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@id([teamAId, teamBId])
+  @@map("head_to_head")
+}
+
+// Team Profile endpoint -> team metadata + manager (enriches the teams table).
+model TeamProfile {
+  teamId    String   @id @map("team_id")
+  manager   Json?
+  teamInfo  Json?    @map("team_info")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("team_profiles")
+}
+
+// Player Profile endpoint -> rich per-format stats + team membership history.
+model PlayerProfile {
+  playerId  String   @id @map("player_id")
+  payload   Json
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("player_profiles")
+}
+
+// --- Phase 4: User & Auth ---------------------------------------------------
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  username     String   @unique
+  passwordHash String   @map("password_hash")
+  displayName  String?  @map("display_name")
+  avatarUrl    String?  @map("avatar_url")
+  isAdmin      Boolean  @default(false) @map("is_admin")
+  emailVerified Boolean @default(false) @map("email_verified")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  favorites    Favorite[]
+  comments     Comment[]
+  reactions    Reaction[]
+  devices      Device[]
+  notificationLogs NotificationLog[]
+  passwordResetTokens PasswordResetToken[]
+  emailVerificationToken EmailVerificationToken?
+
+  @@map("users")
+}
+
+// --- Phase 4: News / Feed ---------------------------------------------------
+
+model Author {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  bio       String?  @db.Text
+  avatarUrl String?  @map("avatar_url")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  articles  NewsArticle[]
+
+  @@map("authors")
+}
+
+model NewsCategory {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  slug      String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+  articles  NewsArticle[]
+
+  @@map("news_categories")
+}
+
+model NewsArticle {
+  id              String   @id @default(uuid())
+  title           String
+  slug            String   @unique
+  summary         String?
+  content         String   @db.Text
+  imageUrl        String?  @map("image_url")
+  author          String?
+  authorId        String?  @map("author_id")
+  source          String?
+  categoryId      String?  @map("category_id")
+  tags            Json?
+  language        String   @default("en")
+  metaTitle       String?  @map("meta_title")
+  metaDescription String?  @map("meta_description")
+  canonicalUrl    String?  @map("canonical_url")
+  isFeatured      Boolean  @default(false) @map("is_featured")
+  isBreaking      Boolean  @default(false) @map("is_breaking")
+  publishedAt     DateTime? @map("published_at")
+  isPublished     Boolean  @default(false) @map("is_published")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  category        NewsCategory? @relation(fields: [categoryId], references: [id])
+  authorRef       Author?  @relation(fields: [authorId], references: [id])
+  linkedPlayers   NewsArticlePlayer[]
+  linkedTeams     NewsArticleTeam[]
+  linkedMatches   NewsArticleMatch[]
+  linkedSeries    NewsArticleSeries[]
+
+  @@index([publishedAt])
+  @@index([categoryId])
+  @@index([language])
+  @@index([isFeatured])
+  @@index([isBreaking])
+  @@map("news_articles")
+}
+
+model NewsArticlePlayer {
+  articleId String @map("article_id")
+  playerId  String @map("player_id")
+  article   NewsArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  player    Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@id([articleId, playerId])
+  @@map("news_article_players")
+}
+
+model NewsArticleTeam {
+  articleId String @map("article_id")
+  teamId    String @map("team_id")
+  article   NewsArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  team      Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@id([articleId, teamId])
+  @@map("news_article_teams")
+}
+
+model NewsArticleMatch {
+  articleId String @map("article_id")
+  matchId   String @map("match_id")
+  article   NewsArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@id([articleId, matchId])
+  @@map("news_article_matches")
+}
+
+model NewsArticleSeries {
+  articleId    String @map("article_id")
+  tournamentId String @map("tournament_id")
+  article      NewsArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+
+  @@id([articleId, tournamentId])
+  @@map("news_article_series")
+}
+
+// --- Phase 4: Live Streams --------------------------------------------------
+
+model LiveStream {
+  id           String   @id @default(uuid())
+  title        String
+  matchId      String?  @map("match_id")
+  streamUrl    String   @map("stream_url")
+  provider     String?
+  thumbnailUrl String?  @map("thumbnail_url")
+  status       String   @default("upcoming")
+  scheduledAt  DateTime? @map("scheduled_at")
+  startedAt    DateTime? @map("started_at")
+  endedAt      DateTime? @map("ended_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([scheduledAt])
+  @@map("live_streams")
+}
+
+// --- Phase 4: Favorites / Bookmarks -----------------------------------------
+
+model Favorite {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  targetType String   @map("target_type")
+  targetId   String   @map("target_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+  user       User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, targetType, targetId])
+  @@index([userId])
+  @@map("favorites")
+}
+
+// --- Phase 4: Comments & Reactions ------------------------------------------
+
+model Comment {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  targetType String   @map("target_type")
+  targetId   String   @map("target_id")
+  body       String   @db.Text
+  status     String   @default("approved")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  user       User     @relation(fields: [userId], references: [id])
+  reactions  Reaction[]
+  reports    CommentReport[]
+
+  @@index([targetType, targetId])
+  @@index([status])
+  @@map("comments")
+}
+
+model Reaction {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  commentId  String?  @map("comment_id")
+  targetType String   @map("target_type")
+  targetId   String   @map("target_id")
+  emoji      String
+  createdAt  DateTime @default(now()) @map("created_at")
+  user       User     @relation(fields: [userId], references: [id])
+  comment    Comment? @relation(fields: [commentId], references: [id])
+
+  @@unique([userId, targetType, targetId, emoji])
+  @@index([targetType, targetId])
+  @@map("reactions")
+}
+
+model CommentReport {
+  id          String   @id @default(uuid())
+  commentId   String   @map("comment_id")
+  reporterId  String   @map("reporter_id")
+  reason      String
+  status      String   @default("pending")
+  resolvedAt  DateTime? @map("resolved_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  comment     Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@index([commentId])
+  @@index([status])
+  @@map("comment_reports")
+}
+
+// --- Sharing analytics ------------------------------------------------------
+
+model ShareStat {
+  shareType String   @map("share_type")
+  targetId  String   @map("target_id")
+  count     Int      @default(0)
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@id([shareType, targetId])
+  @@map("share_stats")
+}
+
+// --- Push Notifications (FCM) -----------------------------------------------
+
+model NotificationLog {
+  id        String   @id @default(uuid())
+  userId    String?  @map("user_id")
+  title     String
+  body      String
+  data      Json?
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User?    @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("notification_logs")
+}
+
+model Device {
+  id          String   @id @default(uuid())
+  userId      String?  @map("user_id")
+  fcmToken    String   @unique @map("fcm_token")
+  platform    String
+  preferences Json     @default("{\"matchStart\":true,\"wicket\":true,\"milestone\":true,\"matchEnd\":true}")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  user        User?    @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("devices")
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  tokenHash String   @map("token_hash")
+  codeHash  String?  @map("code_hash")
+  expiresAt DateTime @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(uuid())
+  userId    String   @unique @map("user_id")
+  tokenHash String   @map("token_hash")
+  expiresAt DateTime @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("email_verification_tokens")
 }

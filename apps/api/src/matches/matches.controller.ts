@@ -13,8 +13,8 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { MatchesService } from './matches.service.js';
-import type { MatchSummary as MatchSummaryResponse } from './matches.service.js';
 import { MatchSummaryDto } from './dto/match-summary.dto.js';
+import { MatchTimelineDto } from './dto/match-timeline.dto.js';
 import { ListMatchesQuery } from './dto/list-matches.query.js';
 
 @ApiTags('matches')
@@ -24,17 +24,26 @@ export class MatchesController {
 
   @Get()
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
-  @ApiOperation({ summary: 'List matches', description: 'Filter by status and/or tournament with pagination.' })
-  @ApiResponse({ status: 200, description: 'Matching match summaries.', type: [MatchSummaryDto] })
-  async list(@Query() query: ListMatchesQuery): Promise<MatchSummaryResponse[]> {
+  @ApiOperation({ summary: 'List matches (paginated)', description: 'All matches (live, upcoming, completed, cancelled) with status/tournament filters and pagination.' })
+  @ApiResponse({ status: 200, description: 'Paginated match summaries.' })
+  async list(@Query() query: ListMatchesQuery) {
     return this.matchesService.list(query);
   }
 
   @Get('live')
   @ApiOperation({ summary: 'List live matches', description: 'Live matches, preferring the Redis live-set then falling back to Postgres.' })
-  @ApiResponse({ status: 200, description: 'Live match summaries.', type: [MatchSummaryDto] })
-  async listLive(): Promise<MatchSummaryResponse[]> {
+  @ApiResponse({ status: 200, description: 'Live match summaries.' })
+  async listLive() {
     return this.matchesService.listLive();
+  }
+
+  @Get(':matchId/timeline')
+  @ApiOperation({ summary: 'Match timeline', description: 'Ball-by-ball timeline for a match.' })
+  @ApiParam({ name: 'matchId', description: 'Provider match id (e.g. sr:match:66650320).' })
+  @ApiResponse({ status: 200, description: 'The match timeline payload.', type: MatchTimelineDto })
+  @ApiResponse({ status: 404, description: 'Timeline not found.' })
+  async timeline(@Param('matchId') matchId: string) {
+    return this.matchesService.getTimeline(matchId);
   }
 
   @Get(':matchId')
@@ -42,7 +51,7 @@ export class MatchesController {
   @ApiParam({ name: 'matchId', description: 'Provider match id (e.g. sr:match:66650320).' })
   @ApiResponse({ status: 200, description: 'The match summary.', type: MatchSummaryDto })
   @ApiResponse({ status: 404, description: 'Match not found.' })
-  async byId(@Param('matchId') matchId: string): Promise<MatchSummaryResponse> {
+  async byId(@Param('matchId') matchId: string) {
     return this.matchesService.getById(matchId);
   }
 }

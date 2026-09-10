@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { RedisService } from '../redis/redis.service.js';
 import {
@@ -9,6 +10,10 @@ import {
   type LastEvent,
 } from '@cricapp/shared-types';
 import type { Match } from '@prisma/client';
+import {
+  createPaginatedResponse,
+  getPaginationOffset,
+} from '../common/pagination/pagination.util.js';
 
 export type MatchSummary = Pick<
   CanonicalMatch,
@@ -49,41 +54,101 @@ export class MatchesService {
   }
 
   async list(params: {
+    q?: string;
     status?: string;
     tournament?: string;
+    page?: number;
     limit?: number;
     offset?: number;
-  }): Promise<MatchSummary[]> {
-    const status = params.status;
-    const limit = Math.min(params.limit ?? 50, 100);
-    const offset = params.offset ?? 0;
+  }) {
+    const { page, limit, skip } = getPaginationOffset(params.page, params.limit, params.offset);
 
-    const rows = await this.prisma.match.findMany({
-      where: {
-        ...(status ? { status } : {}),
-        ...(params.tournament
-          ? { tournament: { contains: params.tournament, mode: 'insensitive' } }
-          : {}),
-      },
-      orderBy: [{ scheduled: 'asc' }],
-      take: limit,
-      skip: offset,
-    });
+    if (params.q?.trim()) {
+      return this.search(params);
+    }
 
-    return rows.map((r) => this.toSummary(r));
+    const where: Record<string, unknown> = {};
+    if (params.status) where.status = params.status;
+    if (params.tournament) where.tournament = { contains: params.tournament, mode: 'insensitive' };
+
+    const [rows, total] = await Promise.all([
+      this.prisma.match.findMany({
+        where,
+        orderBy: [{ scheduled: 'asc' }],
+        take: limit,
+        skip,
+      }),
+      this.prisma.match.count({ where }),
+    ]);
+
+    return createPaginatedResponse(rows.map((r) => this.toSummary(r)), total, page, limit);
   }
 
-  async listLive(): Promise<MatchSummary[]> {
-    // Prefer the live set in Redis (cheap) but fall back to Postgres.
+  async search(params: {
+    q?: string;
+    status?: string;
+    page?: number;
+    limit?: number;
+    offset?: number;
+  }) {
+    const { page, limit, skip } = getPaginationOffset(params.page, params.limit, params.offset);
+    const pattern = `%${params.q?.trim() ?? ''}%`;
+
+    const statusClause = params.status
+      ? Prisma.sql`AND status = ${params.status}`
+      : Prisma.empty;
+
+    const [rows, countRows] = await Promise.all([
+      this.prisma.$queryRaw<Match[]>(
+        Prisma.sql`
+          SELECT *
+          FROM matches
+          WHERE (
+            tournament ILIKE ${pattern}
+            OR venue ILIKE ${pattern}
+            OR display_score ILIKE ${pattern}
+            OR team_names::text ILIKE ${pattern}
+            OR teams::text ILIKE ${pattern}
+          )
+          ${statusClause}
+          ORDER BY scheduled ASC NULLS LAST
+          LIMIT ${limit} OFFSET ${skip}
+        `,
+      ),
+      this.prisma.$queryRaw<Array<{ count: bigint }>>(
+        Prisma.sql`
+          SELECT COUNT(*)::bigint AS count
+          FROM matches
+          WHERE (
+            tournament ILIKE ${pattern}
+            OR venue ILIKE ${pattern}
+            OR display_score ILIKE ${pattern}
+            OR team_names::text ILIKE ${pattern}
+            OR teams::text ILIKE ${pattern}
+          )
+          ${statusClause}
+        `,
+      ),
+    ]);
+
+    const total = Number(countRows[0]?.count ?? 0);
+    return createPaginatedResponse(rows.map((r) => this.toSummary(r)), total, page, limit);
+  }
+
+  async listLive() {
     const liveIds = await this.redis.smembers(redisKeys.liveMatches());
     let summaries: MatchSummary[] = [];
     if (liveIds.length > 0) {
       summaries = await this.getMany(liveIds);
     }
     if (summaries.length === 0) {
-      summaries = await this.list({ status: MATCH_STATUS.LIVE });
+      const rows = await this.prisma.match.findMany({
+        where: { status: MATCH_STATUS.LIVE },
+        orderBy: [{ scheduled: 'asc' }],
+      });
+      summaries = rows.map((r) => this.toSummary(r));
     }
-    return summaries;
+    return { data: summaries };
   }
 
   async getMany(matchIds: string[]): Promise<MatchSummary[]> {
@@ -95,7 +160,6 @@ export class MatchesService {
   }
 
   async getById(matchId: string): Promise<MatchSummary> {
-    // Live cache first for hot reads.
     const cached = await this.redis.get<MatchSummary>(
       redisKeys.matchState(matchId),
     );
@@ -108,5 +172,18 @@ export class MatchesService {
       throw new NotFoundException(`Match ${matchId} not found`);
     }
     return this.toSummary(row);
+  }
+
+  async getTimeline(matchId: string): Promise<{ matchId: string; payload: Record<string, unknown> }> {
+    const row = await this.prisma.matchTimeline.findUnique({
+      where: { matchId },
+    });
+    if (!row) {
+      throw new NotFoundException(`Timeline for match ${matchId} not found`);
+    }
+    return {
+      matchId: row.matchId,
+      payload: row.payload as Record<string, unknown>,
+    };
   }
 }

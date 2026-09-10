@@ -1,27 +1,28 @@
-import { IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import { MATCH_STATUS } from '@cricapp/shared-types';
+import { PaginationQuery } from '../../common/dto/pagination.query.js';
 
-export class ListMatchesQuery {
+export class ListMatchesQuery extends PaginationQuery {
+  @ApiPropertyOptional({ description: 'Search team names, tournament, venue or score.' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  q?: string;
+
+  @ApiPropertyOptional({
+    enum: Object.values(MATCH_STATUS),
+    description: 'Filter by match status: upcoming, live, completed or cancelled.',
+  })
   @IsOptional()
   @IsIn(Object.values(MATCH_STATUS))
   status?: string;
 
+  @ApiPropertyOptional({
+    description: 'Filter by tournament/competition name (case-insensitive).',
+  })
   @IsOptional()
   @IsString()
   @MaxLength(100)
   tournament?: string;
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @Max(100)
-  limit?: number;
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(0)
-  offset?: number;
 }

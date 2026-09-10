@@ -15,6 +15,9 @@ export class TeamSummaryDto {
 
   @ApiPropertyOptional()
   logoUrl: string | null;
+
+  @ApiPropertyOptional({ description: 'Team manager name.' })
+  manager: string | null;
 }
 
 export class PlayerSummaryDto {
