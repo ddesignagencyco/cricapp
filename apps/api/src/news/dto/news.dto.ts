@@ -1,12 +1,18 @@
-import { IsString, IsOptional, IsBoolean, IsArray, IsIn } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { IsString, IsOptional, IsBoolean, IsArray, IsIn, Matches, MinLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginationQuery } from '../../common/dto/pagination.query.js';
 
 export class CreateNewsDto {
   @ApiProperty({ example: 'PSL 2026 Final Preview' })
   @IsString()
+  @MinLength(1)
   title: string;
+
+  @ApiPropertyOptional({ example: 'psl-2026-final-preview', description: 'SEO slug; generated from title when omitted' })
+  @IsOptional()
+  @IsString()
+  @Matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+  slug?: string;
 
   @ApiPropertyOptional({ example: 'A look ahead to the PSL final...' })
   @IsOptional()
@@ -42,12 +48,6 @@ export class CreateNewsDto {
   @IsString()
   categoryId?: string;
 
-  @ApiPropertyOptional({ example: ['psl', 'cricket', 'final'] })
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  tags?: string[];
-
   @ApiPropertyOptional({ enum: ['en', 'ur'], default: 'en' })
   @IsOptional()
   @IsIn(['en', 'ur'])
@@ -67,16 +67,6 @@ export class CreateNewsDto {
   @IsOptional()
   @IsString()
   canonicalUrl?: string;
-
-  @ApiPropertyOptional({ default: false })
-  @IsOptional()
-  @IsBoolean()
-  isFeatured?: boolean;
-
-  @ApiPropertyOptional({ default: false })
-  @IsOptional()
-  @IsBoolean()
-  isBreaking?: boolean;
 
   @ApiPropertyOptional({ default: false })
   @IsOptional()
@@ -114,6 +104,12 @@ export class UpdateNewsDto {
   @IsString()
   title?: string;
 
+  @ApiPropertyOptional({ example: 'psl-2026-final-preview' })
+  @IsOptional()
+  @IsString()
+  @Matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+  slug?: string;
+
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
@@ -149,12 +145,6 @@ export class UpdateNewsDto {
   @IsString()
   categoryId?: string;
 
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  tags?: string[];
-
   @ApiPropertyOptional({ enum: ['en', 'ur'] })
   @IsOptional()
   @IsIn(['en', 'ur'])
@@ -174,16 +164,6 @@ export class UpdateNewsDto {
   @IsOptional()
   @IsString()
   canonicalUrl?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsBoolean()
-  isFeatured?: boolean;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsBoolean()
-  isBreaking?: boolean;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -221,11 +201,6 @@ export class NewsListQuery extends PaginationQuery {
   @IsString()
   category?: string;
 
-  @ApiPropertyOptional({ description: 'Filter by tag' })
-  @IsOptional()
-  @IsString()
-  tag?: string;
-
   @ApiPropertyOptional({ description: 'Search in title and summary' })
   @IsOptional()
   @IsString()
@@ -235,18 +210,6 @@ export class NewsListQuery extends PaginationQuery {
   @IsOptional()
   @IsIn(['en', 'ur'])
   language?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @Transform(({ value }) => value === true || value === 'true')
-  @IsBoolean()
-  featured?: boolean;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @Transform(({ value }) => value === true || value === 'true')
-  @IsBoolean()
-  breaking?: boolean;
 
   @ApiPropertyOptional({ description: 'Filter articles linked to a player id' })
   @IsOptional()
@@ -294,13 +257,10 @@ export class NewsArticleDto {
   @ApiProperty({ nullable: true }) authorId: string | null;
   @ApiProperty({ nullable: true }) source: string | null;
   @ApiProperty({ nullable: true }) categoryId: string | null;
-  @ApiProperty({ nullable: true }) tags: string[] | null;
   @ApiProperty() language: string;
   @ApiProperty({ nullable: true }) metaTitle: string | null;
   @ApiProperty({ nullable: true }) metaDescription: string | null;
   @ApiProperty({ nullable: true }) canonicalUrl: string | null;
-  @ApiProperty() isFeatured: boolean;
-  @ApiProperty() isBreaking: boolean;
   @ApiProperty({ nullable: true }) publishedAt: Date | null;
   @ApiProperty() isPublished: boolean;
   @ApiProperty() createdAt: Date;
@@ -315,7 +275,28 @@ export class NewsArticleDto {
 export class CreateCategoryDto {
   @ApiProperty({ example: 'PSL' })
   @IsString()
+  @MinLength(1)
   name: string;
+
+  @ApiPropertyOptional({ example: 'psl', description: 'SEO slug; generated from name when omitted' })
+  @IsOptional()
+  @IsString()
+  @Matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+  slug?: string;
+}
+
+export class UpdateCategoryDto {
+  @ApiPropertyOptional({ example: 'Pakistan Super League' })
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  name?: string;
+
+  @ApiPropertyOptional({ example: 'psl' })
+  @IsOptional()
+  @IsString()
+  @Matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+  slug?: string;
 }
 
 export class CreateAuthorDto {

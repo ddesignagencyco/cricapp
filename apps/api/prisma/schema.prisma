@@ -271,6 +271,7 @@ model User {
   displayName  String?  @map("display_name")
   avatarUrl    String?  @map("avatar_url")
   isAdmin      Boolean  @default(false) @map("is_admin")
+  isSuperAdmin Boolean  @default(false) @map("is_super_admin")
   emailVerified Boolean @default(false) @map("email_verified")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
@@ -321,13 +322,10 @@ model NewsArticle {
   authorId        String?  @map("author_id")
   source          String?
   categoryId      String?  @map("category_id")
-  tags            Json?
   language        String   @default("en")
   metaTitle       String?  @map("meta_title")
   metaDescription String?  @map("meta_description")
   canonicalUrl    String?  @map("canonical_url")
-  isFeatured      Boolean  @default(false) @map("is_featured")
-  isBreaking      Boolean  @default(false) @map("is_breaking")
   publishedAt     DateTime? @map("published_at")
   isPublished     Boolean  @default(false) @map("is_published")
   createdAt       DateTime @default(now()) @map("created_at")
@@ -342,8 +340,6 @@ model NewsArticle {
   @@index([publishedAt])
   @@index([categoryId])
   @@index([language])
-  @@index([isFeatured])
-  @@index([isBreaking])
   @@map("news_articles")
 }
 
@@ -519,7 +515,6 @@ model PasswordResetToken {
   id        String   @id @default(uuid())
   userId    String   @map("user_id")
   tokenHash String   @map("token_hash")
-  codeHash  String?  @map("code_hash")
   expiresAt DateTime @map("expires_at")
   usedAt    DateTime? @map("used_at")
   createdAt DateTime @default(now()) @map("created_at")

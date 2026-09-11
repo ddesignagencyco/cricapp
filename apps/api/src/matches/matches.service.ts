@@ -136,17 +136,21 @@ export class MatchesService {
   }
 
   async listLive() {
-    const liveIds = await this.redis.smembers(redisKeys.liveMatches());
-    let summaries: MatchSummary[] = [];
-    if (liveIds.length > 0) {
-      summaries = await this.getMany(liveIds);
-    }
-    if (summaries.length === 0) {
-      const rows = await this.prisma.match.findMany({
+    // Postgres status is authoritative. The Redis live set is an ingestion
+    // index and can briefly contain IDs for matches that just completed.
+    const [rows, liveIds] = await Promise.all([
+      this.prisma.match.findMany({
         where: { status: MATCH_STATUS.LIVE },
         orderBy: [{ scheduled: 'asc' }],
-      });
-      summaries = rows.map((r) => this.toSummary(r));
+      }),
+      this.redis.smembers(redisKeys.liveMatches()),
+    ]);
+    const summaries = rows.map((r) => this.toSummary(r));
+
+    const authoritativeIds = new Set(rows.map((row) => row.matchId));
+    const staleIds = liveIds.filter((id) => !authoritativeIds.has(id));
+    if (staleIds.length > 0) {
+      await this.redis.cached.srem(redisKeys.liveMatches(), ...staleIds);
     }
     return { data: summaries };
   }

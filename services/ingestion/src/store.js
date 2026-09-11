@@ -447,7 +447,11 @@ export async function saveSportEventRecords(rows) {
       });
     }
 
-    await saveMatch(recordToMatch(r));
+    const match = recordToMatch(r);
+    await saveMatch(match);
+    // Reference/result sync also observes matches leaving the live schedule.
+    // Keep the Redis live index aligned so completed IDs do not linger.
+    await publishMatchState(match);
   }
 
   if (teamsToUpsert.size > 0) {

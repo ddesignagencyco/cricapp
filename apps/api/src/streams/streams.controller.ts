@@ -10,17 +10,29 @@ import {
   UseGuards,
   UsePipes,
   ValidationPipe,
+  Request,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiCookieAuth, ApiParam } from '@nestjs/swagger';
 import { StreamsService } from './streams.service.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import { AdminGuard } from '../auth/admin.guard.js';
-import { CreateStreamDto, UpdateStreamDto, StreamListQuery, LiveStreamDto } from './dto/streams.dto.js';
+import { CommentsService } from '../comments/comments.service.js';
+import {
+  CreateStreamDto,
+  UpdateStreamDto,
+  StreamListQuery,
+  LiveStreamDto,
+  StreamCommentsQuery,
+  CreateStreamCommentDto,
+} from './dto/streams.dto.js';
 
 @ApiTags('streams')
 @Controller('streams')
 export class StreamsController {
-  constructor(private readonly streamsService: StreamsService) {}
+  constructor(
+    private readonly streamsService: StreamsService,
+    private readonly commentsService: CommentsService,
+  ) {}
 
   @Get()
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
@@ -28,6 +40,38 @@ export class StreamsController {
   @ApiResponse({ status: 200, description: 'Paginated streams.' })
   async list(@Query() query: StreamListQuery) {
     return this.streamsService.list(query);
+  }
+
+  @Get(':id/comments')
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+  @ApiOperation({ summary: 'List comments for a stream (paginated)' })
+  async listComments(
+    @Param('id') id: string,
+    @Query() query: StreamCommentsQuery,
+  ) {
+    await this.streamsService.getById(id);
+    return this.commentsService.listComments(null, {
+      ...query,
+      targetType: 'stream',
+      targetId: id,
+    });
+  }
+
+  @Post(':id/comments')
+  @UseGuards(JwtAuthGuard)
+  @ApiCookieAuth()
+  @ApiOperation({ summary: 'Post a comment while watching a stream' })
+  async createComment(
+    @Request() req: { user: { id: string } },
+    @Param('id') id: string,
+    @Body() dto: CreateStreamCommentDto,
+  ) {
+    await this.streamsService.getById(id);
+    return this.commentsService.createComment(req.user.id, {
+      targetType: 'stream',
+      targetId: id,
+      body: dto.body,
+    });
   }
 
   @Get(':id')
@@ -41,7 +85,7 @@ export class StreamsController {
 
   @Post()
   @UseGuards(JwtAuthGuard, AdminGuard)
-  @ApiBearerAuth()
+  @ApiCookieAuth()
   @ApiOperation({ summary: 'Create a live stream (admin)' })
   @ApiResponse({ status: 201, type: LiveStreamDto })
   async create(@Body() dto: CreateStreamDto) {
@@ -50,7 +94,7 @@ export class StreamsController {
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard, AdminGuard)
-  @ApiBearerAuth()
+  @ApiCookieAuth()
   @ApiOperation({ summary: 'Update a live stream (admin)' })
   @ApiParam({ name: 'id', description: 'Stream ID' })
   @ApiResponse({ status: 200, type: LiveStreamDto })
@@ -61,7 +105,7 @@ export class StreamsController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, AdminGuard)
-  @ApiBearerAuth()
+  @ApiCookieAuth()
   @ApiOperation({ summary: 'Delete a live stream (admin)' })
   @ApiParam({ name: 'id', description: 'Stream ID' })
   @ApiResponse({ status: 200, description: 'Deleted.' })

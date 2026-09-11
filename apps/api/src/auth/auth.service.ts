@@ -1,4 +1,11 @@
-import { Injectable, ConflictException, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  ConflictException,
+  UnauthorizedException,
+  BadRequestException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -9,6 +16,8 @@ import crypto from 'crypto';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
@@ -36,10 +45,24 @@ export class AuthService {
       },
     });
 
-    // Send verification email asynchronously; don't block signup.
-    this.sendVerificationEmail(user.id, user.email).catch(() => null);
+    // Issue the token inside the request so it cannot outlive the user row,
+    // then hand the slow SMTP call off so signup stays responsive.
+    const verifyLink = await this.createVerificationLink(user.id);
+    this.sendVerificationEmail(
+      user.email,
+      user.displayName ?? user.username,
+      verifyLink,
+    ).catch((error: unknown) => {
+      this.logger.error(
+        `Failed to send verification email to ${user.email}`,
+        error instanceof Error ? error.stack : String(error),
+      );
+    });
 
-    return this.buildAuthResponse(user);
+    return {
+      message: 'Account created. Check your email to verify your account.',
+      user: this.toAuthUser(user),
+    };
   }
 
   async login(dto: LoginDto) {
@@ -48,6 +71,11 @@ export class AuthService {
 
     const valid = await bcrypt.compare(dto.password, user.passwordHash);
     if (!valid) throw new UnauthorizedException('Invalid credentials');
+    if (!user.emailVerified) {
+      throw new ForbiddenException(
+        'Email address is not verified. Check your inbox or request a new verification link.',
+      );
+    }
 
     return this.buildAuthResponse(user);
   }
@@ -62,6 +90,7 @@ export class AuthService {
       displayName: user.displayName,
       avatarUrl: user.avatarUrl,
       isAdmin: user.isAdmin,
+      isSuperAdmin: user.isSuperAdmin,
       emailVerified: user.emailVerified,
       createdAt: user.createdAt,
     };
@@ -91,6 +120,7 @@ export class AuthService {
       displayName: user.displayName,
       avatarUrl: user.avatarUrl,
       isAdmin: user.isAdmin,
+      isSuperAdmin: user.isSuperAdmin,
       emailVerified: user.emailVerified,
       createdAt: user.createdAt,
     };
@@ -100,13 +130,24 @@ export class AuthService {
   /* Password Reset                                                     */
   /* ------------------------------------------------------------------ */
 
-  private generateResetCode(): string {
-    return String(Math.floor(1000 + Math.random() * 9000));
+  private escapeHtml(value: string): string {
+    return value.replace(
+      /[&<>"']/g,
+      (character) =>
+        ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#039;',
+        })[character]!,
+    );
   }
 
-  private buildResetEmail({ username, code, resetLink, expiresAt }: { username: string; code: string; resetLink: string; expiresAt: Date }): { html: string; text: string } {
+  private buildResetEmail({ username, resetLink, expiresAt }: { username: string; resetLink: string; expiresAt: Date }): { html: string; text: string } {
     const expiryTime = expiresAt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
     const expiryDate = expiresAt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    const safeUsername = this.escapeHtml(username);
 
     const html = `<!DOCTYPE html>
 <html lang="en">
@@ -132,29 +173,16 @@ export class AuthService {
           <tr>
             <td style="padding:40px 30px;">
               <h2 style="margin:0 0 16px 0;color:#1a1a1a;font-size:22px;font-weight:600;">Password Reset Request</h2>
-              <p style="margin:0 0 24px 0;color:#555;font-size:15px;line-height:1.6;">Hi <strong>${username}</strong>, we received a request to reset your CricApp password. Use the 4-digit code below to complete the reset.</p>
+              <p style="margin:0 0 24px 0;color:#555;font-size:15px;line-height:1.6;">Hi <strong>${safeUsername}</strong>, we received a request to reset your CricApp password.</p>
 
-              <!-- Code Box -->
-              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0;">
-                <tr>
-                  <td style="background:#f0f7f0;border:2px dashed #2e8b47;border-radius:8px;padding:24px;text-align:center;">
-                    <p style="margin:0 0 8px 0;color:#666;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Your Reset Code</p>
-                    <p style="margin:0;color:#1a5f2a;font-size:42px;font-weight:800;letter-spacing:8px;font-family:'Courier New',monospace;">${code}</p>
-                  </td>
-                </tr>
-              </table>
-
-              <p style="margin:0 0 24px 0;color:#555;font-size:15px;line-height:1.6;">Enter this code in the app or on the website to set a new password. This code will expire at <strong>${expiryTime}</strong> on <strong>${expiryDate}</strong>.</p>
-
-              <!-- Alternative Link -->
               <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0;">
                 <tr>
                   <td style="text-align:center;">
-                    <p style="margin:0 0 12px 0;color:#777;font-size:13px;">Or click the button below to reset directly:</p>
                     <a href="${resetLink}" style="display:inline-block;background:linear-gradient(135deg,#1a5f2a 0%,#2e8b47 100%);color:#ffffff;text-decoration:none;padding:14px 36px;border-radius:6px;font-size:15px;font-weight:600;letter-spacing:0.5px;">Reset Password</a>
                   </td>
                 </tr>
               </table>
+              <p style="margin:0 0 24px 0;color:#555;font-size:15px;line-height:1.6;">This secure link expires at <strong>${expiryTime}</strong> on <strong>${expiryDate}</strong> and can only be used once.</p>
 
               <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0;">
                 <tr>
@@ -185,11 +213,10 @@ export class AuthService {
 
 Hi ${username},
 
-Your password reset code is: ${code}
+Reset your password using this secure link:
+${resetLink}
 
-Enter this code in the app to reset your password. This code expires at ${expiryTime} on ${expiryDate}.
-
-Alternatively, use this link: ${resetLink}
+This link expires at ${expiryTime} on ${expiryDate} and can only be used once.
 
 Didn't request this? Ignore this email — your account is safe.
 
@@ -208,15 +235,11 @@ Live Scores • Match Analytics • Player Stats • News & Updates
     }
 
     const rawToken = crypto.randomUUID();
-    const resetCode = this.generateResetCode();
-    const [tokenHash, codeHash] = await Promise.all([
-      bcrypt.hash(rawToken, 10),
-      bcrypt.hash(resetCode, 10),
-    ]);
+    const tokenHash = await bcrypt.hash(rawToken, 10);
     const expiresAt = new Date(Date.now() + 3600 * 1000); // 1 hour
 
     const tokenRecord = await this.prisma.passwordResetToken.create({
-      data: { userId: user.id, tokenHash, codeHash, expiresAt },
+      data: { userId: user.id, tokenHash, expiresAt },
     });
 
     const appUrl = this.config.get<string>('APP_URL', 'http://localhost:3000');
@@ -224,14 +247,13 @@ Live Scores • Match Analytics • Player Stats • News & Updates
 
     const { html, text } = this.buildResetEmail({
       username: user.displayName || user.username,
-      code: resetCode,
       resetLink,
       expiresAt,
     });
 
     await this.mailer.sendMail({
       to: user.email,
-      subject: '🔐 Your CricApp Password Reset Code',
+      subject: 'Reset your CricApp password',
       html,
       text,
     });
@@ -249,28 +271,28 @@ Live Scores • Match Analytics • Player Stats • News & Updates
       throw new BadRequestException('Invalid or expired token');
     }
 
-    let valid = false;
-
-    if (dto.code && token.codeHash) {
-      valid = await bcrypt.compare(dto.code, token.codeHash);
-    } else if (dto.token) {
-      valid = await bcrypt.compare(dto.token, token.tokenHash);
-    }
-
+    const valid = await bcrypt.compare(dto.token, token.tokenHash);
     if (!valid) throw new BadRequestException('Invalid or expired token');
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
 
-    await this.prisma.$transaction([
-      this.prisma.user.update({
+    await this.prisma.$transaction(async (transaction) => {
+      const claimed = await transaction.passwordResetToken.updateMany({
+        where: {
+          id: token.id,
+          usedAt: null,
+          expiresAt: { gt: new Date() },
+        },
+        data: { usedAt: new Date() },
+      });
+      if (claimed.count !== 1) {
+        throw new BadRequestException('Invalid or expired token');
+      }
+      await transaction.user.update({
         where: { id: token.userId },
         data: { passwordHash },
-      }),
-      this.prisma.passwordResetToken.update({
-        where: { id: token.id },
-        data: { usedAt: new Date() },
-      }),
-    ]);
+      });
+    });
 
     return { message: 'Password has been reset successfully.' };
   }
@@ -315,11 +337,58 @@ Live Scores • Match Analytics • Player Stats • News & Updates
       return { message: 'Email is already verified.' };
     }
 
-    await this.sendVerificationEmail(user.id, user.email);
+    const verifyLink = await this.createVerificationLink(user.id);
+    await this.sendVerificationEmail(
+      user.email,
+      user.displayName ?? user.username,
+      verifyLink,
+    );
     return { message: 'If an account exists, a verification email has been sent.' };
   }
 
-  private async sendVerificationEmail(userId: string, email: string) {
+  private buildVerificationEmail({
+    username,
+    verifyLink,
+  }: {
+    username: string;
+    verifyLink: string;
+  }): { html: string; text: string } {
+    const safeUsername = this.escapeHtml(username);
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Verify your CricApp email</title></head>
+<body style="margin:0;padding:0;background:#f4f7f6;font-family:'Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 16px;background:#f4f7f6;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.08);">
+        <tr><td style="background:linear-gradient(135deg,#1a5f2a,#2e8b47);padding:36px 30px;text-align:center;">
+          <h1 style="margin:0;color:#fff;font-size:28px;">🏏 CricApp</h1>
+          <p style="margin:8px 0 0;color:#c8e6c9;font-size:14px;">Pakistan cricket, live scores, PSL and news</p>
+        </td></tr>
+        <tr><td style="padding:40px 30px;">
+          <h2 style="margin:0 0 16px;color:#1a1a1a;font-size:22px;">Welcome to CricApp</h2>
+          <p style="color:#555;font-size:15px;line-height:1.6;">Hi <strong>${safeUsername}</strong>, verify your email to activate your account and start following live matches, teams, players and cricket news.</p>
+          <p style="margin:28px 0;text-align:center;"><a href="${verifyLink}" style="display:inline-block;background:#2e8b47;color:#fff;text-decoration:none;padding:14px 36px;border-radius:6px;font-weight:600;">Verify Email Address</a></p>
+          <p style="color:#777;font-size:13px;line-height:1.5;">This link expires in 24 hours and can only be used once. If you did not create a CricApp account, ignore this email.</p>
+        </td></tr>
+        <tr><td style="background:#1a3c1d;padding:24px;text-align:center;color:#a5d6a7;font-size:12px;">CricApp — Your Cricket Companion</td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+    const text = `Welcome to CricApp, ${username}!
+
+Verify your email to activate your account:
+${verifyLink}
+
+This link expires in 24 hours and can only be used once.
+
+CricApp — Your Cricket Companion`;
+    return { html, text };
+  }
+
+  private async createVerificationLink(userId: string): Promise<string> {
     await this.prisma.emailVerificationToken.deleteMany({ where: { userId } });
 
     const rawToken = crypto.randomUUID();
@@ -331,32 +400,61 @@ Live Scores • Match Analytics • Player Stats • News & Updates
     });
 
     const appUrl = this.config.get<string>('APP_URL', 'http://localhost:3000');
-    const verifyLink = `${appUrl}/verify-email?token=${rawToken}&tid=${tokenRecord.id}`;
+    return `${appUrl}/verify-email?token=${rawToken}&tid=${tokenRecord.id}`;
+  }
+
+  private async sendVerificationEmail(
+    email: string,
+    username: string,
+    verifyLink: string,
+  ) {
+    const { html, text } = this.buildVerificationEmail({
+      username,
+      verifyLink,
+    });
 
     await this.mailer.sendMail({
       to: email,
-      subject: 'Verify your CricApp email address',
-      html: `<p>Welcome to CricApp!</p>
-             <p>Please verify your email address by clicking the link below:</p>
-             <p><a href="${verifyLink}">Verify Email</a></p>
-             <p>This link expires in 24 hours.</p>`,
-      text: `Verify your email: ${verifyLink}`,
+      subject: 'Verify your CricApp email',
+      html,
+      text,
     });
   }
 
-  private buildAuthResponse(user: { id: string; email: string; username: string; displayName: string | null; avatarUrl: string | null; isAdmin: boolean; emailVerified?: boolean }) {
-    const payload = { sub: user.id, email: user.email, username: user.username, isAdmin: user.isAdmin };
+  private toAuthUser(user: {
+    id: string;
+    email: string;
+    username: string;
+    displayName: string | null;
+    avatarUrl: string | null;
+    isAdmin: boolean;
+    isSuperAdmin: boolean;
+    emailVerified?: boolean;
+  }) {
     return {
-      access_token: this.jwt.sign(payload),
-      user: {
-        id: user.id,
-        email: user.email,
-        username: user.username,
-        displayName: user.displayName,
-        avatarUrl: user.avatarUrl,
-        isAdmin: user.isAdmin,
-        emailVerified: user.emailVerified ?? false,
-      },
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      displayName: user.displayName,
+      avatarUrl: user.avatarUrl,
+      isAdmin: user.isAdmin,
+      isSuperAdmin: user.isSuperAdmin,
+      emailVerified: user.emailVerified ?? false,
+    };
+  }
+
+  private buildAuthResponse(user: Parameters<AuthService['toAuthUser']>[0]) {
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      username: user.username,
+      isAdmin: user.isAdmin,
+      isSuperAdmin: user.isSuperAdmin,
+      emailVerified: user.emailVerified ?? false,
+    };
+    return {
+      token: this.jwt.sign(payload),
+      user: this.toAuthUser(user),
     };
   }
 }

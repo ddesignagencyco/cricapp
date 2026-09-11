@@ -109,11 +109,6 @@ export async function cleanDatabase(prisma: PrismaService): Promise<void> {
     'users',
   ];
 
-  for (const table of tables) {
-    try {
-      await prisma.$executeRawUnsafe(`TRUNCATE TABLE "${table}" CASCADE;`);
-    } catch {
-      // Table may not exist until scripts/migrate-priorities.js has been applied.
-    }
-  }
+  const quotedTables = tables.map((table) => `"${table}"`).join(', ');
+  await prisma.$executeRawUnsafe(`TRUNCATE TABLE ${quotedTables} CASCADE;`);
 }
