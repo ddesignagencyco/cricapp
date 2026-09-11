@@ -14,8 +14,13 @@ import CommentsSection from '../CommentsSection';
 import BallTracker from '../BallTracker';
 import MatchTimeline, { extractBalls } from '../MatchTimeline';
 import { formatScheduled } from '../../utils/helpers';
-import { fetchMatchTimeline } from '../../services/matches';
+import { fetchMatchTimeline, matchSideIds } from '../../services/matches';
+import { fetchHeadToHead } from '../../services/headToHead';
+import { fetchNews } from '../../services/news';
+import { fetchTeams } from '../../services/teams';
+import { getInitials } from '../../utils/helpers';
 import { useMatchStream } from '../../hooks/useMatchStream';
+import type { NewsArticle, Team } from '../../types';
 
 const detailTabs = [
   { key: 'live', label: 'Live Score', icon: Users },
@@ -34,12 +39,49 @@ interface Props {
   headToHead?: any;
 }
 
-export default function MatchDetailBody({ match: initialMatch, headToHead }: Props) {
+function looksLikeTeamId(value: string): boolean {
+  return value.startsWith('sr:competitor:') || /^[0-9a-f-]{20,}$/i.test(value);
+}
+
+function resolveTeamId(raw: string, teams: Team[]): string {
+  if (!raw) return '';
+  if (raw.startsWith('sr:competitor:')) return raw;
+  const needle = raw.toLowerCase();
+  const t = teams.find(
+    (x) =>
+      (x.abbr || '').toLowerCase() === needle ||
+      (x.code || '').toLowerCase() === needle ||
+      (x.id || '').toLowerCase() === needle ||
+      (x.name || '').toLowerCase() === needle
+  );
+  if (t?.id) return t.id;
+  return looksLikeTeamId(raw) ? raw : '';
+}
+
+function displaySide(match: any, index: 0 | 1) {
+  const teams = match.teams;
+  const isObj = teams && typeof teams === 'object' && !Array.isArray(teams);
+  const side = isObj ? (index === 0 ? teams.home : teams.away) : null;
+  const rawCode = side?.code || side?.abbr || (Array.isArray(teams) ? teams[index] : '') || '';
+  const rawName = side?.name || match.teamNames?.[index] || '';
+  const name = String(rawName || '').replace(/^sr:competitor:/, '') || (index === 0 ? 'Team A' : 'Team B');
+  const codeStr = String(rawCode || '').replace(/^sr:competitor:/, '');
+  const badCode = !codeStr || /^sr:/.test(codeStr) || codeStr.length > 5;
+  return {
+    name,
+    code: badCode ? getInitials(name) : codeStr.toUpperCase(),
+    raw: String(rawCode || rawName || ''),
+  };
+}
+
+export default function MatchDetailBody({ match: initialMatch, headToHead: initialHeadToHead }: Props) {
   const [match, setMatch] = useState(initialMatch);
   const [tab, setTab] = useState(
     initialMatch?.status === 'completed' || initialMatch?.status === 'cancelled' ? 'info' : 'live'
   );
   const [timeline, setTimeline] = useState<Record<string, unknown> | null>(null);
+  const [headToHead, setHeadToHead] = useState(initialHeadToHead || null);
+  const [relatedNews, setRelatedNews] = useState<NewsArticle[]>([]);
   const matchId = initialMatch?.matchId || initialMatch?.id;
   const liveUpdate = useMatchStream(matchId, initialMatch?.status === 'live');
 
@@ -66,10 +108,41 @@ export default function MatchDetailBody({ match: initialMatch, headToHead }: Pro
       .catch(() => {
         if (!cancelled) setTimeline(null);
       });
+    fetchNews({ matchId, limit: 6 })
+      .then((items) => {
+        if (!cancelled) setRelatedNews(items);
+      })
+      .catch(() => {
+        if (!cancelled) setRelatedNews([]);
+      });
     return () => {
       cancelled = true;
     };
   }, [matchId]);
+
+  useEffect(() => {
+    const sides = matchSideIds(initialMatch);
+    const homeRaw = sides.home || initialMatch?.teams?.home?.code || initialMatch?.home?.code || (Array.isArray(initialMatch?.teams) ? initialMatch.teams[0] : '') || '';
+    const awayRaw = sides.away || initialMatch?.teams?.away?.code || initialMatch?.away?.code || (Array.isArray(initialMatch?.teams) ? initialMatch.teams[1] : '') || '';
+    let cancelled = false;
+    const load = async () => {
+      let teamAId = homeRaw.startsWith('sr:competitor:') ? homeRaw : '';
+      let teamBId = awayRaw.startsWith('sr:competitor:') ? awayRaw : '';
+      if (!teamAId || !teamBId) {
+        const teams = await fetchTeams({ limit: 100 }).catch(() => [] as Team[]);
+        if (cancelled) return;
+        teamAId = resolveTeamId(homeRaw, teams);
+        teamBId = resolveTeamId(awayRaw, teams);
+      }
+      if (!teamAId || !teamBId) return;
+      const data = await fetchHeadToHead(teamAId, teamBId);
+      if (!cancelled) setHeadToHead(data);
+    };
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [initialMatch]);
 
   const isLive = match?.status === 'live';
   const isUpcoming = match?.status === 'upcoming';
@@ -85,16 +158,20 @@ export default function MatchDetailBody({ match: initialMatch, headToHead }: Pro
     );
   }
 
-  const codes = match.teams || [];
-  const names = match.teamNames || [];
-  const homeCode = codes[0] || '';
-  const awayCode = codes[1] || '';
-  const homeName = (names[0] && !names[0].startsWith('sr:')) ? names[0] : homeCode || 'Team A';
-  const awayName = (names[1] && !names[1].startsWith('sr:')) ? names[1] : awayCode || 'Team B';
+  const home = displaySide(match, 0);
+  const away = displaySide(match, 1);
+  const homeCode = home.code;
+  const awayCode = away.code;
+  const homeName = home.name;
+  const awayName = away.name;
 
   const inn = match.currentInnings;
   const battingCode = inn?.battingTeam;
-  const battingIsHome = battingCode === homeCode;
+  const sideMatches = (side: { code: string; name: string; raw: string }, value: string) => {
+    const needle = String(value || '').replace(/^sr:competitor:/, '').toLowerCase();
+    return [side.code, side.name, side.raw].some((part) => String(part || '').replace(/^sr:competitor:/, '').toLowerCase() === needle);
+  };
+  const battingIsHome = Boolean(battingCode) && sideMatches(home, battingCode);
   const hasInnings = inn && (inn.runs > 0 || inn.wickets > 0 || inn.overs > 0);
 
   let homeScore = '';
@@ -170,7 +247,7 @@ export default function MatchDetailBody({ match: initialMatch, headToHead }: Pro
                 Completed
               </span>
             )}
-            <FavoriteButton targetType="match" targetId={match.id || match.matchId} compact />
+            <FavoriteButton targetType="match" targetId={String(match.matchId || match.id || '')} compact />
             <ShareButton
               type="match"
               id={String(match.matchId || match.id || '')}
@@ -314,12 +391,16 @@ export default function MatchDetailBody({ match: initialMatch, headToHead }: Pro
               {date && <InfoRow label="Date" value={date} />}
               {time && <InfoRow label="Time" value={time} />}
               <InfoRow label="Venue" value={match.venue || 'TBA'} />
+              {match.matchStatus && <InfoRow label="Official status" value={String(match.matchStatus)} />}
             </div>
           )}
 
           {tab === 'result' && (isCompleted || isCancelled) && (
             <div className="rounded-2xl bg-card p-6 ring-1 ring-lborder">
               <h3 className="mb-4 text-sm font-bold uppercase tracking-widest text-stext">Match Result</h3>
+              {match.matchStatus && (
+                <p className="mb-4 text-sm font-semibold text-mtext">{match.matchStatus}</p>
+              )}
               {match.displayScore ? (
                 <div className="rounded-xl bg-elevated p-4 ring-1 ring-lborder">
                   <p className="text-xs font-bold uppercase tracking-widest text-stext mb-2">Final Score</p>
@@ -332,13 +413,28 @@ export default function MatchDetailBody({ match: initialMatch, headToHead }: Pro
           )}
         </div>
 
-        <aside className="lg:col-span-1 mt-3">
+        <aside className="lg:col-span-1 mt-3 space-y-4">
           <HeadToHeadWidget data={headToHead || null} />
+          {relatedNews.length > 0 && (
+            <div className="rounded-2xl bg-card p-4 ring-1 ring-lborder">
+              <h3 className="mb-3 text-sm font-bold uppercase tracking-widest text-stext">Related news</h3>
+              <ul className="space-y-2">
+                {relatedNews.map((article) => (
+                  <li key={article.id}>
+                    <Link href={`/news/${article.slug || article.id}`} className="block text-sm font-semibold text-mtext hover:text-accent">
+                      {article.title}
+                    </Link>
+                    <p className="text-xs text-stext">{article.date}</p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </aside>
       </div>
 
       <div className="mt-8">
-        <CommentsSection targetType="match" targetId={match.id || match.matchId} />
+        <CommentsSection targetType="match" targetId={String(match.matchId || match.id || '')} />
       </div>
     </div>
   );

@@ -285,6 +285,7 @@ function SearchCard({
   return (
     <Link
       href={href}
+      prefetch={false}
       className="group flex items-center gap-3 rounded-md border border-lborder bg-card px-3.5 py-3 transition-colors hover:border-accent/40 hover:bg-elevated"
     >
       {avatar}

@@ -25,9 +25,18 @@ import {
   type NewsInput,
 } from '../../services/newsAdmin';
 import RichTextEditor from './RichTextEditor';
+import MediaPicker from './MediaPicker';
 import { AdminInput, AdminSelect } from './AdminShared';
 import { fetchAdminAuthors, type AdminAuthor } from '../../services/admin';
 import RemoteImage from '../RemoteImage';
+import {
+  NEWS_LANGUAGES,
+  NEWS_TITLE_MAX_WORDS,
+  countWords,
+  isEmptyRichText,
+  isValidNewsSlug,
+  slugifyNews,
+} from '../../utils/newsConstraints';
 
 interface NewsEditorProps {
   mode: 'create' | 'edit';
@@ -36,6 +45,7 @@ interface NewsEditorProps {
 
 interface FormState {
   title: string;
+  slug: string;
   summary: string;
   content: string;
   imageUrl: string;
@@ -48,12 +58,11 @@ interface FormState {
   metaTitle: string;
   metaDescription: string;
   canonicalUrl: string;
-  isFeatured: boolean;
-  isBreaking: boolean;
 }
 
 const emptyForm: FormState = {
   title: '',
+  slug: '',
   summary: '',
   content: '',
   imageUrl: '',
@@ -66,8 +75,6 @@ const emptyForm: FormState = {
   metaTitle: '',
   metaDescription: '',
   canonicalUrl: '',
-  isFeatured: false,
-  isBreaking: false,
 };
 
 export default function NewsEditor({ mode, id }: NewsEditorProps) {
@@ -81,6 +88,8 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
   const [loading, setLoading] = useState(mode === 'edit');
   const [saving, setSaving] = useState(false);
   const [tagDraft, setTagDraft] = useState('');
+  const [slugTouched, setSlugTouched] = useState(mode === 'edit');
+  const [galleryOpen, setGalleryOpen] = useState(false);
 
   useEffect(() => {
     fetchNewsCategories().then(setCategories).catch(() => setCategories([]));
@@ -94,6 +103,7 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
         .then((article) => {
           setForm({
             title: article.title,
+            slug: article.slug || '',
             summary: article.summary || '',
             content: article.content,
             imageUrl: article.imageUrl || '',
@@ -106,8 +116,6 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
             metaTitle: article.metaTitle || '',
             metaDescription: article.metaDescription || '',
             canonicalUrl: article.canonicalUrl || '',
-            isFeatured: Boolean(article.isFeatured),
-            isBreaking: Boolean(article.isBreaking),
           });
         })
         .catch(() => toast.error('Could not load the article.'))
@@ -117,6 +125,16 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
+
+  const setTitle = (title: string) => {
+    setForm((f) => ({
+      ...f,
+      title,
+      slug: slugTouched ? f.slug : slugifyNews(title),
+    }));
+  };
+
+  const titleWordCount = countWords(form.title);
 
   const addTags = (raw: string) => {
     const incoming = raw
@@ -168,16 +186,31 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
   };
 
   const submit = async (publish: boolean) => {
-    if (!form.title.trim()) { toast.error('Title is required.'); return; }
-    if (!form.content.trim()) { toast.error('Content cannot be empty.'); return; }
+    const title = form.title.trim();
+    const slug = form.slug.trim();
+    const wordCount = countWords(title);
+    if (!title) { toast.error('Title is required.'); return; }
+    if (wordCount > NEWS_TITLE_MAX_WORDS) {
+      toast.error(`Title must be ${NEWS_TITLE_MAX_WORDS} words or fewer.`);
+      return;
+    }
+    if (slug && !isValidNewsSlug(slug)) {
+      toast.error('Slug can only use lowercase letters, numbers, and hyphens.');
+      return;
+    }
+    if (isEmptyRichText(form.content)) { toast.error('Content cannot be empty.'); return; }
+    if (form.language && !NEWS_LANGUAGES.includes(form.language as (typeof NEWS_LANGUAGES)[number])) {
+      toast.error('Language must be English or Urdu.');
+      return;
+    }
 
     setSaving(true);
     const payload: NewsInput = {
-      title: form.title.trim(),
+      title,
       content: form.content.trim(),
       isPublished: publish,
-      tags: form.tags,
     };
+    if (slug) payload.slug = slug;
     if (form.summary.trim()) payload.summary = form.summary.trim();
     if (form.imageUrl.trim()) payload.imageUrl = form.imageUrl.trim();
     if (form.author.trim()) payload.author = form.author.trim();
@@ -188,8 +221,6 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
     if (form.metaTitle.trim()) payload.metaTitle = form.metaTitle.trim();
     if (form.metaDescription.trim()) payload.metaDescription = form.metaDescription.trim();
     if (form.canonicalUrl.trim()) payload.canonicalUrl = form.canonicalUrl.trim();
-    payload.isFeatured = form.isFeatured;
-    payload.isBreaking = form.isBreaking;
 
     try {
       if (mode === 'create') {
@@ -274,16 +305,43 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
         {/* Left: Content */}
         <div className="space-y-4 lg:col-span-2">
           <div>
-            <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--admin-text-secondary)' }}>
-              Headline <span style={{ color: 'var(--admin-danger)' }}>*</span>
-            </label>
+            <div className="mb-1 flex items-center justify-between">
+              <label className="block text-xs font-semibold" style={{ color: 'var(--admin-text-secondary)' }}>
+                Headline <span style={{ color: 'var(--admin-danger)' }}>*</span>
+              </label>
+              <span
+                className="text-xs"
+                style={{ color: titleWordCount > NEWS_TITLE_MAX_WORDS ? 'var(--admin-danger)' : 'var(--admin-text-muted)' }}
+              >
+                {titleWordCount}/{NEWS_TITLE_MAX_WORDS} words
+              </span>
+            </div>
             <AdminInput
               type="text"
               value={form.title}
-              onChange={(e) => set('title', e.target.value)}
+              onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Babar Azam seals thriller at Gaddafi Stadium"
               required
             />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--admin-text-secondary)' }}>
+              SEO slug
+            </label>
+            <AdminInput
+              type="text"
+              value={form.slug}
+              onChange={(e) => {
+                setSlugTouched(true);
+                set('slug', e.target.value.toLowerCase().replace(/\s+/g, '-'));
+              }}
+              placeholder="generated-from-headline"
+            />
+            <p className="mt-1 text-xs" style={{ color: form.slug && !isValidNewsSlug(form.slug) ? 'var(--admin-danger)' : 'var(--admin-text-muted)' }}>
+              {form.slug && !isValidNewsSlug(form.slug)
+                ? 'Use lowercase letters, numbers, and hyphens only.'
+                : 'Leave blank to let the API generate this from the headline.'}
+            </p>
           </div>
           <div>
             <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--admin-text-secondary)' }}>Summary</label>
@@ -331,6 +389,15 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
                 {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </AdminSelect>
             )}
+            <label className="mt-3 block text-xs font-semibold" style={{ color: 'var(--admin-text-secondary)' }}>
+              Language
+              <div className="mt-1">
+                <AdminSelect value={form.language} onChange={(e) => set('language', e.target.value)}>
+                  <option value="en">English</option>
+                  <option value="ur">Urdu</option>
+                </AdminSelect>
+              </div>
+            </label>
           </div>
 
           {/* Featured Image */}
@@ -338,10 +405,26 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
             <label className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 mb-2" style={{ color: 'var(--admin-text)' }}>
               <ImageIcon size={12} style={{ color: 'var(--admin-accent)' }} /> Cover Image
             </label>
-            <AdminInput type="url" value={form.imageUrl} onChange={(e) => set('imageUrl', e.target.value)} placeholder="https://..." />
+            <button
+              type="button"
+              onClick={() => setGalleryOpen(true)}
+              className="flex w-full items-center justify-center rounded-md px-3 py-2 text-xs font-bold"
+              style={{ border: '1px dashed var(--admin-border)', color: 'var(--admin-accent)' }}
+            >
+              {form.imageUrl ? 'Change image' : 'Choose from gallery'}
+            </button>
             {form.imageUrl && (
               <div className="mt-2 overflow-hidden rounded" style={{ border: '1px solid var(--admin-border)' }}>
                 <RemoteImage src={form.imageUrl} alt="Preview" width={640} height={96} className="h-24 w-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                <p className="break-all px-2 py-1 text-[11px]" style={{ color: 'var(--admin-text-muted)' }}>{form.imageUrl}</p>
+                <button
+                  type="button"
+                  onClick={() => set('imageUrl', '')}
+                  className="w-full px-2 py-1.5 text-xs font-semibold"
+                  style={{ borderTop: '1px solid var(--admin-border)', color: 'var(--admin-danger)' }}
+                >
+                  Remove cover
+                </button>
               </div>
             )}
           </div>
@@ -433,27 +516,23 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
           </div>
 
           <div className="rounded-lg p-4 space-y-3" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
-            <label className="block text-xs font-semibold" style={{ color: 'var(--admin-text-secondary)' }}>
-              Language
-              <AdminSelect value={form.language} onChange={(e) => set('language', e.target.value)}>
-                <option value="en">English</option>
-                <option value="ur">Urdu</option>
-              </AdminSelect>
-            </label>
-            <label className="flex items-center gap-2 text-xs font-semibold" style={{ color: 'var(--admin-text)' }}>
-              <input type="checkbox" checked={form.isFeatured} onChange={(e) => set('isFeatured', e.target.checked)} />
-              Featured
-            </label>
-            <label className="flex items-center gap-2 text-xs font-semibold" style={{ color: 'var(--admin-text)' }}>
-              <input type="checkbox" checked={form.isBreaking} onChange={(e) => set('isBreaking', e.target.checked)} />
-              Breaking
-            </label>
+            <p className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text)' }}>SEO</p>
             <AdminInput value={form.metaTitle} onChange={(e) => set('metaTitle', e.target.value)} placeholder="SEO title" />
             <AdminInput value={form.metaDescription} onChange={(e) => set('metaDescription', e.target.value)} placeholder="SEO description" />
             <AdminInput value={form.canonicalUrl} onChange={(e) => set('canonicalUrl', e.target.value)} placeholder="Canonical URL" />
           </div>
         </div>
       </div>
+
+      <MediaPicker
+        open={galleryOpen}
+        title="Choose cover image"
+        onClose={() => setGalleryOpen(false)}
+        onSelect={(url) => {
+          set('imageUrl', url);
+          setGalleryOpen(false);
+        }}
+      />
     </div>
   );
 }

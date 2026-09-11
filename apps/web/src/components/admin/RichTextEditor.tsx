@@ -26,7 +26,8 @@ import {
   Undo2,
   Redo2,
 } from 'lucide-react';
-import { useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import MediaPicker from './MediaPicker';
 
 interface RichTextEditorProps {
   value: string;
@@ -35,6 +36,7 @@ interface RichTextEditorProps {
 }
 
 export default function RichTextEditor({ value, onChange, placeholder }: RichTextEditorProps) {
+  const [galleryOpen, setGalleryOpen] = useState(false);
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -77,11 +79,13 @@ export default function RichTextEditor({ value, onChange, placeholder }: RichTex
   }, [editor]);
 
   const addImage = useCallback(() => {
-    if (!editor) return;
-    const url = window.prompt('Image URL');
-    if (url) {
-      editor.chain().focus().setImage({ src: url }).run();
-    }
+    setGalleryOpen(true);
+  }, []);
+
+  const insertImage = useCallback((url: string) => {
+    if (!editor || !url) return;
+    editor.chain().focus().setImage({ src: url }).run();
+    setGalleryOpen(false);
   }, [editor]);
 
   if (!editor) return null;
@@ -97,6 +101,7 @@ export default function RichTextEditor({ value, onChange, placeholder }: RichTex
   });
 
   return (
+    <>
     <div className="tiptap-editor overflow-hidden rounded-lg" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-0.5 border-b p-2" style={{ borderColor: 'var(--admin-border)', background: 'var(--admin-input-bg)' }}>
@@ -157,7 +162,7 @@ export default function RichTextEditor({ value, onChange, placeholder }: RichTex
           className={btnClass(editor.isActive('link'))} style={btnStyle(editor.isActive('link'))} title="Add Link">
           <LinkIcon size={15} />
         </button>
-        <button type="button" onClick={addImage} className={btnClass(false)} style={btnStyle(false)} title="Add Image">
+        <button type="button" onClick={addImage} className={btnClass(false)} style={btnStyle(false)} title="Insert image from gallery">
           <ImageIcon size={15} />
         </button>
         <button type="button" onClick={() => editor.chain().focus().setHorizontalRule().run()}
@@ -186,6 +191,14 @@ export default function RichTextEditor({ value, onChange, placeholder }: RichTex
         <span>Rich text editor • TipTap</span>
         <span>{editor.storage.characterCount?.characters?.() ?? editor.getText().length} chars • {editor.storage.characterCount?.words?.() ?? editor.getText().split(/\s+/).filter(Boolean).length} words</span>
       </div>
+
     </div>
+    <MediaPicker
+      open={galleryOpen}
+      title="Insert image from Cloudinary"
+      onClose={() => setGalleryOpen(false)}
+      onSelect={insertImage}
+    />
+    </>
   );
 }

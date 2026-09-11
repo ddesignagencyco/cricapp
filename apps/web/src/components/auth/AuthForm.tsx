@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Hash, Mail, User } from 'lucide-react';
+import { Mail, User } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
 import toast from 'react-hot-toast';
@@ -50,7 +50,6 @@ interface FieldErrors {
   confirmPassword?: string;
   terms?: string;
   token?: string;
-  code?: string;
 }
 
 const inputClass =
@@ -81,8 +80,6 @@ function TextField({
   autoComplete,
   error,
   placeholder,
-  maxLength,
-  inputMode,
 }: {
   id: string;
   label: string;
@@ -93,8 +90,6 @@ function TextField({
   autoComplete: string;
   error?: string;
   placeholder: string;
-  maxLength?: number;
-  inputMode?: 'text' | 'email' | 'numeric';
 }) {
   const errorId = `${id}-error`;
   return (
@@ -105,8 +100,6 @@ function TextField({
       <div className="relative">
         {type === 'email' ? (
           <Mail size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-stext" />
-        ) : name === 'code' ? (
-          <Hash size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-stext" />
         ) : (
           <User size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-stext" />
         )}
@@ -118,8 +111,6 @@ function TextField({
           onChange={(event) => onChange(event.target.value)}
           autoComplete={autoComplete}
           placeholder={placeholder}
-          maxLength={maxLength}
-          inputMode={inputMode}
           required
           aria-invalid={Boolean(error)}
           aria-describedby={error ? errorId : undefined}
@@ -139,13 +130,13 @@ export default function AuthForm({ mode, token = '', tokenId = '', initialEmail 
   const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [code, setCode] = useState('');
   const [terms, setTerms] = useState(false);
   const [loading, setLoading] = useState(mode === 'verify');
   const [message, setMessage] = useState('');
   const [success, setSuccess] = useState('');
   const [errors, setErrors] = useState<FieldErrors>({});
   const [verified, setVerified] = useState(false);
+  const [unverifiedLogin, setUnverifiedLogin] = useState(false);
 
   useEffect(() => {
     if (mode !== 'verify') return;
@@ -189,14 +180,7 @@ export default function AuthForm({ mode, token = '', tokenId = '', initialEmail 
     if ((mode === 'login' || mode === 'register' || mode === 'reset') && password.length < 6) next.password = 'Password must be at least 6 characters.';
     if ((mode === 'register' || mode === 'reset') && password !== confirmPassword) next.confirmPassword = 'Passwords do not match.';
     if (mode === 'register' && !terms) next.terms = 'Accept the terms to continue.';
-    if (mode === 'reset') {
-      if (tokenId) {
-        if (!token && !/^\d{4}$/.test(code.trim())) next.token = 'This reset link is missing or invalid.';
-      } else {
-        if (!/^\S+@\S+\.\S+$/.test(email.trim())) next.email = 'Enter a valid email address.';
-        if (!/^\d{4}$/.test(code.trim())) next.code = 'Enter the 4-digit code from your email.';
-      }
-    }
+    if (mode === 'reset' && (!token || !tokenId)) next.token = 'Open the reset link from your email to set a new password.';
     return next;
   };
 
@@ -204,6 +188,7 @@ export default function AuthForm({ mode, token = '', tokenId = '', initialEmail 
     event.preventDefault();
     setMessage('');
     setSuccess('');
+    setUnverifiedLogin(false);
     const nextErrors = validate();
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
@@ -217,21 +202,18 @@ export default function AuthForm({ mode, token = '', tokenId = '', initialEmail 
         const returnTo = params.get('returnTo');
         router.replace(returnTo ? safeReturnTo(returnTo) : user.isAdmin ? '/admin' : '/');
       } else if (mode === 'register') {
-        await register({ email: email.trim(), username: slugFromName(name, email), displayName: name.trim(), password });
-        await refresh();
-        setSuccess('Account created. Check your email to verify your address.');
-        toast.success('Account created. Check your inbox.');
+        const created = await register({ email: email.trim(), username: slugFromName(name, email), displayName: name.trim(), password });
+        setSuccess(created.message || 'Account created. Check your email to verify your address before signing in.');
+        toast.success('Account created. Check your inbox to verify your email.');
+        router.replace('/login');
       } else if (mode === 'forgot') {
         const response = await forgotPassword({ email: email.trim() });
         setSuccess(response.message);
-        toast.success('We sent a 4-digit code to your email.');
-        router.push(`/reset-password?email=${encodeURIComponent(email.trim())}`);
+        toast.success('If an account exists, we sent a reset link to your email.');
       } else if (mode === 'reset') {
         const response = await resetPassword({
-          tokenId: tokenId || undefined,
-          token: token || undefined,
-          email: tokenId ? undefined : email.trim(),
-          code: code.trim() || undefined,
+          tokenId,
+          token,
           password,
         });
         setSuccess(response.message);
@@ -241,6 +223,9 @@ export default function AuthForm({ mode, token = '', tokenId = '', initialEmail 
     } catch (error: unknown) {
       const text = errorMessage(error);
       setMessage(text);
+      if (mode === 'login' && error instanceof ApiError && error.status === 403) {
+        setUnverifiedLogin(true);
+      }
       toast.error(text);
     } finally {
       setLoading(false);
@@ -255,6 +240,7 @@ export default function AuthForm({ mode, token = '', tokenId = '', initialEmail 
         {!loading && message && <FormMessage message={message} />}
         {!loading && !verified && (
           <ResendForm
+            initialEmail={email}
             onAlreadyVerified={(text) => {
               setVerified(true);
               setSuccess(text);
@@ -267,25 +253,21 @@ export default function AuthForm({ mode, token = '', tokenId = '', initialEmail 
     );
   }
 
+  if (mode === 'reset' && (!token || !tokenId)) {
+    return (
+      <div className="space-y-4 text-center">
+        <FormMessage message="This reset page only works from the link in your email. Password-reset codes are no longer used." />
+        <Link href="/forgot-password" className="inline-block text-sm font-semibold text-accent hover:text-accent2">
+          Request a new reset link
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <form onSubmit={submit} className="space-y-4" noValidate>
       {mode === 'register' && <TextField id="name" label="Full name" name="name" type="text" value={name} onChange={setName} autoComplete="name" placeholder="Your full name" error={errors.name} />}
-      {(mode === 'login' || mode === 'register' || mode === 'forgot' || (mode === 'reset' && !tokenId)) && <TextField id="email" label="Email" name="email" type="email" value={email} onChange={setEmail} autoComplete="email" placeholder="you@example.com" error={errors.email} />}
-      {mode === 'reset' && !tokenId && (
-        <TextField
-          id="reset-code"
-          label="4-digit code"
-          name="code"
-          type="text"
-          value={code}
-          onChange={(value) => setCode(value.replace(/\D/g, '').slice(0, 4))}
-          autoComplete="one-time-code"
-          placeholder="1234"
-          maxLength={4}
-          inputMode="numeric"
-          error={errors.code}
-        />
-      )}
+      {(mode === 'login' || mode === 'register' || mode === 'forgot') && <TextField id="email" label="Email" name="email" type="email" value={email} onChange={setEmail} autoComplete="email" placeholder="you@example.com" error={errors.email} />}
       {(mode === 'login' || mode === 'register' || mode === 'reset') && <PasswordField id="password" label={mode === 'reset' ? 'New password' : 'Password'} name="password" value={password} onChange={setPassword} autoComplete={mode === 'login' ? 'current-password' : 'new-password'} error={errors.password} />}
       {mode === 'register' && <PasswordField id="confirm-password" label="Confirm password" name="confirmPassword" value={confirmPassword} onChange={setConfirmPassword} autoComplete="new-password" error={errors.confirmPassword} />}
       {mode === 'reset' && <>
@@ -323,6 +305,12 @@ export default function AuthForm({ mode, token = '', tokenId = '', initialEmail 
       )}
       <FormMessage message={message} />
       <FormMessage message={success} tone="success" />
+      {unverifiedLogin && (
+        <div className="rounded-xl border border-lborder bg-elevated/60 p-3">
+          <p className="mb-2 text-xs text-stext">This account is not verified yet. Request a new verification email below.</p>
+          <ResendForm initialEmail={email} />
+        </div>
+      )}
       <button
         type="submit"
         disabled={loading}
@@ -335,26 +323,21 @@ export default function AuthForm({ mode, token = '', tokenId = '', initialEmail 
           : mode === 'register'
           ? 'Create Free Account'
           : mode === 'forgot'
-          ? 'Send reset code'
+          ? 'Send reset link'
           : 'Reset Password'}
       </button>
-      {mode === 'forgot' && (
-        <p className="text-center text-xs text-stext">
-          Already have a code?{' '}
-          <Link
-            href={email.trim() ? `/reset-password?email=${encodeURIComponent(email.trim())}` : '/reset-password'}
-            className="font-semibold text-accent hover:text-accent2"
-          >
-            Enter it here
-          </Link>
-        </p>
-      )}
     </form>
   );
 }
 
-function ResendForm({ onAlreadyVerified }: { onAlreadyVerified?: (_message: string) => void }) {
-  const [email, setEmail] = useState('');
+function ResendForm({
+  initialEmail = '',
+  onAlreadyVerified,
+}: {
+  initialEmail?: string;
+  onAlreadyVerified?: (_message: string) => void;
+}) {
+  const [email, setEmail] = useState(initialEmail);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const resend = async (event: FormEvent) => {
@@ -378,5 +361,12 @@ function ResendForm({ onAlreadyVerified }: { onAlreadyVerified?: (_message: stri
       setLoading(false);
     }
   };
-  return <form onSubmit={resend} className="space-y-2 text-left"><label htmlFor="resend-email" className="block text-xs font-semibold text-mtext">Resend verification email</label><input id="resend-email" name="email" type="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" autoComplete="email" className={inputClass} /><button type="submit" disabled={loading} className="w-full rounded bg-elevated px-3 py-2 text-xs font-bold text-mtext ring-1 ring-lborder disabled:opacity-60">{loading ? 'Sending…' : 'Resend email'}</button>{message && <FormMessage message={message} tone="info" />}</form>;
+  return (
+    <form onSubmit={resend} className="space-y-2 text-left">
+      <label htmlFor="resend-email" className="block text-xs font-semibold text-mtext">Resend verification email</label>
+      <input id="resend-email" name="email" type="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" autoComplete="email" className={inputClass} />
+      <button type="submit" disabled={loading} className="w-full rounded bg-elevated px-3 py-2 text-xs font-bold text-mtext ring-1 ring-lborder disabled:opacity-60">{loading ? 'Sending…' : 'Resend email'}</button>
+      {message && <FormMessage message={message} tone="info" />}
+    </form>
+  );
 }

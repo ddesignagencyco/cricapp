@@ -66,7 +66,30 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeProvider>
           <AuthProvider>
             <ClientLayout>{children}</ClientLayout>
-            <Toaster position="top-center" toastOptions={{ duration: 3500 }} />
+            <Toaster
+              position="top-right"
+              gutter={10}
+              containerStyle={{ top: 16, right: 16, zIndex: 80 }}
+              toastOptions={{
+                duration: 3200,
+                className: 'pcz-toast',
+                style: {
+                  background: 'transparent',
+                  color: 'inherit',
+                  border: 'none',
+                  boxShadow: 'none',
+                  padding: 0,
+                },
+                success: {
+                  className: 'pcz-toast pcz-toast--success',
+                  iconTheme: { primary: 'var(--color-accent)', secondary: 'var(--color-surface-elevated)' },
+                },
+                error: {
+                  className: 'pcz-toast pcz-toast--error',
+                  iconTheme: { primary: 'var(--color-danger)', secondary: 'var(--color-surface-elevated)' },
+                },
+              }}
+            />
           </AuthProvider>
         </ThemeProvider>
       </body>

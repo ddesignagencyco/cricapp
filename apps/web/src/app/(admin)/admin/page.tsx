@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import {
   FileText,
   Trophy,
@@ -16,6 +16,8 @@ import {
   Share2,
   Flag,
   RefreshCw,
+  Globe,
+  Map,
 } from 'lucide-react';
 import { useAuth } from '../../../components/AuthProvider';
 import { fetchMatchesPage } from '../../../services/matches';
@@ -139,7 +141,7 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
         <MetricCard
           label="Users"
           value={n(analytics?.users)}
@@ -169,18 +171,25 @@ export default function AdminDashboard() {
           accentBg="var(--admin-info-bg)"
         />
         <MetricCard
+          label="Tournaments"
+          value={n(analytics?.tournaments)}
+          icon={<Globe size={14} />}
+          accentColor="var(--admin-accent)"
+          accentBg="rgba(0, 191, 255, 0.12)"
+        />
+        <MetricCard
+          label="Tours"
+          value={n(analytics?.tours)}
+          icon={<Map size={14} />}
+          accentColor="var(--admin-info)"
+          accentBg="var(--admin-info-bg)"
+        />
+        <MetricCard
           label="Comments"
           value={n(analytics?.comments)}
           icon={<MessageSquare size={14} />}
           accentColor="var(--admin-accent)"
           accentBg="var(--admin-info-bg)"
-        />
-        <MetricCard
-          label="Favorites"
-          value={n(analytics?.favorites)}
-          icon={<Heart size={14} />}
-          accentColor="var(--admin-danger)"
-          accentBg="var(--admin-danger-bg)"
         />
         <MetricCard
           label="Streams"
@@ -209,6 +218,20 @@ export default function AdminDashboard() {
           icon={<Share2 size={14} />}
           accentColor="var(--admin-accent)"
           accentBg="rgba(0, 191, 255, 0.12)"
+        />
+        <MetricCard
+          label="Favorites"
+          value={n(favoriteTotal(analytics))}
+          icon={<Heart size={14} />}
+          accentColor="var(--admin-danger)"
+          accentBg="var(--admin-danger-bg)"
+          extra={
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              <FavoriteTypeChip icon={<Users size={10} />} label="Teams" count={favoriteType(analytics, 'team')} />
+              <FavoriteTypeChip icon={<UserCircle size={10} />} label="Players" count={favoriteType(analytics, 'player')} />
+              <FavoriteTypeChip icon={<Trophy size={10} />} label="Matches" count={favoriteType(analytics, 'match')} />
+            </div>
+          }
         />
       </div>
 
@@ -318,11 +341,11 @@ export default function AdminDashboard() {
                           <span
                             className="rounded-full px-2 py-0.5 text-[11px] font-bold"
                             style={{
-                              background: u.isAdmin ? 'var(--admin-accent)' : 'var(--admin-input-bg)',
-                              color: u.isAdmin ? '#fff' : 'var(--admin-text-secondary)',
+                              background: u.isSuperAdmin || u.isAdmin ? 'var(--admin-accent)' : 'var(--admin-input-bg)',
+                              color: u.isSuperAdmin || u.isAdmin ? '#fff' : 'var(--admin-text-secondary)',
                             }}
                           >
-                            {u.isAdmin ? 'Admin' : 'Member'}
+                            {u.isSuperAdmin ? 'Superadmin' : u.isAdmin ? 'Admin' : 'Member'}
                           </span>
                         </td>
                       </tr>
@@ -482,22 +505,58 @@ function n(value?: number) {
   return (value ?? 0).toLocaleString();
 }
 
+function favoriteTotal(analytics: AdminAnalytics | null) {
+  const favorites = analytics?.favorites;
+  if (!favorites) return 0;
+  if (typeof favorites === 'number') return favorites;
+  return favorites.total ?? 0;
+}
+
+function favoriteType(analytics: AdminAnalytics | null, type: string) {
+  const favorites = analytics?.favorites;
+  if (!favorites || typeof favorites === 'number') return 0;
+  return favorites.types?.[type] ?? 0;
+}
+
+function FavoriteTypeChip({
+  icon,
+  label,
+  count,
+}: {
+  icon: ReactNode;
+  label: string;
+  count: number;
+}) {
+  return (
+    <span
+      className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold"
+      style={{ background: 'var(--admin-input-bg)', color: 'var(--admin-text-secondary)' }}
+      title={label}
+    >
+      <span style={{ color: 'var(--admin-accent)' }}>{icon}</span>
+      <span className="tabular-nums" style={{ color: 'var(--admin-text)' }}>{n(count)}</span>
+    </span>
+  );
+}
+
 function MetricCard({
   label,
   value,
   icon,
   accentColor,
   accentBg,
+  extra,
 }: {
   label: string;
   value: string | number;
-  icon: React.ReactNode;
+  icon: ReactNode;
   accentColor: string;
   accentBg: string;
+  extra?: ReactNode;
 }) {
   return (
     <div
-      className="flex items-center gap-2.5 rounded-md px-3 py-2"
+      className="flex items-start gap-2.5 rounded-md px-3 py-2"
       style={{
         border: '1px solid var(--admin-border)',
         background: 'var(--admin-card)',
@@ -516,6 +575,7 @@ function MetricCard({
         <p className="text-lg font-bold tabular-nums leading-tight" style={{ color: 'var(--admin-text)' }}>
           {value}
         </p>
+        {extra}
       </div>
     </div>
   );

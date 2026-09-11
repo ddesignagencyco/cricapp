@@ -8,43 +8,30 @@ import type {
   RegisterInput,
   ResendVerificationInput,
   ResetPasswordInput,
+  SignupResponse,
   UpdateProfileInput,
   VerifyEmailInput,
 } from '../types/auth';
 
-const TOKEN_KEY = 'pak-criczone-access-token';
-
-function canUseStorage(): boolean {
-  return typeof window !== 'undefined' && Boolean(window.localStorage);
+/** Cookie session — Bearer headers are unused. Kept so existing call sites compile. */
+export function authHeaders(): Record<string, string> {
+  return {};
 }
 
 export function getAccessToken(): string | null {
-  return canUseStorage() ? window.localStorage.getItem(TOKEN_KEY) : null;
-}
-
-function saveAccessToken(token: string): void {
-  if (canUseStorage()) window.localStorage.setItem(TOKEN_KEY, token);
+  return null;
 }
 
 export function clearAccessToken(): void {
-  if (canUseStorage()) window.localStorage.removeItem(TOKEN_KEY);
-}
-
-export function authHeaders(): Record<string, string> {
-  const token = getAccessToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  // Session lives in the HttpOnly cookie; nothing to clear locally.
 }
 
 export async function login(input: LoginInput): Promise<AuthResponse> {
-  const response = await apiPost<AuthResponse>('/auth/login', input);
-  saveAccessToken(response.access_token);
-  return response;
+  return apiPost<AuthResponse>('/auth/login', input);
 }
 
-export async function register(input: RegisterInput): Promise<AuthResponse> {
-  const response = await apiPost<AuthResponse>('/auth/signup', input);
-  saveAccessToken(response.access_token);
-  return response;
+export async function register(input: RegisterInput): Promise<SignupResponse> {
+  return apiPost<SignupResponse>('/auth/signup', input);
 }
 
 export function forgotPassword(input: ForgotPasswordInput): Promise<MessageResponse> {
@@ -52,12 +39,11 @@ export function forgotPassword(input: ForgotPasswordInput): Promise<MessageRespo
 }
 
 export function resetPassword(input: ResetPasswordInput): Promise<MessageResponse> {
-  const body: Record<string, string> = { password: input.password };
-  if (input.tokenId) body.tokenId = input.tokenId;
-  if (input.token) body.token = input.token;
-  if (input.email) body.email = input.email;
-  if (input.code) body.code = input.code;
-  return apiPost<MessageResponse>('/auth/reset-password', body);
+  return apiPost<MessageResponse>('/auth/reset-password', {
+    tokenId: input.tokenId,
+    token: input.token,
+    password: input.password,
+  });
 }
 
 export function verifyEmail(input: VerifyEmailInput): Promise<MessageResponse> {
@@ -69,13 +55,17 @@ export function resendVerification(input: ResendVerificationInput): Promise<Mess
 }
 
 export function getCurrentUser(): Promise<AuthUser> {
-  return apiGet<AuthUser>('/auth/me', undefined, { headers: authHeaders() });
+  return apiGet<AuthUser>('/auth/me');
 }
 
 export function updateProfile(input: UpdateProfileInput): Promise<AuthUser> {
-  return apiPatch<AuthUser>('/auth/me', input, { headers: authHeaders() });
+  return apiPatch<AuthUser>('/auth/me', input);
 }
 
-export function logout(): void {
-  clearAccessToken();
+export async function logout(): Promise<void> {
+  try {
+    await apiPost<MessageResponse>('/auth/logout');
+  } catch {
+    // Cookie may already be gone.
+  }
 }

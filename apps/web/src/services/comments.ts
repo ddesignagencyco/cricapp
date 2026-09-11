@@ -2,8 +2,8 @@ import { apiGet, apiPost, apiDelete, extractPage } from './api/client';
 import { authHeaders } from './auth';
 import type { AuthUser } from '../types/auth';
 
-export type CommentTarget = 'match' | 'news';
-export type ReactionTarget = 'match' | 'news' | 'comment';
+export type CommentTarget = 'match' | 'news' | 'stream';
+export type ReactionTarget = 'match' | 'news' | 'stream' | 'comment';
 
 export interface CommentItem {
   id: string;

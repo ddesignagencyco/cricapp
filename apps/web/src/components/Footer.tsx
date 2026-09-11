@@ -16,6 +16,8 @@ const footerCols = [
       { label: 'Players', to: '/players' },
       { label: 'Live Streams', to: '/streams' },
       { label: 'News', to: '/news' },
+      { label: 'Urdu News', to: '/ur/news' },
+      { label: 'Authors', to: '/authors' },
     ],
   },
   {

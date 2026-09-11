@@ -12,6 +12,7 @@ import RemoteImage from '../RemoteImage';
 import FavoriteButton from '../FavoriteButton';
 import ShareButton from '../ShareButton';
 import { getInitials } from '../../utils/helpers';
+import type { NewsArticle } from '../../types';
 
 const playerTabs = [
   { key: 'profile', label: 'Profile' },
@@ -20,9 +21,10 @@ const playerTabs = [
 
 interface Props {
   player: any;
+  relatedNews?: NewsArticle[];
 }
 
-export default function PlayerDetailBody({ player }: Props) {
+export default function PlayerDetailBody({ player, relatedNews = [] }: Props) {
   const [tab, setTab] = useState('profile');
 
   if (!player) {
@@ -182,6 +184,22 @@ export default function PlayerDetailBody({ player }: Props) {
             <EmptyState title="No recent matches" message="This player's recent fixtures have not been recorded yet." />
           )}
         </div>
+      )}
+
+      {relatedNews.length > 0 && (
+        <section className="rounded-md border border-lborder bg-card p-4">
+          <h3 className="mb-3 text-sm font-bold uppercase tracking-widest text-stext">Related news</h3>
+          <ul className="space-y-2">
+            {relatedNews.map((article) => (
+              <li key={article.id}>
+                <Link href={`/news/${article.slug || article.id}`} className="text-sm font-semibold text-mtext hover:text-accent">
+                  {article.title}
+                </Link>
+                <p className="text-xs text-stext">{article.date}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
     </div>
   );

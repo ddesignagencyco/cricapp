@@ -1,13 +1,14 @@
 'use client';
 
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
-import { clearAccessToken, getAccessToken, getCurrentUser, logout as logoutService } from '../services/auth';
+import { getCurrentUser, logout as logoutService } from '../services/auth';
 import type { AuthUser } from '../types/auth';
 import { ApiError } from '../services/api/client';
 
 interface AuthContextValue {
   user: AuthUser | null;
   isAdmin: boolean;
+  isSuperAdmin: boolean;
   isAuthenticated: boolean;
   loading: boolean;
   refresh: () => Promise<void>;
@@ -27,17 +28,12 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
-    if (!getAccessToken()) {
-      setUser(null);
-      setLoading(false);
-      return;
-    }
     try {
       const me = await getCurrentUser();
       setUser(me);
     } catch (error) {
-      if (error instanceof ApiError && error.status === 401) {
-        clearAccessToken();
+      if (error instanceof ApiError && error.status !== 401) {
+        // Keep going; session probe failed for a non-auth reason.
       }
       setUser(null);
     } finally {
@@ -50,7 +46,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   }, [refresh]);
 
   const logout = useCallback(() => {
-    logoutService();
+    void logoutService();
     setUser(null);
   }, []);
 
@@ -58,7 +54,8 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         user,
-        isAdmin: Boolean(user?.isAdmin),
+        isAdmin: Boolean(user?.isAdmin || user?.isSuperAdmin),
+        isSuperAdmin: Boolean(user?.isSuperAdmin),
         isAuthenticated: Boolean(user),
         loading,
         refresh,

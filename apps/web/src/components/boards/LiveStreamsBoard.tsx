@@ -11,6 +11,7 @@ import Pagination from '../Pagination';
 import { formatDate } from '../../utils/helpers';
 import { fetchStreamsPage } from '../../services/streams';
 import type { Stream } from '../../types/index';
+import CommentsSection from '../CommentsSection';
 
 function youtubeId(url: string): string | null {
   const match = url.match(/(?:youtube\.com\/(?:embed\/|watch\?v=)|youtu\.be\/)([A-Za-z0-9_-]{6,})/);
@@ -139,6 +140,7 @@ export default function LiveStreamsBoard() {
               </div>
               <h2 className="mt-2 text-lg font-bold text-mtext">{featured.title}</h2>
             </div>
+            <CommentsSection targetType="stream" targetId={featured.id} />
             <AdSlot slot="streams-below-player" format="leaderboard" />
           </div>
           <div className="space-y-4">

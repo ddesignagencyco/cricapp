@@ -12,6 +12,7 @@ import {
   Heart,
   Home,
   LayoutDashboard,
+  LogIn,
   LogOut,
   Menu,
   Moon,
@@ -23,13 +24,16 @@ import {
   Sun,
   Trophy,
   User,
+  UserPlus,
   UserRound,
   X,
 } from 'lucide-react';
 import Logo from './Logo';
 import SearchBar from './SearchBar';
+import RemoteImage from './RemoteImage';
 import { useTheme } from './ThemeProvider';
 import { useAuth } from './AuthProvider';
+import { getInitials } from '../utils/helpers';
 
 type NavItem = {
   to: string;
@@ -66,10 +70,26 @@ export default function Navbar() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const menuCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const openMenu = () => {
+    if (menuCloseTimer.current) clearTimeout(menuCloseTimer.current);
+    setMenuOpen(true);
+  };
+
+  const closeMenuSoon = () => {
+    if (menuCloseTimer.current) clearTimeout(menuCloseTimer.current);
+    menuCloseTimer.current = setTimeout(() => setMenuOpen(false), 140);
+  };
+
+  const toggleMenu = () => {
+    if (menuCloseTimer.current) clearTimeout(menuCloseTimer.current);
+    setMenuOpen((open) => !open);
+  };
   const pathname = usePathname();
   const router = useRouter();
   const { theme, toggle, mounted } = useTheme();
-  const { user, isAdmin, isAuthenticated, logout } = useAuth();
+  const { user, isAdmin, isSuperAdmin, isAuthenticated, logout } = useAuth();
 
   useEffect(() => {
     setMobileOpen(false);
@@ -93,6 +113,7 @@ export default function Navbar() {
     return () => {
       document.removeEventListener('mousedown', onClick);
       document.removeEventListener('keydown', onKeyDown);
+      if (menuCloseTimer.current) clearTimeout(menuCloseTimer.current);
     };
   }, []);
 
@@ -119,14 +140,15 @@ export default function Navbar() {
   const closeMobile = () => setMobileOpen(false);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-lborder bg-primary/95 backdrop-blur-md">
+    <>
+    <header className="sticky top-0 z-40 h-14 shrink-0 border-b border-lborder bg-primary/95 backdrop-blur-md">
       <a
         href="#main-content"
         className="btn-brand fixed left-3 top-3 z-50 -translate-y-20 rounded px-3 py-2 text-sm font-medium focus:translate-y-0"
       >
         Skip to content
       </a>
-      <nav className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-2 sm:px-6">
+      <nav className="mx-auto flex h-full max-w-7xl items-center justify-between gap-3 px-4 sm:px-6">
         <Logo size="lg" />
 
         <div className="hidden items-center gap-1 lg:flex">
@@ -169,67 +191,155 @@ export default function Navbar() {
             <Search size={18} />
           </button>
           {isAuthenticated && user ? (
-            <div ref={menuRef} className="relative hidden sm:block">
+            <div
+              ref={menuRef}
+              className="relative hidden sm:block"
+              onMouseEnter={openMenu}
+              onMouseLeave={closeMenuSoon}
+            >
               <button
                 type="button"
-                onClick={() => setMenuOpen((s) => !s)}
-                className="flex items-center gap-2 rounded py-1 pl-1 pr-2 transition-colors hover:bg-card"
+                onClick={toggleMenu}
+                className={`grid h-9 w-9 place-items-center rounded transition-colors ${
+                  menuOpen ? 'bg-card text-accent' : 'text-stext hover:bg-card hover:text-mtext'
+                }`}
                 aria-label="Account menu"
                 aria-expanded={menuOpen}
                 aria-haspopup="menu"
               >
-                <span
-                  className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[10px] font-bold text-white"
-                  style={{ backgroundImage: `linear-gradient(135deg, hsl(${hue}, 75%, 50%), hsl(${(hue + 40) % 360}, 85%, 35%))` }}
-                >
-                  {displayName.slice(0, 2).toUpperCase()}
-                </span>
-                <span className="hidden max-w-24 truncate text-xs font-semibold text-mtext sm:block">
-                  {user.displayName || user.username}
-                </span>
+                <User size={18} />
               </button>
               {menuOpen && (
-                <div className="absolute right-0 top-full z-50 mt-2 w-52 overflow-hidden rounded bg-elevated py-1 shadow-xl ring-1 ring-lborder">
-                  <div className="border-b border-lborder px-3.5 py-2.5">
-                    <p className="truncate text-sm font-semibold text-mtext">{user.displayName || user.username}</p>
-                    <p className="truncate text-xs text-stext">{user.email}</p>
+                <div className="absolute right-0 top-full z-50 pt-2">
+                <div
+                  role="menu"
+                  className="w-72 overflow-hidden rounded-lg border border-lborder bg-card shadow-2xl"
+                >
+                  <div className="border-b border-lborder bg-elevated/70 px-3.5 py-3.5">
+                    <div className="flex items-center gap-3">
+                      <ProfileAvatar name={displayName} src={user.avatarUrl} hue={hue} size={40} />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold text-mtext">{user.displayName || user.username}</p>
+                        <p className="truncate text-xs text-stext">@{user.username}</p>
+                        <p className="mt-0.5 truncate text-[11px] text-stext/80">{user.email}</p>
+                      </div>
+                    </div>
+                    <div className="mt-2.5 flex flex-wrap gap-1.5">
+                      {isSuperAdmin ? (
+                        <span className="inline-flex items-center gap-1 rounded bg-accent px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                          <ShieldCheck size={10} /> Superadmin
+                        </span>
+                      ) : isAdmin ? (
+                        <span className="inline-flex items-center gap-1 rounded bg-accent/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-accent">
+                          <ShieldCheck size={10} /> Admin
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center rounded bg-secondary px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-stext">
+                          Member
+                        </span>
+                      )}
+                      {user.emailVerified && (
+                        <span className="inline-flex items-center rounded bg-accent/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-accent">
+                          Verified
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="p-1.5">
+                    <ProfileMenuLink href="/profile" icon={User} label="Profile" hint="Account details" active={pathname.startsWith('/profile')} />
+                    <ProfileMenuLink href="/favorites" icon={Heart} label="Favorites" hint="Saved teams and players" active={pathname.startsWith('/favorites')} />
+                    <ProfileMenuLink href="/settings/notifications" icon={Bell} label="Notifications" hint="Alerts and devices" active={pathname.startsWith('/settings/notifications')} />
                     {isAdmin && (
-                      <span className="mt-1.5 inline-flex items-center gap-1 rounded bg-accent/10 px-1.5 py-0.5 text-xs font-bold uppercase tracking-wide text-accent">
-                        <ShieldCheck size={10} /> Admin
-                      </span>
+                      <ProfileMenuLink href="/admin" icon={LayoutDashboard} label="CMS Dashboard" hint="Manage the site" active={pathname.startsWith('/admin')} />
                     )}
                   </div>
-                  <Link href="/profile" className="flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-stext hover:bg-card hover:text-mtext">
-                    <User size={15} /> Profile
-                  </Link>
-                  <Link href="/settings/notifications" className="flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-stext hover:bg-card hover:text-mtext">
-                    <Bell size={15} /> Notifications
-                  </Link>
-                  {isAdmin && (
-                    <Link href="/admin" className="flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-stext hover:bg-card hover:text-mtext">
-                      <LayoutDashboard size={15} /> CMS Dashboard
-                    </Link>
-                  )}
-                  <Link href="/favorites" className="flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-stext hover:bg-card hover:text-mtext">
-                    <Heart size={15} /> My Favorites
-                  </Link>
-                  <button type="button" onClick={handleLogout} className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-sm text-danger hover:bg-card">
-                    <LogOut size={15} /> Sign out
-                  </button>
+                  <div className="border-t border-lborder p-1.5">
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={handleLogout}
+                      className="flex w-full items-center gap-3 rounded-md px-2.5 py-2 text-left text-sm font-semibold text-danger transition-colors hover:bg-danger/10"
+                    >
+                      <span className="grid h-8 w-8 place-items-center rounded-md bg-danger/10">
+                        <LogOut size={15} />
+                      </span>
+                      Sign out
+                    </button>
+                  </div>
+                </div>
                 </div>
               )}
             </div>
           ) : (
-            <Link
-              href="/login"
-              className={`hidden h-9 place-items-center rounded px-2 transition-colors hover:bg-card hover:text-mtext sm:grid ${pathname.startsWith('/login') || pathname.startsWith('/register')
-                ? 'text-accent'
-                : 'text-stext'
-                }`}
-              aria-label="Sign in"
+            <div
+              ref={menuRef}
+              className="relative"
+              onMouseEnter={openMenu}
+              onMouseLeave={closeMenuSoon}
             >
-              <User size={18} />
-            </Link>
+              <button
+                type="button"
+                onClick={() => {
+                  toggleMenu();
+                  setMobileOpen(false);
+                }}
+                className={`grid h-9 w-9 place-items-center rounded transition-colors ${
+                  menuOpen || pathname.startsWith('/login') || pathname.startsWith('/register')
+                    ? 'bg-card text-accent'
+                    : 'text-stext hover:bg-card hover:text-mtext'
+                }`}
+                aria-label="Sign in menu"
+                aria-expanded={menuOpen}
+                aria-haspopup="menu"
+              >
+                <User size={18} />
+              </button>
+              {menuOpen && (
+                <div className="absolute right-0 top-full z-50 pt-2">
+                <div
+                  role="menu"
+                  className="w-72 overflow-hidden rounded-lg border border-lborder bg-card shadow-2xl"
+                >
+                  <div className="border-b border-lborder bg-elevated/70 px-3.5 py-3.5">
+                    <p className="text-sm font-semibold text-mtext">Welcome to PakCricZone</p>
+                    <p className="mt-1 text-xs leading-relaxed text-stext">
+                      Sign in to save favorites, comment on matches, and follow live scores.
+                    </p>
+                  </div>
+                  <div className="space-y-1.5 p-2">
+                    <Link
+                      href="/login"
+                      role="menuitem"
+                      className="btn-brand flex items-center justify-center gap-2 rounded-md px-3 py-2.5 text-sm font-semibold"
+                      onClick={() => setMenuOpen(false)}
+                    >
+                      <LogIn size={15} />
+                      Sign in
+                    </Link>
+                    <Link
+                      href="/register"
+                      role="menuitem"
+                      className="flex items-center justify-center gap-2 rounded-md px-3 py-2.5 text-sm font-semibold text-mtext transition-colors hover:bg-elevated"
+                      style={{ border: '1px solid var(--color-lborder)' }}
+                      onClick={() => setMenuOpen(false)}
+                    >
+                      <UserPlus size={15} />
+                      Create account
+                    </Link>
+                  </div>
+                  <div className="border-t border-lborder px-3.5 py-2.5">
+                    <Link
+                      href="/forgot-password"
+                      className="text-xs font-medium text-stext hover:text-accent"
+                      onClick={() => setMenuOpen(false)}
+                    >
+                      Forgot password?
+                    </Link>
+                  </div>
+                </div>
+                </div>
+              )}
+            </div>
           )}
 
           <button
@@ -248,6 +358,7 @@ export default function Navbar() {
           </button>
         </div>
       </nav>
+    </header>
 
       {searchOpen && <SearchBar autoFocus onDone={() => setSearchOpen(false)} />}
 
@@ -255,13 +366,13 @@ export default function Navbar() {
         <>
           <button
             type="button"
-            className="fixed inset-0 top-[3.75rem] z-30 bg-black/50 lg:hidden"
+            className="fixed inset-0 top-14 z-30 bg-black/50 lg:hidden"
             aria-label="Close menu"
             onClick={closeMobile}
           />
           <div
             id="mobile-navigation"
-            className="relative z-40 max-h-[calc(100dvh-3.75rem)] overflow-y-auto border-t border-lborder bg-primary lg:hidden"
+            className="fixed inset-x-0 top-14 z-40 max-h-[calc(100dvh-3.5rem)] overflow-y-auto border-t border-lborder bg-primary lg:hidden"
           >
             <div className="mx-auto max-w-7xl px-4 pb-8 pt-4 sm:px-6">
               <MobileSection label="Live">
@@ -280,15 +391,11 @@ export default function Navbar() {
                 {isAuthenticated && user ? (
                   <>
                     <div className="mb-1 flex items-center gap-3 rounded border border-lborder bg-card px-3 py-3">
-                      <span
-                        className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-xs font-bold text-white"
-                        style={{ backgroundImage: `linear-gradient(135deg, hsl(${hue}, 75%, 50%), hsl(${(hue + 40) % 360}, 85%, 35%))` }}
-                      >
-                        {displayName.slice(0, 2).toUpperCase()}
-                      </span>
+                      <ProfileAvatar name={displayName} src={user.avatarUrl} hue={hue} size={40} />
                       <div className="min-w-0">
                         <p className="truncate text-sm font-semibold text-mtext">{user.displayName || user.username}</p>
-                        <p className="truncate text-xs text-stext">{user.email}</p>
+                        <p className="truncate text-xs text-stext">@{user.username}</p>
+                        <p className="truncate text-[11px] text-stext/80">{user.email}</p>
                       </div>
                     </div>
                     <MobileNavLink item={{ to: '/profile', label: 'Profile', icon: User }} active={pathname.startsWith('/profile')} />
@@ -309,20 +416,106 @@ export default function Navbar() {
                     </button>
                   </>
                 ) : (
-                  <Link
-                    href="/login"
-                    className="btn-brand mt-1 flex items-center justify-center gap-2 rounded px-4 py-3 text-sm font-semibold"
-                  >
-                    <User size={16} />
-                    Sign in
-                  </Link>
+                  <div className="space-y-2 rounded border border-lborder bg-card p-3">
+                    <p className="text-sm font-semibold text-mtext">Welcome to PakCricZone</p>
+                    <p className="text-xs text-stext">Sign in to save favorites and comment on matches.</p>
+                    <Link
+                      href="/login"
+                      className="btn-brand flex items-center justify-center gap-2 rounded px-4 py-2.5 text-sm font-semibold"
+                    >
+                      <LogIn size={16} />
+                      Sign in
+                    </Link>
+                    <Link
+                      href="/register"
+                      className="flex items-center justify-center gap-2 rounded px-4 py-2.5 text-sm font-semibold text-mtext"
+                      style={{ border: '1px solid var(--color-lborder)' }}
+                    >
+                      <UserPlus size={16} />
+                      Create account
+                    </Link>
+                  </div>
                 )}
               </MobileSection>
             </div>
           </div>
         </>
       )}
-    </header>
+    </>
+  );
+}
+
+function ProfileAvatar({
+  name,
+  src,
+  hue,
+  size,
+}: {
+  name: string;
+  src?: string | null;
+  hue: number;
+  size: number;
+}) {
+  if (src) {
+    return (
+      <RemoteImage
+        src={src}
+        alt={name}
+        width={size}
+        height={size}
+        className="shrink-0 rounded-full object-cover ring-1 ring-lborder"
+        style={{ width: size, height: size }}
+      />
+    );
+  }
+  return (
+    <span
+      className="grid shrink-0 place-items-center rounded-full text-xs font-bold text-white ring-1 ring-white/10"
+      style={{
+        width: size,
+        height: size,
+        backgroundImage: `linear-gradient(135deg, hsl(${hue}, 75%, 50%), hsl(${(hue + 40) % 360}, 85%, 35%))`,
+      }}
+    >
+      {getInitials(name)}
+    </span>
+  );
+}
+
+function ProfileMenuLink({
+  href,
+  icon: Icon,
+  label,
+  hint,
+  active,
+}: {
+  href: string;
+  icon: ComponentType<{ size?: number; className?: string }>;
+  label: string;
+  hint: string;
+  active: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      role="menuitem"
+      aria-current={active ? 'page' : undefined}
+      className={`flex items-center gap-3 rounded-md px-2.5 py-2 transition-colors ${
+        active ? 'bg-accent/10 text-accent' : 'text-mtext hover:bg-elevated'
+      }`}
+    >
+      <span
+        className={`grid h-8 w-8 shrink-0 place-items-center rounded-md ${
+          active ? 'bg-accent/15 text-accent' : 'bg-elevated text-stext'
+        }`}
+      >
+        <Icon size={15} />
+      </span>
+      <span className="min-w-0">
+        <span className="block text-sm font-semibold">{label}</span>
+        <span className={`block text-[11px] ${active ? 'text-accent/80' : 'text-stext'}`}>{hint}</span>
+      </span>
+    </Link>
   );
 }
 

@@ -23,16 +23,20 @@ export interface NewsArticleAdmin {
   metaTitle?: string | null;
   metaDescription?: string | null;
   canonicalUrl?: string | null;
-  isFeatured?: boolean;
-  isBreaking?: boolean;
   publishedAt: string | null;
   isPublished: boolean;
   createdAt: string;
   category: NewsCategory | null;
+  authorRef?: { id: string; name: string; slug?: string } | null;
+  playerIds?: string[];
+  teamIds?: string[];
+  matchIds?: string[];
+  seriesIds?: string[];
 }
 
 export interface NewsInput {
   title: string;
+  slug?: string;
   summary?: string;
   content: string;
   imageUrl?: string;
@@ -40,13 +44,10 @@ export interface NewsInput {
   authorId?: string;
   source?: string;
   categoryId?: string;
-  tags?: string[];
   language?: string;
   metaTitle?: string;
   metaDescription?: string;
   canonicalUrl?: string;
-  isFeatured?: boolean;
-  isBreaking?: boolean;
   isPublished?: boolean;
 }
 
@@ -57,6 +58,10 @@ export interface NewsAdminListParams {
   tag?: string;
   page?: number;
   limit?: number;
+  playerId?: string;
+  teamId?: string;
+  matchId?: string;
+  seriesId?: string;
 }
 
 export async function fetchNewsAdmin(
@@ -122,4 +127,15 @@ export async function deleteNews(id: string): Promise<void> {
 
 export function createCategory(name: string): Promise<NewsCategory> {
   return apiPost<NewsCategory>('/news/categories', { name }, { headers: authHeaders() });
+}
+
+export function updateCategory(
+  idOrSlug: string,
+  input: { name?: string; slug?: string }
+): Promise<NewsCategory> {
+  return apiPatch<NewsCategory>(`/news/categories/${idOrSlug}`, input, { headers: authHeaders() });
+}
+
+export async function deleteCategory(idOrSlug: string): Promise<void> {
+  await apiDelete(`/news/categories/${idOrSlug}`, { headers: authHeaders() });
 }

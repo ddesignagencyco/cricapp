@@ -69,6 +69,7 @@ export default function MatchCard({ match, compact = false, showVenue = true }: 
   return (
     <Link
       href={`/matches/${match.matchId || match.id}`}
+      prefetch={false}
       className="group flex flex-col rounded-md border border-lborder bg-card p-3.5 transition-colors hover:border-accent/50 hover:bg-elevated"
     >
       <div className="mb-2.5 flex items-center justify-between gap-2">

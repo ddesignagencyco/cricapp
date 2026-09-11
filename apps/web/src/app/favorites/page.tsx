@@ -507,7 +507,7 @@ function FavoriteMatchCard({
           </button>
         </div>
 
-        <Link href={`/matches/${fav.targetId}`} className="block">
+        <Link href={`/matches/${fav.targetId}`} prefetch={false} className="block">
           <p className="truncate text-[11px] font-bold uppercase tracking-wider text-accent">
             {tournament}
           </p>
@@ -535,6 +535,7 @@ function FavoriteMatchCard({
       <div className="mt-5 border-t border-lborder/60 pt-3">
         <Link
           href={`/matches/${fav.targetId}`}
+          prefetch={false}
           className="inline-flex w-full items-center justify-between text-xs font-bold text-accent transition-colors hover:text-accent2"
         >
           <span>Match Scorecard & Details</span>

@@ -5,21 +5,25 @@ import Link from 'next/link';
 import {
   FolderPlus,
   Loader2,
+  Pencil,
   Plus,
   Search,
   Tag,
   Hash,
   FolderArchive,
+  Trash2,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
   createCategory,
+  deleteCategory,
   fetchAllNewsAdmin,
   fetchNewsCategories,
+  updateCategory,
   type NewsArticleAdmin,
   type NewsCategory,
 } from '../../services/newsAdmin';
-import { AdminInput } from './AdminShared';
+import { AdminInput, ConfirmDialog } from './AdminShared';
 import { BlinkingDot } from '../Badge';
 
 export default function CategoryManager() {
@@ -31,6 +35,10 @@ export default function CategoryManager() {
   const [search, setSearch] = useState('');
   const [selectedCatId, setSelectedCatId] = useState<string | null>(null);
   const [articlesFailed, setArticlesFailed] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
+  const [savingId, setSavingId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<NewsCategory | null>(null);
 
   const load = () => {
     setLoading(true);
@@ -62,6 +70,41 @@ export default function CategoryManager() {
       toast.error('Could not create category.');
     } finally {
       setCreating(false);
+    }
+  };
+
+  const handleRename = async (category: NewsCategory) => {
+    const name = editName.trim();
+    if (!name || name === category.name) {
+      setEditingId(null);
+      return;
+    }
+    setSavingId(category.id);
+    try {
+      const updated = await updateCategory(category.id, { name });
+      setCategories((list) => list.map((item) => (item.id === category.id ? updated : item)));
+      toast.success('Category renamed.');
+      setEditingId(null);
+    } catch {
+      toast.error('Could not rename the category.');
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setSavingId(deleteTarget.id);
+    try {
+      await deleteCategory(deleteTarget.id);
+      setCategories((list) => list.filter((item) => item.id !== deleteTarget.id));
+      if (selectedCatId === deleteTarget.id) setSelectedCatId(null);
+      toast.success('Category deleted.');
+      setDeleteTarget(null);
+    } catch {
+      toast.error('Could not delete the category. It may still have articles.');
+    } finally {
+      setSavingId(null);
     }
   };
 
@@ -203,7 +246,21 @@ export default function CategoryManager() {
                             <div className="grid h-7 w-7 place-items-center rounded-md" style={{ background: 'var(--admin-accent)', color: '#fff' }}>
                               <Tag size={12} />
                             </div>
-                            <span className="font-bold" style={{ color: 'var(--admin-text)' }}>{c.name}</span>
+                            {editingId === c.id ? (
+                              <AdminInput
+                                value={editName}
+                                onChange={(e) => setEditName(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    void handleRename(c);
+                                  }
+                                  if (e.key === 'Escape') setEditingId(null);
+                                }}
+                              />
+                            ) : (
+                              <span className="font-bold" style={{ color: 'var(--admin-text)' }}>{c.name}</span>
+                            )}
                           </div>
                         </td>
                         <td className="px-4 py-3 font-mono" style={{ color: 'var(--admin-text-muted)' }}>
@@ -226,14 +283,46 @@ export default function CategoryManager() {
                           )}
                         </td>
                         <td className="px-4 py-3 text-right">
-                          <button
-                            type="button"
-                            onClick={() => setSelectedCatId(isSelected ? null : c.id)}
-                            className="rounded px-2 py-1 text-xs font-bold transition-colors"
-                            style={{ color: 'var(--admin-accent)', background: isSelected ? 'var(--admin-info-bg)' : 'transparent' }}
-                          >
-                            {isSelected ? 'Close' : 'Inspect'}
-                          </button>
+                          <div className="flex items-center justify-end gap-1">
+                            {editingId === c.id ? (
+                              <button
+                                type="button"
+                                disabled={savingId === c.id}
+                                onClick={() => void handleRename(c)}
+                                className="rounded px-2 py-1 text-xs font-bold"
+                                style={{ color: 'var(--admin-accent)' }}
+                              >
+                                {savingId === c.id ? 'Saving…' : 'Save'}
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => { setEditingId(c.id); setEditName(c.name); }}
+                                className="rounded px-2 py-1 text-xs font-bold"
+                                style={{ color: 'var(--admin-text-secondary)' }}
+                                aria-label={`Rename ${c.name}`}
+                              >
+                                <Pencil size={12} />
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => setDeleteTarget(c)}
+                              className="rounded px-2 py-1 text-xs font-bold"
+                              style={{ color: 'var(--admin-danger)' }}
+                              aria-label={`Delete ${c.name}`}
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedCatId(isSelected ? null : c.id)}
+                              className="rounded px-2 py-1 text-xs font-bold transition-colors"
+                              style={{ color: 'var(--admin-accent)', background: isSelected ? 'var(--admin-info-bg)' : 'transparent' }}
+                            >
+                              {isSelected ? 'Close' : 'Inspect'}
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -285,6 +374,15 @@ export default function CategoryManager() {
           )}
         </div>
       </div>
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        title="Delete category"
+        message={deleteTarget ? `Delete “${deleteTarget.name}”? Articles in this category will lose the category link.` : ''}
+        confirmLabel="Delete"
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={() => void handleDelete()}
+        danger
+      />
     </div>
   );
 }

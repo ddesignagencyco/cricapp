@@ -92,6 +92,7 @@ async function request<T>(
     method,
     headers: { ...customHeaders },
     ...rest,
+    credentials: rest.credentials ?? 'include',
   };
 
   if (reqBody !== undefined) {
@@ -133,7 +134,7 @@ export async function apiGetOptional<T = unknown>(
   try {
     return await apiGet<T>(path, params, options);
   } catch (error) {
-    if (error instanceof ApiError && error.status === 404) return null;
+    if (error instanceof ApiError && (error.status === 404 || error.status === 429)) return null;
     throw error;
   }
 }

@@ -14,17 +14,22 @@ interface LogoProps {
 //   lg: 36,
 // } as const;
 
+const imageClass: Record<string, string> = {
+  sm: 'h-7 w-auto',
+  md: 'h-8 w-auto',
+  lg: 'h-9 w-auto',
+  xl: 'h-12 w-auto',
+};
+
 export default function Logo({ to = '/', size = 'md' }: LogoProps) {
-  // const px = MARK[size as keyof typeof MARK] || MARK.md;
-  // const textSize = size === 'lg' ? 'text-xl sm:text-2xl' : 'text-xl';
   return (
-    <Link href={to} className="group flex shrink-0 items-center gap-2 whitespace-nowrap" aria-label="PAK CRICZONE home">
+    <Link href={to} className="group flex h-full shrink-0 items-center gap-2 whitespace-nowrap" aria-label="PAK CRICZONE home">
       <Image
         src="/brand/logo.png"
         alt=""
         width={120}
         height={100}
-        className="shrink-0 object-contain"
+        className={`${imageClass[size] || imageClass.md} shrink-0 object-contain`}
         priority
       />
       {/* <span className={`${textSize} font-black tracking-tight`}>

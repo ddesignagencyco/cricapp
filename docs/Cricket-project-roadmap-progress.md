@@ -3,7 +3,7 @@
 > **Purpose:** This file is the single source of truth for project progress. It is structured in phases, each broken into **Frontend**, **Backend**, and **Ingestion** task groups. Check a box (`- [x]`) when that task is verified complete. This file is meant to be read and updated by AI coding agents as well as humans — keep task descriptions atomic and unambiguous so an agent can pick up any unchecked box and know exactly what "done" means.
 >
 > **Baseline source:** Progress Report dated Sep 8, 2026 (Day 8 of development).
-> **Last updated:** Sep 11, 2026 — backend QA pass (cookie sessions, superadmin, category CRUD, SEO slugs, live-match accuracy, stream comments, Cloudinary uploads, admin analytics). Live Sportradar poll still paused pending a new API key.
+> **Last updated:** Sep 11, 2026 — frontend aligned to current APIs (cookie auth, news CMS + Cloudinary gallery, admin analytics `{ favorites: { total, types } }`, superadmin-locked users UI). Live Sportradar poll still paused pending a new API key.
 
 **Legend:**
 - `[x]` = Complete / verified
@@ -161,7 +161,7 @@
 - [x] Language field (`en` / `ur`) + `?language=` filter
 - [x] SEO fields on articles (`metaTitle`, `metaDescription`, `canonicalUrl`)
 - [x] Author model + `GET/POST /admin/authors`, `PATCH /admin/authors/:id`
-- [x] Article–entity links (players, teams, matches, series) + query filters
+- [x] Article–entity links (players, teams, matches, series) + query filters — **API only**; CMS pickers removed from the news editor for now
 - [x] `GET /admin/news` includes drafts for CMS
 - [x] `POST /admin/media/upload` — Cloudinary image upload (admin; JPEG/PNG/WebP/GIF/AVIF, 10 MB)
 - [x] Removed `isFeatured`, `isBreaking`, and article `tags` — categories are the taxonomy
@@ -255,7 +255,7 @@
 - [x] `ContactBody`
 
 ### 5.4 Shared Components — Frontend
-- [x] `Navbar` (search, theme toggle, mobile menu)
+- [x] `Navbar` (search, theme toggle, mobile menu, account icon + profile dropdown; Urdu nav links removed — language stays on News)
 - [x] `Footer`
 - [x] `SearchBar`
 - [x] `MatchCard`
@@ -289,11 +289,17 @@
 - [x] Error boundary
 
 ### 5.7 Admin CMS — Frontend (`/admin`)
-- [x] Overview dashboard — KPI cards from `GET /admin/analytics`, recent/upcoming matches, latest users
+- [x] Overview dashboard — KPI cards from `GET /admin/analytics` (users, matches, teams, players, tournaments, tours, comments, streams, reports, articles, shares; favorites total + team/player/match type chips)
 - [x] Articles list/create/edit (`NewsManager`, `NewsEditor`) with colored action icons
-- [x] Categories, authors, comments/reports, users (admin/verified toggles + pagination)
+- [x] News editor mirrors API rules: title 1–50 words, optional kebab slug, `en`/`ur` language under category, required body
+- [x] Linked-entity pickers (`playerIds` / `teamIds` / `matchIds` / `seriesIds`) and Featured/Breaking checkboxes removed from CMS (not needed in the UI; featured/breaking were never API fields)
+- [x] Cover image + TipTap image button open Cloudinary gallery (`POST /admin/media/upload`); recent uploads kept in the browser (no list API)
+- [x] Media Library page + author avatar gallery use the same upload flow
+- [x] Categories, authors, comments/reports
+- [x] Users — admin/verified toggles + pagination; **superadmin row is labels only** (no toggles, no delete)
 - [x] Matches, teams, players, tournaments (avatars + pagination)
 - [x] Streams CMS (create/status/delete + pagination)
+- [x] Shared toast UI restyled to the blue theme (top-right)
 
 ---
 
@@ -321,7 +327,7 @@
 - [x] Public unpublished-draft filter
 - [x] Language / SEO fields; categories (not featured/breaking flags or tags)
 - [x] Author profiles (admin CRUD)
-- [x] Article links to players, teams, matches, series
+- [x] Article links to players, teams, matches, series (API + public related-news filters; CMS no longer edits links)
 - [x] Cloudinary media upload for article images
 - [x] `GET /admin/ingestion-health` (Redis heartbeat, live-set, sync keys)
 
@@ -337,11 +343,11 @@
 - [ ] `hreflang` pairs for `en` / `ur` article variants
 
 ### 7.3 Editorial remaining — Frontend
-- [ ] Wire `NewsBoard` and `NewsDetailBody` to real API instead of mock data
-- [ ] Unhide `/news` route from navigation once real data flows
-- [ ] Author profile pages
-- [ ] Category-driven presentation (featured/breaking flags removed from API)
-- [ ] Urdu (`/ur/...`) article routes
+- [x] Wire `NewsBoard` and `NewsDetailBody` to real API instead of mock data
+- [x] Unhide `/news` route from navigation once real data flows
+- [x] Author profile pages — `/authors` and `/authors/[slug]` built from published news `authorRef` / bylines (no public `GET /authors` API)
+- [x] Category-driven news list (tabs by category slug); featured/breaking flags removed from UI (they were never in the API)
+- [x] Urdu (`/ur`, `/ur/news`) article routes + EN/اردو toggle (`GET /news?language=ur`)
 - [x] QA: pagination, empty states, and image handling for articles — `Pagination` + `EmptyState` + `RemoteImage` on news list/detail
 
 ---
@@ -368,8 +374,10 @@
 - [x] Backend: verification token is written before the async mail send (no orphaned FK)
 - [x] Backend: password reset / email verification flow — `PasswordResetToken` + `EmailVerificationToken` models, `POST /auth/forgot-password`, `POST /auth/reset-password`, `POST /auth/verify-email`, `POST /auth/resend-verification`, `MailerService` with SMTP/SendGrid/Resend/console providers
 - [x] Backend: `DELETE /admin/users/:id` with superadmin protection
-- [ ] Frontend: signup/login pages
-- [ ] Frontend: auth state management (Zustand store + protected routes)
+- [x] Frontend: signup/login pages (cookie session; signup requires email verify before login)
+- [x] Frontend: unverified login `403` shows resend-verification (`POST /auth/resend-verification`)
+- [x] Frontend: password reset is email **link token only** (`token` + `tid`); OTP/code UI removed
+- [x] Frontend: auth state via `GET /auth/me` + `POST /auth/logout` (HttpOnly cookie, not localStorage JWT)
 
 ### 9.2 User Accounts/Profiles — Backend + Frontend
 - [x] Backend: user profile DB model + endpoints (Phase 2.1)
@@ -383,7 +391,7 @@
 
 ### 9.4 Comments/Reactions — Backend + Frontend
 - [x] Backend: endpoints (see Phase 4.11)
-- [x] Frontend: comment thread UI on match/news detail pages
+- [x] Frontend: comment thread UI on match/news detail pages and live streams (`targetType: stream`)
 - [x] Frontend: reaction buttons (like/emoji) UI
 
 ### 9.5 Social Sharing — Backend + Frontend
@@ -393,7 +401,7 @@
 ### 9.6 Push Notifications — Backend + Frontend
 - [x] Backend: notification system (see Phase 4.9)
 - [x] Frontend: replace hardcoded mock notification dropdown in `Navbar` with real data — mock dropdown removed; `/settings/notifications` loads `GET /notifications/history` + devices
-- [~] Frontend: notification permission prompt + settings UI — prefs / device list / history exist; browser FCM `Notification.requestPermission` is not wired
+- [~] Frontend: notification permission prompt + settings UI — prefs / device list / history + `Notification.requestPermission` exist; no Firebase web SDK so a real FCM token is not registered
 
 ---
 
@@ -528,23 +536,19 @@
 | 2. Backend Core Infra | Backend | ~99% (cookie sessions, superadmin, logout) |
 | 3. Ingestion Service | Ingestion | ~92% (live Redis prune on completed matches; **live poll still blocked on Sportradar 429 / new key**) |
 | 4. Backend API Endpoints | Backend | ~99% (categories, slugs, stream comments, analytics, Cloudinary, live-match fix) |
-| 5. Frontend Pages & Components | Frontend | ~80% (core done, 4 pages missing) |
-| 6. Real Data Integration | Frontend+Backend | ~80% (backend search ready; frontend still mocks teams/players/tournaments) |
-| 7. News / Editorial | Full-stack | ~85% backend (categories, slugs, uploads); remaining = RSS prod config, Urdu, sitemaps, **frontend wiring** |
-| 8. Live Streams Module | Full-stack | ~50% (backend + stream comments; frontend + licensing pending) |
-| 9. User System & Engagement | Full-stack | ~70% (cookie auth, verify-before-login, superadmin, SMTP; **frontend auth UI pending**) |
-| 10. Technical Debt | Cross-cutting | ~40% |
-| 11. Testing & QA | Cross-cutting | ~65% (isolated test DB + Sep 11 API smoke) |
-| 12. Deployment & Launch | DevOps | ~40% |
+| 5. Frontend Pages & Components | Frontend | ~95% (H2H, team fixtures, schedules, tours, streams, admin CMS shipped) |
+| 6. Real Data Integration | Frontend+Backend | ~95% (pages use live APIs; no mock news/streams/search) |
+| 7. News / Editorial | Full-stack | ~92% (CMS + gallery + title/slug/language; remaining = RSS prod, public authors API, sitemaps) |
+| 8. Live Streams Module | Full-stack | ~70% (backend + frontend + stream comments; licensed provider + legal check pending) |
+| 9. User System & Engagement | Full-stack | ~90% (cookie auth + reset-link UX + browser permission prompt; FCM web token still blocked) |
+| 10. Technical Debt | Cross-cutting | ~85% (listed debt items done) |
+| 11. Testing & QA | Cross-cutting | ~65% (isolated test DB + Sep 11 API smoke; no frontend component/E2E suite) |
+| 12. Deployment & Launch | DevOps | ~15% (Docker/CI exist in Phase 1; CD/staging/prod launch still open) |
 | 13. AI Prediction Centre | Backend+ML | **0% — not started** |
 | 14. Odds Intelligence | Backend | **0% — not started** |
 | 15. Interactive Tools | Backend+Frontend | **~10%** (H2H UI on match + team pages; `/tools/{slug}` not started) |
 
-<<<<<<< HEAD
-**Overall project completion (updated Sep 11, 2026): public web + admin CMS are on real APIs for sports, news, streams, and engagement. Remaining frontend gaps: public author pages, Urdu routes, FCM permission prompt, component/E2E tests, Predictions/Odds/Tools pages.**
-=======
-**Overall project completion (updated Sep 11, 2026): sports + CMS backend is production-shaped for sessions, editorial, and admin dashboards. Frontend auth/CMS wiring and Predictions/Odds remain the next large domains.**
->>>>>>> 37ffcc8d450518139f2c4198b318132711f23218
+**Overall project completion (updated Sep 11, 2026, evening): public web + admin CMS use cookie sessions against the current API. News editor matches API constraints and Cloudinary upload; admin analytics and superadmin users UI match the latest backend. Remaining gaps: component/E2E tests, Predictions/Odds/Tools pages (no APIs), Firebase web FCM tokens, licensed streams, CD/staging.**
 
 ---
 

@@ -13,7 +13,7 @@ import FavoriteButton from '../FavoriteButton';
 import ShareButton from '../ShareButton';
 import { StatusBadge } from '../Badge';
 import { fetchTeamRosterPage } from '../../services/teams';
-import type { Player, SportEventRecord } from '../../types/index';
+import type { NewsArticle, Player, SportEventRecord } from '../../types/index';
 import { formatScheduled } from '../../utils/helpers';
 
 const teamTabs = [
@@ -31,6 +31,7 @@ interface Props {
   schedule: SportEventRecord[];
   results: SportEventRecord[];
   allTeams?: any[];
+  relatedNews?: NewsArticle[];
 }
 
 export default function TeamDetailBody({
@@ -40,6 +41,7 @@ export default function TeamDetailBody({
   schedule = [],
   results = [],
   allTeams = [],
+  relatedNews = [],
 }: Props) {
   const [tab, setTab] = useState('overview');
   const [players, setPlayers] = useState<Player[]>(initialPlayers || []);
@@ -223,6 +225,22 @@ export default function TeamDetailBody({
           <TeamHeadToHead team={team} allTeams={allTeams} teamMatches={[]} />
         </div>
       )}
+
+      {relatedNews.length > 0 && (
+        <section className="rounded-md border border-lborder bg-card p-4">
+          <h3 className="mb-3 text-sm font-bold uppercase tracking-widest text-stext">Related news</h3>
+          <ul className="space-y-2">
+            {relatedNews.map((article) => (
+              <li key={article.id}>
+                <Link href={`/news/${article.slug || article.id}`} className="text-sm font-semibold text-mtext hover:text-accent">
+                  {article.title}
+                </Link>
+                <p className="text-xs text-stext">{article.date}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </div>
   );
 }
@@ -258,7 +276,7 @@ function SportEventRow({ event }: { event: SportEventRecord }) {
   );
 
   if (!href) return inner;
-  return <Link href={href}>{inner}</Link>;
+  return <Link href={href} prefetch={false}>{inner}</Link>;
 }
 
 function InfoStat({ label, value }: { label: string; value: string }) {

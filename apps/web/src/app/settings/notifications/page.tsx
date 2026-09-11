@@ -20,6 +20,7 @@ import Pagination from '../../../components/Pagination';
 import {
   fetchDevices,
   fetchNotificationHistory,
+  requestNotificationPermission,
   unregisterDevice,
   updateDevicePreferences,
   type NotificationDevice,
@@ -85,6 +86,16 @@ export default function NotificationSettingsPage() {
   const [busy, setBusy] = useState(false);
   const [query, setQuery] = useState('');
   const [now] = useState(() => Date.now());
+  const [permission, setPermission] = useState<NotificationPermission | 'unsupported'>('default');
+  const [asking, setAsking] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('Notification' in window)) {
+      setPermission('unsupported');
+      return;
+    }
+    setPermission(Notification.permission);
+  }, []);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -177,6 +188,23 @@ export default function NotificationSettingsPage() {
       toast.error('Could not update preferences.');
     } finally {
       setBusy(false);
+    }
+  };
+
+  const enableBrowserAlerts = async () => {
+    setAsking(true);
+    try {
+      const next = await requestNotificationPermission();
+      setPermission(next);
+      if (next === 'granted') {
+        toast.success('Browser permission granted. A web device can be registered once Firebase Cloud Messaging is configured.');
+      } else if (next === 'denied') {
+        toast.error('Notifications are blocked in this browser.');
+      } else if (next === 'unsupported') {
+        toast.error('This browser does not support notifications.');
+      }
+    } finally {
+      setAsking(false);
     }
   };
 
@@ -299,8 +327,23 @@ export default function NotificationSettingsPage() {
           <div id="preferences" className="rounded-md border border-lborder bg-card p-5">
             <h2 className="text-sm font-semibold text-mtext">Preferences</h2>
             <p className="mt-1 text-xs leading-relaxed text-stext">
-              Match alert toggles are stored on registered devices. New browser registration needs a Firebase token, which this site does not collect.
+              Match alert toggles are stored on registered devices. This site can ask the browser for permission; it does not mint a fake FCM token.
             </p>
+            <div className="mt-4 rounded-md border border-lborder bg-elevated px-3 py-3">
+              <p className="text-xs font-semibold text-mtext">
+                Browser permission:{' '}
+                <span className="font-medium capitalize text-stext">{permission}</span>
+              </p>
+              <button
+                type="button"
+                disabled={asking || permission === 'granted' || permission === 'unsupported'}
+                onClick={enableBrowserAlerts}
+                className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-accent px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60"
+              >
+                {asking ? <Loader2 size={12} className="animate-spin" /> : <Bell size={12} />}
+                {permission === 'granted' ? 'Permission granted' : 'Enable browser alerts'}
+              </button>
+            </div>
             {devices.length === 0 ? (
               <p className="mt-4 rounded-md border border-dashed border-lborder bg-secondary px-3 py-6 text-center text-xs text-stext">
                 No registered devices.

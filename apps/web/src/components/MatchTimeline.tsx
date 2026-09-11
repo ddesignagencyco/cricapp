@@ -34,13 +34,21 @@ function asRecord(value: unknown): Record<string, unknown> | null {
   return null;
 }
 
+function formatPlayerName(name: string): string {
+  if (name.includes(',')) {
+    const [last, first] = name.split(',').map((part) => part.trim());
+    if (first && last) return `${first} ${last}`;
+  }
+  return name;
+}
+
 function pickName(value: unknown): string | undefined {
   if (!value) return undefined;
-  if (typeof value === 'string') return value;
+  if (typeof value === 'string') return formatPlayerName(value);
   const rec = asRecord(value);
   if (!rec) return undefined;
   const name = rec.name || rec.full_name || rec.short_name;
-  return typeof name === 'string' ? name : undefined;
+  return typeof name === 'string' ? formatPlayerName(name) : undefined;
 }
 
 function num(value: unknown): number | undefined {
@@ -89,51 +97,101 @@ export function parseTimelineEvents(payload: Record<string, unknown> | null | un
     .filter((event): event is TimelineEvent => !!event);
 }
 
-export function extractBalls(payload: Record<string, unknown> | null | undefined): (string | number)[] {
+export function extractBalls(payload: Record<string, unknown> | null | undefined): (string | number | null)[] {
   if (!payload) return [];
   const keys = ['balls', 'recentBalls', 'thisOver'];
   for (const key of keys) {
     const value = payload[key];
-    if (Array.isArray(value)) return value as (string | number)[];
+    if (Array.isArray(value) && value.length) {
+      return padOverSlots(value as (string | number)[]);
+    }
   }
   const nested = asRecord(payload.currentOver) || asRecord(payload.over);
-  if (nested && Array.isArray(nested.balls)) {
-    return nested.balls as (string | number)[];
+  if (nested && Array.isArray(nested.balls) && nested.balls.length) {
+    return padOverSlots(nested.balls as (string | number)[]);
   }
 
   const events = parseTimelineEvents(payload).filter(isDelivery);
   if (!events.length) return [];
   const lastOver = events[events.length - 1]?.over;
-  return events
-    .filter((event) => event.over === lastOver)
-    .map(deliveryLabel);
+  if (lastOver == null) return [];
+  const overEvents = events.filter((event) => event.over === lastOver);
+  const bowled = overEvents.map(deliveryLabel);
+  const legalCount = overEvents.filter((event) => {
+    const type = event.type.toLowerCase();
+    return !type.includes('wide') && !/(^|_)no[_ ]?ball/.test(type);
+  }).length;
+  const remaining = Math.max(0, 6 - legalCount);
+  return [...bowled, ...Array.from({ length: remaining }, () => null)];
+}
+
+function padOverSlots(bowled: (string | number)[]): (string | number | null)[] {
+  const legal = bowled.filter((ball) => {
+    const value = String(ball).toLowerCase();
+    return value !== 'wd' && value !== 'nb';
+  }).length;
+  const remaining = Math.max(0, 6 - legal);
+  return [...bowled, ...Array.from({ length: remaining }, () => null)];
 }
 
 function isDelivery(event: TimelineEvent): boolean {
+  if (event.over == null) return false;
   const type = event.type.toLowerCase();
-  return /ball|wicket|boundary|four|six|wide|no.?ball|bye|leg.?bye|run|extra/.test(type);
+  return /^(ball|wicket|boundary|four|six|wide|no.?ball|bye|leg.?bye)/.test(type) || type.includes('wicket');
 }
 
 function deliveryLabel(event: TimelineEvent): string | number {
   const type = event.type.toLowerCase();
   if (type.includes('wicket')) return 'W';
   if (type.includes('wide')) return 'Wd';
-  if (type.includes('no')) return 'Nb';
+  if (/(^|_)no[_ ]?ball/.test(type) || type === 'noball') return 'Nb';
   if (event.runs === 4 || type.includes('four')) return 4;
   if (event.runs === 6 || type.includes('six')) return 6;
   if (typeof event.runs === 'number') return event.runs;
-  return '•';
+  return 0;
+}
+
+function humanizeType(type: string): string {
+  const key = type.toLowerCase().replace(/_/g, ' ').trim();
+  const labels: Record<string, string> = {
+    ball: 'Ball',
+    wicket: 'Wicket',
+    boundary: 'Boundary',
+    four: 'Four',
+    six: 'Six',
+    wide: 'Wide',
+    'no ball': 'No ball',
+    bye: 'Bye',
+    'leg bye': 'Leg bye',
+    'match started': 'Match started',
+    'match ended': 'Match ended',
+    'period start': 'Innings started',
+    'period score': 'Innings score',
+    'period end': 'Innings ended',
+    'score change': 'Score update',
+  };
+  return labels[key] || key.replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 function eventTitle(event: TimelineEvent): string {
-  const type = event.type.replace(/_/g, ' ');
+  const type = humanizeType(event.type);
   const overBall =
     event.over != null && event.ball != null
       ? `${event.over}.${event.ball}`
       : event.over != null
         ? `Over ${event.over}`
         : null;
-  return overBall ? `${overBall} · ${type}` : type;
+  if (!overBall) return type;
+  return type.toLowerCase() === 'ball' ? overBall : `${overBall} · ${type}`;
+}
+
+function eventDetail(event: TimelineEvent): string | null {
+  const parts = [
+    event.bowler && event.batsman ? `${event.bowler} to ${event.batsman}` : event.batsman || event.bowler,
+    event.runs != null ? `${event.runs} run${event.runs === 1 ? '' : 's'}` : null,
+    event.extras ? `${event.extras} extra${event.extras === 1 ? '' : 's'}` : null,
+  ].filter(Boolean);
+  return parts.length ? parts.join(' · ') : null;
 }
 
 export default function MatchTimeline({
@@ -146,6 +204,7 @@ export default function MatchTimeline({
   const events = parseTimelineEvents(payload);
   const deliveries = events.filter(isDelivery);
   const thisOver = extractBalls(payload);
+  const latestFirst = [...events].reverse();
 
   if (!events.length) {
     return (
@@ -169,32 +228,30 @@ export default function MatchTimeline({
           <BallTracker balls={thisOver} size="lg" />
         </div>
       )}
-      <ol className="space-y-2">
-        {events.map((event, index) => (
-          <li
-            key={`${event.type}-${event.over}-${event.ball}-${index}`}
-            className="rounded-xl border border-lborder bg-secondary/40 px-3.5 py-2.5"
-          >
-            <p className="text-xs font-bold uppercase tracking-wide text-accent">{eventTitle(event)}</p>
-            {event.commentary && <p className="mt-1 text-sm text-mtext">{event.commentary}</p>}
-            {(event.batsman || event.bowler || event.runs != null) && (
-              <p className="mt-1 text-xs text-stext">
-                {[
-                  event.batsman && `Batter ${event.batsman}`,
-                  event.bowler && `Bowler ${event.bowler}`,
-                  event.runs != null && `${event.runs} run${event.runs === 1 ? '' : 's'}`,
-                  event.extras ? `${event.extras} extra${event.extras === 1 ? '' : 's'}` : null,
-                ]
-                  .filter(Boolean)
-                  .join(' · ')}
-              </p>
-            )}
-          </li>
-        ))}
-      </ol>
-      {deliveries.length === 0 && (
-        <p className="text-xs text-stext">{events.length} match event{events.length === 1 ? '' : 's'} recorded. No deliveries yet.</p>
-      )}
+      <div className="overflow-hidden rounded-xl border border-lborder">
+        <div className="flex items-center justify-between border-b border-lborder bg-secondary/50 px-3.5 py-2">
+          <p className="text-xs font-semibold text-mtext">
+            {deliveries.length > 0
+              ? `${deliveries.length} ball${deliveries.length === 1 ? '' : 's'}`
+              : `${events.length} event${events.length === 1 ? '' : 's'}`}
+          </p>
+          <p className="text-[11px] text-stext">Latest first</p>
+        </div>
+        <ol className="max-h-[min(28rem,60vh)] overflow-y-auto overscroll-contain divide-y divide-lborder">
+          {latestFirst.map((event, index) => {
+            const detail = event.commentary || eventDetail(event);
+            return (
+              <li
+                key={`${event.type}-${event.over}-${event.ball}-${index}`}
+                className="px-3.5 py-2.5"
+              >
+                <p className="font-mono text-xs font-semibold text-accent">{eventTitle(event)}</p>
+                {detail && <p className="mt-0.5 text-sm text-mtext">{detail}</p>}
+              </li>
+            );
+          })}
+        </ol>
+      </div>
     </div>
   );
 }

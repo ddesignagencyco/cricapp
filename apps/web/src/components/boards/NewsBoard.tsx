@@ -62,6 +62,7 @@ interface Props {
   totalPages: number;
   limit: number;
   selectedCategory?: string;
+  language?: 'en' | 'ur';
 }
 
 export default function NewsBoard({
@@ -72,6 +73,7 @@ export default function NewsBoard({
   totalPages,
   limit,
   selectedCategory = 'all',
+  language = 'en',
 }: Props) {
   const pathname = usePathname();
   const router = useRouter();
@@ -82,7 +84,7 @@ export default function NewsBoard({
   // Spotlight: Priority to type === 'featured', otherwise the most recent item (first in list)
   const featured = useMemo(() => {
     if (safeItems.length === 0) return null;
-    return safeItems.find((n) => n.isBreaking || n.isFeatured || n.type === 'featured' || n.isSpotlight) || safeItems[0];
+    return safeItems[0];
   }, [safeItems]);
 
   // Remaining articles (cards)
@@ -142,9 +144,29 @@ export default function NewsBoard({
             Cricket Newsroom
           </span>
         </div>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-mtext">News & Updates</h1>
+        <div className="mt-1 flex flex-wrap items-end justify-between gap-3">
+          <h1 className="text-2xl font-semibold tracking-tight text-mtext">
+            {language === 'ur' ? 'خبریں اور اپ ڈیٹس' : 'News & Updates'}
+          </h1>
+          <div className="inline-flex rounded-md border border-lborder bg-card p-0.5 text-xs font-semibold">
+            <Link
+              href="/news"
+              className={`rounded px-2.5 py-1 ${language === 'en' ? 'bg-accent text-white' : 'text-stext hover:text-mtext'}`}
+            >
+              EN
+            </Link>
+            <Link
+              href="/ur/news"
+              className={`rounded px-2.5 py-1 ${language === 'ur' ? 'bg-accent text-white' : 'text-stext hover:text-mtext'}`}
+            >
+              اردو
+            </Link>
+          </div>
+        </div>
         <p className="mt-2 max-w-2xl text-sm text-stext">
-          Match reports, PSL stories, team roster updates, and tactical analysis from the PAK CRICZONE team.
+          {language === 'ur'
+            ? 'میچ رپورٹس، پی ایس ایل اور پاکستان کرکٹ کی اردو خبریں۔'
+            : 'Match reports, PSL stories, team roster updates, and tactical analysis from the PAK CRICZONE team.'}
         </p>
       </header>
 

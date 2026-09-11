@@ -15,7 +15,8 @@ interface MatchTickerBarProps {
 export default function MatchTickerBar({ matches: initialMatches }: MatchTickerBarProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [matches, setMatches] = useState(initialMatches || []);
-  const liveUpdate = useMatchStream(undefined, true);
+  const hasLive = (initialMatches || []).some((match) => match?.status === 'live');
+  const liveUpdate = useMatchStream(undefined, hasLive);
 
   useEffect(() => {
     setMatches(initialMatches || []);
@@ -150,6 +151,7 @@ function TickerCard({ match }: { match: any }) {
   return (
     <Link
       href={`/matches/${match.matchId || match.id}`}
+      prefetch={false}
       className="group flex w-[260px] shrink-0 flex-col overflow-hidden rounded-xl bg-card p-3 ring-1 ring-lborder transition-all hover:bg-elevated hover:ring-accent/30"
     >
       <div className="mb-2 flex items-center justify-between gap-2">

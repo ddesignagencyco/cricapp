@@ -1,4 +1,4 @@
-import { apiGet, apiPatch, apiDelete, extractPage } from './api/client';
+import { apiGet, apiPost, apiPatch, apiDelete, extractPage } from './api/client';
 import { authHeaders } from './auth';
 
 export interface NotificationDevice {
@@ -25,6 +25,19 @@ export async function fetchNotificationHistory(
   const res = await apiGet('/notifications/history', { page: 1, limit: 20, ...params }, { headers: authHeaders() });
   const { items, meta } = extractPage<NotificationLogItem>(res);
   return { items, total: meta.total, totalPages: meta.totalPages };
+}
+
+export function registerDevice(input: {
+  fcmToken: string;
+  platform: 'web' | 'android' | 'ios';
+}): Promise<NotificationDevice> {
+  return apiPost<NotificationDevice>('/devices', input, { headers: authHeaders() });
+}
+
+export async function requestNotificationPermission(): Promise<NotificationPermission | 'unsupported'> {
+  if (typeof window === 'undefined' || !('Notification' in window)) return 'unsupported';
+  if (Notification.permission !== 'default') return Notification.permission;
+  return Notification.requestPermission();
 }
 
 export async function fetchDevices(): Promise<NotificationDevice[]> {

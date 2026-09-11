@@ -225,7 +225,7 @@ function MeetingRow({ meeting }: { meeting: ParsedMeeting }) {
 
   if (meeting.matchId) {
     return (
-      <Link key={meeting.matchId} href={`/matches/${meeting.matchId}`} className="block group">
+      <Link key={meeting.matchId} href={`/matches/${meeting.matchId}`} prefetch={false} className="block group">
         {body}
       </Link>
     );

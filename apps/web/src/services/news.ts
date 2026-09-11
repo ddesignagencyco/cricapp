@@ -36,6 +36,18 @@ function stripHtml(value: string): string {
     .trim();
 }
 
+export interface NewsAuthorRef {
+  id: string;
+  name: string;
+  slug?: string;
+  bio?: string | null;
+  avatarUrl?: string | null;
+}
+
+function asIdList(value: unknown): string[] {
+  return Array.isArray(value) ? value.map((id) => String(id)).filter(Boolean) : [];
+}
+
 function mapNewsItem(item: Record<string, unknown>): NewsArticle {
   const catObj = (item.category as Record<string, unknown>) || {};
   const rawTags = item.tags;
@@ -54,6 +66,7 @@ function mapNewsItem(item: Record<string, unknown>): NewsArticle {
   const contentStr = (item.content as string) || '';
   const summary = stripHtml((item.summary as string) || '');
   const plainContent = stripHtml(contentStr);
+  const authorRef = (item.authorRef as NewsAuthorRef | null) || null;
 
   return {
     ...item,
@@ -65,30 +78,47 @@ function mapNewsItem(item: Record<string, unknown>): NewsArticle {
     date: dateFormatted,
     tag: tags[0] || '',
     tags: tags,
-    author: (item.author as string) || 'Editorial Team',
+    author: authorRef?.name || (item.author as string) || 'Editorial Team',
+    authorId: (item.authorId as string) || authorRef?.id || '',
+    authorRef,
     readTime: calculateReadTime(contentStr),
     excerpt: summary || (plainContent ? `${plainContent.slice(0, 160)}${plainContent.length > 160 ? '…' : ''}` : ''),
     content: contentStr,
     image: (item.imageUrl as string) || undefined,
     imageGradient: undefined,
     relatedTeams: [],
-    isFeatured: Boolean(item.isFeatured),
-    isBreaking: Boolean(item.isBreaking),
     language: (item.language as string) || 'en',
+    playerIds: asIdList(item.playerIds),
+    teamIds: asIdList(item.teamIds),
+    matchIds: asIdList(item.matchIds),
+    seriesIds: asIdList(item.seriesIds),
   };
 }
 
+export interface NewsListParams {
+  category?: string;
+  tag?: string;
+  q?: string;
+  language?: string;
+  page?: number;
+  limit?: number;
+  playerId?: string;
+  teamId?: string;
+  matchId?: string;
+  seriesId?: string;
+}
+
 export async function fetchNews(
-  { category, tag, q, limit = 50 }: { category?: string; tag?: string; q?: string; limit?: number } = {}
+  { category, tag, q, language, playerId, teamId, matchId, seriesId, limit = 50 }: NewsListParams = {}
 ): Promise<NewsArticle[]> {
-  const res = await apiGet('/news', { category, tag, q, limit });
+  const res = await apiGet('/news', { category, tag, q, language, playerId, teamId, matchId, seriesId, limit });
   return extractPage<Record<string, unknown>>(res).items.map(mapNewsItem);
 }
 
 export async function fetchNewsPage(
-  { category, tag, q, page = 1, limit = 12 }: { category?: string; tag?: string; q?: string; page?: number; limit?: number } = {}
+  { category, tag, q, language, playerId, teamId, matchId, seriesId, page = 1, limit = 12 }: NewsListParams = {}
 ): Promise<{ items: NewsArticle[]; total: number; totalPages: number }> {
-  const res = await apiGet('/news', { category, tag, q, page, limit });
+  const res = await apiGet('/news', { category, tag, q, language, playerId, teamId, matchId, seriesId, page, limit });
   const { items, meta } = extractPage<Record<string, unknown>>(res);
   return {
     items: items.map(mapNewsItem),

@@ -38,22 +38,36 @@ export function useMatchStream(matchId?: string | null, enabled = true): LiveUpd
   useEffect(() => {
     if (!enabled || typeof window === 'undefined' || typeof EventSource === 'undefined') return;
 
-    const es = new EventSource(streamUrl(matchId));
-    es.onmessage = (event) => {
-      try {
-        const parsed = JSON.parse(event.data) as LiveUpdate;
-        if (parsed?.type === 'ping') return;
-        setUpdate(parsed);
-      } catch {
-        // ignore malformed frames
-      }
-    };
-    es.onerror = () => {
-      // Browser will retry; keep last known update.
+    let es: EventSource | null = null;
+    let retry: ReturnType<typeof setTimeout> | null = null;
+    let closed = false;
+
+    const connect = () => {
+      if (closed) return;
+      es = new EventSource(streamUrl(matchId));
+      es.onmessage = (event) => {
+        try {
+          const parsed = JSON.parse(event.data) as LiveUpdate;
+          if (parsed?.type === 'ping') return;
+          setUpdate(parsed);
+        } catch {
+          // ignore malformed frames
+        }
+      };
+      es.onerror = () => {
+        es?.close();
+        es = null;
+        if (closed) return;
+        retry = setTimeout(connect, 15000);
+      };
     };
 
+    connect();
+
     return () => {
-      es.close();
+      closed = true;
+      if (retry) clearTimeout(retry);
+      es?.close();
     };
   }, [matchId, enabled]);
 

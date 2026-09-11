@@ -221,7 +221,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             </div>
             <div className="hidden sm:block">
               <p className="text-xs font-semibold" style={{ color: 'var(--admin-text)' }}>{userName}</p>
-              <p className="text-xs" style={{ color: 'var(--admin-text-secondary)' }}>{user?.isAdmin ? 'Administrator' : 'Editor'}</p>
+              <p className="text-xs" style={{ color: 'var(--admin-text-secondary)' }}>{user?.isSuperAdmin ? 'Superadmin' : user?.isAdmin ? 'Administrator' : 'Editor'}</p>
             </div>
           </div>
         </header>

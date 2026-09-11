@@ -16,8 +16,7 @@ export interface ForgotPasswordInput {
 
 export interface ResetPasswordInput {
   tokenId: string;
-  token?: string;
-  code?: string;
+  token: string;
   password: string;
 }
 
@@ -37,6 +36,7 @@ export interface AuthUser {
   displayName: string | null;
   avatarUrl: string | null;
   isAdmin: boolean;
+  isSuperAdmin?: boolean;
   emailVerified?: boolean;
   createdAt?: string;
 }
@@ -48,7 +48,11 @@ export interface UpdateProfileInput {
 }
 
 export interface AuthResponse {
-  access_token: string;
+  user: AuthUser;
+}
+
+export interface SignupResponse {
+  message: string;
   user: AuthUser;
 }
 

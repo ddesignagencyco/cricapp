@@ -41,6 +41,7 @@ export default function MatchCardCompact({ match }: MatchCardCompactProps) {
   return (
     <Link
       href={`/matches/${match.matchId || match.id}`}
+      prefetch={false}
       className="group block rounded-md border border-lborder bg-card px-3.5 py-3 transition-colors hover:border-accent/50 hover:bg-elevated"
     >
       <div className="mb-2 flex items-center justify-between gap-3">

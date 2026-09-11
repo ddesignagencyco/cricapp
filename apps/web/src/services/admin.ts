@@ -1,4 +1,4 @@
-import { apiGet, apiPatch, apiPost, extractPage } from './api/client';
+import { apiDelete, apiGet, apiPatch, apiPost, extractPage } from './api/client';
 import { authHeaders } from './auth';
 
 export interface AdminUser {
@@ -8,6 +8,7 @@ export interface AdminUser {
   displayName: string | null;
   avatarUrl: string | null;
   isAdmin: boolean;
+  isSuperAdmin?: boolean;
   emailVerified: boolean;
   createdAt: string;
   updatedAt?: string;
@@ -26,8 +27,18 @@ export interface AdminAnalytics {
   matches: number;
   teams: number;
   players: number;
+  tournaments: number;
+  tours: number;
   comments: number;
-  favorites: number;
+  favorites: {
+    total: number;
+    types: {
+      team: number;
+      player: number;
+      match: number;
+      [key: string]: number;
+    };
+  };
   streams: number;
   pendingReports: number;
   publishedArticles: number;
@@ -76,6 +87,10 @@ export function updateAdminUser(
   input: { isAdmin?: boolean; emailVerified?: boolean }
 ): Promise<AdminUser> {
   return apiPatch<AdminUser>(`/admin/users/${id}`, input, { headers: authHeaders() });
+}
+
+export async function deleteAdminUser(id: string): Promise<void> {
+  await apiDelete(`/admin/users/${id}`, { headers: authHeaders() });
 }
 
 export async function fetchAdminAuthors(): Promise<AdminAuthor[]> {

@@ -45,12 +45,19 @@ const categoryTone: Record<string, string> = {
   Statistics: 'gold',
 };
 
+interface RelatedLink {
+  href: string;
+  label: string;
+}
+
 interface Props {
   item: any;
   related?: any[];
+  authorHref?: string;
+  relatedLinks?: RelatedLink[];
 }
 
-export default function NewsDetailBody({ item, related = [] }: Props) {
+export default function NewsDetailBody({ item, related = [], authorHref, relatedLinks = [] }: Props) {
   if (!item) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-16 text-center">
@@ -87,7 +94,6 @@ export default function NewsDetailBody({ item, related = [] }: Props) {
               {categoryName && (
                 <Badge tone={categoryTone[categoryName] || 'neutral'}>{categoryName}</Badge>
               )}
-              {item.type === 'featured' && <Badge tone="live">Featured</Badge>}
               {Array.isArray(item.tags) && item.tags.slice(0, 3).map((t: string) => (
                 <Badge key={t} tone="neutral">{t}</Badge>
               ))}
@@ -100,7 +106,14 @@ export default function NewsDetailBody({ item, related = [] }: Props) {
             </p>
             <div className="mt-6 flex flex-wrap items-center gap-5 border-b border-lborder pb-6 text-xs text-stext">
               <span className="flex items-center gap-1.5">
-                <User size={14} className="text-accent" /> {item.author}
+                <User size={14} className="text-accent" />
+                {authorHref ? (
+                  <Link href={authorHref} className="font-semibold text-accent hover:text-accent2">
+                    {item.author}
+                  </Link>
+                ) : (
+                  item.author
+                )}
               </span>
               <span className="flex items-center gap-1.5">
                 <Calendar size={14} /> {item.date}
@@ -148,6 +161,23 @@ export default function NewsDetailBody({ item, related = [] }: Props) {
                 <Newspaper size={14} /> PAK CRICZONE Newsroom
               </span>
             </div>
+
+            {relatedLinks.length > 0 && (
+              <div className="mt-6">
+                <p className="mb-2 text-xs font-bold uppercase tracking-widest text-stext">Related</p>
+                <div className="flex flex-wrap gap-2">
+                  {relatedLinks.map((link) => (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      className="inline-flex items-center rounded-full bg-secondary px-3 py-1 text-xs font-medium text-mtext ring-1 ring-lborder transition-colors hover:bg-accent/10 hover:text-accent"
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {Array.isArray(item.tags) && item.tags.length > 0 && (
               <div className="mt-6 flex flex-wrap items-center gap-2">

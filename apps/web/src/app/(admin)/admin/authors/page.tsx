@@ -11,6 +11,7 @@ import {
   ErrorState,
   LoadingState,
 } from '../../../../components/admin/AdminShared';
+import MediaPicker from '../../../../components/admin/MediaPicker';
 import { createAdminAuthor, fetchAdminAuthors, updateAdminAuthor, type AdminAuthor } from '../../../../services/admin';
 
 const emptyForm = { name: '', bio: '', avatarUrl: '' };
@@ -22,6 +23,7 @@ export default function AuthorsPage() {
   const [form, setForm] = useState(emptyForm);
   const [editing, setEditing] = useState<AdminAuthor | null>(null);
   const [saving, setSaving] = useState(false);
+  const [galleryOpen, setGalleryOpen] = useState(false);
 
   const load = () => {
     setLoading(true);
@@ -97,7 +99,17 @@ export default function AuthorsPage() {
           </p>
         )}
         <AdminInput value={form.name} onChange={(e) => setField('name', e.target.value)} placeholder="Name" required />
-        <AdminInput value={form.avatarUrl} onChange={(e) => setField('avatarUrl', e.target.value)} placeholder="Avatar URL" />
+        <div className="flex gap-2">
+          <AdminInput value={form.avatarUrl} onChange={(e) => setField('avatarUrl', e.target.value)} placeholder="Avatar URL" />
+          <button
+            type="button"
+            onClick={() => setGalleryOpen(true)}
+            className="shrink-0 rounded-md px-3 text-xs font-bold"
+            style={{ border: '1px solid var(--admin-border)', color: 'var(--admin-accent)' }}
+          >
+            Gallery
+          </button>
+        </div>
         <div className="sm:col-span-2">
           <AdminInput value={form.bio} onChange={(e) => setField('bio', e.target.value)} placeholder="Short bio" />
         </div>
@@ -182,6 +194,16 @@ export default function AuthorsPage() {
           </table>
         </div>
       )}
+
+      <MediaPicker
+        open={galleryOpen}
+        title="Choose author avatar"
+        onClose={() => setGalleryOpen(false)}
+        onSelect={(url) => {
+          setField('avatarUrl', url);
+          setGalleryOpen(false);
+        }}
+      />
     </div>
   );
 }
