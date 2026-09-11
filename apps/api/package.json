@@ -16,7 +16,7 @@
     "prisma:deploy": "prisma migrate deploy",
     "prisma:seed": "prisma db seed",
     "lint": "eslint \"src/**/*.ts\"",
-    "test": "jest --passWithNoTests --forceExit",
+    "test": "node --env-file-if-exists=.env scripts/run-tests.mjs",
     "typecheck": "tsc --noEmit"
   },
   "prisma": {
@@ -37,6 +37,7 @@
     "bcrypt": "^5.1.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
+    "cloudinary": "^2.11.0",
     "firebase-admin": "^12.7.0",
     "ioredis": "^5.4.1",
     "nodemailer": "^10.0.1",
@@ -53,6 +54,7 @@
     "@types/bcrypt": "^5.0.2",
     "@types/express": "^4.17.21",
     "@types/jest": "^29.5.12",
+    "@types/multer": "^2.2.0",
     "@types/node": "^22.5.0",
     "@types/nodemailer": "^8.0.1",
     "@types/passport-jwt": "^4.0.1",

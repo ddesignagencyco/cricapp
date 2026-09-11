@@ -9,8 +9,14 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api');
 
+  const configuredOrigins = process.env.CORS_ORIGINS?.trim();
   app.enableCors({
-    origin: process.env.CORS_ORIGINS?.split(',') ?? true,
+    // Credentialed requests cannot use Access-Control-Allow-Origin: *.
+    // Reflect the request origin in development, otherwise use the allowlist.
+    origin:
+      !configuredOrigins || configuredOrigins === '*'
+        ? true
+        : configuredOrigins.split(',').map((origin) => origin.trim()),
     credentials: true,
   });
 
@@ -46,7 +52,11 @@ async function bootstrap() {
     .addTag('notifications', 'FCM device registration and notification preferences')
     .addTag('search', 'Unified search across players, teams, matches and tournaments')
     .addTag('admin', 'Admin CMS, moderation and platform analytics')
-    .addBearerAuth()
+    .addCookieAuth('cricapp_access_token', {
+      type: 'apiKey',
+      in: 'cookie',
+      description: 'HttpOnly cookie set by POST /api/auth/login',
+    })
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);

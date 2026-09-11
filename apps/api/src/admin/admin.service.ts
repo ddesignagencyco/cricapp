@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { redisKeys } from '@cricapp/shared-types';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { RedisService } from '../redis/redis.service.js';
@@ -46,6 +50,7 @@ export class AdminService {
           displayName: true,
           avatarUrl: true,
           isAdmin: true,
+          isSuperAdmin: true,
           emailVerified: true,
           createdAt: true,
           updatedAt: true,
@@ -60,9 +65,19 @@ export class AdminService {
     };
   }
 
-  async updateUser(userId: string, dto: UpdateUserDto) {
+  async updateUser(
+    actor: { id: string; isSuperAdmin?: boolean },
+    userId: string,
+    dto: UpdateUserDto,
+  ) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
+    if (user.isSuperAdmin && !actor.isSuperAdmin) {
+      throw new ForbiddenException('Superadmin accounts cannot be modified by admins');
+    }
+    if (user.isSuperAdmin && dto.isAdmin === false) {
+      throw new ForbiddenException('The superadmin role cannot be removed');
+    }
 
     return this.prisma.user.update({
       where: { id: userId },
@@ -76,10 +91,50 @@ export class AdminService {
         username: true,
         displayName: true,
         isAdmin: true,
+        isSuperAdmin: true,
         emailVerified: true,
         updatedAt: true,
       },
     });
+  }
+
+  async deleteUser(
+    actor: { id: string; isSuperAdmin?: boolean },
+    userId: string,
+  ) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+    if (user.isSuperAdmin) {
+      throw new ForbiddenException('The superadmin account cannot be deleted');
+    }
+    if (actor.id === userId) {
+      throw new ForbiddenException('You cannot delete your own account');
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.commentReport.deleteMany({
+        where: {
+          OR: [{ reporterId: userId }, { comment: { userId } }],
+        },
+      });
+      await tx.reaction.deleteMany({
+        where: { OR: [{ userId }, { comment: { userId } }] },
+      });
+      await tx.comment.deleteMany({ where: { userId } });
+      await tx.favorite.deleteMany({ where: { userId } });
+      await tx.device.updateMany({
+        where: { userId },
+        data: { userId: null },
+      });
+      await tx.notificationLog.updateMany({
+        where: { userId },
+        data: { userId: null },
+      });
+      await tx.passwordResetToken.deleteMany({ where: { userId } });
+      await tx.emailVerificationToken.deleteMany({ where: { userId } });
+      await tx.user.delete({ where: { id: userId } });
+    });
+    return { deleted: true };
   }
 
   /* ------------------------------------------------------------------ */
@@ -182,8 +237,11 @@ export class AdminService {
       matchCount,
       teamCount,
       playerCount,
+      tournamentCount,
+      tourCount,
       commentCount,
       favoriteCount,
+      favoriteTypes,
       streamCount,
       pendingReports,
       articleCount,
@@ -193,8 +251,14 @@ export class AdminService {
       this.prisma.match.count(),
       this.prisma.team.count(),
       this.prisma.player.count(),
+      this.prisma.tournament.count(),
+      this.prisma.tour.count(),
       this.prisma.comment.count(),
       this.prisma.favorite.count(),
+      this.prisma.favorite.groupBy({
+        by: ['targetType'],
+        _count: { _all: true },
+      }),
       this.prisma.liveStream.count(),
       this.prisma.commentReport.count({ where: { status: 'pending' } }),
       this.prisma.newsArticle.count({ where: { isPublished: true } }),
@@ -206,8 +270,23 @@ export class AdminService {
       matches: matchCount,
       teams: teamCount,
       players: playerCount,
+      tournaments: tournamentCount,
+      tours: tourCount,
       comments: commentCount,
-      favorites: favoriteCount,
+      favorites: {
+        total: favoriteCount,
+        types: {
+          team: 0,
+          player: 0,
+          match: 0,
+          ...Object.fromEntries(
+            favoriteTypes.map((type) => [
+              type.targetType,
+              type._count._all,
+            ]),
+          ),
+        },
+      },
       streams: streamCount,
       pendingReports,
       publishedArticles: articleCount,

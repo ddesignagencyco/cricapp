@@ -1,0 +1,2 @@
+-- Intentionally empty.
+-- Password reset uses secure one-time link tokens only; no OTP/code column is required.

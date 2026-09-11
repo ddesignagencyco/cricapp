@@ -9,7 +9,7 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiCookieAuth, ApiParam } from '@nestjs/swagger';
 import { NotificationsService } from './notifications.service.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import { RegisterDeviceDto, UpdatePreferencesDto, DeviceDto } from './dto/notifications.dto.js';
@@ -17,7 +17,7 @@ import { RegisterDeviceDto, UpdatePreferencesDto, DeviceDto } from './dto/notifi
 @ApiTags('notifications')
 @Controller('devices')
 @UseGuards(JwtAuthGuard)
-@ApiBearerAuth()
+@ApiCookieAuth()
 export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 
