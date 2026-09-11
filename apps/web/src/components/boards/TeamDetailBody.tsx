@@ -113,7 +113,7 @@ export default function TeamDetailBody({
                   alt={team.name}
                   width={80}
                   height={80}
-                  className="h-20 w-20 shrink-0 rounded-md border border-accent/30 bg-white object-contain p-1.5"
+                  className="h-20 w-20 shrink-0 rounded-full border border-lborder bg-white object-contain p-1.5"
                 />
               ) : (
                 <TeamLogo teamId={team.teamId} name={team.name} code={code} size="xl" link={false} />

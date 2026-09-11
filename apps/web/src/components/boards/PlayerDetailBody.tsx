@@ -126,22 +126,25 @@ export default function PlayerDetailBody({ player }: Props) {
           </div>
 
           {team && (
-            <div className="flex shrink-0 items-center">
-              <Link
-                href={`/teams/${team.id}`}
-                className="group flex items-center gap-3 rounded-md border border-lborder bg-secondary px-3.5 py-3 transition-colors hover:border-accent/50 hover:bg-elevated"
-              >
-                {team.logoUrl ? (
-                  <RemoteImage src={team.logoUrl} alt={team.name} width={44} height={44} className="h-11 w-11 rounded-full border border-white/10 bg-white object-contain p-0.5" />
-                ) : (
-                  <TeamLogo teamId={team.id} name={team.name} code={team.abbr} size="sm" link={false} />
+            <Link
+              href={`/teams/${team.id}`}
+              className="group flex min-w-[220px] shrink-0 items-center gap-3 rounded-lg border border-lborder bg-secondary px-4 py-3 transition-colors hover:border-accent/50 hover:bg-elevated"
+            >
+              {team.logoUrl ? (
+                <RemoteImage src={team.logoUrl} alt={team.name} width={48} height={48} className="h-12 w-12 rounded-full border border-lborder bg-white object-contain p-0.5" />
+              ) : (
+                <TeamLogo teamId={team.id} name={team.name} code={team.abbr} size="md" link={false} />
+              )}
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-stext">Team</p>
+                <p className="truncate text-sm font-semibold text-mtext transition-colors group-hover:text-accent">
+                  {team.name || team.abbr}
+                </p>
+                {team.abbr && team.name && team.abbr !== team.name && (
+                  <p className="mt-0.5 font-mono text-xs text-stext">{team.abbr}</p>
                 )}
-                <div>
-                  <p className="text-xs font-normal uppercase tracking-wider text-stext">Team</p>
-                  <p className="text-sm font-semibold text-mtext transition-colors group-hover:text-accent">{team.abbr || team.name}</p>
-                </div>
-              </Link>
-            </div>
+              </div>
+            </Link>
           )}
         </div>
       </header>
