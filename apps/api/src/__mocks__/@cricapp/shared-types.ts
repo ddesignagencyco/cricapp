@@ -30,6 +30,16 @@ export const PSL_SEASONS = [
 
 export const PSL_LEADER_CATEGORIES = ['batting', 'bowling'];
 
+export const PREDICTION_STAGE = {
+  PRE_MATCH: 'pre_match',
+  LIVE: 'live',
+};
+
+export const PREDICTION_MODELS = {
+  PREMATCH: 'prematch-logit-v1',
+  LIVE: 'live-resource-v1',
+};
+
 export const redisKeys = {
   matchState: (matchId: string) => `match:${matchId}:state`,
   matchChannel: (matchId: string) => `match:${matchId}`,

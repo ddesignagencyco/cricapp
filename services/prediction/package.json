@@ -1,0 +1,16 @@
+{
+  "name": "@cricapp/prediction",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "lint": "node --check src/db.js src/redis.js src/logger.js src/features.js src/prematch.js src/live.js src/persist.js src/settle.js src/index.js",
+    "test": "node --test --test-force-exit test/prematch.test.js test/live.test.js test/features.test.js test/settle.test.js",
+    "start": "node --env-file-if-exists=.env src/index.js"
+  },
+  "dependencies": {
+    "@cricapp/shared-types": "*",
+    "ioredis": "^6.0.0",
+    "pg": "^8.23.0"
+  }
+}

@@ -540,3 +540,39 @@ model EmailVerificationToken {
 
   @@map("email_verification_tokens")
 }
+
+// --- Phase 13: AI Prediction Centre (append-only; never update result rows) --
+
+model PredictionRun {
+  id           String   @id @default(uuid())
+  matchId      String   @map("match_id")
+  stage        String
+  modelVersion String   @map("model_version")
+  createdAt    DateTime @default(now()) @map("created_at")
+  features     PredictionFeature?
+  result       PredictionResult?
+
+  @@index([matchId, stage, createdAt])
+  @@map("prediction_runs")
+}
+
+model PredictionFeature {
+  runId    String        @id @map("run_id")
+  snapshot Json
+  run      PredictionRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@map("prediction_features")
+}
+
+model PredictionResult {
+  runId        String        @id @map("run_id")
+  homeWinProb  Float         @map("home_win_prob")
+  awayWinProb  Float         @map("away_win_prob")
+  confidence   Float
+  explanation  Json
+  scoreRange   Json?         @map("score_range")
+  xi           Json?
+  run          PredictionRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@map("prediction_results")
+}

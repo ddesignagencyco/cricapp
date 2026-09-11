@@ -24,6 +24,7 @@ import { CommentsModule } from './comments/comments.module.js';
 import { NotificationsModule } from './notifications/notifications.module.js';
 import { AdminModule } from './admin/admin.module.js';
 import { SearchModule } from './search/search.module.js';
+import { PredictionsModule } from './predictions/predictions.module.js';
 import { RequestLogger } from './common/request-logger.middleware.js';
 
 @Module({
@@ -62,6 +63,7 @@ import { RequestLogger } from './common/request-logger.middleware.js';
     NotificationsModule,
     AdminModule,
     SearchModule,
+    PredictionsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

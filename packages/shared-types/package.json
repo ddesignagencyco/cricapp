@@ -14,6 +14,6 @@
   },
   "scripts": {
     "lint": "node --check src/schema.js src/redis.js src/index.js",
-    "test": "node --test test/redis.test.js"
+    "test": "node --test test/redis.test.js test/schema.test.js"
   }
 }

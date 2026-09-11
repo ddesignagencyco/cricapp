@@ -74,3 +74,13 @@ export const PSL_LEADER_CATEGORIES = Object.freeze({
   BOWLING: 'bowling',
   FIELDING: 'fielding',
 });
+
+export const PREDICTION_STAGE = Object.freeze({
+  PRE_MATCH: 'pre_match',
+  LIVE: 'live',
+});
+
+export const PREDICTION_MODELS = Object.freeze({
+  PREMATCH: 'prematch-logit-v1',
+  LIVE: 'live-resource-v1',
+});

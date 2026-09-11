@@ -34,6 +34,27 @@ export interface MatchEvent {
   matchId: string;
 }
 
+export type PredictionStage = "pre_match" | "live";
+
+export interface PredictionSnapshot {
+  matchId: string;
+  homeTeamId: string | null;
+  awayTeamId: string | null;
+  homeName: string | null;
+  awayName: string | null;
+  venue: string | null;
+  tournament: string | null;
+  scheduled: string | null;
+  format: "t20" | "odi" | "test" | "unknown";
+}
+
+export interface PredictionScore {
+  homeWinProb: number;
+  awayWinProb: number;
+  confidence: number;
+  explanation: Record<string, unknown>;
+}
+
 export {
   PROVIDERS,
   MATCH_STATUS,
@@ -41,6 +62,8 @@ export {
   PSL,
   PSL_SEASONS,
   PSL_LEADER_CATEGORIES,
+  PREDICTION_STAGE,
+  PREDICTION_MODELS,
 } from "./schema.js";
 
 export { redisKeys, REDIS_TTL } from "./redis.js";
