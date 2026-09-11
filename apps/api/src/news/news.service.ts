@@ -8,7 +8,15 @@ import {
   getPaginationOffset,
   createPaginatedResponse,
 } from '../common/pagination/pagination.util.js';
-import type { CreateNewsDto, UpdateNewsDto, NewsListQuery, CreateAuthorDto, UpdateAuthorDto } from './dto/news.dto.js';
+import type {
+  CreateNewsDto,
+  UpdateNewsDto,
+  NewsListQuery,
+  CreateAuthorDto,
+  UpdateAuthorDto,
+  CreateCategoryDto,
+  UpdateCategoryDto,
+} from './dto/news.dto.js';
 
 function slugify(text: string): string {
   return text
@@ -30,6 +38,13 @@ const articleInclude = {
 export class NewsService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private validateTitle(title: string): void {
+    const wordCount = title.trim().split(/\s+/).filter(Boolean).length;
+    if (wordCount === 0 || wordCount > 50) {
+      throw new BadRequestException('Article title must contain between 1 and 50 words');
+    }
+  }
+
   private toSummary(row: any) {
     return {
       id: row.id,
@@ -42,13 +57,10 @@ export class NewsService {
       authorId: row.authorId,
       source: row.source,
       categoryId: row.categoryId,
-      tags: row.tags as string[] | null,
       language: row.language ?? 'en',
       metaTitle: row.metaTitle,
       metaDescription: row.metaDescription,
       canonicalUrl: row.canonicalUrl,
-      isFeatured: row.isFeatured ?? false,
-      isBreaking: row.isBreaking ?? false,
       publishedAt: row.publishedAt,
       isPublished: row.isPublished,
       createdAt: row.createdAt,
@@ -79,17 +91,8 @@ export class NewsService {
     if (query.category) {
       where.category = { slug: query.category };
     }
-    if (query.tag) {
-      where.tags = { path: [query.tag], not: null };
-    }
     if (query.language) {
       where.language = query.language;
-    }
-    if (query.featured === true) {
-      where.isFeatured = true;
-    }
-    if (query.breaking === true) {
-      where.isBreaking = true;
     }
     if (query.q) {
       where.OR = [
@@ -120,7 +123,7 @@ export class NewsService {
       this.prisma.newsArticle.findMany({
         where,
         include: articleInclude,
-        orderBy: [{ isBreaking: 'desc' }, { isFeatured: 'desc' }, { publishedAt: 'desc' }],
+        orderBy: [{ publishedAt: 'desc' }, { createdAt: 'desc' }],
         skip,
         take: limit,
       }),
@@ -195,7 +198,8 @@ export class NewsService {
   }
 
   async create(dto: CreateNewsDto, _userId: string) {
-    const slug = slugify(dto.title);
+    this.validateTitle(dto.title);
+    const slug = dto.slug ?? slugify(dto.title);
     const existing = await this.prisma.newsArticle.findUnique({ where: { slug } });
     if (existing) throw new BadRequestException('An article with this title already exists');
 
@@ -210,11 +214,8 @@ export class NewsService {
         ...scalars,
         slug,
         language: dto.language ?? 'en',
-        isFeatured: dto.isFeatured ?? false,
-        isBreaking: dto.isBreaking ?? false,
         isPublished: dto.isPublished ?? false,
         publishedAt,
-        tags: dto.tags ?? [],
         ...this.entityLinkData(dto),
       },
       include: articleInclude,
@@ -229,9 +230,16 @@ export class NewsService {
     await this.validateCategory(dto.categoryId);
     await this.validateAuthor(dto.authorId);
 
+    if (dto.title) this.validateTitle(dto.title);
     const scalars = this.articleScalars(dto);
     const data: Record<string, unknown> = { ...scalars };
-    if (dto.title) data.slug = slugify(dto.title);
+    if (dto.slug || dto.title) data.slug = dto.slug ?? slugify(dto.title!);
+    if (data.slug && data.slug !== existing.slug) {
+      const slugOwner = await this.prisma.newsArticle.findUnique({
+        where: { slug: data.slug as string },
+      });
+      if (slugOwner) throw new BadRequestException('Article slug is already in use');
+    }
     if (dto.isPublished && !existing.isPublished) data.publishedAt = new Date();
     Object.assign(data, this.entityLinkData(dto));
 
@@ -254,13 +262,51 @@ export class NewsService {
     return this.prisma.newsCategory.findMany({ orderBy: { name: 'asc' } });
   }
 
-  async createCategory(name: string) {
-    const slug = slugify(name);
-    const existing = await this.prisma.newsCategory.findFirst({
-      where: { OR: [{ name }, { slug }] },
+  async getCategory(idOrSlug: string) {
+    const category = await this.prisma.newsCategory.findFirst({
+      where: { OR: [{ id: idOrSlug }, { slug: idOrSlug }] },
     });
-    if (existing) throw new BadRequestException(`Category '${name}' already exists`);
-    return this.prisma.newsCategory.create({ data: { name, slug } });
+    if (!category) throw new NotFoundException(`Category ${idOrSlug} not found`);
+    return category;
+  }
+
+  async createCategory(dto: CreateCategoryDto) {
+    const slug = dto.slug ?? slugify(dto.name);
+    const existing = await this.prisma.newsCategory.findFirst({
+      where: { OR: [{ name: dto.name }, { slug }] },
+    });
+    if (existing) throw new BadRequestException(`Category '${dto.name}' already exists`);
+    return this.prisma.newsCategory.create({ data: { name: dto.name, slug } });
+  }
+
+  async updateCategory(idOrSlug: string, dto: UpdateCategoryDto) {
+    const category = await this.getCategory(idOrSlug);
+    const slug = dto.slug ?? (dto.name ? slugify(dto.name) : undefined);
+    if (dto.name || slug) {
+      const duplicate = await this.prisma.newsCategory.findFirst({
+        where: {
+          id: { not: category.id },
+          OR: [
+            ...(dto.name ? [{ name: dto.name }] : []),
+            ...(slug ? [{ slug }] : []),
+          ],
+        },
+      });
+      if (duplicate) throw new BadRequestException('Category name or slug is already in use');
+    }
+    return this.prisma.newsCategory.update({
+      where: { id: category.id },
+      data: {
+        ...(dto.name !== undefined && { name: dto.name }),
+        ...(slug !== undefined && { slug }),
+      },
+    });
+  }
+
+  async removeCategory(idOrSlug: string) {
+    const category = await this.getCategory(idOrSlug);
+    await this.prisma.newsCategory.delete({ where: { id: category.id } });
+    return { deleted: true };
   }
 
   async listAuthors() {

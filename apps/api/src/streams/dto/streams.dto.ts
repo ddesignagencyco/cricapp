@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsEnum, IsDateString } from 'class-validator';
+import { IsString, IsOptional, IsEnum, IsDateString, MinLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginationQuery } from '../../common/dto/pagination.query.js';
 
@@ -79,6 +79,15 @@ export class StreamListQuery extends PaginationQuery {
   @IsOptional()
   @IsEnum(['upcoming', 'live', 'ended'] as const)
   status?: string;
+}
+
+export class StreamCommentsQuery extends PaginationQuery {}
+
+export class CreateStreamCommentDto {
+  @ApiProperty({ example: 'What a shot!' })
+  @IsString()
+  @MinLength(1)
+  body: string;
 }
 
 export class LiveStreamDto {

@@ -1,5 +1,5 @@
-import { Controller, Get, Patch, Post, Body, Query, Param, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { Controller, Get, Patch, Post, Delete, Body, Query, Param, UseGuards, Request } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiCookieAuth } from '@nestjs/swagger';
 import { AdminService } from './admin.service.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import { AdminGuard } from '../auth/admin.guard.js';
@@ -15,7 +15,7 @@ import { NewsListQuery, CreateAuthorDto, UpdateAuthorDto } from '../news/dto/new
 @ApiTags('admin')
 @Controller('admin')
 @UseGuards(JwtAuthGuard, AdminGuard)
-@ApiBearerAuth()
+@ApiCookieAuth()
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
@@ -30,8 +30,24 @@ export class AdminController {
   @ApiOperation({ summary: 'Update user (promote to admin, verify email, etc.)' })
   @ApiResponse({ status: 200, description: 'User updated.' })
   @ApiResponse({ status: 404, description: 'User not found.' })
-  async updateUser(@Param('id') id: string, @Body() dto: UpdateUserDto) {
-    return this.adminService.updateUser(id, dto);
+  async updateUser(
+    @Request() req: { user: { id: string; isSuperAdmin?: boolean } },
+    @Param('id') id: string,
+    @Body() dto: UpdateUserDto,
+  ) {
+    return this.adminService.updateUser(req.user, id, dto);
+  }
+
+  @Delete('users/:id')
+  @ApiOperation({ summary: 'Delete a user; the superadmin can never be deleted' })
+  @ApiResponse({ status: 200, description: 'User deleted.' })
+  @ApiResponse({ status: 403, description: 'Protected superadmin or own account.' })
+  @ApiResponse({ status: 404, description: 'User not found.' })
+  async deleteUser(
+    @Request() req: { user: { id: string; isSuperAdmin?: boolean } },
+    @Param('id') id: string,
+  ) {
+    return this.adminService.deleteUser(req.user, id);
   }
 
   @Get('news')

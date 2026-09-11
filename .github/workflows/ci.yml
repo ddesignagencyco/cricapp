@@ -36,9 +36,11 @@ jobs:
 
     env:
       DATABASE_URL: postgresql://cricapp:cricapp_test_password@localhost:5432/cricapp
+      TEST_DATABASE_URL: postgresql://cricapp:cricapp_test_password@localhost:5432/cricapp_test
       REDIS_URL: redis://localhost:6379
       EMAIL_PROVIDER: console
       JWT_SECRET: ci-test-secret-change-me
+      NODE_ENV: test
 
     steps:
       - uses: actions/checkout@v4

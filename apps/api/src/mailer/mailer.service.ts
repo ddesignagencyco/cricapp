@@ -38,6 +38,16 @@ export class MailerService {
         },
       });
       this.logger.log(`SMTP configured: ${this.config.get<string>('SMTP_HOST')}:${port} (secure=${secure})`);
+      void this.smtpTransporter
+        .verify()
+        .then(() => this.logger.log('SMTP connection verified'))
+        .catch((error: unknown) => {
+          this.logger.error(
+            `SMTP connection failed; verification emails will not be delivered: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
+          );
+        });
     }
   }
 
@@ -49,13 +59,16 @@ export class MailerService {
     }
 
     if (this.provider === 'smtp') {
-      await this.smtpTransporter!.sendMail({
+      const info = await this.smtpTransporter!.sendMail({
         from: this.from,
         to: options.to,
         subject: options.subject,
         text: options.text,
         html: options.html,
       });
+      this.logger.log(
+        `[EMAIL] sent to ${options.to} | ${options.subject} | messageId=${info.messageId}`,
+      );
       return;
     }
 

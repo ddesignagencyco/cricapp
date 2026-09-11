@@ -40,9 +40,19 @@ describe('MatchesModule (integration)', () => {
   });
 
   it('GET /matches/live — returns live matches', async () => {
+    await ctx.prisma.match.create({
+      data: {
+        matchId: 'sr:match:completed',
+        status: 'completed',
+        teams: ['team-c', 'team-d'],
+        teamNames: ['Team C', 'Team D'],
+        lastEvent: { type: 'none', runs: 0, over: 0 },
+      },
+    });
     const res = await ctx.agent.get('/matches/live').expect(200);
     expect(res.body.data).toHaveLength(1);
     expect(res.body.data[0].matchId).toBe('sr:match:999');
+    expect(res.body.data.every((match: { status: string }) => match.status === 'live')).toBe(true);
   });
 
   it('GET /matches/:id — returns match by id', async () => {

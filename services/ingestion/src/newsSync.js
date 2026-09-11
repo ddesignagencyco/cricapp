@@ -162,17 +162,15 @@ export async function saveNewsArticles(articles) {
            image_url = COALESCE($3, image_url),
            author = COALESCE($4, author),
            category_id = COALESCE($5, category_id),
-           tags = COALESCE($6, tags),
-           published_at = COALESCE($7, published_at),
+           published_at = COALESCE($6, published_at),
            updated_at = NOW()
-         WHERE id = $8`,
+         WHERE id = $7`,
         [
           article.summary,
           article.content,
           article.imageUrl,
           article.author,
           article.categoryId,
-          JSON.stringify(article.tags),
           article.publishedAt,
           existing.rows[0].id,
         ],
@@ -180,8 +178,8 @@ export async function saveNewsArticles(articles) {
       updated++;
     } else {
       await query(
-        `INSERT INTO news_articles (id, title, slug, summary, content, image_url, author, source, category_id, tags, published_at, is_published)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, true)`,
+        `INSERT INTO news_articles (id, title, slug, summary, content, image_url, author, source, category_id, published_at, is_published)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, true)`,
         [
           crypto.randomUUID(),
           article.title,
@@ -192,7 +190,6 @@ export async function saveNewsArticles(articles) {
           article.author,
           article.source,
           article.categoryId,
-          JSON.stringify(article.tags),
           article.publishedAt,
         ],
       );
