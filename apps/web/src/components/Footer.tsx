@@ -78,21 +78,21 @@ export default function Footer() {
             <p className="mb-4 text-sm text-stext">
               Live scores, news and more on the go.
             </p>
-            <div className="flex gap-2">
+            <div className="flex w-full max-w-[14rem] flex-col gap-2">
               <button
                 type="button"
                 disabled
-                className="inline-flex cursor-not-allowed items-center gap-1.5 rounded bg-card px-3 py-2 text-xs font-medium text-stext ring-1 ring-lborder opacity-70"
+                className="inline-flex w-full cursor-not-allowed items-center justify-center gap-2 rounded bg-card px-3 py-2.5 text-xs font-medium text-stext ring-1 ring-lborder opacity-70"
               >
-                <Download size={13} />
+                <Download size={14} />
                 App Store soon
               </button>
               <button
                 type="button"
                 disabled
-                className="inline-flex cursor-not-allowed items-center gap-1.5 rounded bg-card px-3 py-2 text-xs font-medium text-stext ring-1 ring-lborder opacity-70"
+                className="inline-flex w-full cursor-not-allowed items-center justify-center gap-2 rounded bg-card px-3 py-2.5 text-xs font-medium text-stext ring-1 ring-lborder opacity-70"
               >
-                <Download size={13} />
+                <Download size={14} />
                 Google Play soon
               </button>
             </div>
@@ -101,12 +101,9 @@ export default function Footer() {
       </div>
 
       <div className="border-t border-lborder">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6">
-          <p className="text-xs text-stext">
+        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6">
+          <p className="text-center text-xs text-stext">
             &copy; {CURRENT_YEAR} PakCricZone. All rights reserved.
-          </p>
-          <p className="text-xs text-stext">
-            Cricket Brings Us Together ❤
           </p>
         </div>
       </div>
