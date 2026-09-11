@@ -3,7 +3,7 @@
 > **Purpose:** This file is the single source of truth for project progress. It is structured in phases, each broken into **Frontend**, **Backend**, and **Ingestion** task groups. Check a box (`- [x]`) when that task is verified complete. This file is meant to be read and updated by AI coding agents as well as humans — keep task descriptions atomic and unambiguous so an agent can pick up any unchecked box and know exactly what "done" means.
 >
 > **Baseline source:** Progress Report dated Sep 8, 2026 (Day 8 of development).
-> **Last updated:** Sep 10, 2026 — backend priorities 1–4 (search, editorial hardening, engagement, ingestion health). Live Sportradar poll paused pending a new API key.
+> **Last updated:** Sep 11, 2026 — frontend (`apps/web`) audit: news/streams unhidden and on real APIs, profile + favorites + comments, admin CMS, analytics KPIs. Live Sportradar poll still paused pending a new API key.
 
 **Legend:**
 - `[x]` = Complete / verified
@@ -215,11 +215,11 @@
 - [x] `/contact` — static page
 - [x] `/privacy` — static page
 - [x] `/terms` — static page
-- [~] `/streams` — built but uses mock data, hidden from nav
+- [x] `/streams` — `LiveStreamsBoard` uses `GET /streams`; listed in Navbar + Footer
 
 ### 5.2 Missing Frontend Pages (Backend endpoints already exist)
 - [x] `/head-to-head` or `/matches/[id]/head-to-head` — dedicated head-to-head comparison page
-- [ ] `/teams/[id]/schedule` or tab — team schedule/results dedicated view
+- [x] `/teams/[id]/schedule` or tab — team detail `Fixtures` + `Results` tabs from `/teams/:id/schedule` and `/teams/:id/results`
 - [x] `/schedules/[date]` — daily schedule/results dedicated page
 - [x] `/tours` — tours listing/detail page
 
@@ -257,7 +257,7 @@
 - [x] `StatCard`, `Badge`, `SectionHeader`, `FilterBar`, `Tabs`
 - [x] `ThemeProvider` (dark/light)
 - [x] `LoadingSkeleton`, `EmptyState`, `ScrollToTop`
-- [x] `AdBanner`, `ShareButton` (UI ready; backend `/share/:type/:id` endpoint wired)
+- [x] `AdBanner`, `ShareButton` (wired to `GET /share/:type/:id` via `services/sharing.ts`)
 
 ### 5.5 SEO & PWA — Frontend
 - [x] Dynamic sitemap generation
@@ -274,6 +274,13 @@
 - [x] Loading skeletons
 - [x] Error boundary
 
+### 5.7 Admin CMS — Frontend (`/admin`)
+- [x] Overview dashboard — KPI cards from `GET /admin/analytics`, recent/upcoming matches, latest users
+- [x] Articles list/create/edit (`NewsManager`, `NewsEditor`) with colored action icons
+- [x] Categories, authors, comments/reports, users (admin/verified toggles + pagination)
+- [x] Matches, teams, players, tournaments (avatars + pagination)
+- [x] Streams CMS (create/status/delete + pagination)
+
 ---
 
 ## PHASE 6 — Frontend ↔ Backend Real Data Integration
@@ -288,7 +295,7 @@
 - [x] Search (tournaments) — connected to real API
 - [x] Tournaments page — connected to real API (backend endpoint already exists)
 - [x] News — real backend API exists (Phase 4.7 complete)
-- [x] Streams — real backend API exists, but not implement yet (Phase 4.8 complete)
+- [x] Streams — `LiveStreamsBoard` + `/streams` page use `GET /streams` (Phase 4.8)
 
 ---
 
@@ -315,12 +322,12 @@
 - [ ] `hreflang` pairs for `en` / `ur` article variants
 
 ### 7.3 Editorial remaining — Frontend
-- [ ] Wire `NewsBoard` and `NewsDetailBody` to real API instead of mock data
-- [ ] Unhide `/news` route from navigation once real data flows
-- [ ] Author profile pages
-- [ ] Featured / breaking presentation
+- [x] Wire `NewsBoard` and `NewsDetailBody` to real API instead of mock data — `/news` uses `fetchNewsPage`, `/news/[id]` uses `fetchNewsById`
+- [x] Unhide `/news` route from navigation once real data flows — Navbar + Footer
+- [ ] Author profile pages — admin `/admin/authors` only; no public `/authors` or `/authors/[slug]`
+- [x] Featured / breaking presentation — `NewsBoard` spotlights `isBreaking` / `isFeatured`
 - [ ] Urdu (`/ur/...`) article routes
-- [ ] QA: pagination, empty states, and image handling for articles
+- [x] QA: pagination, empty states, and image handling for articles — `Pagination` + `EmptyState` + `RemoteImage` on news list/detail
 
 ---
 
@@ -329,7 +336,7 @@
 - [~] **Ingestion:** source live stream metadata/links — `streamsSync.js` + admin CRUD; licensed provider not wired
 - [x] **Backend:** implement `/streams` endpoints (see Phase 4.8)
 - [x] **Frontend:** wire `LiveStreamsBoard` to real API instead of mock data
-- [ ] **Frontend:** unhide `/streams` route from navigation once real data flows
+- [x] **Frontend:** unhide `/streams` route from navigation once real data flows
 - [ ] Legal/licensing check for stream embedding (confirm rights before going live)
 
 ---
@@ -347,7 +354,7 @@
 ### 9.2 User Accounts/Profiles — Backend + Frontend
 - [x] Backend: user profile DB model + endpoints (Phase 2.1)
 - [x] Backend: `PATCH /auth/me` profile update
-- [ ] Frontend: profile page (view/edit)
+- [x] Frontend: profile page (view/edit) — `/profile` updates displayName, username, avatarUrl via `PATCH /auth/me`
 
 ### 9.3 Favorites/Bookmarks — Backend + Frontend
 - [x] Backend: endpoints (see Phase 4.10)
@@ -365,16 +372,16 @@
 
 ### 9.6 Push Notifications — Backend + Frontend
 - [x] Backend: notification system (see Phase 4.9)
-- [ ] Frontend: replace hardcoded mock notification dropdown in `Navbar` with real data
-- [ ] Frontend: notification permission prompt + settings UI
+- [x] Frontend: replace hardcoded mock notification dropdown in `Navbar` with real data — mock dropdown removed; `/settings/notifications` loads `GET /notifications/history` + devices
+- [~] Frontend: notification permission prompt + settings UI — prefs / device list / history exist; browser FCM `Notification.requestPermission` is not wired
 
 ---
 
 ## PHASE 10 — Technical Debt & Code Quality
 
-- [ ] Remove legacy `cricketApi.ts` service layer; consolidate on new `services/*.ts` pattern
+- [x] Remove legacy `cricketApi.ts` service layer; consolidate on new `services/*.ts` pattern — no `cricketApi` in `apps/web`
 - [x] Fix `MatchStatus` TypeScript type to include `"cancelled"` (already present in JS schema)
-- [ ] Decide fate of hidden News/Streams pages — either finish (Phase 7/8) or remove until ready
+- [x] Decide fate of hidden News/Streams pages — finished and unhidden in Navbar + Footer (Phase 7/8)
 - [x] Full pagination audit across all list endpoints (see Phase 2.1)
 - [x] Code review pass for consistent error handling across API modules — improved FK validation for news categories and comment reactions; auth endpoints use consistent `BadRequestException` / `UnauthorizedException` / `ConflictException`
 
@@ -484,7 +491,7 @@
 - [ ] Batting strike rate / average; bowling economy / average APIs
 - [ ] Follow-on calculator API
 - [ ] Player comparison and team comparison APIs
-- [ ] Head-to-head analyzer UI (backend `GET /head-to-head` already exists)
+- [x] Head-to-head analyzer UI (backend `GET /head-to-head` already exists) — match detail widget + team `h2h` tab
 - [ ] Match / what-if simulator
 - [ ] Odds converter + implied probability calculator APIs
 - [ ] Fantasy points / informational XI tool
@@ -500,19 +507,19 @@
 | 2. Backend Core Infra | Backend | ~98% (`PATCH /auth/me`, Redis boot fix) |
 | 3. Ingestion Service | Ingestion | ~90% (code complete; **live poll blocked on Sportradar 429 / new key**) |
 | 4. Backend API Endpoints | Backend | ~98% (search, news hardening, notifications, share stats, moderation) |
-| 5. Frontend Pages & Components | Frontend | ~80% (core done, 4 pages missing) |
-| 6. Real Data Integration | Frontend+Backend | ~80% (backend search ready; frontend still mocks teams/players/tournaments) |
-| 7. News / Editorial | Full-stack | ~75% backend done; remaining = RSS prod config, Urdu depth, sitemaps, **frontend wiring** |
-| 8. Live Streams Module | Full-stack | ~40% (backend + `STREAM_SOURCES` scaffold; frontend + licensing pending) |
-| 9. User System & Engagement | Full-stack | ~60% (backend complete including profile PATCH, history, expand favorites; frontend pending) |
-| 10. Technical Debt | Cross-cutting | ~35% |
+| 5. Frontend Pages & Components | Frontend | ~95% (streams + news in nav; admin CMS; team fixtures/results tabs) |
+| 6. Real Data Integration | Frontend+Backend | ~95% (matches, teams, players, tournaments, search, news, streams on real APIs) |
+| 7. News / Editorial | Full-stack | ~85% (public news + admin CMS wired; remaining = RSS prod, Urdu routes, public author pages, sitemaps) |
+| 8. Live Streams Module | Full-stack | ~70% (public + admin wired; licensing still pending) |
+| 9. User System & Engagement | Full-stack | ~85% (auth, profile, favorites, comments, share, notification settings; FCM permission prompt pending) |
+| 10. Technical Debt | Cross-cutting | ~50% (`cricketApi` gone; news/streams published) |
 | 11. Testing & QA | Cross-cutting | ~60% (79 API tests + smoke: search / auth / news) |
 | 12. Deployment & Launch | DevOps | ~40% |
 | 13. AI Prediction Centre | Backend+ML | **0% — not started** |
 | 14. Odds Intelligence | Backend | **0% — not started** |
-| 15. Interactive Tools | Backend+Frontend | **~5%** (H2H API exists; calculators not started) |
+| 15. Interactive Tools | Backend+Frontend | **~10%** (H2H UI on match + team pages; `/tools/{slug}` not started) |
 
-**Overall project completion (updated Sep 10, 2026): sports + editorial backend largely done; next backend domains are Predictions then Odds.**
+**Overall project completion (updated Sep 11, 2026): public web + admin CMS are on real APIs for sports, news, streams, and engagement. Remaining frontend gaps: public author pages, Urdu routes, FCM permission prompt, component/E2E tests, Predictions/Odds/Tools pages.**
 
 ---
 
