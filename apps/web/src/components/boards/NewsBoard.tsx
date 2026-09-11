@@ -296,7 +296,7 @@ function ArticleCard({ item }: { item: NewsArticle }) {
   return (
     <Link
       href={`/news/${item.id}`}
-      className="group flex flex-col overflow-hidden rounded-md border border-lborder bg-card transition-colors hover:border-accent/50 hover:bg-elevated"
+      className="group flex h-full flex-col overflow-hidden rounded-md border border-lborder bg-card transition-colors hover:border-accent/50 hover:bg-elevated"
     >
       <div
         className="relative aspect-[16/9] overflow-hidden bg-primary"
@@ -341,11 +341,11 @@ function ArticleCard({ item }: { item: NewsArticle }) {
         )}
 
         {tags.length > 1 && (
-          <div className="mt-3 flex flex-wrap items-center gap-1.5" aria-label="Article tags">
+          <div className="mt-3 mb-3 flex flex-wrap items-center gap-2" aria-label="Article tags">
             {tags.slice(1, 3).map((t) => (
               <span
                 key={t}
-                className="rounded border border-lborder bg-secondary px-2 py-0.5 text-xs font-medium text-stext"
+                className="rounded border border-lborder bg-secondary px-2.5 py-1 text-xs font-medium text-stext"
               >
                 #{t}
               </span>
@@ -353,7 +353,7 @@ function ArticleCard({ item }: { item: NewsArticle }) {
           </div>
         )}
 
-        <div className="mt-4 flex items-center justify-between border-t border-lborder pt-3 text-xs text-stext">
+        <div className="mt-auto flex items-center justify-between border-t border-lborder pt-3 text-xs text-stext">
           <span className="flex items-center gap-1.5 font-medium">
             <Calendar size={12} className="text-accent" /> {item.date || 'Recent'}
           </span>

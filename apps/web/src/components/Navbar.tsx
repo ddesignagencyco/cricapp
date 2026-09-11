@@ -8,6 +8,7 @@ import {
   Award,
   Bell,
   Calendar,
+  ChevronDown,
   Globe,
   Heart,
   Home,
@@ -55,10 +56,38 @@ const exploreItems: NavItem[] = [
 
 const navItems = [...liveItems, ...exploreItems];
 
-function avatarHue(name: string) {
-  let h = 0;
-  for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
-  return Math.abs(h % 360);
+function UserAvatar({ name, src, size = 36 }: { name: string; src?: string | null; size?: number }) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  const hue = Math.abs(hash % 360);
+  const initials = name.includes(' ')
+    ? name.split(/\s+/).map((w) => w[0]).join('').toUpperCase().slice(0, 2)
+    : name.slice(0, 2).toUpperCase();
+
+  if (src) {
+    return (
+      <img
+        src={src}
+        alt=""
+        className="shrink-0 rounded-full object-cover"
+        style={{ width: size, height: size }}
+      />
+    );
+  }
+
+  return (
+    <span
+      className="grid shrink-0 place-items-center rounded-full font-bold text-white"
+      style={{
+        width: size,
+        height: size,
+        fontSize: size * 0.34,
+        backgroundImage: `linear-gradient(135deg, hsl(${hue}, 75%, 50%), hsl(${(hue + 40) % 360}, 85%, 35%))`,
+      }}
+    >
+      {initials}
+    </span>
+  );
 }
 
 export default function Navbar() {
@@ -114,7 +143,6 @@ export default function Navbar() {
 
   const isActive = (to: string) => (to === '/' ? pathname === '/' : pathname.startsWith(to));
   const displayName = (user?.displayName || user?.username || user?.email || '').trim();
-  const hue = avatarHue(displayName);
 
   const closeMobile = () => setMobileOpen(false);
 
@@ -126,8 +154,8 @@ export default function Navbar() {
       >
         Skip to content
       </a>
-      <nav className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
-        <Logo size="lg" />
+      <nav className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-2 sm:px-6">
+        <Logo width={132} height={42} />
 
         <div className="hidden items-center gap-1 lg:flex">
           {navItems.map((item) => (
@@ -173,47 +201,50 @@ export default function Navbar() {
               <button
                 type="button"
                 onClick={() => setMenuOpen((s) => !s)}
-                className="flex items-center gap-2 rounded py-1 pl-1 pr-2 transition-colors hover:bg-card"
+                className={`flex h-9 items-center gap-0.5 rounded px-2 transition-colors hover:bg-card hover:text-mtext ${
+                  menuOpen ? 'bg-card text-mtext' : 'text-stext'
+                }`}
                 aria-label="Account menu"
                 aria-expanded={menuOpen}
                 aria-haspopup="menu"
               >
-                <span
-                  className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[10px] font-bold text-white"
-                  style={{ backgroundImage: `linear-gradient(135deg, hsl(${hue}, 75%, 50%), hsl(${(hue + 40) % 360}, 85%, 35%))` }}
-                >
-                  {displayName.slice(0, 2).toUpperCase()}
-                </span>
-                <span className="hidden max-w-24 truncate text-xs font-semibold text-mtext sm:block">
-                  {user.displayName || user.username}
-                </span>
+                <User size={18} />
+                <ChevronDown size={14} className={`transition-transform ${menuOpen ? 'rotate-180' : ''}`} />
               </button>
               {menuOpen && (
-                <div className="absolute right-0 top-full z-50 mt-2 w-52 overflow-hidden rounded bg-elevated py-1 shadow-xl ring-1 ring-lborder">
-                  <div className="border-b border-lborder px-3.5 py-2.5">
-                    <p className="truncate text-sm font-semibold text-mtext">{user.displayName || user.username}</p>
-                    <p className="truncate text-xs text-stext">{user.email}</p>
-                    {isAdmin && (
-                      <span className="mt-1.5 inline-flex items-center gap-1 rounded bg-accent/10 px-1.5 py-0.5 text-xs font-bold uppercase tracking-wide text-accent">
-                        <ShieldCheck size={10} /> Admin
-                      </span>
-                    )}
+                <div
+                  role="menu"
+                  className="absolute right-0 top-full z-50 mt-2 w-60 overflow-hidden rounded-lg bg-elevated py-1 shadow-xl ring-1 ring-lborder"
+                >
+                  <div className="flex items-start gap-3 border-b border-lborder px-3.5 py-3">
+                    <span className="mt-0.5">
+                      <UserAvatar name={displayName || user.username} src={user.avatarUrl} size={36} />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-mtext">{displayName || user.username}</p>
+                      <p className="truncate text-xs text-stext">{user.email}</p>
+                      {isAdmin && (
+                        <span className="mt-1.5 inline-flex items-center gap-1 rounded bg-accent/10 px-1.5 py-0.5 text-xs font-bold uppercase tracking-wide text-accent">
+                          <ShieldCheck size={10} /> Admin
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <Link href="/profile" className="flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-stext hover:bg-card hover:text-mtext">
+                  <Link href="/profile" role="menuitem" className="flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-stext hover:bg-card hover:text-mtext">
                     <User size={15} /> Profile
                   </Link>
-                  <Link href="/settings/notifications" className="flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-stext hover:bg-card hover:text-mtext">
+                  <Link href="/settings/notifications" role="menuitem" className="flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-stext hover:bg-card hover:text-mtext">
                     <Bell size={15} /> Notifications
                   </Link>
                   {isAdmin && (
-                    <Link href="/admin" className="flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-stext hover:bg-card hover:text-mtext">
+                    <Link href="/admin" role="menuitem" className="flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-stext hover:bg-card hover:text-mtext">
                       <LayoutDashboard size={15} /> CMS Dashboard
                     </Link>
                   )}
-                  <Link href="/favorites" className="flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-stext hover:bg-card hover:text-mtext">
+                  <Link href="/favorites" role="menuitem" className="flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-stext hover:bg-card hover:text-mtext">
                     <Heart size={15} /> My Favorites
                   </Link>
-                  <button type="button" onClick={handleLogout} className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-sm text-danger hover:bg-card">
+                  <button type="button" role="menuitem" onClick={handleLogout} className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-sm text-danger hover:bg-card">
                     <LogOut size={15} /> Sign out
                   </button>
                 </div>
@@ -280,14 +311,9 @@ export default function Navbar() {
                 {isAuthenticated && user ? (
                   <>
                     <div className="mb-1 flex items-center gap-3 rounded border border-lborder bg-card px-3 py-3">
-                      <span
-                        className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-xs font-bold text-white"
-                        style={{ backgroundImage: `linear-gradient(135deg, hsl(${hue}, 75%, 50%), hsl(${(hue + 40) % 360}, 85%, 35%))` }}
-                      >
-                        {displayName.slice(0, 2).toUpperCase()}
-                      </span>
+                      <UserAvatar name={displayName || user.username} src={user.avatarUrl} size={40} />
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-mtext">{user.displayName || user.username}</p>
+                        <p className="truncate text-sm font-semibold text-mtext">{displayName || user.username}</p>
                         <p className="truncate text-xs text-stext">{user.email}</p>
                       </div>
                     </div>

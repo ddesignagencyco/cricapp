@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../../components/AuthProvider';
 import { useTheme } from '../../../components/ThemeProvider';
+import Logo from '../../../components/Logo';
 
 const adminNav = [
   { to: '/admin', label: 'Overview', icon: LayoutDashboard },
@@ -100,13 +101,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   const userInitials = userName.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2);
 
   const sidebar = (
-    <div className="flex h-full flex-col" style={{ width: 220, minWidth: 220, background: 'var(--admin-sidebar)' }}>
-      <div className="flex h-14 items-center gap-2.5 px-4" style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
-        <div className="grid h-8 w-8 place-items-center rounded-lg text-xs font-black text-white" style={{ background: 'var(--color-brand)' }}>PC</div>
-        <div>
-          <p className="text-xs font-bold text-white leading-tight">PAK CRICZONE</p>
-          <p className="text-[10px] uppercase tracking-wider text-slate-400">CMS Admin</p>
-        </div>
+    <div className="flex h-full min-h-0 w-full flex-col" style={{ width: 240, minWidth: 240, background: 'var(--admin-sidebar)' }}>
+      <div className="flex h-14 shrink-0 items-center justify-center px-2" style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
+        <Logo to="/admin" width={228} height={38} className="mx-auto" />
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-0.5">
@@ -171,8 +168,10 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       )}
 
       {/* Mobile sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 transform transition-transform duration-200 lg:hidden ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="relative">
+      <div
+        className={`fixed inset-y-0 left-0 z-50 flex h-dvh transform transition-transform duration-200 lg:hidden ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}
+      >
+        <div className="relative flex h-full min-h-0 flex-col">
           <button type="button" onClick={() => setMobileOpen(false)}
             className="absolute right-2 top-3 z-10 grid h-8 w-8 place-items-center rounded-lg text-white/60 hover:text-white"
             aria-label="Close navigation">
@@ -183,7 +182,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       </div>
 
       {/* Main content */}
-      <div className="flex flex-1 flex-col lg:pl-[220px]">
+      <div className="flex flex-1 flex-col lg:pl-[240px]">
         {/* Top bar */}
         <header className="sticky top-0 z-20 flex h-14 items-center gap-4 px-4 sm:px-6" style={{ background: 'var(--admin-topbar)', borderBottom: '1px solid var(--admin-border)' }}>
           <button type="button" onClick={() => setMobileOpen(true)}

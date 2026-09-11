@@ -23,6 +23,7 @@ const HIGHLIGHTS = [
 function BrandLockup() {
   return (
     <Link href="/" className="inline-flex items-center gap-2.5" aria-label="PAK CRICZONE home">
+      <Image src="/brand/pak-criczone-mark.png" alt="" width={88} height={88} className="h-[88px] w-[88px] object-contain" />
       <span className="text-xl font-black tracking-tight sm:text-2xl">
         <span className="text-white">PAK CRIC</span>
         <span className="text-accent2">ZONE</span>

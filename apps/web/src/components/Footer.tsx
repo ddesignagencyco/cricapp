@@ -45,7 +45,7 @@ export default function Footer() {
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
         <div className="grid grid-cols-1 gap-10 md:grid-cols-[1.5fr_1fr_1fr_1fr_1.2fr]">
           <div>
-            <Logo size="lg" />
+            <Logo size="xl" />
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-stext">
               Every Run. Every Ball. Live. Your home for cricket live scores, PSL fixtures, teams, players and in-depth analysis.
             </p>
