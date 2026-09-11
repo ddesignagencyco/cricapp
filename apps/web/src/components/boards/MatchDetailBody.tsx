@@ -173,7 +173,7 @@ export default function MatchDetailBody({ match: initialMatch, headToHead }: Pro
             <FavoriteButton targetType="match" targetId={match.id || match.matchId} compact />
             <ShareButton
               type="match"
-              id={match.id || match.matchId}
+              id={String(match.matchId || match.id || '')}
               fallbackTitle={`${homeName} vs ${awayName}`}
               compact
             />

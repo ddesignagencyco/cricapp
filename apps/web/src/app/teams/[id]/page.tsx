@@ -7,6 +7,7 @@ import {
   fetchTeamResults,
   fetchTeams,
 } from '../../../services/teams';
+import { sharePageMetadata } from '../../../services/sharing';
 
 export const revalidate = 3600;
 
@@ -16,10 +17,12 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   if (!team) {
     return { title: 'Team not found' };
   }
-  return {
+  return sharePageMetadata({
     title: team.name,
     description: `${team.name} (${team.abbr || ''}) — ${team.country || 'Cricket'} team page.`,
-  };
+    image: team.logoUrl,
+    path: `/teams/${id}`,
+  });
 }
 
 export default async function TeamDetailPage({ params }: { params: Promise<{ id: string }> }) {

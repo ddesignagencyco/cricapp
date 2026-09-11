@@ -1,5 +1,6 @@
 import NewsDetailBody from '../../../components/boards/NewsDetailBody';
 import { fetchNews, fetchNewsById } from '../../../services/news';
+import { sharePageMetadata } from '../../../services/sharing';
 import { notFound } from 'next/navigation';
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
@@ -8,10 +9,12 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   if (!item) {
     return { title: 'Article not found' };
   }
-  return {
+  return sharePageMetadata({
     title: item.title,
     description: item.excerpt,
-  };
+    image: item.image,
+    path: `/news/${item.slug || id}`,
+  });
 }
 
 export default async function NewsDetailPage({ params }: { params: Promise<{ id: string }> }) {

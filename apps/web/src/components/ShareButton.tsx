@@ -13,6 +13,16 @@ interface ShareButtonProps {
   className?: string;
 }
 
+function siteShareUrl(apiUrl: string): string {
+  if (typeof window === 'undefined') return apiUrl;
+  try {
+    const path = new URL(apiUrl).pathname;
+    return `${window.location.origin}${path}`;
+  } catch {
+    return window.location.href;
+  }
+}
+
 export default function ShareButton({ type, id, fallbackTitle, compact = false, className = '' }: ShareButtonProps) {
   const [busy, setBusy] = useState(false);
 
@@ -20,21 +30,28 @@ export default function ShareButton({ type, id, fallbackTitle, compact = false, 
     setBusy(true);
     try {
       const link = await getShareLink(type, id);
+      const url = siteShareUrl(link.url);
       const shareData: ShareData = {
         title: link.ogTitle || fallbackTitle,
         text: link.ogDescription || fallbackTitle,
-        url: link.url,
+        url,
       };
       if (typeof navigator !== 'undefined' && navigator.share) {
         await navigator.share(shareData);
       } else if (typeof navigator !== 'undefined' && navigator.clipboard) {
-        await navigator.clipboard.writeText(link.url);
+        await navigator.clipboard.writeText(url);
         toast.success('Link copied to clipboard.');
       } else {
         toast.error('Sharing is not supported on this device.');
       }
     } catch {
-      toast.error('Could not create the share link.');
+      const fallbackUrl = typeof window !== 'undefined' ? window.location.href : '';
+      if (fallbackUrl && navigator.clipboard) {
+        await navigator.clipboard.writeText(fallbackUrl);
+        toast.success('Link copied to clipboard.');
+      } else {
+        toast.error('Could not create the share link.');
+      }
     } finally {
       setBusy(false);
     }

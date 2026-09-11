@@ -4,6 +4,7 @@ import MatchDetailBody from '../../../components/boards/MatchDetailBody';
 import { fetchMatchById, matchSideIds } from '../../../services/matches';
 import { fetchTeams } from '../../../services/teams';
 import { fetchHeadToHead } from '../../../services/headToHead';
+import { sharePageMetadata } from '../../../services/sharing';
 
 export const revalidate = 30;
 
@@ -34,10 +35,11 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   }
   const names = match.teamNames || [];
   const title = `${names[0] || match.teams?.home?.name || 'Team A'} vs ${names[1] || match.teams?.away?.name || 'Team B'}`;
-  return {
+  return sharePageMetadata({
     title: `${title} — ${match.status || 'Match'}`,
-    description: `${match.tournament || 'Cricket'} • ${match.displayScore || 'Full score details'}`,
-  };
+    description: `${match.tournament || 'Cricket'} • ${match.displayScore || 'Live score updates'}`,
+    path: `/matches/${id}`,
+  });
 }
 
 export default async function MatchDetailPage({ params }: { params: Promise<{ id: string }> }) {

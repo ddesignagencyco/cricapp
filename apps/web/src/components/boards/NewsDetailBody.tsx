@@ -108,7 +108,7 @@ export default function NewsDetailBody({ item, related = [] }: Props) {
               <span className="flex items-center gap-1.5">
                 <Clock size={14} /> {item.readTime}
               </span>
-              <ShareButton type="news" id={item.id} fallbackTitle={item.title} compact className="ml-auto" />
+              <ShareButton type="news" id={String(item.slug || item.id)} fallbackTitle={item.title} compact className="ml-auto" />
             </div>
           </header>
 
