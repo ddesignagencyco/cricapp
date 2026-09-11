@@ -12,6 +12,7 @@ import FavoriteButton from '../FavoriteButton';
 import ShareButton from '../ShareButton';
 import CommentsSection from '../CommentsSection';
 import BallTracker from '../BallTracker';
+import MatchTimeline, { extractBalls } from '../MatchTimeline';
 import { formatScheduled } from '../../utils/helpers';
 import { fetchMatchTimeline } from '../../services/matches';
 import { useMatchStream } from '../../hooks/useMatchStream';
@@ -31,20 +32,6 @@ const completedTabs = [
 interface Props {
   match: any;
   headToHead?: any;
-}
-
-function extractBalls(payload: Record<string, unknown> | null | undefined): (string | number)[] {
-  if (!payload) return [];
-  const keys = ['balls', 'recentBalls', 'thisOver'];
-  for (const key of keys) {
-    const value = payload[key];
-    if (Array.isArray(value)) return value as (string | number)[];
-  }
-  const nested = payload.currentOver || payload.over;
-  if (nested && typeof nested === 'object' && Array.isArray((nested as { balls?: unknown }).balls)) {
-    return (nested as { balls: (string | number)[] }).balls;
-  }
-  return [];
 }
 
 export default function MatchDetailBody({ match: initialMatch, headToHead }: Props) {
@@ -313,18 +300,7 @@ export default function MatchDetailBody({ match: initialMatch, headToHead }: Pro
           {tab === 'timeline' && (
             <div className="rounded-2xl bg-card p-6 ring-1 ring-lborder">
               <h3 className="mb-4 text-sm font-bold uppercase tracking-widest text-stext">Ball-by-ball</h3>
-              {extractBalls(timeline).length > 0 ? (
-                <BallTracker balls={extractBalls(timeline)} size="lg" />
-              ) : timeline ? (
-                <pre className="max-h-80 overflow-auto whitespace-pre-wrap break-words text-xs text-stext">
-                  {JSON.stringify(timeline, null, 2)}
-                </pre>
-              ) : (
-                <EmptyState
-                  title="Timeline unavailable"
-                  message="This match does not have a ball-by-ball timeline yet."
-                />
-              )}
+              <MatchTimeline payload={timeline} upcoming={isUpcoming} />
             </div>
           )}
 
