@@ -1,8 +1,19 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ArrowRight, Bell, Loader2, Monitor, Smartphone, Tablet, Trash2 } from 'lucide-react';
+import {
+  ArrowRight,
+  Bell,
+  Calendar,
+  Loader2,
+  Mail,
+  Monitor,
+  Search,
+  Smartphone,
+  Tablet,
+  Trash2,
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../../components/AuthProvider';
 import Pagination from '../../../components/Pagination';
@@ -16,10 +27,10 @@ import {
 } from '../../../services/notifications';
 
 const PREF_KEYS = [
-  { key: 'matchStart', label: 'Match start' },
-  { key: 'wicket', label: 'Wicket' },
-  { key: 'milestone', label: 'Milestone' },
-  { key: 'matchEnd', label: 'Match end' },
+  { key: 'matchStart', label: 'Match start', hint: 'When a followed match begins.' },
+  { key: 'wicket', label: 'Wicket', hint: 'Wicket alerts from live matches.' },
+  { key: 'milestone', label: 'Milestone', hint: 'Fifties, hundreds and similar marks.' },
+  { key: 'matchEnd', label: 'Match end', hint: 'Result when a match is finished.' },
 ] as const;
 
 function platformIcon(platform: string) {
@@ -27,6 +38,41 @@ function platformIcon(platform: string) {
   if (value.includes('ios') || value.includes('android')) return Smartphone;
   if (value.includes('tablet')) return Tablet;
   return Monitor;
+}
+
+function startOfDay(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+}
+
+function groupLabel(iso: string) {
+  const then = startOfDay(new Date(iso));
+  const today = startOfDay(new Date());
+  const day = 24 * 60 * 60 * 1000;
+  if (then === today) return 'Today';
+  if (then === today - day) return 'Yesterday';
+  if (then > today - 7 * day) return 'Earlier this week';
+  return 'Older';
+}
+
+function timeLabel(iso: string) {
+  const date = new Date(iso);
+  const diff = Date.now() - date.getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'Just now';
+  if (mins < 60) return `${mins} min ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+  return date.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+}
+
+function itemHref(item: NotificationLogItem): string | null {
+  const data = item.data;
+  if (!data) return null;
+  const matchId = data.matchId;
+  if (typeof matchId === 'string' && matchId) return `/matches/${matchId}`;
+  const url = data.url;
+  if (typeof url === 'string' && url.startsWith('/')) return url;
+  return null;
 }
 
 export default function NotificationSettingsPage() {
@@ -37,6 +83,7 @@ export default function NotificationSettingsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [devices, setDevices] = useState<NotificationDevice[]>([]);
   const [busy, setBusy] = useState(false);
+  const [query, setQuery] = useState('');
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -58,6 +105,36 @@ export default function NotificationSettingsPage() {
       .then(setDevices)
       .catch(() => setDevices([]));
   }, [isAuthenticated]);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return history;
+    return history.filter(
+      (item) => item.title.toLowerCase().includes(q) || item.body.toLowerCase().includes(q)
+    );
+  }, [history, query]);
+
+  const grouped = useMemo(() => {
+    const order = ['Today', 'Yesterday', 'Earlier this week', 'Older'];
+    const map = new Map<string, NotificationLogItem[]>();
+    for (const item of filtered) {
+      const label = groupLabel(item.createdAt);
+      const list = map.get(label) || [];
+      list.push(item);
+      map.set(label, list);
+    }
+    return order.filter((label) => map.has(label)).map((label) => ({ label, items: map.get(label) || [] }));
+  }, [filtered]);
+
+  const todayCount = useMemo(() => {
+    const today = startOfDay(new Date());
+    return history.filter((item) => startOfDay(new Date(item.createdAt)) === today).length;
+  }, [history]);
+
+  const weekCount = useMemo(() => {
+    const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    return history.filter((item) => new Date(item.createdAt).getTime() >= weekAgo).length;
+  }, [history]);
 
   if (loading) {
     return (
@@ -117,115 +194,172 @@ export default function NotificationSettingsPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-      <header className="relative mb-6 overflow-hidden rounded-md border border-lborder bg-card p-6 sm:p-8">
-        <div className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-accent/5 blur-3xl" />
-        <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-accent">Match alerts</p>
-            <h1 className="mt-1 text-2xl font-semibold tracking-tight text-mtext sm:text-3xl">Notifications</h1>
-            <p className="mt-1 max-w-2xl text-sm text-stext">
-              History and device preferences for match alerts.
-            </p>
-          </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <div className="rounded-md border border-lborder bg-secondary px-4 py-2.5 text-center">
-              <p className="text-lg font-semibold text-mtext">{devices.length}</p>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-stext">Devices</p>
-            </div>
-            <div className="rounded-md border border-lborder bg-secondary px-4 py-2.5 text-center">
-              <p className="text-lg font-semibold text-mtext">{total}</p>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-stext">Alerts</p>
-            </div>
-          </div>
+      <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-mtext sm:text-3xl">Notifications</h1>
+          <p className="mt-1 text-sm text-stext">Stay updated on matches and account alerts.</p>
         </div>
+        <a
+          href="#preferences"
+          className="inline-flex shrink-0 items-center gap-2 rounded-md border border-lborder bg-card px-4 py-2 text-sm font-semibold text-mtext hover:bg-elevated"
+        >
+          <Bell size={14} />
+          Notification settings
+        </a>
       </header>
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-        <section className="rounded-md border border-lborder bg-card p-5 sm:p-6 lg:col-span-1">
-          <h2 className="flex items-center gap-2 text-sm font-semibold text-mtext">
-            <Bell size={15} className="text-accent" />
-            Devices
-          </h2>
-          <p className="mt-2 text-xs leading-relaxed text-stext">
-            New browser registration needs a Firebase Cloud Messaging token, which this site does not collect. Existing devices can still change preferences or be removed.
-          </p>
-          {devices.length === 0 ? (
-            <div className="mt-6 rounded-md border border-dashed border-lborder bg-secondary px-4 py-8 text-center">
-              <Monitor size={22} className="mx-auto text-stext" />
-              <p className="mt-2 text-sm text-stext">No registered devices.</p>
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <section className="rounded-md border border-lborder bg-card p-4 sm:p-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="inline-flex items-center gap-2 rounded-md bg-secondary px-3 py-1.5 text-xs font-semibold text-accent">
+              All
+              <span className="rounded bg-accent/15 px-1.5 py-0.5">{total}</span>
             </div>
-          ) : (
-            <ul className="mt-4 space-y-3">
-              {devices.map((device) => {
-                const Icon = platformIcon(device.platform);
-                return (
-                  <li key={device.id} className="rounded-md border border-lborder bg-elevated p-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex min-w-0 items-center gap-2">
-                        <Icon size={16} className="shrink-0 text-accent" />
-                        <p className="truncate text-sm font-semibold capitalize text-mtext">{device.platform}</p>
-                      </div>
-                      <button
-                        type="button"
-                        disabled={busy}
-                        onClick={() => remove(device.id)}
-                        className="inline-flex items-center gap-1 text-xs font-semibold text-danger disabled:opacity-60"
-                      >
-                        <Trash2 size={12} /> Remove
-                      </button>
-                    </div>
-                    <div className="mt-3 flex flex-wrap gap-1.5">
-                      {PREF_KEYS.map((pref) => (
-                        <button
-                          key={pref.key}
-                          type="button"
-                          disabled={busy}
-                          onClick={() => togglePref(device, pref.key)}
-                          className={`rounded-md px-2.5 py-1 text-[11px] font-semibold ${
-                            device.preferences?.[pref.key]
-                              ? 'bg-accent/15 text-accent'
-                              : 'border border-lborder bg-card text-stext'
-                          }`}
-                        >
-                          {pref.label}
-                        </button>
-                      ))}
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </section>
+            <label className="relative block min-w-0 sm:w-64">
+              <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-stext" />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search notifications…"
+                className="w-full rounded-md border border-lborder bg-elevated py-2 pl-9 pr-3 text-sm text-mtext outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+              />
+            </label>
+          </div>
 
-        <section className="rounded-md border border-lborder bg-card p-5 sm:p-6 lg:col-span-2">
-          <h2 className="text-sm font-semibold text-mtext">History</h2>
-          {history.length === 0 ? (
-            <div className="mt-6 rounded-md border border-dashed border-lborder bg-secondary px-4 py-12 text-center">
+          {filtered.length === 0 ? (
+            <div className="mt-8 rounded-md border border-dashed border-lborder bg-secondary px-4 py-12 text-center">
               <Bell size={22} className="mx-auto text-stext" />
-              <p className="mt-2 text-sm text-stext">No notifications have been sent to this account yet.</p>
+              <p className="mt-2 text-sm text-stext">
+                {query.trim() ? 'No notifications match that search.' : 'No notifications have been sent to this account yet.'}
+              </p>
             </div>
           ) : (
-            <ul className="mt-4 divide-y divide-lborder">
-              {history.map((item) => (
-                <li key={item.id} className="py-3.5 first:pt-0">
-                  <div className="flex flex-wrap items-baseline justify-between gap-2">
-                    <p className="text-sm font-semibold text-mtext">{item.title}</p>
-                    <p className="text-[11px] text-stext">
-                      {new Date(item.createdAt).toLocaleString()}
-                    </p>
-                  </div>
-                  <p className="mt-1 text-sm text-stext">{item.body}</p>
-                </li>
+            <div className="mt-5 space-y-6">
+              {grouped.map((group) => (
+                <div key={group.label}>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-stext">{group.label}</p>
+                  <ul className="space-y-1.5">
+                    {group.items.map((item) => {
+                      const href = itemHref(item);
+                      return (
+                        <li key={item.id} className="rounded-md border border-lborder bg-elevated px-3 py-3">
+                          <div className="flex gap-3">
+                            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-accent/10 text-accent">
+                              <Bell size={15} />
+                            </span>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-start justify-between gap-2">
+                                <p className="text-sm font-semibold text-mtext">{item.title}</p>
+                                <p className="shrink-0 text-[11px] text-stext">{timeLabel(item.createdAt)}</p>
+                              </div>
+                              <p className="mt-0.5 line-clamp-2 text-xs text-stext">{item.body}</p>
+                              {href && (
+                                <Link href={href} className="mt-2 inline-flex text-xs font-semibold text-accent hover:text-accent2">
+                                  Open
+                                </Link>
+                              )}
+                            </div>
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
               ))}
-            </ul>
+            </div>
           )}
+
           {totalPages > 1 && (
-            <div className="mt-4">
+            <div className="mt-5">
               <Pagination page={page} totalPages={totalPages} total={total} limit={20} onPageChange={setPage} />
             </div>
           )}
         </section>
+
+        <aside className="space-y-4">
+          <div className="rounded-md border border-lborder bg-card p-5">
+            <h2 className="text-sm font-semibold text-mtext">Notification summary</h2>
+            <ul className="mt-4 space-y-3 text-sm">
+              <li className="flex items-center justify-between">
+                <span className="flex items-center gap-2 text-stext"><Mail size={14} className="text-accent" /> Total</span>
+                <span className="font-semibold text-mtext">{total}</span>
+              </li>
+              <li className="flex items-center justify-between">
+                <span className="flex items-center gap-2 text-stext"><Calendar size={14} className="text-accent" /> Today</span>
+                <span className="font-semibold text-mtext">{todayCount}</span>
+              </li>
+              <li className="flex items-center justify-between">
+                <span className="flex items-center gap-2 text-stext"><Bell size={14} className="text-accent" /> This week</span>
+                <span className="font-semibold text-mtext">{weekCount}</span>
+              </li>
+            </ul>
+          </div>
+
+          <div id="preferences" className="rounded-md border border-lborder bg-card p-5">
+            <h2 className="text-sm font-semibold text-mtext">Preferences</h2>
+            <p className="mt-1 text-xs leading-relaxed text-stext">
+              Match alert toggles are stored on registered devices. New browser registration needs a Firebase token, which this site does not collect.
+            </p>
+            {devices.length === 0 ? (
+              <p className="mt-4 rounded-md border border-dashed border-lborder bg-secondary px-3 py-6 text-center text-xs text-stext">
+                No registered devices.
+              </p>
+            ) : (
+              <ul className="mt-4 space-y-4">
+                {devices.map((device) => {
+                  const Icon = platformIcon(device.platform);
+                  return (
+                    <li key={device.id}>
+                      <div className="mb-2 flex items-center justify-between gap-2">
+                        <p className="flex items-center gap-2 text-xs font-semibold capitalize text-mtext">
+                          <Icon size={14} className="text-accent" />
+                          {device.platform}
+                        </p>
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => remove(device.id)}
+                          className="inline-flex items-center gap-1 text-[11px] font-semibold text-danger disabled:opacity-60"
+                        >
+                          <Trash2 size={11} /> Remove
+                        </button>
+                      </div>
+                      <div className="space-y-2">
+                        {PREF_KEYS.map((pref) => {
+                          const on = Boolean(device.preferences?.[pref.key]);
+                          return (
+                            <div key={pref.key} className="flex items-center justify-between gap-3 rounded-md border border-lborder bg-elevated px-3 py-2.5">
+                              <div>
+                                <p className="text-xs font-semibold text-mtext">{pref.label}</p>
+                                <p className="text-[11px] text-stext">{pref.hint}</p>
+                              </div>
+                              <button
+                                type="button"
+                                role="switch"
+                                aria-checked={on}
+                                disabled={busy}
+                                onClick={() => togglePref(device, pref.key)}
+                                className={`relative h-5 w-9 shrink-0 rounded-full transition-colors disabled:opacity-60 ${
+                                  on ? 'bg-accent' : 'bg-lborder'
+                                }`}
+                              >
+                                <span
+                                  className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white transition-transform ${
+                                    on ? 'translate-x-4' : 'translate-x-0'
+                                  }`}
+                                />
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        </aside>
       </div>
     </div>
   );

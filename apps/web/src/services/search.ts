@@ -7,16 +7,20 @@ function asArray<T>(value: unknown): T[] {
   return Array.isArray(value) ? (value as T[]) : [];
 }
 
+const SEARCH_LIMITS = {
+  playerLimit: 20,
+  teamLimit: 20,
+  matchLimit: 20,
+  tournamentLimit: 20,
+} as const;
+
 export async function searchAll(query: string): Promise<SearchResults> {
   const q = query.trim();
   if (!q) return emptyResults();
 
   const res = await apiGet<SearchResults>('/search', {
     q,
-    playerLimit: 6,
-    teamLimit: 6,
-    matchLimit: 6,
-    tournamentLimit: 4,
+    ...SEARCH_LIMITS,
   });
 
   const players = asArray<Player>(res?.players).map((p: any) => {

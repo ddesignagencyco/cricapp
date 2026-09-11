@@ -1,25 +1,65 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ComponentType, type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Bell, Heart, LayoutDashboard, LogOut, Menu, Moon, Search, ShieldCheck, Sun, User, X } from 'lucide-react';
+import {
+  Activity,
+  Award,
+  Bell,
+  Calendar,
+  Globe,
+  Heart,
+  Home,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  Moon,
+  Newspaper,
+  Radio,
+  Search,
+  Shield,
+  ShieldCheck,
+  Sun,
+  Trophy,
+  User,
+  UserRound,
+  X,
+} from 'lucide-react';
 import Logo from './Logo';
 import SearchBar from './SearchBar';
 import { useTheme } from './ThemeProvider';
 import { useAuth } from './AuthProvider';
 
-const navItems = [
-  { to: '/', label: 'Home' },
-  { to: '/matches', label: 'Matches' },
-  { to: '/schedules', label: 'Schedule' },
-  { to: '/teams', label: 'Teams' },
-  { to: '/players', label: 'Players' },
-  { to: '/psl', label: 'PSL' },
-  { to: '/tours', label: 'Tours' },
-  { to: '/tournaments', label: 'Tournaments' },
-  { to: '/news', label: 'News' },
+type NavItem = {
+  to: string;
+  label: string;
+  icon: ComponentType<{ size?: number; className?: string }>;
+};
+
+const liveItems: NavItem[] = [
+  { to: '/', label: 'Home', icon: Home },
+  { to: '/matches', label: 'Matches', icon: Activity },
+  { to: '/streams', label: 'Streams', icon: Radio },
+  { to: '/schedules', label: 'Schedule', icon: Calendar },
 ];
+
+const exploreItems: NavItem[] = [
+  { to: '/teams', label: 'Teams', icon: Shield },
+  { to: '/players', label: 'Players', icon: UserRound },
+  { to: '/psl', label: 'PSL', icon: Trophy },
+  { to: '/tours', label: 'Tours', icon: Globe },
+  { to: '/tournaments', label: 'Tournaments', icon: Award },
+  { to: '/news', label: 'News', icon: Newspaper },
+];
+
+const navItems = [...liveItems, ...exploreItems];
+
+function avatarHue(name: string) {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
+  return Math.abs(h % 360);
+}
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -56,16 +96,30 @@ export default function Navbar() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [mobileOpen]);
+
   const handleLogout = () => {
     logout();
     setMenuOpen(false);
+    setMobileOpen(false);
     router.push('/');
   };
 
   const isActive = (to: string) => (to === '/' ? pathname === '/' : pathname.startsWith(to));
+  const displayName = (user?.displayName || user?.username || user?.email || '').trim();
+  const hue = avatarHue(displayName);
+
+  const closeMobile = () => setMobileOpen(false);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-lborder bg-primary backdrop-blur-md">
+    <header className="sticky top-0 z-40 border-b border-lborder bg-primary/95 backdrop-blur-md">
       <a
         href="#main-content"
         className="btn-brand fixed left-3 top-3 z-50 -translate-y-20 rounded px-3 py-2 text-sm font-medium focus:translate-y-0"
@@ -96,7 +150,7 @@ export default function Navbar() {
             <button
               type="button"
               onClick={toggle}
-              className="grid h-9 w-9 place-items-center rounded-lg text-stext transition-colors hover:bg-card hover:text-mtext"
+              className="grid h-9 w-9 place-items-center rounded text-stext transition-colors hover:bg-card hover:text-mtext"
               aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
             >
               {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
@@ -105,36 +159,31 @@ export default function Navbar() {
 
           <button
             type="button"
-            onClick={() => setSearchOpen((s) => !s)}
-            className="grid h-9 w-9 place-items-center rounded-lg text-stext transition-colors hover:bg-card hover:text-mtext"
+            onClick={() => {
+              setSearchOpen((s) => !s);
+              setMobileOpen(false);
+            }}
+            className="grid h-9 w-9 place-items-center rounded text-stext transition-colors hover:bg-card hover:text-mtext"
             aria-label="Search"
           >
             <Search size={18} />
           </button>
           {isAuthenticated && user ? (
-            <div ref={menuRef} className="relative">
+            <div ref={menuRef} className="relative hidden sm:block">
               <button
                 type="button"
                 onClick={() => setMenuOpen((s) => !s)}
-                className="flex items-center gap-2 rounded-lg py-1 pl-1 pr-2 transition-colors hover:bg-card"
+                className="flex items-center gap-2 rounded py-1 pl-1 pr-2 transition-colors hover:bg-card"
                 aria-label="Account menu"
                 aria-expanded={menuOpen}
                 aria-haspopup="menu"
               >
-                {(() => {
-                  const displayName = (user.displayName || user.username || user.email || '').trim();
-                  let h = 0;
-                  for (let i = 0; i < displayName.length; i++) h = displayName.charCodeAt(i) + ((h << 5) - h);
-                  const hue = Math.abs(h % 360);
-                  return (
-                    <span
-                      className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[10px] font-bold text-white"
-                      style={{ backgroundImage: `linear-gradient(135deg, hsl(${hue}, 75%, 50%), hsl(${(hue + 40) % 360}, 85%, 35%))` }}
-                    >
-                      {displayName.slice(0, 2).toUpperCase()}
-                    </span>
-                  );
-                })()}
+                <span
+                  className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[10px] font-bold text-white"
+                  style={{ backgroundImage: `linear-gradient(135deg, hsl(${hue}, 75%, 50%), hsl(${(hue + 40) % 360}, 85%, 35%))` }}
+                >
+                  {displayName.slice(0, 2).toUpperCase()}
+                </span>
                 <span className="hidden max-w-24 truncate text-xs font-semibold text-mtext sm:block">
                   {user.displayName || user.username}
                 </span>
@@ -173,7 +222,7 @@ export default function Navbar() {
           ) : (
             <Link
               href="/login"
-              className={`grid h-9 w-9 place-items-center rounded-lg transition-colors hover:bg-card hover:text-mtext ${pathname.startsWith('/login') || pathname.startsWith('/register')
+              className={`hidden h-9 place-items-center rounded px-2 transition-colors hover:bg-card hover:text-mtext sm:grid ${pathname.startsWith('/login') || pathname.startsWith('/register')
                 ? 'text-accent'
                 : 'text-stext'
                 }`}
@@ -185,9 +234,13 @@ export default function Navbar() {
 
           <button
             type="button"
-            onClick={() => setMobileOpen((m) => !m)}
-            className="grid h-9 w-9 place-items-center rounded-lg text-mtext transition-colors hover:bg-card lg:hidden"
-            aria-label="Toggle menu"
+            onClick={() => {
+              setMobileOpen((m) => !m);
+              setMenuOpen(false);
+              setSearchOpen(false);
+            }}
+            className="grid h-9 w-9 place-items-center rounded text-mtext transition-colors hover:bg-card lg:hidden"
+            aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
             aria-expanded={mobileOpen}
             aria-controls="mobile-navigation"
           >
@@ -199,31 +252,107 @@ export default function Navbar() {
       {searchOpen && <SearchBar autoFocus onDone={() => setSearchOpen(false)} />}
 
       {mobileOpen && (
-        <div id="mobile-navigation" className="border-t border-lborder bg-secondary lg:hidden">
-          <div className="mx-auto max-w-7xl px-4 py-3">
-            <div className="grid grid-cols-2 gap-1.5">
-              {navItems.map((item) => (
-                <Link
-                  key={item.to}
-                  href={item.to}
-                  aria-current={isActive(item.to) ? 'page' : undefined}
-                  className={`rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${isActive(item.to)
-                    ? 'bg-accent/15 text-accent ring-1 ring-inset ring-accent/25'
-                    : 'text-stext hover:bg-card hover:text-mtext'
-                    }`}
-                >
-                  {item.label}
-                </Link>
-              ))}
-              {isAuthenticated && isAdmin && (
-                <Link href="/admin" className="rounded-xl bg-accent/15 px-4 py-3 text-sm font-semibold text-accent ring-1 ring-inset ring-accent/25">
-                  CMS Dashboard
-                </Link>
-              )}
+        <>
+          <button
+            type="button"
+            className="fixed inset-0 top-[3.75rem] z-30 bg-black/50 lg:hidden"
+            aria-label="Close menu"
+            onClick={closeMobile}
+          />
+          <div
+            id="mobile-navigation"
+            className="relative z-40 max-h-[calc(100dvh-3.75rem)] overflow-y-auto border-t border-lborder bg-primary lg:hidden"
+          >
+            <div className="mx-auto max-w-7xl px-4 pb-8 pt-4 sm:px-6">
+              <MobileSection label="Live">
+                {liveItems.map((item) => (
+                  <MobileNavLink key={item.to} item={item} active={isActive(item.to)} />
+                ))}
+              </MobileSection>
+
+              <MobileSection label="Explore">
+                {exploreItems.map((item) => (
+                  <MobileNavLink key={item.to} item={item} active={isActive(item.to)} />
+                ))}
+              </MobileSection>
+
+              <MobileSection label="Account">
+                {isAuthenticated && user ? (
+                  <>
+                    <div className="mb-1 flex items-center gap-3 rounded border border-lborder bg-card px-3 py-3">
+                      <span
+                        className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-xs font-bold text-white"
+                        style={{ backgroundImage: `linear-gradient(135deg, hsl(${hue}, 75%, 50%), hsl(${(hue + 40) % 360}, 85%, 35%))` }}
+                      >
+                        {displayName.slice(0, 2).toUpperCase()}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-mtext">{user.displayName || user.username}</p>
+                        <p className="truncate text-xs text-stext">{user.email}</p>
+                      </div>
+                    </div>
+                    <MobileNavLink item={{ to: '/profile', label: 'Profile', icon: User }} active={pathname.startsWith('/profile')} />
+                    <MobileNavLink item={{ to: '/favorites', label: 'Favorites', icon: Heart }} active={pathname.startsWith('/favorites')} />
+                    <MobileNavLink item={{ to: '/settings/notifications', label: 'Notifications', icon: Bell }} active={pathname.startsWith('/settings/notifications')} />
+                    {isAdmin && (
+                      <MobileNavLink item={{ to: '/admin', label: 'CMS Dashboard', icon: LayoutDashboard }} active={pathname.startsWith('/admin')} />
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      className="flex w-full items-center gap-3 rounded px-3 py-3 text-left text-sm font-semibold text-danger hover:bg-card"
+                    >
+                      <span className="grid h-9 w-9 place-items-center rounded bg-danger/10">
+                        <LogOut size={16} />
+                      </span>
+                      Sign out
+                    </button>
+                  </>
+                ) : (
+                  <Link
+                    href="/login"
+                    className="btn-brand mt-1 flex items-center justify-center gap-2 rounded px-4 py-3 text-sm font-semibold"
+                  >
+                    <User size={16} />
+                    Sign in
+                  </Link>
+                )}
+              </MobileSection>
             </div>
           </div>
-        </div>
+        </>
       )}
     </header>
+  );
+}
+
+function MobileSection({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <section className="mb-5 last:mb-0">
+      <p className="px-1 text-[11px] font-semibold uppercase tracking-wider text-stext">{label}</p>
+      <div className="mt-2 space-y-0.5">{children}</div>
+    </section>
+  );
+}
+
+function MobileNavLink({ item, active }: { item: NavItem; active: boolean }) {
+  const Icon = item.icon;
+  return (
+    <Link
+      href={item.to}
+      aria-current={active ? 'page' : undefined}
+      className={`flex items-center gap-3 rounded px-3 py-2.5 text-sm font-semibold transition-colors ${
+        active ? 'bg-accent/10 text-accent' : 'text-mtext hover:bg-card'
+      }`}
+    >
+      <span
+        className={`grid h-9 w-9 shrink-0 place-items-center rounded ${
+          active ? 'bg-accent/15 text-accent' : 'bg-card text-stext'
+        }`}
+      >
+        <Icon size={16} />
+      </span>
+      {item.label}
+    </Link>
   );
 }
