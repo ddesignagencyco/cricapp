@@ -20,17 +20,32 @@ export async function fetchTeamById(idOrAbbr: string): Promise<Team | null> {
   return apiGetOptional(`/teams/${idOrAbbr}`);
 }
 
-export async function fetchTeamRoster(idOrAbbr: string): Promise<Player[]> {
-  const res = await apiGet(`/teams/${idOrAbbr}/players`);
-  return extractPage<Player>(res).items;
+export async function fetchTeamRosterPage(
+  idOrAbbr: string,
+  params: { page?: number; limit?: number } = {}
+): Promise<{ items: Player[]; total: number; totalPages: number }> {
+  const res = await apiGet(`/teams/${idOrAbbr}/players`, { page: 1, limit: 40, ...params });
+  const { items, meta } = extractPage<Player>(res);
+  return { items, total: meta.total, totalPages: meta.totalPages };
 }
 
-export async function fetchTeamSchedule(idOrAbbr: string): Promise<SportEventRecord[]> {
-  const res = await apiGet(`/teams/${idOrAbbr}/schedule`);
+export async function fetchTeamRoster(idOrAbbr: string, params: { page?: number; limit?: number } = {}): Promise<Player[]> {
+  const res = await fetchTeamRosterPage(idOrAbbr, { page: 1, limit: 100, ...params });
+  return res.items;
+}
+
+export async function fetchTeamSchedule(
+  idOrAbbr: string,
+  params: { page?: number; limit?: number } = {}
+): Promise<SportEventRecord[]> {
+  const res = await apiGet(`/teams/${idOrAbbr}/schedule`, { page: 1, limit: 50, ...params });
   return extractPage<SportEventRecord>(res).items;
 }
 
-export async function fetchTeamResults(idOrAbbr: string): Promise<SportEventRecord[]> {
-  const res = await apiGet(`/teams/${idOrAbbr}/results`);
+export async function fetchTeamResults(
+  idOrAbbr: string,
+  params: { page?: number; limit?: number } = {}
+): Promise<SportEventRecord[]> {
+  const res = await apiGet(`/teams/${idOrAbbr}/results`, { page: 1, limit: 50, ...params });
   return extractPage<SportEventRecord>(res).items;
 }

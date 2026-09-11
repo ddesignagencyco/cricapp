@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { ChevronRight, Globe } from 'lucide-react';
+import RemoteImage from './RemoteImage';
 import { getInitials, getPslLogo } from '../utils/helpers';
 
 interface TeamCardProps {
@@ -35,10 +36,11 @@ export default function TeamCard({ team }: TeamCardProps) {
       className="group flex items-center gap-3 rounded-md border border-lborder bg-card p-3.5 transition-colors hover:border-accent/50 hover:bg-elevated"
     >
       {logo ? (
-        <img
+        <RemoteImage
           src={logo}
           alt={name}
-          loading="lazy"
+          width={44}
+          height={44}
           className="h-11 w-11 shrink-0 rounded-full border border-lborder bg-white object-contain p-1"
         />
       ) : (

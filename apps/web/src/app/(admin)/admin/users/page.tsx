@@ -1,63 +1,123 @@
 'use client';
 
-import { UserCircle } from 'lucide-react';
-import { useAuth } from '../../../../components/AuthProvider';
-import { AdminPageHeader, EmptyState } from '../../../../components/admin/AdminShared';
+import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
+import { Search } from 'lucide-react';
+import { AdminInput, AdminPageHeader, ErrorState, LoadingState } from '../../../../components/admin/AdminShared';
+import AdminPagination from '../../../../components/admin/AdminPagination';
+import { fetchAdminUsers, updateAdminUser, type AdminUser } from '../../../../services/admin';
 
 export default function UsersPage() {
-  const { user } = useAuth();
+  const [q, setQ] = useState('');
+  const [page, setPage] = useState(1);
+  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [busyId, setBusyId] = useState<string | null>(null);
 
-  const userInitials = (user?.displayName || user?.username || 'A').split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2);
+  const load = (nextPage = page, query = q) => {
+    setLoading(true);
+    setError(false);
+    fetchAdminUsers({ page: nextPage, limit: 20, q: query || undefined })
+      .then((res) => {
+        setUsers(res.items);
+        setTotal(res.total);
+        setTotalPages(res.totalPages);
+        setPage(nextPage);
+      })
+      .catch(() => setError(true))
+      .finally(() => setLoading(false));
+  };
 
-  let hue = 0;
-  if (user) {
-    const raw = (user.displayName || user.username || '').trim();
-    for (let i = 0; i < raw.length; i++) hue = raw.charCodeAt(i) + ((hue << 5) - hue);
-    hue = Math.abs(hue % 360);
-  }
+  useEffect(() => {
+    load(1, '');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const patch = async (user: AdminUser, input: { isAdmin?: boolean; emailVerified?: boolean }) => {
+    setBusyId(user.id);
+    try {
+      const updated = await updateAdminUser(user.id, input);
+      setUsers((list) => list.map((item) => (item.id === user.id ? { ...item, ...updated } : item)));
+      toast.success('User updated.');
+    } catch {
+      toast.error('Could not update this user.');
+    } finally {
+      setBusyId(null);
+    }
+  };
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader title="Users & Roles" subtitle="Manage user accounts and permissions." />
+      <AdminPageHeader title="Users" subtitle="Promote administrators and mark emails as verified. Invite and delete are not available on the API." />
 
-      <div className="rounded-lg p-4" style={{ border: '1px solid var(--admin-warning)', background: 'var(--admin-warning-bg)' }}>
-        <h3 className="text-xs font-bold" style={{ color: 'var(--admin-warning)' }}>Backend API Required</h3>
-        <p className="mt-1 text-xs" style={{ color: 'var(--admin-warning)' }}>
-          User management requires admin-level user CRUD endpoints on the backend.
-          Currently, only the authenticated user profile (GET /api/auth/me) is available.
-        </p>
-        <div className="mt-3 rounded-lg p-3 text-xs" style={{ border: '1px solid var(--admin-warning)', background: 'var(--admin-card)', color: 'var(--admin-warning)' }}>
-          <p className="font-bold">Required backend endpoints:</p>
-          <ul className="mt-1 list-disc pl-4 space-y-0.5">
-            <li>GET /api/users — List all users (admin only)</li>
-            <li>POST /api/users/invite — Invite new user</li>
-            <li>PATCH /api/users/:id — Update user role/status</li>
-            <li>DELETE /api/users/:id — Deactivate user</li>
-          </ul>
-        </div>
+      <div className="relative max-w-sm">
+        <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--admin-text-muted)' }} />
+        <AdminInput
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') load(1, q);
+          }}
+          placeholder="Search email, username or name"
+          style={{ paddingLeft: '2rem' }}
+        />
       </div>
 
-      {user && (
-        <div className="rounded-lg p-4" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
-          <h3 className="text-xs font-bold mb-3" style={{ color: 'var(--admin-text)' }}>Current Session</h3>
-          <div className="flex items-center gap-4">
-            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full text-sm font-black text-white"
-              style={{ backgroundImage: `linear-gradient(135deg, hsl(${hue}, 75%, 50%), hsl(${(hue + 40) % 360}, 85%, 35%))` }}>
-              {userInitials}
-            </span>
-            <div>
-              <p className="text-xs font-bold" style={{ color: 'var(--admin-text)' }}>{user.displayName || user.username}</p>
-              <p className="text-xs" style={{ color: 'var(--admin-text-secondary)' }}>{user.email}</p>
-              <span className="mt-1 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold"
-                style={{ background: 'var(--admin-accent)', color: '#fff' }}>
-                {user.isAdmin ? 'Administrator' : 'Editor'}
-              </span>
-            </div>
+      {loading ? (
+        <LoadingState />
+      ) : error ? (
+        <ErrorState message="Could not load users." onRetry={() => load(page, q)} />
+      ) : (
+        <div className="overflow-hidden rounded-lg" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
+          <table className="w-full text-left text-xs">
+            <thead>
+              <tr style={{ background: 'var(--admin-table-header)', borderBottom: '1px solid var(--admin-border)' }}>
+                <th className="px-4 py-2.5">User</th>
+                <th className="px-4 py-2.5">Email</th>
+                <th className="px-4 py-2.5">Role</th>
+                <th className="px-4 py-2.5">Verified</th>
+                <th className="px-4 py-2.5 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.map((user) => (
+                <tr key={user.id} style={{ borderBottom: '1px solid var(--admin-border)' }}>
+                  <td className="px-4 py-2.5" style={{ color: 'var(--admin-text)' }}>{user.displayName || user.username}</td>
+                  <td className="px-4 py-2.5" style={{ color: 'var(--admin-text-secondary)' }}>{user.email}</td>
+                  <td className="px-4 py-2.5">{user.isAdmin ? 'Admin' : 'Member'}</td>
+                  <td className="px-4 py-2.5">{user.emailVerified ? 'Yes' : 'No'}</td>
+                  <td className="px-4 py-2.5 text-right">
+                    <button
+                      type="button"
+                      disabled={busyId === user.id}
+                      onClick={() => patch(user, { isAdmin: !user.isAdmin })}
+                      className="mr-2 text-xs font-semibold"
+                      style={{ color: 'var(--admin-accent)' }}
+                    >
+                      {user.isAdmin ? 'Remove admin' : 'Make admin'}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={busyId === user.id}
+                      onClick={() => patch(user, { emailVerified: !user.emailVerified })}
+                      className="text-xs font-semibold"
+                      style={{ color: 'var(--admin-text-secondary)' }}
+                    >
+                      {user.emailVerified ? 'Unverify' : 'Verify'}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div className="px-4 py-3">
+            <AdminPagination page={page} totalPages={totalPages} total={total} limit={20} onPageChange={(p) => load(p, q)} />
           </div>
         </div>
       )}
-
-      <EmptyState icon={<UserCircle size={28} />} title="User management unavailable" message="Once the backend user management API is implemented, you'll be able to invite and manage users here." />
     </div>
   );
 }

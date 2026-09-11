@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import RemoteImage from './RemoteImage';
 import { getInitials, getPslLogo } from '../utils/helpers';
 
 interface MatchCardCompactProps {
@@ -67,9 +68,11 @@ function TeamCell({ name, abbr, align }: { name: string; abbr: string; align: 'l
   const hue = Math.abs(hash % 360);
 
   const badge = pslLogo ? (
-    <img
+    <RemoteImage
       src={pslLogo}
       alt={name}
+      width={28}
+      height={28}
       className="h-7 w-7 shrink-0 rounded-full border border-lborder bg-white object-contain p-0.5"
     />
   ) : (

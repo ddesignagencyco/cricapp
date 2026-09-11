@@ -72,6 +72,9 @@ function mapNewsItem(item: Record<string, unknown>): NewsArticle {
     image: (item.imageUrl as string) || undefined,
     imageGradient: undefined,
     relatedTeams: [],
+    isFeatured: Boolean(item.isFeatured),
+    isBreaking: Boolean(item.isBreaking),
+    language: (item.language as string) || 'en',
   };
 }
 
@@ -79,9 +82,7 @@ export async function fetchNews(
   { category, tag, q, limit = 50 }: { category?: string; tag?: string; q?: string; limit?: number } = {}
 ): Promise<NewsArticle[]> {
   const res = await apiGet('/news', { category, tag, q, limit });
-  return extractPage<Record<string, unknown>>(res).items
-    .filter((item) => item.isPublished === true)
-    .map(mapNewsItem);
+  return extractPage<Record<string, unknown>>(res).items.map(mapNewsItem);
 }
 
 export async function fetchNewsPage(
@@ -89,18 +90,16 @@ export async function fetchNewsPage(
 ): Promise<{ items: NewsArticle[]; total: number; totalPages: number }> {
   const res = await apiGet('/news', { category, tag, q, page, limit });
   const { items, meta } = extractPage<Record<string, unknown>>(res);
-  const published = items.filter((item) => item.isPublished === true);
-  const visibleTotal = Math.max(0, meta.total - (items.length - published.length));
   return {
-    items: published.map(mapNewsItem),
-    total: visibleTotal,
-    totalPages: Math.max(1, Math.ceil(visibleTotal / limit)),
+    items: items.map(mapNewsItem),
+    total: meta.total,
+    totalPages: meta.totalPages,
   };
 }
 
 export async function fetchNewsById(idOrSlug: string): Promise<NewsArticle | null> {
   const item = await apiGetOptional<Record<string, unknown>>(`/news/${idOrSlug}`);
-  if (!item || item.isPublished !== true) return null;
+  if (!item) return null;
   return mapNewsItem(item);
 }
 

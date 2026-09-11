@@ -497,3 +497,10 @@ body {
 .tiptap-content p > br:only-child::before {
   content: "\00a0";
 }
+
+/* Edge/Chrome draw a native reveal control over our eye button and then
+   React resets type="password", so the toggle appears broken. */
+.auth-password-input::-ms-reveal,
+.auth-password-input::-ms-clear {
+  display: none;
+}

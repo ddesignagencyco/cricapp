@@ -1,4 +1,4 @@
-import { apiGet, apiPost, apiPatch, apiDelete, extractPage } from './api/client';
+import { apiGet, apiPost, apiPatch, apiDelete, extractPage, ApiError } from './api/client';
 import { authHeaders } from './auth';
 
 export interface NewsCategory {
@@ -15,9 +15,16 @@ export interface NewsArticleAdmin {
   content: string;
   imageUrl: string | null;
   author: string | null;
+  authorId?: string | null;
   source: string | null;
   categoryId: string | null;
   tags: string[] | null;
+  language?: string;
+  metaTitle?: string | null;
+  metaDescription?: string | null;
+  canonicalUrl?: string | null;
+  isFeatured?: boolean;
+  isBreaking?: boolean;
   publishedAt: string | null;
   isPublished: boolean;
   createdAt: string;
@@ -30,9 +37,16 @@ export interface NewsInput {
   content: string;
   imageUrl?: string;
   author?: string;
+  authorId?: string;
   source?: string;
   categoryId?: string;
   tags?: string[];
+  language?: string;
+  metaTitle?: string;
+  metaDescription?: string;
+  canonicalUrl?: string;
+  isFeatured?: boolean;
+  isBreaking?: boolean;
   isPublished?: boolean;
 }
 
@@ -48,7 +62,7 @@ export interface NewsAdminListParams {
 export async function fetchNewsAdmin(
   params: NewsAdminListParams = {}
 ): Promise<{ items: NewsArticleAdmin[]; total: number; totalPages: number }> {
-  const res = await apiGet('/news', params);
+  const res = await apiGet('/admin/news', params, { headers: authHeaders() });
   const { items, meta } = extractPage<NewsArticleAdmin>(res);
   return { items, total: meta.total, totalPages: meta.totalPages };
 }
@@ -77,8 +91,21 @@ export function fetchNewsCategories(): Promise<NewsCategory[]> {
   return apiGet<NewsCategory[]>('/news/categories');
 }
 
-export function fetchNewsArticle(idOrSlug: string): Promise<NewsArticleAdmin> {
-  return apiGet<NewsArticleAdmin>(`/news/${idOrSlug}`);
+export async function fetchNewsArticle(idOrSlug: string): Promise<NewsArticleAdmin> {
+  try {
+    return await apiGet<NewsArticleAdmin>(`/news/${idOrSlug}`);
+  } catch (error) {
+    if (!(error instanceof ApiError) || error.status !== 404) throw error;
+    let page = 1;
+    while (page <= 10) {
+      const res = await fetchNewsAdmin({ page, limit: 100 });
+      const found = res.items.find((article) => article.id === idOrSlug || article.slug === idOrSlug);
+      if (found) return found;
+      if (page >= res.totalPages) break;
+      page += 1;
+    }
+    throw error;
+  }
 }
 
 export function createNews(input: NewsInput): Promise<NewsArticleAdmin> {

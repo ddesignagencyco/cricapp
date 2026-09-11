@@ -1,18 +1,30 @@
 'use client';
 
-import { useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Badge, { normalizeStatus } from './Badge';
 import LiveIndicator from './LiveIndicator';
 import { getInitials } from '../utils/helpers';
+import { mergeLiveUpdate, useMatchStream } from '../hooks/useMatchStream';
 
 interface MatchTickerBarProps {
   matches: any[];
 }
 
-export default function MatchTickerBar({ matches }: MatchTickerBarProps) {
+export default function MatchTickerBar({ matches: initialMatches }: MatchTickerBarProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [matches, setMatches] = useState(initialMatches || []);
+  const liveUpdate = useMatchStream(undefined, true);
+
+  useEffect(() => {
+    setMatches(initialMatches || []);
+  }, [initialMatches]);
+
+  useEffect(() => {
+    if (!liveUpdate) return;
+    setMatches((prev) => mergeLiveUpdate(prev, liveUpdate));
+  }, [liveUpdate]);
 
   const scroll = (dir: 'left' | 'right') => {
     if (!scrollRef.current) return;

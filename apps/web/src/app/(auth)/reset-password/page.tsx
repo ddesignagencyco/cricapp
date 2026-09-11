@@ -9,10 +9,23 @@ export const metadata = {
 };
 
 interface ResetPageProps {
-  searchParams: Promise<{ token?: string; tid?: string }>;
+  searchParams: Promise<{ token?: string; tid?: string; email?: string }>;
 }
 
 export default async function ResetPasswordPage({ searchParams }: ResetPageProps) {
   const params = await searchParams;
-  return <AuthShell title="Reset password" subtitle="Choose a new password for your account." footer={<span>Back to <Link href="/login" className="font-semibold text-accent hover:text-accent2">login</Link></span>}><AuthForm mode="reset" token={params.token} tokenId={params.tid} /></AuthShell>;
+  const fromLink = Boolean(params.token && params.tid);
+  return (
+    <AuthShell
+      title="Reset password"
+      subtitle={
+        fromLink
+          ? 'Choose a new password for your account.'
+          : 'Enter the 4-digit code from your email, then choose a new password.'
+      }
+      footer={<span>Back to <Link href="/login" className="font-semibold text-accent hover:text-accent2">login</Link></span>}
+    >
+      <AuthForm mode="reset" token={params.token} tokenId={params.tid} initialEmail={params.email} />
+    </AuthShell>
+  );
 }

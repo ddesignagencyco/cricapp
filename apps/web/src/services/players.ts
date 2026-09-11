@@ -22,5 +22,5 @@ export async function fetchPlayersByTeam(teamAbbr: string): Promise<Player[]> {
 }
 
 export async function fetchPlayerById(playerId: string): Promise<Player | null> {
-  return apiGetOptional(`/players/${playerId}`, { recent: true });
+  return apiGetOptional(`/players/${playerId}`, { recent: 10 });
 }

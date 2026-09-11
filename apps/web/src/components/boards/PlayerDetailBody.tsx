@@ -8,6 +8,7 @@ import Tabs from '../Tabs';
 import MatchCard from '../MatchCard';
 import EmptyState from '../EmptyState';
 import TeamLogo from '../TeamLogo';
+import RemoteImage from '../RemoteImage';
 import FavoriteButton from '../FavoriteButton';
 import ShareButton from '../ShareButton';
 import { getInitials } from '../../utils/helpers';
@@ -74,9 +75,11 @@ export default function PlayerDetailBody({ player }: Props) {
         <div className="mt-5 flex flex-col gap-5 md:flex-row md:items-center">
           <div className="shrink-0">
             {player.profileUrl ? (
-              <img
+              <RemoteImage
                 src={player.profileUrl}
                 alt={name}
+                width={80}
+                height={80}
                 className="h-20 w-20 rounded-full border border-lborder bg-secondary object-cover"
               />
             ) : (
@@ -129,7 +132,7 @@ export default function PlayerDetailBody({ player }: Props) {
                 className="group flex items-center gap-3 rounded-md border border-lborder bg-secondary px-3.5 py-3 transition-colors hover:border-accent/50 hover:bg-elevated"
               >
                 {team.logoUrl ? (
-                  <img src={team.logoUrl} alt={team.name} className="h-11 w-11 rounded-full border border-white/10 bg-white object-contain p-0.5" />
+                  <RemoteImage src={team.logoUrl} alt={team.name} width={44} height={44} className="h-11 w-11 rounded-full border border-white/10 bg-white object-contain p-0.5" />
                 ) : (
                   <TeamLogo teamId={team.id} name={team.name} code={team.abbr} size="sm" link={false} />
                 )}

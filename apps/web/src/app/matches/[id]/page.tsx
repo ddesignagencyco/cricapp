@@ -1,21 +1,29 @@
 import { notFound } from 'next/navigation';
 import type { Team } from '../../../types/index';
 import MatchDetailBody from '../../../components/boards/MatchDetailBody';
-import { fetchMatchById } from '../../../services/matches';
+import { fetchMatchById, matchSideIds } from '../../../services/matches';
 import { fetchTeams } from '../../../services/teams';
 import { fetchHeadToHead } from '../../../services/headToHead';
 
 export const revalidate = 30;
 
+function looksLikeTeamId(value: string): boolean {
+  return value.startsWith('sr:competitor:') || /^[0-9a-f-]{20,}$/i.test(value);
+}
+
 function resolveTeamId(raw: string, teams: Team[]): string {
   if (!raw) return '';
   if (raw.startsWith('sr:competitor:')) return raw;
+  const needle = raw.toLowerCase();
   const t = teams.find(
     (x) =>
-      (x.abbr || '').toLowerCase() === raw.toLowerCase() ||
-      (x.id || '').toLowerCase() === raw.toLowerCase()
+      (x.abbr || '').toLowerCase() === needle ||
+      (x.code || '').toLowerCase() === needle ||
+      (x.id || '').toLowerCase() === needle ||
+      (x.name || '').toLowerCase() === needle
   );
-  return t?.id || '';
+  if (t?.id) return t.id;
+  return looksLikeTeamId(raw) ? raw : '';
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
@@ -40,8 +48,9 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
   }
 
   const [teams] = await Promise.all([fetchTeams()]);
-  const homeCode = match.teams?.home?.code || match.home?.code || '';
-  const awayCode = match.teams?.away?.code || match.away?.code || '';
+  const sides = matchSideIds(match);
+  const homeCode = sides.home || match.teams?.home?.code || match.home?.code || '';
+  const awayCode = sides.away || match.teams?.away?.code || match.away?.code || '';
   const teamAId = resolveTeamId(homeCode, teams || []);
   const teamBId = resolveTeamId(awayCode, teams || []);
 

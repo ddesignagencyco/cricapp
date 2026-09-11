@@ -6,10 +6,51 @@ All inspected and modified files are inside `apps/web/`. No API, Prisma, Docker,
 
 ## Route inventory
 
-- Public: `/`, `/matches`, `/matches/[id]`, `/schedules`, `/teams`, `/teams/[id]`, `/players`, `/players/[id]`, `/tours`, `/tournaments`, `/tournaments/[id]`, `/psl`, `/stats`, `/news`, `/news/[id]`, `/search`, `/streams`, `/favorites`, `/about`, `/contact`, `/privacy`, `/terms`.
+- Public: `/`, `/matches`, `/matches/[id]`, `/schedules`, `/teams`, `/teams/[id]`, `/players`, `/players/[id]`, `/tours`, `/tournaments`, `/tournaments/[id]`, `/psl`, `/stats`, `/news`, `/news/[id]`, `/search`, `/streams`, `/favorites`, `/profile`, `/settings/notifications`, `/about`, `/contact`, `/privacy`, `/terms`.
 - Authentication: `/login`, `/register`, `/forgot-password`, `/reset-password`, `/verify-email`, plus `/signin` and `/signup` redirects.
-- Admin: `/admin`, `/admin/news`, `/admin/news/new`, `/admin/news/[id]/edit`, `/admin/articles` redirect, `/admin/categories`, `/admin/matches`, `/admin/teams`, `/admin/players`, `/admin/tournaments`, `/admin/comments`, `/admin/media`, `/admin/users`, `/admin/settings`.
+- Admin: `/admin`, `/admin/news`, `/admin/news/new`, `/admin/news/[id]/edit`, `/admin/articles` redirect, `/admin/categories`, `/admin/matches`, `/admin/teams`, `/admin/players`, `/admin/tournaments`, `/admin/streams`, `/admin/authors`, `/admin/comments`, `/admin/media`, `/admin/users`, `/admin/settings`.
 - Framework: global loading, error, not-found, robots, sitemap and manifest routes.
+
+## Swagger coverage (web vs OpenAPI)
+
+Wired in `apps/web` against documented endpoints:
+
+| Area | Endpoints used |
+| --- | --- |
+| Search | `GET /search` |
+| Live matches | `GET /matches/live`, SSE `GET /matches/live/stream`, `GET /matches/:id/stream` |
+| Matches | list `q`/`status`/`tournament`, detail, timeline (`apiGetOptional`), H2H via resolved team ids |
+| Players | `GET /players/:id?recent=10` (numeric; `recent=true` is NaN on the API) |
+| Teams | list `q`, roster pagination, `GET /teams/:id/schedule`, `GET /teams/:id/results` |
+| News | public published list/detail; `isFeatured`/`isBreaking` spotlight; admin `GET /admin/news` includes drafts |
+| Auth | `PATCH /auth/me`, `GET /auth/me`, resend verification |
+| Comments | pagination, `POST /comments/:id/report`, reactions `targetType=comment` |
+| Favorites | `expand=true` + pagination params |
+| Streams | public list/status/embed from `streamUrl`; admin `POST/PATCH/DELETE /streams` |
+| Notifications | `GET /notifications/history`, `GET /devices`, `PATCH /devices/:id/preferences`, `DELETE /devices/:id` |
+| Admin | users list/patch, authors CRUD, reported comments, moderate comment, resolve report, analytics, ingestion-health |
+
+Remaining by design (not faked):
+
+| Item | Why |
+| --- | --- |
+| `GET /api` HTML health, `GET /api/health/json` | Ops, not a product page |
+| `POST /devices` | Needs a real FCM token + Firebase SDK. `/settings/notifications` states this honestly |
+| Media upload, site settings CRUD | No backend endpoints. `/admin/media` and `/admin/settings` stay as unavailable placeholders |
+| Category update/delete, user invite/delete, global comment list | Not in the API. Users can only patch `isAdmin`/`emailVerified`. Comments admin is the pending-report queue |
+| `GET /news/:id` drafts | Public get is published-only. Editor falls back to scanning `GET /admin/news`. **Backend blocker:** `includeUnpublished` on get-by-id |
+
+This pass no longer claims that users, comments, analytics, authors or streams have “no backend”. Those admin surfaces now call the documented endpoints.
+
+### Contract bugs fixed
+
+- Search no longer fans out four list endpoints and client-filters them.
+- Player recent matches now request `recent=10`.
+- Match H2H resolves ids from `teams` arrays / `sr:competitor:` / names, not only `teams.home.code`.
+- Homepage Live Now uses `GET /matches/live`.
+- Directory search uses API `q` (teams, tournaments, matches).
+- Team pages use schedule/results feeds (SportEventRecord rows) instead of client-filtering `GET /matches`.
+- Public news no longer client-filters `isPublished`, which skewed pagination.
 
 ## Problems found and fixed
 

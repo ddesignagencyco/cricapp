@@ -2,13 +2,14 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Flame, Loader2, MessageSquare, Trash2 } from 'lucide-react';
+import { Flag, Flame, Loader2, MessageSquare, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
   createComment,
   deleteComment,
   getReactionCounts,
   listComments,
+  reportComment,
   toggleReaction,
   type CommentItem,
   type CommentTarget,
@@ -28,19 +29,26 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
   const { user, isAuthenticated } = useAuth();
   const [comments, setComments] = useState<CommentItem[]>([]);
   const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [body, setBody] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<CommentItem | null>(null);
+  const [reportTarget, setReportTarget] = useState<CommentItem | null>(null);
+  const reportReason = 'spam';
   const [counts, setCounts] = useState<Record<string, number>>({});
+  const [commentCounts, setCommentCounts] = useState<Record<string, Record<string, number>>>({});
 
-  const load = useCallback(() => {
-    setLoading(true);
-    listComments(targetType, targetId)
+  const load = useCallback((nextPage = 1, append = false) => {
+    if (!append) setLoading(true);
+    listComments(targetType, targetId, nextPage, 20)
       .then((r) => {
-        setComments(r.items);
+        setComments((prev) => (append ? [...prev, ...r.items] : r.items));
         setTotal(r.total);
+        setTotalPages(r.totalPages);
+        setPage(nextPage);
       })
       .catch(() => {
         // Silently handle load errors (e.g. backend offline or empty); don't spam toasts to user
@@ -66,7 +74,7 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
       await createComment(targetType, targetId, text);
       setBody('');
       toast.success('Comment posted.');
-      load();
+      load(1, false);
     } catch {
       toast.error('Could not post the comment.');
     } finally {
@@ -101,6 +109,34 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
       setCounts(updated.counts);
     } catch {
       toast.error('Could not save the reaction.');
+    }
+  };
+
+  const reactToComment = async (comment: CommentItem, emoji: string) => {
+    if (!isAuthenticated) {
+      toast.error('Sign in to react.');
+      return;
+    }
+    try {
+      await toggleReaction('comment', comment.id, emoji);
+      const updated = await getReactionCounts('comment', comment.id);
+      setCommentCounts((prev) => ({ ...prev, [comment.id]: updated.counts }));
+    } catch {
+      toast.error('Could not save the reaction.');
+    }
+  };
+
+  const submitReport = async () => {
+    if (!reportTarget) return;
+    setBusyId(reportTarget.id);
+    try {
+      await reportComment(reportTarget.id, reportReason.trim() || 'spam');
+      toast.success('Comment reported.');
+      setReportTarget(null);
+    } catch {
+      toast.error('Could not report this comment.');
+    } finally {
+      setBusyId(null);
     }
   };
 
@@ -207,9 +243,47 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
                 )}
               </div>
               <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed text-mtext">{comment.body}</p>
+              <div className="mt-2 flex flex-wrap items-center gap-1">
+                {REACTIONS.map((emoji) => (
+                  <button
+                    key={emoji}
+                    type="button"
+                    onClick={() => reactToComment(comment, emoji)}
+                    className="flex items-center gap-1 rounded-full bg-card px-2 py-0.5 text-[11px] ring-1 ring-lborder hover:ring-accent/40"
+                    aria-label={`React to comment with ${emoji}`}
+                  >
+                    <span>{emoji}</span>
+                    {commentCounts[comment.id]?.[emoji] ? (
+                      <span className="font-bold text-stext">{commentCounts[comment.id][emoji]}</span>
+                    ) : null}
+                  </button>
+                ))}
+                {isAuthenticated && user?.id !== comment.userId && (
+                  <button
+                    type="button"
+                    onClick={() => setReportTarget(comment)}
+                    className="ml-auto inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] text-stext hover:text-danger"
+                  >
+                    <Flag size={11} /> Report
+                  </button>
+                )}
+              </div>
             </li>
           ))}
         </ul>
+      )}
+
+      {page < totalPages && (
+        <div className="mt-4 flex justify-center">
+          <button
+            type="button"
+            onClick={() => load(page + 1, true)}
+            disabled={loading}
+            className="rounded-md border border-lborder bg-elevated px-4 py-2 text-xs font-semibold text-mtext disabled:opacity-60"
+          >
+            {loading ? 'Loading…' : 'Load more comments'}
+          </button>
+        </div>
       )}
 
       <ConfirmDialog
@@ -221,6 +295,15 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
         onCancel={() => setDeleteTarget(null)}
         loading={!!busyId}
         danger
+      />
+      <ConfirmDialog
+        open={!!reportTarget}
+        title="Report comment"
+        message="This comment will be sent to moderators. Choose a reason and continue."
+        confirmLabel="Report"
+        onConfirm={submitReport}
+        onCancel={() => setReportTarget(null)}
+        loading={!!busyId}
       />
     </section>
   );

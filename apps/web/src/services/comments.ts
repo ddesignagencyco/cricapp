@@ -51,9 +51,18 @@ export function getReactionCounts(targetType: ReactionTarget, targetId: string):
 export function toggleReaction(
   targetType: ReactionTarget,
   targetId: string,
-  emoji: string
+  emoji: string,
+  commentId?: string
 ): Promise<{ message: string }> {
-  return apiPost<{ message: string }>('/reactions', { targetType, targetId, emoji }, { headers: authHeaders() });
+  return apiPost<{ message: string }>(
+    '/reactions',
+    { targetType, targetId, emoji, commentId },
+    { headers: authHeaders() }
+  );
+}
+
+export function reportComment(id: string, reason: string): Promise<{ message?: string }> {
+  return apiPost(`/comments/${id}/report`, { reason }, { headers: authHeaders() });
 }
 
 export type { AuthUser };

@@ -7,7 +7,6 @@ import {
   Trophy,
   Users,
   UserCircle,
-  Activity,
   ArrowUpRight,
   Radio,
   Newspaper,
@@ -27,6 +26,7 @@ import type { Match } from '../../../types';
 import Pagination from '../../../components/admin/AdminPagination';
 import { LoadingState, StatusBadge } from '../../../components/admin/AdminShared';
 import { BlinkingDot } from '../../../components/Badge';
+import { fetchAdminAnalytics, fetchIngestionHealth, type AdminAnalytics, type IngestionHealth } from '../../../services/admin';
 import { getInitials } from '../../../utils/helpers';
 
 export default function AdminDashboard() {
@@ -49,7 +49,8 @@ export default function AdminDashboard() {
     tournaments: 0,
   });
 
-  // Recent articles
+  const [analytics, setAnalytics] = useState<AdminAnalytics | null>(null);
+  const [health, setHealth] = useState<IngestionHealth | null>(null);
   const [recentArticles, setRecentArticles] = useState<any[]>([]);
 
   const loadMatches = useCallback((p: number) => {
@@ -74,7 +75,9 @@ export default function AdminDashboard() {
       fetchTeamsPage({ limit: 1 }),
       fetchPlayersPage({ limit: 1 }),
       fetchTournamentsPage({ limit: 1 }),
-    ]).then(([newsRes, matchRes, liveRes, teamRes, playerRes, tourRes]) => {
+      fetchAdminAnalytics(),
+      fetchIngestionHealth(),
+    ]).then(([newsRes, matchRes, liveRes, teamRes, playerRes, tourRes, analyticsRes, healthRes]) => {
       if (newsRes.status === 'fulfilled') {
         setRecentArticles(newsRes.value.items || []);
         setCounts((c) => ({ ...c, articles: newsRes.value.total || 0 }));
@@ -96,6 +99,12 @@ export default function AdminDashboard() {
       }
       if (tourRes.status === 'fulfilled') {
         setCounts((c) => ({ ...c, tournaments: tourRes.value.total || 0 }));
+      }
+      if (analyticsRes.status === 'fulfilled') {
+        setAnalytics(analyticsRes.value);
+      }
+      if (healthRes.status === 'fulfilled') {
+        setHealth(healthRes.value);
       }
       setLoading(false);
     });
@@ -196,8 +205,8 @@ export default function AdminDashboard() {
         />
         <MetricCard
           label="Comments"
-          value="Unavailable"
-          sub="Admin feed API required"
+          value={(analytics?.comments ?? 0).toLocaleString()}
+          sub={analytics ? `${analytics.pendingReports} pending reports` : 'From admin analytics'}
           icon={<MessageSquare size={14} />}
           accentColor="var(--admin-accent)"
           accentBg="var(--admin-info-bg)"
@@ -234,58 +243,50 @@ export default function AdminDashboard() {
         style={{
           border: '1px solid var(--admin-border)',
           background: 'var(--admin-card)',
-          borderColor: 'var(--admin-border)',
         }}
       >
         <div className="flex items-center gap-3 sm:pr-4">
           <div
             className="grid h-10 w-10 shrink-0 place-items-center rounded-lg"
-            style={{ background: 'var(--admin-success-bg)', color: 'var(--admin-success)' }}
+            style={{
+              background: health?.status === 'healthy' ? 'var(--admin-success-bg)' : 'var(--admin-warning-bg)',
+              color: health?.status === 'healthy' ? 'var(--admin-success)' : 'var(--admin-warning)',
+            }}
           >
             <CheckCircle2 size={18} />
           </div>
           <div>
-            <p className="text-xs font-bold" style={{ color: 'var(--admin-text)' }}>Ingestion Pipeline</p>
-            <p className="text-xs" style={{ color: 'var(--admin-text-secondary)' }}>Sportradar live stream active</p>
+            <p className="text-xs font-bold" style={{ color: 'var(--admin-text)' }}>Ingestion</p>
+            <p className="text-xs" style={{ color: 'var(--admin-text-secondary)' }}>
+              {health ? `${health.status}${health.heartbeatAgeMs !== null ? ` · ${Math.round(health.heartbeatAgeMs / 1000)}s ago` : ''}` : 'Unavailable'}
+            </p>
           </div>
         </div>
-
         <div className="flex items-center gap-3 sm:px-4">
-          <div
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-lg"
-            style={{ background: 'rgba(0, 191, 255, 0.12)', color: 'var(--admin-accent)' }}
-          >
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg" style={{ background: 'rgba(0, 191, 255, 0.12)', color: 'var(--admin-accent)' }}>
             <Database size={18} />
           </div>
           <div>
-            <p className="text-xs font-bold" style={{ color: 'var(--admin-text)' }}>Redis Cache & Storage</p>
-            <p className="text-xs" style={{ color: 'var(--admin-text-secondary)' }}>Optimized real-time memory</p>
+            <p className="text-xs font-bold" style={{ color: 'var(--admin-text)' }}>Live matches</p>
+            <p className="text-xs" style={{ color: 'var(--admin-text-secondary)' }}>{health?.liveMatchCount ?? counts.liveMatches} in Redis set</p>
           </div>
         </div>
-
         <div className="flex items-center gap-3 sm:px-4">
-          <div
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-lg"
-            style={{ background: 'var(--admin-success-bg)', color: 'var(--admin-success)' }}
-          >
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg" style={{ background: 'var(--admin-success-bg)', color: 'var(--admin-success)' }}>
             <ShieldCheck size={18} />
           </div>
           <div>
-            <p className="text-xs font-bold" style={{ color: 'var(--admin-text)' }}>Security & Roles</p>
-            <p className="text-xs" style={{ color: 'var(--admin-text-secondary)' }}>Protected admin gateway</p>
+            <p className="text-xs font-bold" style={{ color: 'var(--admin-text)' }}>Users</p>
+            <p className="text-xs" style={{ color: 'var(--admin-text-secondary)' }}>{analytics ? `${analytics.users} accounts · ${analytics.favorites} favorites` : 'Analytics unavailable'}</p>
           </div>
         </div>
-
         <div className="flex items-center gap-3 sm:pl-4">
-          <div
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-lg"
-            style={{ background: 'rgba(255, 209, 102, 0.12)', color: 'var(--admin-warning)' }}
-          >
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg" style={{ background: 'rgba(255, 209, 102, 0.12)', color: 'var(--admin-warning)' }}>
             <Globe2 size={18} />
           </div>
           <div>
-            <p className="text-xs font-bold" style={{ color: 'var(--admin-text)' }}>Global Delivery</p>
-            <p className="text-xs" style={{ color: 'var(--admin-text-secondary)' }}>Low latency edge sync</p>
+            <p className="text-xs font-bold" style={{ color: 'var(--admin-text)' }}>Shares</p>
+            <p className="text-xs" style={{ color: 'var(--admin-text-secondary)' }}>{analytics ? `${analytics.totalShares} recorded · ${analytics.streams} streams` : '—'}</p>
           </div>
         </div>
       </div>
@@ -403,7 +404,7 @@ export default function AdminDashboard() {
           <div className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
             <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid var(--admin-border)' }}>
               <h3 className="text-xs font-bold" style={{ color: 'var(--admin-text)' }}>Editorial Feed</h3>
-              <Link href="/admin/articles" className="text-xs font-bold" style={{ color: 'var(--admin-accent)' }}>View all →</Link>
+              <Link href="/admin/news" className="text-xs font-bold" style={{ color: 'var(--admin-accent)' }}>View all →</Link>
             </div>
             <div>
               {recentArticles.length === 0 ? (
@@ -436,7 +437,9 @@ export default function AdminDashboard() {
               <Link href="/admin/comments" className="text-xs font-bold" style={{ color: 'var(--admin-accent)' }}>View all →</Link>
             </div>
             <p className="px-4 py-6 text-center text-xs" style={{ color: 'var(--admin-text-muted)' }}>
-              The backend does not provide an admin-wide comment feed.
+              {analytics
+                ? `${analytics.comments} comments · ${analytics.pendingReports} pending reports`
+                : 'Analytics unavailable.'}
             </p>
           </div>
         </div>

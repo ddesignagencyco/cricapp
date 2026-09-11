@@ -9,8 +9,9 @@ import RecentResultCard from '../components/RecentResultCard';
 import TopPerformers from '../components/TopPerformers';
 import Newsletter from '../components/Newsletter';
 import AdSlot from '../components/AdSlot';
+import RemoteImage from '../components/RemoteImage';
 
-import { fetchMatches } from '../services/matches';
+import { fetchLiveMatches, fetchMatches } from '../services/matches';
 import { fetchNews } from '../services/news';
 import { fetchPslLeaders, fetchPslStandings } from '../services/psl';
 
@@ -32,7 +33,7 @@ export default async function HomePage() {
   tomorrowEnd.setDate(tomorrowEnd.getDate() + 1);
 
   const results = await Promise.allSettled([
-      fetchMatches({ status: 'live', limit: 10 }),
+      fetchLiveMatches(),
       fetchMatches({ status: 'upcoming', limit: 20 }),
       fetchMatches({ status: 'completed', limit: 60 }),
       fetchMatches({ limit: 20 }),
@@ -169,7 +170,7 @@ export default async function HomePage() {
               >
                 <div className="relative h-48 overflow-hidden sm:h-60">
                   {newsList[0].image ? (
-                    <img src={newsList[0].image} alt={newsList[0].title} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                    <RemoteImage src={newsList[0].image} alt={newsList[0].title} fill sizes="(min-width: 1024px) 55vw, 100vw" className="object-cover transition-transform duration-500 group-hover:scale-105" />
                   ) : (
                     <div className={`h-full w-full bg-gradient-to-br ${newsList[0].imageGradient || 'from-slate-600 to-slate-800'}`} />
                   )}
@@ -202,7 +203,7 @@ export default async function HomePage() {
                 >
                   <div className="relative h-16 w-20 shrink-0 overflow-hidden rounded-lg sm:h-20 sm:w-24">
                     {item.image ? (
-                      <img src={item.image} alt={item.title} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                      <RemoteImage src={item.image} alt={item.title} fill sizes="96px" className="object-cover transition-transform duration-500 group-hover:scale-105" />
                     ) : (
                       <div className={`h-full w-full bg-gradient-to-br ${item.imageGradient || 'from-slate-600 to-slate-800'}`} />
                     )}

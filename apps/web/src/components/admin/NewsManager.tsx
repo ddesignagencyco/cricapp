@@ -24,6 +24,7 @@ import {
 } from '../../services/newsAdmin';
 import { AdminInput, AdminSelect, ConfirmDialog, ErrorState } from './AdminShared';
 import Pagination from './AdminPagination';
+import RemoteImage from '../RemoteImage';
 
 const PAGE_SIZE = 20;
 
@@ -190,7 +191,7 @@ export default function NewsManager() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3 max-w-md">
                         {a.imageUrl ? (
-                          <img src={a.imageUrl} alt="" className="h-9 w-12 shrink-0 rounded object-cover" style={{ border: '1px solid var(--admin-border)' }} />
+                          <RemoteImage src={a.imageUrl} alt="" width={48} height={36} className="h-9 w-12 shrink-0 rounded object-cover" style={{ border: '1px solid var(--admin-border)' }} />
                         ) : (
                           <div className="grid h-9 w-12 shrink-0 place-items-center rounded" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-input-bg)', color: 'var(--admin-text-muted)' }}>
                             <FileText size={14} />

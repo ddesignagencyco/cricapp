@@ -31,13 +31,14 @@ export default function TournamentsBoard({ initialCountry }: Props) {
   const searchParams = useSearchParams();
 
   const page = Math.max(1, Number(searchParams.get('page')) || 1);
+  const search = searchParams.get('q') || searchParams.get('search') || '';
 
   const [tournaments, setTournaments] = useState<TournamentApi[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
-  const [localSearch, setLocalSearch] = useState('');
+  const [localSearch, setLocalSearch] = useState(search);
   const [formatFilter, setFormatFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState(initialCountry || 'all');
 
@@ -45,7 +46,7 @@ export default function TournamentsBoard({ initialCountry }: Props) {
     let cancelled = false;
     setLoading(true);
     setError(false);
-    fetchTournamentsPage({ limit: LIMIT, page })
+    fetchTournamentsPage({ limit: LIMIT, page, q: search || undefined })
       .then(({ items, total: t }) => {
         if (!cancelled) {
           setTournaments(items);
@@ -64,7 +65,11 @@ export default function TournamentsBoard({ initialCountry }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [page, retryKey]);
+  }, [page, search, retryKey]);
+
+  useEffect(() => {
+    setLocalSearch(search);
+  }, [search]);
 
   const totalPages = Math.max(1, Math.ceil((total || 0) / LIMIT));
 
@@ -88,15 +93,6 @@ export default function TournamentsBoard({ initialCountry }: Props) {
 
   const filtered = useMemo(() => {
     let list = tournaments;
-    const q = localSearch.toLowerCase().trim();
-    if (q) {
-      list = list.filter(
-        (t) =>
-          (t.name || '').toLowerCase().includes(q) ||
-          str(t.category).toLowerCase().includes(q) ||
-          str(t.type).toLowerCase().includes(q)
-      );
-    }
     if (formatFilter !== 'all') {
       list = list.filter((t) => str(t.type).toUpperCase() === formatFilter);
     }
@@ -104,9 +100,20 @@ export default function TournamentsBoard({ initialCountry }: Props) {
       list = list.filter((t) => str(t.category) === categoryFilter);
     }
     return list;
-  }, [tournaments, localSearch, formatFilter, categoryFilter]);
+  }, [tournaments, formatFilter, categoryFilter]);
 
   const activeFilters = formatFilter !== 'all' || categoryFilter !== 'all';
+
+  const handleSearchSubmit = (value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value) params.set('q', value);
+    else {
+      params.delete('q');
+      params.delete('search');
+    }
+    params.delete('page');
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+  };
 
   const handlePageChange = (p: number) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -154,6 +161,9 @@ export default function TournamentsBoard({ initialCountry }: Props) {
             <input
               value={localSearch}
               onChange={(e) => setLocalSearch(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleSearchSubmit(localSearch);
+              }}
               placeholder="Search tournaments by title, format or country…"
               className="w-full rounded-md border border-lborder bg-card py-2.5 pl-10 pr-4 text-sm text-mtext outline-none transition-colors focus:border-accent focus:bg-elevated focus:ring-2 focus:ring-accent/20"
             />

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ArrowLeft, ArrowRight, Calendar, Clock, Newspaper, Tag, User } from 'lucide-react';
 import Badge from '../Badge';
 import AdSlot from '../AdSlot';
+import RemoteImage from '../RemoteImage';
 import ShareButton from '../ShareButton';
 import CommentsSection from '../CommentsSection';
 import { sanitizeArticleHtml } from '../../utils/sanitizeHtml';
@@ -113,10 +114,12 @@ export default function NewsDetailBody({ item, related = [] }: Props) {
 
           <div className={`relative h-56 overflow-hidden rounded-3xl sm:h-80 ${item.image ? '' : `bg-gradient-to-br ${item.imageGradient || 'from-slate-600 to-slate-800'}`}`}>
             {item.image ? (
-              <img
+              <RemoteImage
                 src={item.image}
                 alt={item.title}
-                className="h-full w-full object-cover"
+                fill
+                sizes="(min-width: 1024px) 70vw, 100vw"
+                className="object-cover"
               />
             ) : (
               <div className="absolute inset-0 flex items-center justify-center">
@@ -194,11 +197,12 @@ export default function NewsDetailBody({ item, related = [] }: Props) {
                         }`}
                       >
                         {a.image && (
-                          <img
+                          <RemoteImage
                             src={a.image}
                             alt={a.title}
-                            loading="lazy"
-                            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            fill
+                            sizes="80px"
+                            className="object-cover transition-transform duration-500 group-hover:scale-105"
                           />
                         )}
                       </div>

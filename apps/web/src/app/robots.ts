@@ -15,6 +15,8 @@ export default function robots(): MetadataRoute.Robots {
         '/reset-password',
         '/verify-email',
         '/favorites',
+        '/profile',
+        '/settings/',
       ],
     },
     sitemap: 'https://pakcriczone.com/sitemap.xml',

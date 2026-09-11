@@ -1,4 +1,4 @@
-import { apiGet, apiPost } from './api/client';
+import { apiGet, apiPost, apiPatch } from './api/client';
 import type {
   AuthResponse,
   AuthUser,
@@ -8,6 +8,7 @@ import type {
   RegisterInput,
   ResendVerificationInput,
   ResetPasswordInput,
+  UpdateProfileInput,
   VerifyEmailInput,
 } from '../types/auth';
 
@@ -51,7 +52,12 @@ export function forgotPassword(input: ForgotPasswordInput): Promise<MessageRespo
 }
 
 export function resetPassword(input: ResetPasswordInput): Promise<MessageResponse> {
-  return apiPost<MessageResponse>('/auth/reset-password', input);
+  const body: Record<string, string> = { password: input.password };
+  if (input.tokenId) body.tokenId = input.tokenId;
+  if (input.token) body.token = input.token;
+  if (input.email) body.email = input.email;
+  if (input.code) body.code = input.code;
+  return apiPost<MessageResponse>('/auth/reset-password', body);
 }
 
 export function verifyEmail(input: VerifyEmailInput): Promise<MessageResponse> {
@@ -64,6 +70,10 @@ export function resendVerification(input: ResendVerificationInput): Promise<Mess
 
 export function getCurrentUser(): Promise<AuthUser> {
   return apiGet<AuthUser>('/auth/me', undefined, { headers: authHeaders() });
+}
+
+export function updateProfile(input: UpdateProfileInput): Promise<AuthUser> {
+  return apiPatch<AuthUser>('/auth/me', input, { headers: authHeaders() });
 }
 
 export function logout(): void {

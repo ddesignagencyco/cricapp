@@ -31,5 +31,20 @@ export async function fetchMatchById(id: string): Promise<Match | null> {
 }
 
 export async function fetchMatchTimeline(id: string): Promise<MatchTimeline | null> {
-  return apiGet(`/matches/${id}/timeline`);
+  return apiGetOptional(`/matches/${id}/timeline`);
+}
+
+export function matchSideIds(match: Match): { home: string; away: string } {
+  const teams = match.teams as unknown;
+  if (Array.isArray(teams)) {
+    return { home: String(teams[0] || ''), away: String(teams[1] || '') };
+  }
+  if (teams && typeof teams === 'object') {
+    const obj = teams as { home?: { teamId?: string; id?: string; code?: string }; away?: { teamId?: string; id?: string; code?: string } };
+    return {
+      home: String(obj.home?.teamId || obj.home?.id || obj.home?.code || ''),
+      away: String(obj.away?.teamId || obj.away?.id || obj.away?.code || ''),
+    };
+  }
+  return { home: '', away: '' };
 }

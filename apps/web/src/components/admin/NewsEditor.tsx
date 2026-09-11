@@ -26,6 +26,8 @@ import {
 } from '../../services/newsAdmin';
 import RichTextEditor from './RichTextEditor';
 import { AdminInput, AdminSelect } from './AdminShared';
+import { fetchAdminAuthors, type AdminAuthor } from '../../services/admin';
+import RemoteImage from '../RemoteImage';
 
 interface NewsEditorProps {
   mode: 'create' | 'edit';
@@ -38,9 +40,16 @@ interface FormState {
   content: string;
   imageUrl: string;
   author: string;
+  authorId: string;
   source: string;
   categoryId: string;
   tags: string[];
+  language: string;
+  metaTitle: string;
+  metaDescription: string;
+  canonicalUrl: string;
+  isFeatured: boolean;
+  isBreaking: boolean;
 }
 
 const emptyForm: FormState = {
@@ -49,9 +58,16 @@ const emptyForm: FormState = {
   content: '',
   imageUrl: '',
   author: '',
+  authorId: '',
   source: '',
   categoryId: '',
   tags: [],
+  language: 'en',
+  metaTitle: '',
+  metaDescription: '',
+  canonicalUrl: '',
+  isFeatured: false,
+  isBreaking: false,
 };
 
 export default function NewsEditor({ mode, id }: NewsEditorProps) {
@@ -59,6 +75,7 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
   const searchParams = useSearchParams();
   const [form, setForm] = useState<FormState>(emptyForm);
   const [categories, setCategories] = useState<NewsCategory[]>([]);
+  const [authors, setAuthors] = useState<AdminAuthor[]>([]);
   const [newCategory, setNewCategory] = useState('');
   const [showAddCat, setShowAddCat] = useState(false);
   const [loading, setLoading] = useState(mode === 'edit');
@@ -67,6 +84,7 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
 
   useEffect(() => {
     fetchNewsCategories().then(setCategories).catch(() => setCategories([]));
+    fetchAdminAuthors().then(setAuthors).catch(() => setAuthors([]));
     const initialCategory = searchParams.get('category');
     if (mode === 'create' && initialCategory) {
       setForm((current) => ({ ...current, categoryId: initialCategory }));
@@ -80,9 +98,16 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
             content: article.content,
             imageUrl: article.imageUrl || '',
             author: article.author || '',
+            authorId: article.authorId || '',
             source: article.source || '',
             categoryId: article.categoryId || '',
             tags: (article.tags || []).filter(Boolean),
+            language: article.language || 'en',
+            metaTitle: article.metaTitle || '',
+            metaDescription: article.metaDescription || '',
+            canonicalUrl: article.canonicalUrl || '',
+            isFeatured: Boolean(article.isFeatured),
+            isBreaking: Boolean(article.isBreaking),
           });
         })
         .catch(() => toast.error('Could not load the article.'))
@@ -156,8 +181,15 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
     if (form.summary.trim()) payload.summary = form.summary.trim();
     if (form.imageUrl.trim()) payload.imageUrl = form.imageUrl.trim();
     if (form.author.trim()) payload.author = form.author.trim();
+    if (form.authorId.trim()) payload.authorId = form.authorId.trim();
     if (form.source.trim()) payload.source = form.source.trim();
     if (form.categoryId.trim()) payload.categoryId = form.categoryId.trim();
+    if (form.language.trim()) payload.language = form.language.trim();
+    if (form.metaTitle.trim()) payload.metaTitle = form.metaTitle.trim();
+    if (form.metaDescription.trim()) payload.metaDescription = form.metaDescription.trim();
+    if (form.canonicalUrl.trim()) payload.canonicalUrl = form.canonicalUrl.trim();
+    payload.isFeatured = form.isFeatured;
+    payload.isBreaking = form.isBreaking;
 
     try {
       if (mode === 'create') {
@@ -309,7 +341,7 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
             <AdminInput type="url" value={form.imageUrl} onChange={(e) => set('imageUrl', e.target.value)} placeholder="https://..." />
             {form.imageUrl && (
               <div className="mt-2 overflow-hidden rounded" style={{ border: '1px solid var(--admin-border)' }}>
-                <img src={form.imageUrl} alt="Preview" className="h-24 w-full object-cover" onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }} />
+                <RemoteImage src={form.imageUrl} alt="Preview" width={640} height={96} className="h-24 w-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
               </div>
             )}
           </div>
@@ -317,7 +349,16 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
           {/* Author & Tags */}
           <div className="rounded-lg p-4 space-y-3" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
             <div>
-              <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--admin-text-secondary)' }}>Author</label>
+              <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--admin-text-secondary)' }}>Author profile</label>
+              <AdminSelect value={form.authorId} onChange={(e) => set('authorId', e.target.value)}>
+                <option value="">No author profile</option>
+                {authors.map((author) => (
+                  <option key={author.id} value={author.id}>{author.name}</option>
+                ))}
+              </AdminSelect>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--admin-text-secondary)' }}>Author byline</label>
               <div className="relative">
                 <User size={12} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--admin-text-muted)' }} />
                 <AdminInput type="text" value={form.author} onChange={(e) => set('author', e.target.value)} placeholder="PakCricZone Editorial" style={{ paddingLeft: '2rem' }} />
@@ -389,6 +430,27 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
                 Press Enter or comma to add. Backspace removes the last tag.
               </p>
             </div>
+          </div>
+
+          <div className="rounded-lg p-4 space-y-3" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
+            <label className="block text-xs font-semibold" style={{ color: 'var(--admin-text-secondary)' }}>
+              Language
+              <AdminSelect value={form.language} onChange={(e) => set('language', e.target.value)}>
+                <option value="en">English</option>
+                <option value="ur">Urdu</option>
+              </AdminSelect>
+            </label>
+            <label className="flex items-center gap-2 text-xs font-semibold" style={{ color: 'var(--admin-text)' }}>
+              <input type="checkbox" checked={form.isFeatured} onChange={(e) => set('isFeatured', e.target.checked)} />
+              Featured
+            </label>
+            <label className="flex items-center gap-2 text-xs font-semibold" style={{ color: 'var(--admin-text)' }}>
+              <input type="checkbox" checked={form.isBreaking} onChange={(e) => set('isBreaking', e.target.checked)} />
+              Breaking
+            </label>
+            <AdminInput value={form.metaTitle} onChange={(e) => set('metaTitle', e.target.value)} placeholder="SEO title" />
+            <AdminInput value={form.metaDescription} onChange={(e) => set('metaDescription', e.target.value)} placeholder="SEO description" />
+            <AdminInput value={form.canonicalUrl} onChange={(e) => set('canonicalUrl', e.target.value)} placeholder="Canonical URL" />
           </div>
         </div>
       </div>

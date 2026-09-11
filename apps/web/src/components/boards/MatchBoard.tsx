@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { Search } from 'lucide-react';
 import type { Match } from '../../types/index';
-import { fetchMatchesPage } from '../../services/matches';
+import { fetchMatchesPage, fetchLiveMatches } from '../../services/matches';
+import { mergeLiveUpdate, useMatchStream } from '../../hooks/useMatchStream';
 import MatchCard from '../MatchCard';
 import Tabs from '../Tabs';
 import EmptyState from '../EmptyState';
@@ -27,18 +29,34 @@ export default function MatchBoard() {
 
   const tab = searchParams.get('tab') || 'upcoming';
   const page = Math.max(1, Number(searchParams.get('page')) || 1);
+  const q = searchParams.get('q') || '';
 
   const [matches, setMatches] = useState<Match[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
+  const [localSearch, setLocalSearch] = useState(q);
+  const liveUpdate = useMatchStream(undefined, tab === 'live');
+
+  useEffect(() => {
+    setLocalSearch(q);
+  }, [q]);
+
+  useEffect(() => {
+    if (!liveUpdate) return;
+    setMatches((prev) => mergeLiveUpdate(prev, liveUpdate));
+  }, [liveUpdate]);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
     setError(false);
-    fetchMatchesPage({ status: tab, limit: LIMIT, page })
+    const request =
+      tab === 'live' && !q
+        ? fetchLiveMatches().then((items) => ({ items, total: items.length, totalPages: 1 }))
+        : fetchMatchesPage({ status: tab, limit: LIMIT, page, q: q || undefined });
+    request
       .then(({ items, total: t }) => {
         if (!cancelled) {
           setMatches(items);
@@ -55,13 +73,21 @@ export default function MatchBoard() {
         }
       });
     return () => { cancelled = true; };
-  }, [tab, page, retryKey]);
+  }, [tab, page, q, retryKey]);
 
   const totalPages = Math.max(1, Math.ceil((total || 0) / LIMIT));
 
   const handleTabChange = (newTab: string) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set('tab', newTab);
+    params.delete('page');
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+
+  const handleSearchSubmit = (value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value) params.set('q', value);
+    else params.delete('q');
     params.delete('page');
     router.push(`${pathname}?${params.toString()}`, { scroll: false });
   };
@@ -95,7 +121,18 @@ export default function MatchBoard() {
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-lborder pb-3">
         <Tabs tabs={TABS} active={tab} onChange={handleTabChange} />
-        <p className="text-xs text-stext">Page {page} of {totalPages}</p>
+        <div className="relative w-full max-w-xs">
+          <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-stext" />
+          <input
+            value={localSearch}
+            onChange={(e) => setLocalSearch(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleSearchSubmit(localSearch);
+            }}
+            placeholder="Search matches…"
+            className="w-full rounded-md border border-lborder bg-card py-2 pl-9 pr-3 text-xs text-mtext outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+          />
+        </div>
       </div>
 
       {loading ? (
@@ -122,7 +159,11 @@ export default function MatchBoard() {
       ) : (
         <EmptyState
           title={`No ${tab} matches found`}
-          message="Try switching to a different status tab or check back later for scheduled fixtures."
+          message={
+            localSearch || q
+              ? `No ${tab} matches match that search.`
+              : 'Try switching to a different status tab or check back later for scheduled fixtures.'
+          }
         />
       )}
     </div>

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { Calendar, Clock, MapPin } from 'lucide-react';
 import { StatusBadge, BlinkingDot } from './Badge';
+import RemoteImage from './RemoteImage';
 import { formatScheduled, getInitials, getPslLogo } from '../utils/helpers';
 
 interface MatchCardProps {
@@ -159,9 +160,11 @@ function TeamRow({
   return (
     <div className="flex items-center gap-2.5">
       {pslLogo ? (
-        <img
+        <RemoteImage
           src={pslLogo}
           alt={name}
+          width={28}
+          height={28}
           className="h-7 w-7 shrink-0 rounded-full border border-lborder bg-white object-contain p-0.5"
         />
       ) : (

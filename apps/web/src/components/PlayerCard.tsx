@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { ChevronRight, MapPin, Shield } from 'lucide-react';
 import Badge from './Badge';
+import RemoteImage from './RemoteImage';
 import { getInitials } from '../utils/helpers';
 
 interface PlayerCardProps {
@@ -53,10 +54,11 @@ export default function PlayerCard({ player }: PlayerCardProps) {
       className="group flex items-center gap-3 rounded-md border border-lborder bg-card p-3.5 transition-colors hover:border-accent/50 hover:bg-elevated"
     >
       {player.profileUrl || player.avatarUrl ? (
-        <img
+        <RemoteImage
           src={player.profileUrl || player.avatarUrl}
           alt={name}
-          loading="lazy"
+          width={48}
+          height={48}
           className="h-12 w-12 shrink-0 rounded-full border border-lborder bg-secondary object-cover"
         />
       ) : (

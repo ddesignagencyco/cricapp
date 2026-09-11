@@ -1,86 +1,97 @@
 'use client';
 
-import { MessageSquare, Trash2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
+import { AdminPageHeader, ErrorState, LoadingState, EmptyState } from '../../../../components/admin/AdminShared';
 import {
-  AdminPageHeader,
-  EmptyState,
-} from '../../../../components/admin/AdminShared';
+  fetchReportedComments,
+  moderateComment,
+  resolveReport,
+  type ReportedComment,
+} from '../../../../services/admin';
 
 export default function CommentsPage() {
+  const [reports, setReports] = useState<ReportedComment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  const load = () => {
+    setLoading(true);
+    setError(false);
+    fetchReportedComments()
+      .then(setReports)
+      .catch(() => setError(true))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  const act = async (report: ReportedComment, status: 'approved' | 'hidden' | 'deleted', reportStatus: 'resolved' | 'dismissed') => {
+    if (!report.comment) return;
+    setBusyId(report.id);
+    try {
+      await moderateComment(report.comment.id, status);
+      await resolveReport(report.id, reportStatus);
+      setReports((list) => list.filter((item) => item.id !== report.id));
+      toast.success('Moderation saved.');
+    } catch {
+      toast.error('Could not update this report.');
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <AdminPageHeader
-        title="Comment Moderation"
-        subtitle="Review and manage comments across news stories and matches."
-        actions={
-          <button
-            type="button"
-            disabled
-            className="inline-flex cursor-not-allowed items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold"
-            style={{
-              background: 'var(--admin-input-bg)',
-              color: 'var(--admin-text-muted)',
-            }}
-          >
-            <Trash2 size={14} /> Moderation (Coming Soon)
-          </button>
-        }
+        title="Comment moderation"
+        subtitle="Pending reports from POST /comments/:id/report. There is no global comment list endpoint."
       />
 
-      <div
-        className="rounded-lg p-4"
-        style={{
-          border: '1px solid var(--admin-warning)',
-          background: 'var(--admin-warning-bg)',
-        }}
-      >
-        <h2
-          className="text-xs font-bold"
-          style={{ color: 'var(--admin-warning)' }}
-        >
-          Backend API Required
-        </h2>
-        <p
-          className="mt-1 text-xs"
-          style={{ color: 'var(--admin-warning)' }}
-        >
-          The current API can only return comments when both a target type and
-          target ID are supplied. The admin panel needs dedicated protected
-          endpoints to list every comment and let administrators remove any
-          inappropriate comment.
-        </p>
-
-        <div
-          className="mt-3 rounded-md p-3 text-xs"
-          style={{
-            border: '1px solid var(--admin-warning)',
-            background: 'var(--admin-card)',
-            color: 'var(--admin-warning)',
-          }}
-        >
-          <p className="font-bold">Required backend endpoints:</p>
-          <ul className="mt-1 list-disc space-y-0.5 pl-4">
-            <li>
-              GET /api/admin/comments — List all comments with pagination,
-              search and target-type filters
-            </li>
-            <li>
-              DELETE /api/admin/comments/:id — Allow an administrator to delete
-              any comment
-            </li>
-          </ul>
-          <p className="mt-3 font-bold">Expected list query parameters:</p>
-          <p className="mt-1 font-mono">
-            page, limit, q, targetType, sort
-          </p>
+      {loading ? (
+        <LoadingState />
+      ) : error ? (
+        <ErrorState message="Could not load reported comments." onRetry={load} />
+      ) : reports.length === 0 ? (
+        <EmptyState title="No pending reports" message="Reported comments will appear here for review." />
+      ) : (
+        <div className="space-y-3">
+          {reports.map((report) => (
+            <div
+              key={report.id}
+              className="rounded-lg p-4"
+              style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}
+            >
+              <p className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-warning)' }}>
+                {report.reason}
+              </p>
+              <p className="mt-2 text-sm" style={{ color: 'var(--admin-text)' }}>
+                {report.comment?.body || 'Comment missing'}
+              </p>
+              <p className="mt-1 text-xs" style={{ color: 'var(--admin-text-muted)' }}>
+                {report.comment?.user?.username || 'Unknown'} · {report.comment?.targetType}/{report.comment?.targetId}
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button type="button" disabled={busyId === report.id} onClick={() => act(report, 'approved', 'resolved')} className="rounded-md px-3 py-1.5 text-xs font-bold text-white" style={{ background: 'var(--admin-success)' }}>
+                  Approve
+                </button>
+                <button type="button" disabled={busyId === report.id} onClick={() => act(report, 'hidden', 'resolved')} className="rounded-md px-3 py-1.5 text-xs font-bold" style={{ border: '1px solid var(--admin-border)', color: 'var(--admin-text)' }}>
+                  Hide
+                </button>
+                <button type="button" disabled={busyId === report.id} onClick={() => act(report, 'deleted', 'resolved')} className="rounded-md px-3 py-1.5 text-xs font-bold text-white" style={{ background: 'var(--admin-danger)' }}>
+                  Delete
+                </button>
+                <button type="button" disabled={busyId === report.id} onClick={() => act(report, 'approved', 'dismissed')} className="rounded-md px-3 py-1.5 text-xs font-semibold" style={{ color: 'var(--admin-text-secondary)' }}>
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
-      </div>
-
-      <EmptyState
-        icon={<MessageSquare size={28} />}
-        title="Global comment moderation is not available yet"
-        message="Once the protected admin comment APIs are implemented, all comments will appear here in a searchable, paginated table with delete actions."
-      />
+      )}
     </div>
   );
 }

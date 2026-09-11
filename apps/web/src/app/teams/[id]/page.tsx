@@ -1,7 +1,12 @@
 import { notFound } from 'next/navigation';
 import TeamDetailBody from '../../../components/boards/TeamDetailBody';
-import { fetchTeamById, fetchTeamRoster, fetchTeams } from '../../../services/teams';
-import { fetchMatches } from '../../../services/matches';
+import {
+  fetchTeamById,
+  fetchTeamRosterPage,
+  fetchTeamSchedule,
+  fetchTeamResults,
+  fetchTeams,
+} from '../../../services/teams';
 
 export const revalidate = 3600;
 
@@ -19,10 +24,11 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
 export default async function TeamDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [team, roster, matches, allTeams] = await Promise.all([
+  const [team, roster, schedule, results, allTeams] = await Promise.all([
     fetchTeamById(id),
-    fetchTeamRoster(id),
-    fetchMatches(),
+    fetchTeamRosterPage(id, { page: 1, limit: 40 }),
+    fetchTeamSchedule(id, { page: 1, limit: 50 }),
+    fetchTeamResults(id, { page: 1, limit: 50 }),
     fetchTeams(),
   ]);
   if (!team) {
@@ -31,8 +37,10 @@ export default async function TeamDetailPage({ params }: { params: Promise<{ id:
   return (
     <TeamDetailBody
       team={team}
-      players={roster || []}
-      matches={matches || []}
+      players={roster.items || []}
+      playerTotal={roster.total}
+      schedule={schedule || []}
+      results={results || []}
       allTeams={allTeams || []}
     />
   );

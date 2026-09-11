@@ -3,31 +3,50 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { CalendarDays, MapPin, Shield, Swords, User } from 'lucide-react';
-import MatchCard from '../MatchCard';
 import PlayerCard from '../PlayerCard';
 import Tabs from '../Tabs';
 import EmptyState from '../EmptyState';
 import TeamHeadToHead from './TeamHeadToHead';
 import TeamLogo from '../TeamLogo';
+import RemoteImage from '../RemoteImage';
 import FavoriteButton from '../FavoriteButton';
 import ShareButton from '../ShareButton';
+import { StatusBadge } from '../Badge';
+import { fetchTeamRosterPage } from '../../services/teams';
+import type { Player, SportEventRecord } from '../../types/index';
+import { formatScheduled } from '../../utils/helpers';
 
 const teamTabs = [
   { key: 'overview', label: 'Overview', icon: Shield },
-  { key: 'matches', label: 'Matches', icon: CalendarDays },
+  { key: 'fixtures', label: 'Fixtures', icon: CalendarDays },
+  { key: 'results', label: 'Results', icon: CalendarDays },
   { key: 'squad', label: 'Squad', icon: User },
   { key: 'h2h', label: 'Head to Head', icon: Swords },
 ];
 
 interface Props {
   team: any;
-  players: any[];
-  matches: any[];
+  players: Player[];
+  playerTotal?: number;
+  schedule: SportEventRecord[];
+  results: SportEventRecord[];
   allTeams?: any[];
 }
 
-export default function TeamDetailBody({ team, players, matches, allTeams = [] }: Props) {
+export default function TeamDetailBody({
+  team,
+  players: initialPlayers,
+  playerTotal = 0,
+  schedule = [],
+  results = [],
+  allTeams = [],
+}: Props) {
   const [tab, setTab] = useState('overview');
+  const [players, setPlayers] = useState<Player[]>(initialPlayers || []);
+  const [squadPage, setSquadPage] = useState(1);
+  const [squadLoading, setSquadLoading] = useState(false);
+  const squadTotal = playerTotal || players.length;
+  const squadPages = Math.max(1, Math.ceil(squadTotal / 40));
 
   if (!team) {
     return (
@@ -38,26 +57,22 @@ export default function TeamDetailBody({ team, players, matches, allTeams = [] }
   }
 
   const code = team.abbr || '';
-  const teamIdentifiers = [team.id, team.teamId, code, team.name]
-    .filter(Boolean)
-    .map((value) => String(value).toLowerCase());
-  const teamMatches = (matches || []).filter((match) => {
-    const teams = match.teams;
-    const values = Array.isArray(teams)
-      ? teams
-      : teams && typeof teams === 'object'
-        ? Object.values(teams).flatMap((side: any) => [
-            side?.teamId,
-            side?.id,
-            side?.code,
-            side?.name,
-          ])
-        : [];
-    const names = Array.isArray(match.teamNames) ? match.teamNames : [];
-    return [...values, ...names]
-      .filter(Boolean)
-      .some((value) => teamIdentifiers.includes(String(value).toLowerCase()));
-  });
+  const teamKey = team.id || code;
+
+  const loadMoreSquad = () => {
+    const next = squadPage + 1;
+    if (next > squadPages || squadLoading) return;
+    setSquadLoading(true);
+    fetchTeamRosterPage(teamKey, { page: next, limit: 40 })
+      .then((res) => {
+        setPlayers((prev) => {
+          const seen = new Set(prev.map((p) => p.id));
+          return [...prev, ...res.items.filter((p) => !seen.has(p.id))];
+        });
+        setSquadPage(next);
+      })
+      .finally(() => setSquadLoading(false));
+  };
 
   return (
     <div className="mx-auto max-w-7xl space-y-5 px-4 py-8 sm:px-6">
@@ -93,9 +108,11 @@ export default function TeamDetailBody({ team, players, matches, allTeams = [] }
         <div className="mt-5 flex flex-col gap-5 sm:flex-row sm:items-center">
           <div className="shrink-0">
               {team.logoUrl ? (
-                <img
+                <RemoteImage
                   src={team.logoUrl}
                   alt={team.name}
+                  width={80}
+                  height={80}
                   className="h-20 w-20 shrink-0 rounded-md border border-accent/30 bg-white object-contain p-1.5"
                 />
               ) : (
@@ -119,12 +136,12 @@ export default function TeamDetailBody({ team, players, matches, allTeams = [] }
 
           <div className="flex shrink-0 items-center gap-2">
             <div className="min-w-24 rounded-md border border-lborder bg-secondary px-3.5 py-3 text-center">
-              <p className="font-mono text-lg font-semibold text-accent">{players?.length || 0}</p>
+              <p className="font-mono text-lg font-semibold text-accent">{squadTotal}</p>
               <p className="text-xs font-medium uppercase tracking-wider text-stext">Players</p>
             </div>
             <div className="min-w-24 rounded-md border border-lborder bg-secondary px-3.5 py-3 text-center">
-              <p className="font-mono text-lg font-semibold text-mtext">{teamMatches.length}</p>
-              <p className="text-xs font-medium uppercase tracking-wider text-stext">Matches</p>
+              <p className="font-mono text-lg font-semibold text-mtext">{schedule.length + results.length}</p>
+              <p className="text-xs font-medium uppercase tracking-wider text-stext">Events</p>
             </div>
           </div>
         </div>
@@ -140,33 +157,61 @@ export default function TeamDetailBody({ team, players, matches, allTeams = [] }
             <InfoStat label="Country" value={team.country || '—'} />
           </div>
           <p className="rounded-md border border-lborder bg-card p-4 text-sm leading-relaxed text-stext">
-            No detailed description is available for this team yet.
+            Upcoming fixtures and recent results come from the team schedule and results feeds. Open those tabs for the full list.
           </p>
         </div>
       )}
 
-      {tab === 'matches' && (
+      {tab === 'fixtures' && (
         <div className="fade-in">
-          {teamMatches.length > 0 ? (
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-              {teamMatches.map((m) => (
-                <MatchCard key={m.matchId} match={m} />
+          {schedule.length > 0 ? (
+            <div className="space-y-2">
+              {schedule.map((event) => (
+                <SportEventRow key={event.eventId || event.scopeKey} event={event} />
               ))}
             </div>
           ) : (
-            <EmptyState title="No matches found" message="This team has no recorded matches yet." />
+            <EmptyState title="No upcoming fixtures" message="This team has no scheduled matches in the current feed." />
+          )}
+        </div>
+      )}
+
+      {tab === 'results' && (
+        <div className="fade-in">
+          {results.length > 0 ? (
+            <div className="space-y-2">
+              {results.map((event) => (
+                <SportEventRow key={event.eventId || event.scopeKey} event={event} />
+              ))}
+            </div>
+          ) : (
+            <EmptyState title="No results" message="Recent results are not available for this team yet." />
           )}
         </div>
       )}
 
       {tab === 'squad' && (
-        <div className="fade-in">
+        <div className="fade-in space-y-4">
           {players && players.length > 0 ? (
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {players.map((p) => (
-                <PlayerCard key={p.id} player={p} />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {players.map((p) => (
+                  <PlayerCard key={p.id} player={p} />
+                ))}
+              </div>
+              {squadPage < squadPages && (
+                <div className="flex justify-center">
+                  <button
+                    type="button"
+                    onClick={loadMoreSquad}
+                    disabled={squadLoading}
+                    className="rounded-md border border-lborder bg-card px-4 py-2 text-xs font-semibold text-mtext hover:border-accent/40 disabled:opacity-60"
+                  >
+                    {squadLoading ? 'Loading…' : `Load more (${players.length} of ${squadTotal})`}
+                  </button>
+                </div>
+              )}
+            </>
           ) : (
             <EmptyState title="No players" message="Squad information is not available yet." />
           )}
@@ -175,11 +220,45 @@ export default function TeamDetailBody({ team, players, matches, allTeams = [] }
 
       {tab === 'h2h' && (
         <div className="fade-in">
-          <TeamHeadToHead team={team} allTeams={allTeams} teamMatches={teamMatches} />
+          <TeamHeadToHead team={team} allTeams={allTeams} teamMatches={[]} />
         </div>
       )}
     </div>
   );
+}
+
+function eventTitle(event: SportEventRecord): string {
+  const payload = event.payload || {};
+  const names = payload.teamNames;
+  if (Array.isArray(names) && names.length >= 2) return `${names[0]} vs ${names[1]}`;
+  if (typeof payload.title === 'string' && payload.title) return payload.title;
+  if (typeof payload.tournament === 'string' && payload.tournament) return payload.tournament;
+  return event.eventId || 'Match';
+}
+
+function SportEventRow({ event }: { event: SportEventRecord }) {
+  const payload = event.payload || {};
+  const { date, time } = formatScheduled(event.scheduled || (payload.scheduled as string) || '');
+  const score = (payload.displayScore as string) || (payload.result as string) || '';
+  const href = event.eventId ? `/matches/${event.eventId}` : undefined;
+
+  const inner = (
+    <div className="flex items-center justify-between gap-3 rounded-md border border-lborder bg-card p-3.5 transition-colors hover:border-accent/40 hover:bg-elevated">
+      <div className="min-w-0">
+        <p className="truncate text-sm font-semibold text-mtext">{eventTitle(event)}</p>
+        <p className="mt-0.5 text-xs text-stext">
+          {[date, time, payload.venue].filter(Boolean).join(' · ') || 'Schedule TBA'}
+        </p>
+      </div>
+      <div className="flex shrink-0 items-center gap-2">
+        {score ? <span className="font-mono text-xs font-bold text-accent">{score}</span> : null}
+        <StatusBadge status={event.status || (payload.status as string) || ''} />
+      </div>
+    </div>
+  );
+
+  if (!href) return inner;
+  return <Link href={href}>{inner}</Link>;
 }
 
 function InfoStat({ label, value }: { label: string; value: string }) {

@@ -8,6 +8,7 @@ import EmptyState from '../EmptyState';
 import ErrorState from '../ErrorState';
 import Pagination from '../Pagination';
 import Tabs from '../Tabs';
+import RemoteImage from '../RemoteImage';
 import { APP_TIME_ZONE, getPslLogo, toKarachiISODate } from '../../utils/helpers';
 import { str } from '../../utils/extract';
 import type { SportEventRecord } from '../../types/index';
@@ -239,9 +240,11 @@ function TeamRow({
   return (
     <div className="flex items-center gap-2.5">
       {pslLogo ? (
-        <img
+        <RemoteImage
           src={pslLogo}
           alt={name}
+          width={28}
+          height={28}
           className="h-7 w-7 shrink-0 rounded-full border border-lborder bg-white object-contain p-0.5"
         />
       ) : (

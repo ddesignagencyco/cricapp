@@ -17,6 +17,7 @@ import Tabs from '../Tabs';
 import EmptyState from '../EmptyState';
 import Pagination from '../Pagination';
 import AdSlot from '../AdSlot';
+import RemoteImage from '../RemoteImage';
 import type { NewsArticle } from '../../types';
 
 const categoryTone: Record<string, string> = {
@@ -81,7 +82,7 @@ export default function NewsBoard({
   // Spotlight: Priority to type === 'featured', otherwise the most recent item (first in list)
   const featured = useMemo(() => {
     if (safeItems.length === 0) return null;
-    return safeItems.find((n) => n.type === 'featured' || n.isSpotlight) || safeItems[0];
+    return safeItems.find((n) => n.isBreaking || n.isFeatured || n.type === 'featured' || n.isSpotlight) || safeItems[0];
   }, [safeItems]);
 
   // Remaining articles (cards)
@@ -167,10 +168,12 @@ export default function NewsBoard({
           <div className="grid md:grid-cols-[minmax(0,1.45fr)_minmax(280px,1fr)]">
             <div className="relative aspect-[16/10] overflow-hidden md:aspect-auto md:min-h-[360px]">
               {featured.image ? (
-                <img
+                <RemoteImage
                   src={featured.image}
                   alt={featured.title}
-                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                  fill
+                  sizes="(min-width: 768px) 55vw, 100vw"
+                  className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
                 />
               ) : (
                 <div className="relative flex h-full min-h-[260px] w-full items-center justify-center bg-primary">
@@ -299,11 +302,12 @@ function ArticleCard({ item }: { item: NewsArticle }) {
         className="relative aspect-[16/9] overflow-hidden bg-primary"
       >
         {item.image ? (
-          <img
+          <RemoteImage
             src={item.image}
             alt={item.title}
-            loading="lazy"
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+            fill
+            sizes="(min-width: 768px) 33vw, 100vw"
+            className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, LogOut, Menu, Moon, Search, ShieldCheck, Sun, User, UserRound, X } from 'lucide-react';
+import { Bell, Heart, LayoutDashboard, LogOut, Menu, Moon, Search, ShieldCheck, Sun, User, X } from 'lucide-react';
 import Logo from './Logo';
 import SearchBar from './SearchBar';
 import { useTheme } from './ThemeProvider';
@@ -150,13 +150,19 @@ export default function Navbar() {
                       </span>
                     )}
                   </div>
+                  <Link href="/profile" className="flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-stext hover:bg-card hover:text-mtext">
+                    <User size={15} /> Profile
+                  </Link>
+                  <Link href="/settings/notifications" className="flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-stext hover:bg-card hover:text-mtext">
+                    <Bell size={15} /> Notifications
+                  </Link>
                   {isAdmin && (
                     <Link href="/admin" className="flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-stext hover:bg-card hover:text-mtext">
                       <LayoutDashboard size={15} /> CMS Dashboard
                     </Link>
                   )}
                   <Link href="/favorites" className="flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-stext hover:bg-card hover:text-mtext">
-                    <UserRound size={15} /> My Favorites
+                    <Heart size={15} /> My Favorites
                   </Link>
                   <button type="button" onClick={handleLogout} className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-sm text-danger hover:bg-card">
                     <LogOut size={15} /> Sign out

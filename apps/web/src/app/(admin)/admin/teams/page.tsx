@@ -7,6 +7,7 @@ import type { Team } from '../../../../types';
 import Pagination from '../../../../components/admin/AdminPagination';
 import { AdminPageHeader, LoadingState, EmptyState, AdminInput } from '../../../../components/admin/AdminShared';
 import { getInitials, cap } from '../../../../utils/helpers';
+import RemoteImage from '../../../../components/RemoteImage';
 
 export default function TeamsPage() {
   const [teams, setTeams] = useState<Team[]>([]);
@@ -69,7 +70,7 @@ export default function TeamsPage() {
                       <td className="px-4 py-2.5">
                         <div className="flex items-center gap-2.5">
                           {t.logo ? (
-                            <img src={t.logo} alt={t.name} className="h-7 w-7 rounded-full object-cover" style={{ border: '1px solid var(--admin-border)' }} />
+                            <RemoteImage src={t.logo} alt={t.name} width={28} height={28} className="h-7 w-7 rounded-full object-cover" style={{ border: '1px solid var(--admin-border)' }} />
                           ) : (
                             <TeamBadge code={badgeLabel} />
                           )}

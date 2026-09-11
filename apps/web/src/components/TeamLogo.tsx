@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import RemoteImage from './RemoteImage';
 import { getInitials, getPslLogo } from '../utils/helpers';
 
 interface TeamLogoProps {
@@ -31,11 +32,13 @@ export default function TeamLogo({ teamId, name, code, color, size = 'md', class
   const inner = (
     <div className="relative h-full w-full transition-transform duration-500 group-hover:scale-105">
       {logo ? (
-        <img
+        <RemoteImage
           src={logo}
           alt={displayName}
           title={displayName}
-          className="relative h-full w-full rounded-full border border-white/10 bg-white object-contain p-0.5"
+          fill
+          sizes="96px"
+          className="rounded-full border border-white/10 bg-white object-contain p-0.5"
           style={{ borderColor: accent }}
         />
       ) : (

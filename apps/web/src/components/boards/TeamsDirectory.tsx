@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { Loader2, Search, Users } from 'lucide-react';
+import { Search, Users } from 'lucide-react';
 import type { Team } from '../../types/index';
 import { fetchTeamsPage } from '../../services/teams';
 import TeamCard from '../TeamCard';
@@ -32,7 +32,7 @@ export default function TeamsDirectory() {
     let cancelled = false;
     setLoading(true);
     setError(false);
-    fetchTeamsPage({ limit: LIMIT, page })
+    fetchTeamsPage({ limit: LIMIT, page, q: search || undefined })
       .then(({ items, total: t }) => {
         if (!cancelled) {
           setTeams(items);
@@ -49,21 +49,14 @@ export default function TeamsDirectory() {
         }
       });
     return () => { cancelled = true; };
-  }, [page, retryKey]);
+  }, [page, search, retryKey]);
+
+  useEffect(() => {
+    setLocalSearch(search);
+  }, [search]);
 
   const totalPages = Math.max(1, Math.ceil((total || 0) / LIMIT));
-
-  const filtered = useMemo(() => {
-    const q = localSearch.toLowerCase().trim();
-    if (!q) return teams;
-    return teams.filter(
-      (t) =>
-        (t.name || '').toLowerCase().includes(q) ||
-        (t.abbr || t.code || '').toLowerCase().includes(q) ||
-        (t.country || '').toLowerCase().includes(q) ||
-        (t.city || '').toLowerCase().includes(q)
-    );
-  }, [teams, localSearch]);
+  const filtered = teams;
 
   const handleSearchSubmit = (value: string) => {
     const params = new URLSearchParams(searchParams.toString());

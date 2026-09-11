@@ -7,7 +7,7 @@ export interface RegisterInput {
   email: string;
   username: string;
   password: string;
-  displayName: string;
+  displayName?: string;
 }
 
 export interface ForgotPasswordInput {
@@ -38,6 +38,13 @@ export interface AuthUser {
   avatarUrl: string | null;
   isAdmin: boolean;
   emailVerified?: boolean;
+  createdAt?: string;
+}
+
+export interface UpdateProfileInput {
+  displayName?: string;
+  avatarUrl?: string;
+  username?: string;
 }
 
 export interface AuthResponse {

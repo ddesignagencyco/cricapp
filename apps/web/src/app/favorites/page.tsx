@@ -15,11 +15,9 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { listFavorites, removeFavorite, type FavoriteItem } from '../../services/favorites';
-import { fetchTeamById } from '../../services/teams';
-import { fetchPlayerById } from '../../services/players';
-import { fetchMatchById } from '../../services/matches';
 import { useAuth } from '../../components/AuthProvider';
 import TeamLogo from '../../components/TeamLogo';
+import RemoteImage from '../../components/RemoteImage';
 import Badge, { StatusBadge } from '../../components/Badge';
 import { formatScheduled, getInitials } from '../../utils/helpers';
 import { ConfirmDialog } from '../../components/admin/AdminShared';
@@ -49,62 +47,21 @@ export default function FavoritesPage() {
     }
 
     setLoading(true);
-    listFavorites()
+    listFavorites(undefined, { expand: true, limit: 100 })
       .then((items) => {
         setFavorites(items);
-        // Initialize map
         const initial: Record<string, EnrichedFavorite> = {};
         for (const item of items) {
-          initial[item.id] = { item, loading: true };
+          const target = item.target as Record<string, unknown> | undefined;
+          initial[item.id] = {
+            item,
+            loading: false,
+            team: item.targetType === 'team' ? ((target as Team) || null) : undefined,
+            player: item.targetType === 'player' ? ((target as Player) || null) : undefined,
+            match: item.targetType === 'match' ? ((target as Match) || null) : undefined,
+          };
         }
         setEnrichedMap(initial);
-
-        // Fetch detail for each item concurrently
-        items.forEach((item) => {
-          if (item.targetType === 'team') {
-            fetchTeamById(item.targetId)
-              .then((team) => {
-                setEnrichedMap((prev) => ({
-                  ...prev,
-                  [item.id]: { item, team, loading: false },
-                }));
-              })
-              .catch(() => {
-                setEnrichedMap((prev) => ({
-                  ...prev,
-                  [item.id]: { item, team: null, loading: false },
-                }));
-              });
-          } else if (item.targetType === 'player') {
-            fetchPlayerById(item.targetId)
-              .then((player) => {
-                setEnrichedMap((prev) => ({
-                  ...prev,
-                  [item.id]: { item, player, loading: false },
-                }));
-              })
-              .catch(() => {
-                setEnrichedMap((prev) => ({
-                  ...prev,
-                  [item.id]: { item, player: null, loading: false },
-                }));
-              });
-          } else if (item.targetType === 'match') {
-            fetchMatchById(item.targetId)
-              .then((match) => {
-                setEnrichedMap((prev) => ({
-                  ...prev,
-                  [item.id]: { item, match, loading: false },
-                }));
-              })
-              .catch(() => {
-                setEnrichedMap((prev) => ({
-                  ...prev,
-                  [item.id]: { item, match: null, loading: false },
-                }));
-              });
-          }
-        });
       })
       .catch(() => {
         // Silently handle load errors; do not spam toasts
@@ -403,9 +360,11 @@ function FavoriteTeamCard({
         <Link href={`/teams/${fav.targetId}`} className="block">
           <div className="flex items-center gap-3.5 pt-1">
             {team?.logoUrl ? (
-              <img
+              <RemoteImage
                 src={String(team.logoUrl)}
                 alt={name}
+                width={48}
+                height={48}
                 className="h-12 w-12 shrink-0 rounded-full border border-white/10 bg-secondary object-cover"
               />
             ) : (

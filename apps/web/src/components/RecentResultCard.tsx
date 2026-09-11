@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { StatusBadge } from './Badge';
+import RemoteImage from './RemoteImage';
 import { getInitials, getPslLogo } from '../utils/helpers';
 
 interface RecentResultCardProps {
@@ -82,9 +83,11 @@ function ScoreRow({ code, name, score, overs }: { code: string; name: string; sc
   return (
     <div className="flex items-center gap-2.5">
       {pslLogo ? (
-        <img
+        <RemoteImage
           src={pslLogo}
           alt={name}
+          width={28}
+          height={28}
           className="h-7 w-7 shrink-0 rounded-full border border-lborder bg-white object-contain p-0.5"
         />
       ) : (

@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { BarChart3, Calendar, Clock, MapPin, Trophy, Users } from 'lucide-react';
+import { BarChart3, Calendar, Clock, MapPin, Radio, Trophy, Users } from 'lucide-react';
 import LiveIndicator from '../LiveIndicator';
 import Tabs from '../Tabs';
 import EmptyState from '../EmptyState';
@@ -11,15 +11,20 @@ import TeamLogo from '../TeamLogo';
 import FavoriteButton from '../FavoriteButton';
 import ShareButton from '../ShareButton';
 import CommentsSection from '../CommentsSection';
+import BallTracker from '../BallTracker';
 import { formatScheduled } from '../../utils/helpers';
+import { fetchMatchTimeline } from '../../services/matches';
+import { useMatchStream } from '../../hooks/useMatchStream';
 
 const detailTabs = [
   { key: 'live', label: 'Live Score', icon: Users },
+  { key: 'timeline', label: 'Timeline', icon: Radio },
   { key: 'info', label: 'Match Info', icon: MapPin },
 ];
 
 const completedTabs = [
   { key: 'info', label: 'Match Info', icon: MapPin },
+  { key: 'timeline', label: 'Timeline', icon: Radio },
   { key: 'result', label: 'Result', icon: Trophy },
 ];
 
@@ -28,13 +33,61 @@ interface Props {
   headToHead?: any;
 }
 
-export default function MatchDetailBody({ match, headToHead }: Props) {
+function extractBalls(payload: Record<string, unknown> | null | undefined): (string | number)[] {
+  if (!payload) return [];
+  const keys = ['balls', 'recentBalls', 'thisOver'];
+  for (const key of keys) {
+    const value = payload[key];
+    if (Array.isArray(value)) return value as (string | number)[];
+  }
+  const nested = payload.currentOver || payload.over;
+  if (nested && typeof nested === 'object' && Array.isArray((nested as { balls?: unknown }).balls)) {
+    return (nested as { balls: (string | number)[] }).balls;
+  }
+  return [];
+}
+
+export default function MatchDetailBody({ match: initialMatch, headToHead }: Props) {
+  const [match, setMatch] = useState(initialMatch);
+  const [tab, setTab] = useState(
+    initialMatch?.status === 'completed' || initialMatch?.status === 'cancelled' ? 'info' : 'live'
+  );
+  const [timeline, setTimeline] = useState<Record<string, unknown> | null>(null);
+  const matchId = initialMatch?.matchId || initialMatch?.id;
+  const liveUpdate = useMatchStream(matchId, initialMatch?.status === 'live');
+
+  useEffect(() => {
+    setMatch(initialMatch);
+  }, [initialMatch]);
+
+  useEffect(() => {
+    if (!liveUpdate || liveUpdate.type === 'ping') return;
+    const payload =
+      liveUpdate.data && typeof liveUpdate.data === 'object'
+        ? (liveUpdate.data as Record<string, unknown>)
+        : {};
+    setMatch((prev: any) => ({ ...prev, ...payload }));
+  }, [liveUpdate]);
+
+  useEffect(() => {
+    if (!matchId) return;
+    let cancelled = false;
+    fetchMatchTimeline(matchId)
+      .then((res) => {
+        if (!cancelled) setTimeline(res?.payload || null);
+      })
+      .catch(() => {
+        if (!cancelled) setTimeline(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [matchId]);
+
   const isLive = match?.status === 'live';
   const isUpcoming = match?.status === 'upcoming';
   const isCompleted = match?.status === 'completed';
   const isCancelled = match?.status === 'cancelled';
-
-  const [tab, setTab] = useState(isCompleted || isCancelled ? 'info' : 'live');
   const activeTabs = isCompleted || isCancelled ? completedTabs : detailTabs;
 
   if (!match) {
@@ -238,6 +291,12 @@ export default function MatchDetailBody({ match, headToHead }: Props) {
                     {match.lastEvent.runs === 1 ? '' : 's'} · {match.lastEvent.type}
                   </p>
                 )}
+                {extractBalls(timeline).length > 0 && (
+                  <div className="mt-4">
+                    <p className="mb-2 text-xs font-bold uppercase tracking-wider text-stext">This over</p>
+                    <BallTracker balls={extractBalls(timeline)} />
+                  </div>
+                )}
               </div>
             ) : isUpcoming ? (
               <EmptyState
@@ -250,6 +309,24 @@ export default function MatchDetailBody({ match, headToHead }: Props) {
                 message={match.status || (isCompleted || isCancelled ? 'This match has finished or was cancelled.' : 'No live data available.')}
               />
             ))}
+
+          {tab === 'timeline' && (
+            <div className="rounded-2xl bg-card p-6 ring-1 ring-lborder">
+              <h3 className="mb-4 text-sm font-bold uppercase tracking-widest text-stext">Ball-by-ball</h3>
+              {extractBalls(timeline).length > 0 ? (
+                <BallTracker balls={extractBalls(timeline)} size="lg" />
+              ) : timeline ? (
+                <pre className="max-h-80 overflow-auto whitespace-pre-wrap break-words text-xs text-stext">
+                  {JSON.stringify(timeline, null, 2)}
+                </pre>
+              ) : (
+                <EmptyState
+                  title="Timeline unavailable"
+                  message="This match does not have a ball-by-ball timeline yet."
+                />
+              )}
+            </div>
+          )}
 
           {tab === 'info' && (
             <div className="rounded-2xl bg-card p-6 ring-1 ring-lborder">

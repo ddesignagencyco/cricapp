@@ -23,7 +23,7 @@ export default function PasswordField({ id, label, name, value, onChange, autoCo
         {label}
       </label>
       <div className="relative">
-        <Lock size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-stext" />
+        <Lock size={16} className="pointer-events-none absolute left-3.5 top-1/2 z-10 -translate-y-1/2 text-stext" />
         <input
           id={id}
           name={name}
@@ -31,17 +31,21 @@ export default function PasswordField({ id, label, name, value, onChange, autoCo
           value={value}
           onChange={(event) => onChange(event.target.value)}
           autoComplete={autoComplete}
+          spellCheck={false}
           minLength={6}
           required
           aria-invalid={Boolean(error)}
           aria-describedby={error ? errorId : undefined}
-          className="w-full rounded-2xl border border-lborder bg-secondary/80 py-3 pl-10 pr-11 text-sm text-mtext outline-none transition-all placeholder:text-stext/50 focus:border-accent focus:bg-card focus:ring-2 focus:ring-accent/20"
+          style={visible ? { WebkitTextSecurity: 'none' } : undefined}
+          className="auth-password-input w-full rounded-2xl border border-lborder bg-secondary/80 py-3 pl-10 pr-12 text-sm text-mtext outline-none transition-all placeholder:text-stext/50 focus:border-accent focus:bg-card focus:ring-2 focus:ring-accent/20"
         />
         <button
           type="button"
+          onMouseDown={(event) => event.preventDefault()}
           onClick={() => setVisible((current) => !current)}
-          className="absolute right-3 top-1/2 -translate-y-1/2 rounded-xl p-1 text-stext hover:text-mtext hover:bg-elevated transition-colors focus:outline-none"
+          className="absolute inset-y-0 right-0 z-20 flex w-11 items-center justify-center rounded text-stext transition-colors hover:text-mtext focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           aria-label={visible ? 'Hide password' : 'Show password'}
+          aria-pressed={visible}
         >
           {visible ? <EyeOff size={16} /> : <Eye size={16} />}
         </button>
