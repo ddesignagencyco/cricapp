@@ -42,6 +42,7 @@ model Team {
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
   players   Player[]
+  linkedArticles NewsArticleTeam[]
 
   @@index([abbr])
   @@map("teams")
@@ -64,6 +65,7 @@ model Player {
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
   team        Team?     @relation(fields: [teamId], references: [id])
+  linkedArticles NewsArticlePlayer[]
 
   @@index([teamId])
   @@map("players")
@@ -173,6 +175,7 @@ model Tournament {
   updatedAt      DateTime @updatedAt @map("updated_at")
 
   seasons        TournamentSeason[]
+  linkedArticles NewsArticleSeries[]
 
   @@map("tournaments")
 }
@@ -275,6 +278,7 @@ model User {
   comments     Comment[]
   reactions    Reaction[]
   devices      Device[]
+  notificationLogs NotificationLog[]
   passwordResetTokens PasswordResetToken[]
   emailVerificationToken EmailVerificationToken?
 
@@ -282,6 +286,19 @@ model User {
 }
 
 // --- Phase 4: News / Feed ---------------------------------------------------
+
+model Author {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  bio       String?  @db.Text
+  avatarUrl String?  @map("avatar_url")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  articles  NewsArticle[]
+
+  @@map("authors")
+}
 
 model NewsCategory {
   id        String   @id @default(uuid())
@@ -294,25 +311,79 @@ model NewsCategory {
 }
 
 model NewsArticle {
-  id          String   @id @default(uuid())
-  title       String
-  slug        String   @unique
-  summary     String?
-  content     String   @db.Text
-  imageUrl    String?  @map("image_url")
-  author      String?
-  source      String?
-  categoryId  String?  @map("category_id")
-  tags        Json?
-  publishedAt DateTime? @map("published_at")
-  isPublished Boolean  @default(false) @map("is_published")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-  category    NewsCategory? @relation(fields: [categoryId], references: [id])
+  id              String   @id @default(uuid())
+  title           String
+  slug            String   @unique
+  summary         String?
+  content         String   @db.Text
+  imageUrl        String?  @map("image_url")
+  author          String?
+  authorId        String?  @map("author_id")
+  source          String?
+  categoryId      String?  @map("category_id")
+  tags            Json?
+  language        String   @default("en")
+  metaTitle       String?  @map("meta_title")
+  metaDescription String?  @map("meta_description")
+  canonicalUrl    String?  @map("canonical_url")
+  isFeatured      Boolean  @default(false) @map("is_featured")
+  isBreaking      Boolean  @default(false) @map("is_breaking")
+  publishedAt     DateTime? @map("published_at")
+  isPublished     Boolean  @default(false) @map("is_published")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  category        NewsCategory? @relation(fields: [categoryId], references: [id])
+  authorRef       Author?  @relation(fields: [authorId], references: [id])
+  linkedPlayers   NewsArticlePlayer[]
+  linkedTeams     NewsArticleTeam[]
+  linkedMatches   NewsArticleMatch[]
+  linkedSeries    NewsArticleSeries[]
 
   @@index([publishedAt])
   @@index([categoryId])
+  @@index([language])
+  @@index([isFeatured])
+  @@index([isBreaking])
   @@map("news_articles")
+}
+
+model NewsArticlePlayer {
+  articleId String @map("article_id")
+  playerId  String @map("player_id")
+  article   NewsArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  player    Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@id([articleId, playerId])
+  @@map("news_article_players")
+}
+
+model NewsArticleTeam {
+  articleId String @map("article_id")
+  teamId    String @map("team_id")
+  article   NewsArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  team      Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@id([articleId, teamId])
+  @@map("news_article_teams")
+}
+
+model NewsArticleMatch {
+  articleId String @map("article_id")
+  matchId   String @map("match_id")
+  article   NewsArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@id([articleId, matchId])
+  @@map("news_article_matches")
+}
+
+model NewsArticleSeries {
+  articleId    String @map("article_id")
+  tournamentId String @map("tournament_id")
+  article      NewsArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+
+  @@id([articleId, tournamentId])
+  @@map("news_article_series")
 }
 
 // --- Phase 4: Live Streams --------------------------------------------------
@@ -359,12 +430,15 @@ model Comment {
   targetType String   @map("target_type")
   targetId   String   @map("target_id")
   body       String   @db.Text
+  status     String   @default("approved")
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @updatedAt @map("updated_at")
   user       User     @relation(fields: [userId], references: [id])
   reactions  Reaction[]
+  reports    CommentReport[]
 
   @@index([targetType, targetId])
+  @@index([status])
   @@map("comments")
 }
 
@@ -384,7 +458,48 @@ model Reaction {
   @@map("reactions")
 }
 
-// --- Phase 4: Push Notifications (FCM) --------------------------------------
+model CommentReport {
+  id          String   @id @default(uuid())
+  commentId   String   @map("comment_id")
+  reporterId  String   @map("reporter_id")
+  reason      String
+  status      String   @default("pending")
+  resolvedAt  DateTime? @map("resolved_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  comment     Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@index([commentId])
+  @@index([status])
+  @@map("comment_reports")
+}
+
+// --- Sharing analytics ------------------------------------------------------
+
+model ShareStat {
+  shareType String   @map("share_type")
+  targetId  String   @map("target_id")
+  count     Int      @default(0)
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@id([shareType, targetId])
+  @@map("share_stats")
+}
+
+// --- Push Notifications (FCM) -----------------------------------------------
+
+model NotificationLog {
+  id        String   @id @default(uuid())
+  userId    String?  @map("user_id")
+  title     String
+  body      String
+  data      Json?
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User?    @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("notification_logs")
+}
 
 model Device {
   id          String   @id @default(uuid())

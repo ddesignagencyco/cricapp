@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, UseGuards, Request, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Get, Patch, Body, UseGuards, Request, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service.js';
@@ -14,6 +14,7 @@ import {
   VerifyEmailDto,
   ResendVerificationDto,
   MessageResponseDto,
+  UpdateProfileDto,
 } from './dto/auth.dto.js';
 
 @ApiTags('auth')
@@ -48,6 +49,18 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async me(@Request() req: { user: { id: string } }): Promise<UserProfileDto> {
     return this.authService.getProfile(req.user.id);
+  }
+
+  @Patch('me')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update current user profile' })
+  @ApiResponse({ status: 200, description: 'Updated profile.', type: UserProfileDto })
+  async updateMe(
+    @Request() req: { user: { id: string } },
+    @Body() dto: UpdateProfileDto,
+  ): Promise<UserProfileDto> {
+    return this.authService.updateProfile(req.user.id, dto);
   }
 
   @Post('forgot-password')

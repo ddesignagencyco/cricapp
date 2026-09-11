@@ -8,6 +8,8 @@ export class SharingService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getShareLink(type: string, id: string) {
+    await this.trackShare(type, id);
+
     let ogTitle = 'CricApp';
     let ogDescription = 'Cricket scores, news and live streams';
 
@@ -59,5 +61,22 @@ export class SharingService {
       ogDescription,
       ogImage: `${BASE_URL}/api/og/${type}/${id}`,
     };
+  }
+
+  private async trackShare(shareType: string, targetId: string) {
+    await this.prisma.shareStat.upsert({
+      where: { shareType_targetId: { shareType, targetId } },
+      create: { shareType, targetId, count: 1 },
+      update: { count: { increment: 1 } },
+    });
+  }
+
+  async getShareStats(shareType?: string) {
+    const where = shareType ? { shareType } : {};
+    return this.prisma.shareStat.findMany({
+      where,
+      orderBy: { count: 'desc' },
+      take: 50,
+    });
   }
 }

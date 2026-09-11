@@ -16,7 +16,7 @@
     "prisma:deploy": "prisma migrate deploy",
     "prisma:seed": "prisma db seed",
     "lint": "eslint \"src/**/*.ts\"",
-    "test": "jest --passWithNoTests",
+    "test": "jest --passWithNoTests --forceExit",
     "typecheck": "tsc --noEmit"
   },
   "prisma": {

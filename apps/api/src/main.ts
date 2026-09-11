@@ -44,6 +44,8 @@ async function bootstrap() {
     .addTag('favorites', 'User favorites / bookmarks')
     .addTag('comments', 'Comments and reactions')
     .addTag('notifications', 'FCM device registration and notification preferences')
+    .addTag('search', 'Unified search across players, teams, matches and tournaments')
+    .addTag('admin', 'Admin CMS, moderation and platform analytics')
     .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, config);

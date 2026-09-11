@@ -45,6 +45,8 @@ export class PlayersService {
       where.OR = [
         { fullName: { contains: params.q, mode: 'insensitive' } },
         { shortName: { contains: params.q, mode: 'insensitive' } },
+        { nationality: { contains: params.q, mode: 'insensitive' } },
+        { role: { contains: params.q, mode: 'insensitive' } },
       ];
     }
     if (params?.team) {

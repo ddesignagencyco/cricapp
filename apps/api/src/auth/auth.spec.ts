@@ -68,6 +68,17 @@ describe('AuthModule (integration)', () => {
     await ctx.agent.get('/auth/me').expect(401);
   });
 
+  it('PATCH /auth/me — updates profile fields', async () => {
+    const signup = await ctx.agent.post('/auth/signup').send(signupPayload).expect(201);
+    const res = await ctx.agent
+      .patch('/auth/me')
+      .set('Authorization', `Bearer ${signup.body.access_token}`)
+      .send({ displayName: 'Updated Name', avatarUrl: 'https://cdn.example.com/a.jpg' })
+      .expect(200);
+    expect(res.body.displayName).toBe('Updated Name');
+    expect(res.body.avatarUrl).toBe('https://cdn.example.com/a.jpg');
+  });
+
   it('POST /auth/forgot-password — returns generic message for unknown email', async () => {
     const res = await ctx.agent.post('/auth/forgot-password').send({ email: 'missing@example.com' }).expect(200);
     expect(res.body.message).toContain('If an account exists');

@@ -4,6 +4,12 @@ import { MATCH_STATUS } from '@cricapp/shared-types';
 import { PaginationQuery } from '../../common/dto/pagination.query.js';
 
 export class ListMatchesQuery extends PaginationQuery {
+  @ApiPropertyOptional({ description: 'Search team names, tournament, venue or score.' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  q?: string;
+
   @ApiPropertyOptional({
     enum: Object.values(MATCH_STATUS),
     description: 'Filter by match status: upcoming, live, completed or cancelled.',

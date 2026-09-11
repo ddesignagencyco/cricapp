@@ -311,6 +311,10 @@ async function safeRun(fn, delay = 0) {
   }
 }
 
+// A step that persisted nothing is stamped for this long instead of its full
+// cadence, so an empty/throttled window cannot mark a target fresh for days.
+const EMPTY_RESULT_RETRY_MS = 3600e3;
+
 /**
  * Fetch a step only when its Redis staleness key has expired, stamping the key
  * on success so already-fresh targets are skipped on subsequent cycles.
@@ -319,7 +323,12 @@ async function runStale(category, id, cadenceMs, fn, delay = 0) {
   if (!(await shouldSync(category, id))) return null;
   const result = await safeRun(fn, delay);
   if (result !== null) {
-    await markSynced(category, id, cadenceMs);
+    const persistedNothing = typeof result === 'number' && result === 0;
+    await markSynced(
+      category,
+      id,
+      persistedNothing ? Math.min(cadenceMs, EMPTY_RESULT_RETRY_MS) : cadenceMs,
+    );
   }
   return result;
 }
