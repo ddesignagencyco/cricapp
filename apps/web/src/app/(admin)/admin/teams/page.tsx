@@ -5,9 +5,8 @@ import { Users, Search } from 'lucide-react';
 import { fetchTeamsPage } from '../../../../services/teams';
 import type { Team } from '../../../../types';
 import Pagination from '../../../../components/admin/AdminPagination';
-import { AdminPageHeader, LoadingState, EmptyState, AdminInput } from '../../../../components/admin/AdminShared';
-import { getInitials, cap } from '../../../../utils/helpers';
-import RemoteImage from '../../../../components/RemoteImage';
+import { AdminAvatar, AdminPageHeader, LoadingState, EmptyState, AdminInput } from '../../../../components/admin/AdminShared';
+import { cap } from '../../../../utils/helpers';
 
 export default function TeamsPage() {
   const [teams, setTeams] = useState<Team[]>([]);
@@ -69,15 +68,11 @@ export default function TeamsPage() {
                       onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
                       <td className="px-4 py-2.5">
                         <div className="flex items-center gap-2.5">
-                          {t.logo ? (
-                            <RemoteImage src={t.logo} alt={t.name} width={28} height={28} className="h-7 w-7 rounded-full object-cover" style={{ border: '1px solid var(--admin-border)' }} />
-                          ) : (
-                            <TeamBadge code={badgeLabel} />
-                          )}
-                          <span style={{ color: 'var(--admin-text)' }}>{t.name}</span>
+                          <AdminAvatar name={badgeLabel} src={t.logo} size={28} />
+                          <span className="font-semibold" style={{ color: 'var(--admin-text)' }}>{t.name}</span>
                         </div>
                       </td>
-                      <td className="px-4 py-2.5 font-mono font-bold" style={{ color: 'var(--admin-text)' }}>{code || '—'}</td>
+                      <td className="px-4 py-2.5 font-mono" style={{ color: 'var(--admin-text-secondary)' }}>{code || '—'}</td>
                       <td className="px-4 py-2.5" style={{ color: 'var(--admin-text-secondary)' }}>{cap(t.city)}</td>
                       <td className="px-4 py-2.5" style={{ color: 'var(--admin-text-secondary)' }}>{cap(t.country)}</td>
                     </tr>
@@ -92,18 +87,5 @@ export default function TeamsPage() {
         </div>
       )}
     </div>
-  );
-}
-
-function TeamBadge({ code }: { code: string }) {
-  if (!code) return null;
-  let hash = 0;
-  for (let i = 0; i < code.length; i++) hash = code.charCodeAt(i) + ((hash << 5) - hash);
-  const hue = Math.abs(hash % 360);
-  return (
-    <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full text-[10px] font-bold text-white"
-      style={{ backgroundImage: `linear-gradient(135deg, hsl(${hue}, 70%, 50%), hsl(${(hue + 40) % 360}, 80%, 35%))` }}>
-      {getInitials(code)}
-    </span>
   );
 }

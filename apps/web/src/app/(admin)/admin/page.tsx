@@ -1,104 +1,65 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import {
   FileText,
   Trophy,
   Users,
   UserCircle,
-  ArrowUpRight,
   Radio,
-  Newspaper,
   CheckCircle2,
   Database,
-  Globe2,
   MessageSquare,
-  ShieldCheck,
+  CalendarClock,
+  Heart,
+  Share2,
+  Flag,
+  RefreshCw,
 } from 'lucide-react';
 import { useAuth } from '../../../components/AuthProvider';
 import { fetchMatchesPage } from '../../../services/matches';
 import { fetchNewsAdmin } from '../../../services/newsAdmin';
-import { fetchTeamsPage } from '../../../services/teams';
-import { fetchPlayersPage } from '../../../services/players';
-import { fetchTournamentsPage } from '../../../services/tournaments';
 import type { Match } from '../../../types';
-import Pagination from '../../../components/admin/AdminPagination';
-import { LoadingState, StatusBadge } from '../../../components/admin/AdminShared';
-import { BlinkingDot } from '../../../components/Badge';
-import { fetchAdminAnalytics, fetchIngestionHealth, type AdminAnalytics, type IngestionHealth } from '../../../services/admin';
+import { AdminAvatar, LoadingState, StatusBadge } from '../../../components/admin/AdminShared';
+import {
+  fetchAdminAnalytics,
+  fetchAdminUsers,
+  fetchIngestionHealth,
+  type AdminAnalytics,
+  type AdminUser,
+  type IngestionHealth,
+} from '../../../services/admin';
 import { getInitials } from '../../../utils/helpers';
 
 export default function AdminDashboard() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
 
-  // Matches
   const [matches, setMatches] = useState<Match[]>([]);
-  const [matchPage, setMatchPage] = useState(1);
-  const [matchTotalPages, setMatchTotalPages] = useState(1);
-  const [matchTotal, setMatchTotal] = useState(0);
-
-  // Counts / KPIs
-  const [counts, setCounts] = useState({
-    articles: 0,
-    matches: 0,
-    liveMatches: 0,
-    teams: 0,
-    players: 0,
-    tournaments: 0,
-  });
-
+  const [upcoming, setUpcoming] = useState<Match[]>([]);
+  const [latestUsers, setLatestUsers] = useState<AdminUser[]>([]);
   const [analytics, setAnalytics] = useState<AdminAnalytics | null>(null);
   const [health, setHealth] = useState<IngestionHealth | null>(null);
   const [recentArticles, setRecentArticles] = useState<any[]>([]);
-
-  const loadMatches = useCallback((p: number) => {
-    fetchMatchesPage({ limit: 5, page: p })
-      .then((res) => {
-        setMatches(res.items);
-        setMatchTotalPages(res.totalPages);
-        setMatchTotal(res.total);
-      })
-      .catch(() => {
-        setMatches([]);
-        setMatchTotalPages(1);
-        setMatchTotal(0);
-      });
-  }, []);
 
   useEffect(() => {
     Promise.allSettled([
       fetchNewsAdmin({ limit: 6 }),
       fetchMatchesPage({ limit: 5, page: 1 }),
-      fetchMatchesPage({ status: 'live', limit: 1 }),
-      fetchTeamsPage({ limit: 1 }),
-      fetchPlayersPage({ limit: 1 }),
-      fetchTournamentsPage({ limit: 1 }),
+      fetchMatchesPage({ status: 'upcoming', limit: 5, page: 1 }),
       fetchAdminAnalytics(),
       fetchIngestionHealth(),
-    ]).then(([newsRes, matchRes, liveRes, teamRes, playerRes, tourRes, analyticsRes, healthRes]) => {
+      fetchAdminUsers({ page: 1, limit: 5 }),
+    ]).then(([newsRes, matchRes, upcomingRes, analyticsRes, healthRes, usersRes]) => {
       if (newsRes.status === 'fulfilled') {
         setRecentArticles(newsRes.value.items || []);
-        setCounts((c) => ({ ...c, articles: newsRes.value.total || 0 }));
       }
       if (matchRes.status === 'fulfilled') {
-        setMatches(matchRes.value.items || []);
-        setMatchTotalPages(matchRes.value.totalPages || 1);
-        setMatchTotal(matchRes.value.total || 0);
-        setCounts((c) => ({ ...c, matches: matchRes.value.total || 0 }));
+        setMatches((matchRes.value.items || []).slice(0, 5));
       }
-      if (liveRes.status === 'fulfilled') {
-        setCounts((c) => ({ ...c, liveMatches: liveRes.value.total || 0 }));
-      }
-      if (teamRes.status === 'fulfilled') {
-        setCounts((c) => ({ ...c, teams: teamRes.value.total || 0 }));
-      }
-      if (playerRes.status === 'fulfilled') {
-        setCounts((c) => ({ ...c, players: playerRes.value.total || 0 }));
-      }
-      if (tourRes.status === 'fulfilled') {
-        setCounts((c) => ({ ...c, tournaments: tourRes.value.total || 0 }));
+      if (upcomingRes.status === 'fulfilled') {
+        setUpcoming((upcomingRes.value.items || []).slice(0, 5));
       }
       if (analyticsRes.status === 'fulfilled') {
         setAnalytics(analyticsRes.value);
@@ -106,13 +67,12 @@ export default function AdminDashboard() {
       if (healthRes.status === 'fulfilled') {
         setHealth(healthRes.value);
       }
+      if (usersRes.status === 'fulfilled') {
+        setLatestUsers((usersRes.value.items || []).slice(0, 5));
+      }
       setLoading(false);
     });
   }, []);
-
-  useEffect(() => {
-    loadMatches(matchPage);
-  }, [matchPage, loadMatches]);
 
   const getTeamInfo = (m: Match) => {
     const teams = m.teams;
@@ -147,99 +107,113 @@ export default function AdminDashboard() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-bold tracking-tight sm:text-2xl" style={{ color: 'var(--admin-text)' }}>
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl" style={{ color: 'var(--admin-text)' }}>
             Welcome back, {userName.split(' ')[0]}
           </h1>
-          <p className="mt-0.5 text-xs sm:text-sm" style={{ color: 'var(--admin-text-secondary)' }}>
-            Platform metrics, match feeds, and editorial activity overview.
+          <p className="mt-1 text-sm" style={{ color: 'var(--admin-text-secondary)' }}>
+            Platform metrics, match feeds, and editorial activity.
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Link
-            href="/admin/matches"
-            className="inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-xs font-bold transition-colors"
-            style={{
-              border: '1px solid var(--admin-border)',
-              background: 'var(--admin-card)',
-              color: 'var(--admin-text)',
-            }}
-          >
-            <Trophy size={13} style={{ color: 'var(--admin-accent)' }} /> Manage Matches
-          </Link>
+        <div className="flex flex-wrap items-center gap-2">
           <Link
             href="/admin/news/new"
-            className="inline-flex items-center gap-1.5 rounded-md px-3.5 py-2 text-xs font-bold text-white transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-bold text-white"
             style={{ background: 'var(--admin-accent)' }}
           >
-            <FileText size={13} /> New Article
+            <FileText size={13} /> Write Story
+          </Link>
+          <Link
+            href="/admin/matches"
+            className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-bold"
+            style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)', color: 'var(--admin-text)' }}
+          >
+            <Trophy size={13} style={{ color: 'var(--admin-accent)' }} /> Match Center
+          </Link>
+          <Link
+            href="/admin/comments"
+            className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-bold"
+            style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)', color: 'var(--admin-text)' }}
+          >
+            <MessageSquare size={13} style={{ color: 'var(--admin-warning)' }} /> Moderate
           </Link>
         </div>
       </div>
 
-      {/* KPI Cards Grid */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-7">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
         <MetricCard
-          label="Live Matches"
-          value={counts.liveMatches}
-          sub={counts.liveMatches > 0 ? 'Action in progress' : 'No matches live'}
-          icon={<Radio size={14} className={counts.liveMatches > 0 ? 'animate-pulse' : ''} />}
-          badge={counts.liveMatches > 0 ? 'Live' : undefined}
-          accentColor="var(--admin-danger)"
-          accentBg="var(--admin-danger-bg)"
+          label="Users"
+          value={n(analytics?.users)}
+          icon={<Users size={14} />}
+          accentColor="var(--admin-success)"
+          accentBg="var(--admin-success-bg)"
         />
         <MetricCard
-          label="Total Matches"
-          value={counts.matches > 0 ? counts.matches.toLocaleString() : matchTotal.toLocaleString()}
-          sub="Catalog fixtures"
+          label="Matches"
+          value={n(analytics?.matches)}
           icon={<Trophy size={14} />}
           accentColor="var(--admin-accent)"
           accentBg="rgba(0, 191, 255, 0.12)"
         />
         <MetricCard
-          label="Articles"
-          value={counts.articles.toLocaleString()}
-          sub="News & reports"
-          icon={<FileText size={14} />}
-          accentColor="var(--admin-warning)"
-          accentBg="var(--admin-warning-bg)"
-        />
-        <MetricCard
-          label="Comments"
-          value={(analytics?.comments ?? 0).toLocaleString()}
-          sub={analytics ? `${analytics.pendingReports} pending reports` : 'From admin analytics'}
-          icon={<MessageSquare size={14} />}
-          accentColor="var(--admin-accent)"
-          accentBg="var(--admin-info-bg)"
-        />
-        <MetricCard
           label="Teams"
-          value={counts.teams.toLocaleString()}
-          sub="Clubs & nations"
+          value={n(analytics?.teams)}
           icon={<Users size={14} />}
           accentColor="var(--admin-success)"
           accentBg="var(--admin-success-bg)"
         />
         <MetricCard
           label="Players"
-          value={counts.players.toLocaleString()}
-          sub="Rosters & profiles"
+          value={n(analytics?.players)}
           icon={<UserCircle size={14} />}
           accentColor="var(--admin-info)"
           accentBg="var(--admin-info-bg)"
         />
         <MetricCard
-          label="Tournaments"
-          value={counts.tournaments.toLocaleString()}
-          sub="Leagues & series"
-          icon={<Newspaper size={14} />}
+          label="Comments"
+          value={n(analytics?.comments)}
+          icon={<MessageSquare size={14} />}
+          accentColor="var(--admin-accent)"
+          accentBg="var(--admin-info-bg)"
+        />
+        <MetricCard
+          label="Favorites"
+          value={n(analytics?.favorites)}
+          icon={<Heart size={14} />}
+          accentColor="var(--admin-danger)"
+          accentBg="var(--admin-danger-bg)"
+        />
+        <MetricCard
+          label="Streams"
+          value={n(analytics?.streams)}
+          icon={<Radio size={14} />}
+          accentColor="var(--admin-info)"
+          accentBg="var(--admin-info-bg)"
+        />
+        <MetricCard
+          label="Pending Reports"
+          value={n(analytics?.pendingReports)}
+          icon={<Flag size={14} />}
+          accentColor="var(--admin-warning)"
+          accentBg="var(--admin-warning-bg)"
+        />
+        <MetricCard
+          label="Published Articles"
+          value={n(analytics?.publishedArticles)}
+          icon={<FileText size={14} />}
+          accentColor="var(--admin-warning)"
+          accentBg="var(--admin-warning-bg)"
+        />
+        <MetricCard
+          label="Total Shares"
+          value={n(analytics?.totalShares)}
+          icon={<Share2 size={14} />}
           accentColor="var(--admin-accent)"
           accentBg="rgba(0, 191, 255, 0.12)"
         />
       </div>
 
-      {/* Secondary Performance & Health Strip */}
       <div
-        className="grid grid-cols-1 gap-3 rounded-lg p-4 sm:grid-cols-4 sm:divide-x"
+        className="grid grid-cols-1 gap-3 rounded-lg p-4 sm:grid-cols-3 sm:divide-x"
         style={{
           border: '1px solid var(--admin-border)',
           background: 'var(--admin-card)',
@@ -268,25 +242,16 @@ export default function AdminDashboard() {
           </div>
           <div>
             <p className="text-xs font-bold" style={{ color: 'var(--admin-text)' }}>Live matches</p>
-            <p className="text-xs" style={{ color: 'var(--admin-text-secondary)' }}>{health?.liveMatchCount ?? counts.liveMatches} in Redis set</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3 sm:px-4">
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg" style={{ background: 'var(--admin-success-bg)', color: 'var(--admin-success)' }}>
-            <ShieldCheck size={18} />
-          </div>
-          <div>
-            <p className="text-xs font-bold" style={{ color: 'var(--admin-text)' }}>Users</p>
-            <p className="text-xs" style={{ color: 'var(--admin-text-secondary)' }}>{analytics ? `${analytics.users} accounts · ${analytics.favorites} favorites` : 'Analytics unavailable'}</p>
+            <p className="text-xs" style={{ color: 'var(--admin-text-secondary)' }}>{health?.liveMatchCount ?? 0} in Redis set</p>
           </div>
         </div>
         <div className="flex items-center gap-3 sm:pl-4">
           <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg" style={{ background: 'rgba(255, 209, 102, 0.12)', color: 'var(--admin-warning)' }}>
-            <Globe2 size={18} />
+            <RefreshCw size={18} />
           </div>
           <div>
-            <p className="text-xs font-bold" style={{ color: 'var(--admin-text)' }}>Shares</p>
-            <p className="text-xs" style={{ color: 'var(--admin-text-secondary)' }}>{analytics ? `${analytics.totalShares} recorded · ${analytics.streams} streams` : '—'}</p>
+            <p className="text-xs font-bold" style={{ color: 'var(--admin-text)' }}>Sync keys</p>
+            <p className="text-xs" style={{ color: 'var(--admin-text-secondary)' }}>{health?.syncKeyCount ?? 0} reference keys</p>
           </div>
         </div>
       </div>
@@ -294,112 +259,82 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         {/* Main content */}
         <div className="space-y-5 lg:col-span-2">
-          {/* ─── Matches Table ─── */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span style={{ color: 'var(--admin-accent)' }}><Trophy size={14} /></span>
-              <h2 className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text)' }}>Recent Matches</h2>
+          <MatchPreviewTable
+            title="Recent Matches"
+            icon={<Trophy size={14} />}
+            empty="No matches yet"
+            matches={matches}
+            getTeamInfo={getTeamInfo}
+          />
+
+          <MatchPreviewTable
+            title="Upcoming Fixtures"
+            icon={<CalendarClock size={14} />}
+            empty="No upcoming fixtures"
+            matches={upcoming}
+            getTeamInfo={getTeamInfo}
+            hideScore
+          />
+
+          <div>
+            <div className="mb-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span style={{ color: 'var(--admin-accent)' }}><Users size={14} /></span>
+                <h2 className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text)' }}>Latest Users</h2>
+              </div>
+              <Link href="/admin/users" className="text-xs font-bold" style={{ color: 'var(--admin-accent)' }}>View all →</Link>
             </div>
-            <Link href="/admin/matches" className="text-xs font-bold" style={{ color: 'var(--admin-accent)' }}>View all →</Link>
-          </div>
-          <div className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
-            <div className="overflow-x-auto">
+            <div className="overflow-hidden rounded-lg" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
               <table className="w-full text-left text-xs">
                 <thead>
                   <tr style={{ borderBottom: '1px solid var(--admin-border)', background: 'var(--admin-table-header)' }}>
-                    <th className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Teams</th>
-                    <th className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Score</th>
-                    <th className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Tournament</th>
-                    <th className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Date</th>
-                    <th className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-right" style={{ color: 'var(--admin-text-secondary)' }}>Status</th>
+                    <th className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>User</th>
+                    <th className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Email</th>
+                    <th className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-right" style={{ color: 'var(--admin-text-secondary)' }}>Role</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {matches.length === 0 ? (
-                    <tr><td colSpan={5} className="px-4 py-8 text-center" style={{ color: 'var(--admin-text-muted)' }}>No matches yet</td></tr>
-                  ) : matches.map((m) => {
-                    const t = getTeamInfo(m);
-                    const inn = m.currentInnings;
-                    const homeLabel = t.homeName;
-                    const awayLabel = t.awayName;
-
+                  {latestUsers.length === 0 ? (
+                    <tr>
+                      <td colSpan={3} className="px-4 py-8 text-center" style={{ color: 'var(--admin-text-muted)' }}>No users yet</td>
+                    </tr>
+                  ) : latestUsers.map((u) => {
+                    const name = u.displayName || u.username;
                     return (
-                      <tr key={m.matchId || m.id} style={{ borderBottom: '1px solid var(--admin-border)' }}
-                        onMouseEnter={(e) => e.currentTarget.style.background = 'var(--admin-table-row-hover)'}
-                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
+                      <tr
+                        key={u.id}
+                        style={{ borderBottom: '1px solid var(--admin-border)' }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--admin-table-row-hover)'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                      >
                         <td className="px-4 py-2.5">
-                          <div className="flex flex-col gap-1.5 py-0.5">
-                            <div className="flex items-center gap-2">
-                              <TeamBadge code={homeLabel} />
-                              <span className="font-bold text-xs" style={{ color: 'var(--admin-text)' }}>{homeLabel}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <TeamBadge code={awayLabel} />
-                              <span className="font-bold text-xs" style={{ color: 'var(--admin-text)' }}>{awayLabel}</span>
-                            </div>
+                          <div className="flex items-center gap-2.5">
+                            <AdminAvatar name={name} src={u.avatarUrl} size={24} />
+                            <span className="font-semibold" style={{ color: 'var(--admin-text)' }}>{name}</span>
                           </div>
                         </td>
-                        <td className="px-4 py-2.5 font-mono font-bold" style={{ color: 'var(--admin-text)' }}>
-                          {inn ? `${inn.runs}/${inn.wickets} (${inn.overs})` : '—'}
+                        <td className="px-4 py-2.5" style={{ color: 'var(--admin-text-secondary)' }}>{u.email}</td>
+                        <td className="px-4 py-2.5 text-right">
+                          <span
+                            className="rounded-full px-2 py-0.5 text-[11px] font-bold"
+                            style={{
+                              background: u.isAdmin ? 'var(--admin-accent)' : 'var(--admin-input-bg)',
+                              color: u.isAdmin ? '#fff' : 'var(--admin-text-secondary)',
+                            }}
+                          >
+                            {u.isAdmin ? 'Admin' : 'Member'}
+                          </span>
                         </td>
-                        <td className="px-4 py-2.5" style={{ color: 'var(--admin-text-secondary)' }}>{m.tournament || '—'}</td>
-                        <td className="px-4 py-2.5 font-mono" style={{ color: 'var(--admin-text-muted)' }}>
-                          {m.scheduled ? new Date(m.scheduled).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}
-                        </td>
-                        <td className="px-4 py-2.5 text-right"><StatusBadge status={m.status} /></td>
                       </tr>
                     );
                   })}
                 </tbody>
               </table>
             </div>
-            <div className="px-4 py-2.5 flex justify-end" style={{ borderTop: '1px solid var(--admin-border)' }}>
-              <Pagination page={matchPage} totalPages={matchTotalPages} total={matchTotal} limit={5} onPageChange={setMatchPage} />
-            </div>
           </div>
         </div>
 
-        {/* Sidebar */}
         <div className="space-y-5">
-          {/* Quick actions */}
-          <div className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
-            <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid var(--admin-border)' }}>
-              <h3 className="text-xs font-bold" style={{ color: 'var(--admin-text)' }}>Quick Actions</h3>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-1.5 p-3">
-              <Link href="/admin/news/new" className="flex items-center gap-2.5 rounded-md p-2.5 transition-colors" style={{ border: '1px solid var(--admin-border)' }}
-                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--admin-table-row-hover)'}
-                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
-                <div className="grid h-7 w-7 place-items-center rounded-md" style={{ background: 'var(--admin-success-bg)', color: 'var(--admin-success)' }}><FileText size={13} /></div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-bold" style={{ color: 'var(--admin-text)' }}>Write Story</p>
-                  <p className="text-xs" style={{ color: 'var(--admin-text-muted)' }}>Publish news & match reports</p>
-                </div>
-                <ArrowUpRight size={12} style={{ color: 'var(--admin-text-muted)' }} />
-              </Link>
-              <Link href="/admin/matches" className="flex items-center gap-2.5 rounded-md p-2.5 transition-colors" style={{ border: '1px solid var(--admin-border)' }}
-                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--admin-table-row-hover)'}
-                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
-                <div className="grid h-7 w-7 place-items-center rounded-md" style={{ background: 'rgba(0, 191, 255, 0.12)', color: 'var(--admin-accent)' }}><Trophy size={13} /></div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-bold" style={{ color: 'var(--admin-text)' }}>Match Center</p>
-                  <p className="text-xs" style={{ color: 'var(--admin-text-muted)' }}>Review scores & timelines</p>
-                </div>
-                <ArrowUpRight size={12} style={{ color: 'var(--admin-text-muted)' }} />
-              </Link>
-              <Link href="/admin/comments" className="flex items-center gap-2.5 rounded-md p-2.5 transition-colors" style={{ border: '1px solid var(--admin-border)' }}
-                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--admin-table-row-hover)'}
-                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
-                <div className="grid h-7 w-7 place-items-center rounded-md" style={{ background: 'rgba(255, 209, 102, 0.12)', color: 'var(--admin-warning)' }}><MessageSquare size={13} /></div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-bold" style={{ color: 'var(--admin-text)' }}>Moderate Comments</p>
-                  <p className="text-xs" style={{ color: 'var(--admin-text-muted)' }}>Review community posts</p>
-                </div>
-                <ArrowUpRight size={12} style={{ color: 'var(--admin-text-muted)' }} />
-              </Link>
-            </div>
-          </div>
-
           {/* Recent activity */}
           <div className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
             <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid var(--admin-border)' }}>
@@ -436,11 +371,20 @@ export default function AdminDashboard() {
               </div>
               <Link href="/admin/comments" className="text-xs font-bold" style={{ color: 'var(--admin-accent)' }}>View all →</Link>
             </div>
-            <p className="px-4 py-6 text-center text-xs" style={{ color: 'var(--admin-text-muted)' }}>
-              {analytics
-                ? `${analytics.comments} comments · ${analytics.pendingReports} pending reports`
-                : 'Analytics unavailable.'}
-            </p>
+            {analytics ? (
+              <div className="grid grid-cols-2 divide-x" style={{ borderColor: 'var(--admin-border)' }}>
+                <div className="px-4 py-5">
+                  <p className="text-2xl font-extrabold tabular-nums" style={{ color: 'var(--admin-text)' }}>{analytics.comments}</p>
+                  <p className="mt-1 text-xs font-semibold" style={{ color: 'var(--admin-text-muted)' }}>Comments</p>
+                </div>
+                <div className="px-4 py-5">
+                  <p className="text-2xl font-extrabold tabular-nums" style={{ color: analytics.pendingReports ? 'var(--admin-warning)' : 'var(--admin-text)' }}>{analytics.pendingReports}</p>
+                  <p className="mt-1 text-xs font-semibold" style={{ color: 'var(--admin-text-muted)' }}>Reports</p>
+                </div>
+              </div>
+            ) : (
+              <p className="px-4 py-6 text-center text-sm" style={{ color: 'var(--admin-text-muted)' }}>Analytics unavailable.</p>
+            )}
           </div>
         </div>
       </div>
@@ -448,61 +392,131 @@ export default function AdminDashboard() {
   );
 }
 
+function MatchPreviewTable({
+  title,
+  icon,
+  empty,
+  matches,
+  getTeamInfo,
+  hideScore,
+}: {
+  title: string;
+  icon: React.ReactNode;
+  empty: string;
+  matches: Match[];
+  getTeamInfo: (m: Match) => { homeName: string; awayName: string };
+  hideScore?: boolean;
+}) {
+  return (
+    <div>
+      <div className="mb-3 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span style={{ color: 'var(--admin-accent)' }}>{icon}</span>
+          <h2 className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text)' }}>{title}</h2>
+        </div>
+        <Link href="/admin/matches" className="text-xs font-bold" style={{ color: 'var(--admin-accent)' }}>View all →</Link>
+      </div>
+      <div className="overflow-hidden rounded-lg" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead>
+              <tr style={{ borderBottom: '1px solid var(--admin-border)', background: 'var(--admin-table-header)' }}>
+                <th className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Teams</th>
+                {!hideScore && (
+                  <th className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Score</th>
+                )}
+                <th className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Tournament</th>
+                <th className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Date</th>
+                <th className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-right" style={{ color: 'var(--admin-text-secondary)' }}>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {matches.length === 0 ? (
+                <tr>
+                  <td colSpan={hideScore ? 4 : 5} className="px-4 py-8 text-center" style={{ color: 'var(--admin-text-muted)' }}>{empty}</td>
+                </tr>
+              ) : matches.map((m) => {
+                const t = getTeamInfo(m);
+                const inn = m.currentInnings;
+                return (
+                  <tr
+                    key={m.matchId || m.id}
+                    style={{ borderBottom: '1px solid var(--admin-border)' }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--admin-table-row-hover)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                  >
+                    <td className="px-4 py-2.5">
+                      <div className="flex flex-col gap-1.5 py-0.5">
+                        <div className="flex items-center gap-2">
+                          <TeamBadge code={t.homeName} />
+                          <span className="text-xs font-semibold" style={{ color: 'var(--admin-text)' }}>{t.homeName}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <TeamBadge code={t.awayName} />
+                          <span className="text-xs font-semibold" style={{ color: 'var(--admin-text)' }}>{t.awayName}</span>
+                        </div>
+                      </div>
+                    </td>
+                    {!hideScore && (
+                      <td className="px-4 py-2.5 font-mono font-bold" style={{ color: 'var(--admin-text)' }}>
+                        {inn ? `${inn.runs}/${inn.wickets} (${inn.overs})` : '—'}
+                      </td>
+                    )}
+                    <td className="px-4 py-2.5" style={{ color: 'var(--admin-text-secondary)' }}>{m.tournament || '—'}</td>
+                    <td className="px-4 py-2.5 font-mono" style={{ color: 'var(--admin-text-muted)' }}>
+                      {m.scheduled ? new Date(m.scheduled).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}
+                    </td>
+                    <td className="px-4 py-2.5 text-right"><StatusBadge status={m.status} /></td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function n(value?: number) {
+  return (value ?? 0).toLocaleString();
+}
+
 function MetricCard({
   label,
   value,
-  sub,
   icon,
-  badge,
   accentColor,
   accentBg,
 }: {
   label: string;
   value: string | number;
-  sub: string;
   icon: React.ReactNode;
-  badge?: string;
   accentColor: string;
   accentBg: string;
 }) {
   return (
     <div
-      className="relative overflow-hidden rounded-lg p-3.5 transition-all duration-200"
+      className="flex items-center gap-2.5 rounded-md px-3 py-2"
       style={{
         border: '1px solid var(--admin-border)',
         background: 'var(--admin-card)',
       }}
     >
-      <div className="flex items-center justify-between">
-        <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>
-          {label}
-        </span>
-        <div
-          className="grid h-6 w-6 place-items-center rounded-md"
-          style={{ background: accentBg, color: accentColor }}
-        >
-          {icon}
-        </div>
+      <div
+        className="grid h-7 w-7 shrink-0 place-items-center rounded-md"
+        style={{ background: accentBg, color: accentColor }}
+      >
+        {icon}
       </div>
-
-      <div className="mt-2.5 flex items-baseline gap-2">
-        <p className="text-xl font-extrabold tabular-nums tracking-tight sm:text-2xl" style={{ color: 'var(--admin-text)' }}>
+      <div className="min-w-0">
+        <p className="truncate text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--admin-text-secondary)' }}>
+          {label}
+        </p>
+        <p className="text-lg font-bold tabular-nums leading-tight" style={{ color: 'var(--admin-text)' }}>
           {value}
         </p>
-        {badge && (
-          <span
-            className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase"
-            style={{ background: 'var(--admin-danger-bg)', color: 'var(--admin-danger)' }}
-          >
-            <BlinkingDot />
-            {badge}
-          </span>
-        )}
       </div>
-
-      <p className="mt-1 text-[11px] truncate" style={{ color: 'var(--admin-text-muted)' }}>
-        {sub}
-      </p>
     </div>
   );
 }

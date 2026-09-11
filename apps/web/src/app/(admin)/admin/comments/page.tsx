@@ -1,16 +1,16 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
-import { Check, EyeOff, MessageSquare, Trash2, X } from 'lucide-react';
+import { Check, EyeOff, ExternalLink, MessageSquare, Trash2, X } from 'lucide-react';
 import {
+  AdminAvatar,
   AdminPageHeader,
   ConfirmDialog,
   EmptyState,
   ErrorState,
   LoadingState,
-  StatCard,
 } from '../../../../components/admin/AdminShared';
 import {
   fetchReportedComments,
@@ -30,16 +30,17 @@ function targetHref(type?: string, id?: string): string | null {
 }
 
 function formatWhen(value?: string | null): string {
-  if (!value) return 'Unknown time';
+  if (!value) return '—';
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return 'Unknown time';
+  if (Number.isNaN(date.getTime())) return '—';
   return date.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 }
 
-function statusLabel(status?: string): string {
-  if (status === 'hidden') return 'Hidden';
-  if (status === 'deleted') return 'Deleted';
-  return 'Visible';
+function reasonTone(reason: string) {
+  const key = reason.split(':')[0].trim().toLowerCase();
+  if (key === 'spam') return { background: 'var(--admin-warning-bg)', color: 'var(--admin-warning)' };
+  if (key === 'hate' || key === 'harassment') return { background: 'var(--admin-danger-bg)', color: 'var(--admin-danger)' };
+  return { background: 'var(--admin-info-bg)', color: 'var(--admin-info)' };
 }
 
 export default function CommentsPage() {
@@ -61,15 +62,6 @@ export default function CommentsPage() {
   useEffect(() => {
     load();
   }, []);
-
-  const reasonCounts = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const report of reports) {
-      const key = report.reason.split(':')[0].trim() || 'other';
-      map.set(key, (map.get(key) || 0) + 1);
-    }
-    return map;
-  }, [reports]);
 
   const finish = async (
     report: ReportedComment,
@@ -94,117 +86,125 @@ export default function CommentsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <AdminPageHeader
         title="Comment moderation"
         subtitle="Review reports from the comment section. Keep, hide or delete the comment, or dismiss the report."
       />
-
-      {!loading && !error && (
-        <div className="grid gap-3 sm:grid-cols-2">
-          <StatCard label="Spam" value={reasonCounts.get('spam') || 0} icon={<MessageSquare size={14} />} />
-          <StatCard
-            label="Other reasons"
-            value={Math.max(0, reports.length - (reasonCounts.get('spam') || 0))}
-            icon={<EyeOff size={14} />}
-          />
-        </div>
-      )}
 
       {loading ? (
         <LoadingState />
       ) : error ? (
         <ErrorState message="Could not load reported comments." onRetry={load} />
       ) : reports.length === 0 ? (
-        <EmptyState title="No pending reports" message="Reported comments will appear here for review." />
+        <EmptyState icon={<MessageSquare size={28} />} title="No pending reports" message="Reported comments will appear here for review." />
       ) : (
-        <div className="space-y-3">
-          {reports.map((report) => {
-            const href = targetHref(report.comment?.targetType, report.comment?.targetId);
-            const busy = busyId === report.id;
-            return (
-              <article
-                key={report.id}
-                className="rounded-lg p-4"
-                style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}
-              >
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span
-                        className="inline-flex items-center rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
-                        style={{ background: 'var(--admin-warning-bg)', color: 'var(--admin-warning)' }}
-                      >
-                        {report.reason}
-                      </span>
-                      <span className="text-[11px] font-semibold" style={{ color: 'var(--admin-text-muted)' }}>
-                        Comment {statusLabel(report.comment?.status)}
-                      </span>
-                    </div>
-                    <p className="mt-3 text-sm leading-relaxed" style={{ color: 'var(--admin-text)' }}>
-                      {report.comment?.body || 'Comment missing'}
-                    </p>
-                    <p className="mt-2 text-xs" style={{ color: 'var(--admin-text-muted)' }}>
-                      {report.comment?.user?.username || 'Unknown'}
-                      {report.comment?.user?.email ? ` · ${report.comment.user.email}` : ''}
-                      {' · '}
-                      {report.comment?.targetType}/{report.comment?.targetId}
-                      {' · '}
-                      Reported {formatWhen(report.createdAt)}
-                    </p>
-                    {href && (
-                      <Link
-                        href={href}
-                        className="mt-2 inline-block text-xs font-semibold"
-                        style={{ color: 'var(--admin-accent)' }}
-                      >
-                        Open {report.comment?.targetType} →
-                      </Link>
-                    )}
-                  </div>
-                </div>
-
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => finish(report, 'approved', 'resolved', 'Comment kept visible.')}
-                    className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-bold text-white disabled:opacity-50"
-                    style={{ background: 'var(--admin-success)' }}
-                  >
-                    <Check size={12} /> Keep visible
-                  </button>
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => finish(report, 'hidden', 'resolved', 'Comment hidden.')}
-                    className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-bold disabled:opacity-50"
-                    style={{ border: '1px solid var(--admin-border)', color: 'var(--admin-text)' }}
-                  >
-                    <EyeOff size={12} /> Hide
-                  </button>
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => setDeleteTarget(report)}
-                    className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-bold text-white disabled:opacity-50"
-                    style={{ background: 'var(--admin-danger)' }}
-                  >
-                    <Trash2 size={12} /> Delete
-                  </button>
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => finish(report, null, 'dismissed', 'Report dismissed.')}
-                    className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
-                    style={{ color: 'var(--admin-text-secondary)' }}
-                  >
-                    <X size={12} /> Dismiss report
-                  </button>
-                </div>
-              </article>
-            );
-          })}
+        <div className="overflow-hidden rounded-lg" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[860px] text-left text-sm">
+              <thead>
+                <tr style={{ background: 'var(--admin-table-header)', borderBottom: '1px solid var(--admin-border)' }}>
+                  <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Reason</th>
+                  <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Comment</th>
+                  <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Author</th>
+                  <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Target</th>
+                  <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-right" style={{ color: 'var(--admin-text-secondary)' }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {reports.map((report) => {
+                  const href = targetHref(report.comment?.targetType, report.comment?.targetId);
+                  const author = report.comment?.user?.username || 'Unknown';
+                  const busy = busyId === report.id;
+                  return (
+                    <tr
+                      key={report.id}
+                      style={{ borderBottom: '1px solid var(--admin-border)' }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--admin-table-row-hover)'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                    >
+                      <td className="px-4 py-3 align-top">
+                        <span className="inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold uppercase" style={reasonTone(report.reason)}>
+                          {report.reason}
+                        </span>
+                        <p className="mt-1.5 text-xs" style={{ color: 'var(--admin-text-muted)' }}>{formatWhen(report.createdAt)}</p>
+                      </td>
+                      <td className="px-4 py-3 align-top">
+                        <p className="max-w-md text-sm leading-relaxed" style={{ color: 'var(--admin-text)' }}>
+                          {report.comment?.body || 'Comment missing'}
+                        </p>
+                      </td>
+                      <td className="px-4 py-3 align-top">
+                        <div className="flex items-center gap-2.5">
+                          <AdminAvatar name={author} size={28} />
+                          <div>
+                            <p className="font-semibold" style={{ color: 'var(--admin-text)' }}>{author}</p>
+                            <p className="text-xs" style={{ color: 'var(--admin-text-muted)' }}>{report.comment?.user?.email || '—'}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 align-top">
+                        <p className="text-xs font-semibold uppercase" style={{ color: 'var(--admin-text-secondary)' }}>
+                          {report.comment?.targetType || '—'}
+                        </p>
+                        {href ? (
+                          <Link href={href} className="mt-1 inline-flex items-center gap-1 text-xs font-bold" style={{ color: 'var(--admin-accent)' }}>
+                            Open <ExternalLink size={12} />
+                          </Link>
+                        ) : (
+                          <p className="mt-1 text-xs" style={{ color: 'var(--admin-text-muted)' }}>{report.comment?.targetId || '—'}</p>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 align-top">
+                        <div className="flex justify-end gap-2">
+                          <button
+                            type="button"
+                            disabled={busy}
+                            onClick={() => finish(report, 'approved', 'resolved', 'Comment kept visible.')}
+                            className="grid h-8 w-8 place-items-center rounded-md disabled:opacity-50"
+                            style={{ background: 'var(--admin-success-bg)', color: 'var(--admin-success)' }}
+                            title="Keep visible"
+                          >
+                            <Check size={15} />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={busy}
+                            onClick={() => finish(report, 'hidden', 'resolved', 'Comment hidden.')}
+                            className="grid h-8 w-8 place-items-center rounded-md disabled:opacity-50"
+                            style={{ background: 'var(--admin-warning-bg)', color: 'var(--admin-warning)' }}
+                            title="Hide"
+                          >
+                            <EyeOff size={15} />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={busy}
+                            onClick={() => setDeleteTarget(report)}
+                            className="grid h-8 w-8 place-items-center rounded-md disabled:opacity-50"
+                            style={{ background: 'var(--admin-danger-bg)', color: 'var(--admin-danger)' }}
+                            title="Delete"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={busy}
+                            onClick={() => finish(report, null, 'dismissed', 'Report dismissed.')}
+                            className="grid h-8 w-8 place-items-center rounded-md disabled:opacity-50"
+                            style={{ background: 'var(--admin-input-bg)', color: 'var(--admin-text-secondary)' }}
+                            title="Dismiss report"
+                          >
+                            <X size={15} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 

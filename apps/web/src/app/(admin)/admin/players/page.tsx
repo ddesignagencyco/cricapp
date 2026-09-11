@@ -5,8 +5,8 @@ import { UserCircle, Search } from 'lucide-react';
 import { fetchPlayersPage } from '../../../../services/players';
 import type { Player } from '../../../../types';
 import Pagination from '../../../../components/admin/AdminPagination';
-import { AdminPageHeader, LoadingState, EmptyState, AdminInput } from '../../../../components/admin/AdminShared';
-import { getInitials, cap } from '../../../../utils/helpers';
+import { AdminAvatar, AdminPageHeader, LoadingState, EmptyState, AdminInput } from '../../../../components/admin/AdminShared';
+import { cap } from '../../../../utils/helpers';
 
 export default function PlayersPage() {
   const [players, setPlayers] = useState<Player[]>([]);
@@ -64,22 +64,16 @@ export default function PlayersPage() {
               <tbody>
                 {filtered.map((p) => {
                   const displayName = p.fullName || p.name;
-                  let h = 0;
-                  for (let i = 0; i < displayName.length; i++) h = displayName.charCodeAt(i) + ((h << 5) - h);
-                  const hue = Math.abs(h % 360);
                   return (
                     <tr key={p.id} style={{ borderBottom: '1px solid var(--admin-border)' }}
                       onMouseEnter={(e) => e.currentTarget.style.background = 'var(--admin-table-row-hover)'}
                       onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
                       <td className="px-4 py-2.5">
                         <div className="flex items-center gap-2.5">
-                          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[10px] font-bold text-white"
-                            style={{ backgroundImage: `linear-gradient(135deg, hsl(${hue}, 75%, 50%), hsl(${(hue + 40) % 360}, 85%, 35%))` }}>
-                            {getInitials(p.fullName || p.name)}
-                          </span>
+                          <AdminAvatar name={displayName} src={typeof p.image === 'string' ? p.image : null} size={28} />
                           <div>
-                            <p className="font-extrabold text-sm leading-tight" style={{ color: 'var(--admin-text)' }}>{p.name}</p>
-                            {p.fullName && p.fullName !== p.name && <p className="text-xs font-medium" style={{ color: 'var(--admin-text-muted)' }}>{p.fullName}</p>}
+                            <p className="font-semibold" style={{ color: 'var(--admin-text)' }}>{p.name}</p>
+                            {p.fullName && p.fullName !== p.name && <p className="text-xs" style={{ color: 'var(--admin-text-muted)' }}>{p.fullName}</p>}
                           </div>
                         </div>
                       </td>

@@ -3,6 +3,8 @@
 import { type ReactNode, forwardRef, useEffect, useRef } from 'react';
 import { Loader2 } from 'lucide-react';
 import { StatusBadge as SharedStatusBadge } from '../Badge';
+import { getInitials } from '../../utils/helpers';
+import RemoteImage from '../RemoteImage';
 
 /* ─── Page Header ──────────────────────────────────────────── */
 
@@ -380,5 +382,76 @@ export function CardHeader({
       {children}
       {action}
     </div>
+  );
+}
+
+export function AdminAvatar({
+  name,
+  src,
+  size = 28,
+}: {
+  name: string;
+  src?: string | null;
+  size?: number;
+}) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  const hue = Math.abs(hash % 360);
+  const style = {
+    width: size,
+    height: size,
+    backgroundImage: `linear-gradient(135deg, hsl(${hue}, 75%, 50%), hsl(${(hue + 40) % 360}, 85%, 35%))`,
+  };
+
+  if (src) {
+    return (
+      <RemoteImage
+        src={src}
+        alt={name}
+        width={size}
+        height={size}
+        className="shrink-0 rounded-full object-cover"
+        style={{ width: size, height: size, border: '1px solid var(--admin-border)' }}
+      />
+    );
+  }
+
+  return (
+    <span
+      className="grid shrink-0 place-items-center rounded-full font-bold text-white"
+      style={{ ...style, fontSize: Math.max(9, Math.round(size * 0.36)) }}
+    >
+      {getInitials(name || '?')}
+    </span>
+  );
+}
+
+export function AdminToggle({
+  checked,
+  disabled,
+  onChange,
+  label,
+}: {
+  checked: boolean;
+  disabled?: boolean;
+  onChange: () => void;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      disabled={disabled}
+      onClick={onChange}
+      className="relative inline-flex h-5 w-9 shrink-0 rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+      style={{ background: checked ? 'var(--admin-success)' : 'var(--admin-border-strong, #64748b)' }}
+    >
+      <span
+        className="absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform"
+        style={{ transform: checked ? 'translateX(16px)' : 'translateX(0)' }}
+      />
+    </button>
   );
 }

@@ -126,11 +126,11 @@ export default function MatchesPage() {
                         <div className="flex flex-col gap-1.5 py-0.5">
                           <div className="flex items-center gap-2">
                             <TeamBadge code={homeLabel} />
-                            <span className="font-bold text-xs" style={{ color: 'var(--admin-text)' }}>{homeLabel}</span>
+                            <span className="text-xs font-semibold" style={{ color: 'var(--admin-text)' }}>{homeLabel}</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <TeamBadge code={awayLabel} />
-                            <span className="font-bold text-xs" style={{ color: 'var(--admin-text)' }}>{awayLabel}</span>
+                            <span className="text-xs font-semibold" style={{ color: 'var(--admin-text)' }}>{awayLabel}</span>
                           </div>
                         </div>
                       </td>

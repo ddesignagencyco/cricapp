@@ -5,7 +5,7 @@ import { Trophy, Search } from 'lucide-react';
 import { fetchTournamentsPage } from '../../../../services/tournaments';
 import type { TournamentApi } from '../../../../types';
 import Pagination from '../../../../components/admin/AdminPagination';
-import { AdminPageHeader, LoadingState, EmptyState, AdminInput } from '../../../../components/admin/AdminShared';
+import { AdminAvatar, AdminPageHeader, LoadingState, EmptyState, AdminInput } from '../../../../components/admin/AdminShared';
 import { cap } from '../../../../utils/helpers';
 
 export default function TournamentsPage() {
@@ -64,7 +64,16 @@ export default function TournamentsPage() {
                   <tr key={t.id} style={{ borderBottom: '1px solid var(--admin-border)' }}
                     onMouseEnter={(e) => e.currentTarget.style.background = 'var(--admin-table-row-hover)'}
                     onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
-                    <td className="px-4 py-2.5 font-bold" style={{ color: 'var(--admin-text)' }}>{t.name}</td>
+                    <td className="px-4 py-2.5">
+                      <div className="flex items-center gap-2.5">
+                        <AdminAvatar
+                          name={t.name}
+                          src={typeof t.logo === 'string' ? t.logo : typeof t.image === 'string' ? t.image : null}
+                          size={28}
+                        />
+                        <span className="font-semibold" style={{ color: 'var(--admin-text)' }}>{t.name}</span>
+                      </div>
+                    </td>
                     <td className="px-4 py-2.5" style={{ color: 'var(--admin-text-secondary)' }}>{cap(t.type) || 'Cricket'}</td>
                     <td className="px-4 py-2.5" style={{ color: 'var(--admin-text-secondary)' }}>{cap(t.gender)}</td>
                     <td className="px-4 py-2.5" style={{ color: 'var(--admin-text-secondary)' }}>{t.currentSeason?.name || String(t.currentSeason?.year || '') || '—'}</td>

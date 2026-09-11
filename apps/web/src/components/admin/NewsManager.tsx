@@ -9,7 +9,7 @@ import {
   Loader2,
   Search,
   Trash2,
-  ExternalLink,
+  Eye,
   CheckCircle2,
   Clock,
 } from 'lucide-react';
@@ -142,12 +142,20 @@ export default function NewsManager() {
             style={{ paddingLeft: '2.25rem' }}
           />
         </div>
-        <div className="flex items-center gap-2">
-          <AdminSelect value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)}>
+        <div className="flex shrink-0 items-center gap-2">
+          <AdminSelect
+            value={filterCategory}
+            onChange={(e) => setFilterCategory(e.target.value)}
+            style={{ width: 'auto', minWidth: '12.5rem' }}
+          >
             <option value="all">All Categories</option>
             {categories.map((c) => <option key={c.id} value={c.slug}>{c.name}</option>)}
           </AdminSelect>
-          <AdminSelect value={filterStatus} onChange={(e) => setFilterStatus(e.target.value as any)}>
+          <AdminSelect
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value as any)}
+            style={{ width: 'auto', minWidth: '9.5rem' }}
+          >
             <option value="all">All Status</option>
             <option value="published">Published</option>
             <option value="draft">Draft</option>
@@ -198,7 +206,7 @@ export default function NewsManager() {
                           </div>
                         )}
                         <div className="min-w-0">
-                          <Link href={`/admin/news/${a.id}/edit`} className="block truncate text-xs font-bold" style={{ color: 'var(--admin-text)' }}>{a.title}</Link>
+                          <Link href={`/admin/news/${a.id}/edit`} className="block truncate text-xs font-semibold" style={{ color: 'var(--admin-text)' }}>{a.title}</Link>
                           <p className="mt-0.5 truncate text-xs" style={{ color: 'var(--admin-text-muted)' }}>
                             by {a.author || 'Editorial Desk'}
                           </p>
@@ -229,15 +237,33 @@ export default function NewsManager() {
                       {new Date(a.publishedAt || a.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex items-center justify-end gap-1">
-                        <Link href={`/news/${a.slug || a.id}`} target="_blank" className="grid h-6 w-6 place-items-center rounded transition-colors" style={{ color: 'var(--admin-text-muted)' }} title="View">
-                          <ExternalLink size={12} />
+                      <div className="flex items-center justify-end gap-2">
+                        <Link
+                          href={`/news/${a.slug || a.id}`}
+                          target="_blank"
+                          className="grid h-8 w-8 place-items-center rounded-md"
+                          style={{ background: 'var(--admin-info-bg)', color: 'var(--admin-info)' }}
+                          title="View"
+                        >
+                          <Eye size={16} />
                         </Link>
-                        <Link href={`/admin/news/${a.id}/edit`} className="grid h-6 w-6 place-items-center rounded transition-colors" style={{ color: 'var(--admin-text-muted)' }} title="Edit">
-                          <FileEdit size={12} />
+                        <Link
+                          href={`/admin/news/${a.id}/edit`}
+                          className="grid h-8 w-8 place-items-center rounded-md"
+                          style={{ background: 'rgba(0, 191, 255, 0.14)', color: 'var(--admin-accent)' }}
+                          title="Edit"
+                        >
+                          <FileEdit size={16} />
                         </Link>
-                        <button type="button" disabled={busyId === a.id} onClick={() => setDeleteTarget(a)} className="grid h-6 w-6 place-items-center rounded transition-colors disabled:opacity-50" style={{ color: 'var(--admin-text-muted)' }} title="Delete">
-                          {busyId === a.id ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
+                        <button
+                          type="button"
+                          disabled={busyId === a.id}
+                          onClick={() => setDeleteTarget(a)}
+                          className="grid h-8 w-8 place-items-center rounded-md disabled:opacity-50"
+                          style={{ background: 'var(--admin-danger-bg)', color: 'var(--admin-danger)' }}
+                          title="Delete"
+                        >
+                          {busyId === a.id ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
                         </button>
                       </div>
                     </td>
