@@ -303,7 +303,7 @@ function TabButton({
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+      className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition-all ${
         active
           ? 'btn-brand shadow-sm'
           : 'bg-secondary text-stext hover:bg-elevated hover:text-mtext'
@@ -312,8 +312,8 @@ function TabButton({
       {icon}
       <span>{label}</span>
       <span
-        className={`rounded-full px-1.5 py-0.2 text-[10px] font-black ${
-          active ? 'bg-white/20 text-white' : 'bg-card text-stext'
+        className={`rounded-full px-1.5 py-0.5 text-[11px] font-black ${
+          active ? 'bg-black/25 text-white' : 'bg-card text-stext'
         }`}
       >
         {count}

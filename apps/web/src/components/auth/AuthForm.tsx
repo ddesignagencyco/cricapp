@@ -15,9 +15,24 @@ import {
   resetPassword,
   verifyEmail,
 } from '../../services/auth';
-import type { AuthUser } from '../../types/auth';
+import type { AuthUser, MessageResponse } from '../../types/auth';
 import FormMessage from './FormMessage';
 import PasswordField from './PasswordField';
+
+const verifyEmailRequests = new Map<string, Promise<MessageResponse>>();
+
+function alreadyVerified(text: string): boolean {
+  return /already verified/i.test(text);
+}
+
+function verifyEmailOnce(token: string, tokenId: string): Promise<MessageResponse> {
+  const key = `${tokenId}:${token}`;
+  const pending = verifyEmailRequests.get(key);
+  if (pending) return pending;
+  const request = verifyEmail({ token, tokenId });
+  verifyEmailRequests.set(key, request);
+  return request;
+}
 
 type Mode = 'login' | 'register' | 'forgot' | 'reset' | 'verify';
 
@@ -139,18 +154,32 @@ export default function AuthForm({ mode, token = '', tokenId = '', initialEmail 
       setMessage('This verification link is missing or incomplete.');
       return;
     }
-    verifyEmail({ token, tokenId })
+    let cancelled = false;
+    verifyEmailOnce(token, tokenId)
       .then((response) => {
+        if (cancelled) return;
         setSuccess(response.message);
         setVerified(true);
-        toast.success('Email verified successfully.');
+        toast.success(response.message, { id: 'verify-email' });
       })
       .catch((error: unknown) => {
+        if (cancelled) return;
         const text = errorMessage(error);
+        if (alreadyVerified(text)) {
+          setSuccess(text);
+          setVerified(true);
+          toast.success(text, { id: 'verify-email' });
+          return;
+        }
         setMessage(text);
-        toast.error(text);
+        toast.error(text, { id: 'verify-email' });
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [mode, token, tokenId]);
 
   const validate = (): FieldErrors => {
@@ -225,7 +254,13 @@ export default function AuthForm({ mode, token = '', tokenId = '', initialEmail 
         {!loading && success && <FormMessage message={success} tone="success" />}
         {!loading && message && <FormMessage message={message} />}
         {!loading && !verified && (
-          <ResendForm />
+          <ResendForm
+            onAlreadyVerified={(text) => {
+              setVerified(true);
+              setSuccess(text);
+              setMessage('');
+            }}
+          />
         )}
         {!loading && <Link href="/login" className="inline-block text-sm font-semibold text-accent hover:text-accent2">Continue to login</Link>}
       </div>
@@ -318,7 +353,7 @@ export default function AuthForm({ mode, token = '', tokenId = '', initialEmail 
   );
 }
 
-function ResendForm() {
+function ResendForm({ onAlreadyVerified }: { onAlreadyVerified?: (_message: string) => void }) {
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
@@ -329,11 +364,16 @@ function ResendForm() {
     try {
       const response = await resendVerification({ email: email.trim() });
       setMessage(response.message);
-      toast.success('Verification email request sent.');
+      if (alreadyVerified(response.message)) {
+        toast.success(response.message, { id: 'verify-email' });
+        onAlreadyVerified?.(response.message);
+        return;
+      }
+      toast.success('Verification email request sent.', { id: 'verify-email-resent' });
     } catch (error: unknown) {
       const text = errorMessage(error);
       setMessage(text);
-      toast.error(text);
+      toast.error(text, { id: 'verify-email-resent' });
     } finally {
       setLoading(false);
     }

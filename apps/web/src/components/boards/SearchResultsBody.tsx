@@ -236,7 +236,11 @@ function FilterChip({
       }`}
     >
       {label}
-      <span className={`rounded px-1.5 py-0.5 text-[10px] ${active ? 'bg-white/20 text-white' : 'bg-elevated text-stext'}`}>
+      <span
+        className={`rounded px-1.5 py-0.5 text-[11px] font-bold ${
+          active ? 'bg-black/25 text-white' : 'bg-elevated text-stext'
+        }`}
+      >
         {count}
       </span>
     </button>

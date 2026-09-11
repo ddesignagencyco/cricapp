@@ -32,6 +32,7 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [body, setBody] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -43,6 +44,7 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
 
   const load = useCallback((nextPage = 1, append = false) => {
     if (!append) setLoading(true);
+    setLoadError('');
     listComments(targetType, targetId, nextPage, 20)
       .then((r) => {
         setComments((prev) => (append ? [...prev, ...r.items] : r.items));
@@ -51,9 +53,11 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
         setPage(nextPage);
       })
       .catch(() => {
-        // Silently handle load errors (e.g. backend offline or empty); don't spam toasts to user
-        setComments([]);
-        setTotal(0);
+        if (!append) {
+          setComments([]);
+          setTotal(0);
+          setLoadError('Could not load comments.');
+        }
       })
       .finally(() => setLoading(false));
     getReactionCounts(targetType as ReactionTarget, targetId)
@@ -197,6 +201,8 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
 
       {loading ? (
         <div className="flex justify-center py-6"><Loader2 size={20} className="animate-spin text-accent" /></div>
+      ) : loadError ? (
+        <p className="py-6 text-center text-sm text-danger">{loadError}</p>
       ) : comments.length === 0 ? (
         <p className="py-6 text-center text-sm text-stext">No comments yet. Be the first to share your take.</p>
       ) : (

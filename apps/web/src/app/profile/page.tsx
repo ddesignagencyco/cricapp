@@ -105,8 +105,13 @@ export default function ProfilePage() {
   const resend = async () => {
     setResending(true);
     try {
-      await resendVerification({ email: user.email });
-      toast.success('Verification email sent.');
+      const response = await resendVerification({ email: user.email });
+      if (/already verified/i.test(response.message)) {
+        toast.success(response.message, { id: 'verify-email' });
+        await refresh();
+      } else {
+        toast.success('Verification email sent.', { id: 'verify-email-resent' });
+      }
     } catch {
       toast.error('Could not resend verification email.');
     } finally {
