@@ -84,6 +84,7 @@ export default function NotificationSettingsPage() {
   const [devices, setDevices] = useState<NotificationDevice[]>([]);
   const [busy, setBusy] = useState(false);
   const [query, setQuery] = useState('');
+  const [now] = useState(() => Date.now());
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -127,14 +128,14 @@ export default function NotificationSettingsPage() {
   }, [filtered]);
 
   const todayCount = useMemo(() => {
-    const today = startOfDay(new Date());
+    const today = startOfDay(new Date(now));
     return history.filter((item) => startOfDay(new Date(item.createdAt)) === today).length;
-  }, [history]);
+  }, [history, now]);
 
   const weekCount = useMemo(() => {
-    const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    const weekAgo = now - 7 * 24 * 60 * 60 * 1000;
     return history.filter((item) => new Date(item.createdAt).getTime() >= weekAgo).length;
-  }, [history]);
+  }, [history, now]);
 
   if (loading) {
     return (

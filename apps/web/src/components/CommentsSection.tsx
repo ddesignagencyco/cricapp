@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Flag, Flame, Loader2, MessageSquare, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
@@ -15,8 +16,10 @@ import {
   type CommentTarget,
   type ReactionTarget,
 } from '../services/comments';
+import { ApiError } from '../services/api/client';
 import { useAuth } from './AuthProvider';
 import { ConfirmDialog } from './admin/AdminShared';
+import ReportCommentDialog from './ReportCommentDialog';
 
 interface CommentsSectionProps {
   targetType: CommentTarget;
@@ -27,6 +30,7 @@ const REACTIONS = ['🔥', '❤️', '👏', '😂'];
 
 export default function CommentsSection({ targetType, targetId }: CommentsSectionProps) {
   const { user, isAuthenticated } = useAuth();
+  const pathname = usePathname();
   const [comments, setComments] = useState<CommentItem[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -38,7 +42,7 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
   const [busyId, setBusyId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<CommentItem | null>(null);
   const [reportTarget, setReportTarget] = useState<CommentItem | null>(null);
-  const reportReason = 'spam';
+  const [reportedIds, setReportedIds] = useState<string[]>([]);
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [commentCounts, setCommentCounts] = useState<Record<string, Record<string, number>>>({});
 
@@ -130,15 +134,17 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
     }
   };
 
-  const submitReport = async () => {
+  const submitReport = async (reason: string) => {
     if (!reportTarget) return;
     setBusyId(reportTarget.id);
     try {
-      await reportComment(reportTarget.id, reportReason.trim() || 'spam');
+      await reportComment(reportTarget.id, reason);
+      setReportedIds((ids) => (ids.includes(reportTarget.id) ? ids : [...ids, reportTarget.id]));
       toast.success('Comment reported.');
       setReportTarget(null);
-    } catch {
-      toast.error('Could not report this comment.');
+    } catch (error) {
+      const text = error instanceof ApiError ? error.message : 'Could not report this comment.';
+      toast.error(text);
     } finally {
       setBusyId(null);
     }
@@ -192,7 +198,7 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
         </form>
       ) : (
         <p className="mb-5 rounded bg-elevated px-4 py-3 text-center text-sm text-stext ring-1 ring-lborder">
-          <Link href={`/login?returnTo=${typeof window !== 'undefined' ? window.location.pathname : '/'}`} className="font-semibold text-accent hover:text-accent2">
+          <Link href={`/login?returnTo=${encodeURIComponent(pathname || '/')}`} className="font-semibold text-accent hover:text-accent2">
             Sign in
           </Link>{' '}
           to join the conversation.
@@ -267,10 +273,14 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
                 {isAuthenticated && user?.id !== comment.userId && (
                   <button
                     type="button"
-                    onClick={() => setReportTarget(comment)}
-                    className="ml-auto inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] text-stext hover:text-danger"
+                    onClick={() => {
+                      if (reportedIds.includes(comment.id)) return;
+                      setReportTarget(comment);
+                    }}
+                    disabled={reportedIds.includes(comment.id) || busyId === comment.id}
+                    className="ml-auto inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] text-stext hover:text-danger disabled:cursor-default disabled:opacity-70 disabled:hover:text-stext"
                   >
-                    <Flag size={11} /> Report
+                    <Flag size={11} /> {reportedIds.includes(comment.id) ? 'Reported' : 'Report'}
                   </button>
                 )}
               </div>
@@ -302,14 +312,14 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
         loading={!!busyId}
         danger
       />
-      <ConfirmDialog
+      <ReportCommentDialog
         open={!!reportTarget}
-        title="Report comment"
-        message="This comment will be sent to moderators. Choose a reason and continue."
-        confirmLabel="Report"
-        onConfirm={submitReport}
-        onCancel={() => setReportTarget(null)}
-        loading={!!busyId}
+        commentBody={reportTarget?.body}
+        loading={!!busyId && !!reportTarget}
+        onCancel={() => {
+          if (!busyId) setReportTarget(null);
+        }}
+        onSubmit={submitReport}
       />
     </section>
   );
