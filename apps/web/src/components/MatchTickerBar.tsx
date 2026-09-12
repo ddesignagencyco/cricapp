@@ -1,0 +1,287 @@
+'use client';
+
+import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import Badge, { normalizeStatus } from './Badge';
+import LiveIndicator from './LiveIndicator';
+import { getInitials } from '../utils/helpers';
+import { mergeLiveUpdate, useMatchStream } from '../hooks/useMatchStream';
+
+interface MatchTickerBarProps {
+  matches: any[];
+}
+
+export default function MatchTickerBar({ matches: initialMatches }: MatchTickerBarProps) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [matches, setMatches] = useState(initialMatches || []);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+  const hasLive = (initialMatches || []).some((match) => match?.status === 'live');
+  const liveUpdate = useMatchStream(undefined, hasLive);
+  const overflows = canScrollLeft || canScrollRight;
+
+  const updateScrollState = () => {
+    const el = scrollRef.current;
+    if (!el) {
+      setCanScrollLeft(false);
+      setCanScrollRight(false);
+      return;
+    }
+    const { scrollLeft, scrollWidth, clientWidth } = el;
+    setCanScrollLeft(scrollLeft > 1);
+    setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 1);
+  };
+
+  useEffect(() => {
+    setMatches(initialMatches || []);
+  }, [initialMatches]);
+
+  useEffect(() => {
+    if (!liveUpdate) return;
+    setMatches((prev) => mergeLiveUpdate(prev, liveUpdate));
+  }, [liveUpdate]);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    updateScrollState();
+    el.addEventListener('scroll', updateScrollState, { passive: true });
+    const ro = new ResizeObserver(updateScrollState);
+    ro.observe(el);
+
+    return () => {
+      el.removeEventListener('scroll', updateScrollState);
+      ro.disconnect();
+    };
+  }, [matches]);
+
+  const scroll = (dir: 'left' | 'right') => {
+    if (!scrollRef.current) return;
+    const amount = 340;
+    scrollRef.current.scrollBy({ left: dir === 'left' ? -amount : amount, behavior: 'smooth' });
+  };
+
+  return (
+    <div className="border-b border-lborder">
+      <div className="mx-auto max-w-full px-4 sm:px-6">
+        <div className="relative py-3">
+          {canScrollLeft ? (
+            <button
+              type="button"
+              onClick={() => scroll('left')}
+              className="absolute left-0 top-1/2 z-10 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full bg-elevated text-stext ring-1 ring-lborder transition-colors hover:text-mtext"
+              aria-label="Scroll left"
+            >
+              <ChevronLeft size={15} />
+            </button>
+          ) : null}
+
+          <div
+            ref={scrollRef}
+            className={`no-scrollbar flex gap-3 overflow-x-auto scroll-smooth py-2 ${
+              overflows ? 'px-11' : 'justify-center px-2'
+            }`}
+          >
+            {matches.length ? (
+              matches.map((m) => (
+                <TickerCard key={m.matchId || m.id} match={m} />
+              ))
+            ) : (
+              <p className="py-8 text-center text-sm text-stext">No matches right now.</p>
+            )}
+          </div>
+
+          {canScrollRight ? (
+            <button
+              type="button"
+              onClick={() => scroll('right')}
+              className="absolute right-0 top-1/2 z-10 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full bg-elevated text-stext ring-1 ring-lborder transition-colors hover:text-mtext"
+              aria-label="Scroll right"
+            >
+              <ChevronRight size={15} />
+            </button>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface Side {
+  name: string;
+  short: string;
+  score: string;
+}
+
+function pickTeams(match: any): { home: Side; away: Side; battingCode?: string } {
+  const teams = match.teams as any;
+  const obj = teams && typeof teams === 'object' && !Array.isArray(teams) ? teams : null;
+
+  let homeCode = obj ? obj.home?.code : teams?.[0];
+  let awayCode = obj ? obj.away?.code : teams?.[1];
+  let homeName = obj ? obj.home?.name : match.teamNames?.[0];
+  let awayName = obj ? obj.away?.name : match.teamNames?.[1];
+  let homeScore = obj ? obj.home?.score || '' : '';
+  let awayScore = obj ? obj.away?.score || '' : '';
+
+  if (Array.isArray(teams) && !homeName) {
+    homeName = teams[0];
+    awayName = teams[1];
+  }
+
+  if (!homeName && !homeCode && obj && obj.home?.teamId) homeCode = obj.home.teamId;
+  if (!awayName && !awayCode && obj && obj.away?.teamId) awayCode = obj.away.teamId;
+
+  homeName = (homeName || homeCode || 'TBD').replace(/^sr:competitor:/, '');
+  awayName = (awayName || awayCode || 'TBD').replace(/^sr:competitor:/, '');
+  homeCode = (homeCode || homeName).replace(/^sr:competitor:/, '');
+  awayCode = (awayCode || awayName).replace(/^sr:competitor:/, '');
+
+  const battingCode = match.currentInnings?.battingTeam || null;
+
+  if (!homeScore && !awayScore) {
+    const innings = match.currentInnings;
+    const sc = match.displayScore || (innings ? `${innings.runs}/${innings.wickets}` : '');
+    if (sc && battingCode) {
+      if (battingCode === homeCode) homeScore = sc;
+      else if (battingCode === awayCode) awayScore = sc;
+      else homeScore = sc;
+    }
+  }
+
+  return { home: { name: homeName, short: homeCode, score: homeScore }, away: { name: awayName, short: awayCode, score: awayScore }, battingCode };
+}
+
+function TickerCard({ match }: { match: any }) {
+  const { home, away, battingCode } = pickTeams(match);
+
+  const status = match.status;
+  const isLive = status === 'live';
+  const isCompleted = status === 'completed';
+  const isUpcoming = status === 'upcoming';
+
+  const tournament = match.tournamentName || match.tournament || 'Cricket';
+  const result = match.result || '';
+  const venue = match.venue || '';
+
+  const normalizedStatus = normalizeStatus(status);
+  const badgeLabel = isCompleted ? 'RESULT' : normalizedStatus.label.toUpperCase();
+  const badgeTone = normalizedStatus.tone;
+
+  const innings = match.currentInnings;
+  const overs = innings && innings.overs !== null ? innings.overs : '';
+
+  let homeScore = '';
+  let awayScore = '';
+
+  if (isLive) {
+    const liveScore = match.displayScore || (innings ? `${innings.runs}/${innings.wickets}` : '');
+    if (battingCode === home.short) homeScore = liveScore;
+    else if (battingCode === away.short) awayScore = liveScore;
+    else homeScore = liveScore;
+  } else if (isCompleted) {
+    homeScore = match.displayScore || home.score || '';
+    awayScore = away.score || '';
+  }
+
+  return (
+    <Link
+      href={`/matches/${match.matchId || match.id}`}
+      prefetch={false}
+      className="group flex w-[260px] shrink-0 flex-col overflow-hidden rounded-xl bg-card p-3 ring-1 ring-lborder transition-all hover:bg-elevated hover:ring-accent/30"
+    >
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <span className="min-w-0 truncate text-xs font-bold uppercase tracking-wider text-stext">
+          {tournament}
+        </span>
+        {isLive ? (
+          <LiveIndicator label="Live" className="shrink-0" />
+        ) : (
+          <Badge tone={badgeTone} className="shrink-0">
+            {badgeLabel}
+          </Badge>
+        )}
+      </div>
+
+      <div className="flex-1 space-y-1.5">
+        <TeamRow name={home.name} label={home.short} score={homeScore} showDash={!isUpcoming} />
+        <TeamRow name={away.name} label={away.short} score={awayScore} showDash={!isUpcoming} />
+      </div>
+
+      {(isLive || isCompleted) && (
+        <div className="mt-2 flex h-4 items-center justify-center gap-1.5 overflow-hidden text-xs text-stext">
+          {isLive && overs !== '' ? (
+            <span className="shrink-0 font-semibold text-danger">
+              {Number(overs)} ov
+              {match.currentInnings?.runRate ? ` • RR ${Number(match.currentInnings.runRate).toFixed(2)}` : ''}
+            </span>
+          ) : null}
+          {result && <span className="min-w-0 truncate font-semibold text-gold">{result}</span>}
+        </div>
+      )}
+
+      <div className="mt-2 flex items-center gap-1.5 border-t border-lborder/60 pt-1.5 text-xs text-stext">
+        {venue ? (
+          <span className="min-w-0 truncate" title={venue}>{venue.split(',')[0]}</span>
+        ) : (
+          <span suppressHydrationWarning className="truncate font-semibold text-stext">{scheduleTime(match)}</span>
+        )}
+        <span className="ml-auto shrink-0 font-semibold text-accent2">{formatShortDate(match)}</span>
+      </div>
+    </Link>
+  );
+}
+
+function TeamRow({ name, label: _label, score, showDash }: { name: string; label: string; score: string; showDash?: boolean }) {
+  return (
+    <div className="flex items-center gap-2">
+      <TeamMini label={name} />
+      <p className="min-w-0 flex-1 truncate text-xs font-semibold text-mtext" title={name}>
+        {name}
+      </p>
+      {score ? (
+        <span className="shrink-0 font-mono text-sm font-bold text-accent2">{score}</span>
+      ) : showDash ? (
+        <span className="shrink-0 font-mono text-sm font-bold text-stext/60">&mdash;</span>
+      ) : null}
+    </div>
+  );
+}
+
+function formatShortDate(match: any): string {
+  const raw = match.date || match.scheduled || '';
+  if (!raw) return '';
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return raw;
+  return d.toLocaleDateString('en-US', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  });
+}
+
+function scheduleTime(match: any): string {
+  const raw = match.scheduled || match.date || '';
+  if (!raw) return '';
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+}
+
+function TeamMini({ label }: { label: string }) {
+  let hash = 0;
+  const key = label || '?';
+  for (let i = 0; i < key.length; i++) hash = key.charCodeAt(i) + ((hash << 5) - hash);
+  const hue = Math.abs(hash % 360);
+
+  return (
+    <span
+      className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-white/10 text-xs font-black text-white"
+      style={{ backgroundImage: `linear-gradient(135deg, hsl(${hue}, 70%, 50%), hsl(${(hue + 40) % 360}, 80%, 35%))` }}
+    >
+      {getInitials(label)}
+    </span>
+  );
+}

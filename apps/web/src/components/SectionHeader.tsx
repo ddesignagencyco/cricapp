@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Calendar, CalendarDays, Newspaper, Trophy, Users, Video, Zap } from 'lucide-react';
+import { Calendar, CalendarDays, Newspaper, Trophy, Users, Video, Zap, TrendingUp, MapPin } from 'lucide-react';
 
 const iconMap: Record<string, React.ComponentType<{ size?: number; strokeWidth?: number }>> = {
   calendar: Calendar,
@@ -11,6 +11,8 @@ const iconMap: Record<string, React.ComponentType<{ size?: number; strokeWidth?:
   users: Users,
   video: Video,
   zap: Zap,
+  trendingup: TrendingUp,
+  mappin: MapPin,
 };
 
 interface SectionHeaderProps {
@@ -25,32 +27,34 @@ interface SectionHeaderProps {
 export default function SectionHeader({
   title, subtitle, icon, to, actionLabel, onAction,
 }: SectionHeaderProps) {
-  const Icon = typeof icon === 'string' ? iconMap[icon] : null;
+  const Icon = icon ? iconMap[icon.toLowerCase()] : null;
   return (
     <div className="mb-6 flex items-end justify-between gap-4">
-      <div>
+      <div className="flex items-center gap-3">
         {Icon && (
-          <div className="mb-2 flex items-center gap-2 text-accent">
-            <Icon size={18} strokeWidth={2.2} />
-            {subtitle && (
-              <span className="text-xs font-semibold uppercase tracking-widest text-stext">{subtitle}</span>
-            )}
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
+            <Icon size={18} strokeWidth={2.5} />
           </div>
         )}
-        <h2 className="text-xl font-bold tracking-tight text-mtext sm:text-2xl">{title}</h2>
+        <div>
+          <h2 className="text-lg font-bold tracking-tight text-mtext sm:text-xl">{title}</h2>
+          {subtitle && <p className="mt-0.5 text-xs text-stext sm:text-sm">{subtitle}</p>}
+        </div>
       </div>
       {to && (
-        <Link href={to} className="shrink-0 whitespace-nowrap text-sm font-semibold text-accent transition-colors hover:text-accent2">
+        <Link href={to} className="group flex shrink-0 items-center gap-1.5 whitespace-nowrap text-xs font-semibold text-accent transition-all duration-300 hover:text-accent2 sm:text-sm">
           {actionLabel || 'View all'}
+          <span className="transition-transform group-hover:translate-x-1">&rarr;</span>
         </Link>
       )}
       {onAction && (
         <button
           type="button"
           onClick={onAction}
-          className="shrink-0 whitespace-nowrap text-sm font-semibold text-accent transition-colors hover:text-accent2"
+          className="group flex shrink-0 items-center gap-1.5 whitespace-nowrap text-xs font-semibold text-accent transition-all duration-300 hover:text-accent2 sm:text-sm"
         >
           {actionLabel || 'View all'}
+          <span className="transition-transform group-hover:translate-x-1">&rarr;</span>
         </button>
       )}
     </div>

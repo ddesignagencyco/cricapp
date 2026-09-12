@@ -1,12 +1,13 @@
 import './globals.css';
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
 import ScrollToTop from '../components/ScrollToTop';
-import ScrollTopButton from '../components/ScrollTopButton';
 import JsonLd from './json-ld';
 import ThemeProvider from '../components/ThemeProvider';
+import AuthProvider from '../components/AuthProvider';
+import ClientLayout from '../components/ClientLayout';
+import { Toaster } from 'react-hot-toast';
 
 export const metadata = {
+  metadataBase: new URL('https://pakcriczone.com'),
   title: {
     default: 'PAK CRICZONE — Cricket Live Scores & PSL Hub',
     template: '%s | PAK CRICZONE',
@@ -63,10 +64,33 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}
         />
         <ThemeProvider>
-          <Navbar />
-          <main className="min-h-screen flex-1">{children}</main>
-          <Footer />
-          <ScrollTopButton />
+          <AuthProvider>
+            <ClientLayout>{children}</ClientLayout>
+            <Toaster
+              position="top-right"
+              gutter={10}
+              containerStyle={{ top: 16, right: 16, zIndex: 80 }}
+              toastOptions={{
+                duration: 3200,
+                className: 'pcz-toast',
+                style: {
+                  background: 'transparent',
+                  color: 'inherit',
+                  border: 'none',
+                  boxShadow: 'none',
+                  padding: 0,
+                },
+                success: {
+                  className: 'pcz-toast pcz-toast--success',
+                  iconTheme: { primary: 'var(--color-accent)', secondary: 'var(--color-surface-elevated)' },
+                },
+                error: {
+                  className: 'pcz-toast pcz-toast--error',
+                  iconTheme: { primary: 'var(--color-danger)', secondary: 'var(--color-surface-elevated)' },
+                },
+              }}
+            />
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

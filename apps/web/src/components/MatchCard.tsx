@@ -2,9 +2,9 @@
 
 import Link from 'next/link';
 import { Calendar, Clock, MapPin } from 'lucide-react';
-import Badge from './Badge';
-import LiveIndicator from './LiveIndicator';
-import { formatScheduled } from '../utils/helpers';
+import { StatusBadge, BlinkingDot } from './Badge';
+import RemoteImage from './RemoteImage';
+import { formatScheduled, getInitials, getPslLogo } from '../utils/helpers';
 
 interface MatchCardProps {
   match: any;
@@ -12,125 +12,184 @@ interface MatchCardProps {
   showVenue?: boolean;
 }
 
-const statusTone: Record<string, string> = {
-  live: 'live',
-  upcoming: 'upcoming',
-  completed: 'completed',
-};
+function pickSide(match: any, index: 0 | 1) {
+  const teams = match.teams;
+  const isObj = teams && typeof teams === 'object' && !Array.isArray(teams);
+  const side = isObj ? (index === 0 ? teams.home : teams.away) : null;
+  const rawCode =
+    side?.code ||
+    side?.abbr ||
+    side?.shortName ||
+    (Array.isArray(teams) ? teams[index] : '') ||
+    '';
+  const rawName =
+    side?.name ||
+    match.teamNames?.[index] ||
+    '';
+  const name = String(rawName || '').replace(/^sr:competitor:/, '') || 'TBD';
+  const codeStr = String(rawCode || '').replace(/^sr:competitor:/, '');
+  const badCode = !codeStr || /^sr:/.test(codeStr) || codeStr.length > 5;
+  const code = badCode ? getInitials(name) : codeStr.toUpperCase();
+  const score = side?.score || '';
+  const overs = side?.overs || '';
+  return { name, code, score, overs };
+}
+
+function liveScore(match: any, battingCode: string, sideCode: string) {
+  const inn = match.currentInnings;
+  if (!inn || !battingCode || battingCode !== sideCode) return { score: '', overs: '' };
+  const runs = inn.runs ?? 0;
+  const wickets = inn.wickets ?? 0;
+  return {
+    score: `${runs}/${wickets}`,
+    overs: inn.overs ? String(inn.overs) : '',
+  };
+}
 
 export default function MatchCard({ match, compact = false, showVenue = true }: MatchCardProps) {
-  const codes = match.teams || [];
-  const names = match.teamNames || [];
-  const homeCode = codes[0] || '';
-  const awayCode = codes[1] || '';
-  const homeName = names[0] || homeCode;
-  const awayName = names[1] || awayCode;
-
+  const home = pickSide(match, 0);
+  const away = pickSide(match, 1);
   const isLive = match.status === 'live';
   const isUpcoming = match.status === 'upcoming';
   const inn = match.currentInnings;
   const battingCode = inn?.battingTeam;
-  const battingIsHome = battingCode === homeCode;
-
-  const homeScore = isUpcoming || (isLive && battingCode && battingIsHome) ? (inn && battingIsHome ? match.displayScore : '') : '';
-  const awayScore = isUpcoming || (isLive && battingCode && !battingIsHome) ? (inn && !battingIsHome ? match.displayScore : '') : '';
-  const homeOvers = homeScore ? inn?.overs : '';
-  const awayOvers = awayScore ? inn?.overs : '';
-
   const { date, time } = formatScheduled(match.scheduled);
+  const tournament = match.tournamentName || match.tournament || 'Cricket';
+  const venue = match.venue || '';
+  const result = match.result || '';
+
+  const homeLive = isLive ? liveScore(match, battingCode, home.code) : null;
+  const awayLive = isLive ? liveScore(match, battingCode, away.code) : null;
+  const homeScore = home.score || homeLive?.score || '';
+  const awayScore = away.score || awayLive?.score || '';
+  const homeOvers = home.overs || homeLive?.overs || '';
+  const awayOvers = away.overs || awayLive?.overs || '';
+  const sharedScore = !homeScore && !awayScore && !isUpcoming ? match.displayScore || '' : '';
 
   return (
     <Link
-      href={`/matches/${match.matchId}`}
-      className="group flex h-full flex-col rounded-sm bg-card p-4 ring-1 ring-lborder transition-all duration-300 hover:-translate-y-0.5 hover:bg-elevated hover:ring-accent/30"
+      href={`/matches/${match.matchId || match.id}`}
+      prefetch={false}
+      className="group flex flex-col rounded-md border border-lborder bg-card p-3.5 transition-colors hover:border-accent/50 hover:bg-elevated"
     >
-      <div className="mb-3 flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <span className="block truncate text-[11px] font-semibold uppercase tracking-wider text-stext">
-            {match.tournament || 'Cricket'}
-          </span>
-          {showVenue && !isUpcoming && !compact && (
-            <span className="mt-0.5 flex h-[15px] items-center gap-1 truncate text-[10px] text-stext/80">
-              {match.venue ? (
-                <>
-                  <MapPin size={11} className="shrink-0" />
-                  <span className="truncate">{match.venue}</span>
-                </>
-              ) : (
-                <span>{'\u00A0'}</span>
-              )}
-            </span>
-          )}
-        </div>
-        {isLive ? (
-          <LiveIndicator />
-        ) : (
-          <Badge tone={statusTone[match.status]}>{isUpcoming ? 'Upcoming' : 'Completed'}</Badge>
-        )}
+      <div className="mb-2.5 flex items-center justify-between gap-2">
+        <p className="min-w-0 truncate text-xs font-medium uppercase tracking-wide text-stext">
+          {tournament}
+        </p>
+        <StatusBadge status={match.status} />
       </div>
 
-      <div className="flex flex-1 flex-col justify-center space-y-3">
-        <div className="flex items-center gap-3">
-          <TeamCode code={homeCode} name={homeName} />
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-mtext">{homeName}</p>
-            <p className="text-xs text-stext">{homeCode}</p>
-          </div>
-          {!isUpcoming && (
-            <div className="text-right">
-              <p className="font-mono text-lg font-bold tabular-nums text-mtext">
-                {homeScore || '\u2014'}
-              </p>
-              {homeOvers && <p className="font-mono text-[11px] text-stext">{homeOvers} ov</p>}
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-center gap-3">
-          <TeamCode code={awayCode} name={awayName} />
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-mtext">{awayName}</p>
-            <p className="text-xs text-stext">{awayCode}</p>
-          </div>
-          {!isUpcoming && (
-            <div className="text-right">
-              <p className="font-mono text-lg font-bold tabular-nums text-mtext">
-                {awayScore || '\u2014'}
-              </p>
-              {awayOvers && <p className="font-mono text-[11px] text-stext">{awayOvers} ov</p>}
-            </div>
-          )}
-        </div>
+      <div className="space-y-1.5">
+        <TeamRow
+          code={home.code}
+          name={home.name}
+          score={isUpcoming ? null : homeScore}
+          overs={homeOvers}
+          live={isLive && battingCode === home.code}
+        />
+        <TeamRow
+          code={away.code}
+          name={away.name}
+          score={isUpcoming ? null : awayScore}
+          overs={awayOvers}
+          live={isLive && battingCode === away.code}
+        />
       </div>
 
-      <div className="mt-3 border-t border-lborder pt-3">
-        {isLive ? (
-          <p className="truncate text-xs font-medium text-accent">
-            {battingCode} {inn?.runs ?? 0}/{inn?.wickets ?? 0} ({inn?.overs ?? 0} ov · RR {inn?.runRate ?? 0})
+      <div className="mt-2.5 flex items-center justify-between gap-2 border-t border-lborder pt-2 text-xs text-stext">
+        {isLive && inn ? (
+          <p className="min-w-0 truncate font-medium text-danger">
+            <BlinkingDot className="mr-1.5 align-middle" />
+            {inn.overs !== null && inn.overs !== undefined ? `${inn.overs} ov` : 'In play'}
+            {inn.runRate !== null && inn.runRate !== undefined ? ` · RR ${inn.runRate}` : ''}
           </p>
         ) : isUpcoming ? (
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-stext">
-            <span className="flex items-center gap-1">
-              <Calendar size={13} />
-              {date}
-            </span>
-            <span className="flex items-center gap-1">
-              <Clock size={13} />
-              {time}
-            </span>
-          </div>
+          <p className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+            {date && (
+              <span className="inline-flex items-center gap-1">
+                <Calendar size={12} className="text-accent" />
+                {date}
+              </span>
+            )}
+            {time && (
+              <span className="inline-flex items-center gap-1">
+                <Clock size={12} className="text-accent" />
+                {time}
+              </span>
+            )}
+          </p>
+        ) : result ? (
+          <p className="min-w-0 truncate font-medium text-mtext">{result}</p>
+        ) : sharedScore ? (
+          <p className="min-w-0 truncate font-mono font-semibold text-mtext">{sharedScore}</p>
         ) : (
-          <p className="truncate text-xs font-medium text-gold">{match.matchStatus || 'Completed'}</p>
+          <p className="min-w-0 truncate">
+            {[date, !compact && showVenue && venue ? venue.split(',')[0] : '']
+              .filter(Boolean)
+              .join(' · ') || 'Result'}
+          </p>
+        )}
+        {showVenue && venue && isUpcoming && (
+          <span className="hidden max-w-[40%] truncate sm:inline-flex sm:items-center sm:gap-1">
+            <MapPin size={12} />
+            {venue.split(',')[0]}
+          </span>
         )}
       </div>
     </Link>
   );
 }
 
-function TeamCode({ code, name }: { code: string; name: string }) {
+function TeamRow({
+  code,
+  name,
+  score,
+  overs,
+  live,
+}: {
+  code: string;
+  name: string;
+  score: string | null;
+  overs: string;
+  live?: boolean;
+}) {
+  const pslLogo = getPslLogo(code);
+  let hash = 0;
+  for (let i = 0; i < code.length; i++) hash = code.charCodeAt(i) + ((hash << 5) - hash);
+  const hue = Math.abs(hash % 360);
+
   return (
-    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border-2 border-accent bg-primary text-[13px] font-extrabold tracking-tight text-accent" title={name}>
-      {(name || code || '??').replace(/^(\w)\w*\s?(\w)?.*$/, '$1$2').toUpperCase() || (code || '??').slice(0, 2).toUpperCase()}
-    </span>
+    <div className="flex items-center gap-2.5">
+      {pslLogo ? (
+        <RemoteImage
+          src={pslLogo}
+          alt={name}
+          width={28}
+          height={28}
+          className="h-7 w-7 shrink-0 rounded-full border border-lborder bg-white object-contain p-0.5"
+        />
+      ) : (
+        <span
+          className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[10px] font-semibold text-white"
+          style={{
+            backgroundImage: `linear-gradient(135deg, hsl(${hue}, 65%, 48%), hsl(${(hue + 28) % 360}, 75%, 32%))`,
+          }}
+          title={name}
+        >
+          {getInitials(name || code)}
+        </span>
+      )}
+      <p className={`min-w-0 flex-1 truncate text-sm font-semibold ${live ? 'text-accent' : 'text-mtext'}`}>
+        {name}
+      </p>
+      {score !== null && (
+        <div className="shrink-0 text-right">
+          <p className={`font-mono text-sm font-semibold tabular-nums ${live ? 'text-accent' : 'text-mtext'}`}>
+            {score || '—'}
+          </p>
+          {overs && <p className="font-mono text-[11px] text-stext">{overs} ov</p>}
+        </div>
+      )}
+    </div>
   );
 }

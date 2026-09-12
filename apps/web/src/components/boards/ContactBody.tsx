@@ -33,20 +33,24 @@ function ContactForm() {
       >
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div>
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-stext">
+            <label htmlFor="contact-name" className="mb-1 block text-xs font-semibold uppercase tracking-wider text-stext">
               Name
             </label>
             <input
+              id="contact-name"
+              name="name"
               type="text"
               placeholder="Your name"
               className="w-full rounded-lg bg-elevated px-4 py-2.5 text-sm text-mtext ring-1 ring-lborder outline-none transition-colors focus:ring-accent"
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-stext">
+            <label htmlFor="contact-email" className="mb-1 block text-xs font-semibold uppercase tracking-wider text-stext">
               Email
             </label>
             <input
+              id="contact-email"
+              name="email"
               type="email"
               placeholder="you@example.com"
               className="w-full rounded-lg bg-elevated px-4 py-2.5 text-sm text-mtext ring-1 ring-lborder outline-none transition-colors focus:ring-accent"
@@ -54,10 +58,12 @@ function ContactForm() {
           </div>
         </div>
         <div>
-          <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-stext">
+          <label htmlFor="contact-message" className="mb-1 block text-xs font-semibold uppercase tracking-wider text-stext">
             Message
           </label>
           <textarea
+            id="contact-message"
+            name="message"
             rows={5}
             placeholder="How can we help?"
             className="w-full resize-none rounded-lg bg-elevated px-4 py-2.5 text-sm text-mtext ring-1 ring-lborder outline-none transition-colors focus:ring-accent"
@@ -65,10 +71,15 @@ function ContactForm() {
         </div>
         <button
           type="submit"
-          className="rounded-lg bg-accent px-6 py-2.5 text-sm font-bold text-white transition-colors hover:bg-accent2"
+          disabled
+          aria-describedby="contact-unavailable"
+          className="cursor-not-allowed rounded bg-elevated px-6 py-2.5 text-sm font-medium text-stext opacity-70"
         >
-          Send Message
+          Messaging unavailable
         </button>
+        <p id="contact-unavailable" className="text-xs text-stext">
+          Online messaging will be enabled when the contact API is available.
+        </p>
       </form>
     </div>
   );

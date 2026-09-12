@@ -11,20 +11,39 @@ interface StatCardProps {
   icon?: React.ComponentType<{ size?: number; className?: string }>;
   tone?: string;
   className?: string;
+  compact?: boolean;
 }
 
-export default function StatCard({ label, value, sub, icon: Icon, tone = 'default', className = '' }: StatCardProps) {
+export default function StatCard({
+  label,
+  value,
+  sub,
+  icon: Icon,
+  tone = 'default',
+  className = '',
+  compact = false,
+}: StatCardProps) {
   return (
-    <div className={`rounded-2xl border-t-2 bg-card p-5 ring-1 ring-lborder transition-transform duration-300 hover:-translate-y-0.5 ${className}`}>
+    <div
+      className={`border border-lborder bg-card ${
+        compact ? 'rounded-md p-3.5' : 'rounded-2xl border-t-2 p-5 ring-1 ring-lborder transition-transform duration-300 hover:-translate-y-0.5'
+      } ${className}`}
+    >
       <div className="flex items-center justify-between">
-        <p className="text-[11px] font-semibold uppercase tracking-widest text-stext">{label}</p>
+        <p className={`text-xs font-medium uppercase text-stext ${compact ? 'tracking-wider' : 'tracking-widest'}`}>{label}</p>
         {Icon && (
-          <span className="grid h-8 w-8 place-items-center rounded-lg bg-elevated">
-            <Icon size={16} className="text-accent" />
+          <span className={`grid place-items-center rounded bg-elevated ${compact ? 'h-7 w-7' : 'h-8 w-8'}`}>
+            <Icon size={compact ? 14 : 16} className="text-accent" />
           </span>
         )}
       </div>
-      <p className={`mt-2 font-mono text-3xl font-black tabular-nums ${toneValue[tone] || toneValue.default}`}>{value}</p>
+      <p
+        className={`font-mono font-semibold tabular-nums ${compact ? 'mt-1 text-lg' : 'mt-2 text-3xl font-black'} ${
+          toneValue[tone] || toneValue.default
+        }`}
+      >
+        {value}
+      </p>
       {sub && <p className="mt-1 text-xs text-stext">{sub}</p>}
     </div>
   );

@@ -1,118 +1,135 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import {
-  Activity, Clock, Eye, Globe, Radio, Signal, Star, ThumbsUp, User, Video, Zap,
-} from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Clock, Globe, Radio, Signal, User, Video } from 'lucide-react';
 import Badge from '../Badge';
 import LiveIndicator from '../LiveIndicator';
-import AdBanner from '../AdBanner';
+import AdSlot from '../AdSlot';
 import EmptyState from '../EmptyState';
+import ErrorState from '../ErrorState';
+import Pagination from '../Pagination';
 import { formatDate } from '../../utils/helpers';
+import { fetchStreamsPage } from '../../services/streams';
+import type { Stream } from '../../types/index';
+import CommentsSection from '../CommentsSection';
 
-function buildEmbedUrl(stream: any) {
+function youtubeId(url: string): string | null {
+  const match = url.match(/(?:youtube\.com\/(?:embed\/|watch\?v=)|youtu\.be\/)([A-Za-z0-9_-]{6,})/);
+  return match?.[1] || null;
+}
+
+function buildEmbedUrl(stream: Stream): string | null {
+  const raw = stream.embedUrl || (stream as { streamUrl?: string }).streamUrl || '';
+  if (!raw || raw === '#') return null;
   const id = stream.embedId;
-  if (stream.embedUrl && stream.embedUrl !== '#' && !stream.embedUrl.startsWith('http')) {
-    return null;
+  if (stream.embedType === 'youtube' || /youtube\.com|youtu\.be/.test(raw)) {
+    if (id) return `https://www.youtube.com/embed/${id}?autoplay=1`;
+    const extracted = youtubeId(raw);
+    if (extracted) return `https://www.youtube.com/embed/${extracted}?autoplay=1`;
+    if (raw.includes('/embed/')) return raw;
   }
-  switch (stream.embedType) {
-    case 'youtube':
-      if (id) return `https://www.youtube.com/embed/${id}?autoplay=1`;
-      if (stream.embedUrl && stream.embedUrl.includes('youtube.com/embed/')) return stream.embedUrl;
-      return null;
-    case 'twitch':
-      if (id) return `https://player.twitch.tv/?channel=${id}&parent=${typeof window !== 'undefined' ? window.location.hostname : 'localhost'}`;
-      return null;
-    case 'mux':
-      return stream.embedUrl || null;
-    default:
-      return stream.embedUrl && stream.embedUrl !== '#' ? stream.embedUrl : null;
+  if (stream.embedType === 'twitch' && id) {
+    const parent = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
+    return `https://player.twitch.tv/?channel=${id}&parent=${parent}`;
   }
+  if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
+  return null;
 }
 
-interface Props {
-  streams: any[];
-}
+const TABS = [
+  { key: 'live', label: 'Live' },
+  { key: 'upcoming', label: 'Upcoming' },
+  { key: 'ended', label: 'Ended' },
+];
 
-export default function LiveStreamsBoard({ streams }: Props) {
+export default function LiveStreamsBoard() {
+  const [status, setStatus] = useState('live');
+  const [page, setPage] = useState(1);
+  const [streams, setStreams] = useState<Stream[]>([]);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [viewerMap, setViewerMap] = useState<Record<string, number>>({});
-  const [chat, setChat] = useState<any[]>([]);
-
-  const live = (streams || []).filter((s) => s.status === 'live');
-  const searchable = live.length > 0 ? live : streams || [];
-  const featured = searchable.find((s) => s.id === activeId) || searchable[0] || null;
-  const featuredId = featured ? featured.id : null;
-  const prevFeaturedId = useRef(featuredId);
-
-  if (prevFeaturedId.current !== featuredId) {
-    prevFeaturedId.current = featuredId;
-    if (featuredId && featured) {
-      setViewerMap({ [featuredId]: featured.viewers || 0 });
-      setChat(featured.chatSample || []);
-    }
-  }
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
-    if (!featuredId) return;
-    const tick = setInterval(() => {
-      setViewerMap((m) => ({
-        ...m,
-        [featuredId]: Math.max(0, Math.round((m[featuredId] ?? 0) + (Math.random() * 8 - 2))),
-      }));
-    }, 2500);
-    return () => clearInterval(tick);
-     
-  }, [featuredId]);
+    let cancelled = false;
+    setLoading(true);
+    setError(false);
+    fetchStreamsPage({ status, page, limit: 20 })
+      .then((res) => {
+        if (cancelled) return;
+        setStreams(res.items);
+        setTotal(res.total);
+        setTotalPages(res.totalPages);
+        setLoading(false);
+        setActiveId((current) => current && res.items.some((s) => s.id === current) ? current : res.items[0]?.id || null);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setStreams([]);
+        setTotal(0);
+        setError(true);
+        setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [status, page, retryKey]);
+
+  const featured = streams.find((s) => s.id === activeId) || streams[0] || null;
 
   return (
     <>
       <header className="mb-8">
         <div className="flex items-center gap-2 text-accent">
           <Video size={18} />
-          <span className="text-xs font-bold uppercase tracking-widest text-stext">
-            Live Streaming
-          </span>
+          <span className="text-xs font-bold uppercase tracking-widest text-stext">Live Streaming</span>
         </div>
         <h1 className="mt-1 text-3xl font-black tracking-tight sm:text-4xl">Live Streams</h1>
         <p className="mt-2 max-w-2xl text-sm text-stext">
-          Watch every ball with our expert panel. Streams are embedded and offloaded to a
-          CDN-grade video platform so thousands of fans can watch without the website going down.
+          Watch cricket streams published by the editorial team. Playback is embedded from the source URL returned by the API.
         </p>
       </header>
 
-      {!featured ? (
+      <div className="mb-5 flex flex-wrap gap-2">
+        {TABS.map((tab) => (
+          <button
+            key={tab.key}
+            type="button"
+            onClick={() => {
+              setStatus(tab.key);
+              setPage(1);
+            }}
+            className={`rounded-md px-3 py-1.5 text-xs font-semibold ${
+              status === tab.key ? 'btn-brand' : 'border border-lborder bg-card text-stext hover:text-mtext'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {loading ? (
+        <div className="h-64 animate-pulse rounded-md border border-lborder bg-card" />
+      ) : error ? (
+        <ErrorState message="Streams are temporarily unavailable." onRetry={() => setRetryKey((k) => k + 1)} />
+      ) : !featured ? (
         <EmptyState
-          title="No streams right now"
-          message="Live streams will appear here as soon as they go on air."
+          title={`No ${status} streams`}
+          message="Streams appear here when an administrator publishes a stream URL."
         />
       ) : (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="space-y-4 lg:col-span-2">
-            <StreamPlayer stream={featured} viewers={viewerMap[featured.id] ?? featured.viewers} />
-
+            <StreamPlayer stream={featured} />
             <div className="rounded-2xl bg-card p-5 ring-1 ring-lborder">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <LiveIndicator label="LIVE" />
-                    <Badge tone="neutral">{featured.language}</Badge>
-                    <Badge tone="gold">{featured.quality}</Badge>
-                  </div>
-                  <h2 className="mt-2 text-lg font-bold text-mtext">{featured.title}</h2>
-                  <p className="mt-1 text-sm text-stext">{featured.description}</p>
-                </div>
-              </div>
-
-              <div className="mt-4 flex flex-wrap gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                {featured.status === 'live' ? <LiveIndicator label="LIVE" /> : <Badge tone="neutral">{featured.status}</Badge>}
                 {featured.host && (
                   <span className="inline-flex items-center gap-1.5 rounded-lg bg-elevated px-3 py-1.5 text-xs font-semibold text-mtext">
                     <User size={13} className="text-accent" /> {featured.host}
-                  </span>
-                )}
-                {featured.coHost && (
-                  <span className="inline-flex items-center gap-1.5 rounded-lg bg-elevated px-3 py-1.5 text-xs font-semibold text-mtext">
-                    <Star size={13} className="text-gold" /> {featured.coHost}
                   </span>
                 )}
                 {featured.startedAt && (
@@ -120,27 +137,34 @@ export default function LiveStreamsBoard({ streams }: Props) {
                     <Clock size={13} /> {formatDate(featured.startedAt)}
                   </span>
                 )}
-                {featured.tags?.map((t: string) => (
-                  <span key={t} className="inline-flex items-center gap-1 rounded-lg bg-elevated px-3 py-1.5 text-xs font-semibold text-stext">
-                    <Zap size={12} /> {t}
-                  </span>
+              </div>
+              <h2 className="mt-2 text-lg font-bold text-mtext">{featured.title}</h2>
+            </div>
+            <CommentsSection targetType="stream" targetId={featured.id} />
+            <AdSlot slot="streams-below-player" format="leaderboard" />
+          </div>
+          <div className="space-y-4">
+            <div className="rounded-2xl bg-card p-4 ring-1 ring-lborder">
+              <h3 className="mb-3 text-sm font-bold uppercase tracking-widest text-stext">{total} stream{total === 1 ? '' : 's'}</h3>
+              <div className="space-y-2">
+                {streams.map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => setActiveId(s.id)}
+                    className={`w-full rounded-xl p-3 text-left ring-1 transition-all ${
+                      s.id === featured.id ? 'bg-accent/10 ring-accent/40' : 'bg-elevated ring-transparent hover:ring-lborder'
+                    }`}
+                  >
+                    <span className="truncate text-sm font-semibold text-mtext">{s.shortTitle || s.title}</span>
+                    <p className="mt-0.5 line-clamp-1 text-xs text-stext">{s.host || s.status}</p>
+                  </button>
                 ))}
               </div>
             </div>
-
-            <div className="rounded-2xl bg-card p-5 ring-1 ring-lborder">
-              <AdBanner variant="horizontal" />
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <StreamList
-              streams={live}
-              featuredId={featured.id}
-              viewerMap={viewerMap}
-              onSelect={(id: string) => setActiveId(id)}
-            />
-            <LiveChat chat={chat} />
+            {totalPages > 1 && (
+              <Pagination page={page} totalPages={totalPages} total={total} limit={20} onPageChange={setPage} />
+            )}
           </div>
         </div>
       )}
@@ -148,13 +172,14 @@ export default function LiveStreamsBoard({ streams }: Props) {
   );
 }
 
-function StreamPlayer({ stream, viewers }: { stream: any; viewers: number }) {
+function StreamPlayer({ stream }: { stream: Stream }) {
+  const embed = buildEmbedUrl(stream);
   return (
     <div className="overflow-hidden rounded-3xl bg-card ring-1 ring-lborder">
       <div className="relative aspect-video w-full">
-        {buildEmbedUrl(stream) ? (
+        {embed ? (
           <iframe
-            src={buildEmbedUrl(stream)!}
+            src={embed}
             title={stream.title}
             className="h-full w-full"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -162,7 +187,7 @@ function StreamPlayer({ stream, viewers }: { stream: any; viewers: number }) {
           />
         ) : (
           <div
-            className={`relative flex h-full w-full flex-col items-center justify-center bg-cover bg-center ${stream.image ? '' : `bg-gradient-to-br ${stream.theme || 'from-cyan-700 to-blue-900'}`}`}
+            className={`relative flex h-full w-full flex-col items-center justify-center bg-cover bg-center ${stream.image ? '' : 'bg-gradient-to-br from-accent to-primary'}`}
             style={stream.image ? { backgroundImage: `url(${stream.image})` } : undefined}
           >
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/40" />
@@ -171,93 +196,20 @@ function StreamPlayer({ stream, viewers }: { stream: any; viewers: number }) {
                 <Radio size={34} className="text-accent" />
               </div>
               <p className="mt-3 text-sm font-bold uppercase tracking-widest text-white/80">
-                {stream.shortTitle || stream.title}
+                Stream URL is not embeddable
               </p>
             </div>
-            <div className="absolute left-4 top-4 z-10">
-              <LiveIndicator label="LIVE" />
-            </div>
-            <div className="absolute right-4 top-4 z-10 flex items-center gap-1.5 rounded-full bg-black/50 px-3 py-1 text-xs font-bold text-white backdrop-blur-sm">
-              <Eye size={13} className="text-accent2" />
-              {viewers !== null && viewers !== undefined ? viewers.toLocaleString() : 0}
-            </div>
-            <div className="absolute inset-x-4 bottom-4 z-10 flex items-center justify-between text-[11px] font-semibold text-white/70">
-              <span className="flex items-center gap-1.5"><Signal size={12} /> Stable feed</span>
-              <span className="flex items-center gap-1.5"><Globe size={12} /> {stream.language}</span>
+            {stream.status === 'live' && (
+              <div className="absolute left-4 top-4 z-10">
+                <LiveIndicator label="LIVE" />
+              </div>
+            )}
+            <div className="absolute inset-x-4 bottom-4 z-10 flex items-center justify-between text-xs font-semibold text-white/70">
+              <span className="flex items-center gap-1.5"><Signal size={12} /> Source unavailable</span>
+              <span className="flex items-center gap-1.5"><Globe size={12} /> {stream.host || 'External'}</span>
             </div>
           </div>
         )}
-      </div>
-    </div>
-  );
-}
-
-function StreamList({ streams, featuredId, viewerMap, onSelect }: { streams: any[]; featuredId: string; viewerMap: Record<string, number>; onSelect: (id: string) => void }) {
-  return (
-    <div className="rounded-2xl bg-card p-4 ring-1 ring-lborder">
-      <div className="mb-3 flex items-center gap-2">
-        <Activity size={15} className="text-accent" />
-        <h3 className="text-sm font-bold uppercase tracking-widest text-stext">
-          On Air Now
-        </h3>
-      </div>
-      {streams.length === 0 ? (
-        <p className="text-sm text-stext">No streams currently live.</p>
-      ) : (
-        <div className="space-y-2">
-          {streams.map((s) => (
-            <button
-              key={s.id}
-              type="button"
-              onClick={() => onSelect(s.id)}
-              className={`w-full rounded-xl p-3 text-left ring-1 transition-all ${
-                s.id === featuredId
-                  ? 'bg-accent/10 ring-accent/40'
-                  : 'bg-elevated ring-transparent hover:ring-lborder'
-              }`}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className="truncate text-sm font-semibold text-mtext">{s.shortTitle}</span>
-                <span className="flex shrink-0 items-center gap-1 text-[11px] font-bold text-accent2">
-                  <Eye size={12} />
-                  {(viewerMap[s.id] ?? s.viewers ?? 0).toLocaleString()}
-                </span>
-              </div>
-              <p className="mt-0.5 line-clamp-1 text-[11px] text-stext">{s.host || s.title}</p>
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function LiveChat({ chat }: { chat: any[] }) {
-  const messages = chat || [];
-  return (
-    <div className="overflow-hidden rounded-2xl bg-card ring-1 ring-lborder">
-      <div className="flex items-center justify-between border-b border-lborder px-4 py-3">
-        <div className="flex items-center gap-2">
-          <Activity size={15} className="text-accent" />
-          <h3 className="text-sm font-bold text-mtext">Live Chat</h3>
-        </div>
-        <span className="flex items-center gap-1 text-[11px] font-semibold text-stext">
-          <ThumbsUp size={12} /> {messages.length}
-        </span>
-      </div>
-      <div className="h-64 space-y-3 overflow-y-auto px-4 py-3">
-        {messages.map((m: any, i: number) => (
-          <div key={i} className="flex items-start gap-2 text-sm">
-            <span className="shrink-0 rounded-md bg-accent/15 px-1.5 py-0.5 text-[11px] font-bold text-accent">
-              {m.user.slice(0, 2).toUpperCase()}
-            </span>
-            <p className="min-w-0 flex-1 text-[13px] leading-snug">
-              <span className="font-semibold text-mtext">{m.user}</span>{' '}
-              <span className="text-mtext/90">{m.text}</span>
-            </p>
-            <span className="shrink-0 text-[10px] text-stext">{m.time}</span>
-          </div>
-        ))}
       </div>
     </div>
   );

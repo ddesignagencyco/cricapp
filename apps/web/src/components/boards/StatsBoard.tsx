@@ -2,9 +2,10 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { BarChart3, Target, Flame, Gauge, Trophy, Zap } from 'lucide-react';
+import { BarChart3, Target, Flame, Trophy, Zap } from 'lucide-react';
 import Tabs from '../Tabs';
 import EmptyState from '../EmptyState';
+import { cap } from '../../utils/helpers';
 
 const statsTabs = [
   { key: 'batting', label: 'Batting' },
@@ -28,9 +29,10 @@ const statLabels: Record<string, string> = {
 
 interface Props {
   leaders?: any[];
+  season?: string;
 }
 
-export default function StatsBoard({ leaders = [] }: Props) {
+export default function StatsBoard({ leaders = [], season }: Props) {
   const [tab, setTab] = useState('batting');
 
   const grouped = leaders.filter((g) => g.category === tab);
@@ -41,12 +43,12 @@ export default function StatsBoard({ leaders = [] }: Props) {
         <div className="flex items-center gap-2 text-accent">
           <BarChart3 size={18} />
           <span className="text-xs font-bold uppercase tracking-widest text-stext">
-            PSL Season Leaders
+            {season ? `Season ${season} Leaders` : 'Season Leaders'}
           </span>
         </div>
         <h1 className="mt-1 text-3xl font-black tracking-tight sm:text-4xl">Statistics</h1>
-        <p className="mt-2 max-w-2xl text-sm text-stext">
-          The best of the season — runs, wickets, strike rates and more across every franchise.
+        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-stext">
+          The best of the season — runs, wickets, strike rates and more.
         </p>
       </header>
 
@@ -72,7 +74,6 @@ function LeaderSection({ stat, entries }: { stat: string; entries: any[] }) {
   const Icon = stat.includes('runs') ? Zap : stat.includes('wicket') || stat.includes('maiden') || stat.includes('dot') ? Target : stat.includes('six') || stat.includes('four') ? Flame : Trophy;
   const rows = [...entries].sort((a, b) => (a.rank ?? 999) - (b.rank ?? 999)).slice(0, 10);
   const leader = rows[0];
-  const medals = ['text-gold', 'text-stext', 'text-[#CD7F32]'];
 
   return (
     <section>
@@ -91,7 +92,8 @@ function LeaderSection({ stat, entries }: { stat: string; entries: any[] }) {
       {leader && (
         <div className="mb-4 flex items-center justify-between gap-4 rounded-sm bg-gradient-to-r from-accent/15 to-transparent px-5 py-4 ring-1 ring-inset ring-accent/20">
           <div className="flex items-center gap-3">
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-accent/15 text-sm font-black text-accent">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-sm font-black text-white"
+              style={{ backgroundImage: `linear-gradient(135deg, hsl(${nameHash(leader.playerName)}, 75%, 50%), hsl(${(nameHash(leader.playerName) + 40) % 360}, 85%, 35%))` }}>
               <span className="truncate">
                 {initials(leader.playerName || leader.teamAbbr || '?')}
               </span>
@@ -105,15 +107,16 @@ function LeaderSection({ stat, entries }: { stat: string; entries: any[] }) {
           </div>
           <div className="shrink-0 text-right">
             <p className="font-mono text-2xl font-black tabular-nums text-accent">{leader.value}</p>
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-stext">Leader</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-stext">Leader</p>
           </div>
         </div>
       )}
 
       <div className="overflow-hidden rounded-sm bg-card ring-1 ring-lborder">
+        <div className="overflow-x-scroll">
         <table className="w-full min-w-[480px] text-left text-sm">
           <thead>
-            <tr className="border-b border-lborder bg-secondary/40 text-[11px] uppercase tracking-wider text-stext">
+            <tr className="border-b border-lborder bg-secondary/40 text-xs uppercase tracking-wider text-stext">
               <th className="px-4 py-2.5">#</th>
               <th className="px-4 py-2.5">Player</th>
               <th className="px-4 py-2.5 text-right">Value</th>
@@ -127,9 +130,8 @@ function LeaderSection({ stat, entries }: { stat: string; entries: any[] }) {
               >
                 <td className="px-4 py-2.5 align-middle font-mono">
                   <span
-                    className={`grid h-6 w-6 place-items-center rounded-sm text-[11px] font-black ${
-                      i < 3 ? `bg-accent/15 text-accent` : 'bg-elevated text-stext'
-                    }`}
+                    className={`grid h-6 w-6 place-items-center rounded-sm text-xs font-black ${i < 3 ? `bg-accent/15 text-accent` : 'bg-elevated text-stext'
+                      }`}
                   >
                     {i + 1}
                   </span>
@@ -138,7 +140,7 @@ function LeaderSection({ stat, entries }: { stat: string; entries: any[] }) {
                   <Link href={`/players/${row.playerId}`} className="hover:text-accent">
                     <span className="font-bold text-mtext">{row.playerName}</span>
                     <span className="block text-xs text-stext">
-                      {row.teamName} ({row.teamAbbr})
+                      {cap(row.teamName)} ({row.teamAbbr})
                     </span>
                   </Link>
                 </td>
@@ -149,6 +151,7 @@ function LeaderSection({ stat, entries }: { stat: string; entries: any[] }) {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
     </section>
   );
@@ -167,4 +170,10 @@ function initials(name: string) {
     .slice(0, 2)
     .join('')
     .toUpperCase();
+}
+
+function nameHash(name: string): number {
+  let h = 0;
+  for (let i = 0; i < (name || '').length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
+  return Math.abs(h % 360);
 }

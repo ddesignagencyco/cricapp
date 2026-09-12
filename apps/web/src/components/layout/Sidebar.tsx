@@ -2,10 +2,11 @@ import Link from 'next/link';
 import { ArrowUpRight, CalendarDays } from 'lucide-react';
 import { fetchNews } from '../../services/news';
 import { formatScheduled } from '../../utils/helpers';
-import AdBanner from '../AdBanner';
+import AdSlot from '../AdSlot';
 
-export default function Sidebar() {
-  const latest = fetchNews().slice(0, 5);
+export default async function Sidebar() {
+  const allNews = await fetchNews();
+  const latest = allNews.slice(0, 5);
   return (
     <aside className="space-y-6">
       <section className="rounded-2xl bg-card p-5 ring-1 ring-lborder">
@@ -31,7 +32,7 @@ export default function Sidebar() {
                 <p className="line-clamp-2 text-sm font-semibold text-mtext transition-colors group-hover:text-accent">
                   {item.title}
                 </p>
-                <p className="mt-1 flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-stext">
+                <p className="mt-1 flex items-center gap-1.5 text-xs uppercase tracking-wider text-stext">
                   <CalendarDays size={12} />
                   {formatScheduled(item.date).date} • {item.category}
                 </p>
@@ -43,7 +44,7 @@ export default function Sidebar() {
         </div>
       </section>
 
-      <AdBanner variant="vertical" />
+      <AdSlot slot="sidebar" format="rectangle" />
     </aside>
   );
 }

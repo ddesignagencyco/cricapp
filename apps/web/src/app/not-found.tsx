@@ -1,3 +1,5 @@
+'use client';
+
 import Link from 'next/link';
 import { Home, Search } from 'lucide-react';
 
@@ -14,7 +16,7 @@ export default function NotFound() {
       <div className="mt-8 flex flex-wrap justify-center gap-3">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 rounded-xl bg-accent px-5 py-3 text-sm font-bold text-primary transition-transform hover:-translate-y-0.5"
+          className="btn-brand inline-flex items-center gap-2 rounded-md px-5 py-3 text-sm font-semibold transition-colors"
         >
           <Home size={16} /> Back to Home
         </Link>

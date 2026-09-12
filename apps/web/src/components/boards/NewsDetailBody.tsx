@@ -1,10 +1,41 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowLeft, ArrowRight, Calendar, Clock, Newspaper, User } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Calendar, Clock, Newspaper, Tag, User } from 'lucide-react';
 import Badge from '../Badge';
-import AdBanner from '../AdBanner';
+import AdSlot from '../AdSlot';
+import RemoteImage from '../RemoteImage';
 import ShareButton from '../ShareButton';
+import CommentsSection from '../CommentsSection';
+import { sanitizeArticleHtml } from '../../utils/sanitizeHtml';
+
+/**
+ * Splits already-sanitized article HTML at a paragraph boundary near the middle
+ * so a sponsored slot can sit inside the article. Short articles are left whole
+ * so the slot never lands immediately under the heading.
+ */
+function splitAtParagraph(html: string): [string, string] {
+  const parts = html.split('</p>');
+  if (parts.length < 4) return [html, ''];
+  const mid = Math.ceil(parts.length / 2);
+  return [`${parts.slice(0, mid).join('</p>')}</p>`, parts.slice(mid).join('</p>')];
+}
+
+const proseClass = `prose prose-sm max-w-none text-base leading-8 text-mtext/90 tiptap-content
+  prose-p:my-4 prose-p:leading-8
+  prose-a:text-accent prose-a:no-underline hover:prose-a:underline
+  prose-strong:text-mtext prose-strong:font-semibold
+  prose-em:italic
+  prose-blockquote:border-l-accent prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:text-stext
+  prose-img:my-6 prose-img:rounded-xl
+  prose-headings:text-mtext prose-headings:font-bold
+  prose-h2:text-xl prose-h2:mt-8 prose-h2:mb-4
+  prose-h3:text-lg prose-h3:mt-6 prose-h3:mb-3
+  prose-ul:my-4 prose-ol:my-4
+  prose-li:my-1
+  prose-code:bg-secondary prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm
+  prose-pre:bg-secondary prose-pre:p-4 prose-pre:rounded-xl
+  prose-hr:border-lborder prose-hr:my-8`;
 
 const categoryTone: Record<string, string> = {
   'Match Report': 'live',
@@ -14,12 +45,19 @@ const categoryTone: Record<string, string> = {
   Statistics: 'gold',
 };
 
+interface RelatedLink {
+  href: string;
+  label: string;
+}
+
 interface Props {
   item: any;
   related?: any[];
+  authorHref?: string;
+  relatedLinks?: RelatedLink[];
 }
 
-export default function NewsDetailBody({ item, related = [] }: Props) {
+export default function NewsDetailBody({ item, related = [], authorHref, relatedLinks = [] }: Props) {
   if (!item) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-16 text-center">
@@ -32,8 +70,12 @@ export default function NewsDetailBody({ item, related = [] }: Props) {
       </div>
     );
   }
+  const safeContent = sanitizeArticleHtml(item.content || '');
+  const [contentBeforeAd, contentAfterAd] = splitAtParagraph(safeContent);
 
-  const paragraphs = (item.content || '').split('\n\n').filter(Boolean);
+  const categoryName = typeof item.category === 'string'
+    ? item.category
+    : (item.category && typeof item.category === 'object' && 'name' in item.category ? String((item.category as any).name) : '');
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
@@ -49,8 +91,12 @@ export default function NewsDetailBody({ item, related = [] }: Props) {
         <article className="min-w-0 lg:col-span-2">
           <header className="mb-8">
             <div className="flex flex-wrap items-center gap-2">
-              <Badge tone={categoryTone[item.category] || 'neutral'}>{item.tag || item.category}</Badge>
-              {item.type === 'featured' && <Badge tone="live">Featured</Badge>}
+              {categoryName && (
+                <Badge tone={categoryTone[categoryName] || 'neutral'}>{categoryName}</Badge>
+              )}
+              {Array.isArray(item.tags) && item.tags.slice(0, 3).map((t: string) => (
+                <Badge key={t} tone="neutral">{t}</Badge>
+              ))}
             </div>
             <h1 className="mt-4 text-3xl font-black leading-tight tracking-tight text-mtext sm:text-5xl">
               {item.title}
@@ -60,7 +106,14 @@ export default function NewsDetailBody({ item, related = [] }: Props) {
             </p>
             <div className="mt-6 flex flex-wrap items-center gap-5 border-b border-lborder pb-6 text-xs text-stext">
               <span className="flex items-center gap-1.5">
-                <User size={14} className="text-accent" /> {item.author}
+                <User size={14} className="text-accent" />
+                {authorHref ? (
+                  <Link href={authorHref} className="font-semibold text-accent hover:text-accent2">
+                    {item.author}
+                  </Link>
+                ) : (
+                  item.author
+                )}
               </span>
               <span className="flex items-center gap-1.5">
                 <Calendar size={14} /> {item.date}
@@ -68,16 +121,18 @@ export default function NewsDetailBody({ item, related = [] }: Props) {
               <span className="flex items-center gap-1.5">
                 <Clock size={14} /> {item.readTime}
               </span>
-              <ShareButton title={item.title} text={item.excerpt} className="ml-auto" />
+              <ShareButton type="news" id={String(item.slug || item.id)} fallbackTitle={item.title} compact className="ml-auto" />
             </div>
           </header>
 
           <div className={`relative h-56 overflow-hidden rounded-3xl sm:h-80 ${item.image ? '' : `bg-gradient-to-br ${item.imageGradient || 'from-slate-600 to-slate-800'}`}`}>
             {item.image ? (
-              <img
+              <RemoteImage
                 src={item.image}
                 alt={item.title}
-                className="h-full w-full object-cover"
+                fill
+                sizes="(min-width: 1024px) 70vw, 100vw"
+                className="object-cover"
               />
             ) : (
               <div className="absolute inset-0 flex items-center justify-center">
@@ -89,13 +144,14 @@ export default function NewsDetailBody({ item, related = [] }: Props) {
           </div>
 
           <div className="mt-10">
-            <div className="space-y-6">
-              {paragraphs.map((p, i) => (
-                <p key={i} className="text-base leading-8 text-mtext/90">
-                  {p}
-                </p>
-              ))}
-            </div>
+            <div className={proseClass} dangerouslySetInnerHTML={{ __html: contentBeforeAd }} />
+
+            {contentAfterAd && (
+              <>
+                <AdSlot slot="news-detail-mid" format="inline" className="my-8" />
+                <div className={proseClass} dangerouslySetInnerHTML={{ __html: contentAfterAd }} />
+              </>
+            )}
 
             <div className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-lborder pt-6">
               <Link href="/news" className="inline-flex items-center gap-1.5 text-sm font-semibold text-accent hover:text-accent2">
@@ -105,17 +161,48 @@ export default function NewsDetailBody({ item, related = [] }: Props) {
                 <Newspaper size={14} /> PAK CRICZONE Newsroom
               </span>
             </div>
+
+            {relatedLinks.length > 0 && (
+              <div className="mt-6">
+                <p className="mb-2 text-xs font-bold uppercase tracking-widest text-stext">Related</p>
+                <div className="flex flex-wrap gap-2">
+                  {relatedLinks.map((link) => (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      className="inline-flex items-center rounded-full bg-secondary px-3 py-1 text-xs font-medium text-mtext ring-1 ring-lborder transition-colors hover:bg-accent/10 hover:text-accent"
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {Array.isArray(item.tags) && item.tags.length > 0 && (
+              <div className="mt-6 flex flex-wrap items-center gap-2">
+                <Tag size={14} className="text-stext" />
+                {item.tags.map((t: string) => (
+                  <Link
+                    key={t}
+                    href={`/news?tag=${encodeURIComponent(t)}`}
+                    className="inline-flex items-center gap-1 rounded-full bg-secondary px-3 py-1 text-xs font-medium text-mtext ring-1 ring-lborder transition-colors hover:bg-accent/10 hover:text-accent"
+                  >
+                    #{t}
+                  </Link>
+                ))}
+              </div>
+            )}
+
+            <div className="mt-12">
+              <CommentsSection targetType="news" targetId={item.id} />
+            </div>
           </div>
         </article>
 
         <aside className="min-w-0 lg:col-span-1">
           <div className="space-y-8 lg:sticky lg:top-20">
-            <section>
-              <p className="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-stext">
-                Sponsored
-              </p>
-              <AdBanner variant="vertical" />
-            </section>
+            <AdSlot slot="news-detail-sidebar" format="rectangle" />
 
             {related.length > 0 && (
               <section>
@@ -140,11 +227,12 @@ export default function NewsDetailBody({ item, related = [] }: Props) {
                         }`}
                       >
                         {a.image && (
-                          <img
+                          <RemoteImage
                             src={a.image}
                             alt={a.title}
-                            loading="lazy"
-                            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            fill
+                            sizes="80px"
+                            className="object-cover transition-transform duration-500 group-hover:scale-105"
                           />
                         )}
                       </div>
@@ -152,7 +240,7 @@ export default function NewsDetailBody({ item, related = [] }: Props) {
                         <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-mtext transition-colors group-hover:text-accent">
                           {a.title}
                         </h3>
-                        <div className="mt-1 flex items-center gap-1.5 text-[11px] text-stext">
+                        <div className="mt-1 flex items-center gap-1.5 text-xs text-stext">
                           <Calendar size={11} /> {a.date}
                         </div>
                       </div>

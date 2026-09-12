@@ -5,14 +5,42 @@
   --color-secondary: #0A1728;
   --color-card: #0D1B2A;
   --color-elevated: #122238;
-  --color-accent: #22C55E;
-  --color-accent2: #4ADE80;
+  --color-accent: #00BFFF;
+  --color-accent2: #00BFFF;
   --color-gold: #FFD166;
   --color-mtext: #F5F7FA;
   --color-stext: #94A3B8;
   --color-lborder: #1E334A;
   --color-danger: #FF4D6D;
   --color-shadow: #000;
+
+  /* Semantic Design Tokens (Dark Default) */
+  --color-background: #07111F;
+  --color-surface: #0D1B2A;
+  --color-surface-elevated: #122238;
+  --color-surface-muted: #0A1728;
+
+  --color-text-primary: #F5F7FA;
+  --color-text-secondary: #94A3B8;
+  --color-text-muted: #64748B;
+
+  --color-border: #1E334A;
+  --color-border-strong: #2D4A6B;
+
+  /* Filled brand surfaces use a deeper sky blue than the bright accent so that
+     solid buttons do not glare against the dark background, and hover darkens. */
+  --color-brand: #00BFFF;
+  --color-brand-hover: #0099CC;
+  --color-brand-fg: #FFFFFF;
+  --color-focus-ring: #00BFFF;
+
+  --color-success: #10B981;
+  --color-success-soft: rgba(16, 185, 129, 0.14);
+  --color-warning: #FFD166;
+  --color-warning-soft: rgba(255, 209, 102, 0.14);
+  --color-danger-soft: rgba(255, 77, 109, 0.14);
+  --color-info: #00BFFF;
+  --color-info-soft: rgba(0, 191, 255, 0.14);
 
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
@@ -31,18 +59,44 @@
 
 /* Light theme overrides */
 .light {
-  --color-primary: #F8FAFC;
+  --color-primary: #FFFFFF;
   --color-secondary: #F1F5F9;
   --color-card: #FFFFFF;
-  --color-elevated: #F1F5F9;
-  --color-accent: #15803D;
-  --color-accent2: #16A34A;
+  --color-elevated: #F8FAFC;
+  --color-accent: #0086B3;
+  --color-accent2: #0086B3;
   --color-gold: #B45309;
   --color-mtext: #0F172A;
-  --color-stext: #64748B;
+  --color-stext: #1E293B;
   --color-lborder: #E2E8F0;
   --color-danger: #E11D48;
   --color-shadow: #0F172A;
+
+  /* Semantic Design Tokens (Light Mode) */
+  --color-background: #FFFFFF;
+  --color-surface: #FFFFFF;
+  --color-surface-elevated: #F8FAFC;
+  --color-surface-muted: #F1F5F9;
+
+  --color-text-primary: #0F172A;
+  --color-text-secondary: #1E293B;
+  --color-text-muted: #334155;
+
+  --color-border: #E2E8F0;
+  --color-border-strong: #CBD5E1;
+
+  --color-brand: #0086B3;
+  --color-brand-hover: #006B8F;
+  --color-brand-fg: #FFFFFF;
+  --color-focus-ring: #0086B3;
+
+  --color-success: #10B981;
+  --color-success-soft: rgba(16, 185, 129, 0.12);
+  --color-warning: #B45309;
+  --color-warning-soft: rgba(180, 83, 9, 0.12);
+  --color-danger-soft: rgba(225, 29, 72, 0.12);
+  --color-info: #0086B3;
+  --color-info-soft: rgba(0, 134, 179, 0.14);
 }
 
 * {
@@ -66,13 +120,16 @@ body {
   width: 10px;
   height: 10px;
 }
+
 ::-webkit-scrollbar-track {
   background: var(--color-primary);
 }
+
 ::-webkit-scrollbar-thumb {
   background: var(--color-lborder);
   border-radius: 5px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-stext);
 }
@@ -81,22 +138,24 @@ body {
 .text-accent-grad {
   background: linear-gradient(135deg, #07111F 0%, #0D1B2A 55%, #064E3B 100%);
 }
+
 .light .text-accent-grad {
   background: linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 55%, #BBF7D0 100%);
 }
 
 .hero-grad {
   background-image:
-    linear-gradient(rgba(4, 10, 20, 0.68), rgba(4, 10, 20, 0.68)),
-    url('/banner2.jpg');
+    /* linear-gradient(rgba(4, 10, 20, 0.68), rgba(4, 10, 20, 0.68)), */
+    url('/banner.png');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
 }
+
 .light .hero-grad {
   background-image:
-    linear-gradient(rgba(4, 10, 20, 0.68), rgba(4, 10, 20, 0.68)),
-    url('/banner2.jpg');
+    /* linear-gradient(rgba(4, 10, 20, 0.68), rgba(4, 10, 20, 0.68)), */
+    url('/banner.png');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -105,6 +164,7 @@ body {
 .hero-title {
   color: #F5F7FA;
 }
+
 .hero-lead {
   color: #CBD5E1;
 }
@@ -118,24 +178,36 @@ body {
 
 .hero-grad-home {
   background-image:
-    linear-gradient(rgba(4, 10, 20, 0.55), rgba(4, 10, 20, 0.55)),
-    url('/banner.jpg');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-}
-.light .hero-grad-home {
-  background-image:
-    linear-gradient(rgba(4, 10, 20, 0.55), rgba(4, 10, 20, 0.55)),
-    url('/banner.jpg');
+    /* linear-gradient(rgba(4, 10, 20, 0.55), rgba(4, 10, 20, 0.55)), */
+    url('/banner.png');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
 }
 
+.light .hero-grad-home {
+  background-image:
+    /* linear-gradient(rgba(4, 10, 20, 0.55), rgba(4, 10, 20, 0.55)), */
+    url('/banner.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* Solid brand button/pill fill. Hover darkens instead of brightening. */
+.btn-brand {
+  background-color: var(--color-brand);
+  color: var(--color-brand-fg);
+}
+
+.btn-brand:hover:not(:disabled) {
+  background-color: var(--color-brand-hover);
+}
+
 .shadow-card-dark {
   box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.3);
 }
+
 .light .shadow-card-dark {
   box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.08);
 }
@@ -147,6 +219,7 @@ body {
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -157,27 +230,26 @@ body {
   overflow: hidden;
   background: var(--color-elevated);
 }
+
 .skeleton::after {
   content: "";
   position: absolute;
   inset: 0;
   transform: translateX(-100%);
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.08),
-    transparent
-  );
+  background: linear-gradient(90deg,
+      transparent,
+      rgba(255, 255, 255, 0.08),
+      transparent);
   animation: shimmer 1.5s infinite;
 }
+
 .light .skeleton::after {
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(0, 0, 0, 0.06),
-    transparent
-  );
+  background: linear-gradient(90deg,
+      transparent,
+      rgba(0, 0, 0, 0.06),
+      transparent);
 }
+
 @keyframes shimmer {
   100% {
     transform: translateX(100%);
@@ -185,18 +257,19 @@ body {
 }
 
 @keyframes pulse-live {
+
   0%,
   100% {
     opacity: 1;
-    box-shadow: 0 0 0 0 rgba(0, 230, 118, 0.6);
   }
+
   50% {
-    opacity: 0.7;
-    box-shadow: 0 0 0 6px rgba(0, 230, 118, 0);
+    opacity: 0.25;
   }
 }
+
 .live-pulse {
-  animation: pulse-live 1.6s infinite;
+  animation: pulse-live 1.4s ease-in-out infinite;
 }
 
 @keyframes live-ping {
@@ -204,17 +277,20 @@ body {
     transform: scale(1);
     opacity: 0.85;
   }
+
   70%,
   100% {
     transform: scale(3.4);
     opacity: 0;
   }
 }
+
 .live-ping {
   animation: live-ping 1.4s cubic-bezier(0, 0, 0.2, 1) infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   .live-ping,
   .live-pulse {
     animation: none;
@@ -226,11 +302,13 @@ body {
     opacity: 0;
     transform: translateY(8px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
+
 .fade-in {
   animation: fade-in 0.35s ease-out both;
 }
@@ -240,11 +318,265 @@ body {
     opacity: 0;
     transform: translateY(16px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
+
 .slide-up {
   animation: slide-up 0.4s ease-out both;
+}
+
+/* Ticker scrollbar hide */
+.ticker-scroll {
+  scroll-behavior: smooth;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.ticker-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* Countdown digit flip */
+.countdown-digit {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* ============================
+   Semantic Root Variables & Aliases
+   (Single Source of Truth for Public & Admin)
+   ============================ */
+:root {
+  /* Common semantic variables mapped to Tailwind theme tokens */
+  --background: var(--color-background);
+  --surface: var(--color-surface);
+  --surface-elevated: var(--color-surface-elevated);
+  --surface-muted: var(--color-surface-muted);
+
+  --text-primary: var(--color-text-primary);
+  --text-secondary: var(--color-text-secondary);
+  --text-muted: var(--color-text-muted);
+
+  --border: var(--color-border);
+  --border-strong: var(--color-border-strong);
+
+  --primary: var(--color-brand);
+  --primary-hover: var(--color-brand-hover);
+  --primary-foreground: var(--color-brand-fg);
+  --focus-ring: var(--color-focus-ring);
+
+  --success: var(--color-success);
+  --success-soft: var(--color-success-soft);
+  --warning: var(--color-warning);
+  --warning-soft: var(--color-warning-soft);
+  --danger: var(--color-danger);
+  --danger-soft: var(--color-danger-soft);
+  --info: var(--color-info);
+  --info-soft: var(--color-info-soft);
+
+  /* Admin Aliases: 100% synchronized with master semantic variables */
+  --admin-bg: var(--color-background);
+  --admin-surface: var(--color-surface-muted);
+  --admin-sidebar: var(--color-primary);
+  --admin-sidebar-hover: rgba(255, 255, 255, 0.08);
+  --admin-sidebar-active: var(--color-accent);
+  --admin-card: var(--color-surface);
+  --admin-card-hover: var(--color-surface-elevated);
+  --admin-border: var(--color-border);
+  --admin-border-light: var(--color-surface-elevated);
+  --admin-text: var(--color-text-primary);
+  --admin-text-secondary: var(--color-text-secondary);
+  --admin-text-muted: var(--color-text-muted);
+  --admin-accent: var(--color-accent);
+  --admin-accent-hover: var(--color-brand-hover);
+  --admin-success: var(--color-success);
+  --admin-success-bg: var(--color-success-soft);
+  --admin-info: var(--color-info);
+  --admin-info-bg: var(--color-info-soft);
+  --admin-warning: var(--color-warning);
+  --admin-warning-bg: var(--color-warning-soft);
+  --admin-danger: var(--color-danger);
+  --admin-danger-bg: var(--color-danger-soft);
+  --admin-input-bg: var(--color-surface-muted);
+  --admin-table-header: var(--color-surface-muted);
+  --admin-table-row-hover: var(--color-surface-elevated);
+  --admin-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  --admin-shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.45);
+  --admin-topbar: var(--color-background);
+}
+
+.light {
+  --admin-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+  --admin-shadow-lg: 0 4px 14px rgba(15, 23, 42, 0.08);
+}
+
+/* TipTap Editor Styles */
+.tiptap-editor {
+  min-height: 300px;
+}
+.tiptap-editor .ProseMirror {
+  min-height: 300px;
+  padding: 1rem;
+  outline: none;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+.tiptap-editor .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: var(--admin-text-muted);
+  pointer-events: none;
+  height: 0;
+}
+.tiptap-editor .ProseMirror h1 { font-size: 1.5rem; font-weight: 800; margin: 1rem 0 0.5rem; }
+.tiptap-editor .ProseMirror h2 { font-size: 1.25rem; font-weight: 700; margin: 0.75rem 0 0.5rem; }
+.tiptap-editor .ProseMirror h3 { font-size: 1.1rem; font-weight: 600; margin: 0.75rem 0 0.5rem; }
+.tiptap-editor .ProseMirror p { margin: 0.5rem 0; }
+.tiptap-editor .ProseMirror ul { list-style: disc; padding-left: 1.5rem; margin: 0.5rem 0; }
+.tiptap-editor .ProseMirror ol { list-style: decimal; padding-left: 1.5rem; margin: 0.5rem 0; }
+.tiptap-editor .ProseMirror li { margin: 0.25rem 0; }
+.tiptap-editor .ProseMirror blockquote {
+  border-left: 3px solid var(--admin-accent);
+  padding-left: 1rem;
+  margin: 0.75rem 0;
+  color: var(--admin-text-secondary);
+  font-style: italic;
+}
+.tiptap-editor .ProseMirror pre {
+  background: var(--admin-input-bg);
+  border: 1px solid var(--admin-border);
+  border-radius: 0.375rem;
+  padding: 0.75rem 1rem;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.8rem;
+  overflow-x: auto;
+  margin: 0.75rem 0;
+}
+.tiptap-editor .ProseMirror code {
+  background: var(--admin-input-bg);
+  border: 1px solid var(--admin-border);
+  border-radius: 0.25rem;
+  padding: 0.15rem 0.35rem;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.85em;
+}
+.tiptap-editor .ProseMirror img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  margin: 0.75rem 0;
+}
+.tiptap-editor .ProseMirror a {
+  color: var(--admin-accent);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.tiptap-editor .ProseMirror hr {
+  border: none;
+  border-top: 1px solid var(--admin-border);
+  margin: 1rem 0;
+}
+.tiptap-editor .ProseMirror mark {
+  background: rgba(255,212,0,0.3);
+  border-radius: 0.15rem;
+  padding: 0.1rem 0.2rem;
+}
+
+/* Preserves spaces, line breaks, and empty lines saved from the editor */
+.tiptap-content {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.tiptap-content p {
+  min-height: 1.5rem;
+}
+.tiptap-content p:empty::before,
+.tiptap-content p > br:only-child::before {
+  content: "\00a0";
+}
+
+/* Edge/Chrome draw a native reveal control over our eye button and then
+   React resets type="password", so the toggle appears broken. */
+.auth-password-input::-ms-reveal,
+.auth-password-input::-ms-clear {
+  display: none;
+}
+
+.pcz-toast {
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 10px !important;
+  max-width: min(380px, calc(100vw - 24px)) !important;
+  padding: 12px 14px !important;
+  background: var(--color-surface-elevated) !important;
+  color: var(--color-text-primary) !important;
+  border: 1px solid var(--color-border) !important;
+  border-left: 3px solid var(--color-info) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28) !important;
+  font-family: var(--font-sans) !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+}
+
+.pcz-toast > div {
+  margin: 0 !important;
+}
+
+.pcz-toast--success {
+  border-left-color: var(--color-accent) !important;
+}
+
+.pcz-toast--error {
+  border-left-color: var(--color-danger) !important;
+}
+
+.light .pcz-toast {
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12) !important;
+}
+
+/* Keep every table column reachable on small screens.
+   Direct table parents become a horizontal scroll area with a visible bar. */
+@media (max-width: 767px) {
+  :has(> table) {
+    overflow-x: scroll;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-lborder) transparent;
+  }
+
+  :has(> table)::-webkit-scrollbar {
+    display: block;
+    height: 8px;
+    width: 8px;
+  }
+
+  :has(> table)::-webkit-scrollbar-track {
+    background: color-mix(in srgb, var(--color-lborder) 35%, transparent);
+    border-radius: 999px;
+  }
+
+  :has(> table)::-webkit-scrollbar-thumb {
+    background: var(--color-stext);
+    border-radius: 999px;
+  }
+
+  :has(> table)::-webkit-scrollbar-thumb:hover {
+    background: var(--color-mtext);
+  }
+
+  table {
+    width: 100%;
+    min-width: max-content;
+  }
+
+  table th {
+    white-space: nowrap;
+  }
 }

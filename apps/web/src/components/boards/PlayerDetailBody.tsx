@@ -3,12 +3,16 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Calendar, Target, User } from 'lucide-react';
-import Badge from '../Badge';
 import StatCard from '../StatCard';
 import Tabs from '../Tabs';
 import MatchCard from '../MatchCard';
 import EmptyState from '../EmptyState';
+import TeamLogo from '../TeamLogo';
+import RemoteImage from '../RemoteImage';
+import FavoriteButton from '../FavoriteButton';
+import ShareButton from '../ShareButton';
 import { getInitials } from '../../utils/helpers';
+import type { NewsArticle } from '../../types';
 
 const playerTabs = [
   { key: 'profile', label: 'Profile' },
@@ -17,9 +21,10 @@ const playerTabs = [
 
 interface Props {
   player: any;
+  relatedNews?: NewsArticle[];
 }
 
-export default function PlayerDetailBody({ player }: Props) {
+export default function PlayerDetailBody({ player, relatedNews = [] }: Props) {
   const [tab, setTab] = useState('profile');
 
   if (!player) {
@@ -34,85 +39,143 @@ export default function PlayerDetailBody({ player }: Props) {
   const team = player.team;
   const nickname = player.shortName?.split(', ')[0];
   const initials = getInitials(name);
+  const role = String(player.role || 'Player')
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
 
   return (
-    <div className="mx-auto max-w-7xl space-y-3 px-4 py-8 sm:px-6">
+    <div className="mx-auto max-w-7xl space-y-5 px-4 py-8 sm:px-6">
       <nav className="flex items-center gap-1.5 text-xs text-stext">
         <Link href="/players" className="hover:text-accent">Players</Link>
         <span>/</span>
         <span className="text-mtext">{name}</span>
       </nav>
 
-      <header className="rounded-3xl bg-card p-6 ring-1 ring-lborder sm:p-8">
-        <div className="flex flex-col gap-6 md:flex-row md:items-center">
-          <div className="grid h-24 w-24 shrink-0 place-items-center rounded-3xl bg-elevated text-3xl font-black text-accent ring-1 ring-lborder">
-            {initials}
+      <header className="rounded-md border border-lborder bg-card p-5 sm:p-6">
+        <div className="flex items-center justify-between border-b border-lborder pb-3">
+          <div className="flex items-center gap-2">
+            <span className="rounded border border-accent/25 bg-accent/10 px-2.5 py-1 text-xs font-medium uppercase tracking-wider text-accent">
+              {role}
+            </span>
+            {player.nationality && (
+              <span className="rounded border border-lborder bg-secondary px-2.5 py-1 text-xs font-medium uppercase tracking-wider text-stext">
+                {player.nationality}
+              </span>
+            )}
           </div>
+          <div className="flex items-center gap-2">
+            <FavoriteButton targetType="player" targetId={player.id} compact />
+            <ShareButton
+              type="player"
+              id={player.id}
+              fallbackTitle={name}
+              compact
+            />
+          </div>
+        </div>
+
+        <div className="mt-5 flex flex-col gap-5 md:flex-row md:items-center">
+          <div className="shrink-0">
+            {player.profileUrl ? (
+              <RemoteImage
+                src={player.profileUrl}
+                alt={name}
+                width={80}
+                height={80}
+                className="h-20 w-20 rounded-full border border-lborder bg-secondary object-cover"
+              />
+            ) : (
+              (() => {
+                let hash = 0;
+                for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+                const hue = Math.abs(hash % 360);
+                return (
+                  <div
+                    className="grid h-20 w-20 place-items-center rounded-full text-xl font-semibold text-white"
+                    style={{
+                      backgroundImage: `linear-gradient(135deg, hsl(${hue}, 75%, 50%), hsl(${(hue + 40) % 360}, 85%, 35%))`,
+                    }}
+                  >
+                    {initials}
+                  </div>
+                );
+              })()
+            )}
+          </div>
+
           <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-2xl font-black tracking-tight sm:text-3xl">{name}</h1>
-            </div>
+            <h1 className="text-2xl font-semibold text-mtext">{name}</h1>
             {nickname && nickname !== name && (
-              <p className="mt-0.5 text-sm text-stext">{nickname}</p>
+              <p className="mt-1 font-mono text-xs font-medium uppercase tracking-wider text-accent">{nickname}</p>
             )}
             <p className="mt-1 text-sm text-stext">
-              {[player.role, player.nationality].filter(Boolean).join(' • ')}
+              {[role, player.nationality, player.birth ? `Born ${player.birth}` : null].filter(Boolean).join(' • ')}
             </p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {player.role && <Badge tone="neutral">{player.role}</Badge>}
-              {player.battingStyle && <Badge tone="neutral">{player.battingStyle}</Badge>}
-              {player.bowlingStyle && <Badge tone="neutral">{player.bowlingStyle}</Badge>}
-            </div>
+            {(player.battingStyle || player.bowlingStyle) && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {player.battingStyle && (
+                  <span className="rounded border border-lborder bg-secondary px-2.5 py-1 text-xs font-medium text-mtext">
+                    Batting: <span className="text-accent">{player.battingStyle}</span>
+                  </span>
+                )}
+                {player.bowlingStyle && (
+                  <span className="rounded border border-lborder bg-secondary px-2.5 py-1 text-xs font-medium text-mtext">
+                    Bowling: <span className="text-accent">{player.bowlingStyle}</span>
+                  </span>
+                )}
+              </div>
+            )}
           </div>
 
           {team && (
             <Link
               href={`/teams/${team.id}`}
-              className="group flex shrink-0 items-center gap-3 rounded-2xl bg-elevated px-4 py-3 transition-colors hover:bg-card"
+              className="group flex min-w-[220px] shrink-0 items-center gap-3 rounded-lg border border-lborder bg-secondary px-4 py-3 transition-colors hover:border-accent/50 hover:bg-elevated"
             >
               {team.logoUrl ? (
-                <img src={team.logoUrl} alt={team.name} className="h-12 w-12 rounded-full border-2 border-accent object-cover" />
+                <RemoteImage src={team.logoUrl} alt={team.name} width={48} height={48} className="h-12 w-12 rounded-full border border-lborder bg-white object-contain p-0.5" />
               ) : (
-                <span className="grid h-12 w-12 place-items-center rounded-full border-2 border-accent bg-primary text-sm font-extrabold text-accent">
-                  {getInitials(team.name || team.abbr)}
-                </span>
+                <TeamLogo teamId={team.id} name={team.name} code={team.abbr} size="md" link={false} />
               )}
-              <div>
-                <p className="text-xs text-stext">Team</p>
-                <p className="text-sm font-bold text-mtext group-hover:text-accent">{team.name} ({team.abbr})</p>
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-stext">Team</p>
+                <p className="truncate text-sm font-semibold text-mtext transition-colors group-hover:text-accent">
+                  {team.name || team.abbr}
+                </p>
+                {team.abbr && team.name && team.abbr !== team.name && (
+                  <p className="mt-0.5 font-mono text-xs text-stext">{team.abbr}</p>
+                )}
               </div>
             </Link>
           )}
         </div>
       </header>
 
-      <div className="grid grid-cols-2 gap-4 pt-4 lg:grid-cols-4">
-        <StatCard label="Player ID" value={player.id.split(':').pop()} sub="Provider id" icon={User} />
-        <StatCard label="Role" value={player.role || '—'} sub="Squad" />
-        <StatCard label="Nationality" value={player.nationality || '—'} />
-        {player.birth && <StatCard label="Born" value={player.birth} sub="Date of birth" icon={Calendar} />}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <StatCard compact label="Player ID" value={String(player.id || '').split(':').pop() || '—'} sub="Provider id" icon={User} />
+        <StatCard compact label="Role" value={role} sub="Squad" />
+        <StatCard compact label="Nationality" value={player.nationality || '—'} />
+        {player.birth && <StatCard compact label="Born" value={player.birth} sub="Date of birth" icon={Calendar} />}
       </div>
 
-      <div className="pt-4">
-        <Tabs tabs={playerTabs} active={tab} onChange={setTab} />
-      </div>
+      <Tabs tabs={playerTabs} active={tab} onChange={setTab} />
 
       {tab === 'profile' && (
-        <div className="fade-in grid grid-cols-1 gap-4 pt-5 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard label="Short Name" value={player.shortName || '—'} sub="Preferred" />
-          <StatCard label="Batting" value={player.battingStyle || '—'} sub="Style" />
-          <StatCard label="Bowling" value={player.bowlingStyle || '—'} sub="Style" tone="accent" />
-          <StatCard label="Team" value={team?.abbr || '—'} sub="Franchise" tone="gold" />
+        <div className="fade-in grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard compact label="Short Name" value={player.shortName || '—'} sub="Preferred" />
+          <StatCard compact label="Batting" value={player.battingStyle || '—'} sub="Style" />
+          <StatCard compact label="Bowling" value={player.bowlingStyle || '—'} sub="Style" tone="accent" />
+          <StatCard compact label="Team" value={team?.abbr || '—'} sub="Franchise" tone="gold" />
         </div>
       )}
 
       {tab === 'recent' && (
-        <div className="fade-in pt-5">
-          <h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-mtext">
+        <div className="fade-in">
+          <h3 className="mb-3 flex items-center gap-2 text-lg font-semibold text-mtext">
             <Target size={18} className="text-accent" /> Recent Matches
           </h3>
           {player.recentMatches && player.recentMatches.length > 0 ? (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               {player.recentMatches.map((m) => (
                 <MatchCard key={m.matchId} match={m} showVenue={false} />
               ))}
@@ -121,6 +184,22 @@ export default function PlayerDetailBody({ player }: Props) {
             <EmptyState title="No recent matches" message="This player's recent fixtures have not been recorded yet." />
           )}
         </div>
+      )}
+
+      {relatedNews.length > 0 && (
+        <section className="rounded-md border border-lborder bg-card p-4">
+          <h3 className="mb-3 text-sm font-bold uppercase tracking-widest text-stext">Related news</h3>
+          <ul className="space-y-2">
+            {relatedNews.map((article) => (
+              <li key={article.id}>
+                <Link href={`/news/${article.slug || article.id}`} className="text-sm font-semibold text-mtext hover:text-accent">
+                  {article.title}
+                </Link>
+                <p className="text-xs text-stext">{article.date}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
     </div>
   );

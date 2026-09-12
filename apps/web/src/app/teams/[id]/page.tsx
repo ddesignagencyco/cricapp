@@ -1,31 +1,48 @@
 import { notFound } from 'next/navigation';
 import TeamDetailBody from '../../../components/boards/TeamDetailBody';
-import { fetchTeamById, fetchTeamRoster } from '../../../services/teams';
-import { fetchMatches } from '../../../services/matches';
+import {
+  fetchTeamById,
+  fetchTeamRosterPage,
+  fetchTeamSchedule,
+  fetchTeamResults,
+  fetchTeams,
+} from '../../../services/teams';
+import { fetchNews } from '../../../services/news';
+import { sharePageMetadata } from '../../../services/sharing';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600;
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const team = await fetchTeamById(id);
-  if (!team) {
-    return { title: 'Team not found' };
-  }
-  return {
-    title: team.name,
-    description: `${team.name} (${team.abbr || ''}) — ${team.country || 'Cricket'} team page.`,
-  };
+  return sharePageMetadata({
+    title: 'Team',
+    description: 'Team profile, squad and fixtures.',
+    path: `/teams/${id}`,
+  });
 }
 
 export default async function TeamDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [team, roster, matches] = await Promise.all([
+  const [team, roster, schedule, results, allTeams, relatedNews] = await Promise.all([
     fetchTeamById(id),
-    fetchTeamRoster(id),
-    fetchMatches(),
+    fetchTeamRosterPage(id, { page: 1, limit: 40 }),
+    fetchTeamSchedule(id, { page: 1, limit: 50 }),
+    fetchTeamResults(id, { page: 1, limit: 50 }),
+    fetchTeams(),
+    fetchNews({ teamId: id, limit: 6 }).catch(() => []),
   ]);
   if (!team) {
     return notFound();
   }
-  return <TeamDetailBody team={team} players={roster || []} matches={matches || []} />;
+  return (
+    <TeamDetailBody
+      team={team}
+      players={roster.items || []}
+      playerTotal={roster.total}
+      schedule={schedule || []}
+      results={results || []}
+      allTeams={allTeams || []}
+      relatedNews={relatedNews}
+    />
+  );
 }

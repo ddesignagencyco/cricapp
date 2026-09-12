@@ -1,97 +1,86 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { ChevronRight, Play } from 'lucide-react';
+import { ChevronRight, Eye, Trophy, Users, Newspaper, Calendar, TrendingUp } from 'lucide-react';
 
-export default function CricketHero() {
-  const ballRef = useRef<HTMLSpanElement>(null);
-  const pos = useRef({ x: 0, y: 0 });
-  const target = useRef({ x: 0, y: 0 });
-  const [active, setActive] = useState(false);
+interface CricketHeroProps {
+  match?: any;
+}
 
-  useEffect(() => {
-    let raf: number;
-    const tick = () => {
-      const b = ballRef.current;
-      if (b) {
-        pos.current.x += (target.current.x - pos.current.x) * 0.14;
-        pos.current.y += (target.current.y - pos.current.y) * 0.14;
-        b.style.transform = `translate3d(${pos.current.x}px, ${pos.current.y}px, 0)`;
-      }
-      raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, []);
-
-  const onMove = (e: React.MouseEvent<HTMLElement>) => {
-    const r = e.currentTarget.getBoundingClientRect();
-    target.current.x = e.clientX - r.left - 18;
-    target.current.y = e.clientY - r.top - 18;
-    setActive(true);
-  };
-
+export default function CricketHero({ match: _match }: CricketHeroProps) {
   return (
-    <section
-      className="hero-grad-home relative overflow-hidden"
-      onMouseMove={onMove}
-      onMouseLeave={() => setActive(false)}
-    >
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/80 via-black/55 to-black/30" />
-      <div className="pointer-events-none absolute -right-20 -top-24 h-96 w-96 rounded-full bg-accent/20 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-32 -left-24 h-96 w-96 rounded-full bg-accent2/15 blur-3xl" />
+    <section className="hero-grad-home relative flex min-h-[420px] items-center overflow-hidden sm:min-h-[500px]">
+      {/* Animated background blobs */}
+      <div className="absolute -top-40 -left-40 h-96 w-96 rounded-full bg-accent/20 blur-[120px] animate-pulse" />
+      <div className="absolute -bottom-20 -right-20 h-80 w-80 rounded-full bg-accent2/15 blur-[100px] animate-pulse delay-1000" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-64 w-64 rounded-full bg-gold/10 blur-[80px] animate-pulse delay-500" />
 
-      <CursorBall ref={ballRef} active={active} />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/90 via-black/70 to-black/40" />
 
-      <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-24">
-        <div className="max-w-2xl">
-          <span className="inline-flex items-center gap-2 rounded-full bg-accent/15 px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-accent ring-1 ring-accent/30">
-            <span className="h-1.5 w-1.5 rounded-full bg-accent2" />
-            Live Cricket Coverage
-          </span>
+      <div className="relative mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-20 w-full">
+        <div className="flex flex-col gap-10 lg:flex-row lg:items-center lg:justify-between">
+          {/* Left content */}
+          <div className="max-w-2xl">
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-extrabold uppercase tracking-widest text-white shadow-sm backdrop-blur-md">
+              LIVE CRICKET
+            </span>
 
-          <h1 className="hero-title mt-5 text-4xl font-black leading-tight tracking-tight sm:text-6xl">
-            EVERY BALL. <span className="text-accent">LIVE.</span>
-          </h1>
-          <p className="hero-lead mt-4 max-w-xl text-base leading-relaxed sm:text-lg">
-            Follow every delivery, boundary and wicket in real time. Live scores, PSL fixtures,
-            teams and player statistics — all in one place.
-          </p>
+            <h1 className="mt-5 text-4xl font-black leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">
+              EVERY BALL{' '}
+              <span className="text-red-500 relative">
+                . LIVE
+              </span>
+            </h1>
 
-          <div className="mt-8 flex flex-wrap items-center gap-3">
-            <Link
-              href="/matches"
-              className="group inline-flex items-center gap-2 rounded-sm bg-accent px-6 py-3 text-sm font-bold text-white shadow-lg shadow-accent/30 transition-colors hover:bg-accent2"
-            >
-              <Play size={16} />
-              Watch Live
-              <ChevronRight size={16} className="transition-transform group-hover:translate-x-0.5" />
-            </Link>
-            <Link
-              href="/teams"
-              className="inline-flex items-center gap-2 rounded-sm bg-white/10 px-6 py-3 text-sm font-bold text-white ring-1 ring-white/25 backdrop-blur-sm transition-colors hover:bg-white/20"
-            >
-              Explore Teams
-            </Link>
+            <p className="mt-4 max-w-xl text-base leading-relaxed text-white/70 sm:text-lg">
+              From the first ball to the final over, experience every moment that makes cricket
+              unforgettable.
+            </p>
+
+            <div className="mt-8 flex flex-wrap items-center gap-3">
+              <Link
+                href="/matches"
+                className="btn-brand group inline-flex items-center gap-2.5 rounded-md px-7 py-3.5 text-sm font-semibold shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+              >
+                <Eye size={17} />
+                View Matches
+                <ChevronRight size={17} className="transition-transform group-hover:translate-x-1" />
+              </Link>
+              <Link
+                href="/teams"
+                className="inline-flex items-center gap-2.5 rounded-md bg-white/10 px-7 py-3.5 text-sm font-semibold text-white ring-1 ring-white/25 transition-colors hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+              >
+                <Users size={17} />
+                Explore Teams
+              </Link>
+            </div>
+          </div>
+
+          {/* Right — Quick links grid */}
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 w-full max-w-xs sm:max-w-sm lg:max-w-xs">
+            {[
+              { icon: Calendar, label: 'Schedule', sub: 'Fixtures & Results', href: '/schedules', color: 'from-accent/20 to-accent/5', iconColor: 'text-accent' },
+              { icon: Trophy, label: 'PSL 2026', sub: 'Points Table & More', href: '/psl', color: 'from-accent2/20 to-accent2/5', iconColor: 'text-accent2' },
+              { icon: Newspaper, label: 'News', sub: 'Latest Stories', href: '/news', color: 'from-gold/20 to-gold/5', iconColor: 'text-gold' },
+              { icon: TrendingUp, label: 'Rankings', sub: 'Top Players', href: '/players', color: 'from-green-500/20 to-green-500/5', iconColor: 'text-green-400' },
+            ].map((item) => (
+              <Link
+                key={item.label}
+                href={item.href}
+                className="group flex flex-col items-start gap-2 rounded-md bg-black/65 p-4 ring-1 ring-white/15 backdrop-blur-md transition-colors hover:bg-black/75 hover:ring-white/30"
+              >
+                <div className={`grid h-9 w-9 place-items-center rounded-md bg-gradient-to-br ${item.color}`}>
+                  <item.icon size={18} className={item.iconColor} />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-white transition-colors group-hover:text-accent">{item.label}</p>
+                  <p className="text-xs text-white/75">{item.sub}</p>
+                </div>
+              </Link>
+            ))}
           </div>
         </div>
       </div>
     </section>
   );
 }
-
-const CursorBall = ({ ref: ballRef, active }: { ref: React.RefObject<HTMLSpanElement | null>; active: boolean }) => {
-  return (
-    <span
-      ref={ballRef}
-      className={`pointer-events-none absolute left-0 top-0 z-30 h-9 w-9 transition-opacity duration-300 ${active ? 'opacity-100' : 'opacity-0'}`}
-    >
-      <span className="block h-full w-full rounded-full bg-gradient-to-br from-red-400 via-red-600 to-red-800 shadow-[0_4px_18px_rgba(0,0,0,0.5)] ring-1 ring-white/20">
-        <span className="absolute left-1/2 top-0 h-full w-[2px] -translate-x-1/2 rounded bg-red-900/70" />
-        <span className="absolute left-[24%] top-1/2 h-[2px] w-[42%] -translate-y-1/2 rounded bg-red-900/50" />
-        <span className="absolute left-[38%] top-[10%] h-[6px] w-[20%] rounded-full bg-white/50 blur-[1px]" />
-      </span>
-    </span>
-  );
-};

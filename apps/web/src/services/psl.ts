@@ -1,38 +1,39 @@
-import { apiGet } from './api/client';
+import { apiGet, extractPage } from './api/client';
+import type { PslSeason, PointsRow, PslSchedule, LeaderGroup, PslSquad } from '../types/index';
 
-async function asArray(promise: Promise<any>): Promise<any[]> {
-  const data = await promise;
-  if (Array.isArray(data)) return data;
-  if (data && Array.isArray(data.value)) return data.value;
-  return data ?? [];
-}
+const ALL = { limit: 100 };
 
 export async function fetchPslSeasons(
   params: Record<string, string | number | boolean | undefined | null> = {}
-): Promise<any[]> {
-  return asArray(apiGet('/psl/seasons', params));
+): Promise<PslSeason[]> {
+  const res = await apiGet('/psl/seasons', { ...ALL, ...params });
+  return extractPage<PslSeason>(res).items;
 }
 
 export async function fetchPslStandings(
   params: Record<string, string | number | boolean | undefined | null> = {}
-): Promise<any[]> {
-  return asArray(apiGet('/psl/standings', params));
+): Promise<PointsRow[]> {
+  const res = await apiGet('/psl/standings', { ...ALL, ...params });
+  return extractPage<PointsRow>(res).items;
 }
 
 export async function fetchPslSchedule(
   params: Record<string, string | number | boolean | undefined | null> = {}
-): Promise<any[]> {
-  return asArray(apiGet('/psl/schedule', params));
+): Promise<PslSchedule[]> {
+  const res = await apiGet('/psl/schedule', { ...ALL, ...params });
+  return extractPage<PslSchedule>(res).items;
 }
 
 export async function fetchPslLeaders(
   params: Record<string, string | number | boolean | undefined | null> = {}
-): Promise<any[]> {
-  return asArray(apiGet('/psl/leaders', params));
+): Promise<LeaderGroup[]> {
+  const res = await apiGet('/psl/leaders', { ...ALL, ...params });
+  return extractPage<LeaderGroup>(res).items;
 }
 
 export async function fetchPslSquads(
   params: Record<string, string | number | boolean | undefined | null> = {}
-): Promise<any[]> {
-  return asArray(apiGet('/psl/squads', params));
+): Promise<PslSquad[]> {
+  const res = await apiGet('/psl/squads', { ...ALL, ...params });
+  return extractPage<PslSquad>(res).items;
 }
