@@ -187,7 +187,7 @@ function StreamPlayer({ stream }: { stream: Stream }) {
           />
         ) : (
           <div
-            className={`relative flex h-full w-full flex-col items-center justify-center bg-cover bg-center ${stream.image ? '' : 'bg-gradient-to-br from-cyan-700 to-blue-900'}`}
+            className={`relative flex h-full w-full flex-col items-center justify-center bg-cover bg-center ${stream.image ? '' : 'bg-gradient-to-br from-accent to-primary'}`}
             style={stream.image ? { backgroundImage: `url(${stream.image})` } : undefined}
           >
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/40" />

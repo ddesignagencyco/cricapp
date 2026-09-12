@@ -181,7 +181,7 @@ export default function AuthorsPage() {
                         type="button"
                         onClick={() => startEdit(author)}
                         className="grid h-8 w-8 place-items-center rounded-md"
-                        style={{ background: 'rgba(0, 191, 255, 0.14)', color: 'var(--admin-accent)' }}
+                        style={{ background: 'var(--admin-info-bg)', color: 'var(--admin-accent)' }}
                         title="Edit author"
                       >
                         <FileEdit size={16} />

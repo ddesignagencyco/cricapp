@@ -65,14 +65,14 @@ export default async function PSLPage({ searchParams }: { searchParams: Promise<
         <div className="hero-content relative mx-auto max-w-7xl px-4 py-14 sm:px-6">
           <div className="max-w-2xl">
             <div className="mb-4 flex items-center gap-2">
-              <span className="text-xs font-bold uppercase tracking-widest text-slate-300">
+              <span className="text-xs font-bold uppercase tracking-widest text-stext">
                 {seasonLabel || 'Pakistan Super League'}
               </span>
             </div>
             <h1 className="hero-title text-4xl font-black tracking-tight sm:text-5xl">
               PAKISTAN <span className="text-accent">SUPER LEAGUE</span>
             </h1>
-            <p className="hero-lead mt-4 max-w-xl text-sm leading-relaxed text-slate-300 sm:text-base">
+            <p className="hero-lead mt-4 max-w-xl text-sm leading-relaxed sm:text-base">
               Six franchises, one mission. Follow the PSL with fixtures, tables and player stats.
             </p>
             <div className="mt-5 flex flex-wrap items-center gap-2.5">

@@ -6,7 +6,7 @@
   --color-card: #0D1B2A;
   --color-elevated: #122238;
   --color-accent: #00BFFF;
-  --color-accent2: #66D9FF;
+  --color-accent2: #00BFFF;
   --color-gold: #FFD166;
   --color-mtext: #F5F7FA;
   --color-stext: #94A3B8;
@@ -29,8 +29,8 @@
 
   /* Filled brand surfaces use a deeper sky blue than the bright accent so that
      solid buttons do not glare against the dark background, and hover darkens. */
-  --color-brand: #0284C7;
-  --color-brand-hover: #0369A1;
+  --color-brand: #00BFFF;
+  --color-brand-hover: #0099CC;
   --color-brand-fg: #FFFFFF;
   --color-focus-ring: #00BFFF;
 
@@ -63,11 +63,11 @@
   --color-secondary: #F1F5F9;
   --color-card: #FFFFFF;
   --color-elevated: #F8FAFC;
-  --color-accent: #0284C7;
-  --color-accent2: #38BDF8;
+  --color-accent: #0086B3;
+  --color-accent2: #0086B3;
   --color-gold: #B45309;
   --color-mtext: #0F172A;
-  --color-stext: #475569;
+  --color-stext: #1E293B;
   --color-lborder: #E2E8F0;
   --color-danger: #E11D48;
   --color-shadow: #0F172A;
@@ -79,24 +79,24 @@
   --color-surface-muted: #F1F5F9;
 
   --color-text-primary: #0F172A;
-  --color-text-secondary: #475569;
-  --color-text-muted: #64748B;
+  --color-text-secondary: #1E293B;
+  --color-text-muted: #334155;
 
   --color-border: #E2E8F0;
   --color-border-strong: #CBD5E1;
 
-  --color-brand: #0284C7;
-  --color-brand-hover: #0369A1;
+  --color-brand: #0086B3;
+  --color-brand-hover: #006B8F;
   --color-brand-fg: #FFFFFF;
-  --color-focus-ring: #0284C7;
+  --color-focus-ring: #0086B3;
 
   --color-success: #10B981;
   --color-success-soft: rgba(16, 185, 129, 0.12);
   --color-warning: #B45309;
   --color-warning-soft: rgba(180, 83, 9, 0.12);
   --color-danger-soft: rgba(225, 29, 72, 0.12);
-  --color-info: #0284C7;
-  --color-info-soft: rgba(2, 132, 199, 0.12);
+  --color-info: #0086B3;
+  --color-info-soft: rgba(0, 134, 179, 0.14);
 }
 
 * {
@@ -380,9 +380,9 @@ body {
   /* Admin Aliases: 100% synchronized with master semantic variables */
   --admin-bg: var(--color-background);
   --admin-surface: var(--color-surface-muted);
-  --admin-sidebar: #060E1A;
+  --admin-sidebar: var(--color-primary);
   --admin-sidebar-hover: rgba(255, 255, 255, 0.08);
-  --admin-sidebar-active: var(--color-brand);
+  --admin-sidebar-active: var(--color-accent);
   --admin-card: var(--color-surface);
   --admin-card-hover: var(--color-surface-elevated);
   --admin-border: var(--color-border);
@@ -390,7 +390,7 @@ body {
   --admin-text: var(--color-text-primary);
   --admin-text-secondary: var(--color-text-secondary);
   --admin-text-muted: var(--color-text-muted);
-  --admin-accent: var(--color-brand);
+  --admin-accent: var(--color-accent);
   --admin-accent-hover: var(--color-brand-hover);
   --admin-success: var(--color-success);
   --admin-success-bg: var(--color-success-soft);

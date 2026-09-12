@@ -58,7 +58,7 @@ export default function PslFixturesTable({ matches }: Props) {
                     </td>
                     <td className="px-4 py-3 text-xs text-stext">
                       <span>{date}</span>
-                      {time && <span className="ml-1 text-stext/60">{time}</span>}
+                      {time && <span className="ml-1 text-stext">{time}</span>}
                     </td>
                     <td className="px-4 py-3 text-right">
                       <StatusBadge status={m.status} />

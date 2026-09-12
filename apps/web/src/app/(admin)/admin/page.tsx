@@ -154,7 +154,7 @@ export default function AdminDashboard() {
           value={n(analytics?.matches)}
           icon={<Trophy size={14} />}
           accentColor="var(--admin-accent)"
-          accentBg="rgba(0, 191, 255, 0.12)"
+          accentBg="var(--admin-info-bg)"
         />
         <MetricCard
           label="Teams"
@@ -175,7 +175,7 @@ export default function AdminDashboard() {
           value={n(analytics?.tournaments)}
           icon={<Globe size={14} />}
           accentColor="var(--admin-accent)"
-          accentBg="rgba(0, 191, 255, 0.12)"
+          accentBg="var(--admin-info-bg)"
         />
         <MetricCard
           label="Tours"
@@ -217,7 +217,7 @@ export default function AdminDashboard() {
           value={n(analytics?.totalShares)}
           icon={<Share2 size={14} />}
           accentColor="var(--admin-accent)"
-          accentBg="rgba(0, 191, 255, 0.12)"
+          accentBg="var(--admin-info-bg)"
         />
         <MetricCard
           label="Favorites"
@@ -260,7 +260,7 @@ export default function AdminDashboard() {
           </div>
         </div>
         <div className="flex items-center gap-3 sm:px-4">
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg" style={{ background: 'rgba(0, 191, 255, 0.12)', color: 'var(--admin-accent)' }}>
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg" style={{ background: 'var(--admin-info-bg)', color: 'var(--admin-accent)' }}>
             <Database size={18} />
           </div>
           <div>

@@ -226,7 +226,7 @@ function TickerCard({ match }: { match: any }) {
         {venue ? (
           <span className="min-w-0 truncate" title={venue}>{venue.split(',')[0]}</span>
         ) : (
-          <span suppressHydrationWarning className="truncate font-semibold text-stext/80">{scheduleTime(match)}</span>
+          <span suppressHydrationWarning className="truncate font-semibold text-stext">{scheduleTime(match)}</span>
         )}
         <span className="ml-auto shrink-0 font-semibold text-accent2">{formatShortDate(match)}</span>
       </div>
