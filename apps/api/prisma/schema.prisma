@@ -95,7 +95,7 @@ model PslStanding {
   oversAgainst Float   @default(0) @map("overs_against")
   change       Int     @default(0)
   createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
 
   @@unique([seasonId, teamId])
   @@index([seasonId, rank])
@@ -117,7 +117,7 @@ model PslFixture {
   resultText   String?  @map("result_text")
   round        String?
   createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
 
   @@index([seasonId])
   @@index([scheduled])
@@ -136,7 +136,7 @@ model PslLeader {
   teamName   String? @map("team_name")
   value      Float  @default(0)
   createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at")
 
   @@unique([seasonId, category, stat, playerId])
   @@index([seasonId, category, stat, rank])

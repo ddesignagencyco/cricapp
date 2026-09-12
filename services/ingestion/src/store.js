@@ -52,8 +52,8 @@ export async function publishEvents(events) {
 }
 
 const upsertTeam = `
-  INSERT INTO teams (id, name, abbr, country, logo_url, manager)
-  VALUES ($1,$2,$3,$4,$5,$6)
+  INSERT INTO teams (id, name, abbr, country, logo_url, manager, created_at, updated_at)
+  VALUES ($1,$2,$3,$4,$5,$6,NOW(),NOW())
   ON CONFLICT (id) DO UPDATE SET
     name = EXCLUDED.name,
     abbr = EXCLUDED.abbr,
@@ -64,8 +64,8 @@ const upsertTeam = `
 `;
 
 const upsertPlayer = `
-  INSERT INTO players (id, full_name, short_name, team_id, birth, nationality, batting_style, bowling_style, role, profile_url, country_code, jersey_number, height)
-  VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+  INSERT INTO players (id, full_name, short_name, team_id, birth, nationality, batting_style, bowling_style, role, profile_url, country_code, jersey_number, height, created_at, updated_at)
+  VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,NOW(),NOW())
   ON CONFLICT (id) DO UPDATE SET
     full_name = EXCLUDED.full_name,
     short_name = EXCLUDED.short_name,
@@ -109,9 +109,10 @@ export async function saveTeamsPlayers({ teams = [], players = [] }) {
 const upsertStanding = `
   INSERT INTO psl_standings (
     season_id, team_id, team_name, team_abbr, rank, played, won, lost, tied,
-    no_result, points, net_run_rate, runs_for, runs_against, overs_for, overs_against, change
+    no_result, points, net_run_rate, runs_for, runs_against, overs_for, overs_against, change,
+    created_at, updated_at
   )
-  VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+  VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,NOW(),NOW())
   ON CONFLICT (season_id, team_id) DO UPDATE SET
     team_name = EXCLUDED.team_name,
     team_abbr = EXCLUDED.team_abbr,
@@ -159,9 +160,10 @@ export async function saveStandings(seasonId, rows) {
 const upsertFixture = `
   INSERT INTO psl_fixtures (
     match_id, season_id, status, scheduled, home_team_id, home_team_name, home_team_abbr,
-    away_team_id, away_team_name, away_team_abbr, venue, result_text, round
+    away_team_id, away_team_name, away_team_abbr, venue, result_text, round,
+    created_at, updated_at
   )
-  VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+  VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,NOW(),NOW())
   ON CONFLICT (match_id) DO UPDATE SET
     season_id = EXCLUDED.season_id,
     status = EXCLUDED.status,
@@ -201,9 +203,10 @@ export async function saveFixtures(seasonId, rows) {
 
 const upsertLeader = `
   INSERT INTO psl_leaders (
-    season_id, category, stat, rank, player_id, player_name, team_abbr, team_name, value
+    season_id, category, stat, rank, player_id, player_name, team_abbr, team_name, value,
+    created_at, updated_at
   )
-  VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+  VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,NOW(),NOW())
   ON CONFLICT (season_id, category, stat, player_id) DO UPDATE SET
     rank = EXCLUDED.rank,
     player_name = EXCLUDED.player_name,
@@ -281,8 +284,8 @@ export async function cachePsData(seasonId, type, payload) {
 }
 
 const upsertTours = `
-  INSERT INTO tours (id, name, category, sport)
-  VALUES ($1,$2,$3,$4)
+  INSERT INTO tours (id, name, category, sport, created_at, updated_at)
+  VALUES ($1,$2,$3,$4,NOW(),NOW())
   ON CONFLICT (id) DO UPDATE SET
     name = EXCLUDED.name,
     category = EXCLUDED.category,
@@ -298,8 +301,8 @@ export async function saveTours(rows) {
 }
 
 const upsertTournaments = `
-  INSERT INTO tournaments (id, name, type, gender, category, current_season, sport, tour_id, parent_id)
-  VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+  INSERT INTO tournaments (id, name, type, gender, category, current_season, sport, tour_id, parent_id, created_at, updated_at)
+  VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,NOW(),NOW())
   ON CONFLICT (id) DO UPDATE SET
     name = EXCLUDED.name,
     type = EXCLUDED.type,
@@ -338,12 +341,14 @@ export async function saveTournaments(rows) {
  */
 export async function backfillTours() {
   const r = await query(`
-    INSERT INTO tours (id, name, category, sport)
+    INSERT INTO tours (id, name, category, sport, created_at, updated_at)
     SELECT DISTINCT
       'cat:' || (t.category->>'id') AS id,
       COALESCE(NULLIF(t.category->>'name', ''), 'Unknown Tour') AS name,
       t.category,
-      t.sport
+      t.sport,
+      NOW(),
+      NOW()
     FROM tournaments t
     WHERE t.category ? 'id' AND COALESCE(NULLIF(t.category->>'id', ''), '') <> ''
     ON CONFLICT (id) DO UPDATE SET
@@ -356,8 +361,8 @@ export async function backfillTours() {
 }
 
 const upsertSportEventRecord = `
-  INSERT INTO sport_event_records (kind, scope_key, event_id, status, scheduled, payload)
-  VALUES ($1,$2,$3,$4,$5,$6)
+  INSERT INTO sport_event_records (kind, scope_key, event_id, status, scheduled, payload, created_at, updated_at)
+  VALUES ($1,$2,$3,$4,$5,$6,NOW(),NOW())
   ON CONFLICT (kind, scope_key, event_id) DO UPDATE SET
     status = EXCLUDED.status,
     scheduled = EXCLUDED.scheduled,
@@ -462,8 +467,8 @@ export async function saveSportEventRecords(rows) {
 }
 
 const upsertMatchTimeline = `
-  INSERT INTO match_timelines (match_id, payload)
-  VALUES ($1,$2)
+  INSERT INTO match_timelines (match_id, payload, created_at, updated_at)
+  VALUES ($1,$2,NOW(),NOW())
   ON CONFLICT (match_id) DO UPDATE SET
     payload = EXCLUDED.payload,
     updated_at = NOW()
@@ -475,8 +480,8 @@ export async function saveMatchTimeline(matchId, payload) {
 }
 
 const upsertHeadToHead = `
-  INSERT INTO head_to_head (team_a_id, team_b_id, payload)
-  VALUES ($1,$2,$3)
+  INSERT INTO head_to_head (team_a_id, team_b_id, payload, created_at, updated_at)
+  VALUES ($1,$2,$3,NOW(),NOW())
   ON CONFLICT (team_a_id, team_b_id) DO UPDATE SET
     payload = EXCLUDED.payload,
     updated_at = NOW()
@@ -488,8 +493,8 @@ export async function saveHeadToHead({ teamAId, teamBId, payload }) {
 }
 
 const upsertTeamProfile = `
-  INSERT INTO team_profiles (team_id, manager, team_info)
-  VALUES ($1,$2,$3)
+  INSERT INTO team_profiles (team_id, manager, team_info, created_at, updated_at)
+  VALUES ($1,$2,$3,NOW(),NOW())
   ON CONFLICT (team_id) DO UPDATE SET
     manager = EXCLUDED.manager,
     team_info = EXCLUDED.team_info,
@@ -506,8 +511,8 @@ export async function saveTeamProfile({ teamId, manager, teamInfo }) {
 }
 
 const upsertPlayerProfile = `
-  INSERT INTO player_profiles (player_id, payload)
-  VALUES ($1,$2)
+  INSERT INTO player_profiles (player_id, payload, created_at, updated_at)
+  VALUES ($1,$2,NOW(),NOW())
   ON CONFLICT (player_id) DO UPDATE SET
     payload = EXCLUDED.payload,
     updated_at = NOW()
@@ -546,8 +551,8 @@ export async function savePlayerProfile({ playerId, payload }) {
 }
 
 const upsertTournamentSeason = `
-  INSERT INTO tournament_seasons (id, tournament_id, name, year, start_date, end_date)
-  VALUES ($1,$2,$3,$4,$5,$6)
+  INSERT INTO tournament_seasons (id, tournament_id, name, year, start_date, end_date, created_at, updated_at)
+  VALUES ($1,$2,$3,$4,$5,$6,NOW(),NOW())
   ON CONFLICT (id) DO UPDATE SET
     tournament_id = EXCLUDED.tournament_id,
     name = EXCLUDED.name,
