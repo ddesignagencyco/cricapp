@@ -113,6 +113,7 @@ function LeaderSection({ stat, entries }: { stat: string; entries: any[] }) {
       )}
 
       <div className="overflow-hidden rounded-sm bg-card ring-1 ring-lborder">
+        <div className="overflow-x-scroll">
         <table className="w-full min-w-[480px] text-left text-sm">
           <thead>
             <tr className="border-b border-lborder bg-secondary/40 text-xs uppercase tracking-wider text-stext">
@@ -150,6 +151,7 @@ function LeaderSection({ stat, entries }: { stat: string; entries: any[] }) {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
     </section>
   );

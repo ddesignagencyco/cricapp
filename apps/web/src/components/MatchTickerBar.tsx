@@ -15,8 +15,23 @@ interface MatchTickerBarProps {
 export default function MatchTickerBar({ matches: initialMatches }: MatchTickerBarProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [matches, setMatches] = useState(initialMatches || []);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
   const hasLive = (initialMatches || []).some((match) => match?.status === 'live');
   const liveUpdate = useMatchStream(undefined, hasLive);
+  const overflows = canScrollLeft || canScrollRight;
+
+  const updateScrollState = () => {
+    const el = scrollRef.current;
+    if (!el) {
+      setCanScrollLeft(false);
+      setCanScrollRight(false);
+      return;
+    }
+    const { scrollLeft, scrollWidth, clientWidth } = el;
+    setCanScrollLeft(scrollLeft > 1);
+    setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 1);
+  };
 
   useEffect(() => {
     setMatches(initialMatches || []);
@@ -27,44 +42,67 @@ export default function MatchTickerBar({ matches: initialMatches }: MatchTickerB
     setMatches((prev) => mergeLiveUpdate(prev, liveUpdate));
   }, [liveUpdate]);
 
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    updateScrollState();
+    el.addEventListener('scroll', updateScrollState, { passive: true });
+    const ro = new ResizeObserver(updateScrollState);
+    ro.observe(el);
+
+    return () => {
+      el.removeEventListener('scroll', updateScrollState);
+      ro.disconnect();
+    };
+  }, [matches]);
+
   const scroll = (dir: 'left' | 'right') => {
     if (!scrollRef.current) return;
     const amount = 340;
     scrollRef.current.scrollBy({ left: dir === 'left' ? -amount : amount, behavior: 'smooth' });
   };
 
-  if (!matches.length) return null;
-
   return (
     <div className="border-b border-lborder">
       <div className="mx-auto max-w-full px-4 sm:px-6">
-        <div className="relative flex items-center gap-3 py-3">
-          <button
-            type="button"
-            onClick={() => scroll('left')}
-            className="z-10 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-elevated text-stext ring-1 ring-lborder transition-colors hover:text-mtext"
-            aria-label="Scroll left"
-          >
-            <ChevronLeft size={15} />
-          </button>
+        <div className="relative py-3">
+          {canScrollLeft ? (
+            <button
+              type="button"
+              onClick={() => scroll('left')}
+              className="absolute left-0 top-1/2 z-10 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full bg-elevated text-stext ring-1 ring-lborder transition-colors hover:text-mtext"
+              aria-label="Scroll left"
+            >
+              <ChevronLeft size={15} />
+            </button>
+          ) : null}
 
           <div
             ref={scrollRef}
-            className="no-scrollbar p-2 flex flex-1 gap-3 overflow-x-auto scroll-smooth"
+            className={`no-scrollbar flex gap-3 overflow-x-auto scroll-smooth py-2 ${
+              overflows ? 'px-11' : 'justify-center px-2'
+            }`}
           >
-            {matches.map((m) => (
-              <TickerCard key={m.matchId || m.id} match={m} />
-            ))}
+            {matches.length ? (
+              matches.map((m) => (
+                <TickerCard key={m.matchId || m.id} match={m} />
+              ))
+            ) : (
+              <p className="py-8 text-center text-sm text-stext">No matches right now.</p>
+            )}
           </div>
 
-          <button
-            type="button"
-            onClick={() => scroll('right')}
-            className="z-10 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-elevated text-stext ring-1 ring-lborder transition-colors hover:text-mtext"
-            aria-label="Scroll right"
-          >
-            <ChevronRight size={15} />
-          </button>
+          {canScrollRight ? (
+            <button
+              type="button"
+              onClick={() => scroll('right')}
+              className="absolute right-0 top-1/2 z-10 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full bg-elevated text-stext ring-1 ring-lborder transition-colors hover:text-mtext"
+              aria-label="Scroll right"
+            >
+              <ChevronRight size={15} />
+            </button>
+          ) : null}
         </div>
       </div>
     </div>

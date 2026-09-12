@@ -93,8 +93,8 @@ export default function PslSpotlight({ standings = [] }: PslSpotlightProps) {
                   <th className="px-4 py-2.5">Team</th>
                   <th className="px-4 py-2.5 text-center">P</th>
                   <th className="px-4 py-2.5 text-center">W</th>
-                  <th className="hidden px-4 py-2.5 text-center sm:table-cell">L</th>
-                  <th className="hidden px-4 py-2.5 text-center sm:table-cell">NRR</th>
+                  <th className="px-4 py-2.5 text-center">L</th>
+                  <th className="px-4 py-2.5 text-center">NRR</th>
                   <th className="px-4 py-2.5 text-center">PTS</th>
                 </tr>
               </thead>
@@ -115,8 +115,8 @@ export default function PslSpotlight({ standings = [] }: PslSpotlightProps) {
                       </td>
                       <td className="px-4 py-2.5 text-center font-mono text-xs text-stext">{row.played ?? 0}</td>
                       <td className="px-4 py-2.5 text-center font-mono text-xs text-accent2">{row.won ?? 0}</td>
-                      <td className="hidden px-4 py-2.5 text-center font-mono text-xs text-danger sm:table-cell">{row.lost ?? 0}</td>
-                      <td className={`hidden px-4 py-2.5 text-center font-mono text-xs sm:table-cell ${(row.netRunRate ?? 0) >= 0 ? 'text-accent2' : 'text-danger'}`}>
+                      <td className="px-4 py-2.5 text-center font-mono text-xs text-danger">{row.lost ?? 0}</td>
+                      <td className={`px-4 py-2.5 text-center font-mono text-xs ${(row.netRunRate ?? 0) >= 0 ? 'text-accent2' : 'text-danger'}`}>
                         {row.netRunRate ?? 0}
                       </td>
                       <td className="px-4 py-2.5 text-center font-mono text-xs font-bold text-mtext">{row.points ?? 0}</td>

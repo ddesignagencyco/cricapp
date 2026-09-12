@@ -538,3 +538,45 @@ body {
 .light .pcz-toast {
   box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12) !important;
 }
+
+/* Keep every table column reachable on small screens.
+   Direct table parents become a horizontal scroll area with a visible bar. */
+@media (max-width: 767px) {
+  :has(> table) {
+    overflow-x: scroll;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-lborder) transparent;
+  }
+
+  :has(> table)::-webkit-scrollbar {
+    display: block;
+    height: 8px;
+    width: 8px;
+  }
+
+  :has(> table)::-webkit-scrollbar-track {
+    background: color-mix(in srgb, var(--color-lborder) 35%, transparent);
+    border-radius: 999px;
+  }
+
+  :has(> table)::-webkit-scrollbar-thumb {
+    background: var(--color-stext);
+    border-radius: 999px;
+  }
+
+  :has(> table)::-webkit-scrollbar-thumb:hover {
+    background: var(--color-mtext);
+  }
+
+  table {
+    width: 100%;
+    min-width: max-content;
+  }
+
+  table th {
+    white-space: nowrap;
+  }
+}

@@ -178,8 +178,8 @@ export async function saveNewsArticles(articles) {
       updated++;
     } else {
       await query(
-        `INSERT INTO news_articles (id, title, slug, summary, content, image_url, author, source, category_id, published_at, is_published)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, true)`,
+        `INSERT INTO news_articles (id, title, slug, summary, content, image_url, author, source, category_id, published_at, is_published, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, true, NOW(), NOW())`,
         [
           crypto.randomUUID(),
           article.title,
