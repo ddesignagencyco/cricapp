@@ -81,6 +81,6 @@ export const PREDICTION_STAGE = Object.freeze({
 });
 
 export const PREDICTION_MODELS = Object.freeze({
-  PREMATCH: 'prematch-logit-v1',
-  LIVE: 'live-resource-v1',
+  PREMATCH: 'prematch-logit-v2',
+  LIVE: 'live-resource-v2',
 });

@@ -474,6 +474,18 @@ const upsertMatchTimeline = `
     updated_at = NOW()
 `;
 
+export async function saveMatchLineup(matchId, payload) {
+  await query(upsertSportEventRecord, [
+    'match_lineup',
+    matchId,
+    matchId,
+    null,
+    null,
+    JSON.stringify(payload),
+  ]);
+  return 1;
+}
+
 export async function saveMatchTimeline(matchId, payload) {
   await query(upsertMatchTimeline, [matchId, JSON.stringify(payload)]);
   return 1;

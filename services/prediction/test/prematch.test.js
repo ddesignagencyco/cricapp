@@ -37,6 +37,10 @@ describe('scorePrematch', () => {
     assert.ok(out.homeWinProb > 0.7);
     assert.equal(Number((out.homeWinProb + out.awayWinProb).toFixed(4)), 1);
     assert.equal(out.explanation.weights.form, PREMATCH_WEIGHTS.form);
+    assert.ok(out.scoreRange.low < out.scoreRange.expected);
+    assert.ok(out.scoreRange.expected < out.scoreRange.high);
+    assert.equal(out.calibrationBand, 'high');
+    assert.ok(out.explanation.factorAttributions.length >= 6);
   });
 
   it('lowers confidence when either team has fewer than 3 prior results', () => {
@@ -51,5 +55,23 @@ describe('scorePrematch', () => {
     const out = scorePrematch({ ...base, toss: { edge: 1, wonBy: 'sr:competitor:1' } });
     assert.equal(out.explanation.tossAdjusted, true);
     assert.ok(out.homeWinProb > 0.5);
+  });
+
+  it('uses pitch/weather signals and stores player projections', () => {
+    const out = scorePrematch({
+      ...base,
+      format: 't20',
+      parScore: 160,
+      conditions: { pitch: 'flat batting pitch', weather: 'dew expected' },
+      playerProjections: {
+        topBatters: [{ playerId: 'p1', probability: 1 }],
+        topBowlers: [{ playerId: 'p2', probability: 1 }],
+        xi: { home: [], away: [] },
+      },
+    });
+    assert.ok(out.scoreRange.expected > 160);
+    assert.equal(out.topBatters[0].playerId, 'p1');
+    assert.equal(out.topBowlers[0].playerId, 'p2');
+    assert.ok(out.explanation.conditionsImpact.factors.length > 0);
   });
 });

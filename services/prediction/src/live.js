@@ -85,6 +85,43 @@ export function scoreLive(snapshot, previous = null) {
 
   const prevHome = previous?.homeWinProb ?? homeWinProb;
   const deltaFromPrevious = Number((homeWinProb - prevHome).toFixed(4));
+  const scoringRate = Math.max(0, rr / Math.max(1, par / (allottedBalls / 6)));
+  const wicketPressure = Math.min(1, wicketsLost / 10);
+  const chasePressure =
+    currentInning === 2 && requiredRunRate != null
+      ? Math.max(0, Math.min(1, (requiredRunRate - rr) / Math.max(1, requiredRunRate)))
+      : 0;
+  const pressureIndex = Number(
+    Math.max(0, Math.min(1, 0.55 * wicketPressure + 0.45 * chasePressure)).toFixed(4),
+  );
+  const momentum = Number(
+    Math.max(-1, Math.min(1, (scoringRate - 1) * 0.6 - pressureIndex * 0.4)).toFixed(4),
+  );
+  const wicketRisk = Number(
+    Math.max(0.05, Math.min(0.95, 0.12 + pressureIndex * 0.55 + wicketPressure * 0.2)).toFixed(4),
+  );
+  const partnershipExpectedRuns = Math.max(
+    0,
+    Math.round(Math.min(remainingBalls / 6, 8) * Math.max(2, rr) * (1 - wicketRisk)),
+  );
+  const rangeExpected =
+    currentInning === 1
+      ? Math.round(projectedTotal ?? innings.runs ?? 0)
+      : Math.round((innings.runs ?? 0) + Math.min(requiredRuns ?? 0, resourcesLeft * par));
+  const rangeSpread = Math.max(6, Math.round(18 * resourcesLeft + pressureIndex * 10));
+  const scoreRange = {
+    type: currentInning === 1 ? 'first_innings' : 'chase_total',
+    low: Math.max(Number(innings.runs ?? 0), rangeExpected - rangeSpread),
+    expected: rangeExpected,
+    high: rangeExpected + rangeSpread,
+    unit: 'runs',
+  };
+  const factorAttributions = [
+    { factor: 'scoring_rate', impact: Number(((scoringRate - 1) * 0.6).toFixed(4)) },
+    { factor: 'wickets', impact: Number((-wicketPressure * 0.35).toFixed(4)) },
+    { factor: 'chase_pressure', impact: Number((-chasePressure * 0.45).toFixed(4)) },
+    { factor: 'resources', impact: Number(((resourcesLeft - 0.5) * 0.3).toFixed(4)) },
+  ];
 
   const n = (snapshot.currentInnings?.overs ?? 0) > 0 ? 1 : 0;
   const confidence = currentInning === 1 && n === 0 ? 0.4 : 0.55;
@@ -93,6 +130,16 @@ export function scoreLive(snapshot, previous = null) {
     homeWinProb,
     awayWinProb,
     confidence,
+    calibrationBand: confidence >= 0.75 ? 'high' : confidence >= 0.5 ? 'medium' : 'low',
+    scoreRange,
+    momentum,
+    pressureIndex,
+    wicketRisk,
+    partnershipProjection: {
+      expectedAdditionalRuns: partnershipExpectedRuns,
+      horizonBalls: Math.min(remainingBalls, 48),
+      reliability: innings.overs > 0 ? 'medium' : 'low',
+    },
     explanation: {
       over: innings.overs ?? 0,
       wickets: wicketsLost,
@@ -105,6 +152,10 @@ export function scoreLive(snapshot, previous = null) {
       projectedTotal: projectedTotal != null ? Number(projectedTotal.toFixed(1)) : null,
       deltaFromPrevious,
       reasons: reasonsFromEvent(snapshot.lastEvent),
+      factorAttributions,
+      momentum,
+      pressureIndex,
+      wicketRisk,
     },
   };
 }

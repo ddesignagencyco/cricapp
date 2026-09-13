@@ -7,12 +7,15 @@ import { createLogger } from './logger.js';
 import { extractLiveFeatures, extractPrematchFeatures, listUpcomingMatchIds } from './features.js';
 import { scorePrematch } from './prematch.js';
 import { scoreLive } from './live.js';
-import { latestLiveResult, persistPrediction } from './persist.js';
+import { latestFeatureSnapshot, latestLiveResult, persistPrediction } from './persist.js';
+import { recalibratePrematch, resolvePrematchCalibration } from './calibrate.js';
 
 const log = createLogger('prediction');
 const PREMATCH_INTERVAL_MS = Number(process.env.PREMATCH_INTERVAL_MS || 900000);
 const LIVE_THROTTLE_MS = Number(process.env.LIVE_THROTTLE_MS || 15000);
 const LIVE_REFRESH_MS = Number(process.env.LIVE_REFRESH_MS || 5000);
+const PREMATCH_HORIZON_HOURS = Number(process.env.PREMATCH_HORIZON_HOURS || 720);
+const CALIBRATION_INTERVAL_MS = Number(process.env.CALIBRATION_INTERVAL_MS || 3600000);
 
 const liveThrottle = new Map();
 
@@ -32,6 +35,22 @@ export async function runPrematch(matchId) {
   const snapshot = await extractPrematchFeatures(matchId, { query, redis });
   if (!snapshot) {
     log.warn('prematch skipped — match not found', { matchId });
+    return null;
+  }
+  const calibration = await resolvePrematchCalibration(query);
+  snapshot.calibration = {
+    slope: calibration.slope,
+    intercept: calibration.intercept,
+    source: calibration.source,
+  };
+  const previousSnapshot = await latestFeatureSnapshot(
+    query,
+    matchId,
+    PREDICTION_STAGE.PRE_MATCH,
+    PREDICTION_MODELS.PREMATCH,
+  );
+  if (previousSnapshot && JSON.stringify(previousSnapshot) === JSON.stringify(snapshot)) {
+    log.info('prematch unchanged — skipped', { matchId });
     return null;
   }
   const result = scorePrematch(snapshot);
@@ -67,8 +86,23 @@ export async function runLive(matchId) {
   return id;
 }
 
+export async function recalibrateModels() {
+  const result = await recalibratePrematch(query);
+  if (result.applied) {
+    log.info('prematch recalibrated', {
+      slope: result.slope,
+      intercept: result.intercept,
+      sampleSize: result.sampleSize,
+      brierScore: result.brierScore,
+    });
+  } else {
+    log.info('prematch calibration skipped', { reason: result.reason, sampleSize: result.sampleSize });
+  }
+  return result;
+}
+
 export async function scoreUpcomingMatches() {
-  const ids = await listUpcomingMatchIds(query);
+  const ids = await listUpcomingMatchIds(query, { horizonHours: PREMATCH_HORIZON_HOURS });
   log.info('prematch cycle', { count: ids.length });
   for (const matchId of ids) {
     try {
@@ -165,9 +199,14 @@ async function main() {
     scoreUpcomingMatches().catch((err) => log.error('prematch cycle failed', { error: err.message }));
   }, PREMATCH_INTERVAL_MS);
   await startLiveSubscriber();
+  await recalibrateModels().catch((err) => log.error('calibration failed', { error: err.message }));
+  setInterval(() => {
+    recalibrateModels().catch((err) => log.error('calibration failed', { error: err.message }));
+  }, CALIBRATION_INTERVAL_MS);
   log.info('prediction service started', {
     prematchIntervalMs: PREMATCH_INTERVAL_MS,
     liveThrottleMs: LIVE_THROTTLE_MS,
+    calibrationIntervalMs: CALIBRATION_INTERVAL_MS,
   });
 }
 

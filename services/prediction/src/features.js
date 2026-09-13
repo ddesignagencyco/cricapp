@@ -160,6 +160,18 @@ async function loadEventPayload(query, matchId) {
   const r = await query(
     `SELECT payload FROM sport_event_records
      WHERE event_id = $1
+       AND kind <> 'match_lineup'
+     ORDER BY updated_at DESC
+     LIMIT 1`,
+    [matchId],
+  );
+  return r.rows[0]?.payload ?? null;
+}
+
+async function loadMatchLineup(query, matchId) {
+  const r = await query(
+    `SELECT payload FROM sport_event_records
+     WHERE event_id = $1 AND kind = 'match_lineup'
      ORDER BY updated_at DESC
      LIMIT 1`,
     [matchId],
@@ -266,10 +278,105 @@ async function loadStandings(query, homeId, awayId) {
   return { used: false };
 }
 
-async function loadSquadSize(query, teamId) {
-  if (!teamId) return 0;
-  const r = await query(`SELECT COUNT(*)::int AS n FROM players WHERE team_id = $1`, [teamId]);
-  return r.rows[0]?.n ?? 0;
+async function loadSquadPlayers(query, teamId) {
+  if (!teamId) return [];
+  const r = await query(
+    `SELECT id, full_name, short_name, role, batting_style, bowling_style
+     FROM players
+     WHERE team_id = $1
+     ORDER BY full_name`,
+    [teamId],
+  );
+  return r.rows;
+}
+
+function normalizedProbabilities(players, predicate, limit, leaderRows, category) {
+  const eligible = players.filter(predicate);
+  const relevant = leaderRows.filter(
+    (row) => row.category === category || String(row.stat ?? '').includes(category === 'batting' ? 'run' : 'wicket'),
+  );
+  const rankByPlayer = new Map(
+    relevant.map((row) => [row.player_id, Number(row.rank) || 999]),
+  );
+  const selected = [...(eligible.length ? eligible : players)]
+    .sort((a, b) => (rankByPlayer.get(a.id) ?? 999) - (rankByPlayer.get(b.id) ?? 999))
+    .slice(0, limit);
+  const weights = selected.map((player, index) => ({
+    playerId: player.id,
+    playerName: player.full_name ?? player.short_name ?? player.id,
+    probability: rankByPlayer.has(player.id)
+      ? 1 / Math.sqrt(rankByPlayer.get(player.id))
+      : Math.max(0.1, 0.5 - index * 0.04),
+    basis: rankByPlayer.has(player.id) ? 'season_leader_rank' : 'squad_role_prior',
+  }));
+  const total = weights.reduce((sum, item) => sum + item.probability, 0) || 1;
+  return weights.map((item) => ({
+    ...item,
+    probability: Number((item.probability / total).toFixed(4)),
+  }));
+}
+
+function xiForTeam(players, confirmedIds = []) {
+  if (players.length === 0) return [];
+  const confirmed = new Set(confirmedIds);
+  if (confirmed.size > 0) {
+    return players.map((player) => ({
+      playerId: player.id,
+      playerName: player.full_name ?? player.short_name ?? player.id,
+      role: player.role ?? null,
+      probability: confirmed.has(player.id) ? 1 : 0,
+      source: 'confirmed_match_lineup',
+    }));
+  }
+  const probability = Math.min(1, 11 / players.length);
+  return players.map((player) => ({
+    playerId: player.id,
+    playerName: player.full_name ?? player.short_name ?? player.id,
+    role: player.role ?? null,
+    probability: Number(probability.toFixed(4)),
+    source: 'registered_squad',
+  }));
+}
+
+function confirmedLineupIds(payload, side) {
+  const lineups = Array.isArray(payload?.lineups) ? payload.lineups : [];
+  const lineup = lineups.find((item, index) => item?.team === side || item?.qualifier === side || index === (side === 'home' ? 0 : 1));
+  return Array.isArray(lineup?.starting_lineup)
+    ? lineup.starting_lineup.map((player) => player?.id).filter(Boolean)
+    : [];
+}
+
+export function buildPlayerProjections(homePlayers, awayPlayers, leaderRows = [], lineupPayload = null) {
+  const all = [...homePlayers, ...awayPlayers];
+  const confirmedHome = confirmedLineupIds(lineupPayload, 'home');
+  const confirmedAway = confirmedLineupIds(lineupPayload, 'away');
+  const hasConfirmedLineup = confirmedHome.length > 0 || confirmedAway.length > 0;
+  const batter = (player) => /bat|all.?round|wicket.?keep/i.test(player.role ?? '');
+  const bowler = (player) =>
+    /bowl|all.?round/i.test(`${player.role ?? ''} ${player.bowling_style ?? ''}`);
+  return {
+    topBatters: normalizedProbabilities(all, batter, 6, leaderRows, 'batting'),
+    topBowlers: normalizedProbabilities(all, bowler, 6, leaderRows, 'bowling'),
+    xi: {
+      home: xiForTeam(homePlayers, confirmedHome),
+      away: xiForTeam(awayPlayers, confirmedAway),
+      method: hasConfirmedLineup ? 'confirmed match lineup' : 'registered-squad availability heuristic',
+      reliability: hasConfirmedLineup ? 'high' : 'low',
+    },
+  };
+}
+
+async function loadLeaderPriors(query, players) {
+  const ids = players.map((player) => player.id).filter(Boolean);
+  if (ids.length === 0) return [];
+  const r = await query(
+    `SELECT player_id, category, stat, rank, value
+     FROM psl_leaders
+     WHERE player_id = ANY($1::text[])
+     ORDER BY rank`,
+    [ids],
+  );
+  return r.rows;
 }
 
 async function loadTeamProfile(query, teamId) {
@@ -320,15 +427,25 @@ export async function extractPrematchFeatures(matchId, { query, redis }) {
   const match = await loadMatch(query, matchId);
   if (!match) return null;
   const eventPayload = await loadEventPayload(query, matchId);
+  const lineupPayload = await loadMatchLineup(query, matchId);
   const teams = await resolveTeams(query, match, eventPayload);
-  const [homeResults, awayResults, h2hPayload, table, homeSquad, awaySquad, homeProfile, awayProfile] =
+  const [
+    homeResults,
+    awayResults,
+    h2hPayload,
+    table,
+    homePlayers,
+    awayPlayers,
+    homeProfile,
+    awayProfile,
+  ] =
     await Promise.all([
       loadTeamResults(query, teams.homeTeamId),
       loadTeamResults(query, teams.awayTeamId),
       loadHeadToHead(query, teams.homeTeamId, teams.awayTeamId),
       loadStandings(query, teams.homeTeamId, teams.awayTeamId),
-      loadSquadSize(query, teams.homeTeamId),
-      loadSquadSize(query, teams.awayTeamId),
+      loadSquadPlayers(query, teams.homeTeamId),
+      loadSquadPlayers(query, teams.awayTeamId),
       loadTeamProfile(query, teams.homeTeamId),
       loadTeamProfile(query, teams.awayTeamId),
     ]);
@@ -337,6 +454,7 @@ export async function extractPrematchFeatures(matchId, { query, redis }) {
   const awayForm = weightedForm(awayResults, teams.awayTeamId);
   const h2h = h2hEdge(meetingsFromHeadToHead(h2hPayload), teams.homeTeamId, teams.awayTeamId);
   const status = sportEventStatus(eventPayload);
+  const leaderPriors = await loadLeaderPriors(query, [...homePlayers, ...awayPlayers]);
   const tossWonBy = status.toss_won_by ?? null;
   let tossEdge = 0;
   if (tossWonBy && tossWonBy === teams.homeTeamId) tossEdge = 1;
@@ -365,6 +483,7 @@ export async function extractPrematchFeatures(matchId, { query, redis }) {
     tournament: match.tournament ?? null,
     scheduled: match.scheduled ?? null,
     format: detectFormat(match.tournament, match.match_status),
+    parScore: parScoreForFormat(detectFormat(match.tournament, match.match_status)),
     form: {
       home: homeForm.rate,
       away: awayForm.rate,
@@ -379,7 +498,8 @@ export async function extractPrematchFeatures(matchId, { query, redis }) {
       decision: status.toss_decision ?? null,
       edge: tossEdge,
     },
-    squad: { homeSize: homeSquad, awaySize: awaySquad },
+    squad: { homeSize: homePlayers.length, awaySize: awayPlayers.length },
+    playerProjections: buildPlayerProjections(homePlayers, awayPlayers, leaderPriors, lineupPayload),
     conditions: conditionsFromPayload(eventPayload),
   };
 }

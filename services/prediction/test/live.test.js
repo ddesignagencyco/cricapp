@@ -34,6 +34,12 @@ describe('scoreLive', () => {
     assert.ok(out.homeWinProb > 0.55);
     assert.equal(out.explanation.reasons[0], 'boundary');
     assert.ok(out.explanation.projectedTotal > 120);
+    assert.ok(out.scoreRange.low <= out.scoreRange.expected);
+    assert.ok(out.scoreRange.expected <= out.scoreRange.high);
+    assert.ok(out.pressureIndex >= 0 && out.pressureIndex <= 1);
+    assert.ok(out.wicketRisk >= 0 && out.wicketRisk <= 1);
+    assert.ok(out.partnershipProjection.expectedAdditionalRuns >= 0);
+    assert.ok(out.explanation.factorAttributions.length >= 4);
   });
 
   it('raises chase probability when required runs are well inside remaining resources', () => {

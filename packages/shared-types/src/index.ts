@@ -52,6 +52,21 @@ export interface PredictionScore {
   homeWinProb: number;
   awayWinProb: number;
   confidence: number;
+  calibrationBand: "low" | "medium" | "high";
+  scoreRange?: {
+    type: string;
+    low: number;
+    expected: number;
+    high: number;
+    unit: "runs";
+  };
+  topBatters?: Array<{ playerId: string; playerName: string; probability: number }>;
+  topBowlers?: Array<{ playerId: string; playerName: string; probability: number }>;
+  xi?: Record<string, unknown>;
+  momentum?: number;
+  pressureIndex?: number;
+  partnershipProjection?: Record<string, unknown>;
+  wicketRisk?: number;
   explanation: Record<string, unknown>;
 }
 

@@ -2,6 +2,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   detectFormat,
+  buildPlayerProjections,
   extractPrematchFeatures,
   extractWinnerId,
   meetingsFromHeadToHead,
@@ -30,6 +31,32 @@ describe('meetingsFromHeadToHead', () => {
       last_meetings: { results: [{ sport_event_status: { winner_id: 'a' } }] },
     });
     assert.equal(meetings.length, 1);
+  });
+});
+
+describe('buildPlayerProjections', () => {
+  it('produces normalized top-player and transparent XI probabilities', () => {
+    const home = [
+      { id: 'h1', full_name: 'Home Batter', role: 'Batter' },
+      { id: 'h2', full_name: 'Home Bowler', role: 'Bowler' },
+    ];
+    const away = [
+      { id: 'a1', full_name: 'Away Allrounder', role: 'All-rounder' },
+    ];
+    const result = buildPlayerProjections(home, away);
+    assert.ok(Math.abs(result.topBatters.reduce((n, p) => n + p.probability, 0) - 1) < 0.001);
+    assert.ok(Math.abs(result.topBowlers.reduce((n, p) => n + p.probability, 0) - 1) < 0.001);
+    assert.equal(result.xi.method, 'registered-squad availability heuristic');
+    assert.equal(result.xi.reliability, 'low');
+
+    const confirmed = buildPlayerProjections(home, away, [], {
+      lineups: [
+        { team: 'home', starting_lineup: [{ id: 'h1' }] },
+        { team: 'away', starting_lineup: [{ id: 'a1' }] },
+      ],
+    });
+    assert.equal(confirmed.xi.reliability, 'high');
+    assert.equal(confirmed.xi.home.find((player) => player.playerId === 'h1').probability, 1);
   });
 });
 

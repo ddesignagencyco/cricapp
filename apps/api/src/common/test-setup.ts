@@ -78,6 +78,7 @@ export async function cleanDatabase(prisma: PrismaService): Promise<void> {
     'prediction_results',
     'prediction_features',
     'prediction_runs',
+    'prediction_calibrations',
     'notification_logs',
     'share_stats',
     'news_article_players',

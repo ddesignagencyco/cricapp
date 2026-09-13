@@ -36,8 +36,8 @@ export const PREDICTION_STAGE = {
 };
 
 export const PREDICTION_MODELS = {
-  PREMATCH: 'prematch-logit-v1',
-  LIVE: 'live-resource-v1',
+  PREMATCH: 'prematch-logit-v2',
+  LIVE: 'live-resource-v2',
 };
 
 export const redisKeys = {

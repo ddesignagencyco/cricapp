@@ -5,6 +5,7 @@ import {
   MatchPredictionsDto,
   PredictionHistoryDto,
   PredictionPerformanceDto,
+  PredictionChartDto,
 } from './dto/predictions.dto.js';
 
 @ApiTags('predictions')
@@ -31,6 +32,13 @@ export class PredictionsController {
   @ApiResponse({ status: 200, description: 'Prediction runs in chronological order.', type: PredictionHistoryDto })
   getHistory(@Param('matchId') matchId: string) {
     return this.predictionsService.getHistory(matchId);
+  }
+
+  @Get(':matchId/chart')
+  @ApiOperation({ summary: 'Chart-ready probability history for a match' })
+  @ApiResponse({ status: 200, description: 'Chronological probability points.', type: PredictionChartDto })
+  getChart(@Param('matchId') matchId: string) {
+    return this.predictionsService.getChart(matchId);
   }
 
   @Get(':matchId')
