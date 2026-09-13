@@ -34,9 +34,6 @@ export class LoginDto {
 
 export class AuthResponseDto {
   @ApiProperty()
-  access_token: string;
-
-  @ApiProperty()
   user: {
     id: string;
     email: string;
@@ -44,7 +41,17 @@ export class AuthResponseDto {
     displayName: string | null;
     avatarUrl: string | null;
     isAdmin: boolean;
+    isSuperAdmin: boolean;
+    emailVerified: boolean;
   };
+}
+
+export class SignupResponseDto {
+  @ApiProperty({ example: 'Account created. Check your email to verify your account.' })
+  message: string;
+
+  @ApiProperty()
+  user: AuthResponseDto['user'];
 }
 
 export class UserProfileDto {
@@ -67,6 +74,9 @@ export class UserProfileDto {
   isAdmin: boolean;
 
   @ApiProperty()
+  isSuperAdmin: boolean;
+
+  @ApiProperty()
   emailVerified: boolean;
 
   @ApiProperty()
@@ -84,15 +94,9 @@ export class ResetPasswordDto {
   @IsString()
   tokenId: string;
 
-  @ApiPropertyOptional({ example: 'reset-secret-uuid', description: 'Long token from email link. Provide this OR code.' })
-  @IsOptional()
+  @ApiProperty({ example: 'reset-secret-uuid', description: 'Token from the password-reset email link.' })
   @IsString()
-  token?: string;
-
-  @ApiPropertyOptional({ example: '4829', description: '4-digit code from email. Provide this OR token.' })
-  @IsOptional()
-  @IsString()
-  code?: string;
+  token: string;
 
   @ApiProperty({ example: 'newpassword123' })
   @IsString()

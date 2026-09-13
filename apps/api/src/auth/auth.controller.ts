@@ -1,5 +1,7 @@
-import { Controller, Post, Get, Patch, Body, UseGuards, Request, HttpCode, HttpStatus } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { Controller, Post, Get, Patch, Body, UseGuards, Request, HttpCode, HttpStatus, Res } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { ApiTags, ApiOperation, ApiResponse, ApiCookieAuth } from '@nestjs/swagger';
+import type { Response } from 'express';
 import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service.js';
 import { JwtAuthGuard } from './jwt-auth.guard.js';
@@ -8,6 +10,7 @@ import {
   SignupDto,
   LoginDto,
   AuthResponseDto,
+  SignupResponseDto,
   UserProfileDto,
   ForgotPasswordDto,
   ResetPasswordDto,
@@ -16,18 +19,25 @@ import {
   MessageResponseDto,
   UpdateProfileDto,
 } from './dto/auth.dto.js';
+import {
+  authCookieName,
+  authCookieOptions,
+} from './auth-cookie.js';
 
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly config: ConfigService,
+  ) {}
 
   @Post('signup')
   @Public()
   @ApiOperation({ summary: 'Create a new account' })
-  @ApiResponse({ status: 201, description: 'Account created.', type: AuthResponseDto })
+  @ApiResponse({ status: 201, description: 'Account created. Email verification is required before login.', type: SignupResponseDto })
   @ApiResponse({ status: 409, description: 'Email or username already taken.' })
-  async signup(@Body() dto: SignupDto): Promise<AuthResponseDto> {
+  async signup(@Body() dto: SignupDto): Promise<SignupResponseDto> {
     return this.authService.signup(dto);
   }
 
@@ -35,15 +45,38 @@ export class AuthController {
   @Public()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Log in with email and password' })
-  @ApiResponse({ status: 200, description: 'Login successful.', type: AuthResponseDto })
+  @ApiResponse({ status: 200, description: 'Login successful. An HttpOnly authentication cookie is set.', type: AuthResponseDto })
   @ApiResponse({ status: 401, description: 'Invalid credentials.' })
-  async login(@Body() dto: LoginDto): Promise<AuthResponseDto> {
-    return this.authService.login(dto);
+  @ApiResponse({ status: 403, description: 'Email is not verified.' })
+  async login(
+    @Body() dto: LoginDto,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<AuthResponseDto> {
+    const { token, user } = await this.authService.login(dto);
+    response.cookie(
+      authCookieName(this.config),
+      token,
+      authCookieOptions(this.config),
+    );
+    return { user };
+  }
+
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  @ApiCookieAuth()
+  @ApiOperation({ summary: 'Log out by clearing the authentication cookie' })
+  async logout(
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<MessageResponseDto> {
+    const options = authCookieOptions(this.config);
+    delete options.maxAge;
+    response.clearCookie(authCookieName(this.config), options);
+    return { message: 'Logged out successfully.' };
   }
 
   @Get('me')
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
+  @ApiCookieAuth()
   @ApiOperation({ summary: 'Get current user profile' })
   @ApiResponse({ status: 200, description: 'User profile.', type: UserProfileDto })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
@@ -53,7 +86,7 @@ export class AuthController {
 
   @Patch('me')
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
+  @ApiCookieAuth()
   @ApiOperation({ summary: 'Update current user profile' })
   @ApiResponse({ status: 200, description: 'Updated profile.', type: UserProfileDto })
   async updateMe(
@@ -77,7 +110,7 @@ export class AuthController {
   @Public()
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 5, ttl: 60000 } })
-  @ApiOperation({ summary: 'Reset password using token or 4-digit code from email' })
+  @ApiOperation({ summary: 'Reset password using the token from the email link' })
   @ApiResponse({ status: 200, description: 'Password reset successfully.', type: MessageResponseDto })
   @ApiResponse({ status: 400, description: 'Invalid or expired token.' })
   async resetPassword(@Body() dto: ResetPasswordDto): Promise<MessageResponseDto> {

@@ -11,7 +11,7 @@ import {
   ValidationPipe,
   Request,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiCookieAuth, ApiParam } from '@nestjs/swagger';
 import { CommentsService } from './comments.service.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import {
@@ -42,7 +42,7 @@ export class CommentsController {
 
   @Post('comments')
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
+  @ApiCookieAuth()
   @ApiOperation({ summary: 'Create a comment' })
   @ApiResponse({ status: 201, type: CommentDto })
   async createComment(
@@ -54,7 +54,7 @@ export class CommentsController {
 
   @Delete('comments/:id')
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
+  @ApiCookieAuth()
   @ApiOperation({ summary: 'Delete own comment' })
   @ApiParam({ name: 'id', description: 'Comment ID' })
   @ApiResponse({ status: 200, description: 'Deleted.' })
@@ -76,7 +76,7 @@ export class CommentsController {
 
   @Post('reactions')
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
+  @ApiCookieAuth()
   @ApiOperation({ summary: 'Add/toggle a reaction' })
   @ApiResponse({ status: 201, description: 'Reaction toggled.' })
   async toggleReaction(
@@ -88,7 +88,7 @@ export class CommentsController {
 
   @Post('comments/:id/report')
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
+  @ApiCookieAuth()
   @ApiOperation({ summary: 'Report a comment' })
   @ApiResponse({ status: 201, description: 'Comment reported.' })
   async reportComment(

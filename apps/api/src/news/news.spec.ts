@@ -50,6 +50,39 @@ describe('NewsModule (integration)', () => {
     expect(res.body.slug).toBe('test-article');
   });
 
+  it('POST /news — rejects titles longer than 50 words', async () => {
+    const title = Array.from({ length: 51 }, (_, i) => `word${i}`).join(' ');
+    const res = await ctx.agent
+      .post('/news')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ title, content: 'Body' })
+      .expect(400);
+    expect(res.body.message).toContain('50 words');
+  });
+
+  it('supports category CRUD by SEO slug', async () => {
+    const created = await ctx.agent
+      .post('/news/categories')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ name: 'Pakistan Super League', slug: 'psl' })
+      .expect(201);
+    expect(created.body.slug).toBe('psl');
+
+    await ctx.agent.get('/news/categories/psl').expect(200);
+
+    const updated = await ctx.agent
+      .patch('/news/categories/psl')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ name: 'PSL' })
+      .expect(200);
+    expect(updated.body.name).toBe('PSL');
+
+    await ctx.agent
+      .delete(`/news/categories/${created.body.id}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+  });
+
   it('GET /news/:slug — returns article by slug', async () => {
     const create = await ctx.agent
       .post('/news')

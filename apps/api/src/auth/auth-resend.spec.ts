@@ -7,6 +7,7 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { RedisService } from '../redis/redis.service.js';
 import { ConfigService } from '@nestjs/config';
 import { MailerService } from '../mailer/mailer.service.js';
+import type { SendMailOptions } from '../mailer/mailer.service.js';
 
 class MockRedisService {
   async get<T = unknown>(): Promise<T | null> { return null; }
@@ -33,8 +34,10 @@ class MockRedisService {
 }
 
 class MockMailerService {
-  async sendMail(): Promise<void> {
-    // No-op: don't hit real email APIs in tests
+  static lastMail: SendMailOptions | null = null;
+
+  async sendMail(options: SendMailOptions): Promise<void> {
+    MockMailerService.lastMail = options;
   }
 }
 
@@ -79,6 +82,7 @@ describe('AuthModule forgot-password with Resend (live)', () => {
 
   beforeEach(async () => {
     await prisma.$executeRawUnsafe(`TRUNCATE TABLE "password_reset_tokens", "email_verification_tokens", "users" CASCADE;`);
+    MockMailerService.lastMail = null;
   });
 
   const TEST_EMAIL = 'test@resend.dev';
@@ -108,6 +112,15 @@ describe('AuthModule forgot-password with Resend (live)', () => {
     const tokenRecord = await prisma.passwordResetToken.create({
       data: { userId: user.id, tokenHash, expiresAt: new Date(Date.now() + 3600_000) },
     });
+    expect(
+      await prisma.passwordResetToken.count({
+        where: {
+          id: tokenRecord.id,
+          usedAt: null,
+          expiresAt: { gt: new Date() },
+        },
+      }),
+    ).toBe(1);
 
     const resetRes = await agent.post('/auth/reset-password').send({
       tokenId: tokenRecord.id,
@@ -120,5 +133,26 @@ describe('AuthModule forgot-password with Resend (live)', () => {
     const updatedUser = await prisma.user.findUnique({ where: { id: user.id } });
     const valid = await bcrypt.compare('newpassword123', updatedUser!.passwordHash);
     expect(valid).toBe(true);
+  });
+
+  it('sends a branded, scope-specific verification email', async () => {
+    await prisma.user.create({
+      data: {
+        email: TEST_EMAIL,
+        username: 'cricketfan',
+        displayName: 'Cricket Fan',
+        passwordHash: 'not-used',
+      },
+    });
+
+    await agent
+      .post('/auth/resend-verification')
+      .send({ email: TEST_EMAIL })
+      .expect(200);
+
+    expect(MockMailerService.lastMail?.subject).toContain('CricApp');
+    expect(MockMailerService.lastMail?.html).toContain('Pakistan cricket, live scores, PSL and news');
+    expect(MockMailerService.lastMail?.html).toContain('Verify Email Address');
+    expect(MockMailerService.lastMail?.html).not.toContain('Reset Code');
   });
 });

@@ -3,7 +3,7 @@
 > **Purpose:** This file is the single source of truth for project progress. It is structured in phases, each broken into **Frontend**, **Backend**, and **Ingestion** task groups. Check a box (`- [x]`) when that task is verified complete. This file is meant to be read and updated by AI coding agents as well as humans — keep task descriptions atomic and unambiguous so an agent can pick up any unchecked box and know exactly what "done" means.
 >
 > **Baseline source:** Progress Report dated Sep 8, 2026 (Day 8 of development).
-> **Last updated:** Sep 10, 2026 — backend priorities 1–4 (search, editorial hardening, engagement, ingestion health). Live Sportradar poll paused pending a new API key.
+> **Last updated:** Sep 11, 2026 — backend QA pass (cookie sessions, superadmin, category CRUD, SEO slugs, live-match accuracy, stream comments, Cloudinary uploads, admin analytics). Live Sportradar poll still paused pending a new API key.
 
 **Legend:**
 - `[x]` = Complete / verified
@@ -49,8 +49,12 @@
 - [x] Pagination applied to Tournaments listing
 - [x] Pagination audit — all list endpoints now return `{ data, meta }` (Teams, Players, Matches, Tournaments, PSL leaders/squads/standings/schedule, Schedules)
 - [x] User authentication system (JWT-based, for end users — separate from API key guard)
+- [x] HttpOnly session cookie (`cricapp_access_token`); Bearer still accepted for tests/legacy
+- [x] `POST /auth/logout` clears the session cookie
+- [x] Signup does **not** issue a session; login requires `emailVerified`
 - [x] User accounts/profiles module (DB models + `/auth` endpoints)
 - [x] `PATCH /auth/me` — update displayName, avatarUrl, username
+- [x] Protected superadmin (`isSuperAdmin`) — cannot be deleted or demoted; seed via `SUPERADMIN_*`
 
 ---
 
@@ -90,6 +94,7 @@
 - [x] Redis pub/sub for real-time event publishing
 - [x] PostgreSQL upserts for 13+ tables
 - [x] Redis cache with TTL management
+- [x] `publishMatchState` after reference `saveSportEventRecords` so completed matches leave Redis `matches:live`
 - [x] Staleness tracking per data category
 
 ### 3.4 Testing
@@ -106,7 +111,7 @@
 ### 4.1 Matches Module — Backend
 - [x] `GET /matches`
 - [x] `GET /matches?q=` text search (teams, tournament, venue, score)
-- [x] `GET /matches/live`
+- [x] `GET /matches/live` — Postgres `status === live` is source of truth; stale Redis IDs are filtered (completed matches no longer leak)
 - [x] `GET /matches/:matchId`
 - [x] `GET /matches/:matchId/timeline`
 - [x] `GET /matches/live/stream` (SSE)
@@ -132,7 +137,7 @@
 - [x] `GET /psl/squads`
 
 ### 4.5 Tours & Tournaments — Backend
-- [x] `GET /tours`
+- [x] `GET /tours` — paginated `{ data, meta }` (`page`, `limit`)
 - [x] `GET /tournaments`
 - [x] `GET /tournaments?q=` text search by name
 - [x] `GET /tournaments/:tournamentId`
@@ -145,17 +150,21 @@
 - [x] `GET /head-to-head/:teamAId/:teamBId`
 
 ### 4.7 News/Feed Module — Backend
-- [x] Design News DB schema (articles, categories, tags, publish date, author/source)
+- [x] Design News DB schema (articles, categories, publish date, author/source)
 - [x] `POST/GET/DELETE/PATCH` admin CMS endpoints for news content
+- [x] Category CRUD — `GET/POST /news/categories`, `GET/PATCH/DELETE /news/categories/:idOrSlug`
 - [x] `GET /news` — list endpoint with pagination/filtering
-- [x] `GET /news/:newsId` — single article detail endpoint (by ID or slug)
+- [x] `GET /news/:idOrSlug` — single article by ID or SEO slug
 - [x] Public list/detail hide unpublished drafts (`isPublished: true` only)
-- [x] Featured / breaking flags (`isFeatured`, `isBreaking`) + query filters
+- [x] Article title limited to 50 words (backend validation)
+- [x] SEO slugs on articles and categories (optional explicit slug; otherwise generated)
 - [x] Language field (`en` / `ur`) + `?language=` filter
 - [x] SEO fields on articles (`metaTitle`, `metaDescription`, `canonicalUrl`)
 - [x] Author model + `GET/POST /admin/authors`, `PATCH /admin/authors/:id`
 - [x] Article–entity links (players, teams, matches, series) + query filters
 - [x] `GET /admin/news` includes drafts for CMS
+- [x] `POST /admin/media/upload` — Cloudinary image upload (admin; JPEG/PNG/WebP/GIF/AVIF, 10 MB)
+- [x] Removed `isFeatured`, `isBreaking`, and article `tags` — categories are the taxonomy
 - [x] Smoke-tested: publish article then fetch by slug and list
 
 ### 4.13 Search Module — Backend
@@ -167,6 +176,7 @@
 - [x] Design Streams DB schema (stream URL/provider, match link, status, scheduled time)
 - [x] `GET /streams` — list active/upcoming streams
 - [x] `GET /streams/:streamId` — stream detail endpoint
+- [x] Stream comments while watching — `GET/POST /streams/:id/comments` (`targetType: stream`)
 
 ### 4.9 Push Notifications — Backend
 - [x] Choose provider — Firebase Cloud Messaging (FCM)
@@ -183,17 +193,21 @@
 - [x] `POST/DELETE /favorites` endpoints
 - [x] `GET /favorites` endpoint (requires auth)
 - [x] `GET /favorites?expand=true` returns nested team/player/match objects
+- [x] Admin analytics include favorite totals grouped by `targetType` (team / player / match, plus any extra types)
 
 ### 4.11 Comments / Reactions — Backend
-- [x] DB schema for comments + reactions (linked to match/news)
-- [x] `POST /comments` endpoint
+- [x] DB schema for comments + reactions (linked to match/news/stream)
+- [x] `POST /comments` endpoint (`targetType`: match, news, stream)
 - [x] `GET /comments` endpoint with pagination
+- [x] Nested stream comments — `GET/POST /streams/:id/comments`
 - [x] `POST/GET /reactions` endpoints
 - [x] Moderation/reporting — `POST /comments/:id/report`, admin queue, approve/hide/delete
+- [x] `comments.status` + `comment_reports` applied in Prisma migrations
 
 ### 4.12 Social Sharing — Backend
 - [x] Share-link generation endpoint with OG meta support (`/share/:type/:id`)
 - [x] Share analytics tracking (`share_stats` increment on share link hit; totals in `/admin/analytics`)
+- [x] `GET /admin/analytics` — counts for users, matches, teams, players, tournaments, tours, comments, streams, reports, articles, shares; favorites as `{ total, types }`
 
 ---
 
@@ -298,9 +312,10 @@
 - [x] **Ingestion:** RSS/Atom sync (`newsSync.js`) — parser, normalizer, dedup, Postgres upserts, Redis invalidation
 - [x] **Backend:** `/news` public + admin CMS endpoints (see Phase 4.7)
 - [x] Public unpublished-draft filter
-- [x] Featured / breaking / language / SEO fields
+- [x] Language / SEO fields; categories (not featured/breaking flags or tags)
 - [x] Author profiles (admin CRUD)
 - [x] Article links to players, teams, matches, series
+- [x] Cloudinary media upload for article images
 - [x] `GET /admin/ingestion-health` (Redis heartbeat, live-set, sync keys)
 
 ### 7.2 Editorial remaining — Backend
@@ -318,7 +333,7 @@
 - [ ] Wire `NewsBoard` and `NewsDetailBody` to real API instead of mock data
 - [ ] Unhide `/news` route from navigation once real data flows
 - [ ] Author profile pages
-- [ ] Featured / breaking presentation
+- [ ] Category-driven presentation (featured/breaking flags removed from API)
 - [ ] Urdu (`/ur/...`) article routes
 - [ ] QA: pagination, empty states, and image handling for articles
 
@@ -339,8 +354,13 @@
 > *Only pursue this phase if confirmed as an SRS requirement.*
 
 ### 9.1 Authentication — Backend + Frontend
-- [x] Backend: user auth system (signup/login/JWT)
+- [x] Backend: user auth system (signup/login/JWT + HttpOnly cookie session)
+- [x] Backend: signup returns no token; unverified login is `403`
+- [x] Backend: password reset via email **link token only** (`token` + `tokenId`; OTP removed)
+- [x] Backend: branded CricApp verification + reset HTML; SMTP verified in local env
+- [x] Backend: verification token is written before the async mail send (no orphaned FK)
 - [x] Backend: password reset / email verification flow — `PasswordResetToken` + `EmailVerificationToken` models, `POST /auth/forgot-password`, `POST /auth/reset-password`, `POST /auth/verify-email`, `POST /auth/resend-verification`, `MailerService` with SMTP/SendGrid/Resend/console providers
+- [x] Backend: `DELETE /admin/users/:id` with superadmin protection
 - [ ] Frontend: signup/login pages
 - [ ] Frontend: auth state management (Zustand store + protected routes)
 
@@ -383,8 +403,9 @@
 ## PHASE 11 — Testing & QA
 
 - [x] Ingestion integration tests (full pipeline, see Phase 3.4)
-- [x] Backend API integration/e2e tests per module — 79 tests across 12 suites including Search, Auth (`PATCH /auth/me`), News (draft hiding + admin list)
-- [x] Manual API smoke: search, signup + `/auth/me`, publish news + get by slug (Sep 10, 2026)
+- [x] Backend API integration/e2e tests per module — suites for auth, admin, news, tours, matches, streams, comments; isolated `cricapp_test` DB (`npm test` no longer truncates development data)
+- [x] Manual API smoke (Sep 11, 2026): cookie login, unverified 403, category CRUD, 50-word title reject, tours pagination, live-match status filter, stream comments, admin analytics, Cloudinary upload `201`
+- [x] Manual API smoke (Sep 10, 2026): search, signup + `/auth/me`, publish news + get by slug
 - [ ] Frontend component tests for critical UI (ScoreBoard, LiveBoard, MatchDetailBody)
 - [ ] End-to-end (E2E) tests across full user flows (e.g., Playwright/Cypress)
 - [ ] Load testing for live match SSE streaming under concurrent users
@@ -497,22 +518,22 @@
 | Phase | Layer | Status |
 |-------|-------|--------|
 | 1. Architecture & Foundation | Infra | ~95% |
-| 2. Backend Core Infra | Backend | ~98% (`PATCH /auth/me`, Redis boot fix) |
-| 3. Ingestion Service | Ingestion | ~90% (code complete; **live poll blocked on Sportradar 429 / new key**) |
-| 4. Backend API Endpoints | Backend | ~98% (search, news hardening, notifications, share stats, moderation) |
+| 2. Backend Core Infra | Backend | ~99% (cookie sessions, superadmin, logout) |
+| 3. Ingestion Service | Ingestion | ~92% (live Redis prune on completed matches; **live poll still blocked on Sportradar 429 / new key**) |
+| 4. Backend API Endpoints | Backend | ~99% (categories, slugs, stream comments, analytics, Cloudinary, live-match fix) |
 | 5. Frontend Pages & Components | Frontend | ~80% (core done, 4 pages missing) |
 | 6. Real Data Integration | Frontend+Backend | ~80% (backend search ready; frontend still mocks teams/players/tournaments) |
-| 7. News / Editorial | Full-stack | ~75% backend done; remaining = RSS prod config, Urdu depth, sitemaps, **frontend wiring** |
-| 8. Live Streams Module | Full-stack | ~40% (backend + `STREAM_SOURCES` scaffold; frontend + licensing pending) |
-| 9. User System & Engagement | Full-stack | ~60% (backend complete including profile PATCH, history, expand favorites; frontend pending) |
-| 10. Technical Debt | Cross-cutting | ~35% |
-| 11. Testing & QA | Cross-cutting | ~60% (79 API tests + smoke: search / auth / news) |
+| 7. News / Editorial | Full-stack | ~85% backend (categories, slugs, uploads); remaining = RSS prod config, Urdu, sitemaps, **frontend wiring** |
+| 8. Live Streams Module | Full-stack | ~50% (backend + stream comments; frontend + licensing pending) |
+| 9. User System & Engagement | Full-stack | ~70% (cookie auth, verify-before-login, superadmin, SMTP; **frontend auth UI pending**) |
+| 10. Technical Debt | Cross-cutting | ~40% |
+| 11. Testing & QA | Cross-cutting | ~65% (isolated test DB + Sep 11 API smoke) |
 | 12. Deployment & Launch | DevOps | ~40% |
 | 13. AI Prediction Centre | Backend+ML | **0% — not started** |
 | 14. Odds Intelligence | Backend | **0% — not started** |
 | 15. Interactive Tools | Backend+Frontend | **~5%** (H2H API exists; calculators not started) |
 
-**Overall project completion (updated Sep 10, 2026): sports + editorial backend largely done; next backend domains are Predictions then Odds.**
+**Overall project completion (updated Sep 11, 2026): sports + CMS backend is production-shaped for sessions, editorial, and admin dashboards. Frontend auth/CMS wiring and Predictions/Odds remain the next large domains.**
 
 ---
 

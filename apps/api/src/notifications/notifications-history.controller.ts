@@ -1,5 +1,5 @@
 import { Controller, Get, Query, UseGuards, Request, UsePipes, ValidationPipe } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiCookieAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import { NotificationsService } from './notifications.service.js';
 import { PaginationQuery } from '../common/dto/pagination.query.js';
@@ -7,7 +7,7 @@ import { PaginationQuery } from '../common/dto/pagination.query.js';
 @ApiTags('notifications')
 @Controller('notifications')
 @UseGuards(JwtAuthGuard)
-@ApiBearerAuth()
+@ApiCookieAuth()
 export class NotificationsHistoryController {
   constructor(private readonly notificationsService: NotificationsService) {}
 

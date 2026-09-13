@@ -13,6 +13,7 @@
  * are harmless.
  */
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
@@ -23,8 +24,49 @@ async function seedTeamsAndPlayers(): Promise<void> {
   console.log(`[seed] teams present: ${teamCount} (reference data owned by ingestion)`);
 }
 
+async function seedSuperAdmin(): Promise<void> {
+  const email = process.env.SUPERADMIN_EMAIL?.trim().toLowerCase();
+  const password = process.env.SUPERADMIN_PASSWORD;
+  if (!email || !password) {
+    console.log('[seed] SUPERADMIN_EMAIL/PASSWORD not set; skipping owner account');
+    return;
+  }
+
+  const username =
+    process.env.SUPERADMIN_USERNAME?.trim() || 'superadmin';
+  const passwordHash = await bcrypt.hash(password, 12);
+
+  // Only one row may carry is_super_admin, so hand the role over explicitly.
+  await prisma.$transaction(async (tx) => {
+    await tx.user.updateMany({
+      where: { isSuperAdmin: true, email: { not: email } },
+      data: { isSuperAdmin: false },
+    });
+    await tx.user.upsert({
+      where: { email },
+      update: {
+        passwordHash,
+        isAdmin: true,
+        isSuperAdmin: true,
+        emailVerified: true,
+      },
+      create: {
+        email,
+        username,
+        passwordHash,
+        displayName: 'CricApp Superadmin',
+        isAdmin: true,
+        isSuperAdmin: true,
+        emailVerified: true,
+      },
+    });
+  });
+  console.log(`[seed] superadmin ready: ${email}`);
+}
+
 async function main(): Promise<void> {
   console.log('[seed] starting');
+  await seedSuperAdmin();
   await seedTeamsAndPlayers();
   console.log('[seed] done');
 }

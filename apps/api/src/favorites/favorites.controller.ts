@@ -11,7 +11,7 @@ import {
   ValidationPipe,
   Request,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiCookieAuth, ApiParam } from '@nestjs/swagger';
 import { FavoritesService } from './favorites.service.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import { AddFavoriteDto, FavoriteListQuery, FavoriteDto } from './dto/favorites.dto.js';
@@ -19,7 +19,7 @@ import { AddFavoriteDto, FavoriteListQuery, FavoriteDto } from './dto/favorites.
 @ApiTags('favorites')
 @Controller('favorites')
 @UseGuards(JwtAuthGuard)
-@ApiBearerAuth()
+@ApiCookieAuth()
 export class FavoritesController {
   constructor(private readonly favoritesService: FavoritesService) {}
 

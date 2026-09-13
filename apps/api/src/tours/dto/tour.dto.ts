@@ -1,4 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { PaginationQuery } from '../../common/dto/pagination.query.js';
+
+export class ListToursQuery extends PaginationQuery {}
 
 export class TourDto {
   @ApiProperty({ description: 'Sportradar tour id.' })

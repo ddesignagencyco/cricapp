@@ -3,9 +3,9 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginationQuery } from '../../common/dto/pagination.query.js';
 
 export class CreateCommentDto {
-  @ApiProperty({ enum: ['match', 'news'] })
+  @ApiProperty({ enum: ['match', 'news', 'stream'] })
   @IsString()
-  @IsIn(['match', 'news'])
+  @IsIn(['match', 'news', 'stream'])
   targetType: string;
 
   @ApiProperty({ example: 'sr:match:12345' })
@@ -19,9 +19,9 @@ export class CreateCommentDto {
 }
 
 export class CreateReactionDto {
-  @ApiProperty({ enum: ['match', 'news', 'comment'] })
+  @ApiProperty({ enum: ['match', 'news', 'stream', 'comment'] })
   @IsString()
-  @IsIn(['match', 'news', 'comment'])
+  @IsIn(['match', 'news', 'stream', 'comment'])
   targetType: string;
 
   @ApiProperty({ example: 'sr:match:12345' })
@@ -39,9 +39,9 @@ export class CreateReactionDto {
 }
 
 export class CommentListQuery extends PaginationQuery {
-  @ApiProperty({ enum: ['match', 'news'] })
+  @ApiProperty({ enum: ['match', 'news', 'stream'] })
   @IsString()
-  @IsIn(['match', 'news'])
+  @IsIn(['match', 'news', 'stream'])
   targetType: string;
 
   @ApiProperty({ example: 'sr:match:12345' })
@@ -50,9 +50,9 @@ export class CommentListQuery extends PaginationQuery {
 }
 
 export class ReactionQuery {
-  @ApiProperty({ enum: ['match', 'news', 'comment'] })
+  @ApiProperty({ enum: ['match', 'news', 'stream', 'comment'] })
   @IsString()
-  @IsIn(['match', 'news', 'comment'])
+  @IsIn(['match', 'news', 'stream', 'comment'])
   targetType: string;
 
   @ApiProperty({ example: 'sr:match:12345' })

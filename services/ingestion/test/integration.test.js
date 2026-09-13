@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import { query, shutdown as shutdownDb } from '../src/db.js';
 import redis, { redisKeys, shutdown as shutdownRedis } from '../src/redis.js';
 import { pollOnce } from '../src/poll.js';
+import { saveSportEventRecords } from '../src/store.js';
 
 const TEST_MATCH_ID = 'sr:match:int-99999';
 
@@ -106,5 +107,31 @@ describe('ingestion integration', () => {
       console.error('TEST ERROR:', err);
       throw err;
     }
+  });
+
+  it('reference results remove completed matches from the Redis live set', async () => {
+    await redis.sadd(redisKeys.liveMatches(), TEST_MATCH_ID);
+    await saveSportEventRecords([
+      {
+        kind: 'daily_results',
+        scopeKey: '2026-09-09',
+        eventId: TEST_MATCH_ID,
+        status: 'closed',
+        scheduled: '2026-09-09T10:00:00Z',
+        payload: {
+          sport_event: {
+            id: TEST_MATCH_ID,
+            competitors: [
+              { id: 'sr:team:a', name: 'Team A', abbreviation: 'TMA', qualifier: 'home' },
+              { id: 'sr:team:b', name: 'Team B', abbreviation: 'TMB', qualifier: 'away' },
+            ],
+          },
+          sport_event_status: { status: 'closed', match_status: 'ended' },
+        },
+      },
+    ]);
+
+    const liveSet = await redis.smembers(redisKeys.liveMatches());
+    assert.equal(liveSet.includes(TEST_MATCH_ID), false);
   });
 });
