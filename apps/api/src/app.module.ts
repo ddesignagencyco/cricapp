@@ -25,6 +25,9 @@ import { NotificationsModule } from './notifications/notifications.module.js';
 import { AdminModule } from './admin/admin.module.js';
 import { SearchModule } from './search/search.module.js';
 import { MediaModule } from './media/media.module.js';
+import { NewsletterModule } from './newsletter/newsletter.module.js';
+import { ContactModule } from './contact/contact.module.js';
+import { GalleryModule } from './gallery/gallery.module.js';
 import { RequestLogger } from './common/request-logger.middleware.js';
 
 @Module({
@@ -64,6 +67,9 @@ import { RequestLogger } from './common/request-logger.middleware.js';
     AdminModule,
     SearchModule,
     MediaModule,
+    NewsletterModule,
+    ContactModule,
+    GalleryModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

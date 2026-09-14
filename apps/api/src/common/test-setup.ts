@@ -75,6 +75,10 @@ export async function teardownTestApp(ctx: TestContext): Promise<void> {
  */
 export async function cleanDatabase(prisma: PrismaService): Promise<void> {
   const tables = [
+    'gallery_media',
+    'contact_submissions',
+    'newsletter_subscribers',
+    'editorial_pages',
     'notification_logs',
     'share_stats',
     'news_article_players',

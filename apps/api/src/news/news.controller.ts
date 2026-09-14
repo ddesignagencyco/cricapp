@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Patch,
+  Put,
   Delete,
   Param,
   Query,
@@ -11,7 +12,9 @@ import {
   UsePipes,
   ValidationPipe,
   Request,
+  Res,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { ApiTags, ApiOperation, ApiResponse, ApiCookieAuth, ApiParam } from '@nestjs/swagger';
 import { NewsService } from './news.service.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
@@ -24,15 +27,19 @@ import {
   CreateCategoryDto,
   UpdateCategoryDto,
   NewsCategoryDto,
+  CreateAuthorDto,
+  UpdateAuthorDto,
+  AuthorArticlesQuery,
+  UpsertEditorialPageDto,
 } from './dto/news.dto.js';
 
 @ApiTags('news')
 @Controller('news')
+@UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
 export class NewsController {
   constructor(private readonly newsService: NewsService) {}
 
   @Get()
-  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
   @ApiOperation({ summary: 'List news articles (paginated)' })
   @ApiResponse({ status: 200, description: 'Paginated articles.' })
   async list(@Query() query: NewsListQuery) {
@@ -54,6 +61,19 @@ export class NewsController {
     return this.newsService.getCategory(idOrSlug);
   }
 
+  @Get('google-news-sitemap.xml')
+  @ApiOperation({ summary: 'Google News sitemap for articles from the last 48 hours' })
+  async googleNewsSitemap(@Res() response: Response) {
+    const xml = await this.newsService.googleNewsSitemap();
+    response.type('application/xml').send(xml);
+  }
+
+  @Get(':idOrSlug/seo')
+  @ApiOperation({ summary: 'Get canonical URL, hreflang variants and NewsArticle JSON-LD' })
+  async getSeoPayload(@Param('idOrSlug') idOrSlug: string) {
+    return this.newsService.getSeoPayload(idOrSlug);
+  }
+
   @Get(':idOrSlug')
   @ApiOperation({ summary: 'Get article by ID or slug' })
   @ApiParam({ name: 'idOrSlug', description: 'Article ID or slug' })
@@ -70,6 +90,18 @@ export class NewsController {
   @ApiResponse({ status: 201, type: NewsArticleDto })
   async create(@Request() req: { user: { id: string } }, @Body() dto: CreateNewsDto) {
     return this.newsService.create(dto, req.user.id);
+  }
+
+  @Post(':id/translations')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiCookieAuth()
+  @ApiOperation({ summary: 'Author and link a separate en/ur article variant' })
+  async createTranslation(
+    @Param('id') id: string,
+    @Request() req: { user: { id: string } },
+    @Body() dto: CreateNewsDto,
+  ) {
+    return this.newsService.createTranslation(id, dto, req.user.id);
   }
 
   @Post('categories')
@@ -122,5 +154,89 @@ export class NewsController {
   @ApiResponse({ status: 404, description: 'Article not found.' })
   async remove(@Param('id') id: string) {
     return this.newsService.remove(id);
+  }
+}
+
+@ApiTags('authors')
+@Controller('authors')
+@UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+export class AuthorsController {
+  constructor(private readonly newsService: NewsService) {}
+
+  @Get()
+  @ApiOperation({ summary: 'List public author profiles' })
+  list() {
+    return this.newsService.listAuthors();
+  }
+
+  @Get(':idOrSlug')
+  @ApiOperation({ summary: 'Get an author profile and published articles by id or slug' })
+  get(
+    @Param('idOrSlug') idOrSlug: string,
+    @Query() query: AuthorArticlesQuery,
+  ) {
+    return this.newsService.getAuthor(idOrSlug, query);
+  }
+}
+
+@ApiTags('admin')
+@ApiCookieAuth()
+@UseGuards(JwtAuthGuard, AdminGuard)
+@Controller('admin/authors')
+@UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+export class AuthorsAdminController {
+  constructor(private readonly newsService: NewsService) {}
+
+  @Get()
+  list() {
+    return this.newsService.listAuthors();
+  }
+
+  @Post()
+  create(@Body() dto: CreateAuthorDto) {
+    return this.newsService.createAuthor(dto);
+  }
+
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() dto: UpdateAuthorDto) {
+    return this.newsService.updateAuthor(id, dto);
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.newsService.removeAuthor(id);
+  }
+}
+
+@ApiTags('editorial')
+@Controller('editorial-pages')
+export class EditorialPagesController {
+  constructor(private readonly newsService: NewsService) {}
+
+  @Get()
+  list() {
+    return this.newsService.listEditorialPages();
+  }
+
+  @Get(':slug')
+  get(@Param('slug') slug: string) {
+    return this.newsService.getEditorialPage(slug);
+  }
+}
+
+@ApiTags('admin')
+@ApiCookieAuth()
+@UseGuards(JwtAuthGuard, AdminGuard)
+@Controller('admin/editorial-pages')
+@UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+export class EditorialPagesAdminController {
+  constructor(private readonly newsService: NewsService) {}
+
+  @Put(':slug')
+  upsert(
+    @Param('slug') slug: string,
+    @Body() dto: UpsertEditorialPageDto,
+  ) {
+    return this.newsService.upsertEditorialPage(slug, dto);
   }
 }

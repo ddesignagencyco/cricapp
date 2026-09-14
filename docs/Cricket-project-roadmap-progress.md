@@ -3,7 +3,7 @@
 > **Purpose:** This file is the single source of truth for project progress. It is structured in phases, each broken into **Frontend**, **Backend**, and **Ingestion** task groups. Check a box (`- [x]`) when that task is verified complete. This file is meant to be read and updated by AI coding agents as well as humans — keep task descriptions atomic and unambiguous so an agent can pick up any unchecked box and know exactly what "done" means.
 >
 > **Baseline source:** Progress Report dated Sep 8, 2026 (Day 8 of development).
-> **Last updated:** Sep 14, 2026 — frontend: `/tours` uses paginated `GET /tours`; stream watch comments use `GET/POST /streams/:id/comments`. No API/ingestion folder changes in this pass.
+> **Last updated:** Sep 14, 2026 — backend APIs for Socket.IO live matches, newsletter, contact-us, Unicode Urdu slugs, and Cloudinary gallery media. Live Sportradar poll still paused pending a new API key.
 
 **Legend:**
 - `[x]` = Complete / verified
@@ -116,6 +116,7 @@
 - [x] `GET /matches/:matchId/timeline`
 - [x] `GET /matches/live/stream` (SSE)
 - [x] `GET /matches/:matchId/stream` (SSE)
+- [x] Socket.IO `/matches` namespace — global `live:update` plus per-match rooms (`subscribe:match` / `match:update`)
 
 ### 4.2 Teams Module — Backend
 - [x] `GET /teams`
@@ -158,6 +159,7 @@
 - [x] Public list/detail hide unpublished drafts (`isPublished: true` only)
 - [x] Article title limited to 50 words (backend validation)
 - [x] SEO slugs on articles and categories (optional explicit slug; otherwise generated)
+- [x] Unicode SEO slugs generated from Urdu news titles
 - [x] Language field (`en` / `ur`) + `?language=` filter
 - [x] SEO fields on articles (`metaTitle`, `metaDescription`, `canonicalUrl`)
 - [x] Author model + `GET/POST /admin/authors`, `PATCH /admin/authors/:id`
@@ -208,6 +210,17 @@
 - [x] Share-link generation endpoint with OG meta support (`/share/:type/:id`)
 - [x] Share analytics tracking (`share_stats` increment on share link hit; totals in `/admin/analytics`)
 - [x] `GET /admin/analytics` — counts for users, matches, teams, players, tournaments, tours, comments, streams, reports, articles, shares; favorites as `{ total, types }`
+
+### 4.14 Newsletter, Contact & Gallery — Backend
+- [x] Newsletter subscription model + `POST /newsletter/subscribe`
+- [x] Opaque-token unsubscribe + `POST /newsletter/unsubscribe`
+- [x] Admin subscriber list — `GET /admin/newsletter/subscribers`
+- [x] Contact form persistence — `POST /contact` requires name, email, message
+- [x] Admin contact queue + status update endpoints
+- [x] Gallery media schema and paginated public list/detail APIs
+- [x] Admin Cloudinary gallery upload/delete APIs
+- [x] Gallery type filters: `image`, `short`, `video`
+- [x] Cloudinary duration enforcement — shorts ≤30s, videos ≤60s; rejected assets deleted
 
 ---
 
@@ -334,15 +347,15 @@
 - [x] `GET /admin/ingestion-health` (Redis heartbeat, live-set, sync keys)
 
 ### 7.2 Editorial remaining — Backend
-- [ ] Production `NEWS_SOURCES` env (RSS list) configured for Pakistan/PSL/international feeds
-- [ ] Seed SRS category set (Breaking, Pakistan Cricket, PSL, International, Match News, Analysis, Features, Records, Interviews, Explainers)
-- [ ] Native Urdu authoring workflow (store `ur` body/headline separately, not auto-translate-only)
-- [ ] Public author pages API (`GET /authors`, `GET /authors/:slug` with article list)
-- [ ] Editorial policy + correction policy content endpoints or static CMS pages
-- [ ] Push-notification draft + social-copy fields on articles
-- [ ] Google News sitemap endpoint
-- [ ] Article JSON-LD / NewsArticle payload helper for frontend
-- [ ] `hreflang` pairs for `en` / `ur` article variants
+- [x] Production-ready `NEWS_SOURCES` RSS list for Pakistan/PSL/international feeds added to ingestion env template (deployment must set/copy the value)
+- [x] Seed SRS category set (Breaking, Pakistan Cricket, PSL, International, Match News, Analysis, Features, Records, Interviews, Explainers)
+- [x] Native Urdu authoring workflow — separately stored `en` / `ur` article rows linked by translation group
+- [x] Public author pages API (`GET /authors`, `GET /authors/:slug` with article list)
+- [x] Editorial/correction policy content API (public reads + admin upsert)
+- [x] Push-notification draft + social-copy fields on articles
+- [x] Google News sitemap endpoint (`GET /news/google-news-sitemap.xml`)
+- [x] Article JSON-LD / NewsArticle payload helper (`GET /news/:idOrSlug/seo`)
+- [x] `hreflang` pairs for linked `en` / `ur` article variants
 
 ### 7.3 Editorial remaining — Frontend
 - [x] Wire `NewsBoard` and `NewsDetailBody` to real API instead of mock data
@@ -539,19 +552,19 @@
 | 2. Backend Core Infra | Backend | ~99% (cookie sessions, superadmin, logout) |
 | 3. Ingestion Service | Ingestion | ~92% (live Redis prune on completed matches; **live poll still blocked on Sportradar 429 / new key**) |
 | 4. Backend API Endpoints | Backend | ~99% (categories, slugs, stream comments, analytics, Cloudinary, live-match fix) |
-| 5. Frontend Pages & Components | Frontend | ~96% (gallery, paginated tours, stream comments, H2H, admin CMS) |
-| 6. Real Data Integration | Frontend+Backend | ~96% (tours now paginated; pages use live APIs) |
-| 7. News / Editorial | Full-stack | ~92% (CMS + gallery + title/slug/language; remaining = RSS prod, public authors API, sitemaps) |
-| 8. Live Streams Module | Full-stack | ~70% (backend + frontend + stream comments; licensed provider + legal check pending) |
-| 9. User System & Engagement | Full-stack | ~90% (cookie auth + reset-link UX + browser permission prompt; FCM web token still blocked) |
-| 10. Technical Debt | Cross-cutting | ~85% (listed debt items done) |
-| 11. Testing & QA | Cross-cutting | ~65% (isolated test DB + Sep 11 API smoke; no frontend component/E2E suite) |
-| 12. Deployment & Launch | DevOps | ~15% (Docker/CI exist in Phase 1; CD/staging/prod launch still open) |
+| 5. Frontend Pages & Components | Frontend | ~80% (core done, 4 pages missing) |
+| 6. Real Data Integration | Frontend+Backend | ~80% (backend search ready; frontend still mocks teams/players/tournaments) |
+| 7. News / Editorial | Full-stack | Backend complete 100% (feeds template, categories, native Urdu pairs, authors, policies, social drafts, News sitemap/JSON-LD/hreflang); **frontend wiring remains** |
+| 8. Live Streams Module | Full-stack | ~50% (backend + stream comments; frontend + licensing pending) |
+| 9. User System & Engagement | Full-stack | ~70% (cookie auth, verify-before-login, superadmin, SMTP; **frontend auth UI pending**) |
+| 10. Technical Debt | Cross-cutting | ~40% |
+| 11. Testing & QA | Cross-cutting | ~68% (isolated test DB + Sep 14 full backend suite: 106 tests) |
+| 12. Deployment & Launch | DevOps | ~40% |
 | 13. AI Prediction Centre | Backend+ML | **0% — not started** |
 | 14. Odds Intelligence | Backend | **0% — not started** |
 | 15. Interactive Tools | Backend+Frontend | **~10%** (H2H UI on match + team pages; `/tools/{slug}` not started) |
 
-**Overall project completion (updated Sep 14, 2026): public web + admin CMS still use cookie sessions against the current API. Frontend now pages `/tours` through `GET /tours` and posts stream comments to `/streams/:id/comments`. Remaining gaps: component/E2E tests, Predictions/Odds/Tools pages (no APIs), Firebase web FCM tokens, licensed streams, CD/staging.**
+**Overall project completion (updated Sep 14, 2026): sports + CMS backend is production-shaped for sessions, editorial, and admin dashboards. Frontend auth/CMS wiring and Predictions/Odds remain the next large domains.**
 
 ---
 

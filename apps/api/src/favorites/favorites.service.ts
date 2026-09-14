@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import {
   getPaginationOffset,
@@ -62,6 +62,29 @@ export class FavoritesService {
         }
         break;
       }
+      case 'news': {
+        const article = await this.prisma.newsArticle.findFirst({
+          where: {
+            OR: [{ id: row.targetId }, { slug: row.targetId }],
+            isPublished: true,
+          },
+          select: {
+            id: true,
+            title: true,
+            slug: true,
+            summary: true,
+            imageUrl: true,
+            language: true,
+            publishedAt: true,
+            authorId: true,
+            author: true,
+            authorRef: { select: { id: true, name: true, slug: true } },
+            category: { select: { id: true, name: true, slug: true } },
+          },
+        });
+        if (article) target = article;
+        break;
+      }
     }
 
     return { ...row, target };
@@ -91,6 +114,20 @@ export class FavoritesService {
   }
 
   async add(userId: string, dto: AddFavoriteDto) {
+    if (dto.targetType === 'news') {
+      const article = await this.prisma.newsArticle.findFirst({
+        where: {
+          OR: [{ id: dto.targetId }, { slug: dto.targetId }],
+          isPublished: true,
+        },
+        select: { id: true },
+      });
+      if (!article) {
+        throw new BadRequestException('Published news article not found');
+      }
+      dto = { ...dto, targetId: article.id };
+    }
+
     const existing = await this.prisma.favorite.findUnique({
       where: { userId_targetType_targetId: { userId, targetType: dto.targetType, targetId: dto.targetId } },
     });
