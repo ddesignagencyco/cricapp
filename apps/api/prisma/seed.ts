@@ -24,6 +24,30 @@ async function seedTeamsAndPlayers(): Promise<void> {
   console.log(`[seed] teams present: ${teamCount} (reference data owned by ingestion)`);
 }
 
+const editorialCategories = [
+  ['Breaking', 'breaking'],
+  ['Pakistan Cricket', 'pakistan-cricket'],
+  ['PSL', 'psl'],
+  ['International', 'international'],
+  ['Match News', 'match-news'],
+  ['Analysis', 'analysis'],
+  ['Features', 'features'],
+  ['Records', 'records'],
+  ['Interviews', 'interviews'],
+  ['Explainers', 'explainers'],
+] as const;
+
+async function seedEditorialCategories(): Promise<void> {
+  for (const [name, slug] of editorialCategories) {
+    await prisma.newsCategory.upsert({
+      where: { slug },
+      update: { name },
+      create: { name, slug },
+    });
+  }
+  console.log(`[seed] editorial categories ready: ${editorialCategories.length}`);
+}
+
 async function seedSuperAdmin(): Promise<void> {
   const email = process.env.SUPERADMIN_EMAIL?.trim().toLowerCase();
   const password = process.env.SUPERADMIN_PASSWORD;
@@ -67,6 +91,7 @@ async function seedSuperAdmin(): Promise<void> {
 async function main(): Promise<void> {
   console.log('[seed] starting');
   await seedSuperAdmin();
+  await seedEditorialCategories();
   await seedTeamsAndPlayers();
   console.log('[seed] done');
 }

@@ -133,7 +133,7 @@ describe('AdminModule (integration)', () => {
     expect(typeof res.body.tours).toBe('number');
     expect(res.body.favorites).toEqual({
       total: 3,
-      types: { team: 2, player: 1, match: 0 },
+      types: { team: 2, player: 1, match: 0, news: 0 },
     });
   });
 

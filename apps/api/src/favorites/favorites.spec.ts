@@ -88,4 +88,46 @@ describe('FavoritesModule (integration)', () => {
   it('GET /favorites — rejects unauthenticated', async () => {
     await ctx.agent.get('/favorites').expect(401);
   });
+
+  it('POST /favorites — bookmarks a published news article', async () => {
+    const article = await ctx.prisma.newsArticle.create({
+      data: {
+        title: 'Favorite this story',
+        slug: 'favorite-this-story',
+        content: 'Body',
+        isPublished: true,
+        publishedAt: new Date(),
+      },
+    });
+
+    const created = await ctx.agent
+      .post('/favorites')
+      .set('Authorization', `Bearer ${userToken}`)
+      .send({ targetType: 'news', targetId: article.slug })
+      .expect(201);
+    expect(created.body.targetId).toBe(article.id);
+
+    const listed = await ctx.agent
+      .get('/favorites?targetType=news&expand=true')
+      .set('Authorization', `Bearer ${userToken}`)
+      .expect(200);
+    expect(listed.body.data[0].target.title).toBe('Favorite this story');
+  });
+
+  it('POST /favorites — rejects unpublished news articles', async () => {
+    const draft = await ctx.prisma.newsArticle.create({
+      data: {
+        title: 'Draft only',
+        slug: 'draft-only',
+        content: 'Body',
+        isPublished: false,
+      },
+    });
+
+    await ctx.agent
+      .post('/favorites')
+      .set('Authorization', `Bearer ${userToken}`)
+      .send({ targetType: 'news', targetId: draft.id })
+      .expect(400);
+  });
 });
