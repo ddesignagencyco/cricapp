@@ -11,6 +11,7 @@ import {
   Globe,
   Heart,
   Home,
+  Images,
   LayoutDashboard,
   LogIn,
   LogOut,
@@ -55,6 +56,7 @@ const exploreItems: NavItem[] = [
   { to: '/tours', label: 'Tours', icon: Globe },
   { to: '/tournaments', label: 'Tournaments', icon: Award },
   { to: '/news', label: 'News', icon: Newspaper },
+  { to: '/gallery', label: 'Gallery', icon: Images },
 ];
 
 const navItems = [...liveItems, ...exploreItems];

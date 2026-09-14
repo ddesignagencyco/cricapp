@@ -1,11 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { Calendar, CalendarDays, Newspaper, Trophy, Users, Video, Zap, TrendingUp, MapPin } from 'lucide-react';
+import { Calendar, CalendarDays, Images, Newspaper, Trophy, Users, Video, Zap, TrendingUp, MapPin } from 'lucide-react';
 
 const iconMap: Record<string, React.ComponentType<{ size?: number; strokeWidth?: number }>> = {
   calendar: Calendar,
   calendardays: CalendarDays,
+  images: Images,
   newspaper: Newspaper,
   trophy: Trophy,
   users: Users,

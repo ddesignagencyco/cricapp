@@ -228,6 +228,38 @@ export function MatchesPageSkeleton() {
   );
 }
 
+export function GalleryPageSkeleton() {
+  return (
+    <Page className="space-y-7">
+      <Card className="flex flex-col gap-6 p-6 sm:p-8 lg:flex-row lg:items-end lg:justify-between">
+        <div className="max-w-2xl flex-1">
+          <Skeleton width={110} height={20} borderRadius={999} />
+          <Skeleton width={180} height={34} className="mt-3" />
+          <Skeleton width="70%" height={12} className="mt-3" />
+        </div>
+        <div className="grid grid-cols-4 gap-px overflow-hidden rounded-2xl lg:w-[420px]">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="bg-secondary px-2 py-3 text-center">
+              <Skeleton width="70%" height={8} className="mx-auto" />
+              <Skeleton width={28} height={20} className="mx-auto mt-1.5" />
+            </div>
+          ))}
+        </div>
+      </Card>
+      <div className="flex gap-4 border-b border-lborder pb-3">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} width={96} height={18} />
+        ))}
+      </div>
+      <div className="columns-2 gap-3 sm:columns-3 lg:columns-4 [&>*]:mb-3">
+        {Array.from({ length: 10 }).map((_, i) => (
+          <Skeleton key={i} height={i % 3 === 0 ? 210 : 150} borderRadius={16} className="!block" />
+        ))}
+      </div>
+    </Page>
+  );
+}
+
 export function NewsPageSkeleton() {
   return (
     <Page>

@@ -17,6 +17,7 @@ const staticRoutes = [
   '/players',
   '/stats',
   '/news',
+  '/gallery',
   '/streams',
   '/tours',
   '/tournaments',

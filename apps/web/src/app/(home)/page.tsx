@@ -16,6 +16,7 @@ import { fetchLiveMatches, fetchMatches } from '../../services/matches';
 import { fetchNews } from '../../services/news';
 import { newsHref } from '../../utils/newsConstraints';
 import { fetchPslLeaders, fetchPslStandings } from '../../services/psl';
+import { fetchStreams } from '../../services/streams';
 
 export const revalidate = 60;
 
@@ -42,6 +43,8 @@ export default async function HomePage() {
       fetchNews(),
       fetchPslStandings(),
       fetchPslLeaders(),
+      fetchStreams({ limit: 8 }),
+      fetchNews({ language: 'ur', limit: 6 }),
     ] as const);
   const liveMatches = results[0].status === 'fulfilled' ? results[0].value : [];
   const upcomingMatches = results[1].status === 'fulfilled' ? results[1].value : [];
@@ -50,6 +53,9 @@ export default async function HomePage() {
   const newsList = results[4].status === 'fulfilled' ? results[4].value : [];
   const standings = results[5].status === 'fulfilled' ? results[5].value : [];
   const pslLeaders = results[6].status === 'fulfilled' ? results[6].value : [];
+  const streams = results[7].status === 'fulfilled' ? results[7].value : [];
+  const urduNews = results[8].status === 'fulfilled' ? results[8].value : [];
+  const galleryPhotos = (newsList || []).filter((item) => item.image).slice(0, 6);
 
   const live = liveMatches || [];
   const upcoming = (upcomingMatches || []).slice(0, 5);
@@ -111,8 +117,34 @@ export default async function HomePage() {
         </section>
       )}
 
+      {streams.length > 0 && (
+        <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6">
+          <SectionHeader title="Watch Now" subtitle="Live streams and featured videos" icon="video" to="/gallery?tab=videos" actionLabel="All videos" />
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {streams.slice(0, 3).map((stream) => (
+              <Link key={stream.id} href="/streams" className="group overflow-hidden rounded-2xl bg-card ring-1 ring-lborder hover:ring-border-strong">
+                <div className="relative aspect-video bg-secondary">
+                  {stream.image ? (
+                    <RemoteImage src={stream.image} alt={stream.title} fill sizes="400px" fit="contain" className="news-image" />
+                  ) : (
+                    <div className="grid h-full place-items-center media-fallback text-stext">▶</div>
+                  )}
+                  <span className="absolute inset-0 grid place-items-center">
+                    <span className="grid h-11 w-11 place-items-center rounded-full bg-black/55 text-sm text-white">▶</span>
+                  </span>
+                  <span className="absolute left-2 top-2 rounded-full bg-black/55 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                    {stream.status || 'Video'}
+                  </span>
+                </div>
+                <p className="line-clamp-2 p-3 text-sm font-semibold text-mtext group-hover:text-accent">{stream.title}</p>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Upcoming Matches */}
-      <section className={`mx-auto max-w-7xl px-4 pb-14 sm:px-6 ${live.length > 0 ? '' : 'mt-8'}`}>
+      <section className={`mx-auto max-w-7xl px-4 pb-14 sm:px-6 ${live.length > 0 || streams.length > 0 ? '' : 'mt-8'}`}>
         <SectionHeader title="Upcoming Matches" subtitle="Don't miss the upcoming action" icon="calendar" to="/matches" actionLabel="View all" />
         <div className="grid grid-cols-1 gap-2.5 lg:grid-cols-2">
           {upcoming.length > 0 ? (
@@ -235,6 +267,46 @@ export default async function HomePage() {
                 </Link>
               ))}
             </div>
+          </div>
+        </section>
+      )}
+
+      {urduNews.length > 0 && (
+        <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6">
+          <SectionHeader title="Urdu News" subtitle="اردو خبریں اور تازہ اپڈیٹس" icon="newspaper" to="/ur/news" actionLabel="All Urdu" />
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            {urduNews.slice(0, 4).map((item) => (
+              <Link key={item.id} href={newsHref(item)} className="group flex gap-3 rounded-xl bg-card p-3 ring-1 ring-lborder hover:bg-elevated hover:ring-border-strong">
+                <div className="relative h-16 w-20 shrink-0 overflow-hidden rounded-lg bg-secondary">
+                  {item.image ? (
+                    <RemoteImage src={item.image} alt={item.title} fill sizes="80px" fit="contain" className="news-image" />
+                  ) : (
+                    <div className="h-full w-full media-fallback" />
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <NewsCopy as="h3" language={item.language} text={item.title} className="line-clamp-2 text-sm font-bold text-mtext group-hover:text-accent">
+                    {item.title}
+                  </NewsCopy>
+                  <p className="mt-1 text-[11px] text-stext">{item.date}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {galleryPhotos.length > 0 && (
+        <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6">
+          <SectionHeader title="Gallery" subtitle="Images, shorts, videos and stories" icon="images" to="/gallery" actionLabel="Open gallery" />
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-6">
+            {galleryPhotos.map((item) => (
+              <Link key={item.id} href="/gallery?tab=images" className="group overflow-hidden rounded-2xl bg-card ring-1 ring-lborder">
+                <div className="relative aspect-square bg-secondary">
+                  <RemoteImage src={item.image as string} alt={item.title} fill sizes="180px" fit="contain" className="news-image" />
+                </div>
+              </Link>
+            ))}
           </div>
         </section>
       )}
