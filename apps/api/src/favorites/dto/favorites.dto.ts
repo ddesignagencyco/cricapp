@@ -4,9 +4,9 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginationQuery } from '../../common/dto/pagination.query.js';
 
 export class AddFavoriteDto {
-  @ApiProperty({ enum: ['team', 'player', 'match'] })
+  @ApiProperty({ enum: ['team', 'player', 'match', 'news'] })
   @IsString()
-  @IsIn(['team', 'player', 'match'])
+  @IsIn(['team', 'player', 'match', 'news'])
   targetType: string;
 
   @ApiProperty({ example: 'sr:team:1' })
@@ -15,7 +15,7 @@ export class AddFavoriteDto {
 }
 
 export class FavoriteListQuery extends PaginationQuery {
-  @ApiPropertyOptional({ enum: ['team', 'player', 'match'], description: 'Filter by type' })
+  @ApiPropertyOptional({ enum: ['team', 'player', 'match', 'news'], description: 'Filter by type' })
   @IsOptional()
   @IsString()
   targetType?: string;

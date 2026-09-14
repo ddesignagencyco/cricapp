@@ -1,4 +1,14 @@
-import { IsString, IsOptional, IsBoolean, IsArray, IsIn, Matches, MinLength } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsBoolean,
+  IsArray,
+  IsIn,
+  IsUUID,
+  Matches,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginationQuery } from '../../common/dto/pagination.query.js';
 
@@ -11,7 +21,7 @@ export class CreateNewsDto {
   @ApiPropertyOptional({ example: 'psl-2026-final-preview', description: 'SEO slug; generated from title when omitted' })
   @IsOptional()
   @IsString()
-  @Matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+  @Matches(/^[\p{L}\p{N}]+(?:-[\p{L}\p{N}]+)*$/u)
   slug?: string;
 
   @ApiPropertyOptional({ example: 'A look ahead to the PSL final...' })
@@ -68,6 +78,29 @@ export class CreateNewsDto {
   @IsString()
   canonicalUrl?: string;
 
+  @ApiPropertyOptional({ format: 'uuid', description: 'Groups separately authored en/ur article variants' })
+  @IsOptional()
+  @IsUUID()
+  translationGroupId?: string;
+
+  @ApiPropertyOptional({ description: 'Draft title for a future push notification' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(150)
+  pushNotificationTitle?: string;
+
+  @ApiPropertyOptional({ description: 'Draft body for a future push notification' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  pushNotificationBody?: string;
+
+  @ApiPropertyOptional({ description: 'Draft social-media copy' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  socialCopy?: string;
+
   @ApiPropertyOptional({ default: false })
   @IsOptional()
   @IsBoolean()
@@ -107,7 +140,7 @@ export class UpdateNewsDto {
   @ApiPropertyOptional({ example: 'psl-2026-final-preview' })
   @IsOptional()
   @IsString()
-  @Matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+  @Matches(/^[\p{L}\p{N}]+(?:-[\p{L}\p{N}]+)*$/u)
   slug?: string;
 
   @ApiPropertyOptional()
@@ -164,6 +197,29 @@ export class UpdateNewsDto {
   @IsOptional()
   @IsString()
   canonicalUrl?: string;
+
+  @ApiPropertyOptional({ format: 'uuid' })
+  @IsOptional()
+  @IsUUID()
+  translationGroupId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(150)
+  pushNotificationTitle?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  pushNotificationBody?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  socialCopy?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -230,6 +286,11 @@ export class NewsListQuery extends PaginationQuery {
   @IsOptional()
   @IsString()
   seriesId?: string;
+
+  @ApiPropertyOptional({ description: 'Filter articles by editorial author id' })
+  @IsOptional()
+  @IsString()
+  authorId?: string;
 }
 
 export class NewsCategoryDto {
@@ -261,9 +322,19 @@ export class NewsArticleDto {
   @ApiProperty({ nullable: true }) metaTitle: string | null;
   @ApiProperty({ nullable: true }) metaDescription: string | null;
   @ApiProperty({ nullable: true }) canonicalUrl: string | null;
+  @ApiProperty({ nullable: true }) translationGroupId: string | null;
+  @ApiProperty({ nullable: true }) pushNotificationTitle: string | null;
+  @ApiProperty({ nullable: true }) pushNotificationBody: string | null;
+  @ApiProperty({ nullable: true }) socialCopy: string | null;
+  @ApiProperty({ type: [Object] }) translations: Array<{
+    language: string;
+    slug: string;
+    href: string;
+  }>;
   @ApiProperty({ nullable: true }) publishedAt: Date | null;
   @ApiProperty() isPublished: boolean;
   @ApiProperty() createdAt: Date;
+  @ApiProperty() updatedAt: Date;
   @ApiProperty({ nullable: true }) category: NewsCategoryDto | null;
   @ApiProperty({ nullable: true }) authorRef: AuthorDto | null;
   @ApiProperty({ type: [String] }) playerIds: string[];
@@ -281,7 +352,7 @@ export class CreateCategoryDto {
   @ApiPropertyOptional({ example: 'psl', description: 'SEO slug; generated from name when omitted' })
   @IsOptional()
   @IsString()
-  @Matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+  @Matches(/^[\p{L}\p{N}]+(?:-[\p{L}\p{N}]+)*$/u)
   slug?: string;
 }
 
@@ -295,7 +366,7 @@ export class UpdateCategoryDto {
   @ApiPropertyOptional({ example: 'psl' })
   @IsOptional()
   @IsString()
-  @Matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+  @Matches(/^[\p{L}\p{N}]+(?:-[\p{L}\p{N}]+)*$/u)
   slug?: string;
 }
 
@@ -330,4 +401,20 @@ export class UpdateAuthorDto {
   @IsOptional()
   @IsString()
   avatarUrl?: string;
+}
+
+export class AuthorArticlesQuery extends PaginationQuery {}
+
+export class UpsertEditorialPageDto {
+  @ApiProperty({ example: 'Editorial Policy' })
+  @IsString()
+  @MinLength(1)
+  @MaxLength(150)
+  title: string;
+
+  @ApiProperty({ description: 'Policy content in Markdown or HTML' })
+  @IsString()
+  @MinLength(1)
+  @MaxLength(50000)
+  content: string;
 }

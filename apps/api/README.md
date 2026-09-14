@@ -41,3 +41,30 @@ Upload article images with a multipart `file` field at
 AVIF images up to 10 MB and returns a `url` suitable for the article
 `imageUrl`. Configure `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and
 `CLOUDINARY_API_SECRET` before using it.
+
+## Realtime matches
+
+SSE remains available at `/api/matches/live/stream` and
+`/api/matches/:matchId/stream`. Socket.IO clients connect to the `/matches`
+namespace. Listen for `live:update` globally, or emit `subscribe:match` with
+`{ matchId }` and listen for `match:update`.
+
+## Newsletter and contact
+
+- `POST /api/newsletter/subscribe` with `{ email }`
+- `POST /api/newsletter/unsubscribe` with `{ token }`
+- `GET /api/admin/newsletter/subscribers` (admin)
+- `POST /api/contact` with `{ name, email, message }`
+- `GET /api/admin/contact-submissions` and
+  `PATCH /api/admin/contact-submissions/:id/status` (admin)
+
+## Gallery
+
+- `GET /api/gallery?type=image|short|video` (public, paginated)
+- `GET /api/gallery/:id` (public)
+- `POST /api/gallery` (admin multipart upload: `file`, `type`, optional
+  `title`/`caption`)
+- `DELETE /api/gallery/:id` (admin; removes Cloudinary asset and DB row)
+
+Shorts are limited to 30 seconds and videos to 60 seconds. Over-limit
+Cloudinary uploads are deleted immediately and return `400`.
