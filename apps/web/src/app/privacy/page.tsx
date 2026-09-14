@@ -60,7 +60,7 @@ export default function PrivacyPage() {
         <div className="rounded-2xl bg-card p-5 ring-1 ring-lborder">
           <p className="text-sm text-stext">
             If you have any questions about this Privacy Policy, please contact us at{' '}
-            <a href="mailto:privacy@pakcriczone.com" className="font-semibold text-accent hover:text-accent2">
+            <a href="mailto:privacy@pakcriczone.com" className="font-semibold text-accent">
               privacy@pakcriczone.com
             </a>
             .

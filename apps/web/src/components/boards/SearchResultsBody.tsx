@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowRight, Calendar, Loader2, Search, Shield, Trophy, UserRound, X } from 'lucide-react';
+import { ArrowRight, Calendar, Search, Shield, Trophy, UserRound, X } from 'lucide-react';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
@@ -9,6 +9,7 @@ import { searchAll } from '../../services/search';
 import type { Match, SearchResults } from '../../types/index';
 import EmptyState from '../EmptyState';
 import { PlayerSearchAvatar, TeamSearchAvatar, TypeSearchAvatar } from '../SearchAvatars';
+import { SearchResultsSkeleton } from '../skeletons/Skeletons';
 
 function strVal(v: unknown): string {
   if (typeof v === 'string') return v;
@@ -118,7 +119,7 @@ export default function SearchResultsBody() {
             onChange={(e) => setInputVal(e.target.value)}
             placeholder="Search players, teams, matches or tournaments…"
             autoComplete="off"
-            className="w-full rounded-md border border-lborder bg-elevated py-3 pl-10 pr-20 text-sm text-mtext outline-none placeholder:text-stext/70 focus:border-accent focus:ring-2 focus:ring-accent/20"
+            className="w-full rounded-md border border-lborder bg-elevated py-3 pl-10 pr-20 text-sm text-mtext outline-none placeholder:text-stext/70 focus:border-[var(--color-focus-ring)] focus:ring-2 focus:ring-[var(--color-focus-ring)]/30"
           />
           {inputVal ? (
             <button
@@ -134,11 +135,7 @@ export default function SearchResultsBody() {
         </div>
       </header>
 
-      {loading && (
-        <div className="flex justify-center py-20">
-          <Loader2 size={26} className="animate-spin text-accent" />
-        </div>
-      )}
+      {loading && <SearchResultsSkeleton />}
       {!loading && !debouncedQuery && (
         <EmptyState title="Start searching" icon={Search} message="Search players, teams, matches and tournaments." />
       )}
@@ -238,7 +235,7 @@ function FilterChip({
       {label}
       <span
         className={`rounded px-1.5 py-0.5 text-[11px] font-bold ${
-          active ? 'bg-black/25 text-white' : 'bg-elevated text-stext'
+          active ? 'bg-white/20 text-white' : 'bg-elevated text-stext'
         }`}
       >
         {count}

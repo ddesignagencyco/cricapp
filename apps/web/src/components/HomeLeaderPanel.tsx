@@ -5,9 +5,9 @@ import { getInitials } from '../utils/helpers';
 
 const statMeta: Record<string, { label: string; tone: string }> = {
   top_runs: { label: 'Most Runs', tone: 'text-accent' },
-  top_wickets: { label: 'Most Wickets', tone: 'text-accent2' },
+  top_wickets: { label: 'Most Wickets', tone: 'text-accent' },
   top_sixes: { label: 'Most Sixes', tone: 'text-gold' },
-  top_fours: { label: 'Most Fours', tone: 'text-accent2' },
+  top_fours: { label: 'Most Fours', tone: 'text-accent' },
 };
 
 export function LeaderPanel({ group }: { group: any }) {
@@ -24,7 +24,7 @@ export function LeaderPanel({ group }: { group: any }) {
     <div className="rounded-xl bg-card ring-1 ring-lborder overflow-hidden">
       <div className="flex items-center justify-between border-b border-lborder px-5 py-3">
         <div className="flex items-center gap-2">
-          <StatIcon size={15} className="text-accent2" />
+          <StatIcon size={15} className="text-accent" />
           <h3 className="text-sm font-bold text-mtext">{meta.label}</h3>
         </div>
         <span className="text-xs font-black uppercase tracking-wide text-accent">Top 5</span>

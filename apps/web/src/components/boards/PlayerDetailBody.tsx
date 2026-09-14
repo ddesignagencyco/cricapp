@@ -13,6 +13,7 @@ import FavoriteButton from '../FavoriteButton';
 import ShareButton from '../ShareButton';
 import { getInitials } from '../../utils/helpers';
 import type { NewsArticle } from '../../types';
+import { newsHref } from '../../utils/newsConstraints';
 
 const playerTabs = [
   { key: 'profile', label: 'Profile' },
@@ -192,7 +193,7 @@ export default function PlayerDetailBody({ player, relatedNews = [] }: Props) {
           <ul className="space-y-2">
             {relatedNews.map((article) => (
               <li key={article.id}>
-                <Link href={`/news/${article.slug || article.id}`} className="text-sm font-semibold text-mtext hover:text-accent">
+                <Link href={newsHref(article)} className="text-sm font-semibold text-mtext hover:text-accent">
                   {article.title}
                 </Link>
                 <p className="text-xs text-stext">{article.date}</p>

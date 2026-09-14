@@ -95,7 +95,7 @@ export default function ToursBoard({ tours }: Props) {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search tours by series name, country or category…"
-              className="w-full rounded-md border border-lborder bg-card py-2.5 pl-10 pr-4 text-sm text-mtext outline-none transition-colors focus:border-accent focus:bg-elevated focus:ring-2 focus:ring-accent/20"
+              className="w-full rounded-md border border-lborder bg-card py-2.5 pl-10 pr-4 text-sm text-mtext outline-none transition-colors focus:border-[var(--color-focus-ring)] focus:bg-elevated focus:ring-2 focus:ring-[var(--color-focus-ring)]/30"
             />
           </div>
           {activeFilters && (

@@ -133,8 +133,7 @@ export default function AdminStreamsPage() {
         <button
           type="submit"
           disabled={saving}
-          className="inline-flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-bold text-white disabled:opacity-60 sm:w-fit"
-          style={{ background: 'var(--admin-accent)' }}
+          className="btn-brand inline-flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-bold disabled:opacity-60 sm:w-fit"
         >
           <Plus size={15} />
           Create stream

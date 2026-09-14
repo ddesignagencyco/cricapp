@@ -23,8 +23,9 @@ import {
   type NewsArticleAdmin,
   type NewsCategory,
 } from '../../services/newsAdmin';
-import { AdminInput, ConfirmDialog } from './AdminShared';
+import { AdminInput, ConfirmDialog, LoadingState } from './AdminShared';
 import { BlinkingDot } from '../Badge';
+import NewsCopy from '../NewsCopy';
 
 export default function CategoryManager() {
   const [categories, setCategories] = useState<NewsCategory[]>([]);
@@ -166,8 +167,7 @@ export default function CategoryManager() {
             <button
               type="submit"
               disabled={creating || !newCatName.trim()}
-              className="w-full inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-2 text-xs font-bold text-white disabled:opacity-50 transition-colors"
-              style={{ background: 'var(--admin-accent)' }}
+              className="btn-brand w-full inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-2 text-xs font-bold disabled:opacity-50 transition-colors"
             >
               {creating ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
               {creating ? 'Creating...' : 'Create Category'}
@@ -205,9 +205,7 @@ export default function CategoryManager() {
 
           {/* Table */}
           {loading ? (
-            <div className="flex min-h-[200px] items-center justify-center rounded-lg" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
-              <Loader2 size={20} className="animate-spin" style={{ color: 'var(--admin-accent)' }} />
-            </div>
+            <LoadingState />
           ) : filteredCategories.length === 0 ? (
             <div className="rounded-lg border border-dashed p-8 text-center" style={{ borderColor: 'var(--admin-border)', background: 'var(--admin-card)' }}>
               <FolderArchive size={28} className="mx-auto mb-2" style={{ color: 'var(--admin-text-muted)' }} />
@@ -243,7 +241,7 @@ export default function CategoryManager() {
                       >
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
-                            <div className="grid h-7 w-7 place-items-center rounded-md" style={{ background: 'var(--admin-accent)', color: '#fff' }}>
+                            <div className="grid h-7 w-7 place-items-center rounded-md" style={{ background: 'var(--admin-accent)', color: 'var(--color-brand-fg)' }}>
                               <Tag size={12} />
                             </div>
                             {editingId === c.id ? (
@@ -341,7 +339,7 @@ export default function CategoryManager() {
                   <h3 className="mt-0.5 text-sm font-bold" style={{ color: 'var(--admin-text)' }}>{selectedCategory.name}</h3>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Link href={`/admin/news/new?category=${selectedCategory.id}`} className="inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-bold text-white" style={{ background: 'var(--admin-accent)' }}>
+                  <Link href={`/admin/news/new?category=${selectedCategory.id}`} className="btn-brand inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-bold">
                     <Plus size={12} /> New Article
                   </Link>
                   <button type="button" onClick={() => setSelectedCatId(null)} className="rounded-md px-2 py-1 text-xs font-semibold" style={{ color: 'var(--admin-text-muted)' }}>
@@ -356,7 +354,9 @@ export default function CategoryManager() {
                   {selectedCategoryArticles.slice(0, 8).map((art) => (
                     <div key={art.id} className="flex items-center justify-between py-2 gap-2" style={{ borderBottom: '1px solid var(--admin-border)' }}>
                       <div className="min-w-0 flex-1">
-                        <Link href={`/admin/news/${art.id}/edit`} className="block truncate text-xs font-semibold" style={{ color: 'var(--admin-text)' }}>{art.title}</Link>
+                        <Link href={`/admin/news/${art.id}/edit`} className="block" style={{ color: 'var(--admin-text)' }}>
+                          <NewsCopy as="span" language={art.language} text={art.title} className="block truncate text-xs font-semibold">{art.title}</NewsCopy>
+                        </Link>
                         <p className="text-xs" style={{ color: 'var(--admin-text-muted)' }}>{art.author || 'Editorial'} · {art.publishedAt || art.createdAt}</p>
                       </div>
                       <span

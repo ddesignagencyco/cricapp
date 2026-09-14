@@ -33,6 +33,7 @@ import {
   type IngestionHealth,
 } from '../../../services/admin';
 import { getInitials } from '../../../utils/helpers';
+import NewsCopy from '../../../components/NewsCopy';
 
 export default function AdminDashboard() {
   const { user } = useAuth();
@@ -119,8 +120,7 @@ export default function AdminDashboard() {
         <div className="flex flex-wrap items-center gap-2">
           <Link
             href="/admin/news/new"
-            className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-bold text-white"
-            style={{ background: 'var(--admin-accent)' }}
+            className="btn-brand inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-bold"
           >
             <FileText size={13} /> Write Story
           </Link>
@@ -269,7 +269,7 @@ export default function AdminDashboard() {
           </div>
         </div>
         <div className="flex items-center gap-3 sm:pl-4">
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg" style={{ background: 'rgba(255, 209, 102, 0.12)', color: 'var(--admin-warning)' }}>
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg" style={{ background: 'var(--admin-warning-bg)', color: 'var(--admin-warning)' }}>
             <RefreshCw size={18} />
           </div>
           <div>
@@ -342,7 +342,7 @@ export default function AdminDashboard() {
                             className="rounded-full px-2 py-0.5 text-[11px] font-bold"
                             style={{
                               background: u.isSuperAdmin || u.isAdmin ? 'var(--admin-accent)' : 'var(--admin-input-bg)',
-                              color: u.isSuperAdmin || u.isAdmin ? '#fff' : 'var(--admin-text-secondary)',
+                              color: u.isSuperAdmin || u.isAdmin ? 'var(--color-brand-fg)' : 'var(--admin-text-secondary)',
                             }}
                           >
                             {u.isSuperAdmin ? 'Superadmin' : u.isAdmin ? 'Admin' : 'Member'}
@@ -375,7 +375,7 @@ export default function AdminDashboard() {
                     <FileText size={11} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs font-semibold truncate" style={{ color: 'var(--admin-text)' }}>{a.title}</p>
+                    <NewsCopy as="p" language={a.language} text={a.title} className="truncate text-xs font-semibold" style={{ color: 'var(--admin-text)' }}>{a.title}</NewsCopy>
                     <p className="text-xs mt-0.5" style={{ color: 'var(--admin-text-muted)' }}>
                       {a.isPublished ? 'Published' : 'Draft'} · {new Date(a.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     </p>
@@ -427,7 +427,7 @@ function MatchPreviewTable({
   icon: React.ReactNode;
   empty: string;
   matches: Match[];
-  getTeamInfo: (m: Match) => { homeName: string; awayName: string };
+  getTeamInfo: (_m: Match) => { homeName: string; awayName: string };
   hideScore?: boolean;
 }) {
   return (

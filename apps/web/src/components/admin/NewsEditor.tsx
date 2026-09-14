@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { EditorSkeleton } from '../skeletons/Skeletons';
 import {
   ArrowLeft,
   Loader2,
@@ -37,6 +38,7 @@ import {
   isValidNewsSlug,
   slugifyNews,
 } from '../../utils/newsConstraints';
+import { newsLocale } from '../../utils/locale';
 
 interface NewsEditorProps {
   mode: 'create' | 'edit';
@@ -135,6 +137,12 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
   };
 
   const titleWordCount = countWords(form.title);
+  const copyLocale = newsLocale(form.language, `${form.title} ${form.summary}`);
+  const copyField = {
+    className: 'news-copy',
+    dir: copyLocale.dir,
+    lang: copyLocale.lang,
+  } as const;
 
   const addTags = (raw: string) => {
     const incoming = raw
@@ -247,11 +255,7 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
   };
 
   if (loading) {
-    return (
-      <div className="flex min-h-[200px] items-center justify-center rounded-lg" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
-        <Loader2 size={22} className="animate-spin" style={{ color: 'var(--admin-accent)' }} />
-      </div>
-    );
+    return <EditorSkeleton />;
   }
 
   return (
@@ -291,8 +295,7 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
             type="button"
             disabled={saving}
             onClick={() => submit(true)}
-            className="inline-flex items-center gap-1.5 rounded-md px-4 py-2 text-xs font-bold text-white transition-colors disabled:opacity-50"
-            style={{ background: 'var(--admin-accent)' }}
+            className="btn-brand inline-flex items-center gap-1.5 rounded-md px-4 py-2 text-xs font-bold transition-colors disabled:opacity-50"
           >
             {saving ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
             Publish Live
@@ -322,6 +325,7 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Babar Azam seals thriller at Gaddafi Stadium"
               required
+              {...copyField}
             />
           </div>
           <div>
@@ -350,6 +354,7 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
               value={form.summary}
               onChange={(e) => set('summary', e.target.value)}
               placeholder="Brief lead paragraph for previews..."
+              {...copyField}
             />
           </div>
           <div>
@@ -360,6 +365,7 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
               value={form.content}
               onChange={(v) => set('content', v)}
               placeholder="Write the full article here..."
+              language={form.language}
             />
           </div>
         </div>
@@ -379,7 +385,7 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
             {showAddCat ? (
               <div className="space-y-2">
                 <AdminInput type="text" value={newCategory} onChange={(e) => setNewCategory(e.target.value)} placeholder="New category name" />
-                <button type="button" onClick={handleAddCategory} disabled={!newCategory.trim()} className="w-full rounded-md py-1.5 text-xs font-bold text-white disabled:opacity-50" style={{ background: 'var(--admin-accent)' }}>
+                <button type="button" onClick={handleAddCategory} disabled={!newCategory.trim()} className="btn-brand w-full rounded-md py-1.5 text-xs font-bold disabled:opacity-50">
                   Create & Select
                 </button>
               </div>
@@ -415,7 +421,7 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
             </button>
             {form.imageUrl && (
               <div className="mt-2 overflow-hidden rounded" style={{ border: '1px solid var(--admin-border)' }}>
-                <RemoteImage src={form.imageUrl} alt="Preview" width={640} height={96} className="h-24 w-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                <RemoteImage src={form.imageUrl} alt="Preview" width={640} height={96} className="news-image h-24 w-full bg-secondary" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                 <p className="break-all px-2 py-1 text-[11px]" style={{ color: 'var(--admin-text-muted)' }}>{form.imageUrl}</p>
                 <button
                   type="button"
@@ -517,8 +523,8 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
 
           <div className="rounded-lg p-4 space-y-3" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
             <p className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text)' }}>SEO</p>
-            <AdminInput value={form.metaTitle} onChange={(e) => set('metaTitle', e.target.value)} placeholder="SEO title" />
-            <AdminInput value={form.metaDescription} onChange={(e) => set('metaDescription', e.target.value)} placeholder="SEO description" />
+            <AdminInput value={form.metaTitle} onChange={(e) => set('metaTitle', e.target.value)} placeholder="SEO title" {...copyField} />
+            <AdminInput value={form.metaDescription} onChange={(e) => set('metaDescription', e.target.value)} placeholder="SEO description" {...copyField} />
             <AdminInput value={form.canonicalUrl} onChange={(e) => set('canonicalUrl', e.target.value)} placeholder="Canonical URL" />
           </div>
         </div>

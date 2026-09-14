@@ -18,7 +18,10 @@ import EmptyState from '../EmptyState';
 import Pagination from '../Pagination';
 import AdSlot from '../AdSlot';
 import RemoteImage from '../RemoteImage';
+import NewsCopy from '../NewsCopy';
 import type { NewsArticle } from '../../types';
+import { newsLocale } from '../../utils/locale';
+import { newsHref } from '../../utils/newsConstraints';
 
 const categoryTone: Record<string, string> = {
   'Match Report': 'live',
@@ -135,20 +138,33 @@ export default function NewsBoard({
   const spotlightCategory = featured ? getCategoryName(featured.category) : '';
   const spotlightTags = featured ? getArticleTags(featured) : [];
 
+  const pageLocale = newsLocale(language);
+
   return (
     <>
       <header className="mb-8">
-        <div className="flex items-center gap-2 text-accent">
+        <div className="flex items-center gap-2 text-accent" dir="ltr">
           <Newspaper size={18} />
           <span className="text-xs font-medium uppercase tracking-widest text-stext">
             Cricket Newsroom
           </span>
         </div>
-        <div className="mt-1 flex flex-wrap items-end justify-between gap-3">
-          <h1 className="text-2xl font-semibold tracking-tight text-mtext">
+        <div
+          className="mt-1 flex flex-wrap items-end justify-between gap-3"
+          dir={pageLocale.dir}
+          lang={pageLocale.lang}
+        >
+          <NewsCopy
+            as="h1"
+            language={language}
+            className="text-2xl font-semibold tracking-tight text-mtext"
+          >
             {language === 'ur' ? 'خبریں اور اپ ڈیٹس' : 'News & Updates'}
-          </h1>
-          <div className="inline-flex rounded-md border border-lborder bg-card p-0.5 text-xs font-semibold">
+          </NewsCopy>
+          <div
+            dir="ltr"
+            className="inline-flex rounded-md border border-lborder bg-card p-0.5 text-xs font-semibold"
+          >
             <Link
               href="/news"
               className={`rounded px-2.5 py-1 ${language === 'en' ? 'bg-accent text-white' : 'text-stext hover:text-mtext'}`}
@@ -163,11 +179,11 @@ export default function NewsBoard({
             </Link>
           </div>
         </div>
-        <p className="mt-2 max-w-2xl text-sm text-stext">
+        <NewsCopy language={language} className="mt-2 max-w-2xl text-sm text-stext">
           {language === 'ur'
             ? 'میچ رپورٹس، پی ایس ایل اور پاکستان کرکٹ کی اردو خبریں۔'
             : 'Match reports, PSL stories, team roster updates, and tactical analysis from the PAK CRICZONE team.'}
-        </p>
+        </NewsCopy>
       </header>
 
       {/* Filters apply to both the spotlight and the story grid. */}
@@ -184,22 +200,24 @@ export default function NewsBoard({
 
       {featured && (
         <Link
-          href={`/news/${featured.id}`}
-          className="group mb-10 block overflow-hidden rounded-md border border-lborder bg-card transition-colors hover:border-accent/60"
+          href={newsHref(featured)}
+          className="group mb-10 block overflow-hidden rounded-md border border-lborder bg-card transition-colors hover:border-border-strong"
         >
           <div className="grid md:grid-cols-[minmax(0,1.45fr)_minmax(280px,1fr)]">
-            <div className="relative aspect-[16/10] overflow-hidden md:aspect-auto md:min-h-[360px]">
+            <div className="bg-secondary">
               {featured.image ? (
                 <RemoteImage
                   src={featured.image}
                   alt={featured.title}
-                  fill
+                  width={1600}
+                  height={900}
                   sizes="(min-width: 768px) 55vw, 100vw"
-                  className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                  fit="contain"
+                  className="news-image h-auto w-full"
                 />
               ) : (
-                <div className="relative flex h-full min-h-[260px] w-full items-center justify-center bg-primary">
-                  <Newspaper size={72} className="relative z-10 text-white/20" />
+                <div className="relative flex h-full min-h-[260px] w-full items-center justify-center media-fallback">
+                  <Newspaper size={72} className="relative z-10 text-stext/40" />
                 </div>
               )}
             </div>
@@ -227,14 +245,23 @@ export default function NewsBoard({
                   ))}
                 </div>
 
-                <h2 className="mt-5 text-2xl font-semibold leading-tight text-mtext transition-colors group-hover:text-accent sm:text-3xl">
+                <NewsCopy
+                  as="h2"
+                  language={featured.language as string | undefined || language}
+                  text={featured.title}
+                  className="mt-5 text-2xl font-semibold leading-tight text-mtext transition-colors group-hover:text-accent sm:text-3xl"
+                >
                   {featured.title}
-                </h2>
+                </NewsCopy>
 
                 {featured.excerpt && (
-                  <p className="mt-3 line-clamp-4 text-sm leading-relaxed text-stext">
+                  <NewsCopy
+                    language={featured.language as string | undefined || language}
+                    text={featured.excerpt}
+                    className="mt-3 line-clamp-4 text-sm leading-relaxed text-stext"
+                  >
                     {featured.excerpt}
-                  </p>
+                  </NewsCopy>
                 )}
               </div>
 
@@ -285,7 +312,7 @@ export default function NewsBoard({
           </div>
           <div className="fade-in grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((item) => (
-            <ArticleCard key={item.id} item={item} />
+            <ArticleCard key={item.id} item={item} language={language} />
           ))}
           </div>
           <AdSlot slot="news-list-below-grid" format="leaderboard" className="mt-8" />
@@ -311,17 +338,17 @@ export default function NewsBoard({
   );
 }
 
-function ArticleCard({ item }: { item: NewsArticle }) {
+function ArticleCard({ item, language }: { item: NewsArticle; language: 'en' | 'ur' }) {
   const catName = getCategoryName(item.category);
   const tags = getArticleTags(item);
 
   return (
     <Link
-      href={`/news/${item.id}`}
-      className="group flex h-full flex-col overflow-hidden rounded-md border border-lborder bg-card transition-colors hover:border-accent/50 hover:bg-elevated"
+      href={newsHref(item)}
+      className="group flex h-full flex-col overflow-hidden rounded-md border border-lborder bg-card transition-colors hover:border-border-strong hover:bg-elevated"
     >
       <div
-        className="relative aspect-[16/9] overflow-hidden bg-primary"
+        className="relative aspect-[16/9] overflow-hidden bg-secondary media-fallback"
       >
         {item.image ? (
           <RemoteImage
@@ -329,11 +356,12 @@ function ArticleCard({ item }: { item: NewsArticle }) {
             alt={item.title}
             fill
             sizes="(min-width: 768px) 33vw, 100vw"
-            className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+            fit="contain"
+            className="news-image"
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">
-            <Newspaper size={44} className="text-white/20" />
+            <Newspaper size={44} className="text-stext/40" />
           </div>
         )}
         <div className="absolute bottom-3 left-3 flex max-w-[90%] flex-wrap items-center gap-1.5">
@@ -343,7 +371,7 @@ function ArticleCard({ item }: { item: NewsArticle }) {
             </Badge>
           )}
           {tags[0] && tags[0] !== catName && (
-            <span className="inline-flex items-center gap-1 rounded bg-primary/90 px-2 py-0.5 text-xs font-medium text-white">
+            <span className="inline-flex items-center gap-1 rounded bg-elevated px-2 py-0.5 text-xs font-medium text-stext ring-1 ring-lborder">
               <TagIcon size={9} className="text-accent" />
               {tags[0]}
             </span>
@@ -352,14 +380,23 @@ function ArticleCard({ item }: { item: NewsArticle }) {
       </div>
 
       <div className="flex flex-1 flex-col p-4">
-        <h3 className="line-clamp-2 text-base font-semibold leading-snug text-mtext transition-colors group-hover:text-accent">
+        <NewsCopy
+          as="h3"
+          language={(item.language as string | undefined) || language}
+          text={item.title}
+          className="line-clamp-2 text-base font-semibold leading-snug text-mtext transition-colors group-hover:text-accent"
+        >
           {item.title}
-        </h3>
+        </NewsCopy>
 
         {item.excerpt && (
-          <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-stext">
+          <NewsCopy
+            language={(item.language as string | undefined) || language}
+            text={item.excerpt}
+            className="mt-2 line-clamp-2 text-sm leading-relaxed text-stext"
+          >
             {item.excerpt}
-          </p>
+          </NewsCopy>
         )}
 
         {tags.length > 1 && (

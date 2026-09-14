@@ -22,9 +22,11 @@ import {
   type NewsArticleAdmin,
   type NewsCategory,
 } from '../../services/newsAdmin';
-import { AdminInput, AdminSelect, ConfirmDialog, ErrorState } from './AdminShared';
+import { AdminInput, AdminSelect, ConfirmDialog, ErrorState, LoadingState } from './AdminShared';
 import Pagination from './AdminPagination';
 import RemoteImage from '../RemoteImage';
+import { newsHref } from '../../utils/newsConstraints';
+import NewsCopy from '../NewsCopy';
 
 const PAGE_SIZE = 20;
 
@@ -122,8 +124,7 @@ export default function NewsManager() {
         </div>
         <Link
           href="/admin/news/new"
-          className="inline-flex items-center gap-1.5 rounded-md px-4 py-2 text-xs font-bold text-white transition-colors"
-          style={{ background: 'var(--admin-accent)' }}
+          className="btn-brand inline-flex items-center gap-1.5 rounded-md px-4 py-2 text-xs font-bold transition-colors"
         >
           <FilePlus2 size={14} />
           Create Article
@@ -165,9 +166,7 @@ export default function NewsManager() {
 
       {/* Table */}
       {loading ? (
-        <div className="flex min-h-[200px] items-center justify-center rounded-lg" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
-          <Loader2 size={20} className="animate-spin" style={{ color: 'var(--admin-accent)' }} />
-        </div>
+        <LoadingState />
       ) : error ? (
         <ErrorState message={error} onRetry={load} />
       ) : filtered.length === 0 ? (
@@ -199,14 +198,16 @@ export default function NewsManager() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3 max-w-md">
                         {a.imageUrl ? (
-                          <RemoteImage src={a.imageUrl} alt="" width={48} height={36} className="h-9 w-12 shrink-0 rounded object-cover" style={{ border: '1px solid var(--admin-border)' }} />
+                          <RemoteImage src={a.imageUrl} alt="" width={48} height={36} className="news-image h-9 w-12 shrink-0 rounded object-contain" style={{ border: '1px solid var(--admin-border)' }} />
                         ) : (
                           <div className="grid h-9 w-12 shrink-0 place-items-center rounded" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-input-bg)', color: 'var(--admin-text-muted)' }}>
                             <FileText size={14} />
                           </div>
                         )}
                         <div className="min-w-0">
-                          <Link href={`/admin/news/${a.id}/edit`} className="block truncate text-xs font-semibold" style={{ color: 'var(--admin-text)' }}>{a.title}</Link>
+                          <Link href={`/admin/news/${a.id}/edit`} className="block" style={{ color: 'var(--admin-text)' }}>
+                            <NewsCopy as="span" language={a.language} text={a.title} className="block truncate text-xs font-semibold">{a.title}</NewsCopy>
+                          </Link>
                           <p className="mt-0.5 truncate text-xs" style={{ color: 'var(--admin-text-muted)' }}>
                             by {a.author || 'Editorial Desk'}
                           </p>
@@ -239,7 +240,7 @@ export default function NewsManager() {
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-2">
                         <Link
-                          href={`/news/${a.slug || a.id}`}
+                          href={newsHref(a)}
                           target="_blank"
                           className="grid h-8 w-8 place-items-center rounded-md"
                           style={{ background: 'var(--admin-info-bg)', color: 'var(--admin-info)' }}

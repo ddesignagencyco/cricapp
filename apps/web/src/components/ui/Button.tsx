@@ -16,8 +16,8 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const sizeClasses: Record<ButtonSize, string> = {
   sm: 'h-8 px-3 text-xs gap-1.5 rounded-md font-semibold',
-  md: 'h-9 px-4 text-xs sm:text-sm gap-2 rounded-md font-bold',
-  lg: 'h-11 px-5 text-sm gap-2.5 rounded-md font-bold',
+  md: 'h-9 px-4 text-sm gap-2 rounded-md font-semibold',
+  lg: 'h-11 px-5 text-sm gap-2.5 rounded-md font-semibold',
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
@@ -42,12 +42,12 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         case 'primary':
           return {
             className:
-              'btn-brand shadow-sm transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2',
+              'btn-brand shadow-sm transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]',
           };
         case 'secondary':
           return {
             className:
-              'transition-all duration-150 hover:brightness-105 active:brightness-95 focus-visible:ring-2 focus-visible:ring-accent',
+              'transition-colors duration-150 hover:bg-[var(--color-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
             inlineStyle: {
               background: 'var(--color-surface-elevated)',
               color: 'var(--color-text-primary)',
@@ -57,7 +57,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         case 'outline':
           return {
             className:
-              'transition-all duration-150 hover:brightness-95 focus-visible:ring-2 focus-visible:ring-accent',
+              'transition-colors duration-150 hover:border-[var(--color-border-strong)] hover:bg-[var(--color-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
             inlineStyle: {
               background: 'transparent',
               color: 'var(--color-text-primary)',
@@ -67,7 +67,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         case 'ghost':
           return {
             className:
-              'transition-all duration-150 hover:brightness-95 focus-visible:ring-2 focus-visible:ring-accent',
+              'transition-colors duration-150 hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
             inlineStyle: {
               background: 'transparent',
               color: 'var(--color-text-secondary)',
@@ -76,10 +76,10 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         case 'destructive':
           return {
             className:
-              'text-white shadow-sm transition-all duration-150 hover:brightness-95 active:brightness-90 focus-visible:ring-2 focus-visible:ring-danger',
+              'shadow-sm transition-colors duration-150 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-danger)]',
             inlineStyle: {
               background: 'var(--color-danger)',
-              color: '#FFFFFF',
+              color: 'var(--color-brand-fg)',
             },
           };
       }

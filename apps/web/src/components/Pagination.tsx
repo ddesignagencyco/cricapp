@@ -50,7 +50,7 @@ export default function Pagination({ page, totalPages, total, limit, className =
 
   return (
     <nav className={`mt-8 flex flex-col items-center justify-between gap-3 sm:flex-row ${className}`} aria-label="Pagination">
-      <p className="text-xs font-normal text-stext" aria-live="polite">
+      <p className="text-xs font-medium text-muted-foreground" aria-live="polite">
         {showingFrom !== null && showingTo !== null && total !== undefined
           ? `Showing ${showingFrom}–${showingTo} of ${total}`
           : `Page ${safePage} of ${safeTotalPages}`}
@@ -62,7 +62,7 @@ export default function Pagination({ page, totalPages, total, limit, className =
             type="button"
             onClick={() => onPageChange(Math.max(1, safePage - 1))}
             disabled={safePage <= 1}
-            className="grid h-9 w-9 place-items-center rounded border border-lborder bg-card text-stext transition-colors hover:border-accent/50 hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:pointer-events-none disabled:opacity-40"
+            className="grid h-9 w-9 place-items-center rounded border border-lborder bg-card text-stext transition-colors hover:border-border-strong hover:text-mtext focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] disabled:pointer-events-none disabled:opacity-40"
             aria-label="Previous page"
           >
             <ChevronLeft size={16} />
@@ -78,10 +78,10 @@ export default function Pagination({ page, totalPages, total, limit, className =
                 onClick={() => onPageChange(p)}
                 aria-current={p === safePage ? 'page' : undefined}
                 aria-label={`Page ${p}`}
-                className={`grid h-9 w-9 place-items-center rounded border text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                className={`grid h-9 w-9 place-items-center rounded border text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] ${
                   p === safePage
                     ? 'btn-brand border-transparent'
-                    : 'border-lborder bg-card text-stext hover:border-accent/50 hover:text-accent'
+                    : 'border-lborder bg-card text-stext hover:border-border-strong hover:text-mtext'
                 }`}
               >
                 {p}
@@ -93,7 +93,7 @@ export default function Pagination({ page, totalPages, total, limit, className =
             type="button"
             onClick={() => onPageChange(Math.min(safeTotalPages, safePage + 1))}
             disabled={safePage >= safeTotalPages}
-            className="grid h-9 w-9 place-items-center rounded border border-lborder bg-card text-stext transition-colors hover:border-accent/50 hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:pointer-events-none disabled:opacity-40"
+            className="grid h-9 w-9 place-items-center rounded border border-lborder bg-card text-stext transition-colors hover:border-border-strong hover:text-mtext focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] disabled:pointer-events-none disabled:opacity-40"
             aria-label="Next page"
           >
             <ChevronRight size={16} />

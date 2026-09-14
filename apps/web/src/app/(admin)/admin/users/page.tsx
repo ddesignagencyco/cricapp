@@ -142,7 +142,7 @@ export default function UsersPage() {
                         {locked ? (
                           <span
                             className="rounded-full px-2 py-0.5 text-[11px] font-bold"
-                            style={{ background: 'var(--admin-accent)', color: '#fff' }}
+                            style={{ background: 'var(--admin-accent)', color: 'var(--color-brand-fg)' }}
                           >
                             Superadmin
                           </span>
@@ -158,7 +158,7 @@ export default function UsersPage() {
                               className="rounded-full px-2 py-0.5 text-[11px] font-bold"
                               style={{
                                 background: user.isAdmin ? 'var(--admin-accent)' : 'var(--admin-input-bg)',
-                                color: user.isAdmin ? '#fff' : 'var(--admin-text-secondary)',
+                                color: user.isAdmin ? 'var(--color-brand-fg)' : 'var(--admin-text-secondary)',
                               }}
                             >
                               {user.isAdmin ? 'Admin' : 'Member'}

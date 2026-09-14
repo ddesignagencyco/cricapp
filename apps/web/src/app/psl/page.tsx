@@ -60,34 +60,24 @@ export default async function PSLPage({ searchParams }: { searchParams: Promise<
       {/* Hero */}
       <section className="relative overflow-hidden">
         <div className="hero-grad absolute inset-0" />
-        <div className="pointer-events-none absolute -right-20 top-0 h-80 w-80 rounded-full bg-accent/10 blur-3xl" />
-        <div className="pointer-events-none absolute -left-20 bottom-0 h-80 w-80 rounded-full bg-gold/10 blur-3xl" />
         <div className="hero-content relative mx-auto max-w-7xl px-4 py-14 sm:px-6">
           <div className="max-w-2xl">
             <div className="mb-4 flex items-center gap-2">
-              <span className="text-xs font-bold uppercase tracking-widest text-stext">
+              <span className="hero-kicker text-xs font-bold uppercase tracking-widest">
                 {seasonLabel || 'Pakistan Super League'}
               </span>
             </div>
             <h1 className="hero-title text-4xl font-black tracking-tight sm:text-5xl">
-              PAKISTAN <span className="text-accent">SUPER LEAGUE</span>
+              PAKISTAN <span className="hero-highlight">SUPER LEAGUE</span>
             </h1>
             <p className="hero-lead mt-4 max-w-xl text-sm leading-relaxed sm:text-base">
               Six franchises, one mission. Follow the PSL with fixtures, tables and player stats.
             </p>
             <div className="mt-5 flex flex-wrap items-center gap-2.5">
-              <span className="inline-flex items-center rounded-md border border-white/25 bg-white/10 px-3.5 py-1.5 text-sm font-semibold tracking-wide text-white">
-                T20
-              </span>
-              {seasonLabel && (
-                <span className="inline-flex items-center rounded-md border border-white/25 bg-white/10 px-3.5 py-1.5 text-sm font-semibold tracking-wide text-white">
-                  {seasonLabel}
-                </span>
-              )}
+              <span className="hero-chip">T20</span>
+              {seasonLabel && <span className="hero-chip">{seasonLabel}</span>}
               {pointsRows.length > 0 && (
-                <span className="inline-flex items-center rounded-md border border-accent/40 bg-accent/20 px-3.5 py-1.5 text-sm font-semibold tracking-wide text-accent">
-                  {pointsRows.length} Teams
-                </span>
+                <span className="hero-chip hero-chip--accent">{pointsRows.length} Teams</span>
               )}
             </div>
           </div>
@@ -99,14 +89,14 @@ export default async function PSLPage({ searchParams }: { searchParams: Promise<
         <PslSeasonFilter seasons={seasons} activeSeasonId={activeSeasonId} />
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 pb-4 sm:px-6">
-        <AdSlot slot="psl-top" format="leaderboard" />
-      </section>
-
       {/* Standings */}
       <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
         <SectionHeader title="Points Table" subtitle={seasonLabel ? `${seasonLabel} Standings` : 'Standings'} icon="trophy" />
         <PointsTable rows={pointsRows} />
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 pb-4 sm:px-6">
+        <AdSlot slot="psl-top" format="leaderboard" />
       </section>
 
       {/* Full Leaders / Stats */}
@@ -158,7 +148,7 @@ export default async function PSLPage({ searchParams }: { searchParams: Promise<
                     <TeamLogo code={m.homeTeamAbbr} size="xs" link={false} />
                     <p className="font-semibold text-mtext truncate">{m.homeTeamName}</p>
                   </div>
-                  <p className="text-[10px] font-black italic text-stext/50 px-8">VS</p>
+                  <p className="px-8 text-xs font-semibold text-muted-foreground">VS</p>
                   <div className="flex items-center gap-2">
                     <TeamLogo code={m.awayTeamAbbr} size="xs" link={false} />
                     <p className="font-semibold text-mtext truncate">{m.awayTeamName}</p>

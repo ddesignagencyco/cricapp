@@ -44,7 +44,7 @@ export function sanitizeArticleHtml(html: string): string {
       const src = safeUrl(readAttribute(attributes, 'src'), true);
       if (!src) return '';
       const alt = escapeAttribute(readAttribute(attributes, 'alt'));
-      return `<img src="${escapeAttribute(src)}" alt="${alt}" loading="lazy">`;
+      return `<img src="${escapeAttribute(src)}" alt="${alt}" loading="lazy" class="news-image">`;
     }
     return tag === 'br' || tag === 'hr' ? `<${tag}>` : `<${tag}>`;
   });

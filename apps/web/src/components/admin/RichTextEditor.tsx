@@ -26,17 +26,20 @@ import {
   Undo2,
   Redo2,
 } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import MediaPicker from './MediaPicker';
+import { newsLocale } from '../../utils/locale';
 
 interface RichTextEditorProps {
   value: string;
   onChange: (_value: string) => void;
   placeholder?: string;
+  language?: string | null;
 }
 
-export default function RichTextEditor({ value, onChange, placeholder }: RichTextEditorProps) {
+export default function RichTextEditor({ value, onChange, placeholder, language }: RichTextEditorProps) {
   const [galleryOpen, setGalleryOpen] = useState(false);
+  const locale = useMemo(() => newsLocale(language), [language]);
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -52,7 +55,9 @@ export default function RichTextEditor({ value, onChange, placeholder }: RichTex
     content: value || '',
     editorProps: {
       attributes: {
-        class: 'tiptap-editor',
+        class: 'tiptap-editor news-copy',
+        dir: locale.dir,
+        lang: locale.lang,
       },
     },
     onUpdate: ({ editor }) => {
@@ -65,6 +70,19 @@ export default function RichTextEditor({ value, onChange, placeholder }: RichTex
       editor.commands.setContent(value || '', { emitUpdate: false });
     }
   }, [editor, value]);
+
+  useEffect(() => {
+    if (!editor) return;
+    editor.setOptions({
+      editorProps: {
+        attributes: {
+          class: 'tiptap-editor news-copy',
+          dir: locale.dir,
+          lang: locale.lang,
+        },
+      },
+    });
+  }, [editor, locale.dir, locale.lang]);
 
   const setLink = useCallback(() => {
     if (!editor) return;
@@ -97,7 +115,7 @@ export default function RichTextEditor({ value, onChange, placeholder }: RichTex
 
   const btnStyle = (active: boolean) => ({
     background: active ? 'var(--admin-accent)' : 'transparent',
-    color: active ? '#fff' : 'var(--admin-text-secondary)',
+    color: active ? 'var(--color-brand-fg)' : 'var(--admin-text-secondary)',
   });
 
   return (
@@ -183,7 +201,13 @@ export default function RichTextEditor({ value, onChange, placeholder }: RichTex
       </div>
 
       {/* Editor Content */}
-      <EditorContent editor={editor} className="min-h-[300px] max-h-[600px] overflow-y-auto" style={{ color: 'var(--admin-text)' }} />
+      <EditorContent
+        editor={editor}
+        className="news-copy min-h-[300px] max-h-[600px] overflow-y-auto"
+        dir={locale.dir}
+        lang={locale.lang}
+        style={{ color: 'var(--admin-text)' }}
+      />
 
       {/* Word count footer */}
       <div className="flex items-center justify-between border-t px-4 py-2 text-xs"

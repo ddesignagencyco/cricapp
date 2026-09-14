@@ -1,19 +1,21 @@
 import Link from 'next/link';
-import MatchCard from '../components/MatchCard';
-import MatchCardCompact from '../components/MatchCardCompact';
-import SectionHeader from '../components/SectionHeader';
-import MatchTickerBar from '../components/MatchTickerBar';
-import CricketHero from '../components/CricketHero';
-import PslSpotlight from '../components/PslSpotlight';
-import RecentResultCard from '../components/RecentResultCard';
-import TopPerformers from '../components/TopPerformers';
-import Newsletter from '../components/Newsletter';
-import AdSlot from '../components/AdSlot';
-import RemoteImage from '../components/RemoteImage';
+import MatchCard from '../../components/MatchCard';
+import MatchCardCompact from '../../components/MatchCardCompact';
+import SectionHeader from '../../components/SectionHeader';
+import MatchTickerBar from '../../components/MatchTickerBar';
+import CricketHero from '../../components/CricketHero';
+import PslSpotlight from '../../components/PslSpotlight';
+import RecentResultCard from '../../components/RecentResultCard';
+import TopPerformers from '../../components/TopPerformers';
+import Newsletter from '../../components/Newsletter';
+import AdSlot from '../../components/AdSlot';
+import RemoteImage from '../../components/RemoteImage';
+import NewsCopy from '../../components/NewsCopy';
 
-import { fetchLiveMatches, fetchMatches } from '../services/matches';
-import { fetchNews } from '../services/news';
-import { fetchPslLeaders, fetchPslStandings } from '../services/psl';
+import { fetchLiveMatches, fetchMatches } from '../../services/matches';
+import { fetchNews } from '../../services/news';
+import { newsHref } from '../../utils/newsConstraints';
+import { fetchPslLeaders, fetchPslStandings } from '../../services/psl';
 
 export const revalidate = 60;
 
@@ -165,16 +167,23 @@ export default async function HomePage() {
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.15fr_0.85fr]">
             {newsList[0] && (
               <Link
-                href={`/news/${newsList[0].id}`}
-                className="group overflow-hidden rounded-2xl bg-card ring-1 ring-lborder transition-all duration-300 hover:-translate-y-0.5 hover:bg-elevated hover:ring-accent/30"
+                href={newsHref(newsList[0])}
+                className="group overflow-hidden rounded-2xl bg-card ring-1 ring-lborder transition-colors hover:bg-elevated hover:ring-border-strong"
               >
-                <div className="relative h-48 overflow-hidden sm:h-60">
+                <div className="relative bg-secondary">
                   {newsList[0].image ? (
-                    <RemoteImage src={newsList[0].image} alt={newsList[0].title} fill sizes="(min-width: 1024px) 55vw, 100vw" className="object-cover transition-transform duration-500 group-hover:scale-105" />
+                    <RemoteImage
+                      src={newsList[0].image}
+                      alt={newsList[0].title}
+                      width={1600}
+                      height={900}
+                      sizes="(min-width: 1024px) 55vw, 100vw"
+                      fit="contain"
+                      className="news-image h-auto w-full"
+                    />
                   ) : (
-                    <div className={`h-full w-full bg-gradient-to-br ${newsList[0].imageGradient || 'from-slate-600 to-slate-800'}`} />
+                    <div className="h-48 w-full media-fallback sm:h-60" />
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                   <div className="absolute left-4 top-4">
                     <span className="inline-block rounded-full bg-[var(--color-brand)] px-3 py-1 text-[10px] font-medium uppercase tracking-wide text-white">
                       {typeof newsList[0].tag === 'string' && newsList[0].tag
@@ -188,8 +197,10 @@ export default async function HomePage() {
                   </div>
                 </div>
                 <div className="p-4 sm:p-5">
-                  <h3 className="text-base font-bold leading-snug text-mtext group-hover:text-accent sm:text-lg">{newsList[0].title}</h3>
-                  <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-stext sm:text-sm">{newsList[0].excerpt}</p>
+                  <NewsCopy as="h3" language={newsList[0].language} text={newsList[0].title} className="text-base font-bold leading-snug text-mtext group-hover:text-accent sm:text-lg">{newsList[0].title}</NewsCopy>
+                  {newsList[0].excerpt && (
+                    <NewsCopy language={newsList[0].language} text={newsList[0].excerpt} className="mt-2 line-clamp-2 text-xs leading-relaxed text-stext sm:text-sm">{newsList[0].excerpt}</NewsCopy>
+                  )}
                   <p className="mt-3 text-xs text-stext">{newsList[0].date} • {newsList[0].readTime}</p>
                 </div>
               </Link>
@@ -198,14 +209,14 @@ export default async function HomePage() {
               {newsList.slice(1, 5).map((item) => (
                 <Link
                   key={item.id}
-                  href={`/news/${item.id}`}
-                  className="group flex gap-3 overflow-hidden rounded-xl bg-card p-2.5 ring-1 ring-lborder transition-all duration-300 hover:bg-elevated hover:ring-accent/30 sm:gap-4 sm:p-3"
+                  href={newsHref(item)}
+                  className="group flex gap-3 overflow-hidden rounded-xl bg-card p-2.5 ring-1 ring-lborder transition-colors hover:bg-elevated hover:ring-border-strong sm:gap-4 sm:p-3"
                 >
-                  <div className="relative h-16 w-20 shrink-0 overflow-hidden rounded-lg sm:h-20 sm:w-24">
+                  <div className="relative h-16 w-20 shrink-0 overflow-hidden rounded-lg bg-secondary sm:h-20 sm:w-24">
                     {item.image ? (
-                      <RemoteImage src={item.image} alt={item.title} fill sizes="96px" className="object-cover transition-transform duration-500 group-hover:scale-105" />
+                      <RemoteImage src={item.image} alt={item.title} fill sizes="96px" fit="contain" className="news-image" />
                     ) : (
-                      <div className={`h-full w-full bg-gradient-to-br ${item.imageGradient || 'from-slate-600 to-slate-800'}`} />
+                      <div className="h-full w-full media-fallback" />
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
@@ -218,7 +229,7 @@ export default async function HomePage() {
                             ? String((item.category as any).name)
                             : 'News'}
                     </span>
-                    <h4 className="mt-1 line-clamp-2 text-sm font-bold leading-snug text-mtext group-hover:text-accent">{item.title}</h4>
+                    <NewsCopy as="h4" language={item.language} text={item.title} className="mt-1 line-clamp-2 text-sm font-bold leading-snug text-mtext group-hover:text-accent">{item.title}</NewsCopy>
                     <p className="mt-1 text-[11px] text-stext">{item.date} • {item.readTime}</p>
                   </div>
                 </Link>

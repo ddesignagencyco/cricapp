@@ -3,6 +3,7 @@ import { fetchMatches } from '../services/matches';
 import { fetchTeams } from '../services/teams';
 import { fetchPlayers } from '../services/players';
 import { fetchNews } from '../services/news';
+import { newsHref } from '../utils/newsConstraints';
 import { fetchTournaments } from '../services/tournaments';
 
 const baseUrl = 'https://pakcriczone.com';
@@ -64,7 +65,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   const newsEntries = (news || []).map((article) => ({
-    url: `${baseUrl}/news/${article.slug || article.id}`,
+    url: `${baseUrl}${newsHref(article)}`,
     lastModified: now,
     changeFrequency: 'weekly' as MetadataRoute.Sitemap[number]['changeFrequency'],
     priority: 0.6,

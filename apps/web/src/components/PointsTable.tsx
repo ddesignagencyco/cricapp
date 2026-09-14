@@ -47,29 +47,29 @@ export default function PointsTable({ rows = [], favoriteTeamId }: PointsTablePr
                   key={row.teamId}
                   className={`border-b border-lborder/60 transition-colors last:border-0 hover:bg-elevated/60 ${rowStyle}`}
                 >
-                  <td className="px-4 py-3 font-mono text-stext">{i + 1}</td>
+                  <td className="px-4 py-3 font-mono text-sm font-medium tabular-nums text-muted-foreground">{i + 1}</td>
                   <td className="px-4 py-3">
                     <Link
                       href={`/teams/${row.teamId}`}
                       className="flex items-center gap-2.5 hover:text-accent"
                     >
                       <TeamLogo teamId={row.teamId} name={row.teamName} code={row.teamAbbr} size="md" link={false} />
-                      <span className="font-semibold">{row.teamName}</span>
-                      <span className="text-xs uppercase tracking-wider text-stext">
+                      <span className="text-sm font-semibold text-mtext">{row.teamName}</span>
+                      <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                         {row.teamAbbr}
                       </span>
                     </Link>
                   </td>
-                  <td className="px-4 py-3 text-center font-mono text-stext">{row.played}</td>
-                  <td className="px-4 py-3 text-center font-mono text-accent2">{row.won}</td>
-                  <td className="px-4 py-3 text-center font-mono text-danger">{row.lost}</td>
+                  <td className="px-4 py-3 text-center font-mono text-sm font-medium tabular-nums text-stext">{row.played}</td>
+                  <td className="px-4 py-3 text-center font-mono text-sm font-semibold tabular-nums text-accent">{row.won}</td>
+                  <td className="px-4 py-3 text-center font-mono text-sm font-medium tabular-nums text-danger">{row.lost}</td>
                   <td
-                    className={`px-4 py-3 text-right font-mono ${row.netRunRate >= 0 ? 'text-accent2' : 'text-danger'
+                    className={`px-4 py-3 text-right font-mono text-sm font-semibold tabular-nums ${row.netRunRate >= 0 ? 'text-accent' : 'text-danger'
                       }`}
                   >
                     {row.netRunRate}
                   </td>
-                  <td className="px-4 py-3 text-center font-mono font-bold text-mtext">
+                  <td className="px-4 py-3 text-center font-mono text-sm font-semibold tabular-nums text-mtext">
                     {row.points}
                   </td>
                 </tr>

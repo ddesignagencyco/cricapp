@@ -11,6 +11,7 @@ interface RemoteImageProps {
   sizes?: string;
   title?: string;
   style?: CSSProperties;
+  fit?: 'contain' | 'cover';
   onError?: (_event: SyntheticEvent<HTMLImageElement>) => void;
 }
 
@@ -24,8 +25,15 @@ export default function RemoteImage({
   sizes,
   title,
   style,
+  fit,
   onError,
 }: RemoteImageProps) {
+  const objectFit = fit || (className?.includes('news-image') ? 'contain' : undefined);
+  const mergedStyle: CSSProperties = {
+    ...(objectFit ? { objectFit, objectPosition: 'center' } : {}),
+    ...style,
+  };
+
   if (fill) {
     return (
       <Image
@@ -34,7 +42,7 @@ export default function RemoteImage({
         fill
         sizes={sizes ?? '100vw'}
         className={className}
-        style={style}
+        style={mergedStyle}
         title={title}
         unoptimized
         onError={onError}
@@ -49,7 +57,7 @@ export default function RemoteImage({
       width={width}
       height={height}
       className={className}
-      style={style}
+      style={mergedStyle}
       title={title}
       unoptimized
       onError={onError}

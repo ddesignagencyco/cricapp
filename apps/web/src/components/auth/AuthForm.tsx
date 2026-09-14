@@ -53,7 +53,7 @@ interface FieldErrors {
 }
 
 const inputClass =
-  'w-full rounded-2xl border border-lborder bg-secondary/80 py-3 pl-10 pr-4 text-sm text-mtext outline-none transition-all placeholder:text-stext/50 focus:border-accent focus:bg-card focus:ring-2 focus:ring-accent/20';
+  'w-full rounded-2xl border border-lborder bg-input py-3 pl-10 pr-4 text-sm text-mtext outline-none transition-colors placeholder:text-stext/70 focus:border-[var(--color-focus-ring)] focus:bg-card focus:ring-2 focus:ring-[var(--color-focus-ring)]/30';
 
 function errorMessage(error: unknown): string {
   if (error instanceof ApiError) return error.message;
@@ -248,7 +248,7 @@ export default function AuthForm({ mode, token = '', tokenId = '', initialEmail 
             }}
           />
         )}
-        {!loading && <Link href="/login" className="inline-block text-sm font-semibold text-accent hover:text-accent2">Continue to login</Link>}
+        {!loading && <Link href="/login" className="inline-block text-sm font-semibold text-accent">Continue to login</Link>}
       </div>
     );
   }
@@ -257,7 +257,7 @@ export default function AuthForm({ mode, token = '', tokenId = '', initialEmail 
     return (
       <div className="space-y-4 text-center">
         <FormMessage message="This reset page only works from the link in your email. Password-reset codes are no longer used." />
-        <Link href="/forgot-password" className="inline-block text-sm font-semibold text-accent hover:text-accent2">
+        <Link href="/forgot-password" className="inline-block text-sm font-semibold text-accent">
           Request a new reset link
         </Link>
       </div>
@@ -285,11 +285,11 @@ export default function AuthForm({ mode, token = '', tokenId = '', initialEmail 
           />
           <span>
             I agree to the{' '}
-            <Link href="/terms" className="font-semibold text-accent hover:text-accent2">
+            <Link href="/terms" className="font-semibold text-accent">
               Terms of Service
             </Link>{' '}
             and{' '}
-            <Link href="/privacy" className="font-semibold text-accent hover:text-accent2">
+            <Link href="/privacy" className="font-semibold text-accent">
               Privacy Policy
             </Link>.
           </span>
@@ -298,7 +298,7 @@ export default function AuthForm({ mode, token = '', tokenId = '', initialEmail 
       {errors.terms && <FormMessage message={errors.terms} />}
       {mode === 'login' && (
         <div className="flex justify-end">
-          <Link href="/forgot-password" className="text-xs font-semibold text-accent hover:text-accent2">
+          <Link href="/forgot-password" className="text-xs font-semibold text-accent">
             Forgot password?
           </Link>
         </div>
@@ -314,7 +314,7 @@ export default function AuthForm({ mode, token = '', tokenId = '', initialEmail 
       <button
         type="submit"
         disabled={loading}
-        className="btn-brand w-full rounded py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-card disabled:cursor-not-allowed disabled:opacity-60"
+        className="btn-brand w-full rounded py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-card disabled:cursor-not-allowed disabled:opacity-60"
       >
         {loading
           ? 'Please wait…'

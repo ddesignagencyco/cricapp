@@ -23,7 +23,7 @@ const imageClass: Record<string, string> = {
 
 export default function Logo({ to = '/', size = 'md' }: LogoProps) {
   return (
-    <Link href={to} className="group flex h-full shrink-0 items-center gap-2 whitespace-nowrap" aria-label="PAK CRICZONE home">
+    <Link href={to} className="group inline-flex shrink-0 items-center gap-2 whitespace-nowrap" aria-label="PAK CRICZONE home">
       <Image
         src="/brand/logo.png"
         alt=""

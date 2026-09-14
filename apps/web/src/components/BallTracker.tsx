@@ -1,7 +1,7 @@
 'use client';
 
 const toneStyles: Record<string, string> = {
-  boundary: 'bg-accent2/15 text-accent2 ring-accent2/30',
+  boundary: 'bg-accent/15 text-accent ring-accent/30',
   six: 'bg-gold/20 text-gold ring-gold/40',
   danger: 'bg-danger/15 text-danger ring-danger/30',
   extra: 'bg-accent/10 text-accent ring-accent/25',
@@ -20,7 +20,7 @@ const toneLabels: Record<string, string> = {
 };
 
 function ballTone(ball: string | number | null): string {
-  if (ball == null || ball === '') return 'empty';
+  if (ball === null || ball === undefined || ball === '') return 'empty';
   const value = String(ball);
   if (value === 'w' || value === 'W') return 'danger';
   if (value === 'Wd' || value === 'Nb') return 'extra';
@@ -51,7 +51,7 @@ export default function BallTracker({ balls = [], size = 'md' }: BallTrackerProp
             title={toneLabels[tone]}
             className={`grid place-items-center rounded-lg font-bold ring-1 ring-inset ${s} ${toneStyles[tone]}`}
           >
-            {ball == null ? '' : ball}
+            {ball === null || ball === undefined ? '' : ball}
           </div>
         );
       })}

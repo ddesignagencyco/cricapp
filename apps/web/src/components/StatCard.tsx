@@ -2,7 +2,7 @@
 
 import React from 'react';
 
-const toneValue: Record<string, string> = { default: 'text-mtext', accent: 'text-accent', green: 'text-accent2', gold: 'text-gold', danger: 'text-danger' };
+const toneValue: Record<string, string> = { default: 'text-mtext', accent: 'text-accent', green: 'text-success', gold: 'text-gold', danger: 'text-danger' };
 
 interface StatCardProps {
   label: string;
@@ -26,7 +26,7 @@ export default function StatCard({
   return (
     <div
       className={`border border-lborder bg-card ${
-        compact ? 'rounded-md p-3.5' : 'rounded-2xl border-t-2 p-5 ring-1 ring-lborder transition-transform duration-300 hover:-translate-y-0.5'
+        compact ? 'rounded-md p-3.5' : 'rounded-2xl p-5'
       } ${className}`}
     >
       <div className="flex items-center justify-between">

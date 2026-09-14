@@ -29,7 +29,7 @@ interface LiveIndicatorProps {
 export default function LiveIndicator({ label = 'LIVE', className = '' }: LiveIndicatorProps) {
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide leading-none text-danger ring-1 ring-inset ring-danger/30 ${className}`}
+      className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-semibold uppercase tracking-wide leading-none text-danger ring-1 ring-inset ring-danger/30 ${className}`}
       style={{ background: 'var(--color-danger-soft)' }}
     >
       <BlinkingDot />

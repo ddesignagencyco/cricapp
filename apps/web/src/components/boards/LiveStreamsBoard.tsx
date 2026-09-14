@@ -12,6 +12,7 @@ import { formatDate } from '../../utils/helpers';
 import { fetchStreamsPage } from '../../services/streams';
 import type { Stream } from '../../types/index';
 import CommentsSection from '../CommentsSection';
+import { StreamsBodySkeleton } from '../skeletons/Skeletons';
 
 function youtubeId(url: string): string | null {
   const match = url.match(/(?:youtube\.com\/(?:embed\/|watch\?v=)|youtu\.be\/)([A-Za-z0-9_-]{6,})/);
@@ -112,7 +113,7 @@ export default function LiveStreamsBoard() {
       </div>
 
       {loading ? (
-        <div className="h-64 animate-pulse rounded-md border border-lborder bg-card" />
+        <StreamsBodySkeleton />
       ) : error ? (
         <ErrorState message="Streams are temporarily unavailable." onRetry={() => setRetryKey((k) => k + 1)} />
       ) : !featured ? (
@@ -187,12 +188,14 @@ function StreamPlayer({ stream }: { stream: Stream }) {
           />
         ) : (
           <div
-            className={`relative flex h-full w-full flex-col items-center justify-center bg-cover bg-center ${stream.image ? '' : 'bg-gradient-to-br from-accent to-primary'}`}
+            className={`relative flex h-full w-full flex-col items-center justify-center bg-cover bg-center ${stream.image ? '' : 'media-fallback'}`}
             style={stream.image ? { backgroundImage: `url(${stream.image})` } : undefined}
           >
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/40" />
+            {stream.image && (
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#07111F]/70 via-transparent to-[#07111F]/40" />
+            )}
             <div className="relative z-10 flex flex-col items-center">
-              <div className="grid h-20 w-20 place-items-center rounded-full bg-black/40 ring-4 ring-accent/40">
+              <div className="grid h-20 w-20 place-items-center rounded-full bg-[#07111F]/50 ring-2 ring-accent/40">
                 <Radio size={34} className="text-accent" />
               </div>
               <p className="mt-3 text-sm font-bold uppercase tracking-widest text-white/80">

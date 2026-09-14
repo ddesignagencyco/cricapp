@@ -3,8 +3,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Flag, Flame, Loader2, MessageSquare, Trash2 } from 'lucide-react';
+import { Flag, Flame, Loader2, MessageSquare, SmilePlus, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import ReactionBar from './ReactionBar';
+import { CommentListSkeleton } from './skeletons/Skeletons';
 import {
   createComment,
   deleteComment,
@@ -25,8 +27,6 @@ interface CommentsSectionProps {
   targetType: CommentTarget;
   targetId: string;
 }
-
-const REACTIONS = ['🔥', '❤️', '👏', '😂'];
 
 export default function CommentsSection({ targetType, targetId }: CommentsSectionProps) {
   const { user, isAuthenticated } = useAuth();
@@ -50,11 +50,23 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
     if (!append) setLoading(true);
     setLoadError('');
     listComments(targetType, targetId, nextPage, 20)
-      .then((r) => {
+      .then(async (r) => {
         setComments((prev) => (append ? [...prev, ...r.items] : r.items));
         setTotal(r.total);
         setTotalPages(r.totalPages);
         setPage(nextPage);
+        const pairs = await Promise.all(
+          r.items.map((comment) =>
+            getReactionCounts('comment', comment.id)
+              .then((res) => [comment.id, res.counts] as const)
+              .catch(() => [comment.id, {}] as const),
+          ),
+        );
+        setCommentCounts((prev) => {
+          const next = append ? { ...prev } : {};
+          for (const [id, nextCounts] of pairs) next[id] = nextCounts;
+          return next;
+        });
       })
       .catch(() => {
         if (!append) {
@@ -152,25 +164,18 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
 
   return (
     <section className="rounded bg-card p-5 ring-1 ring-lborder sm:p-6">
-      <div className="mb-4 flex items-center justify-between gap-3">
+      <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <h2 className="flex items-center gap-2 text-sm font-bold text-mtext">
           <MessageSquare size={16} className="text-accent" />
           Comments
           <span className="rounded bg-elevated px-2 py-0.5 text-xs font-semibold text-stext">{total}</span>
         </h2>
-        <div className="flex items-center gap-1">
-          {REACTIONS.map((emoji) => (
-            <button
-              key={emoji}
-              type="button"
-              onClick={() => react(emoji)}
-              className="flex items-center gap-1 rounded-full bg-elevated px-2 py-1 text-xs ring-1 ring-lborder transition hover:ring-accent/40"
-              aria-label={`React with ${emoji}`}
-            >
-              <span>{emoji}</span>
-              {counts[emoji] ? <span className="text-xs font-bold text-stext">{counts[emoji]}</span> : null}
-            </button>
-          ))}
+        <div className="rounded-md border border-lborder bg-elevated/70 px-3 py-2.5 sm:min-w-[260px]">
+          <p className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-stext">
+            <SmilePlus size={12} className="text-accent" />
+            Reactions
+          </p>
+          <ReactionBar counts={counts} onReact={react} />
         </div>
       </div>
 
@@ -182,7 +187,7 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
             onChange={(e) => setBody(e.target.value)}
             placeholder={`Share your thoughts as ${user?.displayName || user?.username || 'a fan'}…`}
             maxLength={1000}
-            className="w-full resize-none rounded bg-elevated px-3.5 py-2.5 text-sm text-mtext ring-1 ring-lborder outline-none transition focus:ring-2 focus:ring-accent/60"
+            className="w-full resize-none rounded bg-elevated px-3.5 py-2.5 text-sm text-mtext ring-1 ring-lborder outline-none transition focus:ring-2 focus:ring-[var(--color-focus-ring)]/30"
           />
           <div className="mt-2 flex items-center justify-between">
             <span className="text-xs text-stext">{body.length}/1000</span>
@@ -198,7 +203,7 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
         </form>
       ) : (
         <p className="mb-5 rounded bg-elevated px-4 py-3 text-center text-sm text-stext ring-1 ring-lborder">
-          <Link href={`/login?returnTo=${encodeURIComponent(pathname || '/')}`} className="font-semibold text-accent hover:text-accent2">
+          <Link href={`/login?returnTo=${encodeURIComponent(pathname || '/')}`} className="font-semibold text-accent">
             Sign in
           </Link>{' '}
           to join the conversation.
@@ -206,7 +211,7 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
       )}
 
       {loading ? (
-        <div className="flex justify-center py-6"><Loader2 size={20} className="animate-spin text-accent" /></div>
+        <CommentListSkeleton />
       ) : loadError ? (
         <p className="py-6 text-center text-sm text-danger">{loadError}</p>
       ) : comments.length === 0 ? (
@@ -255,21 +260,12 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
                 )}
               </div>
               <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed text-mtext">{comment.body}</p>
-              <div className="mt-2 flex flex-wrap items-center gap-1">
-                {REACTIONS.map((emoji) => (
-                  <button
-                    key={emoji}
-                    type="button"
-                    onClick={() => reactToComment(comment, emoji)}
-                    className="flex items-center gap-1 rounded-full bg-card px-2 py-0.5 text-[11px] ring-1 ring-lborder hover:ring-accent/40"
-                    aria-label={`React to comment with ${emoji}`}
-                  >
-                    <span>{emoji}</span>
-                    {commentCounts[comment.id]?.[emoji] ? (
-                      <span className="font-bold text-stext">{commentCounts[comment.id][emoji]}</span>
-                    ) : null}
-                  </button>
-                ))}
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-lborder/70 pt-2.5">
+                <ReactionBar
+                  size="sm"
+                  counts={commentCounts[comment.id]}
+                  onReact={(emoji) => reactToComment(comment, emoji)}
+                />
                 {isAuthenticated && user?.id !== comment.userId && (
                   <button
                     type="button"
@@ -278,7 +274,7 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
                       setReportTarget(comment);
                     }}
                     disabled={reportedIds.includes(comment.id) || busyId === comment.id}
-                    className="ml-auto inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] text-stext hover:text-danger disabled:cursor-default disabled:opacity-70 disabled:hover:text-stext"
+                    className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] text-stext hover:text-danger disabled:cursor-default disabled:opacity-70 disabled:hover:text-stext"
                   >
                     <Flag size={11} /> {reportedIds.includes(comment.id) ? 'Reported' : 'Report'}
                   </button>

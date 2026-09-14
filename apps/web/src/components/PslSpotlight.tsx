@@ -34,7 +34,7 @@ export default function PslSpotlight({ standings = [] }: PslSpotlightProps) {
               sizes="(min-width: 1024px) 45vw, 100vw"
               className="h-44 w-full object-cover sm:h-52"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#07111F]/80 via-[#07111F]/30 to-transparent" />
             <div className="absolute bottom-0 left-0 p-4 sm:p-5">
               <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/90 px-3 py-1 text-xs font-bold uppercase tracking-wider text-white">
                 <Trophy size={11} />
@@ -47,15 +47,15 @@ export default function PslSpotlight({ standings = [] }: PslSpotlightProps) {
           <div className="p-4 sm:p-5">
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-bold text-stext">
               <span className="flex items-center gap-1.5">
-                <Calendar size={12} className="text-accent/70" />
+                <Calendar size={12} className="text-accent" />
                 {PSL_DATA.dates}
               </span>
               <span className="flex items-center gap-1.5">
-                <Users size={12} className="text-accent/70" />
+                <Users size={12} className="text-accent" />
                 {PSL_DATA.teams} Teams
               </span>
               <span className="flex items-center gap-1.5">
-                <MapPin size={12} className="text-accent/70" />
+                <MapPin size={12} className="text-accent" />
                 {PSL_DATA.venues} Venues
               </span>
             </div>
@@ -80,7 +80,7 @@ export default function PslSpotlight({ standings = [] }: PslSpotlightProps) {
               <TrendingUp size={15} className="text-accent" />
               <h3 className="text-sm font-bold text-mtext">Points Table</h3>
             </div>
-            <Link href="/psl" className="text-xs font-bold uppercase tracking-wide text-accent hover:text-accent2">
+            <Link href="/psl" className="text-xs font-bold uppercase tracking-wide text-accent">
               Full table
             </Link>
           </div>
@@ -103,23 +103,23 @@ export default function PslSpotlight({ standings = [] }: PslSpotlightProps) {
                   rows.map((row, i) => (
                     <tr
                       key={row.teamId || i}
-                      className="border-b border-lborder/40 transition-colors last:border-0 hover:bg-elevated/60"
+                      className="border-b border-lborder transition-colors last:border-0 hover:bg-elevated"
                     >
-                      <td className="px-4 py-2.5 text-center font-mono text-xs text-stext">{i + 1}</td>
+                      <td className="px-4 py-2.5 text-center font-mono text-sm font-medium tabular-nums text-muted-foreground">{i + 1}</td>
                       <td className="px-4 py-2.5">
                         <div className="flex items-center gap-2">
                           <TeamLogo teamId={row.teamId} name={row.teamName} code={row.teamAbbr} size="md" link={false} />
-                          <span className="text-xs font-semibold text-mtext">{row.teamName}</span>
-                          <span className="text-xs uppercase text-stext">{row.teamAbbr}</span>
+                          <span className="text-sm font-semibold text-mtext">{row.teamName}</span>
+                          <span className="text-xs font-medium uppercase text-muted-foreground">{row.teamAbbr}</span>
                         </div>
                       </td>
-                      <td className="px-4 py-2.5 text-center font-mono text-xs text-stext">{row.played ?? 0}</td>
-                      <td className="px-4 py-2.5 text-center font-mono text-xs text-accent2">{row.won ?? 0}</td>
-                      <td className="px-4 py-2.5 text-center font-mono text-xs text-danger">{row.lost ?? 0}</td>
-                      <td className={`px-4 py-2.5 text-center font-mono text-xs ${(row.netRunRate ?? 0) >= 0 ? 'text-accent2' : 'text-danger'}`}>
+                      <td className="px-4 py-2.5 text-center font-mono text-sm font-medium tabular-nums text-stext">{row.played ?? 0}</td>
+                      <td className="px-4 py-2.5 text-center font-mono text-sm font-semibold tabular-nums text-accent">{row.won ?? 0}</td>
+                      <td className="px-4 py-2.5 text-center font-mono text-sm font-medium tabular-nums text-danger">{row.lost ?? 0}</td>
+                      <td className={`px-4 py-2.5 text-center font-mono text-sm font-semibold tabular-nums ${(row.netRunRate ?? 0) >= 0 ? 'text-accent' : 'text-danger'}`}>
                         {row.netRunRate ?? 0}
                       </td>
-                      <td className="px-4 py-2.5 text-center font-mono text-xs font-bold text-mtext">{row.points ?? 0}</td>
+                      <td className="px-4 py-2.5 text-center font-mono text-sm font-semibold tabular-nums text-mtext">{row.points ?? 0}</td>
                     </tr>
                   ))
                 ) : (

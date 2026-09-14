@@ -41,7 +41,7 @@ function LeaderList({
         <h3 className="text-sm font-semibold text-mtext">{title}</h3>
         <Link
           href="/psl"
-          className="text-xs font-medium text-accent transition-colors hover:text-accent2"
+          className="text-xs font-medium text-accent transition-colors"
         >
           Full list
         </Link>

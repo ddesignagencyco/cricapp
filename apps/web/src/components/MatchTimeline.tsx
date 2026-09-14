@@ -94,7 +94,7 @@ export function parseTimelineEvents(payload: Record<string, unknown> | null | un
         period: str(rec.period_name ?? rec.period ?? rec.innings),
       } satisfies TimelineEvent;
     })
-    .filter((event): event is TimelineEvent => !!event);
+    .filter((event) => Boolean(event));
 }
 
 export function extractBalls(payload: Record<string, unknown> | null | undefined): (string | number | null)[] {
@@ -114,7 +114,7 @@ export function extractBalls(payload: Record<string, unknown> | null | undefined
   const events = parseTimelineEvents(payload).filter(isDelivery);
   if (!events.length) return [];
   const lastOver = events[events.length - 1]?.over;
-  if (lastOver == null) return [];
+  if (lastOver === null || lastOver === undefined) return [];
   const overEvents = events.filter((event) => event.over === lastOver);
   const bowled = overEvents.map(deliveryLabel);
   const legalCount = overEvents.filter((event) => {
@@ -135,7 +135,7 @@ function padOverSlots(bowled: (string | number)[]): (string | number | null)[] {
 }
 
 function isDelivery(event: TimelineEvent): boolean {
-  if (event.over == null) return false;
+  if (event.over === null || event.over === undefined) return false;
   const type = event.type.toLowerCase();
   return /^(ball|wicket|boundary|four|six|wide|no.?ball|bye|leg.?bye)/.test(type) || type.includes('wicket');
 }
@@ -176,9 +176,9 @@ function humanizeType(type: string): string {
 function eventTitle(event: TimelineEvent): string {
   const type = humanizeType(event.type);
   const overBall =
-    event.over != null && event.ball != null
+    event.over !== null && event.over !== undefined && event.ball !== null && event.ball !== undefined
       ? `${event.over}.${event.ball}`
-      : event.over != null
+      : event.over !== null && event.over !== undefined
         ? `Over ${event.over}`
         : null;
   if (!overBall) return type;
@@ -188,7 +188,7 @@ function eventTitle(event: TimelineEvent): string {
 function eventDetail(event: TimelineEvent): string | null {
   const parts = [
     event.bowler && event.batsman ? `${event.bowler} to ${event.batsman}` : event.batsman || event.bowler,
-    event.runs != null ? `${event.runs} run${event.runs === 1 ? '' : 's'}` : null,
+    event.runs !== null && event.runs !== undefined ? `${event.runs} run${event.runs === 1 ? '' : 's'}` : null,
     event.extras ? `${event.extras} extra${event.extras === 1 ? '' : 's'}` : null,
   ].filter(Boolean);
   return parts.length ? parts.join(' · ') : null;

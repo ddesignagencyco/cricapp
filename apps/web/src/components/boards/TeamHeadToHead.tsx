@@ -80,7 +80,7 @@ export default function TeamHeadToHead({ team, allTeams, teamMatches }: Props) {
     <div className="space-y-4">
       <div className="flex flex-col gap-3 rounded-2xl bg-card p-5 ring-1 ring-lborder sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
-          <Swords size={16} className="text-accent2" />
+          <Swords size={16} className="text-accent" />
           <div>
             <p className="text-sm font-bold text-mtext">Head to Head</p>
             <p className="text-xs text-stext">
@@ -169,7 +169,7 @@ export default function TeamHeadToHead({ team, allTeams, teamMatches }: Props) {
       ) : opponents.length > 0 ? (
         <div className="rounded-2xl bg-card p-5 ring-1 ring-lborder">
           <div className="mb-3 flex items-center gap-2">
-            <Swords size={16} className="text-accent2" />
+            <Swords size={16} className="text-accent" />
             <h3 className="text-sm font-bold uppercase tracking-widest text-stext">Head to Head</h3>
           </div>
           <p className="text-sm text-stext">

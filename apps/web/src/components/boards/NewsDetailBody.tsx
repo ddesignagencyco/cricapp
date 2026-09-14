@@ -8,6 +8,9 @@ import RemoteImage from '../RemoteImage';
 import ShareButton from '../ShareButton';
 import CommentsSection from '../CommentsSection';
 import { sanitizeArticleHtml } from '../../utils/sanitizeHtml';
+import NewsCopy from '../NewsCopy';
+import { newsLocale } from '../../utils/locale';
+import { newsHref } from '../../utils/newsConstraints';
 
 /**
  * Splits already-sanitized article HTML at a paragraph boundary near the middle
@@ -21,13 +24,13 @@ function splitAtParagraph(html: string): [string, string] {
   return [`${parts.slice(0, mid).join('</p>')}</p>`, parts.slice(mid).join('</p>')];
 }
 
-const proseClass = `prose prose-sm max-w-none text-base leading-8 text-mtext/90 tiptap-content
+const proseClass = `prose prose-sm max-w-none text-base leading-8 text-mtext tiptap-content
   prose-p:my-4 prose-p:leading-8
   prose-a:text-accent prose-a:no-underline hover:prose-a:underline
   prose-strong:text-mtext prose-strong:font-semibold
   prose-em:italic
-  prose-blockquote:border-l-accent prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:text-stext
-  prose-img:my-6 prose-img:rounded-xl
+  prose-blockquote:border-s-accent prose-blockquote:ps-4 prose-blockquote:italic prose-blockquote:text-stext
+  prose-img:my-6 prose-img:rounded-xl prose-img:h-auto prose-img:w-full prose-img:object-contain
   prose-headings:text-mtext prose-headings:font-bold
   prose-h2:text-xl prose-h2:mt-8 prose-h2:mb-4
   prose-h3:text-lg prose-h3:mt-6 prose-h3:mb-3
@@ -64,12 +67,13 @@ export default function NewsDetailBody({ item, related = [], authorHref, related
         <Newspaper size={40} className="mx-auto text-stext" />
         <h1 className="mt-4 text-2xl font-bold text-mtext">Article not found</h1>
         <p className="mt-2 text-sm text-stext">We couldn&apos;t find that article. It may have been moved or removed.</p>
-        <Link href="/news" className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-accent hover:text-accent2">
+        <Link href="/news" className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-accent">
           <ArrowLeft size={14} /> Back to all news
         </Link>
       </div>
     );
   }
+  const locale = newsLocale(item.language, item.title);
   const safeContent = sanitizeArticleHtml(item.content || '');
   const [contentBeforeAd, contentAfterAd] = splitAtParagraph(safeContent);
 
@@ -84,7 +88,9 @@ export default function NewsDetailBody({ item, related = [], authorHref, related
         <span>/</span>
         <Link href="/news" className="hover:text-accent">News</Link>
         <span>/</span>
-        <span className="font-medium text-mtext">{item.title}</span>
+        <NewsCopy as="span" language={item.language} text={item.title} className="font-medium text-mtext">
+          {item.title}
+        </NewsCopy>
       </nav>
 
       <div className="grid grid-cols-1 gap-10 lg:grid-cols-3">
@@ -98,17 +104,32 @@ export default function NewsDetailBody({ item, related = [], authorHref, related
                 <Badge key={t} tone="neutral">{t}</Badge>
               ))}
             </div>
-            <h1 className="mt-4 text-3xl font-black leading-tight tracking-tight text-mtext sm:text-5xl">
+            <NewsCopy
+              as="h1"
+              language={item.language}
+              text={item.title}
+              className={locale.lang === 'ur'
+                ? 'mt-4 text-[1.375rem] font-semibold leading-[1.8] text-mtext sm:text-[1.625rem]'
+                : 'mt-4 text-3xl font-black leading-tight tracking-tight text-mtext sm:text-5xl'}
+            >
               {item.title}
-            </h1>
-            <p className="mt-4 max-w-3xl text-base leading-relaxed text-stext sm:text-lg">
-              {item.excerpt}
-            </p>
+            </NewsCopy>
+            {item.excerpt && (
+              <NewsCopy
+                language={item.language}
+                text={item.excerpt}
+                className={locale.lang === 'ur'
+                  ? 'mt-4 max-w-3xl text-[0.9375rem] leading-[1.9] text-stext'
+                  : 'mt-4 max-w-3xl text-base leading-relaxed text-stext sm:text-lg'}
+              >
+                {item.excerpt}
+              </NewsCopy>
+            )}
             <div className="mt-6 flex flex-wrap items-center gap-5 border-b border-lborder pb-6 text-xs text-stext">
               <span className="flex items-center gap-1.5">
                 <User size={14} className="text-accent" />
                 {authorHref ? (
-                  <Link href={authorHref} className="font-semibold text-accent hover:text-accent2">
+                  <Link href={authorHref} className="font-semibold text-accent">
                     {item.author}
                   </Link>
                 ) : (
@@ -121,40 +142,50 @@ export default function NewsDetailBody({ item, related = [], authorHref, related
               <span className="flex items-center gap-1.5">
                 <Clock size={14} /> {item.readTime}
               </span>
-              <ShareButton type="news" id={String(item.slug || item.id)} fallbackTitle={item.title} compact className="ml-auto" />
+              <ShareButton type="news" id={String(item.slug || item.id)} fallbackTitle={item.title} compact className="ms-auto" />
             </div>
           </header>
 
-          <div className={`relative h-56 overflow-hidden rounded-3xl sm:h-80 ${item.image ? '' : `bg-gradient-to-br ${item.imageGradient || 'from-slate-600 to-slate-800'}`}`}>
+          <div className={`overflow-hidden rounded-3xl ${item.image ? 'bg-secondary' : 'media-fallback relative h-56 sm:h-80'}`}>
             {item.image ? (
               <RemoteImage
                 src={item.image}
                 alt={item.title}
-                fill
+                width={1600}
+                height={900}
                 sizes="(min-width: 1024px) 70vw, 100vw"
-                className="object-cover"
+                fit="contain"
+                className="news-image h-auto w-full"
               />
             ) : (
               <div className="absolute inset-0 flex items-center justify-center">
-                <Newspaper size={72} className="text-white/25" />
+                <Newspaper size={72} className="text-stext/40" />
               </div>
             )}
-            <div className="absolute inset-0 bg-black/20" />
-            <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/50 to-transparent" />
           </div>
 
           <div className="mt-10">
-            <div className={proseClass} dangerouslySetInnerHTML={{ __html: contentBeforeAd }} />
+            <div
+              className={`${proseClass} news-copy`}
+              dir={locale.dir}
+              lang={locale.lang}
+              dangerouslySetInnerHTML={{ __html: contentBeforeAd }}
+            />
 
             {contentAfterAd && (
               <>
                 <AdSlot slot="news-detail-mid" format="inline" className="my-8" />
-                <div className={proseClass} dangerouslySetInnerHTML={{ __html: contentAfterAd }} />
+                <div
+                  className={`${proseClass} news-copy`}
+                  dir={locale.dir}
+                  lang={locale.lang}
+                  dangerouslySetInnerHTML={{ __html: contentAfterAd }}
+                />
               </>
             )}
 
             <div className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-lborder pt-6">
-              <Link href="/news" className="inline-flex items-center gap-1.5 text-sm font-semibold text-accent hover:text-accent2">
+              <Link href="/news" className="inline-flex items-center gap-1.5 text-sm font-semibold text-accent">
                 <ArrowLeft size={15} /> Back to all news
               </Link>
               <span className="flex items-center gap-1.5 text-xs text-stext">
@@ -210,7 +241,7 @@ export default function NewsDetailBody({ item, related = [], authorHref, related
                   <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-mtext">
                     More News
                   </h2>
-                  <Link href="/news" className="flex items-center gap-1 text-xs font-semibold text-accent hover:text-accent2">
+                  <Link href="/news" className="flex items-center gap-1 text-xs font-semibold text-accent">
                     All <ArrowRight size={13} />
                   </Link>
                 </div>
@@ -218,12 +249,12 @@ export default function NewsDetailBody({ item, related = [], authorHref, related
                   {related.map((a) => (
                     <Link
                       key={a.id}
-                      href={`/news/${a.id}`}
+                      href={newsHref(a)}
                       className="group flex gap-3"
                     >
                       <div
-                        className={`relative h-16 w-20 shrink-0 overflow-hidden rounded-sm ring-1 ring-lborder ${
-                          a.image ? '' : `bg-gradient-to-br ${a.imageGradient || 'from-slate-600 to-slate-800'}`
+                        className={`relative h-16 w-20 shrink-0 overflow-hidden rounded-sm bg-secondary ring-1 ring-lborder ${
+                          a.image ? '' : 'media-fallback'
                         }`}
                       >
                         {a.image && (
@@ -232,14 +263,20 @@ export default function NewsDetailBody({ item, related = [], authorHref, related
                             alt={a.title}
                             fill
                             sizes="80px"
-                            className="object-cover transition-transform duration-500 group-hover:scale-105"
+                            fit="contain"
+                            className="news-image"
                           />
                         )}
                       </div>
                       <div className="min-w-0">
-                        <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-mtext transition-colors group-hover:text-accent">
+                        <NewsCopy
+                          as="h3"
+                          language={a.language}
+                          text={a.title}
+                          className="line-clamp-2 text-sm font-semibold leading-snug text-mtext transition-colors group-hover:text-accent"
+                        >
                           {a.title}
-                        </h3>
+                        </NewsCopy>
                         <div className="mt-1 flex items-center gap-1.5 text-xs text-stext">
                           <Calendar size={11} /> {a.date}
                         </div>

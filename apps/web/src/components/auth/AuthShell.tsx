@@ -47,8 +47,7 @@ export default function AuthShell({ title, subtitle, children, footer }: AuthShe
             className="object-cover"
             priority
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/80 to-primary/30" />
-          <div className="absolute inset-0 bg-accent/10 mix-blend-overlay" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#07111F] via-[#07111F]/80 to-[#0B1F3A]/40" />
 
           <div className="relative flex h-full flex-col justify-between p-5 sm:p-7 lg:p-9">
             <div className="flex items-center justify-between gap-3">

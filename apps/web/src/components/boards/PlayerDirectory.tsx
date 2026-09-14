@@ -8,6 +8,7 @@ import EmptyState from '../EmptyState';
 import ErrorState from '../ErrorState';
 import Pagination from '../Pagination';
 import AdSlot from '../AdSlot';
+import { DirectoryGridSkeleton } from '../skeletons/Skeletons';
 import { fetchPlayersPage } from '../../services/players';
 import type { Player } from '../../types/index';
 
@@ -162,7 +163,7 @@ export default function PlayerDirectory({ initialPlayers = [], initialTotal = 0 
               if (e.key === 'Enter') handleSearchSubmit(localSearch);
             }}
             placeholder="Search players by name, team, role, nationality…"
-            className="w-full rounded-md border border-lborder bg-card py-2.5 pl-10 pr-4 text-sm text-mtext outline-none transition-colors focus:border-accent focus:bg-elevated focus:ring-2 focus:ring-accent/20"
+            className="w-full rounded-md border border-lborder bg-card py-2.5 pl-10 pr-4 text-sm text-mtext outline-none transition-colors focus:border-[var(--color-focus-ring)] focus:bg-elevated focus:ring-2 focus:ring-[var(--color-focus-ring)]/30"
           />
         </div>
 
@@ -197,11 +198,7 @@ export default function PlayerDirectory({ initialPlayers = [], initialTotal = 0 
 
       {/* Grid Content */}
       {loading ? (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {Array.from({ length: 9 }).map((_, i) => (
-            <div key={i} className="h-[78px] animate-pulse rounded-md border border-lborder bg-card" />
-          ))}
-        </div>
+        <DirectoryGridSkeleton />
       ) : error ? (
         <ErrorState message="Players are temporarily unavailable." onRetry={() => setRetryKey((key) => key + 1)} />
       ) : filtered.length > 0 ? (

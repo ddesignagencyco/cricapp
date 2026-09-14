@@ -15,7 +15,6 @@ import {
   Image as ImageIcon,
   Settings,
   ShieldAlert,
-  Loader2,
   Menu,
   X,
   LogOut,
@@ -28,6 +27,7 @@ import {
 import { useAuth } from '../../../components/AuthProvider';
 import { useTheme } from '../../../components/ThemeProvider';
 import Logo from '../../../components/Logo';
+import { AdminChromeSkeleton } from '../../../components/skeletons/Skeletons';
 
 const adminNav = [
   { to: '/admin', label: 'Overview', icon: LayoutDashboard },
@@ -65,20 +65,8 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     return () => { document.body.style.overflow = ''; };
   }, [mobileOpen]);
 
-  if (loading || !mounted) {
-    return (
-      <div className="flex min-h-screen items-center justify-center" style={{ background: 'var(--admin-bg)' }}>
-        <Loader2 size={28} className="animate-spin" style={{ color: 'var(--admin-accent)' }} />
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <div className="flex min-h-screen items-center justify-center" style={{ background: 'var(--admin-bg)' }}>
-        <Loader2 size={28} className="animate-spin" style={{ color: 'var(--admin-accent)' }} />
-      </div>
-    );
+  if (loading || !mounted || !isAuthenticated) {
+    return <AdminChromeSkeleton />;
   }
 
   if (!isAdmin) {
@@ -88,7 +76,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           <ShieldAlert size={40} className="mx-auto" style={{ color: 'var(--admin-danger)' }} />
           <h1 className="mt-4 text-lg font-bold" style={{ color: 'var(--admin-text)' }}>Admin access required</h1>
           <p className="mt-1 text-sm" style={{ color: 'var(--admin-text-secondary)' }}>Your account does not have permission to open the CMS.</p>
-          <Link href="/" className="mt-6 inline-block rounded-lg px-5 py-2.5 text-sm font-bold text-white" style={{ background: 'var(--admin-accent)' }}>
+          <Link href="/" className="btn-brand mt-6 inline-block rounded-lg px-5 py-2.5 text-sm font-bold">
             Back to homepage
           </Link>
         </div>
@@ -103,7 +91,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   const sidebar = (
     <div className="flex h-full min-h-0 w-full flex-col" style={{ width: 240, minWidth: 240, background: 'var(--admin-sidebar)' }}>
       <div className="flex h-14 shrink-0 items-center justify-center px-2" style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
-        <Logo to="/admin" width={228} height={38} className="mx-auto" />
+        <Logo to="/admin" size="lg" />
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-0.5">
@@ -118,7 +106,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
               className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors"
               style={{
                 background: active ? 'var(--admin-accent)' : 'transparent',
-                color: active ? 'var(--color-brand-fg)' : 'var(--admin-text-secondary)',
+                color: active ? 'var(--color-brand-fg)' : 'var(--admin-sidebar-muted)',
               }}
             >
               <Icon size={16} />
@@ -132,8 +120,8 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         <button
           type="button"
           onClick={() => { logout(); router.push('/'); }}
-          className="mt-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-[13px] transition-colors hover:text-[var(--color-brand-fg)]"
-          style={{ color: 'var(--admin-text-secondary)' }}
+          className="mt-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-[13px] transition-colors hover:text-[var(--admin-sidebar-text)]"
+          style={{ color: 'var(--admin-sidebar-muted)' }}
           onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--admin-sidebar-hover)'; }}
           onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
         >
@@ -217,7 +205,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           </a>
 
           <div className="flex items-center gap-2">
-            <div className="grid h-8 w-8 place-items-center rounded-full text-xs font-bold text-white" style={{ background: 'var(--admin-accent)' }}>
+            <div className="grid h-8 w-8 place-items-center rounded-full text-xs font-bold" style={{ background: 'var(--admin-accent)', color: 'var(--color-brand-fg)' }}>
               {userInitials}
             </div>
             <div className="hidden sm:block">

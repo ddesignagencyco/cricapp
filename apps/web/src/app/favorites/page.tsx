@@ -22,6 +22,7 @@ import Badge, { StatusBadge } from '../../components/Badge';
 import { formatScheduled, getInitials } from '../../utils/helpers';
 import { ConfirmDialog } from '../../components/admin/AdminShared';
 import type { Team, Player, Match } from '../../types/index';
+import { FavoritesPageSkeleton } from '../../components/skeletons/Skeletons';
 
 interface EnrichedFavorite {
   item: FavoriteItem;
@@ -105,12 +106,7 @@ export default function FavoritesPage() {
   }, [favorites]);
 
   if (authLoading || loading) {
-    return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3">
-        <Loader2 size={32} className="animate-spin text-accent" />
-        <p className="text-sm font-medium text-stext">Loading your favorites…</p>
-      </div>
-    );
+    return <FavoritesPageSkeleton />;
   }
 
   if (!isAuthenticated) {
@@ -138,7 +134,6 @@ export default function FavoritesPage() {
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
       {/* Page Header */}
       <header className="relative mb-8 overflow-hidden rounded-3xl border border-lborder bg-card p-6 shadow-sm sm:p-8">
-        <div className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-accent/5 blur-3xl" />
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1.5">
             <div className="flex items-center gap-2 text-accent">
@@ -313,7 +308,7 @@ function TabButton({
       <span>{label}</span>
       <span
         className={`rounded-full px-1.5 py-0.5 text-[11px] font-black ${
-          active ? 'bg-black/25 text-white' : 'bg-card text-stext'
+          active ? 'bg-white/20 text-white' : 'bg-card text-stext'
         }`}
       >
         {count}
@@ -385,7 +380,7 @@ function FavoriteTeamCard({
       <div className="mt-5 border-t border-lborder/60 pt-3">
         <Link
           href={`/teams/${fav.targetId}`}
-          className="inline-flex w-full items-center justify-between text-xs font-bold text-accent transition-colors hover:text-accent2"
+          className="inline-flex w-full items-center justify-between text-xs font-bold text-accent transition-colors"
         >
           <span>View Team Squad</span>
           <ArrowRight size={13} className="transition-transform group-hover:translate-x-1" />
@@ -458,7 +453,7 @@ function FavoritePlayerCard({
       <div className="mt-5 border-t border-lborder/60 pt-3">
         <Link
           href={`/players/${fav.targetId}`}
-          className="inline-flex w-full items-center justify-between text-xs font-bold text-accent transition-colors hover:text-accent2"
+          className="inline-flex w-full items-center justify-between text-xs font-bold text-accent transition-colors"
         >
           <span>View Player Profile</span>
           <ArrowRight size={13} className="transition-transform group-hover:translate-x-1" />
@@ -536,7 +531,7 @@ function FavoriteMatchCard({
         <Link
           href={`/matches/${fav.targetId}`}
           prefetch={false}
-          className="inline-flex w-full items-center justify-between text-xs font-bold text-accent transition-colors hover:text-accent2"
+          className="inline-flex w-full items-center justify-between text-xs font-bold text-accent transition-colors"
         >
           <span>Match Scorecard & Details</span>
           <ArrowRight size={13} className="transition-transform group-hover:translate-x-1" />

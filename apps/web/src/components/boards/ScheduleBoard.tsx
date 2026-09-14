@@ -13,6 +13,7 @@ import { APP_TIME_ZONE, getPslLogo, toKarachiISODate } from '../../utils/helpers
 import { str } from '../../utils/extract';
 import type { SportEventRecord } from '../../types/index';
 import type { PageMeta } from '../../services/api/client';
+import { MatchCardGridSkeleton } from '../skeletons/Skeletons';
 
 function toISODate(d: Date): string {
   const y = d.getFullYear();
@@ -177,14 +178,7 @@ export default function ScheduleBoard({
       </div>
 
       {loading ? (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-32 animate-pulse rounded-md border border-lborder bg-card"
-            />
-          ))}
-        </div>
+        <MatchCardGridSkeleton />
       ) : errorMessage ? (
         <ErrorState message={errorMessage} onRetry={onRetry} />
       ) : events.length > 0 ? (
@@ -260,7 +254,7 @@ function TeamRow({
         {name}
       </p>
       {score !== null && score !== undefined && score !== '' && (
-        <p className="shrink-0 font-mono text-sm font-semibold tabular-nums text-mtext">{score}</p>
+        <p className="shrink-0 font-mono text-sm font-bold tabular-nums text-mtext">{score}</p>
       )}
     </div>
   );
@@ -337,7 +331,7 @@ function ScheduleCard({ record }: { record: SportEventRecord }) {
   return (
     <div className="flex flex-col rounded-md border border-lborder bg-card p-3.5 transition-colors hover:border-accent/50 hover:bg-elevated">
       <div className="mb-2.5 flex items-center justify-between gap-2">
-        <p className="min-w-0 truncate text-xs font-medium uppercase tracking-wide text-stext" title={tournamentName}>
+        <p className="min-w-0 truncate text-xs font-semibold uppercase tracking-wide text-stext" title={tournamentName}>
           {tournamentName || 'Match'}
         </p>
         {isLive ? (
@@ -358,26 +352,26 @@ function ScheduleCard({ record }: { record: SportEventRecord }) {
         </p>
       )}
 
-      <div className="mt-2.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-t border-lborder pt-2 text-xs text-stext">
+      <div className="mt-2.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-t border-lborder pt-2 text-xs">
         <span className="flex min-w-0 items-center gap-3">
           {eventDate && (
-            <span className="inline-flex items-center gap-1">
-              <Calendar size={12} className="text-accent" />
+            <span className="inline-flex items-center gap-1 font-semibold tabular-nums text-accent">
+              <Calendar size={12} />
               {eventDate}
             </span>
           )}
           {time && (
-            <span className="inline-flex items-center gap-1">
+            <span className="inline-flex items-center gap-1 font-semibold tabular-nums text-mtext">
               <Clock size={12} />
               {time}
             </span>
           )}
-          {format && <span className="truncate">{format}</span>}
-          {round && <span className="truncate">{round}</span>}
+          {format && <span className="truncate font-medium text-muted-foreground">{format}</span>}
+          {round && <span className="truncate font-medium text-muted-foreground">{round}</span>}
         </span>
 
         {location && (
-          <span className="inline-flex max-w-[45%] items-center gap-1 truncate" title={location}>
+          <span className="inline-flex max-w-[45%] items-center gap-1 truncate font-medium text-stext" title={location}>
             <MapPin size={11} className="shrink-0" />
             <span className="truncate">{location}</span>
           </span>

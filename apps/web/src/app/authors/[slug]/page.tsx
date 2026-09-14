@@ -2,8 +2,10 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import EmptyState from '../../../components/EmptyState';
 import RemoteImage from '../../../components/RemoteImage';
+import NewsCopy from '../../../components/NewsCopy';
 import { articlesForAuthor, authorsFromNews, fetchPublishedNewsPool } from '../../../services/authors';
 import { sharePageMetadata } from '../../../services/sharing';
+import { newsHref } from '../../../utils/newsConstraints';
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -23,7 +25,7 @@ export default async function AuthorDetailPage({ params }: { params: Promise<{ s
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-      <Link href="/authors" className="inline-flex items-center gap-1 text-sm font-semibold text-accent hover:text-accent2">
+      <Link href="/authors" className="inline-flex items-center gap-1 text-sm font-semibold text-accent">
         ← All authors
       </Link>
 
@@ -55,14 +57,14 @@ export default async function AuthorDetailPage({ params }: { params: Promise<{ s
           <ul className="divide-y divide-lborder rounded-md border border-lborder bg-card">
             {articles.map((article) => (
               <li key={article.id}>
-                <Link href={`/news/${article.slug || article.id}`} className="flex gap-3 px-4 py-3 hover:bg-elevated">
+                <Link href={newsHref(article)} className="flex gap-3 px-4 py-3 hover:bg-elevated">
                   {article.image && (
                     <span className="relative h-16 w-20 shrink-0 overflow-hidden rounded-sm">
-                      <RemoteImage src={article.image} alt={article.title} fill sizes="80px" className="object-cover" />
+                      <RemoteImage src={article.image} alt={article.title} fill sizes="80px" className="news-image" />
                     </span>
                   )}
                   <span className="min-w-0">
-                    <span className="block font-semibold text-mtext">{article.title}</span>
+                    <NewsCopy as="span" language={article.language} text={article.title} className="block font-semibold text-mtext">{article.title}</NewsCopy>
                     <span className="mt-1 block text-xs text-stext">{article.date}</span>
                   </span>
                 </Link>

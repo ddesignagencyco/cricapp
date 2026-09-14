@@ -65,6 +65,12 @@ export default function MatchCard({ match, compact = false, showVenue = true }: 
   const homeOvers = home.overs || homeLive?.overs || '';
   const awayOvers = away.overs || awayLive?.overs || '';
   const sharedScore = !homeScore && !awayScore && !isUpcoming ? match.displayScore || '' : '';
+  const footerRight = isUpcoming && showVenue && venue
+    ? venue.split(',')[0]
+    : !isUpcoming && !isLive
+      ? result || sharedScore
+      : '';
+  const footerRightIsVenue = isUpcoming && !!footerRight;
 
   return (
     <Link
@@ -73,7 +79,7 @@ export default function MatchCard({ match, compact = false, showVenue = true }: 
       className="group flex flex-col rounded-md border border-lborder bg-card p-3.5 transition-colors hover:border-accent/50 hover:bg-elevated"
     >
       <div className="mb-2.5 flex items-center justify-between gap-2">
-        <p className="min-w-0 truncate text-xs font-medium uppercase tracking-wide text-stext">
+        <p className="min-w-0 truncate text-xs font-semibold uppercase tracking-wide text-stext">
           {tournament}
         </p>
         <StatusBadge status={match.status} />
@@ -96,45 +102,43 @@ export default function MatchCard({ match, compact = false, showVenue = true }: 
         />
       </div>
 
-      <div className="mt-2.5 flex items-center justify-between gap-2 border-t border-lborder pt-2 text-xs text-stext">
-        {isLive && inn ? (
-          <p className="min-w-0 truncate font-medium text-danger">
-            <BlinkingDot className="mr-1.5 align-middle" />
-            {inn.overs !== null && inn.overs !== undefined ? `${inn.overs} ov` : 'In play'}
-            {inn.runRate !== null && inn.runRate !== undefined ? ` · RR ${inn.runRate}` : ''}
-          </p>
-        ) : isUpcoming ? (
-          <p className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
-            {date && (
-              <span className="inline-flex items-center gap-1">
-                <Calendar size={12} className="text-accent" />
-                {date}
-              </span>
-            )}
-            {time && (
-              <span className="inline-flex items-center gap-1">
-                <Clock size={12} className="text-accent" />
-                {time}
-              </span>
-            )}
-          </p>
-        ) : result ? (
-          <p className="min-w-0 truncate font-medium text-mtext">{result}</p>
-        ) : sharedScore ? (
-          <p className="min-w-0 truncate font-mono font-semibold text-mtext">{sharedScore}</p>
-        ) : (
-          <p className="min-w-0 truncate">
-            {[date, !compact && showVenue && venue ? venue.split(',')[0] : '']
-              .filter(Boolean)
-              .join(' · ') || 'Result'}
-          </p>
-        )}
-        {showVenue && venue && isUpcoming && (
-          <span className="hidden max-w-[40%] truncate sm:inline-flex sm:items-center sm:gap-1">
-            <MapPin size={12} />
-            {venue.split(',')[0]}
+      <div className="mt-2.5 flex items-center justify-between gap-3 border-t border-lborder pt-2 text-xs">
+        <p className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+          {isLive && inn ? (
+            <span className="truncate font-semibold tabular-nums text-danger">
+              <BlinkingDot className="mr-1.5 align-middle" />
+              {inn.overs !== null && inn.overs !== undefined ? `${inn.overs} ov` : 'In play'}
+              {inn.runRate !== null && inn.runRate !== undefined ? ` · RR ${inn.runRate}` : ''}
+            </span>
+          ) : (
+            <>
+              {date && (
+                <span className="inline-flex items-center gap-1 font-semibold tabular-nums text-accent">
+                  <Calendar size={12} />
+                  {date}
+                </span>
+              )}
+              {isUpcoming && time && (
+                <span className="inline-flex items-center gap-1 font-semibold tabular-nums text-mtext">
+                  <Clock size={12} />
+                  {time}
+                </span>
+              )}
+            </>
+          )}
+        </p>
+        {footerRight ? (
+          <span
+            className={`max-w-[48%] shrink-0 truncate text-right ${
+              footerRightIsVenue
+                ? 'inline-flex items-center justify-end gap-1 font-medium text-stext'
+                : 'font-mono text-sm font-bold tabular-nums text-mtext'
+            }`}
+          >
+            {footerRightIsVenue && <MapPin size={12} />}
+            {footerRight}
           </span>
-        )}
+        ) : null}
       </div>
     </Link>
   );
@@ -183,11 +187,11 @@ function TeamRow({
         {name}
       </p>
       {score !== null && (
-        <div className="shrink-0 text-right">
-          <p className={`font-mono text-sm font-semibold tabular-nums ${live ? 'text-accent' : 'text-mtext'}`}>
+        <div className="min-w-14 shrink-0 text-right">
+          <p className={`font-mono text-sm font-bold tabular-nums ${live ? 'text-accent' : 'text-mtext'}`}>
             {score || '—'}
           </p>
-          {overs && <p className="font-mono text-[11px] text-stext">{overs} ov</p>}
+          {overs && <p className="font-mono text-xs font-medium tabular-nums text-muted-foreground">{overs} ov</p>}
         </div>
       )}
     </div>

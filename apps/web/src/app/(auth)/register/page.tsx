@@ -9,5 +9,5 @@ export const metadata = {
 };
 
 export default function RegisterPage() {
-  return <AuthShell title="Create your account" subtitle="Personalize your PakCricZone experience." footer={<span>Already have an account? <Link href="/login" className="font-semibold text-accent hover:text-accent2">Sign in</Link></span>}><AuthForm mode="register" /></AuthShell>;
+  return <AuthShell title="Create your account" subtitle="Personalize your PakCricZone experience." footer={<span>Already have an account? <Link href="/login" className="font-semibold text-accent">Sign in</Link></span>}><AuthForm mode="register" /></AuthShell>;
 }

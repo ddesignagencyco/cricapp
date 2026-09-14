@@ -6,11 +6,11 @@ import {
   FileEdit,
   FilePlus2,
   FileText,
-  Loader2,
   Send,
   Tag,
   ArrowUpRight,
 } from 'lucide-react';
+import { AdminPageSkeleton } from '../skeletons/Skeletons';
 import {
   fetchNewsAdmin,
   fetchNewsCategories,
@@ -18,6 +18,7 @@ import {
   type NewsCategory,
 } from '../../services/newsAdmin';
 import { BlinkingDot } from '../Badge';
+import NewsCopy from '../NewsCopy';
 
 export default function AdminDashboard() {
   const [articles, setArticles] = useState<NewsArticleAdmin[]>([]);
@@ -34,11 +35,7 @@ export default function AdminDashboard() {
   }, []);
 
   if (loading) {
-    return (
-      <div className="flex min-h-[200px] items-center justify-center rounded-lg" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
-        <Loader2 size={22} className="animate-spin" style={{ color: 'var(--admin-accent)' }} />
-      </div>
-    );
+    return <AdminPageSkeleton />;
   }
 
   const published = articles.filter((a) => a.isPublished).length;
@@ -78,8 +75,7 @@ export default function AdminDashboard() {
             </Link>
             <Link
               href="/admin/news/new"
-              className="inline-flex items-center gap-1.5 rounded-md px-4 py-2 text-xs font-bold text-white transition-colors"
-              style={{ background: 'var(--admin-accent)' }}
+              className="btn-brand inline-flex items-center gap-1.5 rounded-md px-4 py-2 text-xs font-bold transition-colors"
             >
               <FilePlus2 size={14} />
               Write Article
@@ -144,10 +140,10 @@ export default function AdminDashboard() {
                   <div className="min-w-0 flex-1">
                     <Link
                       href={`/admin/news/${a.id}/edit`}
-                      className="block truncate text-xs font-semibold transition-colors"
+                      className="block transition-colors"
                       style={{ color: 'var(--admin-text)' }}
                     >
-                      {a.title}
+                      <NewsCopy as="span" language={a.language} text={a.title} className="block truncate text-xs font-semibold">{a.title}</NewsCopy>
                     </Link>
                     <p className="mt-0.5 text-xs" style={{ color: 'var(--admin-text-muted)' }}>
                       {a.category?.name || 'General'} · {new Date(a.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}

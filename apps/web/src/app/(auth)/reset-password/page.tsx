@@ -23,7 +23,7 @@ export default async function ResetPasswordPage({ searchParams }: ResetPageProps
           ? 'Choose a new password for your account.'
           : 'Open the reset link from your email. Codes are no longer accepted.'
       }
-      footer={<span>Back to <Link href="/login" className="font-semibold text-accent hover:text-accent2">login</Link></span>}
+      footer={<span>Back to <Link href="/login" className="font-semibold text-accent">login</Link></span>}
     >
       <AuthForm mode="reset" token={params.token} tokenId={params.tid} />
     </AuthShell>

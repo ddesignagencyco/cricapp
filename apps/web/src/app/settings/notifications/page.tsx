@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../../components/AuthProvider';
+import { ProfilePageSkeleton } from '../../../components/skeletons/Skeletons';
 import Pagination from '../../../components/Pagination';
 import {
   fetchDevices,
@@ -149,12 +150,7 @@ export default function NotificationSettingsPage() {
   }, [history, now]);
 
   if (loading) {
-    return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3">
-        <Loader2 size={32} className="animate-spin text-accent" />
-        <p className="text-sm font-medium text-stext">Loading notifications…</p>
-      </div>
-    );
+    return <ProfilePageSkeleton />;
   }
 
   if (!isAuthenticated) {
@@ -250,7 +246,7 @@ export default function NotificationSettingsPage() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search notifications…"
-                className="w-full rounded-md border border-lborder bg-elevated py-2 pl-9 pr-3 text-sm text-mtext outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+                className="w-full rounded-md border border-lborder bg-elevated py-2 pl-9 pr-3 text-sm text-mtext outline-none focus:border-[var(--color-focus-ring)] focus:ring-2 focus:ring-[var(--color-focus-ring)]/30"
               />
             </label>
           </div>
@@ -283,7 +279,7 @@ export default function NotificationSettingsPage() {
                               </div>
                               <p className="mt-0.5 line-clamp-2 text-xs text-stext">{item.body}</p>
                               {href && (
-                                <Link href={href} className="mt-2 inline-flex text-xs font-semibold text-accent hover:text-accent2">
+                                <Link href={href} className="mt-2 inline-flex text-xs font-semibold text-accent">
                                   Open
                                 </Link>
                               )}
@@ -338,7 +334,7 @@ export default function NotificationSettingsPage() {
                 type="button"
                 disabled={asking || permission === 'granted' || permission === 'unsupported'}
                 onClick={enableBrowserAlerts}
-                className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-accent px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60"
+                className="btn-brand mt-2 inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold disabled:opacity-60"
               >
                 {asking ? <Loader2 size={12} className="animate-spin" /> : <Bell size={12} />}
                 {permission === 'granted' ? 'Permission granted' : 'Enable browser alerts'}

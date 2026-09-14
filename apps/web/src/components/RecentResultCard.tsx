@@ -50,7 +50,7 @@ export default function RecentResultCard({ match }: RecentResultCardProps) {
       className="group flex h-full flex-col rounded-md border border-lborder bg-card p-3.5 transition-colors hover:border-accent/50 hover:bg-elevated"
     >
       <div className="mb-3 flex items-center justify-between gap-2">
-        <p className="min-w-0 truncate text-xs font-medium uppercase tracking-wide text-stext">
+        <p className="min-w-0 truncate text-xs font-semibold uppercase tracking-wide text-stext">
           {tournament || 'Match'}
         </p>
         <StatusBadge status="completed" />
@@ -61,15 +61,16 @@ export default function RecentResultCard({ match }: RecentResultCardProps) {
         <ScoreRow code={awayCode} name={awayName} score={awayScore} overs={awayOvers} />
       </div>
 
-      <div className="mt-3 space-y-1 border-t border-lborder pt-2.5">
-        {result ? (
-          <p className="text-xs font-medium text-mtext">{result}</p>
-        ) : sharedScore ? (
-          <p className="font-mono text-xs font-semibold text-mtext">{sharedScore}</p>
-        ) : null}
-        <p className="truncate text-xs text-stext">
-          {[dateLabel, venue ? venue.split(',')[0] : ''].filter(Boolean).join(' · ')}
+      <div className="mt-3 flex items-center justify-between gap-3 border-t border-lborder pt-2.5 text-xs">
+        <p className="min-w-0 truncate">
+          {dateLabel ? <span className="font-semibold tabular-nums text-accent">{dateLabel}</span> : null}
+          {venue ? <span className="font-medium text-stext">{dateLabel ? ' · ' : ''}{venue.split(',')[0]}</span> : null}
         </p>
+        {(result || sharedScore) ? (
+          <p className="max-w-[48%] shrink-0 truncate text-right font-mono text-sm font-bold tabular-nums text-mtext">
+            {result || sharedScore}
+          </p>
+        ) : null}
       </div>
     </Link>
   );
@@ -101,9 +102,9 @@ function ScoreRow({ code, name, score, overs }: { code: string; name: string; sc
         </span>
       )}
       <p className="min-w-0 flex-1 truncate text-sm font-semibold text-mtext">{name}</p>
-      <div className="shrink-0 text-right">
-        <p className="font-mono text-sm font-semibold tabular-nums text-mtext">{score || '—'}</p>
-        {overs && <p className="font-mono text-[11px] text-stext">{overs} ov</p>}
+      <div className="min-w-14 shrink-0 text-right">
+        <p className="font-mono text-sm font-bold tabular-nums text-mtext">{score || '—'}</p>
+        {overs && <p className="font-mono text-xs font-medium tabular-nums text-muted-foreground">{overs} ov</p>}
       </div>
     </div>
   );

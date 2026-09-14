@@ -205,6 +205,7 @@ export interface Match {
 
 export interface NewsArticle {
   id: string;
+  slug?: string;
   title: string;
   category: string;
   type: string;
@@ -215,6 +216,7 @@ export interface NewsArticle {
   readTime: string;
   excerpt: string;
   content: string;
+  language?: string;
   image?: string;
   imageGradient?: string;
   relatedTeams?: string[];

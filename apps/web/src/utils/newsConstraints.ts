@@ -23,6 +23,12 @@ export function isValidNewsSlug(slug: string): boolean {
   return NEWS_SLUG_PATTERN.test(slug);
 }
 
+/** Public article URL. Prefer the SEO slug; fall back to the stable id. */
+export function newsHref(article: { id: string; slug?: string | null }): string {
+  const slug = typeof article.slug === 'string' ? article.slug.trim() : '';
+  return `/news/${slug || article.id}`;
+}
+
 export function isEmptyRichText(html: string): boolean {
   return html.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/gi, ' ').trim().length === 0;
 }

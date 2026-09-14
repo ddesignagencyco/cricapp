@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 import { searchAll } from '../services/search';
 import type { Match, SearchResults, TournamentApi } from '../types/index';
 import { PlayerSearchAvatar, TeamSearchAvatar, TypeSearchAvatar } from './SearchAvatars';
+import Skeleton from 'react-loading-skeleton';
 
 interface SearchBarProps {
   autoFocus?: boolean;
@@ -109,7 +110,7 @@ export default function SearchBar({ autoFocus = false, onDone }: SearchBarProps)
         role="dialog"
         aria-modal="true"
         aria-labelledby="global-search-title"
-        className="w-full max-w-xl overflow-hidden rounded-md border border-lborder bg-card shadow-2xl"
+        className="w-full max-w-xl overflow-hidden rounded-md border border-lborder bg-elevated shadow-sm"
       >
         <div className="flex items-center gap-3 border-b border-lborder px-4 py-3">
           <Search size={18} className="shrink-0 text-accent" />
@@ -151,9 +152,9 @@ export default function SearchBar({ autoFocus = false, onDone }: SearchBarProps)
           )}
           {loading && (
             <div className="space-y-2 p-2">
-              <div className="skeleton h-14 rounded-md" />
-              <div className="skeleton h-14 rounded-md" />
-              <div className="skeleton h-14 rounded-md" />
+              <Skeleton height={56} />
+              <Skeleton height={56} />
+              <Skeleton height={56} />
             </div>
           )}
           {!loading && results && total === 0 && (
@@ -227,7 +228,7 @@ export default function SearchBar({ autoFocus = false, onDone }: SearchBarProps)
               <button
                 type="button"
                 onClick={() => go(`/search?q=${encodeURIComponent(query.trim())}`)}
-                className="w-full border-t border-lborder pt-3 text-center text-xs font-semibold text-accent hover:text-accent2"
+                className="w-full border-t border-lborder pt-3 text-center text-xs font-semibold text-accent"
               >
                 View all {total} results
               </button>
@@ -281,7 +282,7 @@ function ResultButton({
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-elevated focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+      className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-elevated focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
     >
       {avatar}
       <span className="min-w-0 flex-1">

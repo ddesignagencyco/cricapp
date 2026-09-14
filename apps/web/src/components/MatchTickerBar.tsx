@@ -190,10 +190,10 @@ function TickerCard({ match }: { match: any }) {
     <Link
       href={`/matches/${match.matchId || match.id}`}
       prefetch={false}
-      className="group flex w-[260px] shrink-0 flex-col overflow-hidden rounded-xl bg-card p-3 ring-1 ring-lborder transition-all hover:bg-elevated hover:ring-accent/30"
+      className="group flex w-[260px] shrink-0 flex-col overflow-hidden rounded-xl bg-card p-3 ring-1 ring-lborder transition-colors hover:bg-elevated hover:ring-border-strong"
     >
       <div className="mb-2 flex items-center justify-between gap-2">
-        <span className="min-w-0 truncate text-xs font-bold uppercase tracking-wider text-stext">
+        <span className="min-w-0 truncate text-xs font-semibold uppercase tracking-wide text-stext">
           {tournament}
         </span>
         {isLive ? (
@@ -222,13 +222,14 @@ function TickerCard({ match }: { match: any }) {
         </div>
       )}
 
-      <div className="mt-2 flex items-center gap-1.5 border-t border-lborder/60 pt-1.5 text-xs text-stext">
+      <div className="mt-2 flex items-center gap-1.5 border-t border-lborder pt-1.5 text-xs">
+        <span className="shrink-0 font-semibold tabular-nums text-accent">{formatShortDate(match)}</span>
+        {scheduleTime(match) ? (
+          <span suppressHydrationWarning className="shrink-0 font-semibold tabular-nums text-mtext">{scheduleTime(match)}</span>
+        ) : null}
         {venue ? (
-          <span className="min-w-0 truncate" title={venue}>{venue.split(',')[0]}</span>
-        ) : (
-          <span suppressHydrationWarning className="truncate font-semibold text-stext">{scheduleTime(match)}</span>
-        )}
-        <span className="ml-auto shrink-0 font-semibold text-accent2">{formatShortDate(match)}</span>
+          <span className="ml-auto min-w-0 truncate font-medium text-stext" title={venue}>{venue.split(',')[0]}</span>
+        ) : null}
       </div>
     </Link>
   );
@@ -238,13 +239,13 @@ function TeamRow({ name, label: _label, score, showDash }: { name: string; label
   return (
     <div className="flex items-center gap-2">
       <TeamMini label={name} />
-      <p className="min-w-0 flex-1 truncate text-xs font-semibold text-mtext" title={name}>
+      <p className="min-w-0 flex-1 truncate text-sm font-semibold text-mtext" title={name}>
         {name}
       </p>
       {score ? (
-        <span className="shrink-0 font-mono text-sm font-bold text-accent2">{score}</span>
+        <span className="shrink-0 font-mono text-sm font-bold tabular-nums text-mtext">{score}</span>
       ) : showDash ? (
-        <span className="shrink-0 font-mono text-sm font-bold text-stext/60">&mdash;</span>
+        <span className="shrink-0 font-mono text-sm font-semibold tabular-nums text-muted-foreground">&mdash;</span>
       ) : null}
     </div>
   );

@@ -63,7 +63,7 @@ export default function ReportCommentDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby="report-comment-title"
-        className="w-full max-w-md overflow-hidden rounded-md border border-lborder bg-card shadow-2xl"
+        className="w-full max-w-md overflow-hidden rounded-md border border-lborder bg-elevated shadow-sm"
       >
         <div className="flex items-start justify-between gap-3 border-b border-lborder px-4 py-3">
           <div>
@@ -131,7 +131,7 @@ export default function ReportCommentDialog({
               value={details}
               onChange={(event) => setDetails(event.target.value.slice(0, 200))}
               placeholder={reasonId === 'other' ? 'Tell moderators what is wrong…' : 'Add context if it helps'}
-              className="mt-1.5 w-full resize-none rounded-md border border-lborder bg-elevated px-3 py-2 text-sm text-mtext outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+              className="mt-1.5 w-full resize-none rounded-md border border-lborder bg-elevated px-3 py-2 text-sm text-mtext outline-none focus:border-[var(--color-focus-ring)] focus:ring-2 focus:ring-[var(--color-focus-ring)]/30"
             />
             <p className="mt-1 text-right text-[11px] text-stext">{details.length}/200</p>
           </div>

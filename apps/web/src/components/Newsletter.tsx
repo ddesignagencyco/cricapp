@@ -5,7 +5,7 @@ import { Mail } from 'lucide-react';
 export default function Newsletter() {
   return (
     <section className="mx-auto max-w-7xl px-4 pb-12 sm:px-6">
-      <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-accent/15 via-card to-accent2/10 ring-1 ring-lborder">
+      <div className="overflow-hidden rounded-2xl bg-card ring-1 ring-lborder">
         <div className="flex flex-col gap-6 p-5 sm:p-7 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-start gap-3 sm:items-center sm:gap-4">
             <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent/15 text-accent sm:h-12 sm:w-12">
@@ -25,7 +25,7 @@ export default function Newsletter() {
               disabled
               aria-label="Newsletter email"
               placeholder="Newsletter coming soon"
-              className="min-w-0 flex-1 cursor-not-allowed rounded bg-primary px-4 py-2.5 text-sm text-stext ring-1 ring-lborder opacity-70 sm:w-64"
+              className="min-w-0 flex-1 cursor-not-allowed rounded bg-elevated px-4 py-2.5 text-sm text-stext ring-1 ring-lborder opacity-70 sm:w-64"
             />
             <button
               type="button"

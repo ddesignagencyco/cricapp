@@ -213,7 +213,7 @@ export default function Navbar() {
                 <div className="absolute right-0 top-full z-50 pt-2">
                 <div
                   role="menu"
-                  className="w-72 overflow-hidden rounded-lg border border-lborder bg-card shadow-2xl"
+                  className="w-72 overflow-hidden rounded-lg border border-lborder bg-elevated shadow-sm"
                 >
                   <div className="border-b border-lborder bg-elevated/70 px-3.5 py-3.5">
                     <div className="flex items-center gap-3">
@@ -221,7 +221,7 @@ export default function Navbar() {
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-semibold text-mtext">{user.displayName || user.username}</p>
                         <p className="truncate text-xs text-stext">@{user.username}</p>
-                        <p className="mt-0.5 truncate text-[11px] text-stext/80">{user.email}</p>
+                        <p className="mt-0.5 truncate text-xs font-medium text-muted-foreground">{user.email}</p>
                       </div>
                     </div>
                     <div className="mt-2.5 flex flex-wrap gap-1.5">
@@ -298,7 +298,7 @@ export default function Navbar() {
                 <div className="absolute right-0 top-full z-50 pt-2">
                 <div
                   role="menu"
-                  className="w-72 overflow-hidden rounded-lg border border-lborder bg-card shadow-2xl"
+                  className="w-72 overflow-hidden rounded-lg border border-lborder bg-elevated shadow-sm"
                 >
                   <div className="border-b border-lborder bg-elevated/70 px-3.5 py-3.5">
                     <p className="text-sm font-semibold text-mtext">Welcome to PakCricZone</p>
@@ -395,7 +395,7 @@ export default function Navbar() {
                       <div className="min-w-0">
                         <p className="truncate text-sm font-semibold text-mtext">{user.displayName || user.username}</p>
                         <p className="truncate text-xs text-stext">@{user.username}</p>
-                        <p className="truncate text-[11px] text-stext/80">{user.email}</p>
+                        <p className="truncate text-xs font-medium text-muted-foreground">{user.email}</p>
                       </div>
                     </div>
                     <MobileNavLink item={{ to: '/profile', label: 'Profile', icon: User }} active={pathname.startsWith('/profile')} />
@@ -513,7 +513,7 @@ function ProfileMenuLink({
       </span>
       <span className="min-w-0">
         <span className="block text-sm font-semibold">{label}</span>
-        <span className={`block text-[11px] ${active ? 'text-accent/80' : 'text-stext'}`}>{hint}</span>
+        <span className={`block text-xs font-medium ${active ? 'text-accent' : 'text-muted-foreground'}`}>{hint}</span>
       </span>
     </Link>
   );

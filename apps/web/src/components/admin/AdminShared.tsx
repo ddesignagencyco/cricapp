@@ -1,10 +1,10 @@
 'use client';
 
 import { type ReactNode, forwardRef, useEffect, useRef } from 'react';
-import { Loader2 } from 'lucide-react';
 import { StatusBadge as SharedStatusBadge } from '../Badge';
 import { getInitials } from '../../utils/helpers';
 import RemoteImage from '../RemoteImage';
+import { AdminTableSkeleton } from '../skeletons/Skeletons';
 
 /* ─── Page Header ──────────────────────────────────────────── */
 
@@ -32,7 +32,7 @@ export function AdminPageHeader({
             {badge && (
               <span
                 className="inline-flex items-center rounded px-2 py-0.5 text-xs font-medium uppercase tracking-wide"
-                style={{ background: 'var(--admin-accent)', color: '#fff' }}
+                style={{ background: 'var(--admin-accent)', color: 'var(--color-brand-fg)' }}
               >
                 {badge}
               </span>
@@ -101,55 +101,10 @@ export function StatCard({
   );
 }
 
-/* ─── Table Skeleton ───────────────────────────────────────── */
+export { AdminTableSkeleton };
 
-export function AdminTableSkeleton({ rows = 5, cols = 5 }: { rows?: number; cols?: number }) {
-  return (
-    <div className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr style={{ borderBottom: '1px solid var(--admin-border)', background: 'var(--admin-table-header)' }}>
-              {Array.from({ length: cols }).map((_, i) => (
-                <th key={i} className="px-4 py-3">
-                  <div className="h-3 w-16 rounded skeleton" />
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {Array.from({ length: rows }).map((_, r) => (
-              <tr key={r} style={{ borderBottom: '1px solid var(--admin-border)' }}>
-                {Array.from({ length: cols }).map((_, c) => (
-                  <td key={c} className="px-4 py-3">
-                    <div className="h-3 rounded skeleton" style={{ width: c === 0 ? '60%' : '40%' }} />
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
-/* ─── Loading State ────────────────────────────────────────── */
-
-export function LoadingState({ text = 'Loading...' }: { text?: string }) {
-  return (
-    <div
-      className="flex min-h-[200px] items-center justify-center rounded-lg"
-      style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}
-    >
-      <div className="flex items-center gap-3">
-        <Loader2 size={18} className="animate-spin" style={{ color: 'var(--admin-accent)' }} />
-        <span className="text-sm" style={{ color: 'var(--admin-text-secondary)' }}>
-          {text}
-        </span>
-      </div>
-    </div>
-  );
+export function LoadingState({ text: _text = 'Loading...' }: { text?: string }) {
+  return <AdminTableSkeleton />;
 }
 
 /* ─── Empty State ──────────────────────────────────────────── */
@@ -297,8 +252,8 @@ export function ConfirmDialog({
             type="button"
             onClick={onConfirm}
             disabled={loading}
-            className="rounded-md px-3 py-1.5 text-xs font-bold text-white disabled:opacity-50"
-            style={{ background: danger ? 'var(--admin-danger)' : 'var(--admin-accent)' }}
+            className={`rounded-md px-3 py-1.5 text-xs font-bold disabled:opacity-50 ${danger ? '' : 'btn-brand'}`}
+            style={danger ? { background: 'var(--admin-danger)', color: 'var(--color-brand-fg)' } : undefined}
           >
             {loading ? 'Processing...' : confirmLabel}
           </button>
@@ -327,7 +282,7 @@ export const AdminInput = forwardRef<HTMLInputElement, React.InputHTMLAttributes
     <input
       ref={ref}
       style={{ ...inputBase, padding: '0.5rem 0.75rem', ...style }}
-      onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--admin-accent)'; props.onFocus?.(e); }}
+      onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--color-focus-ring)'; props.onFocus?.(e); }}
       onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--admin-border)'; props.onBlur?.(e); }}
       {...props}
     />
@@ -446,7 +401,7 @@ export function AdminToggle({
       disabled={disabled}
       onClick={onChange}
       className="relative inline-flex h-5 w-9 shrink-0 rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-      style={{ background: checked ? 'var(--admin-success)' : 'var(--admin-border-strong, #64748b)' }}
+      style={{ background: checked ? 'var(--admin-success)' : 'var(--admin-border-strong)' }}
     >
       <span
         className="absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform"

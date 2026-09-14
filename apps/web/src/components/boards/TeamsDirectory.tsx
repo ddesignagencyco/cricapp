@@ -10,6 +10,7 @@ import EmptyState from '../EmptyState';
 import ErrorState from '../ErrorState';
 import Pagination from '../Pagination';
 import AdSlot from '../AdSlot';
+import { DirectoryGridSkeleton } from '../skeletons/Skeletons';
 
 const LIMIT = 20;
 
@@ -82,9 +83,7 @@ export default function TeamsDirectory() {
   return (
     <div className="space-y-8">
       {/* Header Banner */}
-      <div className="relative overflow-hidden rounded-3xl border border-lborder bg-gradient-to-br from-card via-card to-elevated p-6 shadow-sm sm:p-8">
-        <div className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-accent/5 blur-3xl pointer-events-none" />
-
+      <div className="relative overflow-hidden rounded-3xl border border-lborder bg-card p-6 shadow-sm sm:p-8">
         <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-accent border border-accent/20">
@@ -128,18 +127,14 @@ export default function TeamsDirectory() {
               if (e.key === 'Enter') handleSearchSubmit(localSearch);
             }}
             placeholder="Search teams by name, abbreviation or country..."
-            className="w-full rounded-2xl border border-lborder bg-card py-2.5 pl-10 pr-4 text-xs text-mtext outline-none transition focus:border-accent focus:bg-elevated focus:ring-2 focus:ring-accent/20"
+            className="w-full rounded-2xl border border-lborder bg-card py-2.5 pl-10 pr-4 text-xs text-mtext outline-none transition focus:border-[var(--color-focus-ring)] focus:bg-elevated focus:ring-2 focus:ring-[var(--color-focus-ring)]/30"
           />
         </div>
       </div>
 
       {/* Grid Content */}
       {loading ? (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-[74px] animate-pulse rounded-md border border-lborder bg-card" />
-          ))}
-        </div>
+        <DirectoryGridSkeleton count={6} />
       ) : error ? (
         <ErrorState message="Teams are temporarily unavailable." onRetry={() => setRetryKey((key) => key + 1)} />
       ) : filtered.length > 0 ? (

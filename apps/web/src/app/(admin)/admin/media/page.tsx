@@ -87,8 +87,7 @@ export default function MediaPage() {
                   void navigator.clipboard.writeText(item.url);
                   toast.success('URL copied.');
                 }}
-                className="mt-2 rounded-md px-3 py-1.5 text-xs font-bold text-white"
-                style={{ background: 'var(--admin-accent)' }}
+                className="btn-brand mt-2 rounded-md px-3 py-1.5 text-xs font-bold"
               >
                 Copy URL
               </button>

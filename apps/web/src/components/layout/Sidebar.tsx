@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { ArrowUpRight, CalendarDays } from 'lucide-react';
 import { fetchNews } from '../../services/news';
+import { newsHref } from '../../utils/newsConstraints';
 import { formatScheduled } from '../../utils/helpers';
 import AdSlot from '../AdSlot';
 
@@ -16,7 +17,7 @@ export default async function Sidebar() {
           </h2>
           <Link
             href="/news"
-            className="flex items-center gap-1 text-xs font-semibold text-accent transition-colors hover:text-accent2"
+            className="flex items-center gap-1 text-xs font-semibold text-accent transition-colors"
           >
             All news <ArrowUpRight size={14} />
           </Link>
@@ -26,7 +27,7 @@ export default async function Sidebar() {
             latest.map((item) => (
               <Link
                 key={item.id}
-                href={`/news/${item.id}`}
+                href={newsHref(item)}
                 className="group block py-3 first:pt-0 last:pb-0"
               >
                 <p className="line-clamp-2 text-sm font-semibold text-mtext transition-colors group-hover:text-accent">

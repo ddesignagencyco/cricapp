@@ -9,5 +9,5 @@ export const metadata = {
 };
 
 export default function LoginPage() {
-  return <AuthShell title="Welcome back" subtitle="Sign in to follow matches, teams and cricket updates." footer={<span>New to PakCricZone? <Link href="/register" className="font-semibold text-accent hover:text-accent2">Create an account</Link></span>}><AuthForm mode="login" /></AuthShell>;
+  return <AuthShell title="Welcome back" subtitle="Sign in to follow matches, teams and cricket updates." footer={<span>New to PakCricZone? <Link href="/register" className="font-semibold text-accent">Create an account</Link></span>}><AuthForm mode="login" /></AuthShell>;
 }

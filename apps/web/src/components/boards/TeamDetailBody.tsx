@@ -15,6 +15,7 @@ import { StatusBadge } from '../Badge';
 import { fetchTeamRosterPage } from '../../services/teams';
 import type { NewsArticle, Player, SportEventRecord } from '../../types/index';
 import { formatScheduled } from '../../utils/helpers';
+import { newsHref } from '../../utils/newsConstraints';
 
 const teamTabs = [
   { key: 'overview', label: 'Overview', icon: Shield },
@@ -232,7 +233,7 @@ export default function TeamDetailBody({
           <ul className="space-y-2">
             {relatedNews.map((article) => (
               <li key={article.id}>
-                <Link href={`/news/${article.slug || article.id}`} className="text-sm font-semibold text-mtext hover:text-accent">
+                <Link href={newsHref(article)} className="text-sm font-semibold text-mtext hover:text-accent">
                   {article.title}
                 </Link>
                 <p className="text-xs text-stext">{article.date}</p>

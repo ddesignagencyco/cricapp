@@ -45,11 +45,12 @@ export default function MatchCardCompact({ match }: MatchCardCompactProps) {
       className="group block rounded-md border border-lborder bg-card px-3.5 py-3 transition-colors hover:border-accent/50 hover:bg-elevated"
     >
       <div className="mb-2 flex items-center justify-between gap-3">
-        <p className="min-w-0 truncate text-xs font-medium uppercase tracking-wide text-stext">
+        <p className="min-w-0 truncate text-xs font-semibold uppercase tracking-wide text-stext">
           {tournament || 'Match'}
         </p>
-        <p className="shrink-0 text-xs text-stext">
-          {date}{time ? ` · ${time}` : ''}
+        <p className="shrink-0 text-xs">
+          {date ? <span className="font-semibold tabular-nums text-accent">{date}</span> : null}
+          {time ? <span className="font-semibold tabular-nums text-mtext">{date ? ' · ' : ''}{time}</span> : null}
         </p>
       </div>
 

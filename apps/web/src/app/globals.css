@@ -1,46 +1,50 @@
 @import "tailwindcss";
 
 @theme {
+  /* Legacy Tailwind names — mapped to the same semantic roles */
   --color-primary: #07111F;
-  --color-secondary: #0A1728;
+  --color-secondary: #16283B;
   --color-card: #0D1B2A;
-  --color-elevated: #122238;
-  --color-accent: #00BFFF;
-  --color-accent2: #00BFFF;
-  --color-gold: #FFD166;
-  --color-mtext: #F5F7FA;
-  --color-stext: #94A3B8;
-  --color-lborder: #1E334A;
-  --color-danger: #FF4D6D;
-  --color-shadow: #000;
+  --color-elevated: #122235;
+  --color-accent: #38BDF8;
+  --color-accent2: #38BDF8;
+  --color-gold: #F59E0B;
+  --color-mtext: #F1F5F9;
+  --color-stext: #CBD5E1;
+  --color-lborder: #22364A;
+  --color-danger: #E11D48;
+  --color-shadow: #07111F;
 
-  /* Semantic Design Tokens (Dark Default) */
   --color-background: #07111F;
+  --color-foreground: #F1F5F9;
   --color-surface: #0D1B2A;
-  --color-surface-elevated: #122238;
-  --color-surface-muted: #0A1728;
+  --color-surface-elevated: #122235;
+  --color-surface-muted: #16283B;
 
-  --color-text-primary: #F5F7FA;
-  --color-text-secondary: #94A3B8;
-  --color-text-muted: #64748B;
+  --color-text-primary: #F1F5F9;
+  --color-text-secondary: #CBD5E1;
+  --color-text-muted: #A8B5C5;
+  --color-text-disabled: #64748B;
+  --color-muted-foreground: #A8B5C5;
+  --color-disabled-foreground: #64748B;
 
-  --color-border: #1E334A;
-  --color-border-strong: #2D4A6B;
+  --color-border: #22364A;
+  --color-border-strong: #30475D;
+  --color-input: #16283B;
+  --color-input-border: #3A536A;
 
-  /* Filled brand surfaces use a deeper sky blue than the bright accent so that
-     solid buttons do not glare against the dark background, and hover darkens. */
-  --color-brand: #00BFFF;
-  --color-brand-hover: #0099CC;
+  --color-brand: #0284C7;
+  --color-brand-hover: #0369A1;
   --color-brand-fg: #FFFFFF;
-  --color-focus-ring: #00BFFF;
+  --color-focus-ring: #0EA5E9;
 
   --color-success: #10B981;
   --color-success-soft: rgba(16, 185, 129, 0.14);
-  --color-warning: #FFD166;
-  --color-warning-soft: rgba(255, 209, 102, 0.14);
-  --color-danger-soft: rgba(255, 77, 109, 0.14);
-  --color-info: #00BFFF;
-  --color-info-soft: rgba(0, 191, 255, 0.14);
+  --color-warning: #F59E0B;
+  --color-warning-soft: rgba(245, 158, 11, 0.14);
+  --color-danger-soft: rgba(225, 29, 72, 0.14);
+  --color-info: #38BDF8;
+  --color-info-soft: rgba(56, 189, 248, 0.16);
 
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
@@ -59,57 +63,92 @@
 
 /* Light theme overrides */
 .light {
-  --color-primary: #FFFFFF;
-  --color-secondary: #F1F5F9;
+  --color-primary: #F6F9FC;
+  --color-secondary: #EEF4F8;
   --color-card: #FFFFFF;
-  --color-elevated: #F8FAFC;
-  --color-accent: #0086B3;
-  --color-accent2: #0086B3;
-  --color-gold: #B45309;
-  --color-mtext: #0F172A;
-  --color-stext: #1E293B;
-  --color-lborder: #E2E8F0;
+  --color-elevated: #FFFFFF;
+  --color-accent: #0369A1;
+  --color-accent2: #38BDF8;
+  --color-gold: #D97706;
+  --color-mtext: #0B1F3A;
+  --color-stext: #334155;
+  --color-lborder: #D7E1EA;
   --color-danger: #E11D48;
-  --color-shadow: #0F172A;
+  --color-shadow: #0B1F3A;
 
-  /* Semantic Design Tokens (Light Mode) */
-  --color-background: #FFFFFF;
+  --color-background: #F6F9FC;
+  --color-foreground: #0B1F3A;
   --color-surface: #FFFFFF;
-  --color-surface-elevated: #F8FAFC;
-  --color-surface-muted: #F1F5F9;
+  --color-surface-elevated: #FFFFFF;
+  --color-surface-muted: #EEF4F8;
 
-  --color-text-primary: #0F172A;
-  --color-text-secondary: #1E293B;
-  --color-text-muted: #334155;
+  --color-text-primary: #0B1F3A;
+  --color-text-secondary: #334155;
+  --color-text-muted: #526477;
+  --color-text-disabled: #94A3B8;
+  --color-muted-foreground: #526477;
+  --color-disabled-foreground: #94A3B8;
 
-  --color-border: #E2E8F0;
-  --color-border-strong: #CBD5E1;
+  --color-border: #D7E1EA;
+  --color-border-strong: #BCCAD6;
+  --color-input: #FFFFFF;
+  --color-input-border: #B8C7D5;
 
-  --color-brand: #0086B3;
-  --color-brand-hover: #006B8F;
+  --color-brand: #0284C7;
+  --color-brand-hover: #0369A1;
   --color-brand-fg: #FFFFFF;
-  --color-focus-ring: #0086B3;
+  --color-focus-ring: #0EA5E9;
 
-  --color-success: #10B981;
-  --color-success-soft: rgba(16, 185, 129, 0.12);
-  --color-warning: #B45309;
-  --color-warning-soft: rgba(180, 83, 9, 0.12);
+  --color-success: #059669;
+  --color-success-soft: rgba(5, 150, 105, 0.12);
+  --color-warning: #D97706;
+  --color-warning-soft: rgba(217, 119, 6, 0.12);
   --color-danger-soft: rgba(225, 29, 72, 0.12);
-  --color-info: #0086B3;
-  --color-info-soft: rgba(0, 134, 179, 0.14);
+  --color-info: #0369A1;
+  --color-info-soft: rgba(3, 105, 161, 0.14);
 }
 
 * {
   border-color: var(--color-lborder);
 }
 
+input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']),
+textarea,
+select {
+  border-color: var(--color-input-border);
+}
+
+table thead {
+  background-color: var(--color-surface-muted);
+}
+
+table thead th {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+table tbody td {
+  font-size: 0.875rem;
+}
+
+::placeholder {
+  color: var(--color-text-disabled);
+  opacity: 1;
+}
+
 html {
   scroll-behavior: smooth;
+  color-scheme: dark;
+}
+
+.light {
+  color-scheme: light;
 }
 
 body {
-  background-color: var(--color-primary);
-  color: var(--color-mtext);
+  background-color: var(--color-background);
+  color: var(--color-foreground, var(--color-mtext));
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -122,7 +161,7 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--color-primary);
+  background: var(--color-background);
 }
 
 ::-webkit-scrollbar-thumb {
@@ -136,11 +175,11 @@ body {
 
 /* Utility classes */
 .text-accent-grad {
-  background: linear-gradient(135deg, #07111F 0%, #0D1B2A 55%, #064E3B 100%);
+  background: linear-gradient(135deg, #07111F 0%, #0D1B2A 55%, #0B1F3A 100%);
 }
 
 .light .text-accent-grad {
-  background: linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 55%, #BBF7D0 100%);
+  background: linear-gradient(135deg, #F6F9FC 0%, #EEF4F8 55%, #DCE5ED 100%);
 }
 
 .hero-grad {
@@ -167,6 +206,33 @@ body {
 
 .hero-lead {
   color: #CBD5E1;
+}
+
+.hero-kicker {
+  color: #94A3B8;
+}
+
+.hero-highlight {
+  color: #38BDF8;
+}
+
+.hero-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 0.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(7, 17, 31, 0.45);
+  color: #F8FAFC;
+  padding: 0.375rem 0.875rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.hero-chip--accent {
+  border-color: rgba(56, 189, 248, 0.5);
+  background: rgba(14, 165, 233, 0.22);
+  color: #E0F2FE;
 }
 
 .hero-content .tone-neutral,
@@ -204,12 +270,86 @@ body {
   background-color: var(--color-brand-hover);
 }
 
+.btn-brand:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-background), 0 0 0 4px var(--color-focus-ring);
+}
+
+.btn-brand:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.media-fallback {
+  background: var(--color-surface-muted);
+}
+
+.news-copy[lang="ur"],
+.news-copy[dir="rtl"] {
+  direction: rtl;
+  text-align: right;
+  font-family: "Noto Nastaliq Urdu", "Noto Naskh Arabic", var(--font-sans);
+  line-height: 1.85;
+}
+
+/* Nastaliq reads much larger than Latin at the same px size */
+h1.news-copy[lang="ur"],
+h1.news-copy[dir="rtl"] {
+  font-size: 1.375rem !important;
+  line-height: 1.8 !important;
+  font-weight: 600 !important;
+  letter-spacing: 0 !important;
+}
+
+@media (min-width: 640px) {
+  h1.news-copy[lang="ur"],
+  h1.news-copy[dir="rtl"] {
+    font-size: 1.625rem !important;
+  }
+}
+
+h2.news-copy[lang="ur"],
+h2.news-copy[dir="rtl"],
+h3.news-copy[lang="ur"],
+h3.news-copy[dir="rtl"] {
+  font-size: 1.125rem !important;
+  line-height: 1.8 !important;
+  font-weight: 600 !important;
+}
+
+@media (min-width: 640px) {
+  h2.news-copy[lang="ur"],
+  h2.news-copy[dir="rtl"],
+  h3.news-copy[lang="ur"],
+  h3.news-copy[dir="rtl"] {
+    font-size: 1.25rem !important;
+  }
+}
+
+.prose.news-copy[lang="ur"],
+.prose.news-copy[dir="rtl"] {
+  font-size: 0.9375rem;
+  line-height: 1.95;
+}
+
+.news-copy[lang="en"],
+.news-copy[dir="ltr"] {
+  direction: ltr;
+  text-align: left;
+}
+
+.news-copy[dir="rtl"] blockquote {
+  border-inline-start: 3px solid var(--color-accent);
+  padding-inline-start: 1rem;
+  padding-inline-end: 0;
+}
+
 .shadow-card-dark {
-  box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 1px 2px rgba(7, 17, 31, 0.18);
 }
 
 .light .shadow-card-dark {
-  box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 2px rgba(11, 31, 58, 0.06);
 }
 
 .tabular-nums {
@@ -363,6 +503,13 @@ body {
   --border: var(--color-border);
   --border-strong: var(--color-border-strong);
 
+  --foreground: var(--color-foreground);
+  --muted: var(--color-surface-muted);
+  --muted-foreground: var(--color-text-muted);
+  --disabled-foreground: var(--color-text-disabled);
+  --secondary-foreground: var(--color-text-secondary);
+  --input: var(--color-input);
+  --input-border: var(--color-input-border);
   --primary: var(--color-brand);
   --primary-hover: var(--color-brand-hover);
   --primary-foreground: var(--color-brand-fg);
@@ -380,17 +527,19 @@ body {
   /* Admin Aliases: 100% synchronized with master semantic variables */
   --admin-bg: var(--color-background);
   --admin-surface: var(--color-surface-muted);
-  --admin-sidebar: var(--color-primary);
+  --admin-sidebar: #0B1F3A;
   --admin-sidebar-hover: rgba(255, 255, 255, 0.08);
-  --admin-sidebar-active: var(--color-accent);
+  --admin-sidebar-text: #F1F5F9;
+  --admin-sidebar-muted: #94A3B8;
+  --admin-sidebar-active: var(--color-brand);
   --admin-card: var(--color-surface);
   --admin-card-hover: var(--color-surface-elevated);
   --admin-border: var(--color-border);
-  --admin-border-light: var(--color-surface-elevated);
+  --admin-border-light: var(--color-border-strong);
   --admin-text: var(--color-text-primary);
   --admin-text-secondary: var(--color-text-secondary);
   --admin-text-muted: var(--color-text-muted);
-  --admin-accent: var(--color-accent);
+  --admin-accent: var(--color-brand);
   --admin-accent-hover: var(--color-brand-hover);
   --admin-success: var(--color-success);
   --admin-success-bg: var(--color-success-soft);
@@ -400,17 +549,18 @@ body {
   --admin-warning-bg: var(--color-warning-soft);
   --admin-danger: var(--color-danger);
   --admin-danger-bg: var(--color-danger-soft);
-  --admin-input-bg: var(--color-surface-muted);
+  --admin-input-bg: var(--color-input);
+  --admin-border-strong: var(--color-border-strong);
   --admin-table-header: var(--color-surface-muted);
   --admin-table-row-hover: var(--color-surface-elevated);
-  --admin-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
-  --admin-shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.45);
-  --admin-topbar: var(--color-background);
+  --admin-shadow: 0 1px 2px rgba(7, 17, 31, 0.2);
+  --admin-shadow-lg: 0 1px 3px rgba(7, 17, 31, 0.28);
+  --admin-topbar: var(--color-surface);
 }
 
 .light {
-  --admin-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
-  --admin-shadow-lg: 0 4px 14px rgba(15, 23, 42, 0.08);
+  --admin-shadow: 0 1px 2px rgba(11, 31, 58, 0.06);
+  --admin-shadow-lg: 0 1px 3px rgba(11, 31, 58, 0.08);
 }
 
 /* TipTap Editor Styles */
@@ -430,6 +580,34 @@ body {
   color: var(--admin-text-muted);
   pointer-events: none;
   height: 0;
+}
+.tiptap-editor .ProseMirror[dir="rtl"],
+.tiptap-editor .ProseMirror[lang="ur"],
+.news-copy[dir="rtl"] .ProseMirror,
+.news-copy[lang="ur"] .ProseMirror {
+  direction: rtl;
+  text-align: right;
+  font-family: "Noto Nastaliq Urdu", "Noto Naskh Arabic", var(--font-sans);
+  font-size: 0.9375rem;
+  line-height: 1.85;
+}
+.tiptap-editor .ProseMirror[dir="rtl"] p.is-editor-empty:first-child::before,
+.news-copy[dir="rtl"] .ProseMirror p.is-editor-empty:first-child::before {
+  float: right;
+}
+.news-copy[dir="rtl"] .ProseMirror ul,
+.news-copy[dir="rtl"] .ProseMirror ol,
+.tiptap-editor .ProseMirror[dir="rtl"] ul,
+.tiptap-editor .ProseMirror[dir="rtl"] ol {
+  padding-left: 0;
+  padding-right: 1.5rem;
+}
+.news-copy[dir="rtl"] .ProseMirror blockquote,
+.tiptap-editor .ProseMirror[dir="rtl"] blockquote {
+  border-left: none;
+  padding-left: 0;
+  border-right: 3px solid var(--admin-accent);
+  padding-right: 1rem;
 }
 .tiptap-editor .ProseMirror h1 { font-size: 1.5rem; font-weight: 800; margin: 1rem 0 0.5rem; }
 .tiptap-editor .ProseMirror h2 { font-size: 1.25rem; font-weight: 700; margin: 0.75rem 0 0.5rem; }
@@ -498,6 +676,20 @@ body {
   content: "\00a0";
 }
 
+.news-image {
+  object-fit: contain !important;
+  object-position: center !important;
+}
+
+.tiptap-content img,
+.news-copy img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  object-fit: contain;
+}
+
 /* Edge/Chrome draw a native reveal control over our eye button and then
    React resets type="password", so the toggle appears broken. */
 .auth-password-input::-ms-reveal,
@@ -516,7 +708,7 @@ body {
   border: 1px solid var(--color-border) !important;
   border-left: 3px solid var(--color-info) !important;
   border-radius: 10px !important;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28) !important;
+  box-shadow: 0 1px 3px rgba(7, 17, 31, 0.22) !important;
   font-family: var(--font-sans) !important;
   font-size: 13px !important;
   font-weight: 600 !important;
@@ -528,7 +720,7 @@ body {
 }
 
 .pcz-toast--success {
-  border-left-color: var(--color-accent) !important;
+  border-left-color: var(--color-brand) !important;
 }
 
 .pcz-toast--error {
@@ -536,7 +728,7 @@ body {
 }
 
 .light .pcz-toast {
-  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12) !important;
+  box-shadow: 0 1px 3px rgba(11, 31, 58, 0.08) !important;
 }
 
 /* Keep every table column reachable on small screens.

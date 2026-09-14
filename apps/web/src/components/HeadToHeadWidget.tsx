@@ -129,7 +129,7 @@ export default function HeadToHeadWidget({ data }: Props) {
     return (
       <div className="rounded-2xl bg-card p-5 ring-1 ring-lborder">
         <div className="mb-3 flex items-center gap-2">
-          <Swords size={16} className="text-accent2" />
+          <Swords size={16} className="text-accent" />
           <h3 className="text-sm font-bold uppercase tracking-widest text-stext">Head to Head</h3>
         </div>
         <p className="text-sm text-stext">No head-to-head records available for this fixture yet.</p>
@@ -140,7 +140,7 @@ export default function HeadToHeadWidget({ data }: Props) {
   return (
     <div className="rounded-2xl bg-card p-5 ring-1 ring-lborder">
       <div className="mb-4 flex items-center gap-2">
-        <Swords size={16} className="text-accent2" />
+        <Swords size={16} className="text-accent" />
         <h3 className="text-sm font-bold uppercase tracking-widest text-stext">Head to Head</h3>
       </div>
 
@@ -171,7 +171,7 @@ export default function HeadToHeadWidget({ data }: Props) {
           <p className="text-xs font-semibold uppercase tracking-wider text-stext">Draws / NR</p>
         </div>
         <div className="rounded-xl bg-card p-3 ring-1 ring-lborder">
-          <p className="font-mono text-xl font-black text-accent2">{tally.bWins}</p>
+          <p className="font-mono text-xl font-black text-accent">{tally.bWins}</p>
           <p className="text-xs font-semibold uppercase tracking-wider text-stext">{teamB.abbr} wins</p>
         </div>
       </div>

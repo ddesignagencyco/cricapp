@@ -41,7 +41,7 @@ function ContactForm() {
               name="name"
               type="text"
               placeholder="Your name"
-              className="w-full rounded-lg bg-elevated px-4 py-2.5 text-sm text-mtext ring-1 ring-lborder outline-none transition-colors focus:ring-accent"
+              className="w-full rounded-lg bg-elevated px-4 py-2.5 text-sm text-mtext ring-1 ring-lborder outline-none transition-colors focus:ring-[var(--color-focus-ring)]"
             />
           </div>
           <div>
@@ -53,7 +53,7 @@ function ContactForm() {
               name="email"
               type="email"
               placeholder="you@example.com"
-              className="w-full rounded-lg bg-elevated px-4 py-2.5 text-sm text-mtext ring-1 ring-lborder outline-none transition-colors focus:ring-accent"
+              className="w-full rounded-lg bg-elevated px-4 py-2.5 text-sm text-mtext ring-1 ring-lborder outline-none transition-colors focus:ring-[var(--color-focus-ring)]"
             />
           </div>
         </div>
@@ -66,7 +66,7 @@ function ContactForm() {
             name="message"
             rows={5}
             placeholder="How can we help?"
-            className="w-full resize-none rounded-lg bg-elevated px-4 py-2.5 text-sm text-mtext ring-1 ring-lborder outline-none transition-colors focus:ring-accent"
+            className="w-full resize-none rounded-lg bg-elevated px-4 py-2.5 text-sm text-mtext ring-1 ring-lborder outline-none transition-colors focus:ring-[var(--color-focus-ring)]"
           />
         </div>
         <button

@@ -87,7 +87,7 @@ export default function MatchesPage() {
             <button key={s} type="button" onClick={() => setFilterStatus(s)} className="rounded-md px-3 py-1.5 text-xs font-semibold transition-colors"
               style={{
                 background: filterStatus === s ? 'var(--admin-accent)' : 'var(--admin-input-bg)',
-                color: filterStatus === s ? '#fff' : 'var(--admin-text-secondary)',
+                color: filterStatus === s ? 'var(--color-brand-fg)' : 'var(--admin-text-secondary)',
                 border: filterStatus === s ? 'none' : '1px solid var(--admin-border)',
               }}>
               {s.charAt(0).toUpperCase() + s.slice(1)}

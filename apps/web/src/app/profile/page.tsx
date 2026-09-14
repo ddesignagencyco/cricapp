@@ -17,9 +17,10 @@ import { useAuth } from '../../components/AuthProvider';
 import { resendVerification, updateProfile } from '../../services/auth';
 import { getInitials } from '../../utils/helpers';
 import RemoteImage from '../../components/RemoteImage';
+import { ProfilePageSkeleton } from '../../components/skeletons/Skeletons';
 
 const fieldClass =
-  'mt-1.5 w-full rounded-md border border-lborder bg-elevated px-3.5 py-2.5 text-sm text-mtext outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20';
+  'mt-1.5 w-full rounded-md border border-lborder bg-elevated px-3.5 py-2.5 text-sm text-mtext outline-none transition focus:border-[var(--color-focus-ring)] focus:ring-2 focus:ring-[var(--color-focus-ring)]/30';
 
 type Tab = 'personal' | 'security';
 
@@ -49,12 +50,7 @@ export default function ProfilePage() {
   }, [user, displayName, username, avatarUrl]);
 
   if (loading) {
-    return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3">
-        <Loader2 size={32} className="animate-spin text-accent" />
-        <p className="text-sm font-medium text-stext">Loading your profile…</p>
-      </div>
-    );
+    return <ProfilePageSkeleton />;
   }
 
   if (!isAuthenticated || !user) {
@@ -223,17 +219,17 @@ export default function ProfilePage() {
                 <label className="block text-xs font-semibold text-stext">
                   Display name
                   <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} className={fieldClass} />
-                  <span className="mt-1 block font-normal text-stext/80">Shown on comments and favorites.</span>
+                  <span className="mt-1 block font-normal text-muted-foreground">Shown on comments and favorites.</span>
                 </label>
                 <label className="block text-xs font-semibold text-stext">
                   Username
                   <input value={username} onChange={(e) => setUsername(e.target.value)} className={fieldClass} />
-                  <span className="mt-1 block font-normal text-stext/80">Your unique handle.</span>
+                  <span className="mt-1 block font-normal text-muted-foreground">Your unique handle.</span>
                 </label>
                 <label className="block text-xs font-semibold text-stext">
                   Email address
                   <input value={user.email} readOnly className={`${fieldClass} cursor-not-allowed opacity-70`} />
-                  <span className="mt-1 block font-normal text-stext/80">Email cannot be changed from this page.</span>
+                  <span className="mt-1 block font-normal text-muted-foreground">Email cannot be changed from this page.</span>
                 </label>
                 <label className="block text-xs font-semibold text-stext">
                   Photo URL
@@ -243,7 +239,7 @@ export default function ProfilePage() {
                     placeholder="https://…"
                     className={fieldClass}
                   />
-                  <span className="mt-1 block font-normal text-stext/80">Paste an image URL. File upload is not available.</span>
+                  <span className="mt-1 block font-normal text-muted-foreground">Paste an image URL. File upload is not available.</span>
                 </label>
               </div>
             </form>

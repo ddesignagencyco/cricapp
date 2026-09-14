@@ -25,13 +25,13 @@ export default function PslFixturesTable({ matches }: Props) {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-left text-sm">
             <thead>
-              <tr className="border-b border-lborder text-xs uppercase tracking-wider text-stext">
-                <th className="px-4 py-3 text-center">#</th>
-                <th className="px-4 py-3">Home</th>
-                <th className="px-4 py-3 text-center">vs</th>
-                <th className="px-4 py-3">Away</th>
-                <th className="px-4 py-3">Date</th>
-                <th className="px-4 py-3 text-right">Status</th>
+              <tr className="border-b border-lborder text-xs font-semibold uppercase tracking-wide">
+                <th className="px-4 py-2.5 text-center">#</th>
+                <th className="px-4 py-2.5">Home</th>
+                <th className="px-4 py-2.5 text-center">vs</th>
+                <th className="px-4 py-2.5">Away</th>
+                <th className="px-4 py-2.5">Date</th>
+                <th className="px-4 py-2.5 text-right">Status</th>
               </tr>
             </thead>
             <tbody>
@@ -40,25 +40,25 @@ export default function PslFixturesTable({ matches }: Props) {
                 return (
                   <tr
                     key={m.matchId}
-                    className="border-b border-lborder/60 last:border-0 transition-colors hover:bg-elevated/60"
+                    className="border-b border-lborder last:border-0 transition-colors hover:bg-elevated"
                   >
-                    <td className="px-4 py-3 text-center font-mono text-xs text-stext">{start + i + 1}</td>
+                    <td className="px-4 py-3 text-center font-mono text-sm font-medium tabular-nums text-muted-foreground">{start + i + 1}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <TeamLogo code={m.homeTeamAbbr} size="xs" link={false} />
-                        <span className="font-bold text-mtext">{cap(m.homeTeamName) || m.homeTeamAbbr}</span>
+                        <span className="text-sm font-semibold text-mtext">{cap(m.homeTeamName) || m.homeTeamAbbr}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-center text-xs font-black italic text-stext/50">VS</td>
+                    <td className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">VS</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <TeamLogo code={m.awayTeamAbbr} size="xs" link={false} />
-                        <span className="font-bold text-mtext">{cap(m.awayTeamName) || m.awayTeamAbbr}</span>
+                        <span className="text-sm font-semibold text-mtext">{cap(m.awayTeamName) || m.awayTeamAbbr}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-xs text-stext">
-                      <span>{date}</span>
-                      {time && <span className="ml-1 text-stext">{time}</span>}
+                    <td className="px-4 py-3 text-sm">
+                      <span className="font-semibold tabular-nums text-accent">{date}</span>
+                      {time && <span className="ml-1 font-semibold tabular-nums text-mtext">{time}</span>}
                     </td>
                     <td className="px-4 py-3 text-right">
                       <StatusBadge status={m.status} />

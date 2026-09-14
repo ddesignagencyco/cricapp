@@ -1,7 +1,7 @@
 'use client';
 
 import { Eye, EyeOff, Lock } from 'lucide-react';
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 
 interface PasswordFieldProps {
   id: string;
@@ -36,14 +36,14 @@ export default function PasswordField({ id, label, name, value, onChange, autoCo
           required
           aria-invalid={Boolean(error)}
           aria-describedby={error ? errorId : undefined}
-          style={visible ? { WebkitTextSecurity: 'none' } : undefined}
-          className="auth-password-input w-full rounded-2xl border border-lborder bg-secondary/80 py-3 pl-10 pr-12 text-sm text-mtext outline-none transition-all placeholder:text-stext/50 focus:border-accent focus:bg-card focus:ring-2 focus:ring-accent/20"
+          style={visible ? ({ WebkitTextSecurity: 'none' } as CSSProperties) : undefined}
+          className="auth-password-input w-full rounded-2xl border border-lborder bg-input py-3 pl-10 pr-12 text-sm text-mtext outline-none transition-colors placeholder:text-stext/70 focus:border-[var(--color-focus-ring)] focus:bg-card focus:ring-2 focus:ring-[var(--color-focus-ring)]/30"
         />
         <button
           type="button"
           onMouseDown={(event) => event.preventDefault()}
           onClick={() => setVisible((current) => !current)}
-          className="absolute inset-y-0 right-0 z-20 flex w-11 items-center justify-center rounded text-stext transition-colors hover:text-mtext focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          className="absolute inset-y-0 right-0 z-20 flex w-11 items-center justify-center rounded text-stext transition-colors hover:text-mtext focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
           aria-label={visible ? 'Hide password' : 'Show password'}
           aria-pressed={visible}
         >

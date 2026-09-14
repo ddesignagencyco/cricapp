@@ -42,7 +42,7 @@ export default function SectionHeader({
         </div>
       </div>
       {to && (
-        <Link href={to} className="group flex shrink-0 items-center gap-1.5 whitespace-nowrap text-xs font-semibold text-accent transition-all duration-300 hover:text-accent2 sm:text-sm">
+        <Link href={to} className="group flex shrink-0 items-center gap-1.5 whitespace-nowrap text-xs font-semibold text-accent transition-all duration-300 sm:text-sm">
           {actionLabel || 'View all'}
           <span className="transition-transform group-hover:translate-x-1">&rarr;</span>
         </Link>
@@ -51,7 +51,7 @@ export default function SectionHeader({
         <button
           type="button"
           onClick={onAction}
-          className="group flex shrink-0 items-center gap-1.5 whitespace-nowrap text-xs font-semibold text-accent transition-all duration-300 hover:text-accent2 sm:text-sm"
+          className="group flex shrink-0 items-center gap-1.5 whitespace-nowrap text-xs font-semibold text-accent transition-all duration-300 sm:text-sm"
         >
           {actionLabel || 'View all'}
           <span className="transition-transform group-hover:translate-x-1">&rarr;</span>

@@ -10,7 +10,7 @@ const toneStyles: Record<string, { bg: string; fg: string; ring: string }> = {
   published: { bg: 'var(--color-success-soft)', fg: 'var(--color-success)', ring: 'var(--color-success)' },
   active: { bg: 'var(--color-success-soft)', fg: 'var(--color-success)', ring: 'var(--color-success)' },
   approved: { bg: 'var(--color-success-soft)', fg: 'var(--color-success)', ring: 'var(--color-success)' },
-  draft: { bg: 'var(--color-warning-soft)', fg: 'var(--color-warning)', ring: 'var(--color-warning)' },
+  draft: { bg: 'var(--color-surface-muted)', fg: 'var(--color-text-muted)', ring: 'var(--color-border)' },
   pending: { bg: 'var(--color-warning-soft)', fg: 'var(--color-warning)', ring: 'var(--color-warning)' },
   scheduled: { bg: 'var(--color-warning-soft)', fg: 'var(--color-warning)', ring: 'var(--color-warning)' },
   postponed: { bg: 'var(--color-warning-soft)', fg: 'var(--color-warning)', ring: 'var(--color-warning)' },
@@ -18,7 +18,7 @@ const toneStyles: Record<string, { bg: string; fg: string; ring: string }> = {
   rejected: { bg: 'var(--color-danger-soft)', fg: 'var(--color-danger)', ring: 'var(--color-danger)' },
   failed: { bg: 'var(--color-danger-soft)', fg: 'var(--color-danger)', ring: 'var(--color-danger)' },
   error: { bg: 'var(--color-danger-soft)', fg: 'var(--color-danger)', ring: 'var(--color-danger)' },
-  cancelled: { bg: 'var(--color-danger-soft)', fg: 'var(--color-danger)', ring: 'var(--color-danger)' },
+  cancelled: { bg: 'var(--color-surface-muted)', fg: 'var(--color-text-muted)', ring: 'var(--color-border)' },
   abandoned: { bg: 'var(--color-surface-muted)', fg: 'var(--color-text-muted)', ring: 'var(--color-border)' },
   inactive: { bg: 'var(--color-surface-muted)', fg: 'var(--color-text-muted)', ring: 'var(--color-border)' },
   neutral: { bg: 'var(--color-surface-muted)', fg: 'var(--color-text-secondary)', ring: 'var(--color-border)' },
@@ -76,7 +76,7 @@ export default function Badge({ children, tone = 'neutral', className = '', styl
   return (
     <span
       {...rest}
-      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide leading-none ${className}`}
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold uppercase tracking-wide leading-none ${className}`}
       style={{
         background: current.bg,
         color: current.fg,

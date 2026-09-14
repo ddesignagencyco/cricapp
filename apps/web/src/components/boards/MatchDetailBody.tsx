@@ -21,6 +21,7 @@ import { fetchTeams } from '../../services/teams';
 import { getInitials } from '../../utils/helpers';
 import { useMatchStream } from '../../hooks/useMatchStream';
 import type { NewsArticle, Team } from '../../types';
+import { newsHref } from '../../utils/newsConstraints';
 
 const detailTabs = [
   { key: 'live', label: 'Live Score', icon: Users },
@@ -214,12 +215,9 @@ export default function MatchDetailBody({ match: initialMatch, headToHead: initi
         <span className="text-mtext truncate max-w-[200px] sm:max-w-none font-medium">{breadcrumbName}</span>
       </nav>
 
-      <header className="relative overflow-hidden rounded-3xl border border-lborder bg-gradient-to-br from-card via-card to-elevated p-6 shadow-md transition-all sm:p-8">
-        {/* Ambient background glow */}
-        <div className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-accent/5 blur-3xl" />
-        <div className="pointer-events-none absolute -left-20 -bottom-20 h-72 w-72 rounded-full bg-accent/5 blur-3xl" />
+      <header className="relative overflow-hidden rounded-3xl border border-lborder bg-card p-6 shadow-sm sm:p-8">
         {isLive && (
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-red-500 via-amber-500 to-red-500 animate-pulse" />
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-danger" />
         )}
 
         {/* Top Badges & Actions */}
@@ -274,7 +272,7 @@ export default function MatchDetailBody({ match: initialMatch, headToHead: initi
               <span className="font-mono text-xs font-black italic tracking-wider text-stext">VS</span>
             </div>
             {match.round && (
-              <span className="mt-2 text-xs font-bold uppercase tracking-widest text-stext/80">
+              <span className="mt-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
                 {match.round}
               </span>
             )}
@@ -421,7 +419,7 @@ export default function MatchDetailBody({ match: initialMatch, headToHead: initi
               <ul className="space-y-2">
                 {relatedNews.map((article) => (
                   <li key={article.id}>
-                    <Link href={`/news/${article.slug || article.id}`} className="block text-sm font-semibold text-mtext hover:text-accent">
+                    <Link href={newsHref(article)} className="block text-sm font-semibold text-mtext hover:text-accent">
                       {article.title}
                     </Link>
                     <p className="text-xs text-stext">{article.date}</p>

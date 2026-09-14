@@ -12,6 +12,7 @@ import EmptyState from '../EmptyState';
 import ErrorState from '../ErrorState';
 import Pagination from '../Pagination';
 import AdSlot from '../AdSlot';
+import { MatchCardGridSkeleton } from '../skeletons/Skeletons';
 
 const LIMIT = 20;
 
@@ -130,20 +131,13 @@ export default function MatchBoard() {
               if (e.key === 'Enter') handleSearchSubmit(localSearch);
             }}
             placeholder="Search matches…"
-            className="w-full rounded-md border border-lborder bg-card py-2 pl-9 pr-3 text-xs text-mtext outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+            className="w-full rounded-md border border-lborder bg-card py-2 pl-9 pr-3 text-xs text-mtext outline-none focus:border-[var(--color-focus-ring)] focus:ring-2 focus:ring-[var(--color-focus-ring)]/30"
           />
         </div>
       </div>
 
       {loading ? (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-36 animate-pulse rounded-md border border-lborder bg-card"
-            />
-          ))}
-        </div>
+        <MatchCardGridSkeleton />
       ) : error ? (
         <ErrorState message="Matches are temporarily unavailable." onRetry={() => setRetryKey((key) => key + 1)} />
       ) : matches.length > 0 ? (
