@@ -104,12 +104,12 @@ export default function MatchesPage() {
             <table className="w-full text-left text-xs">
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--admin-border)', background: 'var(--admin-table-header)' }}>
-                  <th className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Teams</th>
-                  <th className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Score</th>
-                  <th className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Tournament</th>
-                  <th className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Venue</th>
-                  <th className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Date</th>
-                  <th className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-right" style={{ color: 'var(--admin-text-secondary)' }}>Status</th>
+                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Teams</th>
+                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Score</th>
+                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Tournament</th>
+                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Venue</th>
+                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Date</th>
+                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-right" style={{ color: 'var(--admin-text-secondary)' }}>Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -123,16 +123,7 @@ export default function MatchesPage() {
                       onMouseEnter={(e) => e.currentTarget.style.background = 'var(--admin-table-row-hover)'}
                       onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
                       <td className="px-4 py-2.5">
-                        <div className="flex flex-col gap-1.5 py-0.5">
-                          <div className="flex items-center gap-2">
-                            <TeamBadge code={homeLabel} />
-                            <span className="text-xs font-semibold" style={{ color: 'var(--admin-text)' }}>{homeLabel}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <TeamBadge code={awayLabel} />
-                            <span className="text-xs font-semibold" style={{ color: 'var(--admin-text)' }}>{awayLabel}</span>
-                          </div>
-                        </div>
+                        <TeamMatchup home={homeLabel} away={awayLabel} />
                       </td>
                       <td className="px-4 py-2.5 font-mono font-bold" style={{ color: 'var(--admin-text)' }}>
                         {inn ? `${inn.runs}/${inn.wickets} (${inn.overs})` : '—'}
@@ -154,6 +145,22 @@ export default function MatchesPage() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function TeamMatchup({ home, away }: { home: string; away: string }) {
+  return (
+    <div className="flex items-center gap-2 whitespace-nowrap">
+      <span className="flex items-center gap-1.5">
+        <TeamBadge code={home} />
+        <span className="text-[13px] font-semibold" style={{ color: 'var(--admin-text)' }}>{home}</span>
+      </span>
+      <span className="text-[11px] font-bold uppercase" style={{ color: 'var(--admin-text-muted)' }}>vs</span>
+      <span className="flex items-center gap-1.5">
+        <TeamBadge code={away} />
+        <span className="text-[13px] font-semibold" style={{ color: 'var(--admin-text)' }}>{away}</span>
+      </span>
     </div>
   );
 }

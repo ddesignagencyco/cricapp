@@ -110,7 +110,7 @@ export default function AdminDashboard() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl" style={{ color: 'var(--admin-text)' }}>
+          <h1 className="text-2xl font-semibold tracking-tight" style={{ color: 'var(--admin-text)' }}>
             Welcome back, {userName.split(' ')[0]}
           </h1>
           <p className="mt-1 text-sm" style={{ color: 'var(--admin-text-secondary)' }}>
@@ -120,20 +120,20 @@ export default function AdminDashboard() {
         <div className="flex flex-wrap items-center gap-2">
           <Link
             href="/admin/news/new"
-            className="btn-brand inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-bold"
+            className="btn-brand inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold"
           >
             <FileText size={13} /> Write Story
           </Link>
           <Link
             href="/admin/matches"
-            className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-bold"
+            className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold"
             style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)', color: 'var(--admin-text)' }}
           >
             <Trophy size={13} style={{ color: 'var(--admin-accent)' }} /> Match Center
           </Link>
           <Link
             href="/admin/comments"
-            className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-bold"
+            className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold"
             style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)', color: 'var(--admin-text)' }}
           >
             <MessageSquare size={13} style={{ color: 'var(--admin-warning)' }} /> Moderate
@@ -253,7 +253,7 @@ export default function AdminDashboard() {
             <CheckCircle2 size={18} />
           </div>
           <div>
-            <p className="text-xs font-bold" style={{ color: 'var(--admin-text)' }}>Ingestion</p>
+            <p className="text-[13px] font-semibold" style={{ color: 'var(--admin-text)' }}>Ingestion</p>
             <p className="text-xs" style={{ color: 'var(--admin-text-secondary)' }}>
               {health ? `${health.status}${health.heartbeatAgeMs !== null ? ` · ${Math.round(health.heartbeatAgeMs / 1000)}s ago` : ''}` : 'Unavailable'}
             </p>
@@ -264,7 +264,7 @@ export default function AdminDashboard() {
             <Database size={18} />
           </div>
           <div>
-            <p className="text-xs font-bold" style={{ color: 'var(--admin-text)' }}>Live matches</p>
+            <p className="text-[13px] font-semibold" style={{ color: 'var(--admin-text)' }}>Live matches</p>
             <p className="text-xs" style={{ color: 'var(--admin-text-secondary)' }}>{health?.liveMatchCount ?? 0} in Redis set</p>
           </div>
         </div>
@@ -273,7 +273,7 @@ export default function AdminDashboard() {
             <RefreshCw size={18} />
           </div>
           <div>
-            <p className="text-xs font-bold" style={{ color: 'var(--admin-text)' }}>Sync keys</p>
+            <p className="text-[13px] font-semibold" style={{ color: 'var(--admin-text)' }}>Sync keys</p>
             <p className="text-xs" style={{ color: 'var(--admin-text-secondary)' }}>{health?.syncKeyCount ?? 0} reference keys</p>
           </div>
         </div>
@@ -303,17 +303,17 @@ export default function AdminDashboard() {
             <div className="mb-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span style={{ color: 'var(--admin-accent)' }}><Users size={14} /></span>
-                <h2 className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text)' }}>Latest Users</h2>
+                <h2 className="text-sm font-semibold" style={{ color: 'var(--admin-text)' }}>Latest Users</h2>
               </div>
-              <Link href="/admin/users" className="text-xs font-bold" style={{ color: 'var(--admin-accent)' }}>View all →</Link>
+              <Link href="/admin/users" className="text-xs font-semibold" style={{ color: 'var(--admin-accent)' }}>View all →</Link>
             </div>
             <div className="overflow-hidden rounded-lg" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
               <table className="w-full text-left text-xs">
                 <thead>
                   <tr style={{ borderBottom: '1px solid var(--admin-border)', background: 'var(--admin-table-header)' }}>
-                    <th className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>User</th>
-                    <th className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Email</th>
-                    <th className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-right" style={{ color: 'var(--admin-text-secondary)' }}>Role</th>
+                    <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>User</th>
+                    <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Email</th>
+                    <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-right" style={{ color: 'var(--admin-text-secondary)' }}>Role</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -333,7 +333,7 @@ export default function AdminDashboard() {
                         <td className="px-4 py-2.5">
                           <div className="flex items-center gap-2.5">
                             <AdminAvatar name={name} src={u.avatarUrl} size={24} />
-                            <span className="font-semibold" style={{ color: 'var(--admin-text)' }}>{name}</span>
+                            <span className="text-[13px] font-semibold" style={{ color: 'var(--admin-text)' }}>{name}</span>
                           </div>
                         </td>
                         <td className="px-4 py-2.5" style={{ color: 'var(--admin-text-secondary)' }}>{u.email}</td>
@@ -361,8 +361,8 @@ export default function AdminDashboard() {
           {/* Recent activity */}
           <div className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
             <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid var(--admin-border)' }}>
-              <h3 className="text-xs font-bold" style={{ color: 'var(--admin-text)' }}>Editorial Feed</h3>
-              <Link href="/admin/news" className="text-xs font-bold" style={{ color: 'var(--admin-accent)' }}>View all →</Link>
+              <h3 className="text-sm font-semibold" style={{ color: 'var(--admin-text)' }}>Editorial Feed</h3>
+              <Link href="/admin/news" className="text-xs font-semibold" style={{ color: 'var(--admin-accent)' }}>View all →</Link>
             </div>
             <div>
               {recentArticles.length === 0 ? (
@@ -375,7 +375,7 @@ export default function AdminDashboard() {
                     <FileText size={11} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <NewsCopy as="p" language={a.language} text={a.title} className="truncate text-xs font-semibold" style={{ color: 'var(--admin-text)' }}>{a.title}</NewsCopy>
+                    <NewsCopy as="p" language={a.language} text={a.title} className="truncate text-[13px] font-semibold" style={{ color: 'var(--admin-text)' }}>{a.title}</NewsCopy>
                     <p className="text-xs mt-0.5" style={{ color: 'var(--admin-text-muted)' }}>
                       {a.isPublished ? 'Published' : 'Draft'} · {new Date(a.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     </p>
@@ -390,18 +390,18 @@ export default function AdminDashboard() {
             <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid var(--admin-border)' }}>
               <div className="flex items-center gap-1.5">
                 <MessageSquare size={13} style={{ color: 'var(--admin-accent)' }} />
-                <h3 className="text-xs font-bold" style={{ color: 'var(--admin-text)' }}>Community Activity</h3>
+                <h3 className="text-sm font-semibold" style={{ color: 'var(--admin-text)' }}>Community Activity</h3>
               </div>
-              <Link href="/admin/comments" className="text-xs font-bold" style={{ color: 'var(--admin-accent)' }}>View all →</Link>
+              <Link href="/admin/comments" className="text-xs font-semibold" style={{ color: 'var(--admin-accent)' }}>View all →</Link>
             </div>
             {analytics ? (
               <div className="grid grid-cols-2 divide-x" style={{ borderColor: 'var(--admin-border)' }}>
                 <div className="px-4 py-5">
-                  <p className="text-2xl font-extrabold tabular-nums" style={{ color: 'var(--admin-text)' }}>{analytics.comments}</p>
+                  <p className="text-xl font-bold tabular-nums" style={{ color: 'var(--admin-text)' }}>{analytics.comments}</p>
                   <p className="mt-1 text-xs font-semibold" style={{ color: 'var(--admin-text-muted)' }}>Comments</p>
                 </div>
                 <div className="px-4 py-5">
-                  <p className="text-2xl font-extrabold tabular-nums" style={{ color: analytics.pendingReports ? 'var(--admin-warning)' : 'var(--admin-text)' }}>{analytics.pendingReports}</p>
+                  <p className="text-xl font-bold tabular-nums" style={{ color: analytics.pendingReports ? 'var(--admin-warning)' : 'var(--admin-text)' }}>{analytics.pendingReports}</p>
                   <p className="mt-1 text-xs font-semibold" style={{ color: 'var(--admin-text-muted)' }}>Reports</p>
                 </div>
               </div>
@@ -435,22 +435,22 @@ function MatchPreviewTable({
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span style={{ color: 'var(--admin-accent)' }}>{icon}</span>
-          <h2 className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text)' }}>{title}</h2>
+          <h2 className="text-sm font-semibold" style={{ color: 'var(--admin-text)' }}>{title}</h2>
         </div>
-        <Link href="/admin/matches" className="text-xs font-bold" style={{ color: 'var(--admin-accent)' }}>View all →</Link>
+        <Link href="/admin/matches" className="text-xs font-semibold" style={{ color: 'var(--admin-accent)' }}>View all →</Link>
       </div>
       <div className="overflow-hidden rounded-lg" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
               <tr style={{ borderBottom: '1px solid var(--admin-border)', background: 'var(--admin-table-header)' }}>
-                <th className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Teams</th>
+                <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Teams</th>
                 {!hideScore && (
-                  <th className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Score</th>
+                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Score</th>
                 )}
-                <th className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Tournament</th>
-                <th className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Date</th>
-                <th className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-right" style={{ color: 'var(--admin-text-secondary)' }}>Status</th>
+                <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Tournament</th>
+                <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Date</th>
+                <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-right" style={{ color: 'var(--admin-text-secondary)' }}>Status</th>
               </tr>
             </thead>
             <tbody>
@@ -469,15 +469,16 @@ function MatchPreviewTable({
                     onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
                   >
                     <td className="px-4 py-2.5">
-                      <div className="flex flex-col gap-1.5 py-0.5">
-                        <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 whitespace-nowrap">
+                        <span className="flex items-center gap-1.5">
                           <TeamBadge code={t.homeName} />
-                          <span className="text-xs font-semibold" style={{ color: 'var(--admin-text)' }}>{t.homeName}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
+                          <span className="text-[13px] font-semibold" style={{ color: 'var(--admin-text)' }}>{t.homeName}</span>
+                        </span>
+                        <span className="text-[11px] font-bold uppercase" style={{ color: 'var(--admin-text-muted)' }}>vs</span>
+                        <span className="flex items-center gap-1.5">
                           <TeamBadge code={t.awayName} />
-                          <span className="text-xs font-semibold" style={{ color: 'var(--admin-text)' }}>{t.awayName}</span>
-                        </div>
+                          <span className="text-[13px] font-semibold" style={{ color: 'var(--admin-text)' }}>{t.awayName}</span>
+                        </span>
                       </div>
                     </td>
                     {!hideScore && (
@@ -529,7 +530,7 @@ function FavoriteTypeChip({
 }) {
   return (
     <span
-      className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold"
+      className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-semibold"
       style={{ background: 'var(--admin-input-bg)', color: 'var(--admin-text-secondary)' }}
       title={label}
     >
@@ -572,7 +573,7 @@ function MetricCard({
         <p className="truncate text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--admin-text-secondary)' }}>
           {label}
         </p>
-        <p className="text-lg font-bold tabular-nums leading-tight" style={{ color: 'var(--admin-text)' }}>
+        <p className="text-xl font-bold tabular-nums leading-tight" style={{ color: 'var(--admin-text)' }}>
           {value}
         </p>
         {extra}
@@ -588,7 +589,7 @@ function TeamBadge({ code }: { code: string }) {
   const hue = Math.abs(hash % 360);
   return (
     <span
-      className="grid h-5 w-5 shrink-0 place-items-center rounded-full text-[9px] font-bold text-white"
+      className="grid h-6 w-6 shrink-0 place-items-center rounded-full text-[10px] font-bold text-white"
       style={{ backgroundImage: `linear-gradient(135deg, hsl(${hue}, 70%, 50%), hsl(${(hue + 40) % 360}, 80%, 35%))` }}
     >
       {getInitials(code)}

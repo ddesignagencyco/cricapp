@@ -53,12 +53,12 @@ export default function PlayersPage() {
             <table className="w-full text-left text-xs">
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--admin-border)', background: 'var(--admin-table-header)' }}>
-                  <th className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Player</th>
-                  <th className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Team</th>
-                  <th className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Country</th>
-                  <th className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Role</th>
-                  <th className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Batting</th>
-                  <th className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Bowling</th>
+                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Player</th>
+                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Team</th>
+                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Country</th>
+                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Role</th>
+                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Batting</th>
+                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Bowling</th>
                 </tr>
               </thead>
               <tbody>
@@ -72,8 +72,7 @@ export default function PlayersPage() {
                         <div className="flex items-center gap-2.5">
                           <AdminAvatar name={displayName} src={typeof p.image === 'string' ? p.image : null} size={28} />
                           <div>
-                            <p className="font-semibold" style={{ color: 'var(--admin-text)' }}>{p.name}</p>
-                            {p.fullName && p.fullName !== p.name && <p className="text-xs" style={{ color: 'var(--admin-text-muted)' }}>{p.fullName}</p>}
+                            <p className="font-semibold" style={{ color: 'var(--admin-text)' }}>{p.fullName}</p>
                           </div>
                         </div>
                       </td>

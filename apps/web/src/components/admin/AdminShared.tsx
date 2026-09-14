@@ -180,6 +180,48 @@ export function StatusBadge({ status }: { status: string }) {
   return <SharedStatusBadge status={status} />;
 }
 
+/* ─── Chip ─────────────────────────────────────────────────── */
+
+const CHIP_TONES: Record<string, { bg: string; fg: string }> = {
+  neutral: { bg: 'var(--admin-input-bg)', fg: 'var(--admin-text-secondary)' },
+  accent: { bg: 'var(--admin-info-bg)', fg: 'var(--admin-accent)' },
+  info: { bg: 'var(--admin-info-bg)', fg: 'var(--admin-info)' },
+  success: { bg: 'var(--admin-success-bg)', fg: 'var(--admin-success)' },
+  warning: { bg: 'var(--admin-warning-bg)', fg: 'var(--admin-warning)' },
+  danger: { bg: 'var(--admin-danger-bg)', fg: 'var(--admin-danger)' },
+};
+
+export function AdminChip({
+  label,
+  tone = 'neutral',
+  icon,
+}: {
+  label: string;
+  tone?: keyof typeof CHIP_TONES;
+  icon?: ReactNode;
+}) {
+  const colors = CHIP_TONES[tone] || CHIP_TONES.neutral;
+  return (
+    <span
+      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap"
+      style={{ background: colors.bg, color: colors.fg }}
+    >
+      {icon}
+      {label}
+    </span>
+  );
+}
+
+/* ─── Table Toolbar ────────────────────────────────────────── */
+
+export function AdminResultCount({ shown, total, noun }: { shown: number; total: number; noun: string }) {
+  return (
+    <p className="text-xs tabular-nums" style={{ color: 'var(--admin-text-muted)' }}>
+      Showing <span style={{ color: 'var(--admin-text)' }}>{shown}</span> of {total.toLocaleString()} {noun}
+    </p>
+  );
+}
+
 /* ─── Confirm Dialog ───────────────────────────────────────── */
 
 export function ConfirmDialog({

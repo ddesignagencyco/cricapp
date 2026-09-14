@@ -756,16 +756,16 @@ export function AdminChromeSkeleton() {
           </div>
           <nav className="flex-1 space-y-0.5 overflow-hidden px-3 py-3">
             {ADMIN_NAV_SKELETON_WIDTHS.map((width, i) => (
-              <div key={i} className="flex items-center gap-2.5 rounded-lg px-3 py-2">
-                <Skeleton circle width={16} height={16} />
-                <Skeleton width={width} height={11} />
+              <div key={i} className="flex items-center gap-3 rounded-lg px-3 py-2.5">
+                <Skeleton circle width={18} height={18} />
+                <Skeleton width={width} height={12} />
               </div>
             ))}
           </nav>
           <div className="px-3 py-3" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-            <div className="flex items-center gap-2 rounded-lg px-3 py-2">
-              <Skeleton circle width={15} height={15} />
-              <Skeleton width={52} height={11} />
+            <div className="flex items-center gap-3 rounded-lg px-3 py-2.5">
+              <Skeleton circle width={18} height={18} />
+              <Skeleton width={56} height={12} />
             </div>
           </div>
         </SkeletonTheme>

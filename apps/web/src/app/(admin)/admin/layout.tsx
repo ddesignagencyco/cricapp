@@ -103,13 +103,13 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
               key={item.to}
               href={item.to}
               aria-current={active ? 'page' : undefined}
-              className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors"
+              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors"
               style={{
                 background: active ? 'var(--admin-accent)' : 'transparent',
                 color: active ? 'var(--color-brand-fg)' : 'var(--admin-sidebar-muted)',
               }}
             >
-              <Icon size={16} />
+              <Icon size={18} />
               <span>{item.label}</span>
             </Link>
           );
@@ -120,12 +120,12 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         <button
           type="button"
           onClick={() => { logout(); router.push('/'); }}
-          className="mt-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-[13px] transition-colors hover:text-[var(--admin-sidebar-text)]"
+          className="mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:text-[var(--admin-sidebar-text)]"
           style={{ color: 'var(--admin-sidebar-muted)' }}
           onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--admin-sidebar-hover)'; }}
           onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
         >
-          <LogOut size={15} />
+          <LogOut size={18} />
           Logout
         </button>
       </div>
