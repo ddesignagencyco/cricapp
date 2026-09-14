@@ -117,26 +117,38 @@ export default function AdminStreamsPage() {
 
       <form
         onSubmit={submit}
-        className="grid gap-3 rounded-lg p-4 sm:grid-cols-2"
+        className="flex flex-wrap items-center gap-2 rounded-lg p-3"
         style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}
       >
-        <AdminInput value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} placeholder="Title" required />
-        <AdminInput value={form.streamUrl} onChange={(e) => setForm((f) => ({ ...f, streamUrl: e.target.value }))} placeholder="https://embed URL" required />
-        <AdminInput value={form.provider || ''} onChange={(e) => setForm((f) => ({ ...f, provider: e.target.value }))} placeholder="Provider" />
-        <AdminInput value={form.thumbnailUrl || ''} onChange={(e) => setForm((f) => ({ ...f, thumbnailUrl: e.target.value }))} placeholder="Thumbnail URL" />
-        <AdminInput value={form.matchId || ''} onChange={(e) => setForm((f) => ({ ...f, matchId: e.target.value }))} placeholder="Match ID (optional)" />
-        <AdminSelect value={form.status} onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}>
-          <option value="upcoming">Upcoming</option>
-          <option value="live">Live</option>
-          <option value="ended">Ended</option>
-        </AdminSelect>
+        <div className="w-44">
+          <AdminInput value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} placeholder="Title" required />
+        </div>
+        <div className="w-56">
+          <AdminInput value={form.streamUrl} onChange={(e) => setForm((f) => ({ ...f, streamUrl: e.target.value }))} placeholder="Embed URL" required />
+        </div>
+        <div className="w-36">
+          <AdminInput value={form.provider || ''} onChange={(e) => setForm((f) => ({ ...f, provider: e.target.value }))} placeholder="Provider" />
+        </div>
+        <div className="w-48">
+          <AdminInput value={form.thumbnailUrl || ''} onChange={(e) => setForm((f) => ({ ...f, thumbnailUrl: e.target.value }))} placeholder="Thumbnail URL" />
+        </div>
+        <div className="w-36">
+          <AdminInput value={form.matchId || ''} onChange={(e) => setForm((f) => ({ ...f, matchId: e.target.value }))} placeholder="Match ID" />
+        </div>
+        <div className="w-32">
+          <AdminSelect value={form.status} onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}>
+            <option value="upcoming">Upcoming</option>
+            <option value="live">Live</option>
+            <option value="ended">Ended</option>
+          </AdminSelect>
+        </div>
         <button
           type="submit"
           disabled={saving}
-          className="btn-brand inline-flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-bold disabled:opacity-60 sm:w-fit"
+          className="btn-brand inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-bold disabled:opacity-60"
         >
           <Plus size={15} />
-          Create stream
+          Create
         </button>
       </form>
 

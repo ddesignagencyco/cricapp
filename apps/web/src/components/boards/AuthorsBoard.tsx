@@ -27,28 +27,29 @@ export default function AuthorsBoard({ authors }: { authors: PublicAuthor[] }) {
   }, [authors, query]);
 
   return (
-    <div className="space-y-6">
-      <header>
-        <p className="text-xs font-medium uppercase tracking-widest text-stext">Newsroom</p>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-mtext">Authors</h1>
-        <p className="mt-2 max-w-2xl text-sm text-stext">
-          Writers covering PSL, internationals, and match reports for PAK CRICZONE.
-        </p>
-      </header>
-
-      <div className="relative max-w-md">
-        <Search
-          size={16}
-          className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-stext"
-        />
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          type="search"
-          placeholder="Search authors by name…"
-          className="w-full rounded-md border border-lborder bg-card py-2.5 pl-10 pr-4 text-sm text-mtext outline-none transition-colors focus:border-[var(--color-focus-ring)] focus:bg-elevated focus:ring-2 focus:ring-[var(--color-focus-ring)]/30"
-          aria-label="Search authors"
-        />
+    <div className="space-y-5">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <header>
+          <p className="text-xs font-medium uppercase tracking-widest text-stext">Newsroom</p>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-mtext">Authors</h1>
+          <p className="mt-1 max-w-xl text-sm text-stext">
+            Writers covering PSL, internationals, and match reports.
+          </p>
+        </header>
+        <div className="relative w-full sm:w-64">
+          <Search
+            size={15}
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-stext"
+          />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            type="search"
+            placeholder="Search authors…"
+            className="w-full rounded-md border border-lborder bg-card py-2 pl-9 pr-3 text-sm text-mtext outline-none transition-colors focus:border-[var(--color-focus-ring)] focus:bg-elevated focus:ring-2 focus:ring-[var(--color-focus-ring)]/30"
+            aria-label="Search authors"
+          />
+        </div>
       </div>
 
       {authors.length === 0 ? (
@@ -96,7 +97,7 @@ export default function AuthorsBoard({ authors }: { authors: PublicAuthor[] }) {
                       </h2>
                       <p className="mt-0.5 flex items-center gap-1 text-xs text-stext">
                         <Newspaper size={11} className="shrink-0" />
-                        {author.articleCount} published
+                        {author.articleCount ?? 0} published
                       </p>
                       <p className="mt-1 line-clamp-1 min-h-4 text-xs text-stext">{author.bio || '\u00a0'}</p>
                     </div>

@@ -1,12 +1,40 @@
 'use client';
 
+import { useState } from 'react';
 import { Mail } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { subscribeNewsletter } from '../services/newsletter';
+import { ApiError } from '../services/api/client';
 
 export default function Newsletter() {
+  const [email, setEmail] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim()) {
+      toast.error('Enter your email.');
+      return;
+    }
+    setBusy(true);
+    try {
+      const res = await subscribeNewsletter(email.trim());
+      toast.success(res.message || 'Subscription confirmed.');
+      setEmail('');
+    } catch (error) {
+      toast.error(error instanceof ApiError ? error.message : 'Could not subscribe.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <section className="mx-auto max-w-7xl px-4 pb-12 sm:px-6">
       <div className="overflow-hidden rounded-2xl bg-card ring-1 ring-lborder">
-        <div className="flex flex-col gap-6 p-5 sm:p-7 lg:flex-row lg:items-center lg:justify-between">
+        <form
+          onSubmit={(e) => void submit(e)}
+          className="flex flex-col gap-6 p-5 sm:p-7 lg:flex-row lg:items-center lg:justify-between"
+        >
           <div className="flex items-start gap-3 sm:items-center sm:gap-4">
             <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent/15 text-accent sm:h-12 sm:w-12">
               <Mail size={20} />
@@ -22,20 +50,21 @@ export default function Newsletter() {
           <div className="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
             <input
               type="email"
-              disabled
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               aria-label="Newsletter email"
-              placeholder="Newsletter coming soon"
-              className="min-w-0 flex-1 cursor-not-allowed rounded bg-elevated px-4 py-2.5 text-sm text-stext ring-1 ring-lborder opacity-70 sm:w-64"
+              placeholder="you@example.com"
+              className="min-w-0 flex-1 rounded bg-elevated px-4 py-2.5 text-sm text-mtext ring-1 ring-lborder outline-none sm:w-64"
             />
             <button
-              type="button"
-              disabled
-              className="shrink-0 cursor-not-allowed rounded bg-elevated px-5 py-2.5 text-sm font-medium text-stext opacity-70"
+              type="submit"
+              disabled={busy}
+              className="btn-brand shrink-0 rounded px-5 py-2.5 text-sm font-medium disabled:opacity-60"
             >
-              Coming soon
+              {busy ? 'Subscribing…' : 'Subscribe'}
             </button>
           </div>
-        </div>
+        </form>
       </div>
     </section>
   );

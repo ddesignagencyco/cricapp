@@ -129,3 +129,7 @@ export function fetchAdminAnalytics(): Promise<AdminAnalytics> {
 export function fetchIngestionHealth(): Promise<IngestionHealth> {
   return apiGet<IngestionHealth>('/admin/ingestion-health', undefined, { headers: authHeaders() });
 }
+
+export async function deleteAdminAuthor(id: string): Promise<void> {
+  await apiDelete(`/admin/authors/${id}`, { headers: authHeaders() });
+}

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Clock, Globe, Radio, Signal, User, Video } from 'lucide-react';
+import { Clock, Globe, Radio, Signal, User } from 'lucide-react';
 import Badge from '../Badge';
 import LiveIndicator from '../LiveIndicator';
 import AdSlot from '../AdSlot';
@@ -83,34 +83,32 @@ export default function LiveStreamsBoard() {
 
   return (
     <>
-      <header className="mb-8">
-        <div className="flex items-center gap-2 text-accent">
-          <Video size={18} />
-          <span className="text-xs font-bold uppercase tracking-widest text-stext">Live Streaming</span>
+      <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-xs font-medium uppercase tracking-widest text-stext">Live streaming</p>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-mtext">Streams</h1>
+          <p className="mt-1 max-w-xl text-sm text-stext">
+            Watch streams published by the newsroom.
+          </p>
         </div>
-        <h1 className="mt-1 text-3xl font-black tracking-tight sm:text-4xl">Live Streams</h1>
-        <p className="mt-2 max-w-2xl text-sm text-stext">
-          Watch cricket streams published by the editorial team. Playback is embedded from the source URL returned by the API.
-        </p>
+        <div className="flex flex-wrap gap-1.5">
+          {TABS.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => {
+                setStatus(tab.key);
+                setPage(1);
+              }}
+              className={`rounded-md px-3 py-1.5 text-xs font-semibold ${
+                status === tab.key ? 'btn-brand' : 'border border-lborder bg-card text-stext hover:text-mtext'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </header>
-
-      <div className="mb-5 flex flex-wrap gap-2">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => {
-              setStatus(tab.key);
-              setPage(1);
-            }}
-            className={`rounded-md px-3 py-1.5 text-xs font-semibold ${
-              status === tab.key ? 'btn-brand' : 'border border-lborder bg-card text-stext hover:text-mtext'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
 
       {loading ? (
         <StreamsBodySkeleton />

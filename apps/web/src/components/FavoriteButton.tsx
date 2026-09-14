@@ -10,9 +10,10 @@ interface FavoriteButtonProps {
   targetType: FavoriteTarget;
   targetId: string;
   compact?: boolean;
+  className?: string;
 }
 
-export default function FavoriteButton({ targetType, targetId, compact = false }: FavoriteButtonProps) {
+export default function FavoriteButton({ targetType, targetId, compact = false, className = '' }: FavoriteButtonProps) {
   const { isAuthenticated } = useAuth();
   const [favorite, setFavorite] = useState<FavoriteItem | null>(null);
   const [loading, setLoading] = useState(false);
@@ -61,7 +62,7 @@ export default function FavoriteButton({ targetType, targetId, compact = false }
           favorite
             ? 'border-danger/40 bg-danger/10 text-danger shadow-sm'
             : 'border-lborder bg-secondary text-stext hover:border-accent/40 hover:bg-card hover:text-mtext'
-        }`}
+        } ${className}`}
         aria-label={favorite ? 'Remove from favorites' : 'Add to favorites'}
         aria-pressed={Boolean(favorite)}
       >
@@ -79,7 +80,7 @@ export default function FavoriteButton({ targetType, targetId, compact = false }
         favorite
           ? 'bg-danger/10 text-danger ring-1 ring-danger/30 hover:bg-danger/20'
           : 'bg-accent/10 text-accent ring-1 ring-accent/25 hover:bg-accent/20'
-      }`}
+      } ${className}`}
       aria-pressed={Boolean(favorite)}
     >
       {loading || busy ? <Loader2 size={15} className="animate-spin" /> : <Heart size={15} fill={favorite ? 'currentColor' : 'none'} />}

@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import EmptyState from '../../../components/EmptyState';
 import RemoteImage from '../../../components/RemoteImage';
 import NewsCopy from '../../../components/NewsCopy';
-import { articlesForAuthor, authorsFromNews, fetchPublishedNewsPool } from '../../../services/authors';
+import { fetchPublicAuthor } from '../../../services/authors';
 import { sharePageMetadata } from '../../../services/sharing';
 import { newsHref } from '../../../utils/newsConstraints';
 import { getInitials } from '../../../utils/helpers';
@@ -16,8 +16,8 @@ function avatarHue(name: string) {
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const news = await fetchPublishedNewsPool();
-  const author = authorsFromNews(news).find((item) => item.slug === slug);
+  const data = await fetchPublicAuthor(slug).catch(() => null);
+  const author = data?.author;
   return sharePageMetadata({
     title: author?.name || 'Author',
     description: author?.bio || `News by ${author?.name || 'this writer'} on PAK CRICZONE.`,
@@ -25,12 +25,19 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   });
 }
 
-export default async function AuthorDetailPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function AuthorDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ page?: string }>;
+}) {
   const { slug } = await params;
-  const news = await fetchPublishedNewsPool();
-  const author = authorsFromNews(news).find((item) => item.slug === slug);
-  if (!author) notFound();
-  const articles = articlesForAuthor(news, slug);
+  const { page: pageRaw } = await searchParams;
+  const page = Math.max(1, Number(pageRaw) || 1);
+  const data = await fetchPublicAuthor(slug, { page, limit: 24 }).catch(() => null);
+  if (!data) notFound();
+  const { author, articles, totalPages } = data;
   const initials = getInitials(author.name);
   const hue = avatarHue(author.name);
 
@@ -85,7 +92,7 @@ export default async function AuthorDetailPage({ params }: { params: Promise<{ s
         <div className="mb-4 flex items-baseline justify-between gap-3">
           <h2 className="text-sm font-bold uppercase tracking-widest text-mtext">News</h2>
           <p className="text-xs text-stext">
-            {articles.length} piece{articles.length === 1 ? '' : 's'}
+            {data.total} piece{data.total === 1 ? '' : 's'}
           </p>
         </div>
 
@@ -128,6 +135,23 @@ export default async function AuthorDetailPage({ params }: { params: Promise<{ s
             ))}
           </ul>
         )}
+        {totalPages > 1 ? (
+          <div className="mt-4 flex justify-center gap-2 text-sm">
+            {page > 1 ? (
+              <Link href={`/authors/${slug}?page=${page - 1}`} className="rounded-md border border-lborder px-3 py-1.5 text-stext hover:text-accent">
+                Previous
+              </Link>
+            ) : null}
+            <span className="px-2 py-1.5 text-stext">
+              Page {page} of {totalPages}
+            </span>
+            {page < totalPages ? (
+              <Link href={`/authors/${slug}?page=${page + 1}`} className="rounded-md border border-lborder px-3 py-1.5 text-stext hover:text-accent">
+                Next
+              </Link>
+            ) : null}
+          </div>
+        ) : null}
       </section>
     </div>
   );

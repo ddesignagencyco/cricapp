@@ -1,7 +1,7 @@
 import { apiGet, apiPost, apiDelete, extractPage, type PageMeta } from './api/client';
 import { authHeaders } from './auth';
 
-export type FavoriteTarget = 'team' | 'player' | 'match';
+export type FavoriteTarget = 'team' | 'player' | 'match' | 'news';
 
 export interface FavoriteItem {
   id: string;

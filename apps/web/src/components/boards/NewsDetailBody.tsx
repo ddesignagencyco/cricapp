@@ -6,6 +6,7 @@ import Badge from '../Badge';
 import AdSlot from '../AdSlot';
 import RemoteImage from '../RemoteImage';
 import ShareButton from '../ShareButton';
+import FavoriteButton from '../FavoriteButton';
 import CommentsSection from '../CommentsSection';
 import { sanitizeArticleHtml } from '../../utils/sanitizeHtml';
 import NewsCopy from '../NewsCopy';
@@ -142,7 +143,10 @@ export default function NewsDetailBody({ item, related = [], authorHref, related
               <span className="flex items-center gap-1.5">
                 <Clock size={14} /> {item.readTime}
               </span>
-              <ShareButton type="news" id={String(item.slug || item.id)} fallbackTitle={item.title} compact className="ms-auto" />
+              <span className="ms-auto inline-flex items-center gap-2">
+                <FavoriteButton targetType="news" targetId={String(item.id)} compact />
+                <ShareButton type="news" id={String(item.slug || item.id)} fallbackTitle={item.title} compact />
+              </span>
             </div>
           </header>
 

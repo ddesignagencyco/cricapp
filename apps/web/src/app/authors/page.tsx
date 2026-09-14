@@ -1,5 +1,5 @@
 import AuthorsBoard from '../../components/boards/AuthorsBoard';
-import { authorsFromNews, fetchPublishedNewsPool } from '../../services/authors';
+import { fetchPublicAuthors } from '../../services/authors';
 
 export const metadata = {
   title: 'Authors',
@@ -7,8 +7,7 @@ export const metadata = {
 };
 
 export default async function AuthorsPage() {
-  const news = await fetchPublishedNewsPool();
-  const authors = authorsFromNews(news);
+  const authors = await fetchPublicAuthors().catch(() => []);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">

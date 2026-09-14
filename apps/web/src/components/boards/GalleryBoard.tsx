@@ -1,371 +1,301 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
-import { Clapperboard, Expand, Images, Play, Sparkles, Video } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { Clapperboard, Expand, Images, Play, Video } from 'lucide-react';
 import RemoteImage from '../RemoteImage';
-import NewsCopy from '../NewsCopy';
 import EmptyState from '../EmptyState';
-import StoryViewer from '../gallery/StoryViewer';
+import ErrorState from '../ErrorState';
+import Pagination from '../Pagination';
 import PhotoLightbox from '../gallery/PhotoLightbox';
 import ShortsViewer from '../gallery/ShortsViewer';
 import type { GalleryPhoto, GalleryShort } from '../gallery/galleryTypes';
+import { fetchGalleryPage, type GalleryMedia } from '../../services/gallery';
 
-export type GalleryTab = 'images' | 'shorts' | 'videos' | 'stories';
+export type GalleryTab = 'images' | 'shorts' | 'videos';
 
-const TABS: { key: GalleryTab; label: string; icon: typeof Images; hint: string }[] = [
-  { key: 'images', label: 'Images', icon: Images, hint: 'Photos from the newsroom' },
-  { key: 'shorts', label: 'Shorts', icon: Clapperboard, hint: 'Vertical clips' },
-  { key: 'videos', label: 'Videos', icon: Video, hint: 'Full length streams' },
-  { key: 'stories', label: 'Stories', icon: Sparkles, hint: 'Tap through highlights' },
+const TABS: { key: GalleryTab; label: string; icon: typeof Images; type: 'image' | 'short' | 'video'; hint: string }[] = [
+  { key: 'images', label: 'Images', icon: Images, type: 'image', hint: 'Photos from the gallery' },
+  { key: 'shorts', label: 'Shorts', icon: Clapperboard, type: 'short', hint: 'Vertical clips' },
+  { key: 'videos', label: 'Videos', icon: Video, type: 'video', hint: 'Landscape videos' },
 ];
 
-const SEEN_KEY = 'pcz-gallery-stories-seen';
+const LIMIT = 24;
 
-function readSeen(): string[] {
-  if (typeof window === 'undefined') return [];
-  try {
-    const raw = window.sessionStorage.getItem(SEEN_KEY);
-    const parsed = raw ? (JSON.parse(raw) as string[]) : [];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
+function asPhoto(item: GalleryMedia): GalleryPhoto {
+  return {
+    id: item.id,
+    src: item.url,
+    title: item.title || 'Gallery image',
+    href: '/gallery?tab=images',
+    excerpt: item.caption || undefined,
+  };
 }
 
-function writeSeen(ids: string[]) {
-  window.sessionStorage.setItem(SEEN_KEY, JSON.stringify(ids.slice(-80)));
+function asClip(item: GalleryMedia): GalleryShort {
+  return {
+    id: item.id,
+    title: item.title || (item.type === 'short' ? 'Short' : 'Video'),
+    image: item.thumbnailUrl || undefined,
+    embedUrl: item.url,
+    rawUrl: item.url,
+    href: `/gallery?tab=${item.type === 'short' ? 'shorts' : 'videos'}`,
+    kind: 'video',
+  };
 }
 
 function TileOverlay({ children }: { children: React.ReactNode }) {
   return (
-    <span className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent p-3 text-left">
+    <span className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent p-2 text-left">
       {children}
     </span>
   );
 }
 
-function PlayBadge({ size = 'md' }: { size?: 'sm' | 'md' }) {
-  const box = size === 'sm' ? 'h-9 w-9' : 'h-12 w-12';
+function PlayBadge() {
   return (
     <span className="pointer-events-none absolute inset-0 grid place-items-center">
-      <span className={`grid ${box} place-items-center rounded-full bg-black/45 text-white ring-1 ring-white/25 backdrop-blur-sm transition-transform duration-200 group-hover:scale-110`}>
-        <Play size={size === 'sm' ? 15 : 19} className="translate-x-[1px] fill-current" />
+      <span className="grid h-8 w-8 place-items-center rounded-full bg-black/45 text-white ring-1 ring-white/25">
+        <Play size={13} className="translate-x-[1px] fill-current" />
       </span>
     </span>
   );
 }
 
 interface GalleryBoardProps {
-  images: GalleryPhoto[];
-  shorts: GalleryShort[];
-  videos: GalleryShort[];
-  stories: GalleryPhoto[];
-  initialTab?: GalleryTab | 'photos';
+  initialTab?: GalleryTab | 'photos' | 'stories';
 }
 
-export default function GalleryBoard({
-  images,
-  shorts,
-  videos,
-  stories,
-  initialTab = 'images',
-}: GalleryBoardProps) {
-  const startTab = initialTab === 'photos' ? 'images' : initialTab;
-  const [tab, setTab] = useState<GalleryTab>(TABS.some((item) => item.key === startTab) ? startTab : 'images');
-  const [seen, setSeen] = useState<string[]>(readSeen);
-  const [storyIndex, setStoryIndex] = useState<number | null>(null);
+export default function GalleryBoard({ initialTab = 'images' }: GalleryBoardProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const startTab: GalleryTab = initialTab === 'shorts' || initialTab === 'videos' ? initialTab : 'images';
+  const [tab, setTab] = useState<GalleryTab>(startTab);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [images, setImages] = useState<GalleryPhoto[]>([]);
+  const [shorts, setShorts] = useState<GalleryShort[]>([]);
+  const [videos, setVideos] = useState<GalleryShort[]>([]);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [counts, setCounts] = useState({ images: 0, shorts: 0, videos: 0 });
   const [photoIndex, setPhotoIndex] = useState<number | null>(null);
   const [shortIndex, setShortIndex] = useState<number | null>(null);
   const [videoIndex, setVideoIndex] = useState<number | null>(null);
+  const [retryKey, setRetryKey] = useState(0);
 
-  const markSeen = useCallback((id: string) => {
-    setSeen((current) => {
-      if (current.includes(id)) return current;
-      const next = [...current, id];
-      writeSeen(next);
-      return next;
-    });
-  }, []);
+  const active = TABS.find((item) => item.key === tab)!;
 
-  const openStory = useCallback((index: number) => {
-    const item = stories[index];
-    if (item) markSeen(item.id);
-    setStoryIndex(index);
-  }, [markSeen, stories]);
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([
+      fetchGalleryPage({ type: 'image', page: 1, limit: 1 }),
+      fetchGalleryPage({ type: 'short', page: 1, limit: 1 }),
+      fetchGalleryPage({ type: 'video', page: 1, limit: 1 }),
+    ])
+      .then(([imagePage, shortPage, videoPage]) => {
+        if (cancelled) return;
+        setCounts({
+          images: imagePage.total,
+          shorts: shortPage.total,
+          videos: videoPage.total,
+        });
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [retryKey]);
 
-  const closeStory = useCallback(() => setStoryIndex(null), []);
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError(false);
+    fetchGalleryPage({ type: active.type, page, limit: LIMIT })
+      .then((res) => {
+        if (cancelled) return;
+        if (tab === 'images') setImages(res.items.map(asPhoto));
+        if (tab === 'shorts') setShorts(res.items.map(asClip));
+        if (tab === 'videos') setVideos(res.items.map(asClip));
+        setTotal(res.total);
+        setTotalPages(Math.max(1, res.totalPages));
+        setCounts((current) => ({ ...current, [tab]: res.total }));
+        setLoading(false);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setError(true);
+        setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [active.type, page, retryKey, tab]);
+
+  const selectTab = useCallback((next: GalleryTab) => {
+    setTab(next);
+    setPage(1);
+    setPhotoIndex(null);
+    setShortIndex(null);
+    setVideoIndex(null);
+    router.replace(`${pathname}?tab=${next}`, { scroll: false });
+  }, [pathname, router]);
+
   const closePhoto = useCallback(() => setPhotoIndex(null), []);
   const closeShort = useCallback(() => setShortIndex(null), []);
   const closeVideo = useCallback(() => setVideoIndex(null), []);
-  const changeStory = useCallback((next: number) => {
-    const item = stories[next];
-    if (item) markSeen(item.id);
-    setStoryIndex(next);
-  }, [markSeen, stories]);
 
-  const counts = useMemo(() => ({
-    images: images.length,
-    shorts: shorts.length,
-    videos: videos.length,
-    stories: stories.length,
-  }), [images.length, shorts.length, videos.length, stories.length]);
-
-  const activeTab = TABS.find((item) => item.key === tab);
-  const activeCount = counts[tab];
+  const empty = useMemo(() => {
+    if (tab === 'images') return images.length === 0;
+    if (tab === 'shorts') return shorts.length === 0;
+    return videos.length === 0;
+  }, [images.length, shorts.length, tab, videos.length]);
 
   return (
-    <div className="space-y-7">
-      <header className="relative overflow-hidden rounded-3xl border border-lborder bg-card">
-        <div className="pointer-events-none absolute -right-16 -top-24 h-56 w-56 rounded-full bg-accent/10 blur-3xl" />
-        <div className="relative flex flex-col gap-6 p-6 sm:p-8 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-2xl">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/25 bg-accent/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-accent">
-              <Images size={12} />
-              Media library
-            </span>
-            <h1 className="mt-3 text-3xl font-black tracking-tight text-mtext sm:text-4xl">Gallery</h1>
-            <p className="mt-2 text-sm leading-relaxed text-stext">
-              Match photography, vertical shorts, full match videos and tap-through stories — all in one place.
-            </p>
-          </div>
-          <dl className="grid grid-cols-4 gap-px overflow-hidden rounded-2xl border border-lborder bg-lborder text-center lg:w-[420px]">
-            {TABS.map((item) => (
-              <div key={item.key} className="bg-secondary px-2 py-3">
-                <dt className="text-[10px] font-semibold uppercase tracking-wider text-stext">{item.label}</dt>
-                <dd className="mt-0.5 text-xl font-black tabular-nums text-mtext">{counts[item.key]}</dd>
-              </div>
-            ))}
-          </dl>
-        </div>
-      </header>
-
-      <div className="sticky top-0 z-10 -mx-4 border-b border-lborder bg-primary/90 px-4 backdrop-blur sm:mx-0 sm:px-0">
-        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar" role="tablist" aria-label="Gallery media types">
+    <div className="space-y-5">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <header>
+          <p className="text-xs font-medium uppercase tracking-widest text-stext">Media</p>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-mtext">Gallery</h1>
+          <p className="mt-1 max-w-xl text-sm text-stext">
+            Photos, shorts, and videos.
+          </p>
+        </header>
+        <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="Gallery media types">
           {TABS.map((item) => {
             const Icon = item.icon;
-            const active = tab === item.key;
+            const selected = tab === item.key;
             return (
               <button
                 key={item.key}
                 type="button"
                 role="tab"
-                aria-selected={active}
-                onClick={() => setTab(item.key)}
-                className={`relative flex shrink-0 items-center gap-2 px-3.5 py-3 text-sm font-semibold transition-colors sm:px-4 ${
-                  active ? 'text-mtext' : 'text-stext hover:text-mtext'
+                aria-selected={selected}
+                onClick={() => selectTab(item.key)}
+                className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold ${
+                  selected ? 'btn-brand' : 'border border-lborder bg-card text-stext hover:text-mtext'
                 }`}
               >
-                <Icon size={15} className={active ? 'text-accent' : ''} />
+                <Icon size={14} />
                 {item.label}
-                <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums ${
-                  active ? 'bg-accent/15 text-accent' : 'bg-secondary text-stext'
-                }`}>
-                  {counts[item.key]}
-                </span>
-                <span className={`absolute inset-x-2 -bottom-px h-0.5 rounded-full transition-opacity ${
-                  active ? 'bg-accent opacity-100' : 'opacity-0'
-                }`} />
+                <span className="tabular-nums opacity-80">{counts[item.key]}</span>
               </button>
             );
           })}
         </div>
       </div>
 
-      <div className="flex items-baseline justify-between gap-4">
-        <p className="text-xs text-stext">{activeTab?.hint}</p>
-        <p className="text-xs tabular-nums text-stext">{activeCount} {activeCount === 1 ? 'item' : 'items'}</p>
-      </div>
+      <p className="text-xs text-stext">
+        {active.hint} · {total} {total === 1 ? 'item' : 'items'}
+      </p>
 
-      {tab === 'images' && (
-        images.length === 0 ? (
-          <EmptyState icon={Images} title="No images yet" message="Cover photos from published articles appear in this tab." />
-        ) : (
-          <div className="fade-in columns-2 gap-3 sm:columns-3 lg:columns-4 [&>*]:mb-3">
-            {images.map((photo, index) => (
-              <button
-                key={photo.id}
-                type="button"
-                onClick={() => setPhotoIndex(index)}
-                className="group relative block w-full break-inside-avoid overflow-hidden rounded-2xl bg-secondary ring-1 ring-lborder transition-shadow hover:ring-accent/40"
-              >
-                <RemoteImage
-                  src={photo.src}
-                  alt={photo.title}
-                  width={640}
-                  height={480}
-                  sizes="(min-width: 1024px) 25vw, 50vw"
-                  fit="contain"
-                  className="news-image h-auto w-full transition-transform duration-300 group-hover:scale-[1.03]"
-                />
-                <span className="pointer-events-none absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full bg-black/45 text-white opacity-0 ring-1 ring-white/20 transition-opacity group-hover:opacity-100">
-                  <Expand size={13} />
-                </span>
-                <TileOverlay>
-                  <NewsCopy as="span" language={photo.language} text={photo.title} className="line-clamp-2 block text-xs font-semibold text-white">
-                    {photo.title}
-                  </NewsCopy>
-                  {photo.date && <span className="mt-0.5 block text-[10px] text-white/70">{photo.date}</span>}
-                </TileOverlay>
-              </button>
-            ))}
-          </div>
-        )
-      )}
-
-      {tab === 'shorts' && (
-        shorts.length === 0 ? (
-          <EmptyState icon={Clapperboard} title="No shorts yet" message="YouTube Shorts and vertical clips show here." />
-        ) : (
-          <div className="fade-in grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-            {shorts.map((short, index) => (
-              <button
-                key={short.id}
-                type="button"
-                onClick={() => setShortIndex(index)}
-                className="group relative overflow-hidden rounded-2xl bg-secondary ring-1 ring-lborder transition-shadow hover:ring-accent/40"
-              >
-                <span className="relative block aspect-[9/16]">
-                  {short.image ? (
-                    <RemoteImage
-                      src={short.image}
-                      alt={short.title}
-                      fill
-                      sizes="220px"
-                      fit="contain"
-                      className="news-image transition-transform duration-300 group-hover:scale-[1.04]"
-                    />
-                  ) : (
-                    <span className="grid h-full place-items-center media-fallback" />
-                  )}
-                  <PlayBadge size="sm" />
-                  <span className="absolute left-2 top-2 rounded-full bg-black/55 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white ring-1 ring-white/15">
-                    Short
-                  </span>
-                  <TileOverlay>
-                    <span className="line-clamp-2 block text-xs font-semibold text-white">{short.title}</span>
-                  </TileOverlay>
-                </span>
-              </button>
-            ))}
-          </div>
-        )
-      )}
-
-      {tab === 'videos' && (
-        videos.length === 0 ? (
-          <EmptyState icon={Video} title="No videos yet" message="Full streams and landscape videos appear here after they are published." />
-        ) : (
-          <div className="fade-in grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {videos.map((video, index) => (
-              <button
-                key={video.id}
-                type="button"
-                onClick={() => setVideoIndex(index)}
-                className="group overflow-hidden rounded-2xl bg-card text-left ring-1 ring-lborder transition-shadow hover:ring-accent/40"
-              >
-                <span className="relative block aspect-video bg-secondary">
-                  {video.image ? (
-                    <RemoteImage
-                      src={video.image}
-                      alt={video.title}
-                      fill
-                      sizes="420px"
-                      fit="contain"
-                      className="news-image transition-transform duration-300 group-hover:scale-[1.03]"
-                    />
-                  ) : (
-                    <span className="grid h-full place-items-center media-fallback" />
-                  )}
-                  <PlayBadge />
-                  {video.status && (
-                    <span className="absolute left-2 top-2 rounded-full bg-black/55 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white ring-1 ring-white/15">
-                      {video.status}
-                    </span>
-                  )}
-                </span>
-                <span className="block p-3.5">
-                  <span className="line-clamp-2 block text-sm font-semibold text-mtext transition-colors group-hover:text-accent">
-                    {video.title}
-                  </span>
-                  <span className="mt-1 block text-[11px] text-stext">Tap to play</span>
-                </span>
-              </button>
-            ))}
-          </div>
-        )
-      )}
-
-      {tab === 'stories' && (
-        stories.length === 0 ? (
-          <EmptyState icon={Sparkles} title="No stories yet" message="Illustrated articles become tap-through stories in this tab." />
-        ) : (
-          <div className="fade-in space-y-6">
-            <div className="rounded-2xl border border-lborder bg-card p-4">
-              <div className="mb-3 flex items-center justify-between">
-                <p className="text-xs font-bold uppercase tracking-widest text-stext">Latest stories</p>
-                <button type="button" onClick={() => openStory(0)} className="text-xs font-bold text-accent hover:underline">
-                  Play all
-                </button>
-              </div>
-              <div className="flex gap-4 overflow-x-auto pb-1 no-scrollbar">
-                {stories.map((story, index) => {
-                  const viewed = seen.includes(story.id);
-                  return (
-                    <button key={story.id} type="button" onClick={() => openStory(index)} className="w-[74px] shrink-0 text-center">
-                      <span className={`mx-auto grid h-[70px] w-[70px] place-items-center rounded-full p-[2.5px] transition-transform hover:scale-105 ${
-                        viewed ? 'bg-lborder' : 'bg-gradient-to-br from-accent via-[var(--color-brand)] to-accent'
-                      }`}>
-                        <span className="relative block h-full w-full overflow-hidden rounded-full bg-secondary ring-2 ring-card">
-                          <RemoteImage src={story.src} alt="" fill sizes="70px" fit="contain" className="news-image" />
-                        </span>
-                      </span>
-                      <NewsCopy as="span" language={story.language} text={story.title} className="mt-1.5 block truncate text-[11px] font-medium text-stext">
-                        {story.title}
-                      </NewsCopy>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-              {stories.map((story, index) => (
+      {loading ? (
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
+          {Array.from({ length: 12 }).map((_, index) => (
+            <div key={index} className="aspect-square animate-pulse rounded-lg bg-secondary" />
+          ))}
+        </div>
+      ) : error ? (
+        <ErrorState message="Gallery is temporarily unavailable." onRetry={() => setRetryKey((key) => key + 1)} />
+      ) : empty ? (
+        <EmptyState
+          icon={active.icon}
+          title={`No ${tab} yet`}
+          message="Items appear here after they are uploaded in Gallery."
+        />
+      ) : (
+        <>
+          {tab === 'images' && (
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
+              {images.map((photo, index) => (
                 <button
-                  key={`card-${story.id}`}
+                  key={photo.id}
                   type="button"
-                  onClick={() => openStory(index)}
-                  className="group relative overflow-hidden rounded-2xl bg-secondary ring-1 ring-lborder transition-shadow hover:ring-accent/40"
+                  onClick={() => setPhotoIndex(index)}
+                  className="group relative overflow-hidden rounded-lg bg-secondary ring-1 ring-lborder"
                 >
-                  <span className="relative block aspect-[3/4]">
+                  <span className="relative block aspect-square">
                     <RemoteImage
-                      src={story.src}
-                      alt={story.title}
+                      src={photo.src}
+                      alt={photo.title}
                       fill
-                      sizes="240px"
-                      fit="contain"
-                      className="news-image transition-transform duration-300 group-hover:scale-[1.04]"
+                      sizes="160px"
+                      fit="cover"
+                      className="news-image"
                     />
-                    {!seen.includes(story.id) && (
-                      <span className="absolute left-2 top-2 rounded-full bg-accent px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
-                        New
-                      </span>
-                    )}
+                    <span className="pointer-events-none absolute right-1.5 top-1.5 grid h-6 w-6 place-items-center rounded-full bg-black/45 text-white opacity-0 ring-1 ring-white/20 group-hover:opacity-100">
+                      <Expand size={11} />
+                    </span>
                     <TileOverlay>
-                      <NewsCopy as="span" language={story.language} text={story.title} className="line-clamp-2 block text-xs font-semibold text-white">
-                        {story.title}
-                      </NewsCopy>
+                      <span className="line-clamp-1 block text-[11px] font-semibold text-white">{photo.title}</span>
                     </TileOverlay>
                   </span>
                 </button>
               ))}
             </div>
-          </div>
-        )
+          )}
+
+          {tab === 'shorts' && (
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
+              {shorts.map((short, index) => (
+                <button
+                  key={short.id}
+                  type="button"
+                  onClick={() => setShortIndex(index)}
+                  className="group relative overflow-hidden rounded-lg bg-secondary ring-1 ring-lborder"
+                >
+                  <span className="relative block aspect-[3/4]">
+                    {short.image ? (
+                      <RemoteImage src={short.image} alt={short.title} fill sizes="160px" fit="cover" className="news-image" />
+                    ) : (
+                      <span className="grid h-full place-items-center media-fallback" />
+                    )}
+                    <PlayBadge />
+                    <TileOverlay>
+                      <span className="line-clamp-1 block text-[11px] font-semibold text-white">{short.title}</span>
+                    </TileOverlay>
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {tab === 'videos' && (
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+              {videos.map((video, index) => (
+                <button
+                  key={video.id}
+                  type="button"
+                  onClick={() => setVideoIndex(index)}
+                  className="group overflow-hidden rounded-lg bg-card text-left ring-1 ring-lborder"
+                >
+                  <span className="relative block aspect-video bg-secondary">
+                    {video.image ? (
+                      <RemoteImage src={video.image} alt={video.title} fill sizes="240px" fit="cover" className="news-image" />
+                    ) : (
+                      <span className="grid h-full place-items-center media-fallback" />
+                    )}
+                    <PlayBadge />
+                  </span>
+                  <span className="block px-2 py-1.5">
+                    <span className="line-clamp-1 block text-xs font-semibold text-mtext">{video.title}</span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            total={total}
+            limit={LIMIT}
+            onPageChange={setPage}
+          />
+        </>
       )}
 
-      {storyIndex !== null && (
-        <StoryViewer items={stories} index={storyIndex} onClose={closeStory} onIndexChange={changeStory} />
-      )}
       {photoIndex !== null && (
         <PhotoLightbox items={images} index={photoIndex} onClose={closePhoto} onIndexChange={setPhotoIndex} />
       )}

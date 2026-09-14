@@ -1,7 +1,8 @@
 import NewsDetailBody from '../../../components/boards/NewsDetailBody';
+import JsonLd from '../../json-ld';
 import { authorSlugFromArticle } from '../../../services/authors';
 import { fetchMatchById } from '../../../services/matches';
-import { fetchNews, fetchNewsById } from '../../../services/news';
+import { fetchNews, fetchNewsById, fetchNewsSeo } from '../../../services/news';
 import { fetchPlayerById } from '../../../services/players';
 import { sharePageMetadata } from '../../../services/sharing';
 import { fetchTeamById } from '../../../services/teams';
@@ -11,19 +12,31 @@ import { newsHref } from '../../../utils/newsConstraints';
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const item = await fetchNewsById(id);
-  return sharePageMetadata({
-    title: 'News',
-    description: 'Cricket news and analysis from PAK CRICZONE.',
+  const [item, seo] = await Promise.all([fetchNewsById(id), fetchNewsSeo(id).catch(() => null)]);
+  const languages: Record<string, string> = {};
+  for (const alt of seo?.hreflang || []) {
+    if (alt.language && alt.href) languages[alt.language] = alt.href;
+  }
+  const meta = sharePageMetadata({
+    title: item?.title || 'News',
+    description: item?.excerpt || 'Cricket news and analysis from PAK CRICZONE.',
     path: item ? newsHref(item) : `/news/${id}`,
   });
+  return {
+    ...meta,
+    alternates: {
+      canonical: seo?.canonicalUrl,
+      languages: Object.keys(languages).length ? languages : undefined,
+    },
+  };
 }
 
 export default async function NewsDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [item, allNews] = await Promise.all([
+  const [item, allNews, seo] = await Promise.all([
     fetchNewsById(id),
     fetchNews(),
+    fetchNewsSeo(id).catch(() => null),
   ]);
   if (!item) notFound();
 
@@ -54,11 +67,14 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ id:
   const authorSlug = authorSlugFromArticle(item);
   const related = allNews.filter((n) => n.id !== item.id).slice(0, 3);
   return (
-    <NewsDetailBody
-      item={item}
-      related={related}
-      authorHref={authorSlug ? `/authors/${authorSlug}` : undefined}
-      relatedLinks={relatedLinks}
-    />
+    <>
+      {seo?.jsonLd ? <JsonLd data={seo.jsonLd} /> : null}
+      <NewsDetailBody
+        item={item}
+        related={related}
+        authorHref={authorSlug ? `/authors/${authorSlug}` : undefined}
+        relatedLinks={relatedLinks}
+      />
+    </>
   );
 }

@@ -48,7 +48,7 @@ function asIdList(value: unknown): string[] {
   return Array.isArray(value) ? value.map((id) => String(id)).filter(Boolean) : [];
 }
 
-function mapNewsItem(item: Record<string, unknown>): NewsArticle {
+export function mapNewsItem(item: Record<string, unknown>): NewsArticle {
   const catObj = (item.category as Record<string, unknown>) || {};
   const rawTags = item.tags;
   const tags: string[] = Array.isArray(rawTags)
@@ -106,19 +106,20 @@ export interface NewsListParams {
   teamId?: string;
   matchId?: string;
   seriesId?: string;
+  authorId?: string;
 }
 
 export async function fetchNews(
-  { category, tag, q, language, playerId, teamId, matchId, seriesId, limit = 50 }: NewsListParams = {}
+  { category, tag, q, language, playerId, teamId, matchId, seriesId, authorId, limit = 50 }: NewsListParams = {}
 ): Promise<NewsArticle[]> {
-  const res = await apiGet('/news', { category, tag, q, language, playerId, teamId, matchId, seriesId, limit });
+  const res = await apiGet('/news', { category, tag, q, language, playerId, teamId, matchId, seriesId, authorId, limit });
   return extractPage<Record<string, unknown>>(res).items.map(mapNewsItem);
 }
 
 export async function fetchNewsPage(
-  { category, tag, q, language, playerId, teamId, matchId, seriesId, page = 1, limit = 12 }: NewsListParams = {}
+  { category, tag, q, language, playerId, teamId, matchId, seriesId, authorId, page = 1, limit = 12 }: NewsListParams = {}
 ): Promise<{ items: NewsArticle[]; total: number; totalPages: number }> {
-  const res = await apiGet('/news', { category, tag, q, language, playerId, teamId, matchId, seriesId, page, limit });
+  const res = await apiGet('/news', { category, tag, q, language, playerId, teamId, matchId, seriesId, authorId, page, limit });
   const { items, meta } = extractPage<Record<string, unknown>>(res);
   return {
     items: items.map(mapNewsItem),
@@ -136,4 +137,18 @@ export async function fetchNewsById(idOrSlug: string): Promise<NewsArticle | nul
 export async function fetchNewsCategories(): Promise<{ id: string; name: string; slug: string }[]> {
   const res = await apiGet<{ id: string; name: string; slug: string }[]>('/news/categories');
   return Array.isArray(res) ? res : [];
+}
+
+export function fetchNewsCategory(idOrSlug: string) {
+  return apiGetOptional<{ id: string; name: string; slug: string }>(`/news/categories/${idOrSlug}`);
+}
+
+export interface NewsSeoPayload {
+  canonicalUrl?: string;
+  hreflang?: { language?: string; slug?: string; href?: string }[];
+  jsonLd?: Record<string, unknown>;
+}
+
+export function fetchNewsSeo(idOrSlug: string): Promise<NewsSeoPayload | null> {
+  return apiGetOptional<NewsSeoPayload>(`/news/${encodeURIComponent(idOrSlug)}/seo`);
 }

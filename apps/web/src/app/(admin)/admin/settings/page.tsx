@@ -1,57 +1,49 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { AdminPageHeader } from '../../../../components/admin/AdminShared';
+import { fetchAdminAnalytics, fetchIngestionHealth, type AdminAnalytics, type IngestionHealth } from '../../../../services/admin';
+import { fetchApiHealth, type ApiHealthJson } from '../../../../services/health';
 
 export default function SettingsPage() {
+  const [analytics, setAnalytics] = useState<AdminAnalytics | null>(null);
+  const [ingestion, setIngestion] = useState<IngestionHealth | null>(null);
+  const [health, setHealth] = useState<ApiHealthJson | null>(null);
+
+  useEffect(() => {
+    fetchAdminAnalytics().then(setAnalytics).catch(() => setAnalytics(null));
+    fetchIngestionHealth().then(setIngestion).catch(() => setIngestion(null));
+    fetchApiHealth().then(setHealth).catch(() => setHealth(null));
+  }, []);
+
   return (
     <div className="space-y-6">
-      <AdminPageHeader title="Settings" subtitle="Manage site configuration and preferences." />
-
-      <div className="rounded-lg p-4" style={{ border: '1px solid var(--admin-warning)', background: 'var(--admin-warning-bg)' }}>
-        <h3 className="text-xs font-bold" style={{ color: 'var(--admin-warning)' }}>Backend API Required</h3>
-        <p className="mt-1 text-xs" style={{ color: 'var(--admin-warning)' }}>
-          Site settings require a backend configuration endpoint.
-          Currently, all site settings are configured via environment variables on the server.
-        </p>
-        <div className="mt-3 rounded-md p-3 text-xs" style={{ border: '1px solid var(--admin-warning)', background: 'var(--admin-card)', color: 'var(--admin-warning)' }}>
-          <p className="font-bold">Required backend endpoints:</p>
-          <ul className="mt-1 list-disc pl-4 space-y-0.5">
-            <li>GET /api/settings — Get current site settings</li>
-            <li>PATCH /api/settings — Update site settings</li>
-          </ul>
-        </div>
-      </div>
+      <AdminPageHeader title="Settings" subtitle="Live API health. Site copy is edited under Editorial." />
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <div className="rounded-lg p-4" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
-          <h3 className="text-xs font-bold mb-3" style={{ color: 'var(--admin-text)' }}>General</h3>
-          <div className="space-y-3">
-            <div>
-              <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--admin-text-secondary)' }}>Site Name</label>
-              <input type="text" value="PAK CRICZONE" disabled className="w-full rounded-md px-3 py-2 text-xs" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-input-bg)', color: 'var(--admin-text)' }} />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--admin-text-secondary)' }}>Tagline</label>
-              <input type="text" value="Cricket Lives Here" disabled className="w-full rounded-md px-3 py-2 text-xs" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-input-bg)', color: 'var(--admin-text)' }} />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--admin-text-secondary)' }}>API URL</label>
-              <input type="text" value={process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'} disabled className="w-full rounded-md px-3 py-2 text-xs font-mono" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-input-bg)', color: 'var(--admin-text-muted)' }} />
-            </div>
-          </div>
+          <h3 className="text-xs font-bold mb-3" style={{ color: 'var(--admin-text)' }}>API health</h3>
+          <p className="text-sm" style={{ color: 'var(--admin-text-secondary)' }}>
+            GET /health/json: {health?.status || 'unavailable'}
+          </p>
+          <p className="mt-2 text-sm" style={{ color: 'var(--admin-text-secondary)' }}>
+            Ingestion: {ingestion?.status || 'unavailable'}
+            {ingestion?.liveMatchCount != null ? ` · ${ingestion.liveMatchCount} live` : ''}
+          </p>
         </div>
 
         <div className="rounded-lg p-4" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
-          <h3 className="text-xs font-bold mb-3" style={{ color: 'var(--admin-text)' }}>About</h3>
-          <div className="space-y-2 text-xs" style={{ color: 'var(--admin-text-secondary)' }}>
-            <p>PakCricZone CMS v1.0.0</p>
-            <p>Live cricket scores, news and statistics for Pakistani cricket fans.</p>
-            <div className="mt-4 rounded-md p-3 text-xs" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-input-bg)', color: 'var(--admin-text-secondary)' }}>
-              <p>Frontend: Next.js 16 + React 19 + Tailwind CSS 4</p>
-              <p>Backend: NestJS 10 + Prisma + PostgreSQL</p>
-              <p>Auth: JWT with Bearer tokens</p>
-            </div>
-          </div>
+          <h3 className="text-xs font-bold mb-3" style={{ color: 'var(--admin-text)' }}>Analytics snapshot</h3>
+          {analytics ? (
+            <ul className="space-y-1 text-sm" style={{ color: 'var(--admin-text-secondary)' }}>
+              <li>Users {analytics.users}</li>
+              <li>Published news {analytics.publishedArticles}</li>
+              <li>Comments {analytics.comments}</li>
+              <li>Pending reports {analytics.pendingReports}</li>
+            </ul>
+          ) : (
+            <p className="text-sm" style={{ color: 'var(--admin-text-muted)' }}>Could not load GET /admin/analytics.</p>
+          )}
         </div>
       </div>
     </div>

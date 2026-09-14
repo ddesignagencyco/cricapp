@@ -1,4 +1,6 @@
 import { AboutValues } from '../../components/AboutValues';
+import EditorialDocument from '../../components/EditorialDocument';
+import { fetchEditorialPage } from '../../services/editorial';
 
 export const metadata = {
   title: 'About',
@@ -6,7 +8,10 @@ export const metadata = {
     'Learn about PAK CRICZONE — your home for live cricket scores, PSL fixtures, teams, players and in-depth statistics.',
 };
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const cms = await fetchEditorialPage('about').catch(() => null);
+  if (cms?.content?.trim()) return <EditorialDocument page={cms} />;
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
       <div className="space-y-10">

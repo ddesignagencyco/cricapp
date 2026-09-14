@@ -1,6 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import { Mail, MapPin, MessageSquare } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { submitContact } from '../../services/contact';
+import { ApiError } from '../../services/api/client';
 
 const contactMethods = [
   {
@@ -24,13 +28,43 @@ const contactMethods = [
 ];
 
 function ContactForm() {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [message, setMessage] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (name.trim().length < 2) {
+      toast.error('Please enter your name.');
+      return;
+    }
+    if (!email.trim()) {
+      toast.error('Please enter your email.');
+      return;
+    }
+    if (message.trim().length < 5) {
+      toast.error('Message must be at least 5 characters.');
+      return;
+    }
+    setBusy(true);
+    try {
+      const res = await submitContact({ name: name.trim(), email: email.trim(), message: message.trim() });
+      toast.success(res.message || 'Message sent.');
+      setName('');
+      setEmail('');
+      setMessage('');
+    } catch (error) {
+      toast.error(error instanceof ApiError ? error.message : 'Could not send the message.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <div className="rounded-2xl bg-card p-6 ring-1 ring-lborder">
       <h2 className="text-lg font-bold text-mtext">Send a Message</h2>
-      <form
-        onSubmit={(e) => e.preventDefault()}
-        className="mt-4 space-y-4"
-      >
+      <form onSubmit={(e) => void onSubmit(e)} className="mt-4 space-y-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div>
             <label htmlFor="contact-name" className="mb-1 block text-xs font-semibold uppercase tracking-wider text-stext">
@@ -40,6 +74,8 @@ function ContactForm() {
               id="contact-name"
               name="name"
               type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               placeholder="Your name"
               className="w-full rounded-lg bg-elevated px-4 py-2.5 text-sm text-mtext ring-1 ring-lborder outline-none transition-colors focus:ring-[var(--color-focus-ring)]"
             />
@@ -52,6 +88,8 @@ function ContactForm() {
               id="contact-email"
               name="email"
               type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
               className="w-full rounded-lg bg-elevated px-4 py-2.5 text-sm text-mtext ring-1 ring-lborder outline-none transition-colors focus:ring-[var(--color-focus-ring)]"
             />
@@ -65,21 +103,19 @@ function ContactForm() {
             id="contact-message"
             name="message"
             rows={5}
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
             placeholder="How can we help?"
             className="w-full resize-none rounded-lg bg-elevated px-4 py-2.5 text-sm text-mtext ring-1 ring-lborder outline-none transition-colors focus:ring-[var(--color-focus-ring)]"
           />
         </div>
         <button
           type="submit"
-          disabled
-          aria-describedby="contact-unavailable"
-          className="cursor-not-allowed rounded bg-elevated px-6 py-2.5 text-sm font-medium text-stext opacity-70"
+          disabled={busy}
+          className="btn-brand rounded px-6 py-2.5 text-sm font-medium disabled:opacity-60"
         >
-          Messaging unavailable
+          {busy ? 'Sending…' : 'Send message'}
         </button>
-        <p id="contact-unavailable" className="text-xs text-stext">
-          Online messaging will be enabled when the contact API is available.
-        </p>
       </form>
     </div>
   );

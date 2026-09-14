@@ -18,6 +18,7 @@ import {
   RefreshCw,
   Globe,
   Map,
+  Newspaper,
 } from 'lucide-react';
 import { useAuth } from '../../../components/AuthProvider';
 import { fetchMatchesPage } from '../../../services/matches';
@@ -222,14 +223,16 @@ export default function AdminDashboard() {
         <MetricCard
           label="Favorites"
           value={n(favoriteTotal(analytics))}
-          icon={<Heart size={14} />}
+          icon={<Heart size={20} />}
+          largeIcon
           accentColor="var(--admin-danger)"
           accentBg="var(--admin-danger-bg)"
           extra={
-            <div className="mt-1.5 flex flex-wrap gap-1.5">
-              <FavoriteTypeChip icon={<Users size={10} />} label="Teams" count={favoriteType(analytics, 'team')} />
-              <FavoriteTypeChip icon={<UserCircle size={10} />} label="Players" count={favoriteType(analytics, 'player')} />
-              <FavoriteTypeChip icon={<Trophy size={10} />} label="Matches" count={favoriteType(analytics, 'match')} />
+            <div className="mt-2 flex flex-wrap gap-2">
+              <FavoriteTypeChip icon={<Users size={18} />} label="Teams" count={favoriteType(analytics, 'team')} />
+              <FavoriteTypeChip icon={<UserCircle size={18} />} label="Players" count={favoriteType(analytics, 'player')} />
+              <FavoriteTypeChip icon={<Trophy size={18} />} label="Matches" count={favoriteType(analytics, 'match')} />
+              <FavoriteTypeChip icon={<Newspaper size={18} />} label="News" count={favoriteType(analytics, 'news')} />
             </div>
           }
         />
@@ -530,7 +533,7 @@ function FavoriteTypeChip({
 }) {
   return (
     <span
-      className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-semibold"
+      className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold"
       style={{ background: 'var(--admin-input-bg)', color: 'var(--admin-text-secondary)' }}
       title={label}
     >
@@ -547,6 +550,7 @@ function MetricCard({
   accentColor,
   accentBg,
   extra,
+  largeIcon,
 }: {
   label: string;
   value: string | number;
@@ -554,6 +558,7 @@ function MetricCard({
   accentColor: string;
   accentBg: string;
   extra?: ReactNode;
+  largeIcon?: boolean;
 }) {
   return (
     <div
@@ -564,7 +569,7 @@ function MetricCard({
       }}
     >
       <div
-        className="grid h-7 w-7 shrink-0 place-items-center rounded-md"
+        className={`grid shrink-0 place-items-center rounded-md ${largeIcon ? 'h-11 w-11' : 'h-7 w-7'}`}
         style={{ background: accentBg, color: accentColor }}
       >
         {icon}

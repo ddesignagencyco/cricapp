@@ -23,6 +23,9 @@ import {
   Moon,
   Radio,
   PenLine,
+  ScrollText,
+  Inbox,
+  Mail,
 } from 'lucide-react';
 import { useAuth } from '../../../components/AuthProvider';
 import { useTheme } from '../../../components/ThemeProvider';
@@ -39,8 +42,11 @@ const adminNav = [
   { to: '/admin/tournaments', label: 'Tournaments', icon: Newspaper },
   { to: '/admin/streams', label: 'Streams', icon: Radio },
   { to: '/admin/authors', label: 'Authors', icon: PenLine },
-  { to: '/admin/media', label: 'Media Library', icon: ImageIcon },
+  { to: '/admin/editorial', label: 'Editorial', icon: ScrollText },
+  { to: '/admin/gallery', label: 'Gallery', icon: ImageIcon },
   { to: '/admin/comments', label: 'Comments', icon: MessageSquare },
+  { to: '/admin/contact', label: 'Contact', icon: Inbox },
+  { to: '/admin/newsletter', label: 'Newsletter', icon: Mail },
   { to: '/admin/users', label: 'Users', icon: UserCircle },
   { to: '/admin/settings', label: 'Settings', icon: Settings },
 ];

@@ -2,17 +2,24 @@
 
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { FileEdit, PenLine, X } from 'lucide-react';
+import { FileEdit, PenLine, Trash2, X } from 'lucide-react';
 import {
   AdminAvatar,
   AdminInput,
   AdminPageHeader,
+  ConfirmDialog,
   EmptyState,
   ErrorState,
   LoadingState,
 } from '../../../../components/admin/AdminShared';
 import MediaPicker from '../../../../components/admin/MediaPicker';
-import { createAdminAuthor, fetchAdminAuthors, updateAdminAuthor, type AdminAuthor } from '../../../../services/admin';
+import {
+  createAdminAuthor,
+  deleteAdminAuthor,
+  fetchAdminAuthors,
+  updateAdminAuthor,
+  type AdminAuthor,
+} from '../../../../services/admin';
 
 const emptyForm = { name: '', bio: '', avatarUrl: '' };
 
@@ -24,6 +31,7 @@ export default function AuthorsPage() {
   const [editing, setEditing] = useState<AdminAuthor | null>(null);
   const [saving, setSaving] = useState(false);
   const [galleryOpen, setGalleryOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<AdminAuthor | null>(null);
 
   const load = () => {
     setLoading(true);
@@ -90,16 +98,18 @@ export default function AuthorsPage() {
 
       <form
         onSubmit={submit}
-        className="grid gap-3 rounded-lg p-4 sm:grid-cols-2"
+        className="flex flex-wrap items-center gap-2 rounded-lg p-3"
         style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}
       >
         {editing && (
-          <p className="text-xs font-semibold sm:col-span-2" style={{ color: 'var(--admin-text-secondary)' }}>
+          <p className="w-full text-xs font-semibold" style={{ color: 'var(--admin-text-secondary)' }}>
             Editing {editing.name}
           </p>
         )}
-        <AdminInput value={form.name} onChange={(e) => setField('name', e.target.value)} placeholder="Name" required />
-        <div className="flex gap-2">
+        <div className="w-44">
+          <AdminInput value={form.name} onChange={(e) => setField('name', e.target.value)} placeholder="Name" required />
+        </div>
+        <div className="flex w-64 gap-2">
           <AdminInput value={form.avatarUrl} onChange={(e) => setField('avatarUrl', e.target.value)} placeholder="Avatar URL" />
           <button
             type="button"
@@ -110,30 +120,28 @@ export default function AuthorsPage() {
             Gallery
           </button>
         </div>
-        <div className="sm:col-span-2">
+        <div className="w-64">
           <AdminInput value={form.bio} onChange={(e) => setField('bio', e.target.value)} placeholder="Short bio" />
         </div>
-        <div className="flex flex-wrap items-center gap-2 sm:col-span-2">
+        <button
+          type="submit"
+          disabled={saving}
+          className="btn-brand inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-bold disabled:opacity-60"
+        >
+          <PenLine size={15} />
+          {editing ? 'Save' : 'Create'}
+        </button>
+        {editing && (
           <button
-            type="submit"
-            disabled={saving}
-            className="btn-brand inline-flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-bold disabled:opacity-60"
+            type="button"
+            onClick={cancelEdit}
+            className="inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-semibold"
+            style={{ color: 'var(--admin-text-secondary)', border: '1px solid var(--admin-border)' }}
           >
-            <PenLine size={15} />
-            {editing ? 'Save author' : 'Create author'}
+            <X size={15} />
+            Cancel
           </button>
-          {editing && (
-            <button
-              type="button"
-              onClick={cancelEdit}
-              className="inline-flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-semibold"
-              style={{ color: 'var(--admin-text-secondary)', border: '1px solid var(--admin-border)' }}
-            >
-              <X size={15} />
-              Cancel
-            </button>
-          )}
-        </div>
+        )}
       </form>
 
       {loading ? (
@@ -175,7 +183,7 @@ export default function AuthorsPage() {
                     {author.bio || '—'}
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex items-center justify-end">
+                    <div className="flex items-center justify-end gap-1">
                       <button
                         type="button"
                         onClick={() => startEdit(author)}
@@ -185,6 +193,15 @@ export default function AuthorsPage() {
                       >
                         <FileEdit size={16} />
                       </button>
+                      <button
+                        type="button"
+                        onClick={() => setDeleteTarget(author)}
+                        className="grid h-8 w-8 place-items-center rounded-md"
+                        style={{ background: 'var(--admin-danger-bg)', color: 'var(--admin-danger)' }}
+                        title="Delete author"
+                      >
+                        <Trash2 size={16} />
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -193,6 +210,29 @@ export default function AuthorsPage() {
           </table>
         </div>
       )}
+
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        title="Delete author?"
+        message={`Remove ${deleteTarget?.name || 'this author'} from the newsroom. Articles keep their byline text.`}
+        confirmLabel="Delete"
+        danger
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={() => {
+          if (!deleteTarget) return;
+          void deleteAdminAuthor(deleteTarget.id)
+            .then(() => {
+              setAuthors((list) => list.filter((item) => item.id !== deleteTarget.id));
+              if (editing?.id === deleteTarget.id) {
+                setEditing(null);
+                setForm(emptyForm);
+              }
+              toast.success('Author deleted.');
+            })
+            .catch(() => toast.error('Could not delete the author.'))
+            .finally(() => setDeleteTarget(null));
+        }}
+      />
 
       <MediaPicker
         open={galleryOpen}

@@ -5,6 +5,7 @@ import { fetchPlayers } from '../services/players';
 import { fetchNews } from '../services/news';
 import { newsHref } from '../utils/newsConstraints';
 import { fetchTournaments } from '../services/tournaments';
+import { fetchPublicAuthors } from '../services/authors';
 
 const baseUrl = 'https://pakcriczone.com';
 
@@ -22,6 +23,7 @@ const staticRoutes = [
   '/tours',
   '/tournaments',
   '/about',
+  '/authors',
   '/contact',
   '/privacy',
   '/terms',
@@ -29,12 +31,13 @@ const staticRoutes = [
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date().toISOString();
-  const [matches, teams, players, news, tournaments] = await Promise.all([
+  const [matches, teams, players, news, tournaments, authors] = await Promise.all([
     fetchMatches().catch(() => []),
     fetchTeams().catch(() => []),
     fetchPlayers().catch(() => []),
     fetchNews().catch(() => []),
     fetchTournaments().catch(() => []),
+    fetchPublicAuthors().catch(() => []),
   ]);
 
   const entries = staticRoutes.map((route) => ({
@@ -79,5 +82,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
-  return [...entries, ...matchEntries, ...teamEntries, ...playerEntries, ...newsEntries, ...tournamentEntries];
+  const authorEntries = (authors || []).map((author) => ({
+    url: `${baseUrl}/authors/${author.slug}`,
+    lastModified: now,
+    changeFrequency: 'weekly' as MetadataRoute.Sitemap[number]['changeFrequency'],
+    priority: 0.5,
+  }));
+
+  return [...entries, ...matchEntries, ...teamEntries, ...playerEntries, ...newsEntries, ...tournamentEntries, ...authorEntries];
 }

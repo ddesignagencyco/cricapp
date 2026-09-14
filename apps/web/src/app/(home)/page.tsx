@@ -271,7 +271,7 @@ export default async function HomePage() {
 
       {galleryPhotos.length > 0 && (
         <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6">
-          <SectionHeader title="Gallery" subtitle="Images, shorts, videos and stories" icon="images" to="/gallery" actionLabel="Open gallery" />
+          <SectionHeader title="Gallery" subtitle="Images, shorts and videos" icon="images" to="/gallery" actionLabel="Open gallery" />
           <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-6">
             {galleryPhotos.map((item) => (
               <Link key={item.id} href="/gallery?tab=images" className="group overflow-hidden rounded-2xl bg-card ring-1 ring-lborder">

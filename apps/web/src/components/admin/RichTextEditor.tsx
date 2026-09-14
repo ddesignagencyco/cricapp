@@ -219,7 +219,7 @@ export default function RichTextEditor({ value, onChange, placeholder, language 
     </div>
     <MediaPicker
       open={galleryOpen}
-      title="Insert image from Cloudinary"
+      title="Insert gallery image"
       onClose={() => setGalleryOpen(false)}
       onSelect={insertImage}
     />

@@ -7,6 +7,7 @@ import {
   Heart,
   Loader2,
   MapPin,
+  Newspaper,
   Shield,
   Trash2,
   UserRound,
@@ -21,14 +22,17 @@ import RemoteImage from '../../components/RemoteImage';
 import Badge, { StatusBadge } from '../../components/Badge';
 import { formatScheduled, getInitials } from '../../utils/helpers';
 import { ConfirmDialog } from '../../components/admin/AdminShared';
-import type { Team, Player, Match } from '../../types/index';
+import type { Team, Player, Match, NewsArticle } from '../../types/index';
 import { FavoritesPageSkeleton } from '../../components/skeletons/Skeletons';
+import { newsHref } from '../../utils/newsConstraints';
+import NewsCopy from '../../components/NewsCopy';
 
 interface EnrichedFavorite {
   item: FavoriteItem;
   team?: Team | null;
   player?: Player | null;
   match?: Match | null;
+  news?: NewsArticle | null;
   loading: boolean;
 }
 
@@ -39,7 +43,7 @@ export default function FavoritesPage() {
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
-  const [activeTab, setActiveTab] = useState<'all' | 'team' | 'player' | 'match'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'team' | 'player' | 'match' | 'news'>('all');
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -60,6 +64,7 @@ export default function FavoritesPage() {
             team: item.targetType === 'team' ? ((target as Team) || null) : undefined,
             player: item.targetType === 'player' ? ((target as Player) || null) : undefined,
             match: item.targetType === 'match' ? ((target as Match) || null) : undefined,
+            news: item.targetType === 'news' ? (mapFavoriteNews(target) || null) : undefined,
           };
         }
         setEnrichedMap(initial);
@@ -102,6 +107,7 @@ export default function FavoritesPage() {
       team: favorites.filter((f) => f.targetType === 'team').length,
       player: favorites.filter((f) => f.targetType === 'player').length,
       match: favorites.filter((f) => f.targetType === 'match').length,
+      news: favorites.filter((f) => f.targetType === 'news').length,
     };
   }, [favorites]);
 
@@ -117,7 +123,7 @@ export default function FavoritesPage() {
         </div>
         <h1 className="mt-6 text-2xl font-black tracking-tight text-mtext">Your Favorites Library</h1>
         <p className="mt-2 text-sm text-stext leading-relaxed">
-          Sign in to view and manage your favorite teams, stars, and cricket fixtures all in one place.
+          Sign in to save teams, players, matches, and news.
         </p>
         <Link
           href="/login?returnTo=/favorites"
@@ -144,7 +150,7 @@ export default function FavoritesPage() {
               Favorites
             </h1>
             <p className="text-sm text-stext max-w-2xl">
-              Keep track of matches, teams, and players you care about most. Instant updates and quick access.
+              Keep track of matches, teams, players, and news you care about.
             </p>
           </div>
 
@@ -186,6 +192,13 @@ export default function FavoritesPage() {
             icon={<Calendar size={14} />}
             count={counts.match}
           />
+          <TabButton
+            active={activeTab === 'news'}
+            onClick={() => setActiveTab('news')}
+            label="News"
+            icon={<Newspaper size={14} />}
+            count={counts.news}
+          />
         </div>
       </header>
 
@@ -199,7 +212,7 @@ export default function FavoritesPage() {
             {activeTab === 'all' ? 'No favorites added yet' : `No favorite ${activeTab}s saved yet`}
           </h2>
           <p className="mt-1.5 max-w-md text-sm text-stext">
-            Explore teams, player rosters, or upcoming matches and tap the heart button to quickly save them here.
+            Explore teams, players, matches, or news and tap the heart to save them here.
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <Link
@@ -219,6 +232,12 @@ export default function FavoritesPage() {
               className="rounded-xl border border-lborder bg-secondary px-4 py-2 text-xs font-bold text-mtext transition-colors hover:bg-card hover:text-accent"
             >
               Discover Players
+            </Link>
+            <Link
+              href="/news"
+              className="rounded-xl border border-lborder bg-secondary px-4 py-2 text-xs font-bold text-mtext transition-colors hover:bg-card hover:text-accent"
+            >
+              Read News
             </Link>
           </div>
         </div>
@@ -262,6 +281,17 @@ export default function FavoritesPage() {
                 />
               );
             }
+            if (fav.targetType === 'news') {
+              return (
+                <FavoriteNewsCard
+                  key={fav.id}
+                  fav={fav}
+                  news={data?.news}
+                  isBusy={busyId === fav.id}
+                  onRemove={() => setDeleteTarget({ id: fav.id, name: data?.news?.title || 'News' })}
+                />
+              );
+            }
             return null;
           })}
         </div>
@@ -279,6 +309,27 @@ export default function FavoritesPage() {
       />
     </div>
   );
+}
+
+function mapFavoriteNews(target: Record<string, unknown> | undefined): NewsArticle | null {
+  if (!target?.id || !target.title) return null;
+  const authorRef = target.authorRef as { name?: string } | undefined;
+  return {
+    id: String(target.id),
+    slug: typeof target.slug === 'string' ? target.slug : undefined,
+    title: String(target.title),
+    category: typeof (target.category as { name?: string } | undefined)?.name === 'string'
+      ? String((target.category as { name: string }).name)
+      : 'News',
+    type: '',
+    date: target.publishedAt ? new Date(String(target.publishedAt)).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '',
+    author: authorRef?.name || String(target.author || 'Editorial'),
+    readTime: '',
+    excerpt: String(target.summary || ''),
+    content: '',
+    language: typeof target.language === 'string' ? target.language : 'en',
+    image: typeof target.imageUrl === 'string' ? target.imageUrl : undefined,
+  };
 }
 
 function TabButton({
@@ -535,6 +586,60 @@ function FavoriteMatchCard({
         >
           <span>Match Scorecard & Details</span>
           <ArrowRight size={13} className="transition-transform group-hover:translate-x-1" />
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function FavoriteNewsCard({
+  fav,
+  news,
+  isBusy,
+  onRemove,
+}: {
+  fav: FavoriteItem;
+  news?: NewsArticle | null;
+  isBusy: boolean;
+  onRemove: () => void;
+}) {
+  const title = news?.title || 'News';
+  const href = news ? newsHref(news) : `/news/${fav.targetId}`;
+
+  return (
+    <div className="group relative flex h-full flex-col overflow-hidden rounded-md border border-lborder bg-card transition-colors hover:border-accent/40 hover:bg-elevated">
+      {news?.image ? (
+        <Link href={href} className="relative block aspect-[16/9] overflow-hidden bg-secondary">
+          <RemoteImage src={news.image} alt={title} fill sizes="(min-width: 768px) 25vw, 100vw" className="object-cover" />
+        </Link>
+      ) : null}
+      <div className="flex flex-1 flex-col p-4">
+        <div className="flex items-start justify-between gap-2">
+          <Badge tone="neutral">News</Badge>
+          <button
+            type="button"
+            onClick={onRemove}
+            disabled={isBusy}
+            title="Remove from favorites"
+            className="grid h-8 w-8 place-items-center rounded-lg text-stext transition-colors hover:bg-danger/10 hover:text-danger disabled:opacity-50"
+          >
+            {isBusy ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+          </button>
+        </div>
+        <Link href={href} className="mt-2 block flex-1">
+          <NewsCopy
+            as="p"
+            language={news?.language}
+            text={title}
+            className="news-copy-card line-clamp-2 text-sm font-bold text-mtext transition-colors group-hover:text-accent"
+          >
+            {title}
+          </NewsCopy>
+          {news?.date ? <p className="mt-2 text-xs text-stext">{news.date}</p> : null}
+        </Link>
+        <Link href={href} className="mt-4 inline-flex items-center justify-between border-t border-lborder/60 pt-3 text-xs font-bold text-accent">
+          <span>Read article</span>
+          <ArrowRight size={13} />
         </Link>
       </div>
     </div>

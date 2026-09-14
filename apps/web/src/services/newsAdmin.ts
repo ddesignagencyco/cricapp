@@ -32,6 +32,11 @@ export interface NewsArticleAdmin {
   teamIds?: string[];
   matchIds?: string[];
   seriesIds?: string[];
+  translationGroupId?: string;
+  pushNotificationTitle?: string | null;
+  pushNotificationBody?: string | null;
+  socialCopy?: string | null;
+  translations?: { language?: string; slug?: string; href?: string }[];
 }
 
 export interface NewsInput {
@@ -49,6 +54,10 @@ export interface NewsInput {
   metaDescription?: string;
   canonicalUrl?: string;
   isPublished?: boolean;
+  translationGroupId?: string;
+  pushNotificationTitle?: string;
+  pushNotificationBody?: string;
+  socialCopy?: string;
 }
 
 export interface NewsAdminListParams {
@@ -62,6 +71,7 @@ export interface NewsAdminListParams {
   teamId?: string;
   matchId?: string;
   seriesId?: string;
+  authorId?: string;
 }
 
 export async function fetchNewsAdmin(
@@ -138,4 +148,12 @@ export function updateCategory(
 
 export async function deleteCategory(idOrSlug: string): Promise<void> {
   await apiDelete(`/news/categories/${idOrSlug}`, { headers: authHeaders() });
+}
+
+export function fetchNewsCategory(idOrSlug: string): Promise<NewsCategory> {
+  return apiGet<NewsCategory>(`/news/categories/${idOrSlug}`);
+}
+
+export function createNewsTranslation(sourceId: string, input: NewsInput): Promise<NewsArticleAdmin> {
+  return apiPost<NewsArticleAdmin>(`/news/${sourceId}/translations`, input, { headers: authHeaders() });
 }

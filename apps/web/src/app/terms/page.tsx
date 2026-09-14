@@ -1,3 +1,6 @@
+import EditorialDocument from '../../components/EditorialDocument';
+import { fetchEditorialPage } from '../../services/editorial';
+
 export const metadata = {
   title: 'Terms of Service',
   description:
@@ -43,7 +46,10 @@ const sections = [
   },
 ];
 
-export default function TermsPage() {
+export default async function TermsPage() {
+  const cms = await fetchEditorialPage('terms').catch(() => null);
+  if (cms?.content?.trim()) return <EditorialDocument page={cms} />;
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
       <div className="space-y-8">

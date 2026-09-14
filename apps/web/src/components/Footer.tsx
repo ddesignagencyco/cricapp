@@ -34,6 +34,7 @@ const footerCols = [
       { label: 'Contact', to: '/contact' },
       { label: 'Privacy Policy', to: '/privacy' },
       { label: 'Terms of Service', to: '/terms' },
+      { label: 'Editorial Policy', to: '/editorial/editorial-policy' },
     ],
   },
 ];
