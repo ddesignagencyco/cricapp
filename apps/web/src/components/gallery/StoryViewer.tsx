@@ -13,7 +13,7 @@ interface StoryViewerProps {
   items: GalleryPhoto[];
   index: number;
   onClose: () => void;
-  onIndexChange: (index: number) => void;
+  onIndexChange: (_index: number) => void;
 }
 
 export default function StoryViewer({ items, index, onClose, onIndexChange }: StoryViewerProps) {

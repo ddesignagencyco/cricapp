@@ -46,7 +46,7 @@ function liveScore(match: any, battingCode: string, sideCode: string) {
   };
 }
 
-export default function MatchCard({ match, compact = false, showVenue = true }: MatchCardProps) {
+export default function MatchCard({ match, compact: _compact = false, showVenue = true }: MatchCardProps) {
   const home = pickSide(match, 0);
   const away = pickSide(match, 1);
   const isLive = match.status === 'live';

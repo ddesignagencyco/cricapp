@@ -3,7 +3,7 @@
 > **Purpose:** This file is the single source of truth for project progress. It is structured in phases, each broken into **Frontend**, **Backend**, and **Ingestion** task groups. Check a box (`- [x]`) when that task is verified complete. This file is meant to be read and updated by AI coding agents as well as humans — keep task descriptions atomic and unambiguous so an agent can pick up any unchecked box and know exactly what "done" means.
 >
 > **Baseline source:** Progress Report dated Sep 8, 2026 (Day 8 of development).
-> **Last updated:** Sep 11, 2026 — frontend aligned to current APIs (cookie auth, news CMS + Cloudinary gallery, admin analytics `{ favorites: { total, types } }`, superadmin-locked users UI). Live Sportradar poll still paused pending a new API key.
+> **Last updated:** Sep 14, 2026 — frontend: `/tours` uses paginated `GET /tours`; stream watch comments use `GET/POST /streams/:id/comments`. No API/ingestion folder changes in this pass.
 
 **Legend:**
 - `[x]` = Complete / verified
@@ -230,12 +230,13 @@
 - [x] `/privacy` — static page
 - [x] `/terms` — static page
 - [x] `/streams` — `LiveStreamsBoard` uses `GET /streams`; listed in Navbar + Footer
+- [x] `/gallery` — images, shorts, videos, stories from news + streams
 
 ### 5.2 Missing Frontend Pages (Backend endpoints already exist)
 - [x] `/head-to-head` or `/matches/[id]/head-to-head` — dedicated head-to-head comparison page
 - [x] `/teams/[id]/schedule` or tab — team detail `Fixtures` + `Results` tabs from `/teams/:id/schedule` and `/teams/:id/results`
 - [x] `/schedules/[date]` — daily schedule/results dedicated page
-- [x] `/tours` — tours listing/detail page
+- [x] `/tours` — tours listing page with `GET /tours` pagination (`page`, `limit`; 20 per page)
 
 ### 5.3 Reusable Board Components — Frontend
 - [x] `HomeHero`
@@ -316,6 +317,7 @@
 - [x] Tournaments page — connected to real API (backend endpoint already exists)
 - [x] News — real backend API exists (Phase 4.7 complete)
 - [x] Streams — `LiveStreamsBoard` + `/streams` page use `GET /streams` (Phase 4.8)
+- [x] Tours — `/tours` uses paginated `GET /tours` (Phase 4.5)
 
 ---
 
@@ -358,6 +360,7 @@
 - [x] **Backend:** implement `/streams` endpoints (see Phase 4.8)
 - [x] **Frontend:** wire `LiveStreamsBoard` to real API instead of mock data
 - [x] **Frontend:** unhide `/streams` route from navigation once real data flows
+- [x] **Frontend:** watch-page comments via `GET/POST /streams/:id/comments` (`CommentsSection` on featured stream)
 - [ ] Legal/licensing check for stream embedding (confirm rights before going live)
 
 ---
@@ -536,8 +539,8 @@
 | 2. Backend Core Infra | Backend | ~99% (cookie sessions, superadmin, logout) |
 | 3. Ingestion Service | Ingestion | ~92% (live Redis prune on completed matches; **live poll still blocked on Sportradar 429 / new key**) |
 | 4. Backend API Endpoints | Backend | ~99% (categories, slugs, stream comments, analytics, Cloudinary, live-match fix) |
-| 5. Frontend Pages & Components | Frontend | ~95% (H2H, team fixtures, schedules, tours, streams, admin CMS shipped) |
-| 6. Real Data Integration | Frontend+Backend | ~95% (pages use live APIs; no mock news/streams/search) |
+| 5. Frontend Pages & Components | Frontend | ~96% (gallery, paginated tours, stream comments, H2H, admin CMS) |
+| 6. Real Data Integration | Frontend+Backend | ~96% (tours now paginated; pages use live APIs) |
 | 7. News / Editorial | Full-stack | ~92% (CMS + gallery + title/slug/language; remaining = RSS prod, public authors API, sitemaps) |
 | 8. Live Streams Module | Full-stack | ~70% (backend + frontend + stream comments; licensed provider + legal check pending) |
 | 9. User System & Engagement | Full-stack | ~90% (cookie auth + reset-link UX + browser permission prompt; FCM web token still blocked) |
@@ -548,7 +551,7 @@
 | 14. Odds Intelligence | Backend | **0% — not started** |
 | 15. Interactive Tools | Backend+Frontend | **~10%** (H2H UI on match + team pages; `/tools/{slug}` not started) |
 
-**Overall project completion (updated Sep 11, 2026, evening): public web + admin CMS use cookie sessions against the current API. News editor matches API constraints and Cloudinary upload; admin analytics and superadmin users UI match the latest backend. Remaining gaps: component/E2E tests, Predictions/Odds/Tools pages (no APIs), Firebase web FCM tokens, licensed streams, CD/staging.**
+**Overall project completion (updated Sep 14, 2026): public web + admin CMS still use cookie sessions against the current API. Frontend now pages `/tours` through `GET /tours` and posts stream comments to `/streams/:id/comments`. Remaining gaps: component/E2E tests, Predictions/Odds/Tools pages (no APIs), Firebase web FCM tokens, licensed streams, CD/staging.**
 
 ---
 

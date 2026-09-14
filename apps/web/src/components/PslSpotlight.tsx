@@ -22,17 +22,17 @@ export default function PslSpotlight({ standings = [] }: PslSpotlightProps) {
   const rows = standings.slice(0, 5);
   return (
     <section className="mx-auto max-w-7xl px-4 pb-12 sm:px-6">
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+      <div className="space-y-4">
         {/* PSL Spotlight */}
         <div className="overflow-hidden rounded-2xl bg-card ring-1 ring-lborder">
           <div className="relative overflow-hidden">
             <Image
               src="/banner2.png"
               alt="PSL 2026"
-              width={1024}
-              height={576}
-              sizes="(min-width: 1024px) 45vw, 100vw"
-              className="h-44 w-full object-cover sm:h-52"
+              width={2103}
+              height={748}
+              sizes="100vw"
+              className="h-auto w-full object-contain"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[#07111F]/80 via-[#07111F]/30 to-transparent" />
             <div className="absolute bottom-0 left-0 p-4 sm:p-5">
@@ -44,32 +44,32 @@ export default function PslSpotlight({ standings = [] }: PslSpotlightProps) {
             </div>
           </div>
 
-          <div className="p-4 sm:p-5">
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-bold text-stext">
-              <span className="flex items-center gap-1.5">
-                <Calendar size={12} className="text-accent" />
-                {PSL_DATA.dates}
-              </span>
-              <span className="flex items-center gap-1.5">
-                <Users size={12} className="text-accent" />
-                {PSL_DATA.teams} Teams
-              </span>
-              <span className="flex items-center gap-1.5">
-                <MapPin size={12} className="text-accent" />
-                {PSL_DATA.venues} Venues
-              </span>
+          <div className="flex flex-col gap-4 p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-bold text-stext">
+                <span className="flex items-center gap-1.5">
+                  <Calendar size={12} className="text-accent" />
+                  {PSL_DATA.dates}
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Users size={12} className="text-accent" />
+                  {PSL_DATA.teams} Teams
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <MapPin size={12} className="text-accent" />
+                  {PSL_DATA.venues} Venues
+                </span>
+              </div>
+
+              <p className="mt-3 max-w-3xl text-sm leading-relaxed text-stext">{PSL_DATA.description}</p>
             </div>
 
-            <p className="mt-3 max-w-xl text-sm leading-relaxed text-stext">{PSL_DATA.description}</p>
-
-            <div className="mt-4">
-              <Link
-                href="/psl"
-                className="inline-flex items-center gap-1.5 rounded-lg bg-accent/10 px-4 py-2 text-xs font-semibold text-accent transition-colors hover:bg-accent/20"
-              >
-                View tournament <ChevronRight size={14} />
-              </Link>
-            </div>
+            <Link
+              href="/psl"
+              className="inline-flex shrink-0 items-center gap-1.5 self-start rounded-lg bg-accent/10 px-4 py-2 text-xs font-semibold text-accent transition-colors hover:bg-accent/20 lg:self-auto"
+            >
+              View tournament <ChevronRight size={14} />
+            </Link>
           </div>
         </div>
 

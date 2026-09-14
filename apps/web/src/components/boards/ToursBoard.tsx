@@ -1,23 +1,21 @@
 'use client';
 
-import { Fragment, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { ChevronRight, MapPin, Search, Trophy, X } from 'lucide-react';
 import { str } from '../../utils/extract';
+import type { Tour } from '../../types/index';
+import { fetchToursPage } from '../../services/tours';
 import EmptyState from '../EmptyState';
+import ErrorState from '../ErrorState';
+import Pagination from '../Pagination';
 import AdSlot from '../AdSlot';
+import { DirectoryGridSkeleton } from '../skeletons/Skeletons';
 
-/**
- * Row index the mid-list sponsored slot follows. Six keeps the break on a row
- * boundary in both the two and three column layouts, and short lists skip it so
- * the slot never sits near the end of the results.
- */
+const LIMIT = 20;
 const MID_SLOT_AFTER_INDEX = 5;
 const MID_SLOT_MIN_RESULTS = 12;
-
-interface Props {
-  tours: any[];
-}
 
 const chipClass = (active: boolean) =>
   `flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition-colors ${
@@ -26,13 +24,48 @@ const chipClass = (active: boolean) =>
       : 'border border-lborder bg-card text-stext hover:bg-secondary hover:text-mtext'
   }`;
 
-export default function ToursBoard({ tours }: Props) {
+export default function ToursBoard() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const page = Math.max(1, Number(searchParams.get('page')) || 1);
+
+  const [tours, setTours] = useState<Tour[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
   const [search, setSearch] = useState('');
   const [countryFilter, setCountryFilter] = useState('all');
 
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError(false);
+    fetchToursPage({ limit: LIMIT, page })
+      .then(({ items, total: nextTotal }) => {
+        if (cancelled) return;
+        setTours(items);
+        setTotal(nextTotal);
+        setLoading(false);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setTours([]);
+        setTotal(0);
+        setError(true);
+        setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [page, retryKey]);
+
+  const totalPages = Math.max(1, Math.ceil((total || 0) / LIMIT));
+
   const categories = useMemo(() => {
     const map = new Map<string, number>();
-    (tours || []).forEach((t) => {
+    tours.forEach((t) => {
       const c = str(t.category) || 'International';
       map.set(c, (map.get(c) || 0) + 1);
     });
@@ -40,7 +73,7 @@ export default function ToursBoard({ tours }: Props) {
   }, [tours]);
 
   const filtered = useMemo(() => {
-    let list = tours || [];
+    let list = tours;
     const q = search.toLowerCase().trim();
     if (q) {
       list = list.filter(
@@ -57,6 +90,14 @@ export default function ToursBoard({ tours }: Props) {
   }, [tours, search, countryFilter]);
 
   const activeFilters = countryFilter !== 'all';
+
+  const handlePageChange = (next: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (next <= 1) params.delete('page');
+    else params.set('page', String(next));
+    const qs = params.toString();
+    router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  };
 
   return (
     <div className="space-y-5">
@@ -77,7 +118,7 @@ export default function ToursBoard({ tours }: Props) {
               <Trophy size={18} />
             </div>
             <div>
-              <p className="text-lg font-semibold leading-none text-mtext">{tours.length}</p>
+              <p className="text-lg font-semibold leading-none text-mtext">{total || tours.length}</p>
               <p className="mt-1 text-xs font-medium uppercase tracking-wider text-stext">Tours</p>
             </div>
           </div>
@@ -131,21 +172,39 @@ export default function ToursBoard({ tours }: Props) {
       </div>
 
       <p className="text-xs text-stext">
-        Showing <span className="font-semibold text-mtext">{filtered.length}</span> of {tours.length} tour
-        {tours.length === 1 ? '' : 's'}
+        Showing <span className="font-semibold text-mtext">{filtered.length}</span> of {total} tour
+        {total === 1 ? '' : 's'}
       </p>
 
-      {filtered.length > 0 ? (
-        <div className="fade-in grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((tour, index) => (
-            <Fragment key={tour.id}>
-              <TourCard tour={tour} />
-              {index === MID_SLOT_AFTER_INDEX && filtered.length >= MID_SLOT_MIN_RESULTS && (
-                <AdSlot slot="tours-mid-list" format="leaderboard" className="col-span-full py-2" />
-              )}
-            </Fragment>
-          ))}
-        </div>
+      {loading ? (
+        <DirectoryGridSkeleton />
+      ) : error ? (
+        <ErrorState
+          message="Tours are temporarily unavailable."
+          onRetry={() => setRetryKey((key) => key + 1)}
+        />
+      ) : filtered.length > 0 ? (
+        <>
+          <div className="fade-in grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {filtered.map((tour, index) => (
+              <Fragment key={tour.id}>
+                <TourCard tour={tour} />
+                {index === MID_SLOT_AFTER_INDEX && filtered.length >= MID_SLOT_MIN_RESULTS && (
+                  <AdSlot slot="tours-mid-list" format="leaderboard" className="col-span-full py-2" />
+                )}
+              </Fragment>
+            ))}
+          </div>
+          <div className="pt-4">
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              total={total}
+              limit={LIMIT}
+              onPageChange={handlePageChange}
+            />
+          </div>
+        </>
       ) : (
         <EmptyState
           title="No cricket tours found"
@@ -160,7 +219,7 @@ export default function ToursBoard({ tours }: Props) {
   );
 }
 
-function TourCard({ tour }: { tour: any }) {
+function TourCard({ tour }: { tour: Tour }) {
   const country = str(tour.category) || 'International';
   const sport = str(tour.sport) || 'Cricket';
   const code =

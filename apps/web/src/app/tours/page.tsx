@@ -1,6 +1,7 @@
+import { Suspense } from 'react';
 import ToursBoard from '../../components/boards/ToursBoard';
 import AdSlot from '../../components/AdSlot';
-import { fetchTours } from '../../services/tours';
+import { ToursPageSkeleton } from '../../components/skeletons/Skeletons';
 
 export const revalidate = 3600;
 
@@ -9,11 +10,12 @@ export const metadata = {
   description: 'Browse international and domestic cricket tours by country and category.',
 };
 
-export default async function ToursPage() {
-  const tours = await fetchTours();
+export default function ToursPage() {
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-      <ToursBoard tours={tours || []} />
+      <Suspense fallback={<ToursPageSkeleton />}>
+        <ToursBoard />
+      </Suspense>
       <AdSlot slot="tours-bottom" format="leaderboard" className="mt-8" />
     </div>
   );

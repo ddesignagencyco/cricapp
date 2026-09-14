@@ -11,7 +11,7 @@ interface PhotoLightboxProps {
   items: GalleryPhoto[];
   index: number;
   onClose: () => void;
-  onIndexChange: (index: number) => void;
+  onIndexChange: (_index: number) => void;
 }
 
 export default function PhotoLightbox({ items, index, onClose, onIndexChange }: PhotoLightboxProps) {

@@ -9,7 +9,7 @@ const REACTIONS = [
 
 interface ReactionBarProps {
   counts?: Record<string, number>;
-  onReact: (value: string) => void;
+  onReact: (_value: string) => void;
   size?: 'md' | 'sm';
   disabled?: boolean;
 }

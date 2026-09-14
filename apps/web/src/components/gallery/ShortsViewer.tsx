@@ -11,7 +11,7 @@ interface ShortsViewerProps {
   items: GalleryShort[];
   index: number;
   onClose: () => void;
-  onIndexChange: (index: number) => void;
+  onIndexChange: (_index: number) => void;
   layout?: 'portrait' | 'landscape';
 }
 
