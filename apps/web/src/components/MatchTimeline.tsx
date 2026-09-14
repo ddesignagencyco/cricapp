@@ -5,15 +5,31 @@ import EmptyState from './EmptyState';
 import BallTracker from './BallTracker';
 
 export interface TimelineEvent {
+  id?: string | number;
   type: string;
+  inning?: number;
   over?: number;
   ball?: number;
+  displayOvers?: string;
+  displayScore?: string;
   runs?: number;
   extras?: number;
+  extraType?: string;
   commentary?: string;
   batsman?: string;
+  nonStriker?: string;
   bowler?: string;
+  shot?: string;
+  connect?: string;
+  zone?: string;
+  dismissal?: string;
+  dismissed?: string;
   period?: string;
+  freeHit?: boolean;
+  dropped?: boolean;
+  misfielded?: boolean;
+  bowlingFrom?: string;
+  deliveryType?: string;
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -61,7 +77,29 @@ function str(value: unknown): string | undefined {
   return typeof value === 'string' && value.trim() ? value.trim() : undefined;
 }
 
-export function parseTimelineEvents(payload: Record<string, unknown> | null | undefined): TimelineEvent[] {
+function commentaryText(value: unknown): string | undefined {
+  const direct = str(value);
+  if (direct) return direct;
+  const rec = asRecord(value);
+  return str(rec?.text ?? rec?.description ?? rec?.comment);
+}
+
+function humanize(value?: string): string | undefined {
+  if (!value) return undefined;
+  return value.replace(/_/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function unwrapPayload(payload: Record<string, unknown> | null | undefined): Record<string, unknown> | null {
+  if (!payload) return null;
+  const nested = asRecord(payload.payload);
+  if (nested && (Array.isArray(nested.timeline) || nested.sport_event_timeline || nested.sport_event)) {
+    return nested;
+  }
+  return payload;
+}
+
+export function parseTimelineEvents(rawPayload: Record<string, unknown> | null | undefined): TimelineEvent[] {
+  const payload = unwrapPayload(rawPayload);
   if (!payload) return [];
 
   const nested = asRecord(payload.sport_event_timeline);
@@ -81,27 +119,47 @@ export function parseTimelineEvents(payload: Record<string, unknown> | null | un
       if (!rec) return null;
       const batting = asRecord(rec.batting_params);
       const bowling = asRecord(rec.bowling_params);
+      const fielding = asRecord(rec.fielding_params);
+      const dismissal = asRecord(rec.dismissal_params);
+      const details = asRecord(dismissal?.dismissal_details);
       const type = str(rec.type) || str(rec.event_type) || 'event';
+      const extraType = str(bowling?.extra_runs_type ?? rec.extra_runs_type ?? rec.extra_type);
       return {
+        id: (rec.id as string | number | undefined) ?? undefined,
         type,
-        over: num(rec.over_number ?? rec.over ?? rec.display_overs),
+        inning: num(rec.inning ?? rec.innings),
+        over: num(rec.over_number ?? rec.over),
         ball: num(rec.ball_number ?? rec.ball),
-        runs: num(rec.runs ?? batting?.runs ?? rec.score),
-        extras: num(rec.extra_runs ?? rec.extras),
-        commentary: str(rec.commentary ?? rec.text ?? rec.description ?? rec.match_note),
-        batsman: pickName(rec.batsman ?? rec.striker ?? batting?.striker),
-        bowler: pickName(rec.bowler ?? bowling?.bowler),
-        period: str(rec.period_name ?? rec.period ?? rec.innings),
+        displayOvers: str(rec.display_overs),
+        displayScore: str(rec.display_score),
+        runs: num(batting?.runs_scored ?? rec.runs ?? batting?.runs ?? rec.score),
+        extras: num(bowling?.extra_runs_conceded ?? rec.extra_runs ?? rec.extras),
+        extraType,
+        commentary: commentaryText(rec.commentary ?? rec.text ?? rec.description ?? rec.match_note),
+        batsman: pickName(batting?.striker ?? rec.batsman ?? rec.striker),
+        nonStriker: pickName(batting?.non_striker ?? rec.non_striker),
+        bowler: pickName(bowling?.bowler ?? rec.bowler),
+        shot: humanize(str(batting?.shot_type)),
+        connect: humanize(str(batting?.connect)),
+        zone: humanize(str(batting?.zone_played_in)),
+        dismissal: humanize(str(details?.type)),
+        dismissed: pickName(dismissal?.player),
+        period: str(rec.period_name ?? rec.period),
+        freeHit: rec.free_hit === true,
+        dropped: fielding?.catch_dropped === true,
+        misfielded: fielding?.misfielded === true,
+        bowlingFrom: humanize(str(bowling?.bowling_from)),
+        deliveryType: humanize(str(bowling?.delivery_type)),
       } satisfies TimelineEvent;
     })
-    .filter((event) => Boolean(event));
+    .filter((event): event is TimelineEvent => Boolean(event));
 }
 
 export function extractBalls(payload: Record<string, unknown> | null | undefined): (string | number | null)[] {
   if (!payload) return [];
   const keys = ['balls', 'recentBalls', 'thisOver'];
   for (const key of keys) {
-    const value = payload[key];
+    const value = unwrapPayload(payload)?.[key] ?? payload[key];
     if (Array.isArray(value) && value.length) {
       return padOverSlots(value as (string | number)[]);
     }
@@ -113,14 +171,12 @@ export function extractBalls(payload: Record<string, unknown> | null | undefined
 
   const events = parseTimelineEvents(payload).filter(isDelivery);
   if (!events.length) return [];
-  const lastOver = events[events.length - 1]?.over;
-  if (lastOver === null || lastOver === undefined) return [];
-  const overEvents = events.filter((event) => event.over === lastOver);
+  const last = events[events.length - 1];
+  const overEvents = events.filter(
+    (event) => event.inning === last.inning && event.over === last.over,
+  );
   const bowled = overEvents.map(deliveryLabel);
-  const legalCount = overEvents.filter((event) => {
-    const type = event.type.toLowerCase();
-    return !type.includes('wide') && !/(^|_)no[_ ]?ball/.test(type);
-  }).length;
+  const legalCount = overEvents.filter((event) => isLegalDelivery(event)).length;
   const remaining = Math.max(0, 6 - legalCount);
   return [...bowled, ...Array.from({ length: remaining }, () => null)];
 }
@@ -134,38 +190,56 @@ function padOverSlots(bowled: (string | number)[]): (string | number | null)[] {
   return [...bowled, ...Array.from({ length: remaining }, () => null)];
 }
 
+function extraKind(event: TimelineEvent): string {
+  return (event.extraType || event.type || '').toLowerCase().replace(/[-\s]/g, '_');
+}
+
 function isDelivery(event: TimelineEvent): boolean {
-  if (event.over === null || event.over === undefined) return false;
+  if (event.over === undefined) return false;
   const type = event.type.toLowerCase();
-  return /^(ball|wicket|boundary|four|six|wide|no.?ball|bye|leg.?bye)/.test(type) || type.includes('wicket');
+  if (type === 'period_start' || type === 'period_end' || type === 'match_started' || type === 'match_ended') {
+    return false;
+  }
+  return /^(ball|wicket|boundary|four|six)/.test(type) || Boolean(event.extraType) || Boolean(event.ball);
+}
+
+function isLegalDelivery(event: TimelineEvent): boolean {
+  const extra = extraKind(event);
+  return extra !== 'wide' && extra !== 'no_ball' && extra !== 'noball';
 }
 
 function deliveryLabel(event: TimelineEvent): string | number {
-  const type = event.type.toLowerCase();
-  if (type.includes('wicket')) return 'W';
-  if (type.includes('wide')) return 'Wd';
-  if (/(^|_)no[_ ]?ball/.test(type) || type === 'noball') return 'Nb';
-  if (event.runs === 4 || type.includes('four')) return 4;
-  if (event.runs === 6 || type.includes('six')) return 6;
+  const extra = extraKind(event);
+  if (event.type.toLowerCase().includes('wicket') || event.dismissal) return 'W';
+  if (extra === 'wide') return 'Wd';
+  if (extra === 'no_ball' || extra === 'noball') return 'Nb';
+  if (extra === 'leg_bye' || extra === 'legbye') return 'Lb';
+  if (extra === 'bye') return 'B';
+  if (event.runs === 6 || event.type.toLowerCase() === 'six') return 6;
+  if (event.runs === 4 || event.type.toLowerCase() === 'boundary' || event.type.toLowerCase() === 'four') return 4;
   if (typeof event.runs === 'number') return event.runs;
   return 0;
 }
 
-function humanizeType(type: string): string {
-  const key = type.toLowerCase().replace(/_/g, ' ').trim();
+function humanizeType(event: TimelineEvent): string {
+  if (event.period) return event.period;
+  if (event.dismissal) return event.dismissal;
+  if (event.extraType) return humanize(event.extraType) || event.extraType;
+  if (event.freeHit) return 'Free hit';
+  const key = event.type.toLowerCase().replace(/_/g, ' ').trim();
   const labels: Record<string, string> = {
     ball: 'Ball',
     wicket: 'Wicket',
-    boundary: 'Boundary',
-    four: 'Four',
-    six: 'Six',
+    boundary: 'FOUR',
+    four: 'FOUR',
+    six: 'SIX',
     wide: 'Wide',
     'no ball': 'No ball',
     bye: 'Bye',
     'leg bye': 'Leg bye',
     'match started': 'Match started',
     'match ended': 'Match ended',
-    'period start': 'Innings started',
+    'period start': 'Break',
     'period score': 'Innings score',
     'period end': 'Innings ended',
     'score change': 'Score update',
@@ -174,24 +248,72 @@ function humanizeType(type: string): string {
 }
 
 function eventTitle(event: TimelineEvent): string {
-  const type = humanizeType(event.type);
-  const overBall =
-    event.over !== null && event.over !== undefined && event.ball !== null && event.ball !== undefined
-      ? `${event.over}.${event.ball}`
-      : event.over !== null && event.over !== undefined
+  const type = humanizeType(event);
+  const overBall = event.displayOvers || (
+    event.over !== undefined && event.ball !== undefined
+      ? `${Math.max(0, event.over - 1)}.${event.ball}`
+      : event.over !== undefined
         ? `Over ${event.over}`
-        : null;
+        : null
+  );
   if (!overBall) return type;
-  return type.toLowerCase() === 'ball' ? overBall : `${overBall} · ${type}`;
+  if (type.toLowerCase() === 'ball') return overBall;
+  return `${overBall} · ${type}`;
 }
 
-function eventDetail(event: TimelineEvent): string | null {
-  const parts = [
-    event.bowler && event.batsman ? `${event.bowler} to ${event.batsman}` : event.batsman || event.bowler,
-    event.runs !== null && event.runs !== undefined ? `${event.runs} run${event.runs === 1 ? '' : 's'}` : null,
-    event.extras ? `${event.extras} extra${event.extras === 1 ? '' : 's'}` : null,
-  ].filter(Boolean);
-  return parts.length ? parts.join(' · ') : null;
+function eventMeta(event: TimelineEvent): string[] {
+  const chips: string[] = [];
+  if (event.bowler && event.batsman) chips.push(`${event.bowler} to ${event.batsman}`);
+  else if (event.batsman) chips.push(event.batsman);
+  else if (event.bowler) chips.push(event.bowler);
+  if (event.nonStriker) chips.push(`Non-striker ${event.nonStriker}`);
+  if (event.dismissed && event.dismissal) chips.push(`${event.dismissed} ${event.dismissal.toLowerCase()}`);
+  if (event.shot) chips.push(event.shot);
+  if (event.connect) chips.push(event.connect);
+  if (event.zone) chips.push(event.zone);
+  if (event.deliveryType && event.deliveryType.toLowerCase() !== 'stock') chips.push(event.deliveryType);
+  if (event.bowlingFrom) chips.push(event.bowlingFrom);
+  if (event.dropped) chips.push('Dropped');
+  if (event.misfielded) chips.push('Misfield');
+  if (event.freeHit) chips.push('Free hit');
+  if (event.extras && event.extraType) chips.push(`${humanize(event.extraType)} +${event.extras}`);
+  else if (typeof event.runs === 'number' && isDelivery(event) && !event.dismissal) {
+    chips.push(event.runs === 0 ? 'Dot' : `${event.runs} run${event.runs === 1 ? '' : 's'}`);
+  }
+  return chips;
+}
+
+function matchSummary(payload: Record<string, unknown> | null | undefined): {
+  result?: string;
+  scores: string[];
+} {
+  const data = unwrapPayload(payload);
+  const status = asRecord(data?.sport_event_status);
+  const periods = Array.isArray(status?.period_scores) ? status.period_scores : [];
+  const scores = periods
+    .map((item) => {
+      const rec = asRecord(item);
+      if (!rec) return '';
+      const innings = num(rec.number);
+      const score = str(rec.display_score);
+      const overs = str(rec.display_overs);
+      if (!score) return '';
+      return `Inn ${innings ?? ''} ${score}${overs ? ` (${overs} ov)` : ''}`.replace('Inn  ', 'Inn ');
+    })
+    .filter(Boolean);
+  return {
+    result: str(status?.match_result_text),
+    scores,
+  };
+}
+
+function rowTone(event: TimelineEvent): string {
+  const type = event.type.toLowerCase();
+  if (type.includes('wicket') || event.dismissal) return 'border-l-2 border-l-danger bg-danger/5';
+  if (type === 'six') return 'border-l-2 border-l-[var(--color-gold,#d4a017)] bg-[var(--color-gold,#d4a017)]/10';
+  if (type === 'boundary' || event.runs === 4) return 'border-l-2 border-l-accent bg-accent/5';
+  if (event.dropped) return 'border-l-2 border-l-warning bg-warning/5';
+  return '';
 }
 
 export default function MatchTimeline({
@@ -205,6 +327,7 @@ export default function MatchTimeline({
   const deliveries = events.filter(isDelivery);
   const thisOver = extractBalls(payload);
   const latestFirst = [...events].reverse();
+  const summary = matchSummary(payload);
 
   if (!events.length) {
     return (
@@ -220,8 +343,34 @@ export default function MatchTimeline({
     );
   }
 
+  const renderEvent = (event: TimelineEvent) => {
+    const meta = eventMeta(event);
+    return (
+      <div className={`px-3.5 py-3 ${rowTone(event)}`}>
+        <div className="flex items-start justify-between gap-3">
+          <p className="font-mono text-xs font-semibold text-accent">{eventTitle(event)}</p>
+          {event.displayScore && (
+            <p className="shrink-0 font-mono text-[11px] tabular-nums text-stext">{event.displayScore}</p>
+          )}
+        </div>
+        {event.commentary && <p className="mt-1 text-sm leading-relaxed text-mtext">{event.commentary}</p>}
+        {meta.length > 0 && (
+          <p className="mt-1.5 text-[11px] leading-relaxed text-stext">{meta.join(' · ')}</p>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-5">
+      {(summary.result || summary.scores.length > 0) && (
+        <div className="rounded-xl border border-lborder bg-secondary/40 px-3.5 py-3">
+          {summary.result && <p className="text-sm font-semibold text-mtext">{summary.result}</p>}
+          {summary.scores.length > 0 && (
+            <p className="mt-1 font-mono text-xs text-stext">{summary.scores.join(' · ')}</p>
+          )}
+        </div>
+      )}
       {thisOver.length > 0 && (
         <div>
           <p className="mb-2 text-xs font-bold uppercase tracking-wider text-stext">This over</p>
@@ -237,16 +386,19 @@ export default function MatchTimeline({
           </p>
           <p className="text-[11px] text-stext">Latest first</p>
         </div>
-        <ol className="max-h-[min(28rem,60vh)] overflow-y-auto overscroll-contain divide-y divide-lborder">
+        <ol className="max-h-[min(40rem,70vh)] overflow-y-auto overscroll-contain divide-y divide-lborder">
           {latestFirst.map((event, index) => {
-            const detail = event.commentary || eventDetail(event);
+            const prev = latestFirst[index - 1];
+            const showInnings =
+              typeof event.inning === 'number' && event.inning !== prev?.inning;
             return (
-              <li
-                key={`${event.type}-${event.over}-${event.ball}-${index}`}
-                className="px-3.5 py-2.5"
-              >
-                <p className="font-mono text-xs font-semibold text-accent">{eventTitle(event)}</p>
-                {detail && <p className="mt-0.5 text-sm text-mtext">{detail}</p>}
+              <li key={`${event.id ?? event.type}-${event.displayOvers}-${index}`}>
+                {showInnings && (
+                  <p className="sticky top-0 z-[1] border-b border-lborder bg-secondary px-3.5 py-2 text-[11px] font-bold uppercase tracking-wider text-stext">
+                    Innings {event.inning}
+                  </p>
+                )}
+                {renderEvent(event)}
               </li>
             );
           })}

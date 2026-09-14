@@ -11,12 +11,9 @@ const footerCols = [
     title: 'Cricket',
     links: [
       { label: 'Matches', to: '/matches' },
-      { label: 'Schedule', to: '/schedules' },
       { label: 'Teams', to: '/teams' },
       { label: 'Players', to: '/players' },
-      { label: 'Live Streams', to: '/streams' },
-      { label: 'News', to: '/news' },
-      { label: 'Urdu News', to: '/ur/news' },
+      { label: 'Authors', to: '/authors' },
       { label: 'Gallery', to: '/gallery' },
     ],
   },

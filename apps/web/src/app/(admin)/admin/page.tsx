@@ -206,7 +206,7 @@ export default function AdminDashboard() {
           accentBg="var(--admin-warning-bg)"
         />
         <MetricCard
-          label="Published Articles"
+          label="Published News"
           value={n(analytics?.publishedArticles)}
           icon={<FileText size={14} />}
           accentColor="var(--admin-warning)"

@@ -119,7 +119,7 @@ export default function NewsDetailBody({ item, related = [], authorHref, related
                 language={item.language}
                 text={item.excerpt}
                 className={locale.lang === 'ur'
-                  ? 'mt-4 max-w-3xl text-[0.9375rem] leading-[1.9] text-stext'
+                  ? 'mt-4 max-w-3xl text-[0.9375rem] leading-[2.4] text-stext'
                   : 'mt-4 max-w-3xl text-base leading-relaxed text-stext sm:text-lg'}
               >
                 {item.excerpt}
@@ -270,10 +270,10 @@ export default function NewsDetailBody({ item, related = [], authorHref, related
                       </div>
                       <div className="min-w-0">
                         <NewsCopy
-                          as="h3"
+                          as="p"
                           language={a.language}
                           text={a.title}
-                          className="line-clamp-2 text-sm font-semibold leading-snug text-mtext transition-colors group-hover:text-accent"
+                          className="news-copy-card line-clamp-2 text-sm font-semibold leading-snug text-mtext transition-colors group-hover:text-accent"
                         >
                           {a.title}
                         </NewsCopy>

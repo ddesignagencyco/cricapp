@@ -233,10 +233,10 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
     try {
       if (mode === 'create') {
         await createNews(payload);
-        toast.success(publish ? 'Article published!' : 'Draft saved.');
+        toast.success(publish ? 'News published!' : 'Draft saved.');
       } else if (id) {
         await updateNews(id, payload);
-        toast.success(publish ? 'Article updated!' : 'Draft updated.');
+        toast.success(publish ? 'News updated!' : 'Draft updated.');
       }
       router.push('/admin/news');
     } catch (err: unknown) {
@@ -267,16 +267,16 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
             href="/admin/news"
             className="grid h-8 w-8 place-items-center rounded-md transition-colors"
             style={{ border: '1px solid var(--admin-border)', color: 'var(--admin-text-secondary)' }}
-            title="Back to Articles"
+            title="Back to News"
           >
             <ArrowLeft size={14} />
           </Link>
           <div>
             <h1 className="text-lg font-bold" style={{ color: 'var(--admin-text)' }}>
-              {mode === 'create' ? 'Create New Story' : 'Edit Story'}
+              {mode === 'create' ? 'Create News' : 'Edit News'}
             </h1>
             <p className="text-xs" style={{ color: 'var(--admin-text-muted)' }}>
-              {mode === 'create' ? 'Write your cricket piece with rich formatting' : `Editing article #${id?.slice(0, 8)}`}
+              {mode === 'create' ? 'Write cricket news with rich formatting' : `Editing news #${id?.slice(0, 8)}`}
             </p>
           </div>
         </div>

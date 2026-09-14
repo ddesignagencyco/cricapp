@@ -39,7 +39,7 @@ export default function MediaPage() {
     <div className="space-y-6">
       <AdminPageHeader
         title="Media Library"
-        subtitle="Upload article images to Cloudinary via POST /admin/media/upload. Recent files stay in this browser."
+        subtitle="Upload news images to Cloudinary via POST /admin/media/upload. Recent files stay in this browser."
       />
 
       <label

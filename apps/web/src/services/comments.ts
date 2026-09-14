@@ -24,7 +24,7 @@ export interface ReactionCounts {
 export async function listStreamComments(
   streamId: string,
   page = 1,
-  limit = 20
+  limit = 10
 ): Promise<{ items: CommentItem[]; total: number; totalPages: number }> {
   const res = await apiGet(`/streams/${streamId}/comments`, { page, limit });
   const { items, meta } = extractPage<CommentItem>(res);
@@ -39,7 +39,7 @@ export async function listComments(
   targetType: CommentTarget,
   targetId: string,
   page = 1,
-  limit = 20
+  limit = 10
 ): Promise<{ items: CommentItem[]; total: number; totalPages: number }> {
   if (targetType === 'stream') return listStreamComments(targetId, page, limit);
   const res = await apiGet('/comments', { targetType, targetId, page, limit });

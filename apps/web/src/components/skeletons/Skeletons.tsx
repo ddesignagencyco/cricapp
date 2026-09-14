@@ -631,17 +631,48 @@ export function StatsPageSkeleton() {
   );
 }
 
+export function AuthorDetailSkeleton() {
+  return (
+    <Page className="space-y-6">
+      <Skeleton width={140} height={10} />
+      <Card className="p-5 sm:p-6">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+          <Skeleton circle width={80} height={80} />
+          <div className="flex-1">
+            <Skeleton width={72} height={20} />
+            <Skeleton width={180} height={26} className="mt-2" />
+            <Skeleton width="40%" height={12} className="mt-2" />
+          </div>
+          <Skeleton width={120} height={64} />
+        </div>
+      </Card>
+      <div className="grid auto-rows-fr grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Card key={i} className="overflow-hidden">
+            <Skeleton height={140} />
+            <div className="p-3.5">
+              <Skeleton width="90%" height={14} />
+              <Skeleton width="40%" height={10} className="mt-3" />
+            </div>
+          </Card>
+        ))}
+      </div>
+    </Page>
+  );
+}
+
 export function AuthorsPageSkeleton() {
   return (
     <Page>
       <PageHeaderSkeleton />
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid auto-rows-fr grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {Array.from({ length: 6 }).map((_, i) => (
-          <Card key={i} className="flex gap-3 p-4">
+          <Card key={i} className="flex h-full items-center gap-3 p-3.5">
             <Skeleton circle width={48} height={48} />
             <div className="flex-1">
-              <Skeleton width="70%" height={14} />
-              <Skeleton width="40%" height={10} className="mt-2" />
+              <Skeleton width="55%" height={14} />
+              <Skeleton width="35%" height={10} className="mt-2" />
+              <Skeleton width="70%" height={10} className="mt-2" />
             </div>
           </Card>
         ))}

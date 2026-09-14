@@ -18,6 +18,7 @@ import {
   type CommentTarget,
   type ReactionTarget,
 } from '../services/comments';
+import { moderateComment } from '../services/admin';
 import { ApiError } from '../services/api/client';
 import { useAuth } from './AuthProvider';
 import { ConfirmDialog } from './admin/AdminShared';
@@ -29,7 +30,7 @@ interface CommentsSectionProps {
 }
 
 export default function CommentsSection({ targetType, targetId }: CommentsSectionProps) {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isAdmin } = useAuth();
   const pathname = usePathname();
   const [comments, setComments] = useState<CommentItem[]>([]);
   const [total, setTotal] = useState(0);
@@ -49,7 +50,7 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
   const load = useCallback((nextPage = 1, append = false) => {
     if (!append) setLoading(true);
     setLoadError('');
-    listComments(targetType, targetId, nextPage, 20)
+    listComments(targetType, targetId, nextPage, 10)
       .then(async (r) => {
         setComments((prev) => (append ? [...prev, ...r.items] : r.items));
         setTotal(r.total);
@@ -106,7 +107,12 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
     if (!deleteTarget) return;
     setBusyId(deleteTarget.id);
     try {
-      await deleteComment(deleteTarget.id);
+      const ownComment = user?.id === deleteTarget.userId;
+      if (isAdmin && !ownComment) {
+        await moderateComment(deleteTarget.id, 'deleted');
+      } else {
+        await deleteComment(deleteTarget.id);
+      }
       setComments((list) => list.filter((c) => c.id !== deleteTarget.id));
       setTotal((t) => Math.max(0, t - 1));
       toast.success('Comment deleted.');
@@ -170,7 +176,7 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
           Comments
           <span className="rounded bg-elevated px-2 py-0.5 text-xs font-semibold text-stext">{total}</span>
         </h2>
-        <div className="rounded-md border border-lborder bg-elevated/70 px-3 py-2.5 sm:min-w-[260px]">
+        <div className="overflow-visible rounded-md border border-lborder bg-elevated/70 px-3 py-2.5 sm:min-w-[280px]">
           <p className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-stext">
             <SmilePlus size={12} className="text-accent" />
             Reactions
@@ -247,7 +253,7 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
                     </p>
                   </div>
                 </div>
-                {user?.id === comment.userId && (
+                {(isAdmin || user?.id === comment.userId) && (
                   <button
                     type="button"
                     onClick={() => setDeleteTarget(comment)}
@@ -260,13 +266,13 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
                 )}
               </div>
               <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed text-mtext">{comment.body}</p>
-              <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-lborder/70 pt-2.5">
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-2 overflow-visible border-t border-lborder/70 pt-2.5">
                 <ReactionBar
                   size="sm"
                   counts={commentCounts[comment.id]}
                   onReact={(emoji) => reactToComment(comment, emoji)}
                 />
-                {isAuthenticated && user?.id !== comment.userId && (
+                {isAuthenticated && !isAdmin && user?.id !== comment.userId && (
                   <button
                     type="button"
                     onClick={() => {
@@ -301,7 +307,11 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
       <ConfirmDialog
         open={!!deleteTarget}
         title="Delete comment"
-        message="Are you sure you want to delete this comment? This cannot be undone."
+        message={
+          isAdmin && deleteTarget && user?.id !== deleteTarget.userId
+            ? 'Remove this comment from the thread? Readers will no longer see it.'
+            : 'Are you sure you want to delete this comment? This cannot be undone.'
+        }
         confirmLabel="Delete"
         onConfirm={remove}
         onCancel={() => setDeleteTarget(null)}

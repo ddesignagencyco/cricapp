@@ -41,7 +41,7 @@ export default function AdminDashboard() {
   const published = articles.filter((a) => a.isPublished).length;
   const drafts = articles.length - published;
   const stats = [
-    { label: 'Total Articles', value: articles.length, icon: FileText, color: 'var(--admin-accent)', bg: 'var(--admin-info-bg)' },
+    { label: 'Total News', value: articles.length, icon: FileText, color: 'var(--admin-accent)', bg: 'var(--admin-info-bg)' },
     { label: 'Published Live', value: published, icon: Send, color: 'var(--admin-success)', bg: 'var(--admin-success-bg)' },
     { label: 'Drafts', value: drafts, icon: FileEdit, color: 'var(--admin-warning)', bg: 'var(--admin-warning-bg)' },
     { label: 'Categories', value: categories.length, icon: Tag, color: 'var(--admin-accent)', bg: 'var(--admin-info-bg)' },
@@ -78,7 +78,7 @@ export default function AdminDashboard() {
               className="btn-brand inline-flex items-center gap-1.5 rounded-md px-4 py-2 text-xs font-bold transition-colors"
             >
               <FilePlus2 size={14} />
-              Write Article
+              Write News
             </Link>
           </div>
         </div>
@@ -117,7 +117,7 @@ export default function AdminDashboard() {
           <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid var(--admin-border)' }}>
             <div className="flex items-center gap-2">
               <FileText size={14} style={{ color: 'var(--admin-accent)' }} />
-              <h2 className="text-xs font-bold" style={{ color: 'var(--admin-text)' }}>Recent Articles</h2>
+              <h2 className="text-xs font-bold" style={{ color: 'var(--admin-text)' }}>Recent News</h2>
             </div>
             <Link href="/admin/news" className="inline-flex items-center gap-1 text-xs font-bold" style={{ color: 'var(--admin-accent)' }}>
               View All <ArrowUpRight size={12} />
@@ -126,7 +126,7 @@ export default function AdminDashboard() {
           <div>
             {recent.length === 0 ? (
               <p className="px-4 py-10 text-center text-xs" style={{ color: 'var(--admin-text-muted)' }}>
-                No articles yet. Click &ldquo;Write Article&rdquo; above.
+                No news yet. Click &ldquo;Write News&rdquo; above.
               </p>
             ) : (
               recent.map((a) => (

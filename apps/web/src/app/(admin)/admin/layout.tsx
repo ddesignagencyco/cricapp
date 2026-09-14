@@ -31,7 +31,7 @@ import { AdminChromeSkeleton } from '../../../components/skeletons/Skeletons';
 
 const adminNav = [
   { to: '/admin', label: 'Overview', icon: LayoutDashboard },
-  { to: '/admin/news', label: 'Articles', icon: FileText },
+  { to: '/admin/news', label: 'News', icon: FileText },
   { to: '/admin/categories', label: 'Categories', icon: Tag },
   { to: '/admin/matches', label: 'Matches', icon: Trophy },
   { to: '/admin/teams', label: 'Teams', icon: Users },

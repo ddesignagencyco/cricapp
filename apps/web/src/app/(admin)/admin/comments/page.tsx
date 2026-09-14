@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
-import { Check, EyeOff, ExternalLink, MessageSquare, Trash2, X } from 'lucide-react';
+import { ExternalLink, MessageSquare, Trash2, X } from 'lucide-react';
 import {
   AdminAvatar,
   AdminPageHeader,
@@ -19,7 +19,6 @@ import {
   type ReportedComment,
 } from '../../../../services/admin';
 
-type CommentStatus = 'approved' | 'hidden' | 'deleted';
 type ReportStatus = 'resolved' | 'dismissed';
 
 function targetHref(type?: string, id?: string): string | null {
@@ -65,7 +64,7 @@ export default function CommentsPage() {
 
   const finish = async (
     report: ReportedComment,
-    commentStatus: CommentStatus | null,
+    commentStatus: 'deleted' | null,
     reportStatus: ReportStatus,
     success: string
   ) => {
@@ -89,7 +88,7 @@ export default function CommentsPage() {
     <div className="space-y-5">
       <AdminPageHeader
         title="Comment moderation"
-        subtitle="Review reports from the comment section. Keep, hide or delete the comment, or dismiss the report."
+        subtitle="Review reports from the comment section. Dismiss the report, or delete the comment."
       />
 
       {loading ? (
@@ -101,7 +100,7 @@ export default function CommentsPage() {
       ) : (
         <div className="overflow-hidden rounded-lg" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[860px] text-left text-sm">
+            <table className="w-full min-w-[800px] text-left text-sm">
               <thead>
                 <tr style={{ background: 'var(--admin-table-header)', borderBottom: '1px solid var(--admin-border)' }}>
                   <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Reason</th>
@@ -160,42 +159,26 @@ export default function CommentsPage() {
                           <button
                             type="button"
                             disabled={busy}
-                            onClick={() => finish(report, 'approved', 'resolved', 'Comment kept visible.')}
-                            className="grid h-8 w-8 place-items-center rounded-md disabled:opacity-50"
-                            style={{ background: 'var(--admin-success-bg)', color: 'var(--admin-success)' }}
-                            title="Keep visible"
+                            onClick={() => finish(report, null, 'dismissed', 'Report dismissed.')}
+                            title="Dismiss report"
+                            aria-label="Dismiss report"
+                            className="inline-flex h-8 items-center gap-1 rounded-md px-2.5 text-xs font-semibold disabled:opacity-50"
+                            style={{ background: 'var(--admin-input-bg)', color: 'var(--admin-text-secondary)', border: '1px solid var(--admin-border)' }}
                           >
-                            <Check size={15} />
-                          </button>
-                          <button
-                            type="button"
-                            disabled={busy}
-                            onClick={() => finish(report, 'hidden', 'resolved', 'Comment hidden.')}
-                            className="grid h-8 w-8 place-items-center rounded-md disabled:opacity-50"
-                            style={{ background: 'var(--admin-warning-bg)', color: 'var(--admin-warning)' }}
-                            title="Hide"
-                          >
-                            <EyeOff size={15} />
+                            <X size={13} />
+                            Dismiss
                           </button>
                           <button
                             type="button"
                             disabled={busy}
                             onClick={() => setDeleteTarget(report)}
-                            className="grid h-8 w-8 place-items-center rounded-md disabled:opacity-50"
+                            title="Delete comment"
+                            aria-label="Delete comment"
+                            className="inline-flex h-8 items-center gap-1 rounded-md px-2.5 text-xs font-semibold disabled:opacity-50"
                             style={{ background: 'var(--admin-danger-bg)', color: 'var(--admin-danger)' }}
-                            title="Delete"
                           >
-                            <Trash2 size={15} />
-                          </button>
-                          <button
-                            type="button"
-                            disabled={busy}
-                            onClick={() => finish(report, null, 'dismissed', 'Report dismissed.')}
-                            className="grid h-8 w-8 place-items-center rounded-md disabled:opacity-50"
-                            style={{ background: 'var(--admin-input-bg)', color: 'var(--admin-text-secondary)' }}
-                            title="Dismiss report"
-                          >
-                            <X size={15} />
+                            <Trash2 size={13} />
+                            Delete
                           </button>
                         </div>
                       </td>
@@ -211,7 +194,7 @@ export default function CommentsPage() {
       <ConfirmDialog
         open={!!deleteTarget}
         title="Delete comment"
-        message="This marks the comment as deleted so it no longer appears publicly. The report will be marked resolved."
+        message="This removes the comment from the public thread and closes the report."
         confirmLabel="Delete"
         danger
         loading={!!busyId}

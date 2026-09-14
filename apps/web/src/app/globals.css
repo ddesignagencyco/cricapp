@@ -289,7 +289,7 @@ body {
   direction: rtl;
   text-align: right;
   font-family: "Noto Nastaliq Urdu", "Noto Naskh Arabic", var(--font-sans);
-  line-height: 1.85;
+  line-height: 2.45;
 }
 
 /* Nastaliq reads much larger than Latin at the same px size */
@@ -326,10 +326,29 @@ h3.news-copy[dir="rtl"] {
   }
 }
 
+.news-copy-card[lang="ur"],
+.news-copy-card[dir="rtl"] {
+  font-size: 0.8125rem !important;
+  line-height: 1.7 !important;
+  font-weight: 600 !important;
+  letter-spacing: 0 !important;
+}
+
 .prose.news-copy[lang="ur"],
 .prose.news-copy[dir="rtl"] {
-  font-size: 0.9375rem;
-  line-height: 1.95;
+  font-size: 1rem;
+  line-height: 2.65;
+}
+
+.prose.news-copy[lang="ur"] p,
+.prose.news-copy[dir="rtl"] p {
+  line-height: 2.7 !important;
+  margin-block: 1.35rem;
+}
+
+.prose.news-copy[lang="ur"] li,
+.prose.news-copy[dir="rtl"] li {
+  line-height: 2.55 !important;
 }
 
 .news-copy[lang="en"],
@@ -589,7 +608,7 @@ h3.news-copy[dir="rtl"] {
   text-align: right;
   font-family: "Noto Nastaliq Urdu", "Noto Naskh Arabic", var(--font-sans);
   font-size: 0.9375rem;
-  line-height: 1.85;
+  line-height: 2.4;
 }
 .tiptap-editor .ProseMirror[dir="rtl"] p.is-editor-empty:first-child::before,
 .news-copy[dir="rtl"] .ProseMirror p.is-editor-empty:first-child::before {

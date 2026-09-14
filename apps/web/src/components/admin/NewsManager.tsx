@@ -22,7 +22,7 @@ import {
   type NewsArticleAdmin,
   type NewsCategory,
 } from '../../services/newsAdmin';
-import { AdminInput, AdminSelect, ConfirmDialog, ErrorState, LoadingState } from './AdminShared';
+import { AdminAvatar, AdminInput, AdminSelect, ConfirmDialog, ErrorState, LoadingState } from './AdminShared';
 import Pagination from './AdminPagination';
 import RemoteImage from '../RemoteImage';
 import { newsHref } from '../../utils/newsConstraints';
@@ -64,7 +64,7 @@ export default function NewsManager() {
       })
       .catch(() => {
         setArticles([]);
-        setError('Could not load articles. Check the API connection and try again.');
+        setError('Could not load news. Check the API connection and try again.');
       })
       .finally(() => setLoading(false));
   }, [filterCategory, page, query]);
@@ -81,9 +81,9 @@ export default function NewsManager() {
     try {
       const updated = await updateNews(article.id, { isPublished: !article.isPublished });
       setArticles((list) => list.map((a) => (a.id === article.id ? updated : a)));
-      toast.success(updated.isPublished ? 'Article published.' : 'Article reverted to draft.');
+      toast.success(updated.isPublished ? 'News published.' : 'News reverted to draft.');
     } catch {
-      toast.error('Could not update article status.');
+      toast.error('Could not update news status.');
     } finally {
       setBusyId(null);
     }
@@ -96,9 +96,9 @@ export default function NewsManager() {
       await deleteNews(deleteTarget.id);
       setArticles((list) => list.filter((a) => a.id !== deleteTarget.id));
       setTotal((current) => Math.max(0, current - 1));
-      toast.success('Article deleted.');
+      toast.success('News deleted.');
     } catch {
-      toast.error('Could not delete article.');
+      toast.error('Could not delete news.');
     } finally {
       setBusyId(null);
       setDeleteTarget(null);
@@ -117,9 +117,9 @@ export default function NewsManager() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-bold" style={{ color: 'var(--admin-text)' }}>Articles Management</h1>
+          <h1 className="text-xl font-bold" style={{ color: 'var(--admin-text)' }}>News Management</h1>
           <p className="mt-1 text-sm" style={{ color: 'var(--admin-text-secondary)' }}>
-            Draft, publish, edit and organize articles.
+            Draft, publish, edit and organize news.
           </p>
         </div>
         <Link
@@ -127,7 +127,7 @@ export default function NewsManager() {
           className="btn-brand inline-flex items-center gap-1.5 rounded-md px-4 py-2 text-xs font-bold transition-colors"
         >
           <FilePlus2 size={14} />
-          Create Article
+          Create News
         </Link>
       </div>
 
@@ -172,15 +172,16 @@ export default function NewsManager() {
       ) : filtered.length === 0 ? (
         <div className="rounded-lg border border-dashed p-10 text-center" style={{ borderColor: 'var(--admin-border)', background: 'var(--admin-card)' }}>
           <FileText size={28} className="mx-auto mb-2" style={{ color: 'var(--admin-text-muted)' }} />
-          <p className="text-xs" style={{ color: 'var(--admin-text-secondary)' }}>No articles match your criteria.</p>
+          <p className="text-xs" style={{ color: 'var(--admin-text-secondary)' }}>No news match your criteria.</p>
         </div>
       ) : (
         <div className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] text-left text-xs">
+            <table className="w-full min-w-[760px] text-left text-xs">
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--admin-border)', background: 'var(--admin-table-header)' }}>
-                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Article</th>
+                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>News</th>
+                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Author</th>
                   <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Category</th>
                   <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Status</th>
                   <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Date</th>
@@ -188,7 +189,9 @@ export default function NewsManager() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((a) => (
+                {filtered.map((a) => {
+                  const authorName = a.authorRef?.name || a.author || '';
+                  return (
                   <tr
                     key={a.id}
                     style={{ borderBottom: '1px solid var(--admin-border)' }}
@@ -208,11 +211,18 @@ export default function NewsManager() {
                           <Link href={`/admin/news/${a.id}/edit`} className="block" style={{ color: 'var(--admin-text)' }}>
                             <NewsCopy as="span" language={a.language} text={a.title} className="block truncate text-xs font-semibold">{a.title}</NewsCopy>
                           </Link>
-                          <p className="mt-0.5 truncate text-xs" style={{ color: 'var(--admin-text-muted)' }}>
-                            by {a.author || 'Editorial Desk'}
-                          </p>
                         </div>
                       </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      {authorName ? (
+                        <div className="flex min-w-0 items-center gap-2">
+                          <AdminAvatar name={authorName} size={26} />
+                          <p className="truncate font-semibold" style={{ color: 'var(--admin-text)' }}>{authorName}</p>
+                        </div>
+                      ) : (
+                        <span style={{ color: 'var(--admin-text-muted)' }}>—</span>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <span className="rounded-full px-2 py-0.5 text-xs font-bold" style={{ background: 'var(--admin-input-bg)', color: 'var(--admin-text-secondary)' }}>
@@ -269,7 +279,8 @@ export default function NewsManager() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -287,7 +298,7 @@ export default function NewsManager() {
 
       <ConfirmDialog
         open={!!deleteTarget}
-        title="Delete article"
+        title="Delete news"
         message={`Are you sure you want to delete "${deleteTarget?.title}"? This cannot be undone.`}
         confirmLabel="Delete"
         onConfirm={handleDelete}

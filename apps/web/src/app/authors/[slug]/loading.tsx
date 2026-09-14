@@ -1,5 +1,5 @@
-import { AuthorsPageSkeleton } from '../../../components/skeletons/Skeletons';
+import { AuthorDetailSkeleton } from '../../../components/skeletons/Skeletons';
 
 export default function Loading() {
-  return <AuthorsPageSkeleton />;
+  return <AuthorDetailSkeleton />;
 }

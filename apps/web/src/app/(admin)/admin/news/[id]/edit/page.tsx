@@ -3,7 +3,7 @@ import { Suspense } from 'react';
 import NewsEditor from '../../../../../../components/admin/NewsEditor';
 
 export const metadata: Metadata = {
-  title: 'Edit Article',
+  title: 'Edit News',
   robots: { index: false, follow: false },
 };
 

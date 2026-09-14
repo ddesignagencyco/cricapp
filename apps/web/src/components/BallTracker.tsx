@@ -23,7 +23,7 @@ function ballTone(ball: string | number | null): string {
   if (ball === null || ball === undefined || ball === '') return 'empty';
   const value = String(ball);
   if (value === 'w' || value === 'W') return 'danger';
-  if (value === 'Wd' || value === 'Nb') return 'extra';
+  if (value === 'Wd' || value === 'Nb' || value === 'Lb' || value === 'B') return 'extra';
   if (value === '4') return 'boundary';
   if (value === '6') return 'six';
   const num = parseInt(value, 10);

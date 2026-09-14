@@ -103,7 +103,7 @@ export default function CategoryManager() {
       toast.success('Category deleted.');
       setDeleteTarget(null);
     } catch {
-      toast.error('Could not delete the category. It may still have articles.');
+      toast.error('Could not delete the category. It may still have news.');
     } finally {
       setSavingId(null);
     }
@@ -196,7 +196,7 @@ export default function CategoryManager() {
 
           {articlesFailed && !loading && (
             <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg p-3 text-xs" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-warning-bg)', color: 'var(--admin-warning)' }}>
-              <span>Article counts are unavailable because the articles could not be loaded.</span>
+              <span>News counts are unavailable because the news could not be loaded.</span>
               <button type="button" onClick={load} className="rounded px-2 py-1 font-semibold" style={{ color: 'var(--admin-accent)' }}>
                 Retry
               </button>
@@ -221,7 +221,7 @@ export default function CategoryManager() {
                   <tr style={{ borderBottom: '1px solid var(--admin-border)', background: 'var(--admin-table-header)' }}>
                     <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Category</th>
                     <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Slug</th>
-                    <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-center" style={{ color: 'var(--admin-text-secondary)' }}>Articles</th>
+                    <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-center" style={{ color: 'var(--admin-text-secondary)' }}>News</th>
                     <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-center" style={{ color: 'var(--admin-text-secondary)' }}>Status</th>
                     <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-right" style={{ color: 'var(--admin-text-secondary)' }}>Actions</th>
                   </tr>
@@ -335,12 +335,12 @@ export default function CategoryManager() {
             <div className="rounded-lg p-4" style={{ border: '1px solid var(--admin-accent)', background: 'var(--admin-card)' }}>
               <div className="flex items-center justify-between pb-3 mb-3" style={{ borderBottom: '1px solid var(--admin-border)' }}>
                 <div>
-                  <span className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-accent)' }}>Articles in Category</span>
+                  <span className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-accent)' }}>News in Category</span>
                   <h3 className="mt-0.5 text-sm font-bold" style={{ color: 'var(--admin-text)' }}>{selectedCategory.name}</h3>
                 </div>
                 <div className="flex items-center gap-2">
                   <Link href={`/admin/news/new?category=${selectedCategory.id}`} className="btn-brand inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-bold">
-                    <Plus size={12} /> New Article
+                    <Plus size={12} /> New News
                   </Link>
                   <button type="button" onClick={() => setSelectedCatId(null)} className="rounded-md px-2 py-1 text-xs font-semibold" style={{ color: 'var(--admin-text-muted)' }}>
                     Close
@@ -348,7 +348,7 @@ export default function CategoryManager() {
                 </div>
               </div>
               {selectedCategoryArticles.length === 0 ? (
-                <p className="py-6 text-center text-xs" style={{ color: 'var(--admin-text-muted)' }}>No articles in this category.</p>
+                <p className="py-6 text-center text-xs" style={{ color: 'var(--admin-text-muted)' }}>No news in this category.</p>
               ) : (
                 <div>
                   {selectedCategoryArticles.slice(0, 8).map((art) => (
@@ -377,7 +377,7 @@ export default function CategoryManager() {
       <ConfirmDialog
         open={Boolean(deleteTarget)}
         title="Delete category"
-        message={deleteTarget ? `Delete “${deleteTarget.name}”? Articles in this category will lose the category link.` : ''}
+        message={deleteTarget ? `Delete “${deleteTarget.name}”? News in this category will lose the category link.` : ''}
         confirmLabel="Delete"
         onCancel={() => setDeleteTarget(null)}
         onConfirm={() => void handleDelete()}
