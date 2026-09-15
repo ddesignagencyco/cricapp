@@ -224,7 +224,7 @@ export default function GalleryBoard({ initialTab = 'images' }: GalleryBoardProp
                       fit="cover"
                       className="news-image"
                     />
-                    <span className="pointer-events-none absolute right-1.5 top-1.5 grid h-6 w-6 place-items-center rounded-full bg-black/45 text-white opacity-0 ring-1 ring-white/20 group-hover:opacity-100">
+                    <span className="pointer-events-none absolute right-1.5 top-1.5 grid h-6 w-6 place-items-center rounded-full bg-black/55 text-white ring-1 ring-white/20">
                       <Expand size={11} />
                     </span>
                     <TileOverlay>
