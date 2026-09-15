@@ -95,7 +95,7 @@ function TextField({
   return (
     <div className="space-y-1.5">
       <label htmlFor={id} className="block text-xs font-bold uppercase tracking-wider text-stext">
-        {label}
+        {label} <span className="text-danger">*</span>
       </label>
       <div className="relative">
         {type === 'email' ? (
@@ -191,7 +191,10 @@ export default function AuthForm({ mode, token = '', tokenId = '', initialEmail 
     setUnverifiedLogin(false);
     const nextErrors = validate();
     setErrors(nextErrors);
-    if (Object.keys(nextErrors).length > 0) return;
+    if (Object.keys(nextErrors).length > 0) {
+      toast.error(Object.values(nextErrors)[0] as string);
+      return;
+    }
     setLoading(true);
     try {
       if (mode === 'login') {
@@ -342,6 +345,10 @@ function ResendForm({
   const [loading, setLoading] = useState(false);
   const resend = async (event: FormEvent) => {
     event.preventDefault();
+    if (!email.trim()) {
+      toast.error('Email is required.');
+      return;
+    }
     setLoading(true);
     setMessage('');
     try {
@@ -362,8 +369,10 @@ function ResendForm({
     }
   };
   return (
-    <form onSubmit={resend} className="space-y-2 text-left">
-      <label htmlFor="resend-email" className="block text-xs font-semibold text-mtext">Resend verification email</label>
+    <form onSubmit={resend} noValidate className="space-y-2 text-left">
+      <label htmlFor="resend-email" className="block text-xs font-semibold text-mtext">
+        Email <span className="text-danger">*</span>
+      </label>
       <input id="resend-email" name="email" type="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" autoComplete="email" className={inputClass} />
       <button type="submit" disabled={loading} className="w-full rounded bg-elevated px-3 py-2 text-xs font-bold text-mtext ring-1 ring-lborder disabled:opacity-60">{loading ? 'Sending…' : 'Resend email'}</button>
       {message && <FormMessage message={message} tone="info" />}

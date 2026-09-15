@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Inbox } from 'lucide-react';
 import {
+  AdminMenu,
   AdminPageHeader,
   AdminSelect,
   EmptyState,
@@ -114,16 +115,18 @@ export default function AdminContactPage() {
                       {formatWhen(item.createdAt)}
                     </td>
                     <td className="px-4 py-3 align-top">
-                      <div className="ml-auto flex w-36 flex-col items-end gap-1.5">
+                      <div className="ml-auto flex items-center justify-end gap-1.5">
                         <StatusBadge status={item.status} />
-                        <AdminSelect
+                        <AdminMenu
+                          label="Change message status"
                           value={item.status}
-                          onChange={(e) => void setItemStatus(item, e.target.value as 'new' | 'read' | 'resolved')}
-                        >
-                          <option value="new">New</option>
-                          <option value="read">Read</option>
-                          <option value="resolved">Resolved</option>
-                        </AdminSelect>
+                          onChange={(next) => void setItemStatus(item, next as 'new' | 'read' | 'resolved')}
+                          options={[
+                            { value: 'new', label: 'New' },
+                            { value: 'read', label: 'Read' },
+                            { value: 'resolved', label: 'Resolved' },
+                          ]}
+                        />
                       </div>
                     </td>
                   </tr>

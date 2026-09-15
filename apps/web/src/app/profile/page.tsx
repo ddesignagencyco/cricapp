@@ -82,6 +82,14 @@ export default function ProfilePage() {
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!displayName.trim()) {
+      toast.error('Display name is required.');
+      return;
+    }
+    if (!username.trim()) {
+      toast.error('Username is required.');
+      return;
+    }
     setSaving(true);
     try {
       await updateProfile({
@@ -211,18 +219,18 @@ export default function ProfilePage() {
           </div>
 
           {tab === 'personal' && (
-            <form id="profile-form" onSubmit={save} className="p-5 sm:p-6">
+            <form id="profile-form" onSubmit={save} noValidate className="p-5 sm:p-6">
               <h3 className="text-sm font-semibold text-mtext">Personal information</h3>
               <p className="mt-1 text-sm text-stext">These details appear on comments and your public activity.</p>
 
               <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <label className="block text-xs font-semibold text-stext">
-                  Display name
+                  Display name <span className="text-danger">*</span>
                   <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} className={fieldClass} />
                   <span className="mt-1 block font-normal text-muted-foreground">Shown on comments and favorites.</span>
                 </label>
                 <label className="block text-xs font-semibold text-stext">
-                  Username
+                  Username <span className="text-danger">*</span>
                   <input value={username} onChange={(e) => setUsername(e.target.value)} className={fieldClass} />
                   <span className="mt-1 block font-normal text-muted-foreground">Your unique handle.</span>
                 </label>

@@ -89,7 +89,10 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const text = body.trim();
-    if (!text) return;
+    if (!text) {
+      toast.error('Comment is required.');
+      return;
+    }
     setSubmitting(true);
     try {
       await createComment(targetType, targetId, text);
@@ -186,7 +189,10 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
       </div>
 
       {isAuthenticated ? (
-        <form onSubmit={submit} className="mb-5">
+        <form onSubmit={submit} noValidate className="mb-5">
+          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-stext">
+            Comment <span className="text-danger">*</span>
+          </label>
           <textarea
             rows={3}
             value={body}
@@ -199,7 +205,7 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
             <span className="text-xs text-stext">{body.length}/1000</span>
             <button
               type="submit"
-              disabled={submitting || !body.trim()}
+              disabled={submitting}
               className="btn-brand inline-flex items-center gap-2 rounded px-4 py-2 text-xs font-bold transition-colors disabled:opacity-60"
             >
               {submitting ? <Loader2 size={13} className="animate-spin" /> : <Flame size={13} />}

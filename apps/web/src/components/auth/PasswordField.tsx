@@ -20,7 +20,7 @@ export default function PasswordField({ id, label, name, value, onChange, autoCo
   return (
     <div className="space-y-1.5">
       <label htmlFor={id} className="block text-xs font-bold uppercase tracking-wider text-stext">
-        {label}
+        {label} <span className="text-danger">*</span>
       </label>
       <div className="relative">
         <Lock size={16} className="pointer-events-none absolute left-3.5 top-1/2 z-10 -translate-y-1/2 text-stext" />

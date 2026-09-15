@@ -3,15 +3,18 @@
 import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import {
+  Check,
+  Eye,
   FolderPlus,
+  Hash,
   Loader2,
   Pencil,
   Plus,
   Search,
   Tag,
-  Hash,
   FolderArchive,
   Trash2,
+  X,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
@@ -23,7 +26,7 @@ import {
   type NewsArticleAdmin,
   type NewsCategory,
 } from '../../services/newsAdmin';
-import { AdminInput, ConfirmDialog, LoadingState } from './AdminShared';
+import { AdminField, AdminIconButton, AdminInput, ConfirmDialog, LoadingState } from './AdminShared';
 import { BlinkingDot } from '../Badge';
 import NewsCopy from '../NewsCopy';
 
@@ -60,7 +63,10 @@ export default function CategoryManager() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     const name = newCatName.trim();
-    if (!name) return;
+    if (!name) {
+      toast.error('Name is required.');
+      return;
+    }
     setCreating(true);
     try {
       const created = await createCategory(name);
@@ -153,20 +159,18 @@ export default function CategoryManager() {
             <FolderPlus size={14} style={{ color: 'var(--admin-accent)' }} />
             <h2 className="text-xs font-bold" style={{ color: 'var(--admin-text)' }}>Add Category</h2>
           </div>
-          <form onSubmit={handleCreate} className="space-y-3">
-            <div>
-              <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--admin-text-secondary)' }}>Name</label>
+          <form onSubmit={handleCreate} noValidate className="space-y-3">
+            <AdminField label="Name" required>
               <AdminInput
                 type="text"
                 value={newCatName}
                 onChange={(e) => setNewCatName(e.target.value)}
                 placeholder="e.g. PSL 10, Match Reports"
-                required
               />
-            </div>
+            </AdminField>
             <button
               type="submit"
-              disabled={creating || !newCatName.trim()}
+              disabled={creating}
               className="btn-brand w-full inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-2 text-xs font-bold disabled:opacity-50 transition-colors"
             >
               {creating ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
@@ -242,8 +246,8 @@ export default function CategoryManager() {
                       >
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
-                            <div className="grid h-7 w-7 place-items-center rounded-md" style={{ background: 'var(--admin-accent)', color: 'var(--color-brand-fg)' }}>
-                              <Tag size={12} />
+                            <div className="grid h-8 w-8 place-items-center rounded-md" style={{ background: 'var(--admin-info-bg)', color: 'var(--admin-accent)' }}>
+                              <Tag size={14} />
                             </div>
                             {editingId === c.id ? (
                               <AdminInput
@@ -282,45 +286,48 @@ export default function CategoryManager() {
                           )}
                         </td>
                         <td className="px-4 py-3 text-right">
-                          <div className="flex items-center justify-end gap-1">
+                          <div className="flex items-center justify-end gap-1.5">
                             {editingId === c.id ? (
-                              <button
-                                type="button"
-                                disabled={savingId === c.id}
-                                onClick={() => void handleRename(c)}
-                                className="rounded px-2 py-1 text-xs font-bold"
-                                style={{ color: 'var(--admin-accent)' }}
-                              >
-                                {savingId === c.id ? 'Saving…' : 'Save'}
-                              </button>
+                              <>
+                                <AdminIconButton
+                                  label="Save name"
+                                  tone="accent"
+                                  disabled={savingId === c.id}
+                                  onClick={() => void handleRename(c)}
+                                >
+                                  {savingId === c.id ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
+                                </AdminIconButton>
+                                <AdminIconButton
+                                  label="Cancel"
+                                  onClick={() => setEditingId(null)}
+                                >
+                                  <X size={16} />
+                                </AdminIconButton>
+                              </>
                             ) : (
-                              <button
-                                type="button"
+                              <AdminIconButton
+                                label={`Rename ${c.name}`}
+                                tone="accent"
                                 onClick={() => { setEditingId(c.id); setEditName(c.name); }}
-                                className="rounded px-2 py-1 text-xs font-bold"
-                                style={{ color: 'var(--admin-text-secondary)' }}
-                                aria-label={`Rename ${c.name}`}
                               >
-                                <Pencil size={12} />
-                              </button>
+                                <Pencil size={16} />
+                              </AdminIconButton>
                             )}
-                            <button
-                              type="button"
-                              onClick={() => setDeleteTarget(c)}
-                              className="rounded px-2 py-1 text-xs font-bold"
-                              style={{ color: 'var(--admin-danger)' }}
-                              aria-label={`Delete ${c.name}`}
-                            >
-                              <Trash2 size={12} />
-                            </button>
-                            <button
-                              type="button"
+                            <AdminIconButton
+                              label={`View ${c.name} news`}
+                              tone="accent"
+                              active={isSelected}
                               onClick={() => setSelectedCatId(isSelected ? null : c.id)}
-                              className="rounded px-2 py-1 text-xs font-bold transition-colors"
-                              style={{ color: 'var(--admin-accent)', background: isSelected ? 'var(--admin-info-bg)' : 'transparent' }}
                             >
-                              {isSelected ? 'Close' : 'Inspect'}
-                            </button>
+                              <Eye size={16} />
+                            </AdminIconButton>
+                            <AdminIconButton
+                              label={`Delete ${c.name}`}
+                              tone="danger"
+                              onClick={() => setDeleteTarget(c)}
+                            >
+                              <Trash2 size={16} />
+                            </AdminIconButton>
                           </div>
                         </td>
                       </tr>

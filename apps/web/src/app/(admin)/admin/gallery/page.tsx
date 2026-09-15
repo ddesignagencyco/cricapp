@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { ImageIcon, Trash2, Upload } from 'lucide-react';
 import {
+  AdminField,
   AdminInput,
   AdminPageHeader,
   AdminSelect,
@@ -118,41 +119,44 @@ export default function AdminGalleryPage() {
       />
 
       <form
-        className="flex flex-wrap items-center gap-2 rounded-lg p-3"
+        className="grid grid-cols-1 gap-3 rounded-lg p-4 sm:grid-cols-2 lg:grid-cols-4"
         style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}
         onSubmit={(e) => e.preventDefault()}
       >
-        <div className="w-36">
+        <AdminField label="Type" required>
           <AdminSelect value={type} onChange={(e) => setType(e.target.value as GalleryMediaType)}>
             <option value="image">Image</option>
             <option value="short">Short</option>
             <option value="video">Video</option>
           </AdminSelect>
-        </div>
-        <div className="w-44">
+        </AdminField>
+        <AdminField label="Title">
           <AdminInput value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title" />
-        </div>
-        <div className="w-52">
+        </AdminField>
+        <AdminField label="Caption">
           <AdminInput value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Caption" />
-        </div>
-        <label
-          className="inline-flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-xs font-semibold"
-          style={{ border: '1px dashed var(--admin-border)', color: 'var(--admin-accent)' }}
-        >
-          <Upload size={14} />
-          {busy ? 'Uploading…' : 'Choose file'}
-          <input
-            type="file"
-            accept={type === 'image' ? 'image/*' : 'video/*'}
-            className="sr-only"
-            disabled={busy}
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              e.target.value = '';
-              void onFile(file);
-            }}
-          />
-        </label>
+        </AdminField>
+        <AdminField label="File" required>
+          <label
+            className="inline-flex h-[38px] w-full cursor-pointer items-center justify-center gap-2 rounded-md px-3 text-xs font-semibold"
+            style={{ border: '1px dashed var(--admin-border)', color: 'var(--admin-accent)', background: 'var(--admin-input-bg)' }}
+          >
+            <Upload size={14} />
+            {busy ? 'Uploading…' : 'Choose file'}
+            <input
+              type="file"
+              accept={type === 'image' ? 'image/*' : 'video/*'}
+              className="sr-only"
+              disabled={busy}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                e.target.value = '';
+                if (!file) return;
+                void onFile(file);
+              }}
+            />
+          </label>
+        </AdminField>
       </form>
 
       {loading ? (

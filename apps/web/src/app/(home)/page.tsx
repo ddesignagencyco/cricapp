@@ -17,6 +17,7 @@ import { fetchNews } from '../../services/news';
 import { newsHref } from '../../utils/newsConstraints';
 import { fetchPslLeaders, fetchPslStandings } from '../../services/psl';
 import { fetchStreams } from '../../services/streams';
+import { fetchGalleryPage } from '../../services/gallery';
 
 export const revalidate = 60;
 
@@ -44,6 +45,7 @@ export default async function HomePage() {
       fetchPslStandings(),
       fetchPslLeaders(),
       fetchStreams({ limit: 8 }),
+      fetchGalleryPage({ limit: 6 }),
     ] as const);
   const liveMatches = results[0].status === 'fulfilled' ? results[0].value : [];
   const upcomingMatches = results[1].status === 'fulfilled' ? results[1].value : [];
@@ -53,7 +55,7 @@ export default async function HomePage() {
   const standings = results[5].status === 'fulfilled' ? results[5].value : [];
   const pslLeaders = results[6].status === 'fulfilled' ? results[6].value : [];
   const streams = results[7].status === 'fulfilled' ? results[7].value : [];
-  const galleryPhotos = (newsList || []).filter((item) => item.image).slice(0, 6);
+  const galleryItems = results[8].status === 'fulfilled' ? results[8].value.items : [];
 
   const live = liveMatches || [];
   const upcoming = (upcomingMatches || []).slice(0, 5);
@@ -258,17 +260,41 @@ export default async function HomePage() {
         </section>
       )}
 
-      {galleryPhotos.length > 0 && (
+      {galleryItems.length > 0 && (
         <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6">
           <SectionHeader title="Gallery" subtitle="Images, shorts and videos" icon="images" to="/gallery" actionLabel="Open gallery" />
           <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-6">
-            {galleryPhotos.map((item) => (
-              <Link key={item.id} href="/gallery?tab=images" className="group overflow-hidden rounded-2xl bg-card ring-1 ring-lborder">
-                <div className="relative aspect-square bg-secondary">
-                  <RemoteImage src={item.image as string} alt={item.title} fill sizes="180px" fit="contain" className="news-image" />
-                </div>
-              </Link>
-            ))}
+            {galleryItems.map((item) => {
+              const tab = item.type === 'short' ? 'shorts' : item.type === 'video' ? 'videos' : 'images';
+              const src = item.thumbnailUrl || item.url;
+              return (
+                <Link
+                  key={item.id}
+                  href={`/gallery?tab=${tab}`}
+                  className="group overflow-hidden rounded-2xl bg-card ring-1 ring-lborder"
+                >
+                  <div className="relative aspect-square bg-secondary">
+                    {src ? (
+                      <RemoteImage src={src} alt={item.title || 'Gallery'} fill sizes="180px" fit="contain" className="news-image" />
+                    ) : (
+                      <div className="h-full w-full media-fallback" />
+                    )}
+                    {item.type !== 'image' ? (
+                      <span className="absolute inset-0 grid place-items-center">
+                        <span className="grid h-9 w-9 place-items-center rounded-full bg-black/55 text-white">
+                          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 translate-x-[1px] fill-current" aria-hidden>
+                            <path d="M8 5v14l11-7z" />
+                          </svg>
+                        </span>
+                      </span>
+                    ) : null}
+                    <span className="absolute left-2 top-2 rounded-full bg-black/55 px-2 py-0.5 text-[10px] font-bold tracking-wide text-white capitalize">
+                      {item.type === 'short' ? 'Short' : item.type === 'video' ? 'Video' : 'Image'}
+                    </span>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </section>
       )}

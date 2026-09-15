@@ -33,6 +33,7 @@ export default function Newsletter() {
       <div className="overflow-hidden rounded-2xl bg-card ring-1 ring-lborder">
         <form
           onSubmit={(e) => void submit(e)}
+          noValidate
           className="flex flex-col gap-6 p-5 sm:p-7 lg:flex-row lg:items-center lg:justify-between"
         >
           <div className="flex items-start gap-3 sm:items-center sm:gap-4">
@@ -47,15 +48,19 @@ export default function Newsletter() {
             </div>
           </div>
 
-          <div className="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              aria-label="Newsletter email"
-              placeholder="you@example.com"
-              className="min-w-0 flex-1 rounded bg-elevated px-4 py-2.5 text-sm text-mtext ring-1 ring-lborder outline-none sm:w-64"
-            />
+          <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-end lg:w-auto">
+            <label className="flex min-w-0 flex-1 flex-col sm:w-64">
+              <span className="mb-1.5 text-xs font-semibold text-stext">
+                Email <span className="text-danger">*</span>
+              </span>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                className="min-w-0 w-full rounded bg-elevated px-4 py-2.5 text-sm text-mtext ring-1 ring-lborder outline-none"
+              />
+            </label>
             <button
               type="submit"
               disabled={busy}

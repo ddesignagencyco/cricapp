@@ -154,6 +154,34 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+a,
+button,
+label,
+summary,
+select,
+[role="button"],
+[role="tab"],
+[role="option"],
+[role="menuitem"],
+[role="link"],
+[role="switch"],
+[role="checkbox"],
+input[type="checkbox"],
+input[type="radio"],
+input[type="file"],
+input[type="submit"],
+input[type="button"],
+input[type="reset"] {
+  cursor: pointer;
+}
+
+a[aria-disabled="true"],
+button:disabled,
+[disabled],
+[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 10px;

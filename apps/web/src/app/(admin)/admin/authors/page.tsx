@@ -5,6 +5,8 @@ import toast from 'react-hot-toast';
 import { FileEdit, PenLine, Trash2, X } from 'lucide-react';
 import {
   AdminAvatar,
+  AdminField,
+  AdminIconButton,
   AdminInput,
   AdminPageHeader,
   ConfirmDialog,
@@ -66,7 +68,10 @@ export default function AuthorsPage() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name.trim()) return;
+    if (!form.name.trim()) {
+      toast.error('Name is required.');
+      return;
+    }
     setSaving(true);
     const payload = {
       name: form.name.trim(),
@@ -98,7 +103,8 @@ export default function AuthorsPage() {
 
       <form
         onSubmit={submit}
-        className="flex flex-wrap items-center gap-2 rounded-lg p-3"
+        noValidate
+        className="flex flex-wrap items-end gap-2 rounded-lg p-3"
         style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}
       >
         {editing && (
@@ -107,21 +113,29 @@ export default function AuthorsPage() {
           </p>
         )}
         <div className="w-44">
-          <AdminInput value={form.name} onChange={(e) => setField('name', e.target.value)} placeholder="Name" required />
-        </div>
-        <div className="flex w-64 gap-2">
-          <AdminInput value={form.avatarUrl} onChange={(e) => setField('avatarUrl', e.target.value)} placeholder="Avatar URL" />
-          <button
-            type="button"
-            onClick={() => setGalleryOpen(true)}
-            className="shrink-0 rounded-md px-3 text-xs font-bold"
-            style={{ border: '1px solid var(--admin-border)', color: 'var(--admin-accent)' }}
-          >
-            Gallery
-          </button>
+          <AdminField label="Name" required>
+            <AdminInput value={form.name} onChange={(e) => setField('name', e.target.value)} placeholder="Name" />
+          </AdminField>
         </div>
         <div className="w-64">
-          <AdminInput value={form.bio} onChange={(e) => setField('bio', e.target.value)} placeholder="Short bio" />
+          <AdminField label="Avatar URL">
+            <div className="flex gap-2">
+              <AdminInput value={form.avatarUrl} onChange={(e) => setField('avatarUrl', e.target.value)} placeholder="Avatar URL" />
+              <button
+                type="button"
+                onClick={() => setGalleryOpen(true)}
+                className="shrink-0 rounded-md px-3 text-xs font-bold"
+                style={{ border: '1px solid var(--admin-border)', color: 'var(--admin-accent)' }}
+              >
+                Gallery
+              </button>
+            </div>
+          </AdminField>
+        </div>
+        <div className="w-64">
+          <AdminField label="Bio">
+            <AdminInput value={form.bio} onChange={(e) => setField('bio', e.target.value)} placeholder="Short bio" />
+          </AdminField>
         </div>
         <button
           type="submit"
@@ -184,25 +198,13 @@ export default function AuthorsPage() {
                     {author.bio || '—'}
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-1">
-                      <button
-                        type="button"
-                        onClick={() => startEdit(author)}
-                        className="grid h-8 w-8 place-items-center rounded-md"
-                        style={{ background: 'var(--admin-info-bg)', color: 'var(--admin-accent)' }}
-                        title="Edit author"
-                      >
+                    <div className="flex items-center justify-end gap-1.5">
+                      <AdminIconButton label="Edit author" tone="accent" onClick={() => startEdit(author)}>
                         <FileEdit size={16} />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setDeleteTarget(author)}
-                        className="grid h-8 w-8 place-items-center rounded-md"
-                        style={{ background: 'var(--admin-danger-bg)', color: 'var(--admin-danger)' }}
-                        title="Delete author"
-                      >
+                      </AdminIconButton>
+                      <AdminIconButton label="Delete author" tone="danger" onClick={() => setDeleteTarget(author)}>
                         <Trash2 size={16} />
-                      </button>
+                      </AdminIconButton>
                     </div>
                   </td>
                 </tr>

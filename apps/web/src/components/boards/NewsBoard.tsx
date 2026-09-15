@@ -161,13 +161,13 @@ export default function NewsBoard({
         </p>
       </header>
 
-      <div className="mb-6 flex flex-col gap-3 border-y border-lborder py-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mb-6 flex flex-col gap-3 border-y border-lborder py-3 sm:flex-row sm:items-start sm:justify-between">
         {categoryTabs.length > 1 ? (
           <Tabs
             tabs={categoryTabs}
             active={selectedCategory}
             onChange={(category) => updateQuery(category)}
-            size="sm"
+            variant="tags"
           />
         ) : (
           <p className="text-xs font-medium uppercase tracking-wider text-stext">Language</p>

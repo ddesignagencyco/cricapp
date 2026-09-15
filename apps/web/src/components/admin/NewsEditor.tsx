@@ -28,7 +28,7 @@ import {
 } from '../../services/newsAdmin';
 import RichTextEditor from './RichTextEditor';
 import MediaPicker from './MediaPicker';
-import { AdminInput, AdminSelect } from './AdminShared';
+import { AdminField, AdminInput, AdminSelect } from './AdminShared';
 import { fetchAdminAuthors, type AdminAuthor } from '../../services/admin';
 import RemoteImage from '../RemoteImage';
 import {
@@ -182,7 +182,10 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
 
   const handleAddCategory = () => {
     const name = newCategory.trim();
-    if (!name) return;
+    if (!name) {
+      toast.error('Name is required.');
+      return;
+    }
     createCategory(name)
       .then((category) => {
         setCategories((list) => [...list, category]);
@@ -198,7 +201,13 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
     const title = form.title.trim();
     const slug = form.slug.trim();
     const wordCount = countWords(title);
-    if (!title) { toast.error('Title is required.'); return; }
+    const missing: string[] = [];
+    if (!title) missing.push('Headline');
+    if (isEmptyRichText(form.content)) missing.push('Content');
+    if (missing.length) {
+      toast.error(`${missing.join(' and ')} ${missing.length === 1 ? 'is' : 'are'} required.`);
+      return;
+    }
     if (wordCount > NEWS_TITLE_MAX_WORDS) {
       toast.error(`Title must be ${NEWS_TITLE_MAX_WORDS} words or fewer.`);
       return;
@@ -207,7 +216,6 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
       toast.error('Slug can only use lowercase letters, numbers, and hyphens.');
       return;
     }
-    if (isEmptyRichText(form.content)) { toast.error('Content cannot be empty.'); return; }
     if (form.language && !NEWS_LANGUAGES.includes(form.language as (typeof NEWS_LANGUAGES)[number])) {
       toast.error('Language must be English or Urdu.');
       return;
@@ -432,8 +440,10 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
             </div>
             {showAddCat ? (
               <div className="space-y-2">
-                <AdminInput type="text" value={newCategory} onChange={(e) => setNewCategory(e.target.value)} placeholder="New category name" />
-                <button type="button" onClick={handleAddCategory} disabled={!newCategory.trim()} className="btn-brand w-full rounded-md py-1.5 text-xs font-bold disabled:opacity-50">
+                <AdminField label="Name" required>
+                  <AdminInput type="text" value={newCategory} onChange={(e) => setNewCategory(e.target.value)} placeholder="New category name" />
+                </AdminField>
+                <button type="button" onClick={handleAddCategory} className="btn-brand w-full rounded-md py-1.5 text-xs font-bold disabled:opacity-50">
                   Create & Select
                 </button>
               </div>
@@ -571,9 +581,15 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
 
           <div className="rounded-lg p-4 space-y-3" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
             <p className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text)' }}>SEO</p>
-            <AdminInput value={form.metaTitle} onChange={(e) => set('metaTitle', e.target.value)} placeholder="SEO title" {...copyField} />
-            <AdminInput value={form.metaDescription} onChange={(e) => set('metaDescription', e.target.value)} placeholder="SEO description" {...copyField} />
-            <AdminInput value={form.canonicalUrl} onChange={(e) => set('canonicalUrl', e.target.value)} placeholder="Canonical URL" />
+            <AdminField label="SEO title">
+              <AdminInput value={form.metaTitle} onChange={(e) => set('metaTitle', e.target.value)} placeholder="Shown in search results" {...copyField} />
+            </AdminField>
+            <AdminField label="SEO description">
+              <AdminInput value={form.metaDescription} onChange={(e) => set('metaDescription', e.target.value)} placeholder="Short search snippet" {...copyField} />
+            </AdminField>
+            <AdminField label="Canonical URL">
+              <AdminInput value={form.canonicalUrl} onChange={(e) => set('canonicalUrl', e.target.value)} placeholder="https://…" />
+            </AdminField>
           </div>
         </div>
       </div>

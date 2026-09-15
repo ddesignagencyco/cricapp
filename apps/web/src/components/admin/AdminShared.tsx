@@ -1,7 +1,9 @@
 'use client';
 
-import { type ReactNode, forwardRef, useEffect, useRef } from 'react';
+import { type ReactNode, forwardRef, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
+import { Check, ChevronDown } from 'lucide-react';
 import { StatusBadge as SharedStatusBadge } from '../Badge';
 import { getInitials } from '../../utils/helpers';
 import RemoteImage from '../RemoteImage';
@@ -358,17 +360,222 @@ AdminInput.displayName = 'AdminInput';
 
 export const AdminSelect = forwardRef<HTMLSelectElement, React.SelectHTMLAttributes<HTMLSelectElement>>(
   ({ style, children, className, ...props }, ref) => (
-    <select
-      ref={ref}
-      className={`outline-none ring-0 focus:outline-none focus:ring-0 ${className || ''}`}
-      style={{ ...inputBase, padding: '0.5rem 2rem 0.5rem 0.75rem', appearance: 'auto' as any, ...style }}
-      {...props}
-    >
-      {children}
-    </select>
+    <span className={`relative inline-flex w-full ${className || ''}`} style={style}>
+      <select
+        ref={ref}
+        className="w-full appearance-none outline-none ring-0 focus:outline-none focus:ring-0"
+        style={{ ...inputBase, padding: '0.5rem 2rem 0.5rem 0.75rem' }}
+        {...props}
+      >
+        {children}
+      </select>
+      <ChevronDown
+        size={14}
+        aria-hidden
+        className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2"
+        style={{ color: 'var(--admin-text-muted)' }}
+      />
+    </span>
   )
 );
 AdminSelect.displayName = 'AdminSelect';
+
+export function RequiredStar() {
+  return (
+    <span aria-hidden className="ml-0.5 font-bold" style={{ color: 'var(--admin-danger, var(--color-danger))' }}>
+      *
+    </span>
+  );
+}
+
+export function AdminField({
+  label,
+  hint,
+  required,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  required?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <div className="block min-w-0">
+      <span className="mb-1.5 block text-xs font-semibold" style={{ color: 'var(--admin-text-secondary)' }}>
+        {label}
+        {required ? <RequiredStar /> : null}
+      </span>
+      {children}
+      {hint ? (
+        <span className="mt-1.5 block text-[11px] leading-snug" style={{ color: 'var(--admin-text-muted)' }}>
+          {hint}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+export function AdminIconButton({
+  label,
+  onClick,
+  tone = 'neutral',
+  disabled,
+  children,
+  active,
+}: {
+  label: string;
+  onClick?: () => void;
+  tone?: 'neutral' | 'accent' | 'danger';
+  disabled?: boolean;
+  children: ReactNode;
+  active?: boolean;
+}) {
+  const tones = {
+    neutral: { background: 'var(--admin-input-bg)', color: 'var(--admin-text-secondary)' },
+    accent: { background: 'var(--admin-info-bg)', color: 'var(--admin-accent)' },
+    danger: { background: 'var(--admin-danger-bg)', color: 'var(--admin-danger)' },
+  } as const;
+
+  return (
+    <button
+      type="button"
+      title={label}
+      aria-label={label}
+      disabled={disabled}
+      onClick={onClick}
+      className="grid h-8 w-8 shrink-0 place-items-center rounded-md disabled:opacity-50"
+      style={{
+        ...tones[tone],
+        boxShadow: active ? 'inset 0 0 0 1px var(--admin-accent)' : undefined,
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+export function AdminMenu({
+  value,
+  options,
+  onChange,
+  label,
+}: {
+  value: string;
+  options: { value: string; label: string }[];
+  onChange: (value: string) => void;
+  label: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  const close = () => setOpen(false);
+
+  const toggle = () => {
+    const btn = btnRef.current;
+    if (!btn) return;
+    if (!open) {
+      const rect = btn.getBoundingClientRect();
+      const height = options.length * 36 + 10;
+      const top = rect.bottom + 6 + height > window.innerHeight
+        ? Math.max(8, rect.top - 6 - height)
+        : rect.bottom + 6;
+      setPos({ top, left: Math.min(rect.right - 168, window.innerWidth - 176) });
+    }
+    setOpen((prev) => !prev);
+  };
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointer = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (btnRef.current?.contains(target) || menuRef.current?.contains(target)) return;
+      close();
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') close();
+    };
+    window.addEventListener('mousedown', onPointer);
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('scroll', close, true);
+    window.addEventListener('resize', close);
+    return () => {
+      window.removeEventListener('mousedown', onPointer);
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('scroll', close, true);
+      window.removeEventListener('resize', close);
+    };
+  }, [open]);
+
+  const selected = options.find((option) => option.value === value)?.label || label;
+
+  return (
+    <>
+      <button
+        ref={btnRef}
+        type="button"
+        title={`${label}: ${selected}`}
+        aria-label={label}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={toggle}
+        className="grid h-8 w-8 shrink-0 place-items-center rounded-md"
+        style={{ background: 'var(--admin-info-bg)', color: 'var(--admin-accent)' }}
+      >
+        <ChevronDown size={16} />
+      </button>
+      {open && typeof document !== 'undefined'
+        ? createPortal(
+            <div
+              ref={menuRef}
+              role="listbox"
+              aria-label={label}
+              className="fixed z-[80] overflow-hidden rounded-lg py-1 shadow-lg"
+              style={{
+                top: pos.top,
+                left: Math.max(8, pos.left),
+                width: 168,
+                background: 'var(--admin-card)',
+                border: '1px solid var(--admin-border)',
+              }}
+            >
+              {options.map((option) => {
+                const isActive = option.value === value;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    role="option"
+                    aria-selected={isActive}
+                    onClick={() => {
+                      onChange(option.value);
+                      close();
+                    }}
+                    className="flex w-full items-center justify-between px-3 py-2 text-left text-sm font-semibold"
+                    style={{
+                      color: isActive ? 'var(--admin-accent)' : 'var(--admin-text)',
+                      background: isActive ? 'var(--admin-info-bg)' : 'transparent',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isActive) e.currentTarget.style.background = 'var(--admin-table-row-hover)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = isActive ? 'var(--admin-info-bg)' : 'transparent';
+                    }}
+                  >
+                    {option.label}
+                    {isActive ? <Check size={14} /> : null}
+                  </button>
+                );
+              })}
+            </div>,
+            document.body,
+          )
+        : null}
+    </>
+  );
+}
 
 /* ─── Card Panel ───────────────────────────────────────────── */
 

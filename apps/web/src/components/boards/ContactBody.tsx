@@ -64,11 +64,11 @@ function ContactForm() {
   return (
     <div className="rounded-2xl bg-card p-6 ring-1 ring-lborder">
       <h2 className="text-lg font-bold text-mtext">Send a Message</h2>
-      <form onSubmit={(e) => void onSubmit(e)} className="mt-4 space-y-4">
+      <form onSubmit={(e) => void onSubmit(e)} noValidate className="mt-4 space-y-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div>
             <label htmlFor="contact-name" className="mb-1 block text-xs font-semibold uppercase tracking-wider text-stext">
-              Name
+              Name <span className="text-danger">*</span>
             </label>
             <input
               id="contact-name"
@@ -82,7 +82,7 @@ function ContactForm() {
           </div>
           <div>
             <label htmlFor="contact-email" className="mb-1 block text-xs font-semibold uppercase tracking-wider text-stext">
-              Email
+              Email <span className="text-danger">*</span>
             </label>
             <input
               id="contact-email"
@@ -97,7 +97,7 @@ function ContactForm() {
         </div>
         <div>
           <label htmlFor="contact-message" className="mb-1 block text-xs font-semibold uppercase tracking-wider text-stext">
-            Message
+            Message <span className="text-danger">*</span>
           </label>
           <textarea
             id="contact-message"

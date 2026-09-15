@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { ScrollText } from 'lucide-react';
-import { AdminInput, AdminPageHeader, EmptyState, ErrorState, LoadingState } from '../../../../components/admin/AdminShared';
+import { AdminField, AdminInput, AdminPageHeader, EmptyState, ErrorState, LoadingState } from '../../../../components/admin/AdminShared';
 import RichTextEditor from '../../../../components/admin/RichTextEditor';
 import {
   fetchEditorialPage,
@@ -95,6 +95,7 @@ export default function AdminEditorialPage() {
       ) : (
         <form
           className="space-y-3 rounded-lg p-4"
+          noValidate
           style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}
           onSubmit={async (e) => {
             e.preventDefault();
@@ -118,17 +119,16 @@ export default function AdminEditorialPage() {
             }
           }}
         >
-          <AdminInput value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title" required />
-          <div>
-            <label className="mb-1 block text-xs font-semibold" style={{ color: 'var(--admin-text-secondary)' }}>
-              Content
-            </label>
+          <AdminField label="Title" required>
+            <AdminInput value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title" />
+          </AdminField>
+          <AdminField label="Content" required>
             <RichTextEditor
               value={content}
               onChange={setContent}
               placeholder="Write this policy with headings, lists, links and quotes..."
             />
-          </div>
+          </AdminField>
           <button type="submit" disabled={saving} className="btn-brand rounded-md px-4 py-2 text-sm font-bold disabled:opacity-60">
             {saving ? 'Saving…' : `Save ${title.trim() || 'page'}`}
           </button>

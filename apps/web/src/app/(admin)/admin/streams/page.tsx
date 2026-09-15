@@ -1,10 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Plus, Radio, Trash2 } from 'lucide-react';
+import { Check, Pencil, Plus, Radio, Trash2, X } from 'lucide-react';
 import {
+  AdminField,
+  AdminIconButton,
   AdminInput,
+  AdminMenu,
   AdminPageHeader,
   AdminSelect,
   ConfirmDialog,
@@ -17,6 +20,14 @@ import AdminPagination from '../../../../components/admin/AdminPagination';
 import { createStream, deleteStream, fetchStreamsPage, updateStream, type StreamInput } from '../../../../services/streams';
 import type { Stream } from '../../../../types/index';
 import RemoteImage from '../../../../components/RemoteImage';
+import {
+  CUSTOM_PROVIDER,
+  STREAM_PROVIDERS,
+  inferStreamFromUrl,
+  fetchStreamTitle,
+  providerChoiceFromName,
+  type StreamProviderChoice,
+} from '../../../../utils/streamEmbed';
 
 const emptyForm: StreamInput = {
   title: '',
@@ -29,6 +40,11 @@ const emptyForm: StreamInput = {
 
 const LIMIT = 20;
 
+function resolvedProvider(choice: StreamProviderChoice, customName: string): string | undefined {
+  if (choice === CUSTOM_PROVIDER) return customName.trim() || undefined;
+  return choice || undefined;
+}
+
 export default function AdminStreamsPage() {
   const [items, setItems] = useState<Stream[]>([]);
   const [page, setPage] = useState(1);
@@ -37,8 +53,42 @@ export default function AdminStreamsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [form, setForm] = useState<StreamInput>(emptyForm);
+  const [providerChoice, setProviderChoice] = useState<StreamProviderChoice>('');
+  const [customProvider, setCustomProvider] = useState('');
+  const [autoThumb, setAutoThumb] = useState('');
+  const autoTitleRef = useRef('');
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  const resetForm = () => {
+    setForm(emptyForm);
+    setProviderChoice('');
+    setCustomProvider('');
+    setAutoThumb('');
+    autoTitleRef.current = '';
+    setEditingId(null);
+  };
+
+  const applyUrl = (url: string) => {
+    const inferred = inferStreamFromUrl(url);
+    setForm((current) => {
+      const keepThumb = Boolean(current.thumbnailUrl && current.thumbnailUrl !== autoThumb);
+      return {
+        ...current,
+        streamUrl: url,
+        thumbnailUrl: keepThumb ? current.thumbnailUrl : inferred.thumbnailUrl || current.thumbnailUrl,
+        provider:
+          providerChoice === CUSTOM_PROVIDER
+            ? current.provider
+            : inferred.provider || current.provider,
+      };
+    });
+    if (inferred.thumbnailUrl) setAutoThumb(inferred.thumbnailUrl);
+    if (inferred.provider && providerChoice !== CUSTOM_PROVIDER) {
+      setProviderChoice(inferred.provider as StreamProviderChoice);
+    }
+  };
 
   const load = (nextPage = page) => {
     setLoading(true);
@@ -58,27 +108,98 @@ export default function AdminStreamsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    const url = form.streamUrl.trim();
+    const inferred = inferStreamFromUrl(url);
+    if (!url || !inferred.thumbnailUrl) return;
+
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      void fetchStreamTitle(url, controller.signal).then((title) => {
+        if (!title) return;
+        setForm((current) => {
+          const keep = Boolean(current.title && current.title !== autoTitleRef.current);
+          if (keep) return current;
+          return { ...current, title };
+        });
+        autoTitleRef.current = title;
+      });
+    }, 400);
+
+    return () => {
+      controller.abort();
+      window.clearTimeout(timer);
+    };
+  }, [form.streamUrl]);
+
+  const startEdit = (stream: Stream) => {
+    const url = stream.embedUrl || '';
+    const provider = stream.host || '';
+    const choice = providerChoiceFromName(provider);
+    const inferred = inferStreamFromUrl(url);
+    setEditingId(stream.id);
+    setProviderChoice(choice);
+    setCustomProvider(choice === CUSTOM_PROVIDER ? provider : '');
+    setAutoThumb(inferred.thumbnailUrl);
+    autoTitleRef.current = '';
+    setForm({
+      title: stream.title || '',
+      streamUrl: url,
+      provider,
+      thumbnailUrl: stream.image || '',
+      matchId: stream.matchId || '',
+      status: stream.status || 'upcoming',
+    });
+  };
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.title.trim() || !form.streamUrl.trim()) {
-      toast.error('Title and stream URL are required.');
+    const missing: string[] = [];
+    if (!form.title.trim()) missing.push('Title');
+    if (!form.streamUrl.trim()) missing.push('Stream URL');
+    if (providerChoice === CUSTOM_PROVIDER && !customProvider.trim()) missing.push('Custom provider');
+    if (missing.length) {
+      toast.error(`${missing.join(', ')} ${missing.length === 1 ? 'is' : 'are'} required.`);
       return;
     }
+    const provider = resolvedProvider(providerChoice, customProvider);
     setSaving(true);
+    const payload: StreamInput = {
+      title: form.title.trim(),
+      streamUrl: form.streamUrl.trim(),
+      provider,
+      thumbnailUrl: form.thumbnailUrl?.trim() || undefined,
+      matchId: form.matchId || undefined,
+      status: form.status || 'upcoming',
+    };
     try {
-      await createStream({
-        title: form.title.trim(),
-        streamUrl: form.streamUrl.trim(),
-        provider: form.provider || undefined,
-        thumbnailUrl: form.thumbnailUrl || undefined,
-        matchId: form.matchId || undefined,
-        status: form.status || 'upcoming',
-      });
-      setForm(emptyForm);
-      toast.success('Stream created.');
-      load(1);
+      if (editingId) {
+        const updated = await updateStream(editingId, payload);
+        setItems((list) =>
+          list.map((item) =>
+            item.id === editingId
+              ? {
+                  ...item,
+                  ...updated,
+                  title: payload.title,
+                  embedUrl: payload.streamUrl,
+                  host: payload.provider,
+                  image: payload.thumbnailUrl,
+                  matchId: payload.matchId,
+                  status: payload.status || item.status,
+                }
+              : item,
+          ),
+        );
+        toast.success('Stream updated.');
+      } else {
+        await createStream(payload);
+        toast.success('Stream created.');
+        load(1);
+      }
+      resetForm();
     } catch {
-      toast.error('Could not create the stream.');
+      toast.error(editingId ? 'Could not update the stream.' : 'Could not create the stream.');
     } finally {
       setSaving(false);
     }
@@ -98,6 +219,7 @@ export default function AdminStreamsPage() {
     try {
       await deleteStream(deleteId);
       setItems((list) => list.filter((item) => item.id !== deleteId));
+      if (editingId === deleteId) resetForm();
       toast.success('Stream deleted.');
     } catch {
       toast.error('Could not delete the stream.');
@@ -108,43 +230,160 @@ export default function AdminStreamsPage() {
 
   return (
     <div className="space-y-5">
-      <AdminPageHeader title="Live streams" subtitle="Create and update public stream embeds shown on /streams." />
+      <AdminPageHeader
+        title="Live streams"
+        subtitle="Create and update public stream embeds shown on /streams."
+      />
 
       <form
         onSubmit={submit}
-        className="flex flex-wrap items-center gap-2 rounded-lg p-3"
+        noValidate
+        className="rounded-lg p-4"
         style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}
       >
-        <div className="w-44">
-          <AdminInput value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} placeholder="Title" required />
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <p className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text)' }}>
+            {editingId ? 'Edit stream' : 'New stream'}
+          </p>
+          {editingId ? (
+            <span className="truncate text-xs font-semibold" style={{ color: 'var(--admin-text-muted)' }}>
+              {form.title || 'Untitled'}
+            </span>
+          ) : null}
         </div>
-        <div className="w-56">
-          <AdminInput value={form.streamUrl} onChange={(e) => setForm((f) => ({ ...f, streamUrl: e.target.value }))} placeholder="Embed URL" required />
+
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-12">
+          <div className="md:col-span-6">
+            <AdminField label="Title" required>
+              <AdminInput
+                value={form.title}
+                onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+                placeholder="PSL final — live stream"
+                required
+              />
+            </AdminField>
+          </div>
+          <div className="md:col-span-3">
+            <AdminField label="Provider">
+              <AdminSelect
+                value={providerChoice}
+                onChange={(e) => {
+                  const next = e.target.value as StreamProviderChoice;
+                  setProviderChoice(next);
+                  setForm((f) => ({
+                    ...f,
+                    provider: next === CUSTOM_PROVIDER ? customProvider : next,
+                  }));
+                }}
+              >
+                <option value="">Select provider</option>
+                {STREAM_PROVIDERS.map((name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
+                <option value={CUSTOM_PROVIDER}>Custom</option>
+              </AdminSelect>
+            </AdminField>
+          </div>
+          <div className="md:col-span-3">
+            <AdminField label="Status">
+              <AdminSelect value={form.status} onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}>
+                <option value="upcoming">Upcoming</option>
+                <option value="live">Live</option>
+                <option value="ended">Ended</option>
+              </AdminSelect>
+            </AdminField>
+          </div>
+          {providerChoice === CUSTOM_PROVIDER ? (
+            <div className="md:col-span-12">
+              <AdminField label="Custom provider" required>
+                <AdminInput
+                  value={customProvider}
+                  onChange={(e) => {
+                    setCustomProvider(e.target.value);
+                    setForm((f) => ({ ...f, provider: e.target.value }));
+                  }}
+                  placeholder="e.g. Tamasha, A Sports"
+                />
+              </AdminField>
+            </div>
+          ) : null}
+
+          <div className="md:col-span-12">
+            <AdminField label="Stream URL" required hint="Paste a watch or embed link. Provider and thumbnail fill automatically when possible.">
+              <AdminInput
+                value={form.streamUrl}
+                onChange={(e) => applyUrl(e.target.value)}
+                placeholder="https://www.youtube.com/watch?v=…"
+                required
+              />
+            </AdminField>
+          </div>
+
+          <div className="md:col-span-8">
+            <AdminField label="Thumbnail">
+              <div className="flex items-stretch gap-2">
+                {form.thumbnailUrl ? (
+                  <RemoteImage
+                    src={form.thumbnailUrl}
+                    alt=""
+                    width={56}
+                    height={36}
+                    className="w-14 shrink-0 self-stretch rounded-md object-cover"
+                    style={{ border: '1px solid var(--admin-border)' }}
+                  />
+                ) : (
+                  <span
+                    className="grid w-14 shrink-0 place-items-center self-stretch rounded-md"
+                    style={{ background: 'var(--admin-input-bg)', color: 'var(--admin-accent)', border: '1px solid var(--admin-border)' }}
+                  >
+                    <Radio size={14} />
+                  </span>
+                )}
+                <AdminInput
+                  value={form.thumbnailUrl || ''}
+                  onChange={(e) => setForm((f) => ({ ...f, thumbnailUrl: e.target.value }))}
+                  placeholder="https://…"
+                />
+              </div>
+            </AdminField>
+          </div>
+          <div className="md:col-span-4">
+            <AdminField label="Match ID">
+              <AdminInput
+                value={form.matchId || ''}
+                onChange={(e) => setForm((f) => ({ ...f, matchId: e.target.value }))}
+                placeholder="sr:match:…"
+              />
+            </AdminField>
+          </div>
         </div>
-        <div className="w-36">
-          <AdminInput value={form.provider || ''} onChange={(e) => setForm((f) => ({ ...f, provider: e.target.value }))} placeholder="Provider" />
-        </div>
-        <div className="w-48">
-          <AdminInput value={form.thumbnailUrl || ''} onChange={(e) => setForm((f) => ({ ...f, thumbnailUrl: e.target.value }))} placeholder="Thumbnail URL" />
-        </div>
-        <div className="w-36">
-          <AdminInput value={form.matchId || ''} onChange={(e) => setForm((f) => ({ ...f, matchId: e.target.value }))} placeholder="Match ID" />
-        </div>
-        <div className="w-32">
-          <AdminSelect value={form.status} onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}>
-            <option value="upcoming">Upcoming</option>
-            <option value="live">Live</option>
-            <option value="ended">Ended</option>
-          </AdminSelect>
-        </div>
-        <button
-          type="submit"
-          disabled={saving}
-          className="btn-brand inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-bold disabled:opacity-60"
+
+        <div
+          className="mt-4 flex flex-wrap items-center justify-end gap-2 pt-4"
+          style={{ borderTop: '1px solid var(--admin-border)' }}
         >
-          <Plus size={15} />
-          Create
-        </button>
+          {editingId ? (
+            <button
+              type="button"
+              onClick={resetForm}
+              className="inline-flex h-9 items-center gap-1.5 rounded-md px-3 text-sm font-semibold"
+              style={{ border: '1px solid var(--admin-border)', color: 'var(--admin-text-secondary)' }}
+            >
+              <X size={14} />
+              Cancel
+            </button>
+          ) : null}
+          <button
+            type="submit"
+            disabled={saving}
+            className="btn-brand inline-flex h-9 items-center justify-center gap-1.5 rounded-md px-4 text-sm font-bold disabled:opacity-60"
+          >
+            {editingId ? <Check size={15} /> : <Plus size={15} />}
+            {editingId ? 'Save changes' : 'Create stream'}
+          </button>
+        </div>
       </form>
 
       {loading ? (
@@ -192,26 +431,26 @@ export default function AdminStreamsPage() {
                     </td>
                     <td className="px-4 py-3" style={{ color: 'var(--admin-text-secondary)' }}>{stream.host || '—'}</td>
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <StatusBadge status={stream.status} />
-                        <AdminSelect value={stream.status} onChange={(e) => setStatus(stream, e.target.value)}>
-                          <option value="upcoming">Upcoming</option>
-                          <option value="live">Live</option>
-                          <option value="ended">Ended</option>
-                        </AdminSelect>
-                      </div>
+                      <StatusBadge status={stream.status} />
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex justify-end">
-                        <button
-                          type="button"
-                          onClick={() => setDeleteId(stream.id)}
-                          className="grid h-8 w-8 place-items-center rounded-md"
-                          style={{ background: 'var(--admin-danger-bg)', color: 'var(--admin-danger)' }}
-                          aria-label="Delete stream"
-                        >
-                          <Trash2 size={15} />
-                        </button>
+                      <div className="flex justify-end gap-1.5">
+                        <AdminIconButton label="Edit stream" tone="accent" onClick={() => startEdit(stream)}>
+                          <Pencil size={16} />
+                        </AdminIconButton>
+                        <AdminMenu
+                          label="Change stream status"
+                          value={stream.status}
+                          onChange={(status) => setStatus(stream, status)}
+                          options={[
+                            { value: 'upcoming', label: 'Upcoming' },
+                            { value: 'live', label: 'Live' },
+                            { value: 'ended', label: 'Ended' },
+                          ]}
+                        />
+                        <AdminIconButton label="Delete stream" tone="danger" onClick={() => setDeleteId(stream.id)}>
+                          <Trash2 size={16} />
+                        </AdminIconButton>
                       </div>
                     </td>
                   </tr>

@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import Select from 'react-select';
 import { Plus, Trash2 } from 'lucide-react';
 import {
+  AdminField,
   AdminInput,
   AdminPageHeader,
 } from '../../../../components/admin/AdminShared';
@@ -84,30 +85,6 @@ function PlatformLabel({ id, label }: { id: string; label: string }) {
       <SocialBrandIcon id={id} size={20} />
       {label}
     </span>
-  );
-}
-
-function Field({
-  label,
-  hint,
-  children,
-}: {
-  label: string;
-  hint?: string;
-  children: ReactNode;
-}) {
-  return (
-    <label className="block">
-      <span className="mb-1 block text-xs font-semibold" style={{ color: 'var(--admin-text-secondary)' }}>
-        {label}
-      </span>
-      {children}
-      {hint ? (
-        <span className="mt-1 block text-[11px]" style={{ color: 'var(--admin-text-muted)' }}>
-          {hint}
-        </span>
-      ) : null}
-    </label>
   );
 }
 
@@ -193,27 +170,27 @@ export default function SettingsPage() {
         subtitle="Contact details, office location and social links shown on the public site."
       />
 
-      <form className="space-y-5" onSubmit={(e) => void onSave(e)}>
+      <form className="space-y-5" noValidate onSubmit={(e) => void onSave(e)}>
         <section className="rounded-lg p-4" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
           <h2 className="mb-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text)' }}>
             Contact
           </h2>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <Field label="Email">
+            <AdminField label="Email">
               <AdminInput type="email" value={form.email} onChange={(e) => setField('email', e.target.value)} placeholder="hello@pakcriczone.com" />
-            </Field>
-            <Field label="Support email">
+            </AdminField>
+            <AdminField label="Support email">
               <AdminInput type="email" value={form.supportEmail} onChange={(e) => setField('supportEmail', e.target.value)} placeholder="feedback@pakcriczone.com" />
-            </Field>
-            <Field label="Phone">
+            </AdminField>
+            <AdminField label="Phone">
               <AdminInput value={form.phone} onChange={(e) => setField('phone', e.target.value)} placeholder="+92 300 1234567" />
-            </Field>
-            <Field label="WhatsApp" hint="Number with country code, e.g. +923001234567">
+            </AdminField>
+            <AdminField label="WhatsApp" hint="Number with country code, e.g. +923001234567">
               <AdminInput value={form.whatsapp} onChange={(e) => setField('whatsapp', e.target.value)} placeholder="+923001234567" />
-            </Field>
-            <Field label="Working hours">
+            </AdminField>
+            <AdminField label="Working hours">
               <AdminInput value={form.workingHours} onChange={(e) => setField('workingHours', e.target.value)} placeholder="Mon–Fri, 10:00–18:00 PKT" />
-            </Field>
+            </AdminField>
           </div>
         </section>
 
@@ -222,18 +199,18 @@ export default function SettingsPage() {
             Location
           </h2>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <Field label="Address">
+            <AdminField label="Address">
               <AdminInput value={form.address} onChange={(e) => setField('address', e.target.value)} placeholder="Office 12, Gulberg III" />
-            </Field>
-            <Field label="City">
+            </AdminField>
+            <AdminField label="City">
               <AdminInput value={form.city} onChange={(e) => setField('city', e.target.value)} placeholder="Lahore" />
-            </Field>
-            <Field label="Country">
+            </AdminField>
+            <AdminField label="Country">
               <AdminInput value={form.country} onChange={(e) => setField('country', e.target.value)} placeholder="Pakistan" />
-            </Field>
-            <Field label="Google Maps link">
+            </AdminField>
+            <AdminField label="Google Maps link">
               <AdminInput value={form.mapsUrl} onChange={(e) => setField('mapsUrl', e.target.value)} placeholder="https://maps.google.com/..." />
-            </Field>
+            </AdminField>
           </div>
         </section>
 
@@ -256,7 +233,7 @@ export default function SettingsPage() {
           <p className="mb-3 text-sm" style={{ color: 'var(--admin-text-muted)' }}>
             Select a network, then paste its URL or handle.
           </p>
-          <div className="space-y-2">
+          <div className="space-y-3">
             {form.socials.map((item, index) => {
               const meta = SOCIAL_PLATFORMS.find((platform) => platform.id === item.platform);
               const options: PlatformOption[] = SOCIAL_PLATFORMS.filter(
@@ -268,21 +245,26 @@ export default function SettingsPage() {
               }));
               const selected = options.find((option) => option.value === item.platform) || null;
               return (
-                <div key={`${item.platform}-${index}`} className="grid grid-cols-1 gap-2 sm:grid-cols-[14rem_1fr_auto]">
-                  <Select
-                    value={selected}
-                    onChange={(option) => updateSocial(index, { platform: option?.value || '' })}
-                    options={options}
-                    formatOptionLabel={(option) => <PlatformLabel id={option.value} label={option.label} />}
-                    isSearchable={false}
-                    classNamePrefix="react-select"
-                    styles={selectStyles as never}
-                  />
-                  <AdminInput
-                    value={item.value}
-                    onChange={(e) => updateSocial(index, { value: e.target.value })}
-                    placeholder={meta?.placeholder || 'https://...'}
-                  />
+                <div key={`${item.platform}-${index}`} className="grid grid-cols-1 items-end gap-2 sm:grid-cols-[14rem_1fr_auto]">
+                  <AdminField label="Platform">
+                    <Select
+                      value={selected}
+                      onChange={(option) => updateSocial(index, { platform: option?.value || '' })}
+                      options={options}
+                      formatOptionLabel={(option) => <PlatformLabel id={option.value} label={option.label} />}
+                      isSearchable={false}
+                      classNamePrefix="react-select"
+                      styles={selectStyles as never}
+                      aria-label="Platform"
+                    />
+                  </AdminField>
+                  <AdminField label="URL or handle">
+                    <AdminInput
+                      value={item.value}
+                      onChange={(e) => updateSocial(index, { value: e.target.value })}
+                      placeholder={meta?.placeholder || 'https://...'}
+                    />
+                  </AdminField>
                   <button
                     type="button"
                     onClick={() => removeSocial(index)}
