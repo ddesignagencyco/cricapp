@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { BarChart3, Calendar, Clock, MapPin, Radio, Trophy, Users } from 'lucide-react';
 import LiveIndicator from '../LiveIndicator';
+import { StatusBadge } from '../Badge';
 import Tabs from '../Tabs';
 import EmptyState from '../EmptyState';
 import HeadToHeadWidget from '../HeadToHeadWidget';
@@ -11,6 +12,7 @@ import TeamLogo from '../TeamLogo';
 import FavoriteButton from '../FavoriteButton';
 import ShareButton from '../ShareButton';
 import CommentsSection from '../CommentsSection';
+import DummyAd from '../advertisements/DummyAd';
 import BallTracker from '../BallTracker';
 import MatchTimeline, { extractBalls } from '../MatchTimeline';
 import { formatScheduled } from '../../utils/helpers';
@@ -223,11 +225,11 @@ export default function MatchDetailBody({ match: initialMatch, headToHead: initi
         {/* Top Badges & Actions */}
         <div className="relative flex flex-wrap items-center justify-between gap-3 border-b border-lborder/60 pb-4">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-accent/10 px-3 py-1 text-xs font-black uppercase tracking-wider text-accent border border-accent/20">
+            <span className="rounded-full bg-accent/10 px-3 py-1 text-xs font-black tracking-wider text-accent border border-accent/20">
               {match.tournament || 'Match Fixture'}
             </span>
             {match.format && (
-              <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-stext border border-lborder/60">
+              <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-bold tracking-wider text-stext border border-lborder/60">
                 {match.format}
               </span>
             )}
@@ -235,15 +237,8 @@ export default function MatchDetailBody({ match: initialMatch, headToHead: initi
           <div className="flex items-center gap-2">
             {isLive ? (
               <LiveIndicator />
-            ) : isUpcoming ? (
-              <span className="rounded-full bg-accent/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-accent border border-accent/20">Upcoming</span>
-            ) : isCancelled ? (
-              <span className="rounded-full bg-stext/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-stext border border-lborder/60">Cancelled</span>
             ) : (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-amber-500 border border-amber-500/20">
-                <Trophy size={13} />
-                Completed
-              </span>
+              <StatusBadge status={match.status} />
             )}
             <FavoriteButton targetType="match" targetId={String(match.matchId || match.id || '')} compact />
             <ShareButton
@@ -332,12 +327,16 @@ export default function MatchDetailBody({ match: initialMatch, headToHead: initi
         )}
       </header>
 
+      <div className="py-5">
+        <DummyAd size="leaderboard" placement="match-detail-after-overview" />
+      </div>
+
       <div className="mt-4">
         <Tabs tabs={activeTabs} active={tab} onChange={setTab} />
       </div>
 
-      <div className="mt-4 grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2 fade-in space-y-6 pt-3">
+      <div className="mt-4 grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="min-w-0 fade-in space-y-6 pt-3">
           {tab === 'live' &&
             (isLive && hasInnings ? (
               <div className="rounded-3xl bg-secondary p-6 ring-1 ring-lborder">
@@ -411,7 +410,10 @@ export default function MatchDetailBody({ match: initialMatch, headToHead: initi
           )}
         </div>
 
-        <aside className="lg:col-span-1 mt-3 space-y-4">
+        <aside className="mt-3 min-w-0 space-y-6">
+          <div className="flex justify-center lg:justify-start">
+            <DummyAd size="medium-rectangle" placement="match-detail-sidebar" />
+          </div>
           <HeadToHeadWidget data={headToHead || null} />
           {relatedNews.length > 0 && (
             <div className="rounded-2xl bg-card p-4 ring-1 ring-lborder">

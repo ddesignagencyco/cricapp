@@ -26,12 +26,20 @@ export async function fetchLiveMatches(): Promise<Match[]> {
   return extractPage<Match>(res).items;
 }
 
+function normalizeMatchId(id: string): string {
+  try {
+    return decodeURIComponent(id);
+  } catch {
+    return id;
+  }
+}
+
 export async function fetchMatchById(id: string): Promise<Match | null> {
-  return apiGetOptional(`/matches/${id}`);
+  return apiGetOptional(`/matches/${normalizeMatchId(id)}`);
 }
 
 export async function fetchMatchTimeline(id: string): Promise<MatchTimeline | null> {
-  return apiGetOptional(`/matches/${id}/timeline`);
+  return apiGetOptional(`/matches/${normalizeMatchId(id)}/timeline`);
 }
 
 export function matchSideIds(match: Match): { home: string; away: string } {

@@ -1,10 +1,32 @@
 'use client';
 
 import { type ReactNode, forwardRef, useEffect, useRef } from 'react';
+import Link from 'next/link';
 import { StatusBadge as SharedStatusBadge } from '../Badge';
 import { getInitials } from '../../utils/helpers';
 import RemoteImage from '../RemoteImage';
 import { AdminTableSkeleton } from '../skeletons/Skeletons';
+
+export function AdminEntityLink({
+  href,
+  children,
+  className = '',
+}: {
+  href: string;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <Link
+      href={href}
+      prefetch={false}
+      className={`font-semibold transition-colors hover:underline ${className}`}
+      style={{ color: 'var(--admin-accent)' }}
+    >
+      {children}
+    </Link>
+  );
+}
 
 /* ─── Page Header ──────────────────────────────────────────── */
 
@@ -31,7 +53,7 @@ export function AdminPageHeader({
             {icon && <span style={{ color: iconColor || 'var(--admin-accent)' }}>{icon}</span>}
             {badge && (
               <span
-                className="inline-flex items-center rounded px-2 py-0.5 text-xs font-medium uppercase tracking-wide"
+                className="inline-flex items-center rounded px-2 py-0.5 text-xs font-medium tracking-wide"
                 style={{ background: 'var(--admin-accent)', color: 'var(--color-brand-fg)' }}
               >
                 {badge}
@@ -203,7 +225,7 @@ export function AdminChip({
   const colors = CHIP_TONES[tone] || CHIP_TONES.neutral;
   return (
     <span
-      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap"
+      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap capitalize"
       style={{ background: colors.bg, color: colors.fg }}
     >
       {icon}
@@ -316,16 +338,18 @@ const inputBase: React.CSSProperties = {
   fontSize: '0.8125rem',
   lineHeight: '1.5',
   outline: 'none',
+  boxShadow: 'none',
   transition: 'border-color 0.15s',
 };
 
 export const AdminInput = forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(
-  ({ style, ...props }, ref) => (
+  ({ style, onFocus, onBlur, ...props }, ref) => (
     <input
       ref={ref}
+      className="outline-none ring-0 focus:outline-none focus:ring-0"
       style={{ ...inputBase, padding: '0.5rem 0.75rem', ...style }}
-      onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--color-focus-ring)'; props.onFocus?.(e); }}
-      onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--admin-border)'; props.onBlur?.(e); }}
+      onFocus={onFocus}
+      onBlur={onBlur}
       {...props}
     />
   )
@@ -333,9 +357,10 @@ export const AdminInput = forwardRef<HTMLInputElement, React.InputHTMLAttributes
 AdminInput.displayName = 'AdminInput';
 
 export const AdminSelect = forwardRef<HTMLSelectElement, React.SelectHTMLAttributes<HTMLSelectElement>>(
-  ({ style, children, ...props }, ref) => (
+  ({ style, children, className, ...props }, ref) => (
     <select
       ref={ref}
+      className={`outline-none ring-0 focus:outline-none focus:ring-0 ${className || ''}`}
       style={{ ...inputBase, padding: '0.5rem 2rem 0.5rem 0.75rem', appearance: 'auto' as any, ...style }}
       {...props}
     >

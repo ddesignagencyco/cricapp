@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import Link from 'next/link';
+import HideDummyAds from '../components/advertisements/HideDummyAds';
 
 export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
@@ -10,6 +11,7 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col items-center justify-center px-4 py-24 text-center">
+      <HideDummyAds />
       <p className="font-mono text-7xl font-black text-danger/30">500</p>
       <h1 className="mt-4 text-2xl font-black tracking-tight text-mtext">
         Something went wrong

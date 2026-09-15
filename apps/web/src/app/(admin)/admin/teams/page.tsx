@@ -5,7 +5,7 @@ import { Users, Search } from 'lucide-react';
 import { fetchTeamsPage } from '../../../../services/teams';
 import type { Team } from '../../../../types';
 import Pagination from '../../../../components/admin/AdminPagination';
-import { AdminAvatar, AdminPageHeader, LoadingState, EmptyState, AdminInput } from '../../../../components/admin/AdminShared';
+import { AdminAvatar, AdminPageHeader, LoadingState, EmptyState, AdminInput, AdminEntityLink } from '../../../../components/admin/AdminShared';
 import { cap } from '../../../../utils/helpers';
 
 export default function TeamsPage() {
@@ -38,7 +38,7 @@ export default function TeamsPage() {
       <AdminPageHeader title="Teams" subtitle="View all teams from the sports data provider." />
 
       <div className="flex items-center gap-3 rounded-lg p-3" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
-        <div className="relative flex-1">
+        <div className="relative w-full max-w-md">
           <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--admin-text-muted)' }} />
           <AdminInput type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search teams..." style={{ paddingLeft: '2.25rem' }} />
         </div>
@@ -48,7 +48,7 @@ export default function TeamsPage() {
         <EmptyState icon={<Users size={28} />} title="No teams found" />
       ) : (
         <div className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
-          <div className="overflow-x-auto">
+          <div className="table-scroll">
             <table className="w-full text-left text-xs">
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--admin-border)', background: 'var(--admin-table-header)' }}>
@@ -69,7 +69,11 @@ export default function TeamsPage() {
                       <td className="px-4 py-2.5">
                         <div className="flex items-center gap-2.5">
                           <AdminAvatar name={badgeLabel} src={t.logo} size={28} />
-                          <span className="font-semibold" style={{ color: 'var(--admin-text)' }}>{t.name}</span>
+                          {t.id ? (
+                            <AdminEntityLink href={`/teams/${t.id}`}>{t.name}</AdminEntityLink>
+                          ) : (
+                            <span className="font-semibold" style={{ color: 'var(--admin-text)' }}>{t.name}</span>
+                          )}
                         </div>
                       </td>
                       <td className="px-4 py-2.5 font-mono" style={{ color: 'var(--admin-text-secondary)' }}>{code || '—'}</td>

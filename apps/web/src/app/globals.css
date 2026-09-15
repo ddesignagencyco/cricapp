@@ -682,17 +682,115 @@ h3.news-copy[dir="rtl"] {
   padding: 0.1rem 0.2rem;
 }
 
-/* Preserves spaces, line breaks, and empty lines saved from the editor */
+/* Public TipTap HTML — same formatting as the admin editor */
 .tiptap-content {
-  white-space: pre-wrap;
   word-break: break-word;
+  color: var(--color-mtext);
+  font-size: 1rem;
+  line-height: 1.75;
+}
+.tiptap-content h1 {
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 1.75rem 0 0.75rem;
+  color: var(--color-mtext);
+}
+.tiptap-content h2 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  margin: 1.5rem 0 0.6rem;
+  color: var(--color-mtext);
+}
+.tiptap-content h3 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 1.25rem 0 0.5rem;
+  color: var(--color-mtext);
+}
+.tiptap-content h1:first-child,
+.tiptap-content h2:first-child,
+.tiptap-content h3:first-child {
+  margin-top: 0;
 }
 .tiptap-content p {
   min-height: 1.5rem;
+  margin: 0.75rem 0;
 }
 .tiptap-content p:empty::before,
 .tiptap-content p > br:only-child::before {
   content: "\00a0";
+}
+.tiptap-content strong,
+.tiptap-content b {
+  font-weight: 700;
+  color: var(--color-mtext);
+}
+.tiptap-content em,
+.tiptap-content i {
+  font-style: italic;
+}
+.tiptap-content u {
+  text-decoration: underline;
+}
+.tiptap-content s {
+  text-decoration: line-through;
+}
+.tiptap-content ul {
+  list-style: disc;
+  padding-left: 1.5rem;
+  margin: 0.75rem 0;
+}
+.tiptap-content ol {
+  list-style: decimal;
+  padding-left: 1.5rem;
+  margin: 0.75rem 0;
+}
+.tiptap-content li {
+  margin: 0.3rem 0;
+}
+.tiptap-content li p {
+  margin: 0.2rem 0;
+}
+.tiptap-content blockquote {
+  border-left: 3px solid var(--color-accent);
+  padding-left: 1rem;
+  margin: 1rem 0;
+  color: var(--color-stext);
+  font-style: italic;
+}
+.tiptap-content pre {
+  background: var(--color-elevated);
+  border: 1px solid var(--color-lborder);
+  border-radius: 0.375rem;
+  padding: 0.75rem 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+.tiptap-content code {
+  background: var(--color-elevated);
+  border: 1px solid var(--color-lborder);
+  border-radius: 0.25rem;
+  padding: 0.15rem 0.35rem;
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+.tiptap-content pre code {
+  background: none;
+  border: 0;
+  padding: 0;
+}
+.tiptap-content a {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.tiptap-content hr {
+  border: none;
+  border-top: 1px solid var(--color-lborder);
+  margin: 1.5rem 0;
 }
 
 .news-image {
@@ -750,38 +848,41 @@ h3.news-copy[dir="rtl"] {
   box-shadow: 0 1px 3px rgba(11, 31, 58, 0.08) !important;
 }
 
-/* Keep every table column reachable on small screens.
-   Direct table parents become a horizontal scroll area with a visible bar. */
+/* Horizontal table scroll: bar stays visible while content overflows. */
+.table-scroll,
+:has(> table) {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--admin-text-muted, var(--color-stext)) var(--admin-input-bg, var(--color-lborder));
+}
+
+.table-scroll::-webkit-scrollbar,
+:has(> table)::-webkit-scrollbar {
+  display: block;
+  height: 10px;
+  width: 10px;
+}
+
+.table-scroll::-webkit-scrollbar-track,
+:has(> table)::-webkit-scrollbar-track {
+  background: var(--admin-input-bg, var(--color-elevated));
+  border-radius: 999px;
+}
+
+.table-scroll::-webkit-scrollbar-thumb,
+:has(> table)::-webkit-scrollbar-thumb {
+  background: var(--admin-text-muted, var(--color-stext));
+  border-radius: 999px;
+}
+
+.table-scroll::-webkit-scrollbar-thumb:hover,
+:has(> table)::-webkit-scrollbar-thumb:hover {
+  background: var(--admin-text, var(--color-mtext));
+}
+
 @media (max-width: 767px) {
-  :has(> table) {
-    overflow-x: scroll;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior-x: contain;
-    scrollbar-gutter: stable;
-    scrollbar-width: thin;
-    scrollbar-color: var(--color-lborder) transparent;
-  }
-
-  :has(> table)::-webkit-scrollbar {
-    display: block;
-    height: 8px;
-    width: 8px;
-  }
-
-  :has(> table)::-webkit-scrollbar-track {
-    background: color-mix(in srgb, var(--color-lborder) 35%, transparent);
-    border-radius: 999px;
-  }
-
-  :has(> table)::-webkit-scrollbar-thumb {
-    background: var(--color-stext);
-    border-radius: 999px;
-  }
-
-  :has(> table)::-webkit-scrollbar-thumb:hover {
-    background: var(--color-mtext);
-  }
-
   table {
     width: 100%;
     min-width: max-content;
@@ -790,4 +891,8 @@ h3.news-copy[dir="rtl"] {
   table th {
     white-space: nowrap;
   }
+}
+
+html[data-hide-dummy-ads] [data-ad-placement] {
+  display: none !important;
 }

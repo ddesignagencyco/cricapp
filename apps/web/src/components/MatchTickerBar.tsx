@@ -17,8 +17,7 @@ export default function MatchTickerBar({ matches: initialMatches }: MatchTickerB
   const [matches, setMatches] = useState(initialMatches || []);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
-  const hasLive = (initialMatches || []).some((match) => match?.status === 'live');
-  const liveUpdate = useMatchStream(undefined, hasLive);
+  const liveUpdate = useMatchStream(undefined, true);
   const overflows = canScrollLeft || canScrollRight;
 
   const updateScrollState = () => {
@@ -63,6 +62,8 @@ export default function MatchTickerBar({ matches: initialMatches }: MatchTickerB
     scrollRef.current.scrollBy({ left: dir === 'left' ? -amount : amount, behavior: 'smooth' });
   };
 
+  if (!matches.length) return null;
+
   return (
     <div className="border-b border-lborder">
       <div className="mx-auto max-w-full px-4 sm:px-6">
@@ -84,13 +85,9 @@ export default function MatchTickerBar({ matches: initialMatches }: MatchTickerB
               overflows ? 'px-11' : 'justify-center px-2'
             }`}
           >
-            {matches.length ? (
-              matches.map((m) => (
-                <TickerCard key={m.matchId || m.id} match={m} />
-              ))
-            ) : (
-              <p className="py-8 text-center text-sm text-stext">No matches right now.</p>
-            )}
+            {matches.map((m) => (
+              <TickerCard key={m.matchId || m.id} match={m} />
+            ))}
           </div>
 
           {canScrollRight ? (
@@ -167,7 +164,7 @@ function TickerCard({ match }: { match: any }) {
   const venue = match.venue || '';
 
   const normalizedStatus = normalizeStatus(status);
-  const badgeLabel = isCompleted ? 'RESULT' : normalizedStatus.label.toUpperCase();
+  const badgeLabel = isCompleted ? 'Result' : normalizedStatus.label;
   const badgeTone = normalizedStatus.tone;
 
   const innings = match.currentInnings;
@@ -193,7 +190,7 @@ function TickerCard({ match }: { match: any }) {
       className="group flex w-[260px] shrink-0 flex-col overflow-hidden rounded-xl bg-card p-3 ring-1 ring-lborder transition-colors hover:bg-elevated hover:ring-border-strong"
     >
       <div className="mb-2 flex items-center justify-between gap-2">
-        <span className="min-w-0 truncate text-xs font-semibold uppercase tracking-wide text-stext">
+        <span className="min-w-0 truncate text-xs font-semibold tracking-wide text-stext">
           {tournament}
         </span>
         {isLive ? (

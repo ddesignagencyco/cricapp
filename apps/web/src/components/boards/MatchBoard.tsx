@@ -1,5 +1,6 @@
 'use client';
 
+import { Fragment } from 'react';
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { Search } from 'lucide-react';
@@ -11,7 +12,7 @@ import Tabs from '../Tabs';
 import EmptyState from '../EmptyState';
 import ErrorState from '../ErrorState';
 import Pagination from '../Pagination';
-import AdSlot from '../AdSlot';
+import DummyAd from '../advertisements/DummyAd';
 import { MatchCardGridSkeleton } from '../skeletons/Skeletons';
 
 const LIMIT = 20;
@@ -39,6 +40,8 @@ export default function MatchBoard() {
   const [retryKey, setRetryKey] = useState(0);
   const [localSearch, setLocalSearch] = useState(q);
   const liveUpdate = useMatchStream(undefined, tab === 'live');
+  const visibleMatches =
+    tab === 'live' ? matches.filter((match) => match.status === 'live') : matches;
 
   useEffect(() => {
     setLocalSearch(q);
@@ -140,14 +143,18 @@ export default function MatchBoard() {
         <MatchCardGridSkeleton />
       ) : error ? (
         <ErrorState message="Matches are temporarily unavailable." onRetry={() => setRetryKey((key) => key + 1)} />
-      ) : matches.length > 0 ? (
+      ) : visibleMatches.length > 0 ? (
         <>
           <div className="fade-in grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {matches.map((m) => (
-              <MatchCard key={m.matchId || m.id} match={m} />
+            {visibleMatches.map((m, index) => (
+              <Fragment key={m.matchId || m.id}>
+                <MatchCard match={m} />
+                {visibleMatches.length >= 4 && index === 3 ? (
+                  <DummyAd size="medium-rectangle" placement="matches-infeed" inFeed />
+                ) : null}
+              </Fragment>
             ))}
           </div>
-          <AdSlot slot="matches-below-grid" format="leaderboard" className="pt-2" />
           <Pagination page={page} totalPages={totalPages} total={total} limit={LIMIT} onPageChange={handlePageChange} />
         </>
       ) : (

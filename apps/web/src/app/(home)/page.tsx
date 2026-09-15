@@ -1,6 +1,6 @@
 import Link from 'next/link';
-import MatchCard from '../../components/MatchCard';
 import MatchCardCompact from '../../components/MatchCardCompact';
+import LiveNowSection from '../../components/LiveNowSection';
 import SectionHeader from '../../components/SectionHeader';
 import MatchTickerBar from '../../components/MatchTickerBar';
 import CricketHero from '../../components/CricketHero';
@@ -8,7 +8,7 @@ import PslSpotlight from '../../components/PslSpotlight';
 import RecentResultCard from '../../components/RecentResultCard';
 import TopPerformers from '../../components/TopPerformers';
 import Newsletter from '../../components/Newsletter';
-import AdSlot from '../../components/AdSlot';
+import DummyAd from '../../components/advertisements/DummyAd';
 import RemoteImage from '../../components/RemoteImage';
 import NewsCopy from '../../components/NewsCopy';
 
@@ -94,26 +94,19 @@ export default async function HomePage() {
 
   return (
     <div className="min-h-screen">
-      <MatchTickerBar matches={tickerMatches} />
+      {tickerMatches.length > 0 ? <MatchTickerBar matches={tickerMatches} /> : null}
+      <div className="mx-auto w-full min-w-0 max-w-7xl px-4 py-5 sm:px-6">
+        <DummyAd size="leaderboard" placement="home-top" />
+      </div>
       <CricketHero match={nextUpcoming || all[0]} />
 
-      {/* Live Now */}
-      {live.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6 mt-8">
-          <SectionHeader
-            title="Live Now"
-            subtitle={`${live.length} match${live.length === 1 ? '' : 'es'} in progress`}
-            icon="zap"
-            to="/matches?tab=live"
-            actionLabel="All live"
-          />
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {live.slice(0, 3).map((m: any) => (
-              <MatchCard key={m.matchId || m.id} match={m} />
-            ))}
-          </div>
+      <LiveNowSection matches={live} />
+
+      {live.length > 0 && newsList.length > 0 ? (
+        <section className="mx-auto w-full min-w-0 max-w-7xl px-4 py-5 sm:px-6">
+          <DummyAd size="leaderboard" placement="home-mid" />
         </section>
-      )}
+      ) : null}
 
       {streams.length > 0 && (
         <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6">
@@ -130,7 +123,7 @@ export default async function HomePage() {
                   <span className="absolute inset-0 grid place-items-center">
                     <span className="grid h-11 w-11 place-items-center rounded-full bg-black/55 text-sm text-white">▶</span>
                   </span>
-                  <span className="absolute left-2 top-2 rounded-full bg-black/55 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                  <span className="absolute left-2 top-2 rounded-full bg-black/55 px-2 py-0.5 text-[10px] font-bold tracking-wide text-white">
                     {stream.status || 'Video'}
                   </span>
                 </div>
@@ -155,10 +148,6 @@ export default async function HomePage() {
             </p>
           )}
         </div>
-      </section>
-
-      <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6">
-        <AdSlot slot="home-mid" format="leaderboard" />
       </section>
 
       {/* PSL Spotlight */}
@@ -215,7 +204,7 @@ export default async function HomePage() {
                     <div className="h-48 w-full media-fallback sm:h-60" />
                   )}
                   <div className="absolute left-4 top-4">
-                    <span className="inline-block rounded-full bg-[var(--color-brand)] px-3 py-1 text-[10px] font-medium uppercase tracking-wide text-white">
+                    <span className="inline-block rounded-full bg-[var(--color-brand)] px-3 py-1 text-[10px] font-medium tracking-wide text-white">
                       {typeof newsList[0].tag === 'string' && newsList[0].tag
                         ? newsList[0].tag
                         : typeof newsList[0].category === 'string'
@@ -250,7 +239,7 @@ export default async function HomePage() {
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <span className="inline-block rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-accent">
+                    <span className="inline-block rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-bold tracking-wide text-accent">
                       {typeof item.tag === 'string' && item.tag
                         ? item.tag
                         : typeof item.category === 'string'
@@ -283,10 +272,6 @@ export default async function HomePage() {
           </div>
         </section>
       )}
-
-      <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6">
-        <AdSlot slot="home-footer" format="leaderboard" />
-      </section>
 
       <Newsletter />
     </div>

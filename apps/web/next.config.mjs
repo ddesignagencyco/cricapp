@@ -4,6 +4,7 @@ const nextConfig = {
   async redirects() {
     return [
       { source: '/admin/media', destination: '/admin/gallery', permanent: false },
+      { source: '/compare', destination: '/teams', permanent: false },
     ];
   },
 };

@@ -33,6 +33,7 @@
     "react-hot-toast": "^2.6.0",
     "react-loading-skeleton": "^3.5.0",
     "react-select": "^5.10.2",
+    "socket.io-client": "^4.8.3",
     "stylis": "^4.4.0",
     "tailwindcss": "^4.3.3",
     "use-isomorphic-layout-effect": "^1.2.1",

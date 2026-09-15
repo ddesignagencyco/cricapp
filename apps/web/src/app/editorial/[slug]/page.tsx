@@ -18,7 +18,7 @@ export default async function EditorialSlugPage({ params }: { params: Promise<{ 
   if (!page) notFound();
   if (!page.content?.trim()) {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-16">
+      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
         <EmptyState title={page.title} message="This page has no published content yet." />
       </div>
     );

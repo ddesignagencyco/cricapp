@@ -133,7 +133,7 @@ export default function NewsManager() {
 
       {/* Filters */}
       <div className="flex flex-col gap-3 rounded-lg p-3 md:flex-row md:items-center" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
-        <div className="relative flex-1">
+        <div className="relative w-full max-w-md">
           <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--admin-text-muted)' }} />
           <AdminInput
             type="search"
@@ -176,7 +176,7 @@ export default function NewsManager() {
         </div>
       ) : (
         <div className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
-          <div className="overflow-x-auto">
+          <div className="table-scroll">
             <table className="w-full min-w-[760px] text-left text-xs">
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--admin-border)', background: 'var(--admin-table-header)' }}>
@@ -234,7 +234,7 @@ export default function NewsManager() {
                         type="button"
                         disabled={busyId === a.id}
                         onClick={() => togglePublish(a)}
-                        className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold uppercase transition-all disabled:opacity-50"
+                        className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold transition-all disabled:opacity-50"
                         style={{
                           background: a.isPublished ? 'var(--admin-success-bg)' : 'var(--admin-warning-bg)',
                           color: a.isPublished ? 'var(--admin-success)' : 'var(--admin-warning)',

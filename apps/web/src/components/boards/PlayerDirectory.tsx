@@ -7,7 +7,7 @@ import PlayerCard from '../PlayerCard';
 import EmptyState from '../EmptyState';
 import ErrorState from '../ErrorState';
 import Pagination from '../Pagination';
-import AdSlot from '../AdSlot';
+import DummyAd from '../advertisements/DummyAd';
 import { DirectoryGridSkeleton } from '../skeletons/Skeletons';
 import { fetchPlayersPage } from '../../services/players';
 import type { Player } from '../../types/index';
@@ -149,6 +149,10 @@ export default function PlayerDirectory({ initialPlayers = [], initialTotal = 0 
         </div>
       </header>
 
+      {!loading && !error && filtered.length > 0 ? (
+        <DummyAd size="leaderboard" placement="players-after-intro" />
+      ) : null}
+
       {/* Search & Role Filters */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative flex-1 max-w-md">
@@ -208,8 +212,6 @@ export default function PlayerDirectory({ initialPlayers = [], initialTotal = 0 
               <PlayerCard key={p.id} player={p} />
             ))}
           </div>
-
-          <AdSlot slot="players-below-grid" format="leaderboard" className="pt-4" />
 
           <div className="pt-4">
             <Pagination page={page} totalPages={totalPages} total={total} limit={LIMIT} onPageChange={handlePageChange} />

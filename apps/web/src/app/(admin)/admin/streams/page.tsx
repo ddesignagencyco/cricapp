@@ -11,6 +11,7 @@ import {
   EmptyState,
   ErrorState,
   LoadingState,
+  StatusBadge,
 } from '../../../../components/admin/AdminShared';
 import AdminPagination from '../../../../components/admin/AdminPagination';
 import { createStream, deleteStream, fetchStreamsPage, updateStream, type StreamInput } from '../../../../services/streams';
@@ -27,12 +28,6 @@ const emptyForm: StreamInput = {
 };
 
 const LIMIT = 20;
-
-function statusStyle(status: string) {
-  if (status === 'live') return { background: 'var(--admin-danger-bg)', color: 'var(--admin-danger)' };
-  if (status === 'ended') return { background: 'var(--admin-input-bg)', color: 'var(--admin-text-muted)' };
-  return { background: 'var(--admin-info-bg)', color: 'var(--admin-info)' };
-}
 
 export default function AdminStreamsPage() {
   const [items, setItems] = useState<Stream[]>([]);
@@ -160,7 +155,7 @@ export default function AdminStreamsPage() {
         <EmptyState icon={<Radio size={28} />} title="No streams" message="Create a stream to show it on the public /streams page." />
       ) : (
         <div className="overflow-hidden rounded-lg" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
-          <div className="overflow-x-auto">
+          <div className="table-scroll">
             <table className="w-full text-left text-sm">
               <thead>
                 <tr style={{ background: 'var(--admin-table-header)', borderBottom: '1px solid var(--admin-border)' }}>
@@ -198,9 +193,7 @@ export default function AdminStreamsPage() {
                     <td className="px-4 py-3" style={{ color: 'var(--admin-text-secondary)' }}>{stream.host || '—'}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <span className="rounded-full px-2 py-0.5 text-[11px] font-bold uppercase" style={statusStyle(stream.status)}>
-                          {stream.status}
-                        </span>
+                        <StatusBadge status={stream.status} />
                         <AdminSelect value={stream.status} onChange={(e) => setStatus(stream, e.target.value)}>
                           <option value="upcoming">Upcoming</option>
                           <option value="live">Live</option>

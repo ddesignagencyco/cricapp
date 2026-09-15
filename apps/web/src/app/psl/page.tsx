@@ -6,7 +6,7 @@ import TeamLogo from '../../components/TeamLogo';
 import StatsBoard from '../../components/boards/StatsBoard';
 import PslSeasonFilter from '../../components/PslSeasonFilter';
 import PslFixturesTable from '../../components/PslFixturesTable';
-import AdSlot from '../../components/AdSlot';
+import DummyAd from '../../components/advertisements/DummyAd';
 import { formatScheduled } from '../../utils/helpers';
 import { fetchPslStandings, fetchPslLeaders, fetchPslSchedule, fetchPslSquads, fetchPslSeasons } from '../../services/psl';
 
@@ -63,7 +63,7 @@ export default async function PSLPage({ searchParams }: { searchParams: Promise<
         <div className="hero-content relative mx-auto max-w-7xl px-4 py-14 sm:px-6">
           <div className="max-w-2xl">
             <div className="mb-4 flex items-center gap-2">
-              <span className="hero-kicker text-xs font-bold uppercase tracking-widest">
+              <span className="hero-kicker text-xs font-semibold capitalize tracking-wide">
                 {seasonLabel || 'Pakistan Super League'}
               </span>
             </div>
@@ -95,17 +95,13 @@ export default async function PSLPage({ searchParams }: { searchParams: Promise<
         <PointsTable rows={pointsRows} />
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 pb-4 sm:px-6">
-        <AdSlot slot="psl-top" format="leaderboard" />
+      <section className="mx-auto max-w-7xl px-4 pb-6 sm:px-6">
+        <DummyAd size="leaderboard" placement="psl-after-intro" />
       </section>
 
       {/* Full Leaders / Stats */}
       <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
         <StatsBoard leaders={leaders || []} season={seasonLabel} />
-      </section>
-
-      <section className="mx-auto max-w-7xl px-4 py-4 sm:px-6">
-        <AdSlot slot="psl-mid" format="leaderboard" />
       </section>
 
       {/* Franchises */}
@@ -167,17 +163,24 @@ export default async function PSLPage({ searchParams }: { searchParams: Promise<
       <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
         <SectionHeader title="Fixtures" subtitle="Schedule" icon="calendar" />
         {regular.length > 0 ? (
-          <PslFixturesTable matches={regular} />
+          regular.length >= 8 ? (
+            <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+              <div className="min-w-0">
+                <PslFixturesTable matches={regular} />
+              </div>
+              <div className="hidden w-[300px] shrink-0 lg:block">
+                <DummyAd size="half-page" placement="psl-half-page" />
+              </div>
+            </div>
+          ) : (
+            <PslFixturesTable matches={regular} />
+          )
         ) : (
           <div className="rounded-2xl bg-card px-6 py-10 text-center ring-1 ring-lborder">
             <p className="text-sm font-semibold text-mtext">No fixtures scheduled</p>
             <p className="mt-1 text-xs text-stext">Schedule will be announced before the season begins.</p>
           </div>
         )}
-      </section>
-
-      <section className="mx-auto max-w-7xl px-4 pb-12 sm:px-6">
-        <AdSlot slot="psl-bottom" format="leaderboard" />
       </section>
     </div>
   );

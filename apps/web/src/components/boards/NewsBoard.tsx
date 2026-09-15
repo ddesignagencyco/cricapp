@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, Fragment } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -16,11 +16,10 @@ import Badge from '../Badge';
 import Tabs from '../Tabs';
 import EmptyState from '../EmptyState';
 import Pagination from '../Pagination';
-import AdSlot from '../AdSlot';
+import DummyAd from '../advertisements/DummyAd';
 import RemoteImage from '../RemoteImage';
 import NewsCopy from '../NewsCopy';
 import type { NewsArticle } from '../../types';
-import { newsLocale } from '../../utils/locale';
 import { newsHref } from '../../utils/newsConstraints';
 
 const categoryTone: Record<string, string> = {
@@ -138,65 +137,56 @@ export default function NewsBoard({
   const spotlightCategory = featured ? getCategoryName(featured.category) : '';
   const spotlightTags = featured ? getArticleTags(featured) : [];
 
-  const pageLocale = newsLocale(language);
+  const newsListHref = (lang: 'en' | 'ur') => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('page');
+    if (lang === 'ur') params.set('lang', 'ur');
+    else params.delete('lang');
+    const query = params.toString();
+    return query ? `/news?${query}` : '/news';
+  };
 
   return (
     <>
       <header className="mb-8">
-        <div className="flex items-center gap-2 text-accent" dir="ltr">
+        <div className="flex items-center gap-2 text-accent">
           <Newspaper size={18} />
           <span className="text-xs font-medium uppercase tracking-widest text-stext">
             Cricket Newsroom
           </span>
         </div>
-        <div
-          className="mt-1 flex flex-wrap items-end justify-between gap-3"
-          dir={pageLocale.dir}
-          lang={pageLocale.lang}
-        >
-          <NewsCopy
-            as="h1"
-            language={language}
-            className="text-2xl font-semibold tracking-tight text-mtext"
-          >
-            {language === 'ur' ? 'خبریں اور اپ ڈیٹس' : 'News & Updates'}
-          </NewsCopy>
-          <div
-            dir="ltr"
-            className="inline-flex rounded-md border border-lborder bg-card p-0.5 text-xs font-semibold"
-          >
-            <Link
-              href="/news"
-              className={`rounded px-2.5 py-1 ${language === 'en' ? 'bg-accent text-white' : 'text-stext hover:text-mtext'}`}
-            >
-              EN
-            </Link>
-            <Link
-              href="/ur/news"
-              className={`rounded px-2.5 py-1 ${language === 'ur' ? 'bg-accent text-white' : 'text-stext hover:text-mtext'}`}
-            >
-              اردو
-            </Link>
-          </div>
-        </div>
-        <NewsCopy language={language} className="mt-2 max-w-2xl text-sm text-stext">
-          {language === 'ur'
-            ? 'میچ رپورٹس، پی ایس ایل اور پاکستان کرکٹ کی اردو خبریں۔'
-            : 'Match reports, PSL stories, team roster updates, and tactical analysis from the PAK CRICZONE team.'}
-        </NewsCopy>
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-mtext">News & Updates</h1>
+        <p className="mt-2 max-w-2xl text-sm text-stext">
+          Match reports, PSL stories, team roster updates, and tactical analysis from the PAK CRICZONE team.
+        </p>
       </header>
 
-      {/* Filters apply to both the spotlight and the story grid. */}
-      {categoryTabs.length > 1 && (
-        <div className="mb-6 border-y border-lborder py-3">
+      <div className="mb-6 flex flex-col gap-3 border-y border-lborder py-3 sm:flex-row sm:items-center sm:justify-between">
+        {categoryTabs.length > 1 ? (
           <Tabs
             tabs={categoryTabs}
             active={selectedCategory}
             onChange={(category) => updateQuery(category)}
             size="sm"
           />
+        ) : (
+          <p className="text-xs font-medium uppercase tracking-wider text-stext">Language</p>
+        )}
+        <div className="inline-flex shrink-0 self-start rounded-md border border-lborder bg-card p-0.5 text-xs font-semibold">
+          <Link
+            href={newsListHref('en')}
+            className={`rounded px-2.5 py-1 ${language === 'en' ? 'bg-accent text-white' : 'text-stext hover:text-mtext'}`}
+          >
+            EN
+          </Link>
+          <Link
+            href={newsListHref('ur')}
+            className={`rounded px-2.5 py-1 ${language === 'ur' ? 'bg-accent text-white' : 'text-stext hover:text-mtext'}`}
+          >
+            اردو
+          </Link>
         </div>
-      )}
+      </div>
 
       {featured && (
         <Link
@@ -225,7 +215,7 @@ export default function NewsBoard({
             <div className="flex flex-col justify-between p-5 sm:p-7 lg:p-8">
               <div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 rounded bg-[var(--color-brand)] px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-white">
+                  <span className="inline-flex items-center gap-1.5 rounded bg-[var(--color-brand)] px-2.5 py-1 text-xs font-semibold tracking-wide text-white">
                     <Flame size={13} />
                     Spotlight
                   </span>
@@ -311,11 +301,20 @@ export default function NewsBoard({
             <span className="text-xs text-stext">{total} published</span>
           </div>
           <div className="fade-in grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((item) => (
-            <ArticleCard key={item.id} item={item} language={language} />
+          {filtered.map((item, index) => (
+            <Fragment key={item.id}>
+              <ArticleCard item={item} language={language} />
+              {filtered.length >= 4 && index === 3 ? (
+                <DummyAd size="large-rectangle" placement="news-list-infeed" inFeed />
+              ) : null}
+            </Fragment>
           ))}
           </div>
-          <AdSlot slot="news-list-below-grid" format="leaderboard" className="mt-8" />
+          {filtered.length >= 8 ? (
+            <div className="mt-8">
+              <DummyAd size="leaderboard" placement="news-list-bottom" />
+            </div>
+          ) : null}
         </>
       ) : !featured ? (
         <EmptyState

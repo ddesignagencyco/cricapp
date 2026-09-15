@@ -150,7 +150,7 @@ export default function AdminDashboard() {
                     </p>
                   </div>
                   <span
-                    className="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold uppercase"
+                    className="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold"
                     style={{
                       background: a.isPublished ? 'var(--admin-success-bg)' : 'var(--admin-warning-bg)',
                       color: a.isPublished ? 'var(--admin-success)' : 'var(--admin-warning)',

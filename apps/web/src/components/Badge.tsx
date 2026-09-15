@@ -19,6 +19,10 @@ const toneStyles: Record<string, { bg: string; fg: string; ring: string }> = {
   failed: { bg: 'var(--color-danger-soft)', fg: 'var(--color-danger)', ring: 'var(--color-danger)' },
   error: { bg: 'var(--color-danger-soft)', fg: 'var(--color-danger)', ring: 'var(--color-danger)' },
   cancelled: { bg: 'var(--color-surface-muted)', fg: 'var(--color-text-muted)', ring: 'var(--color-border)' },
+  ended: { bg: 'var(--color-surface-muted)', fg: 'var(--color-text-muted)', ring: 'var(--color-border)' },
+  spam: { bg: 'var(--color-warning-soft)', fg: 'var(--color-warning)', ring: 'var(--color-warning)' },
+  hate: { bg: 'var(--color-danger-soft)', fg: 'var(--color-danger)', ring: 'var(--color-danger)' },
+  harassment: { bg: 'var(--color-danger-soft)', fg: 'var(--color-danger)', ring: 'var(--color-danger)' },
   abandoned: { bg: 'var(--color-surface-muted)', fg: 'var(--color-text-muted)', ring: 'var(--color-border)' },
   inactive: { bg: 'var(--color-surface-muted)', fg: 'var(--color-text-muted)', ring: 'var(--color-border)' },
   neutral: { bg: 'var(--color-surface-muted)', fg: 'var(--color-text-secondary)', ring: 'var(--color-border)' },
@@ -28,12 +32,22 @@ const toneStyles: Record<string, { bg: string; fg: string; ring: string }> = {
   eliminated: { bg: 'var(--color-danger-soft)', fg: 'var(--color-danger)', ring: 'var(--color-danger)' },
 };
 
+function titleCase(value: string): string {
+  return value
+    .trim()
+    .replace(/[_-]+/g, ' ')
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+}
+
 const statusLabels: Record<string, string> = {
   live: 'Live',
   upcoming: 'Upcoming',
   completed: 'Completed',
   closed: 'Completed',
-  ended: 'Completed',
+  ended: 'Ended',
   cancelled: 'Cancelled',
   postponed: 'Postponed',
   abandoned: 'Abandoned',
@@ -47,12 +61,15 @@ const statusLabels: Record<string, string> = {
   active: 'Active',
   inactive: 'Inactive',
   not_started: 'Upcoming',
+  unknown: 'Unknown',
+  spam: 'Spam',
+  hate: 'Hate',
+  harassment: 'Harassment',
 };
 
 /** Provider aliases that should inherit another tone's colours. */
 const statusToneAliases: Record<string, string> = {
   closed: 'completed',
-  ended: 'completed',
   not_started: 'upcoming',
 };
 
@@ -60,7 +77,7 @@ export function normalizeStatus(status?: string | null): { label: string; tone: 
   const normalized = (status || '').trim().toLowerCase().replace(/[\s-]+/g, '_');
   const tone = statusToneAliases[normalized] || normalized;
   return {
-    label: statusLabels[normalized] || statusLabels[tone] || (status?.trim() || 'Unknown'),
+    label: statusLabels[normalized] || statusLabels[tone] || titleCase(status || '') || 'Unknown',
     tone: tone in toneStyles ? tone : 'neutral',
   };
 }
@@ -73,10 +90,11 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 
 export default function Badge({ children, tone = 'neutral', className = '', style, ...rest }: BadgeProps) {
   const current = toneStyles[tone.toLowerCase()] || toneStyles.neutral;
+  const classes = className.replace(/\buppercase\b/g, '').replace(/\s+/g, ' ').trim();
   return (
     <span
       {...rest}
-      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold uppercase tracking-wide leading-none ${className}`}
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold capitalize leading-none ${classes}`}
       style={{
         background: current.bg,
         color: current.fg,

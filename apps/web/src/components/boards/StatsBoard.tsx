@@ -112,9 +112,9 @@ function LeaderSection({ stat, entries }: { stat: string; entries: any[] }) {
         </div>
       )}
 
-      <div className="overflow-hidden rounded-sm bg-card ring-1 ring-lborder">
-        <div className="overflow-x-scroll">
-        <table className="w-full min-w-[480px] text-left text-sm">
+      <div className="min-w-0 overflow-hidden rounded-sm bg-card ring-1 ring-lborder">
+        <div className="table-scroll">
+        <table className="text-left text-sm">
           <thead>
             <tr className="border-b border-lborder bg-secondary/40 text-xs uppercase tracking-wider text-stext">
               <th className="px-4 py-2.5">#</th>

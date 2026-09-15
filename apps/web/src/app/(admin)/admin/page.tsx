@@ -24,7 +24,7 @@ import { useAuth } from '../../../components/AuthProvider';
 import { fetchMatchesPage } from '../../../services/matches';
 import { fetchNewsAdmin } from '../../../services/newsAdmin';
 import type { Match } from '../../../types';
-import { AdminAvatar, LoadingState, StatusBadge } from '../../../components/admin/AdminShared';
+import { AdminAvatar, AdminEntityLink, LoadingState, StatusBadge } from '../../../components/admin/AdminShared';
 import {
   fetchAdminAnalytics,
   fetchAdminUsers,
@@ -142,7 +142,7 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
+      <div className="grid grid-cols-2 items-start gap-2 sm:grid-cols-3 xl:grid-cols-6">
         <MetricCard
           label="Users"
           value={n(analytics?.users)}
@@ -220,26 +220,12 @@ export default function AdminDashboard() {
           accentColor="var(--admin-accent)"
           accentBg="var(--admin-info-bg)"
         />
-        <MetricCard
-          label="Favorites"
-          value={n(favoriteTotal(analytics))}
-          icon={<Heart size={20} />}
-          largeIcon
-          accentColor="var(--admin-danger)"
-          accentBg="var(--admin-danger-bg)"
-          extra={
-            <div className="mt-2 flex flex-wrap gap-2">
-              <FavoriteTypeChip icon={<Users size={18} />} label="Teams" count={favoriteType(analytics, 'team')} />
-              <FavoriteTypeChip icon={<UserCircle size={18} />} label="Players" count={favoriteType(analytics, 'player')} />
-              <FavoriteTypeChip icon={<Trophy size={18} />} label="Matches" count={favoriteType(analytics, 'match')} />
-              <FavoriteTypeChip icon={<Newspaper size={18} />} label="News" count={favoriteType(analytics, 'news')} />
-            </div>
-          }
-        />
       </div>
 
+      <FavoritesCard analytics={analytics} />
+
       <div
-        className="grid grid-cols-1 gap-3 rounded-lg p-4 sm:grid-cols-3 sm:divide-x"
+        className="grid grid-cols-1 gap-3 divide-y rounded-lg p-4 sm:grid-cols-3 sm:divide-x sm:divide-y-0"
         style={{
           border: '1px solid var(--admin-border)',
           background: 'var(--admin-card)',
@@ -315,7 +301,7 @@ export default function AdminDashboard() {
                 <thead>
                   <tr style={{ borderBottom: '1px solid var(--admin-border)', background: 'var(--admin-table-header)' }}>
                     <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>User</th>
-                    <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Email</th>
+                    <th className="hidden px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider sm:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>Email</th>
                     <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-right" style={{ color: 'var(--admin-text-secondary)' }}>Role</th>
                   </tr>
                 </thead>
@@ -339,7 +325,7 @@ export default function AdminDashboard() {
                             <span className="text-[13px] font-semibold" style={{ color: 'var(--admin-text)' }}>{name}</span>
                           </div>
                         </td>
-                        <td className="px-4 py-2.5" style={{ color: 'var(--admin-text-secondary)' }}>{u.email}</td>
+                        <td className="hidden px-4 py-2.5 sm:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>{u.email}</td>
                         <td className="px-4 py-2.5 text-right">
                           <span
                             className="rounded-full px-2 py-0.5 text-[11px] font-bold"
@@ -378,7 +364,7 @@ export default function AdminDashboard() {
                     <FileText size={11} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <NewsCopy as="p" language={a.language} text={a.title} className="truncate text-[13px] font-semibold" style={{ color: 'var(--admin-text)' }}>{a.title}</NewsCopy>
+                    <NewsCopy as="p" language={a.language} text={a.title} className="line-clamp-2 text-[13px] font-semibold" style={{ color: 'var(--admin-text)' }}>{a.title}</NewsCopy>
                     <p className="text-xs mt-0.5" style={{ color: 'var(--admin-text-muted)' }}>
                       {a.isPublished ? 'Published' : 'Draft'} · {new Date(a.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     </p>
@@ -443,15 +429,15 @@ function MatchPreviewTable({
         <Link href="/admin/matches" className="text-xs font-semibold" style={{ color: 'var(--admin-accent)' }}>View all →</Link>
       </div>
       <div className="overflow-hidden rounded-lg" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
-        <div className="overflow-x-auto">
+        <div className="table-scroll">
           <table className="w-full text-left text-xs">
             <thead>
               <tr style={{ borderBottom: '1px solid var(--admin-border)', background: 'var(--admin-table-header)' }}>
                 <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Teams</th>
                 {!hideScore && (
-                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Score</th>
+                  <th className="hidden px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider sm:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>Score</th>
                 )}
-                <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Tournament</th>
+                <th className="hidden px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider md:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>Tournament</th>
                 <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Date</th>
                 <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-right" style={{ color: 'var(--admin-text-secondary)' }}>Status</th>
               </tr>
@@ -472,24 +458,48 @@ function MatchPreviewTable({
                     onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
                   >
                     <td className="px-4 py-2.5">
-                      <div className="flex items-center gap-2 whitespace-nowrap">
-                        <span className="flex items-center gap-1.5">
-                          <TeamBadge code={t.homeName} />
-                          <span className="text-[13px] font-semibold" style={{ color: 'var(--admin-text)' }}>{t.homeName}</span>
-                        </span>
-                        <span className="text-[11px] font-bold uppercase" style={{ color: 'var(--admin-text-muted)' }}>vs</span>
-                        <span className="flex items-center gap-1.5">
-                          <TeamBadge code={t.awayName} />
-                          <span className="text-[13px] font-semibold" style={{ color: 'var(--admin-text)' }}>{t.awayName}</span>
-                        </span>
-                      </div>
+                      {m.matchId || m.id ? (
+                        <AdminEntityLink href={`/matches/${m.matchId || m.id}`}>
+                          <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                            <span className="flex min-w-0 items-center gap-1.5">
+                              <TeamBadge code={t.homeName} />
+                              <span className="max-w-[9rem] truncate text-[13px] font-semibold sm:max-w-none">{t.homeName}</span>
+                            </span>
+                            <span className="text-[11px] font-semibold" style={{ color: 'var(--admin-text-muted)' }}>vs</span>
+                            <span className="flex min-w-0 items-center gap-1.5">
+                              <TeamBadge code={t.awayName} />
+                              <span className="max-w-[9rem] truncate text-[13px] font-semibold sm:max-w-none">{t.awayName}</span>
+                            </span>
+                          </div>
+                        </AdminEntityLink>
+                      ) : (
+                        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                          <span className="flex min-w-0 items-center gap-1.5">
+                            <TeamBadge code={t.homeName} />
+                            <span className="max-w-[9rem] truncate text-[13px] font-semibold sm:max-w-none" style={{ color: 'var(--admin-text)' }}>{t.homeName}</span>
+                          </span>
+                          <span className="text-[11px] font-semibold" style={{ color: 'var(--admin-text-muted)' }}>vs</span>
+                          <span className="flex min-w-0 items-center gap-1.5">
+                            <TeamBadge code={t.awayName} />
+                            <span className="max-w-[9rem] truncate text-[13px] font-semibold sm:max-w-none" style={{ color: 'var(--admin-text)' }}>{t.awayName}</span>
+                          </span>
+                        </div>
+                      )}
                     </td>
                     {!hideScore && (
-                      <td className="px-4 py-2.5 font-mono font-bold" style={{ color: 'var(--admin-text)' }}>
+                      <td className="hidden px-4 py-2.5 font-mono font-bold sm:table-cell" style={{ color: 'var(--admin-text)' }}>
                         {inn ? `${inn.runs}/${inn.wickets} (${inn.overs})` : '—'}
                       </td>
                     )}
-                    <td className="px-4 py-2.5" style={{ color: 'var(--admin-text-secondary)' }}>{m.tournament || '—'}</td>
+                    <td className="hidden px-4 py-2.5 md:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>
+                      <span className="line-clamp-2 max-w-[14rem]">
+                        {m.tournamentId ? (
+                          <AdminEntityLink href={`/tournaments/${m.tournamentId}`}>{m.tournament || 'Tournament'}</AdminEntityLink>
+                        ) : (
+                          m.tournament || '—'
+                        )}
+                      </span>
+                    </td>
                     <td className="px-4 py-2.5 font-mono" style={{ color: 'var(--admin-text-muted)' }}>
                       {m.scheduled ? new Date(m.scheduled).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}
                     </td>
@@ -522,24 +532,68 @@ function favoriteType(analytics: AdminAnalytics | null, type: string) {
   return favorites.types?.[type] ?? 0;
 }
 
-function FavoriteTypeChip({
-  icon,
-  label,
-  count,
-}: {
-  icon: ReactNode;
-  label: string;
-  count: number;
-}) {
+function FavoritesCard({ analytics }: { analytics: AdminAnalytics | null }) {
+  const types = [
+    { key: 'team', label: 'Teams', icon: Users, count: favoriteType(analytics, 'team') },
+    { key: 'player', label: 'Players', icon: UserCircle, count: favoriteType(analytics, 'player') },
+    { key: 'match', label: 'Matches', icon: Trophy, count: favoriteType(analytics, 'match') },
+    { key: 'news', label: 'News', icon: Newspaper, count: favoriteType(analytics, 'news') },
+  ];
+
   return (
-    <span
-      className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold"
-      style={{ background: 'var(--admin-input-bg)', color: 'var(--admin-text-secondary)' }}
-      title={label}
+    <section
+      className="overflow-hidden rounded-lg"
+      style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}
     >
-      <span style={{ color: 'var(--admin-accent)' }}>{icon}</span>
-      <span className="tabular-nums" style={{ color: 'var(--admin-text)' }}>{n(count)}</span>
-    </span>
+      <div
+        className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
+        style={{ borderBottom: '1px solid var(--admin-border)' }}
+      >
+        <div className="flex items-center gap-3">
+          <div
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-lg"
+            style={{ background: 'var(--admin-danger-bg)', color: 'var(--admin-danger)' }}
+          >
+            <Heart size={18} />
+          </div>
+          <div>
+            <p className="text-sm font-semibold" style={{ color: 'var(--admin-text)' }}>Favorites</p>
+            <p className="text-xs" style={{ color: 'var(--admin-text-secondary)' }}>
+              Saved teams, players, matches, and news
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <p className="text-2xl font-bold tabular-nums leading-none" style={{ color: 'var(--admin-text)' }}>
+            {n(favoriteTotal(analytics))}
+          </p>
+          <Link href="/favorites" className="text-xs font-semibold" style={{ color: 'var(--admin-accent)' }}>
+            View all →
+          </Link>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-px sm:grid-cols-4" style={{ background: 'var(--admin-border)' }}>
+        {types.map((item) => {
+          const Icon = item.icon;
+          return (
+            <div key={item.key} className="flex items-center gap-3 px-4 py-3.5" style={{ background: 'var(--admin-card)' }}>
+              <div
+                className="grid h-8 w-8 shrink-0 place-items-center rounded-md"
+                style={{ background: 'var(--admin-danger-bg)', color: 'var(--admin-danger)' }}
+              >
+                <Icon size={15} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-lg font-bold tabular-nums leading-tight" style={{ color: 'var(--admin-text)' }}>
+                  {n(item.count)}
+                </p>
+                <p className="truncate text-xs" style={{ color: 'var(--admin-text-secondary)' }}>{item.label}</p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 
@@ -549,39 +603,34 @@ function MetricCard({
   icon,
   accentColor,
   accentBg,
-  extra,
-  largeIcon,
 }: {
   label: string;
   value: string | number;
   icon: ReactNode;
   accentColor: string;
   accentBg: string;
-  extra?: ReactNode;
-  largeIcon?: boolean;
 }) {
   return (
     <div
-      className="flex items-start gap-2.5 rounded-md px-3 py-2"
+      className="flex min-w-0 items-center gap-3 rounded-lg px-3 py-2.5"
       style={{
         border: '1px solid var(--admin-border)',
         background: 'var(--admin-card)',
       }}
     >
       <div
-        className={`grid shrink-0 place-items-center rounded-md ${largeIcon ? 'h-11 w-11' : 'h-7 w-7'}`}
+        className="grid h-8 w-8 shrink-0 place-items-center rounded-md"
         style={{ background: accentBg, color: accentColor }}
       >
         {icon}
       </div>
       <div className="min-w-0">
-        <p className="truncate text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--admin-text-secondary)' }}>
+        <p className="truncate text-[11px] font-medium capitalize" style={{ color: 'var(--admin-text-secondary)' }}>
           {label}
         </p>
-        <p className="text-xl font-bold tabular-nums leading-tight" style={{ color: 'var(--admin-text)' }}>
+        <p className="text-lg font-bold tabular-nums leading-tight" style={{ color: 'var(--admin-text)' }}>
           {value}
         </p>
-        {extra}
       </div>
     </div>
   );

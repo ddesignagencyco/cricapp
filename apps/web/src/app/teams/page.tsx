@@ -4,7 +4,7 @@ export const revalidate = 3600;
 
 export const metadata = {
   title: 'Teams',
-  description: 'Browse every cricket team – squads, rosters and profiles.',
+  description: 'Browse cricket teams and compare head-to-head meetings, wins and results.',
 };
 
 export default async function TeamsPage() {

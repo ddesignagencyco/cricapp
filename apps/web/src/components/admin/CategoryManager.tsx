@@ -179,7 +179,7 @@ export default function CategoryManager() {
         <div className="space-y-3">
           {/* Search Bar */}
           <div className="flex items-center gap-3 rounded-lg p-3" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
-            <div className="relative flex-1">
+            <div className="relative w-full max-w-md">
               <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--admin-text-muted)' }} />
               <AdminInput
                 type="search"
@@ -216,6 +216,7 @@ export default function CategoryManager() {
             </div>
           ) : (
             <div className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
+              <div className="table-scroll">
               <table className="w-full text-left text-xs">
                 <thead>
                   <tr style={{ borderBottom: '1px solid var(--admin-border)', background: 'var(--admin-table-header)' }}>
@@ -327,6 +328,7 @@ export default function CategoryManager() {
                   })}
                 </tbody>
               </table>
+              </div>
             </div>
           )}
 
@@ -360,7 +362,7 @@ export default function CategoryManager() {
                         <p className="text-xs" style={{ color: 'var(--admin-text-muted)' }}>{art.author || 'Editorial'} · {art.publishedAt || art.createdAt}</p>
                       </div>
                       <span
-                        className="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold uppercase"
+                        className="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold"
                         style={{ background: art.isPublished ? 'var(--admin-success-bg)' : 'var(--admin-warning-bg)', color: art.isPublished ? 'var(--admin-success)' : 'var(--admin-warning)' }}
                       >
                         {art.isPublished && <BlinkingDot />}

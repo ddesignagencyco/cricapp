@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { ChevronRight, MapPin, Search, Trophy, X } from 'lucide-react';
@@ -10,12 +10,10 @@ import { fetchToursPage } from '../../services/tours';
 import EmptyState from '../EmptyState';
 import ErrorState from '../ErrorState';
 import Pagination from '../Pagination';
-import AdSlot from '../AdSlot';
+import DummyAd from '../advertisements/DummyAd';
 import { DirectoryGridSkeleton } from '../skeletons/Skeletons';
 
 const LIMIT = 20;
-const MID_SLOT_AFTER_INDEX = 5;
-const MID_SLOT_MIN_RESULTS = 12;
 
 const chipClass = (active: boolean) =>
   `flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition-colors ${
@@ -125,6 +123,10 @@ export default function ToursBoard() {
         </div>
       </header>
 
+      {!loading && !error && filtered.length > 0 ? (
+        <DummyAd size="leaderboard" placement="tours-after-intro" />
+      ) : null}
+
       <div className="space-y-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="relative max-w-md flex-1">
@@ -186,13 +188,8 @@ export default function ToursBoard() {
       ) : filtered.length > 0 ? (
         <>
           <div className="fade-in grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {filtered.map((tour, index) => (
-              <Fragment key={tour.id}>
-                <TourCard tour={tour} />
-                {index === MID_SLOT_AFTER_INDEX && filtered.length >= MID_SLOT_MIN_RESULTS && (
-                  <AdSlot slot="tours-mid-list" format="leaderboard" className="col-span-full py-2" />
-                )}
-              </Fragment>
+            {filtered.map((tour) => (
+              <TourCard key={tour.id} tour={tour} />
             ))}
           </div>
           <div className="pt-4">

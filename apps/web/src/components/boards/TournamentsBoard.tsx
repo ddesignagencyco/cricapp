@@ -10,7 +10,7 @@ import { fetchTournamentsPage } from '../../services/tournaments';
 import EmptyState from '../EmptyState';
 import ErrorState from '../ErrorState';
 import Pagination from '../Pagination';
-import AdSlot from '../AdSlot';
+import DummyAd from '../advertisements/DummyAd';
 import { DirectoryGridSkeleton } from '../skeletons/Skeletons';
 
 const LIMIT = 20;
@@ -152,6 +152,10 @@ export default function TournamentsBoard({ initialCountry }: Props) {
         </div>
       </header>
 
+      {!loading && !error && filtered.length > 0 ? (
+        <DummyAd size="leaderboard" placement="tournaments-after-intro" />
+      ) : null}
+
       <div className="space-y-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="relative max-w-md flex-1">
@@ -242,7 +246,6 @@ export default function TournamentsBoard({ initialCountry }: Props) {
               <TournamentCard key={tournament.id} tournament={tournament} />
             ))}
           </div>
-          <AdSlot slot="tournaments-below-grid" format="leaderboard" className="pt-4" />
 
           <div className="pt-4">
             <Pagination
@@ -298,7 +301,7 @@ function TournamentCard({ tournament }: { tournament: TournamentApi }) {
           <h3 className="min-w-0 truncate text-sm font-semibold text-mtext transition-colors group-hover:text-accent" title={tournament.name}>
             {tournament.name}
           </h3>
-          <span className="shrink-0 rounded border border-lborder bg-secondary px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-stext">
+          <span className="shrink-0 rounded border border-lborder bg-secondary px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-stext">
             {format}
           </span>
         </div>

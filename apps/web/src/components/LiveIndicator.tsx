@@ -26,10 +26,11 @@ interface LiveIndicatorProps {
   className?: string;
 }
 
-export default function LiveIndicator({ label = 'LIVE', className = '' }: LiveIndicatorProps) {
+export default function LiveIndicator({ label = 'Live', className = '' }: LiveIndicatorProps) {
+  const classes = className.replace(/\buppercase\b/g, '').replace(/\s+/g, ' ').trim();
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-semibold uppercase tracking-wide leading-none text-danger ring-1 ring-inset ring-danger/30 ${className}`}
+      className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-semibold capitalize leading-none text-danger ring-1 ring-inset ring-danger/30 ${classes}`}
       style={{ background: 'var(--color-danger-soft)' }}
     >
       <BlinkingDot />

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import EmptyState from '../../../components/EmptyState';
+import DummyAd from '../../../components/advertisements/DummyAd';
 import RemoteImage from '../../../components/RemoteImage';
 import NewsCopy from '../../../components/NewsCopy';
 import { fetchPublicAuthor } from '../../../services/authors';
@@ -74,7 +75,7 @@ export default async function AuthorDetailPage({
           )}
 
           <div className="min-w-0 flex-1">
-            <span className="rounded border border-accent/25 bg-accent/10 px-2.5 py-1 text-xs font-medium uppercase tracking-wider text-accent">
+            <span className="rounded border border-accent/25 bg-accent/10 px-2.5 py-1 text-xs font-medium tracking-wider text-accent">
               Author
             </span>
             <h1 className="mt-2 text-2xl font-semibold tracking-tight text-mtext">{author.name}</h1>
@@ -87,6 +88,10 @@ export default async function AuthorDetailPage({
           </div>
         </div>
       </header>
+
+      {articles.length > 0 ? (
+        <DummyAd size="leaderboard" placement="author-after-intro" />
+      ) : null}
 
       <section>
         <div className="mb-4 flex items-baseline justify-between gap-3">

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Calendar, MapPin, Users, ChevronRight, Trophy, TrendingUp } from 'lucide-react';
 import TeamLogo from './TeamLogo';
+import DummyAd from './advertisements/DummyAd';
 
 interface PslSpotlightProps {
   standings?: any[];
@@ -36,7 +37,7 @@ export default function PslSpotlight({ standings = [] }: PslSpotlightProps) {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[#07111F]/80 via-[#07111F]/30 to-transparent" />
             <div className="absolute bottom-0 left-0 p-4 sm:p-5">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/90 px-3 py-1 text-xs font-bold uppercase tracking-wider text-white">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/90 px-3 py-1 text-xs font-bold tracking-wider text-white">
                 <Trophy size={11} />
                 Pakistan Super League
               </span>
@@ -74,7 +75,8 @@ export default function PslSpotlight({ standings = [] }: PslSpotlightProps) {
         </div>
 
         {/* PSL Points Table */}
-        <div className="overflow-hidden rounded-2xl bg-card ring-1 ring-lborder">
+        <div className="grid min-w-0 grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-8">
+        <div className="min-w-0 overflow-hidden rounded-2xl bg-card ring-1 ring-lborder">
           <div className="flex items-center justify-between border-b border-lborder px-4 py-3 sm:px-5">
             <div className="flex items-center gap-2">
               <TrendingUp size={15} className="text-accent" />
@@ -131,6 +133,10 @@ export default function PslSpotlight({ standings = [] }: PslSpotlightProps) {
                 )}
               </tbody>
             </table>
+          </div>
+        </div>
+          <div className="flex justify-center lg:justify-start">
+            <DummyAd size="medium-rectangle" placement="home-sidebar" />
           </div>
         </div>
       </div>

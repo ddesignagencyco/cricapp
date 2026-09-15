@@ -186,7 +186,7 @@ export default function AdminGalleryPage() {
                     <p className="truncate text-xs font-semibold" style={{ color: 'var(--admin-text)' }}>
                       {item.title || item.type}
                     </p>
-                    <p className="text-[10px] uppercase" style={{ color: 'var(--admin-text-muted)' }}>{item.type}</p>
+                    <p className="text-[10px] capitalize" style={{ color: 'var(--admin-text-muted)' }}>{item.type}</p>
                   </div>
                   <button
                     type="button"

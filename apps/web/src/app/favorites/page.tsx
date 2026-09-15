@@ -242,7 +242,7 @@ export default function FavoritesPage() {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
+        <div className="grid auto-rows-fr grid-cols-1 items-stretch gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
           {filteredItems.map((fav) => {
             const data = enrichedMap[fav.id];
             if (fav.targetType === 'team') {
@@ -287,6 +287,7 @@ export default function FavoritesPage() {
                   key={fav.id}
                   fav={fav}
                   news={data?.news}
+                  showImage={activeTab === 'news'}
                   isBusy={busyId === fav.id}
                   onRemove={() => setDeleteTarget({ id: fav.id, name: data?.news?.title || 'News' })}
                 />
@@ -370,6 +371,65 @@ function TabButton({
 
 /* ─── Cards for Favorites ─────────────────────────────────── */
 
+function FavoriteCardFrame({
+  label,
+  href,
+  actionLabel,
+  isBusy,
+  onRemove,
+  prefetch,
+  image,
+  children,
+}: {
+  label: string;
+  href: string;
+  actionLabel: string;
+  isBusy: boolean;
+  onRemove: () => void;
+  prefetch?: boolean;
+  image?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="group relative flex h-full min-h-[230px] flex-col overflow-hidden rounded-md border border-lborder bg-card transition-colors hover:border-accent/40 hover:bg-elevated">
+      <div className="flex items-center justify-between gap-2 px-5 pt-4">
+        <Badge tone="neutral">{label}</Badge>
+        <button
+          type="button"
+          onClick={onRemove}
+          disabled={isBusy}
+          title="Remove from favorites"
+          className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-stext transition-colors hover:bg-danger/10 hover:text-danger disabled:opacity-50"
+        >
+          {isBusy ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+        </button>
+      </div>
+      {image}
+      <div className="flex min-h-0 flex-1 flex-col px-5 pb-5 pt-3">
+        <Link href={href} prefetch={prefetch} className="block min-h-0 flex-1">
+          {children}
+        </Link>
+        <Link
+          href={href}
+          prefetch={prefetch}
+          className="mt-4 inline-flex w-full items-center justify-between border-t border-lborder/60 pt-3 text-xs font-bold text-accent"
+        >
+          <span>{actionLabel}</span>
+          <ArrowRight size={13} className="transition-transform group-hover:translate-x-1" />
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function FavoriteAvatar({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-full border border-lborder bg-secondary">
+      {children}
+    </div>
+  );
+}
+
 function FavoriteTeamCard({
   fav,
   team,
@@ -388,56 +448,37 @@ function FavoriteTeamCard({
   const country = team?.country || team?.city || 'Cricket Club';
 
   return (
-    <div className="group relative flex flex-col justify-between overflow-hidden rounded-md border border-lborder bg-card p-5 transition-colors hover:border-accent/40 hover:bg-elevated">
-      <div>
-        <div className="flex items-center justify-between gap-2 pb-3">
-          <Badge tone="neutral">Team</Badge>
-          <button
-            type="button"
-            onClick={onRemove}
-            disabled={isBusy}
-            title="Remove from favorites"
-            className="grid h-8 w-8 place-items-center rounded-lg text-stext transition-colors hover:bg-danger/10 hover:text-danger disabled:opacity-50"
-          >
-            {isBusy ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
-          </button>
+    <FavoriteCardFrame
+      label="Team"
+      href={`/teams/${fav.targetId}`}
+      actionLabel="View Team Squad"
+      isBusy={isBusy}
+      onRemove={onRemove}
+    >
+      <div className="flex items-center gap-3.5">
+        <FavoriteAvatar>
+          {team?.logoUrl ? (
+            <RemoteImage
+              src={String(team.logoUrl)}
+              alt={name}
+              width={48}
+              height={48}
+              className="h-12 w-12 object-cover"
+            />
+          ) : (
+            <TeamLogo teamId={fav.targetId} name={name} code={code} size="md" link={false} />
+          )}
+        </FavoriteAvatar>
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate text-base font-bold text-mtext transition-colors group-hover:text-accent">
+            {name}
+          </h3>
+          <p className="mt-0.5 truncate text-xs font-semibold text-stext">
+            {code ? `${code} · ${country}` : country}
+          </p>
         </div>
-
-        <Link href={`/teams/${fav.targetId}`} className="block">
-          <div className="flex items-center gap-3.5 pt-1">
-            {team?.logoUrl ? (
-              <RemoteImage
-                src={String(team.logoUrl)}
-                alt={name}
-                width={48}
-                height={48}
-                className="h-12 w-12 shrink-0 rounded-full border border-white/10 bg-secondary object-cover"
-              />
-            ) : (
-              <TeamLogo teamId={fav.targetId} name={name} code={code} size="md" link={false} />
-            )}
-            <div className="min-w-0 flex-1">
-              <h3 className="truncate text-base font-bold text-mtext transition-colors group-hover:text-accent">
-                {name}
-              </h3>
-              <p className="truncate text-xs font-semibold text-stext">
-                {code ? `${code} · ${country}` : country}
-              </p>
-            </div>
-          </div>
-        </Link>
       </div>
-
-      <div className="mt-5 border-t border-lborder/60 pt-3">
-        <Link
-          href={`/teams/${fav.targetId}`}
-          className="inline-flex w-full items-center justify-between text-xs font-bold text-accent transition-colors"
-        >
-          <span>View Team Squad</span>
-          <ArrowRight size={13} className="transition-transform group-hover:translate-x-1" />
-        </Link>
-      </div>
-    </div>
+    </FavoriteCardFrame>
   );
 }
 
@@ -455,62 +496,41 @@ function FavoritePlayerCard({
   onRemove: () => void;
 }) {
   const name = player?.fullName || player?.name || player?.shortName || (fav.targetId.startsWith('sr:') ? 'Cricket Player' : fav.targetId);
-  const role = player?.role || 'Player';
+  const role = String(player?.role || 'Player').replace(/_/g, ' ');
   const nationality = player?.nationality || player?.country || '';
   const team = player?.team?.name || player?.teamName || '';
   const initials = getInitials(name);
+  let hue = 0;
+  for (let i = 0; i < name.length; i++) hue = name.charCodeAt(i) + ((hue << 5) - hue);
+  hue = Math.abs(hue % 360);
 
   return (
-    <div className="group relative flex flex-col justify-between overflow-hidden rounded-md border border-lborder bg-card p-5 transition-colors hover:border-accent/40 hover:bg-elevated">
-      <div>
-        <div className="flex items-center justify-between gap-2 pb-3">
-          <Badge tone="neutral">{role}</Badge>
-          <button
-            type="button"
-            onClick={onRemove}
-            disabled={isBusy}
-            title="Remove from favorites"
-            className="grid h-8 w-8 place-items-center rounded-lg text-stext transition-colors hover:bg-danger/10 hover:text-danger disabled:opacity-50"
+    <FavoriteCardFrame
+      label="Player"
+      href={`/players/${fav.targetId}`}
+      actionLabel="View Player Profile"
+      isBusy={isBusy}
+      onRemove={onRemove}
+    >
+      <div className="flex items-center gap-3.5">
+        <FavoriteAvatar>
+          <span
+            className="grid h-12 w-12 place-items-center text-sm font-black text-white"
+            style={{ backgroundImage: `linear-gradient(135deg, hsl(${hue}, 75%, 50%), hsl(${(hue + 40) % 360}, 85%, 35%))` }}
           >
-            {isBusy ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
-          </button>
+            {initials}
+          </span>
+        </FavoriteAvatar>
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate text-base font-bold text-mtext transition-colors group-hover:text-accent">
+            {name}
+          </h3>
+          <p className="mt-0.5 truncate text-xs text-stext">
+            {[role, nationality, team].filter(Boolean).join(' • ') || 'Player'}
+          </p>
         </div>
-
-        <Link href={`/players/${fav.targetId}`} className="block">
-          <div className="flex items-center gap-3.5 pt-1">
-            {(() => {
-              let h = 0;
-              for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
-              const hue = Math.abs(h % 360);
-              return (
-                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full text-sm font-black text-white"
-                  style={{ backgroundImage: `linear-gradient(135deg, hsl(${hue}, 75%, 50%), hsl(${(hue + 40) % 360}, 85%, 35%))` }}>
-                  {initials}
-                </span>
-              );
-            })()}
-            <div className="min-w-0 flex-1">
-              <h3 className="truncate text-base font-bold text-mtext transition-colors group-hover:text-accent">
-                {name}
-              </h3>
-              <p className="truncate text-xs text-stext">
-                {[nationality, team].filter(Boolean).join(' • ') || 'Pro Player'}
-              </p>
-            </div>
-          </div>
-        </Link>
       </div>
-
-      <div className="mt-5 border-t border-lborder/60 pt-3">
-        <Link
-          href={`/players/${fav.targetId}`}
-          className="inline-flex w-full items-center justify-between text-xs font-bold text-accent transition-colors"
-        >
-          <span>View Player Profile</span>
-          <ArrowRight size={13} className="transition-transform group-hover:translate-x-1" />
-        </Link>
-      </div>
-    </div>
+    </FavoriteCardFrame>
   );
 }
 
@@ -534,114 +554,110 @@ function FavoriteMatchCard({
   const homeName = (names[0] && !names[0].startsWith('sr:')) ? names[0] : homeCode || 'Team A';
   const awayName = (names[1] && !names[1].startsWith('sr:')) ? names[1] : awayCode || 'Team B';
   const tournament = match?.tournament || match?.tournamentName || 'Match Fixture';
-  const status = match?.status || 'Match';
+  const status = match?.status || '';
   const { date, time } = formatScheduled(match?.scheduled);
 
   return (
-    <div className="group relative flex flex-col justify-between overflow-hidden rounded-md border border-lborder bg-card p-5 transition-colors hover:border-accent/40 hover:bg-elevated">
-      <div>
-        <div className="flex items-center justify-between gap-2 pb-3">
-          <StatusBadge status={status} />
-          <button
-            type="button"
-            onClick={onRemove}
-            disabled={isBusy}
-            title="Remove from favorites"
-            className="grid h-8 w-8 place-items-center rounded-lg text-stext transition-colors hover:bg-danger/10 hover:text-danger disabled:opacity-50"
-          >
-            {isBusy ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
-          </button>
-        </div>
-
-        <Link href={`/matches/${fav.targetId}`} prefetch={false} className="block">
-          <p className="truncate text-[11px] font-bold uppercase tracking-wider text-accent">
-            {tournament}
-          </p>
-          <div className="mt-2 space-y-1">
-            <h3 className="truncate text-base font-bold text-mtext transition-colors group-hover:text-accent">
-              {homeName} vs {awayName}
-            </h3>
-            {(date || time) && (
-              <p className="flex items-center gap-1.5 text-xs text-stext">
-                <Calendar size={12} />
-                <span>{date}</span>
-                {time && <span>· {time}</span>}
-              </p>
-            )}
-            {match?.venue && (
-              <p className="flex items-center gap-1.5 truncate text-[11px] text-stext">
-                <MapPin size={11} className="shrink-0 text-stext/80" />
-                <span className="truncate">{match.venue}</span>
-              </p>
-            )}
+    <FavoriteCardFrame
+      label="Match"
+      href={`/matches/${fav.targetId}`}
+      actionLabel="Match Scorecard & Details"
+      isBusy={isBusy}
+      onRemove={onRemove}
+      prefetch={false}
+    >
+      <div className="flex items-start gap-3.5">
+        <FavoriteAvatar>
+          <Calendar size={18} className="text-accent" />
+        </FavoriteAvatar>
+        <div className="min-w-0 flex-1">
+          <div className="mb-1 flex flex-wrap items-center gap-1.5">
+            {status ? <StatusBadge status={status} /> : null}
+            <p className="truncate text-[11px] font-bold uppercase tracking-wider text-accent">
+              {tournament}
+            </p>
           </div>
-        </Link>
+          <h3 className="truncate text-base font-bold text-mtext transition-colors group-hover:text-accent">
+            {homeName} vs {awayName}
+          </h3>
+          {(date || time) && (
+            <p className="mt-1 flex items-center gap-1.5 text-xs text-stext">
+              <span>{date}</span>
+              {time ? <span>· {time}</span> : null}
+            </p>
+          )}
+          {match?.venue ? (
+            <p className="mt-0.5 flex items-center gap-1.5 truncate text-[11px] text-stext">
+              <MapPin size={11} className="shrink-0" />
+              <span className="truncate">{match.venue}</span>
+            </p>
+          ) : null}
+        </div>
       </div>
-
-      <div className="mt-5 border-t border-lborder/60 pt-3">
-        <Link
-          href={`/matches/${fav.targetId}`}
-          prefetch={false}
-          className="inline-flex w-full items-center justify-between text-xs font-bold text-accent transition-colors"
-        >
-          <span>Match Scorecard & Details</span>
-          <ArrowRight size={13} className="transition-transform group-hover:translate-x-1" />
-        </Link>
-      </div>
-    </div>
+    </FavoriteCardFrame>
   );
 }
 
 function FavoriteNewsCard({
   fav,
   news,
+  showImage = false,
   isBusy,
   onRemove,
 }: {
   fav: FavoriteItem;
   news?: NewsArticle | null;
+  showImage?: boolean;
   isBusy: boolean;
   onRemove: () => void;
 }) {
   const title = news?.title || 'News';
   const href = news ? newsHref(news) : `/news/${fav.targetId}`;
+  const image = showImage && news?.image ? (
+    <Link href={href} className="relative mx-5 mt-3 block aspect-[16/9] overflow-hidden rounded-md bg-secondary">
+      <RemoteImage src={news.image} alt={title} fill sizes="(min-width: 768px) 25vw, 100vw" className="object-cover" />
+    </Link>
+  ) : null;
 
   return (
-    <div className="group relative flex h-full flex-col overflow-hidden rounded-md border border-lborder bg-card transition-colors hover:border-accent/40 hover:bg-elevated">
-      {news?.image ? (
-        <Link href={href} className="relative block aspect-[16/9] overflow-hidden bg-secondary">
-          <RemoteImage src={news.image} alt={title} fill sizes="(min-width: 768px) 25vw, 100vw" className="object-cover" />
-        </Link>
-      ) : null}
-      <div className="flex flex-1 flex-col p-4">
-        <div className="flex items-start justify-between gap-2">
-          <Badge tone="neutral">News</Badge>
-          <button
-            type="button"
-            onClick={onRemove}
-            disabled={isBusy}
-            title="Remove from favorites"
-            className="grid h-8 w-8 place-items-center rounded-lg text-stext transition-colors hover:bg-danger/10 hover:text-danger disabled:opacity-50"
-          >
-            {isBusy ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
-          </button>
-        </div>
-        <Link href={href} className="mt-2 block flex-1">
+    <FavoriteCardFrame
+      label="News"
+      href={href}
+      actionLabel="Read article"
+      isBusy={isBusy}
+      onRemove={onRemove}
+      image={image}
+    >
+      {showImage ? (
+        <div>
           <NewsCopy
             as="p"
             language={news?.language}
             text={title}
-            className="news-copy-card line-clamp-2 text-sm font-bold text-mtext transition-colors group-hover:text-accent"
+            className="news-copy-card line-clamp-2 text-base font-bold text-mtext transition-colors group-hover:text-accent"
           >
             {title}
           </NewsCopy>
-          {news?.date ? <p className="mt-2 text-xs text-stext">{news.date}</p> : null}
-        </Link>
-        <Link href={href} className="mt-4 inline-flex items-center justify-between border-t border-lborder/60 pt-3 text-xs font-bold text-accent">
-          <span>Read article</span>
-          <ArrowRight size={13} />
-        </Link>
-      </div>
-    </div>
+          {news?.date ? <p className="mt-1 text-xs text-stext">{news.date}</p> : null}
+        </div>
+      ) : (
+        <div className="flex items-center gap-3.5">
+          <FavoriteAvatar>
+            <Newspaper size={18} className="text-accent" />
+          </FavoriteAvatar>
+          <div className="min-w-0 flex-1">
+            <NewsCopy
+              as="h3"
+              language={news?.language}
+              text={title}
+              className="news-copy-card line-clamp-2 text-base font-bold text-mtext transition-colors group-hover:text-accent"
+            >
+              {title}
+            </NewsCopy>
+            {news?.date ? <p className="mt-0.5 truncate text-xs text-stext">{news.date}</p> : null}
+          </div>
+        </div>
+      )}
+    </FavoriteCardFrame>
   );
 }

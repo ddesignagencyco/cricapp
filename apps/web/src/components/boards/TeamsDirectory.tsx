@@ -9,7 +9,8 @@ import TeamCard from '../TeamCard';
 import EmptyState from '../EmptyState';
 import ErrorState from '../ErrorState';
 import Pagination from '../Pagination';
-import AdSlot from '../AdSlot';
+import DummyAd from '../advertisements/DummyAd';
+import CompareBoard from './CompareBoard';
 import { DirectoryGridSkeleton } from '../skeletons/Skeletons';
 
 const LIMIT = 20;
@@ -86,7 +87,7 @@ export default function TeamsDirectory() {
       <div className="relative overflow-hidden rounded-3xl border border-lborder bg-card p-6 shadow-sm sm:p-8">
         <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-accent border border-accent/20">
+            <div className="inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold tracking-wider text-accent border border-accent/20">
               <Users size={13} />
               <span>Global Cricket Directory</span>
             </div>
@@ -112,6 +113,12 @@ export default function TeamsDirectory() {
           </div>
         </div>
       </div>
+
+      <CompareBoard />
+
+      {!loading && !error && filtered.length > 0 ? (
+        <DummyAd size="leaderboard" placement="teams-after-intro" />
+      ) : null}
 
       {/* Search and Filter Row */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -144,8 +151,6 @@ export default function TeamsDirectory() {
               <TeamCard key={t.id} team={t} />
             ))}
           </div>
-
-          <AdSlot slot="teams-below-grid" format="leaderboard" className="pt-4" />
 
           <div className="pt-4">
             <Pagination page={page} totalPages={totalPages} total={total} limit={LIMIT} onPageChange={handlePageChange} />

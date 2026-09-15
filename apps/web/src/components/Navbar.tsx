@@ -228,20 +228,20 @@ export default function Navbar() {
                     </div>
                     <div className="mt-2.5 flex flex-wrap gap-1.5">
                       {isSuperAdmin ? (
-                        <span className="inline-flex items-center gap-1 rounded bg-accent px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                        <span className="inline-flex items-center gap-1 rounded bg-accent px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-white">
                           <ShieldCheck size={10} /> Superadmin
                         </span>
                       ) : isAdmin ? (
-                        <span className="inline-flex items-center gap-1 rounded bg-accent/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-accent">
+                        <span className="inline-flex items-center gap-1 rounded bg-accent/10 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-accent">
                           <ShieldCheck size={10} /> Admin
                         </span>
                       ) : (
-                        <span className="inline-flex items-center rounded bg-secondary px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-stext">
+                        <span className="inline-flex items-center rounded bg-secondary px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-stext">
                           Member
                         </span>
                       )}
                       {user.emailVerified && (
-                        <span className="inline-flex items-center rounded bg-accent/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-accent">
+                        <span className="inline-flex items-center rounded bg-accent/10 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-accent">
                           Verified
                         </span>
                       )}

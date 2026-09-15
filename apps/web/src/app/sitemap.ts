@@ -16,7 +16,6 @@ const staticRoutes = [
   '/psl',
   '/teams',
   '/players',
-  '/stats',
   '/news',
   '/gallery',
   '/streams',

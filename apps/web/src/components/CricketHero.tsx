@@ -9,18 +9,14 @@ interface CricketHeroProps {
 
 export default function CricketHero({ match: _match }: CricketHeroProps) {
   return (
-    <section className="hero-grad-home relative flex min-h-[420px] items-center overflow-hidden sm:min-h-[500px]">
+    <section className="hero-grad-home relative flex min-h-[300px] items-center overflow-hidden sm:min-h-[360px]">
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#07111F]/90 via-[#07111F]/70 to-[#0B1F3A]/40" />
 
-      <div className="relative mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-20 w-full">
-        <div className="flex flex-col gap-10 lg:flex-row lg:items-center lg:justify-between">
+      <div className="relative mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-12">
+        <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
           {/* Left content */}
           <div className="max-w-2xl">
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-extrabold uppercase tracking-widest text-white shadow-sm backdrop-blur-md">
-              LIVE CRICKET
-            </span>
-
-            <h1 className="mt-5 text-4xl font-black leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">
+            <h1 className="text-4xl font-black leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">
               EVERY BALL{' '}
               <span className="text-danger relative">
                 . LIVE

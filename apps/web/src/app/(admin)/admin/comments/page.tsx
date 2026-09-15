@@ -11,6 +11,7 @@ import {
   EmptyState,
   ErrorState,
   LoadingState,
+  StatusBadge,
 } from '../../../../components/admin/AdminShared';
 import {
   fetchReportedComments,
@@ -33,13 +34,6 @@ function formatWhen(value?: string | null): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '—';
   return date.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
-}
-
-function reasonTone(reason: string) {
-  const key = reason.split(':')[0].trim().toLowerCase();
-  if (key === 'spam') return { background: 'var(--admin-warning-bg)', color: 'var(--admin-warning)' };
-  if (key === 'hate' || key === 'harassment') return { background: 'var(--admin-danger-bg)', color: 'var(--admin-danger)' };
-  return { background: 'var(--admin-info-bg)', color: 'var(--admin-info)' };
 }
 
 export default function CommentsPage() {
@@ -99,7 +93,7 @@ export default function CommentsPage() {
         <EmptyState icon={<MessageSquare size={28} />} title="No pending reports" message="Reported comments will appear here for review." />
       ) : (
         <div className="overflow-hidden rounded-lg" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
-          <div className="overflow-x-auto">
+          <div className="table-scroll">
             <table className="w-full min-w-[800px] text-left text-sm">
               <thead>
                 <tr style={{ background: 'var(--admin-table-header)', borderBottom: '1px solid var(--admin-border)' }}>
@@ -123,9 +117,7 @@ export default function CommentsPage() {
                       onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
                     >
                       <td className="px-4 py-3 align-top">
-                        <span className="inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold uppercase" style={reasonTone(report.reason)}>
-                          {report.reason}
-                        </span>
+                        <StatusBadge status={report.reason} />
                         <p className="mt-1.5 text-xs" style={{ color: 'var(--admin-text-muted)' }}>{formatWhen(report.createdAt)}</p>
                       </td>
                       <td className="px-4 py-3 align-top">
@@ -143,7 +135,7 @@ export default function CommentsPage() {
                         </div>
                       </td>
                       <td className="px-4 py-3 align-top">
-                        <p className="text-xs font-semibold uppercase" style={{ color: 'var(--admin-text-secondary)' }}>
+                        <p className="text-xs font-semibold capitalize" style={{ color: 'var(--admin-text-secondary)' }}>
                           {report.comment?.targetType || '—'}
                         </p>
                         {href ? (

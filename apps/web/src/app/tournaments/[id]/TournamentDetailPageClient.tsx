@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { Calendar, CalendarDays, MapPin, Trophy } from 'lucide-react';
 import EmptyState from '../../../components/EmptyState';
+import DummyAd from '../../../components/advertisements/DummyAd';
 import { StatusBadge } from '../../../components/Badge';
 import { APP_TIME_ZONE } from '../../../utils/helpers';
 
@@ -61,6 +62,29 @@ function getEventStatus(record: Record<string, unknown>): {
   };
 }
 
+function TournamentResultCard({ record }: { record: Record<string, unknown> & { eventId?: string; scheduled?: string } }) {
+  const { homeName, awayName } = getEventTeams(record);
+  const es = getEventStatus(record);
+  return (
+    <Link
+      href={`/matches/${record.eventId}`}
+      className="flex flex-col rounded-md border border-lborder bg-card p-3.5 transition-colors hover:border-accent/50 hover:bg-elevated"
+    >
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <p className="truncate text-xs font-medium uppercase tracking-wide text-stext">
+          {formatScheduled(record.scheduled) || 'Match'}
+        </p>
+        <StatusBadge status={es.status} />
+      </div>
+      <p className="truncate text-sm font-semibold text-mtext">{homeName}</p>
+      <p className="mt-1 truncate text-sm font-semibold text-mtext">{awayName}</p>
+      {(es.result || es.score) && (
+        <p className="mt-2 truncate text-xs font-medium text-mtext">{es.result || es.score}</p>
+      )}
+    </Link>
+  );
+}
+
 interface TournamentDetailPageClientProps {
   tournament: any;
   seasons: any[];
@@ -92,11 +116,11 @@ export default function TournamentDetailPageClient({
 
       <header className="rounded-md border border-lborder bg-card p-5 sm:p-6">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="rounded border border-accent/25 bg-accent/10 px-2.5 py-1 text-xs font-medium uppercase tracking-wider text-accent">
+          <span className="rounded border border-accent/25 bg-accent/10 px-2.5 py-1 text-xs font-medium tracking-wider text-accent">
             Tournament
           </span>
           {format && (
-            <span className="rounded border border-lborder bg-secondary px-2.5 py-1 text-xs font-medium uppercase tracking-wider text-stext">
+            <span className="rounded border border-lborder bg-secondary px-2.5 py-1 text-xs font-medium tracking-wider text-stext">
               {format}
             </span>
           )}
@@ -140,6 +164,8 @@ export default function TournamentDetailPageClient({
         </div>
       </header>
 
+      <DummyAd size="leaderboard" placement="tournament-detail-after-intro" />
+
       <section>
         <h2 className="mb-3 text-lg font-semibold text-mtext">Seasons</h2>
         {seasons && seasons.length > 0 ? (
@@ -171,31 +197,24 @@ export default function TournamentDetailPageClient({
           Results <span className="text-sm font-normal text-stext">({results?.length || 0})</span>
         </h2>
         {results && results.length > 0 ? (
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            {results.map((record) => {
-              const { homeName, awayName } = getEventTeams(record);
-              const es = getEventStatus(record);
-              return (
-                <Link
-                  key={record.eventId}
-                  href={`/matches/${record.eventId}`}
-                  className="flex flex-col rounded-md border border-lborder bg-card p-3.5 transition-colors hover:border-accent/50 hover:bg-elevated"
-                >
-                  <div className="mb-2 flex items-center justify-between gap-2">
-                    <p className="truncate text-xs font-medium uppercase tracking-wide text-stext">
-                      {formatScheduled(record.scheduled) || 'Match'}
-                    </p>
-                    <StatusBadge status={es.status} />
-                  </div>
-                  <p className="truncate text-sm font-semibold text-mtext">{homeName}</p>
-                  <p className="mt-1 truncate text-sm font-semibold text-mtext">{awayName}</p>
-                  {(es.result || es.score) && (
-                    <p className="mt-2 truncate text-xs font-medium text-mtext">{es.result || es.score}</p>
-                  )}
-                </Link>
-              );
-            })}
-          </div>
+          results.length >= 6 ? (
+            <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+              <div className="grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2">
+                {results.map((record) => (
+                  <TournamentResultCard key={record.eventId} record={record} />
+                ))}
+              </div>
+              <div className="flex justify-center lg:justify-start">
+                <DummyAd size="medium-rectangle" placement="tournament-detail-sidebar" />
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              {results.map((record) => (
+                <TournamentResultCard key={record.eventId} record={record} />
+              ))}
+            </div>
+          )
         ) : (
           <EmptyState
             title="No results available"

@@ -15,6 +15,7 @@ const footerCols = [
       { label: 'Players', to: '/players' },
       { label: 'Authors', to: '/authors' },
       { label: 'Gallery', to: '/gallery' },
+      { label: 'Contact', to: '/contact' },
     ],
   },
   {
@@ -23,18 +24,16 @@ const footerCols = [
       { label: 'PSL Hub', to: '/psl' },
       { label: 'Tournaments', to: '/tournaments' },
       { label: 'Tours', to: '/tours' },
-      { label: 'Statistics', to: '/stats' },
     ],
   },
   {
     title: 'Company',
     links: [
       { label: 'About', to: '/about' },
-      { label: 'Authors', to: '/authors' },
-      { label: 'Contact', to: '/contact' },
       { label: 'Privacy Policy', to: '/privacy' },
       { label: 'Terms of Service', to: '/terms' },
       { label: 'Editorial Policy', to: '/editorial/editorial-policy' },
+      { label: 'Corrections', to: '/editorial/corrections' },
     ],
   },
 ];

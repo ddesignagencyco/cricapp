@@ -4,12 +4,24 @@ import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { ScrollText } from 'lucide-react';
 import { AdminInput, AdminPageHeader, EmptyState, ErrorState, LoadingState } from '../../../../components/admin/AdminShared';
+import RichTextEditor from '../../../../components/admin/RichTextEditor';
 import {
   fetchEditorialPage,
   fetchEditorialPages,
   upsertEditorialPage,
   type EditorialPageSummary,
 } from '../../../../services/editorial';
+import { isEmptyRichText } from '../../../../utils/newsConstraints';
+
+function toEditorHtml(content: string) {
+  const text = content.trim();
+  if (!text) return '';
+  if (/<[a-z][\s\S]*>/i.test(content)) return content;
+  return content
+    .split(/\n{2,}/)
+    .map((block) => `<p>${block.replace(/\n/g, '<br/>')}</p>`)
+    .join('');
+}
 
 const PRESETS = [
   { slug: 'about', title: 'About' },
@@ -41,7 +53,7 @@ export default function AdminEditorialPage() {
     fetchEditorialPage(next)
       .then((page) => {
         setTitle(page?.title || preset?.title || next);
-        setContent(page?.content || '');
+        setContent(toEditorHtml(page?.content || ''));
       })
       .catch(() => {
         setTitle(preset?.title || next);
@@ -57,7 +69,7 @@ export default function AdminEditorialPage() {
 
   return (
     <div className="space-y-5">
-      <AdminPageHeader title="Editorial pages" subtitle="PUT /admin/editorial-pages/:slug. Public GET /editorial-pages." />
+      <AdminPageHeader title="Editorial pages" subtitle="Write About, Privacy, Terms and other public policy pages." />
 
       <div className="flex flex-wrap gap-2">
         {PRESETS.map((item) => (
@@ -86,6 +98,14 @@ export default function AdminEditorialPage() {
           style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}
           onSubmit={async (e) => {
             e.preventDefault();
+            if (!title.trim()) {
+              toast.error('Title is required.');
+              return;
+            }
+            if (isEmptyRichText(content)) {
+              toast.error('Write the policy before saving.');
+              return;
+            }
             setSaving(true);
             try {
               await upsertEditorialPage(slug, { title: title.trim(), content });
@@ -99,22 +119,24 @@ export default function AdminEditorialPage() {
           }}
         >
           <AdminInput value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title" required />
-          <textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            rows={16}
-            placeholder="HTML or Markdown"
-            className="w-full rounded-md px-3 py-2 text-sm"
-            style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-input-bg)', color: 'var(--admin-text)' }}
-          />
+          <div>
+            <label className="mb-1 block text-xs font-semibold" style={{ color: 'var(--admin-text-secondary)' }}>
+              Content
+            </label>
+            <RichTextEditor
+              value={content}
+              onChange={setContent}
+              placeholder="Write this policy with headings, lists, links and quotes..."
+            />
+          </div>
           <button type="submit" disabled={saving} className="btn-brand rounded-md px-4 py-2 text-sm font-bold disabled:opacity-60">
-            {saving ? 'Saving…' : `Save /${slug}`}
+            {saving ? 'Saving…' : `Save ${title.trim() || 'page'}`}
           </button>
         </form>
       )}
 
       {pages.length === 0 ? (
-        <EmptyState icon={<ScrollText size={28} />} title="No published pages" message="Save a preset above to create GET /editorial-pages entries." />
+        <EmptyState icon={<ScrollText size={28} />} title="No published pages" message="Save a policy above to publish it on the site." />
       ) : (
         <p className="text-xs" style={{ color: 'var(--admin-text-muted)' }}>
           Live slugs: {pages.map((page) => page.slug).join(', ')}

@@ -60,7 +60,7 @@ export default function AuthShell({ title, subtitle, children, footer }: AuthShe
               <BrandLockup />
               {/* Sits directly on the photo, so it keeps a legible dark surface
                   and only shares the blinking dot with the live match badges. */}
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-black/55 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white ring-1 ring-white/25 backdrop-blur-sm">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-black/55 px-2.5 py-1 text-[10px] font-bold tracking-wider text-white ring-1 ring-white/25 backdrop-blur-sm">
                 <BlinkingDot className="text-danger" />
                 Live
               </span>

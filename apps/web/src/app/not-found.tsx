@@ -2,10 +2,12 @@
 
 import Link from 'next/link';
 import { Home, Search } from 'lucide-react';
+import HideDummyAds from '../components/advertisements/HideDummyAds';
 
 export default function NotFound() {
   return (
     <div className="mx-auto flex max-w-3xl flex-col items-center justify-center px-4 py-24 text-center">
+      <HideDummyAds />
       <p className="font-mono text-7xl font-black text-accent/30">404</p>
       <h1 className="mt-4 text-2xl font-black tracking-tight text-mtext">
         That page went for a duck

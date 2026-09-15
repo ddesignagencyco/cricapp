@@ -5,7 +5,7 @@ import { UserCircle, Search } from 'lucide-react';
 import { fetchPlayersPage } from '../../../../services/players';
 import type { Player } from '../../../../types';
 import Pagination from '../../../../components/admin/AdminPagination';
-import { AdminAvatar, AdminPageHeader, LoadingState, EmptyState, AdminInput } from '../../../../components/admin/AdminShared';
+import { AdminAvatar, AdminPageHeader, LoadingState, EmptyState, AdminInput, AdminEntityLink } from '../../../../components/admin/AdminShared';
 import { cap } from '../../../../utils/helpers';
 
 export default function PlayersPage() {
@@ -39,7 +39,7 @@ export default function PlayersPage() {
       <AdminPageHeader title="Players" subtitle="View all players from the sports data provider." />
 
       <div className="flex items-center gap-3 rounded-lg p-3" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
-        <div className="relative flex-1">
+        <div className="relative w-full max-w-md">
           <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--admin-text-muted)' }} />
           <AdminInput type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search players..." style={{ paddingLeft: '2.25rem' }} />
         </div>
@@ -49,7 +49,7 @@ export default function PlayersPage() {
         <EmptyState icon={<UserCircle size={28} />} title="No players found" />
       ) : (
         <div className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
-          <div className="overflow-x-auto">
+          <div className="table-scroll">
             <table className="w-full text-left text-xs">
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--admin-border)', background: 'var(--admin-table-header)' }}>
@@ -72,11 +72,21 @@ export default function PlayersPage() {
                         <div className="flex items-center gap-2.5">
                           <AdminAvatar name={displayName} src={typeof p.image === 'string' ? p.image : null} size={28} />
                           <div>
-                            <p className="font-semibold" style={{ color: 'var(--admin-text)' }}>{p.fullName}</p>
+                            {p.id ? (
+                              <AdminEntityLink href={`/players/${p.id}`}>{p.fullName || p.name}</AdminEntityLink>
+                            ) : (
+                              <p className="font-semibold" style={{ color: 'var(--admin-text)' }}>{p.fullName}</p>
+                            )}
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-2.5 text-xs" style={{ color: 'var(--admin-text-secondary)' }}>{cap(p.teamName)}</td>
+                      <td className="px-4 py-2.5 text-xs" style={{ color: 'var(--admin-text-secondary)' }}>
+                        {p.teamId ? (
+                          <AdminEntityLink href={`/teams/${p.teamId}`}>{cap(p.teamName) || 'Team'}</AdminEntityLink>
+                        ) : (
+                          cap(p.teamName)
+                        )}
+                      </td>
                       <td className="px-4 py-2.5 text-xs" style={{ color: 'var(--admin-text-secondary)' }}>{cap(p.country)}</td>
                       <td className="px-4 py-2.5 text-xs" style={{ color: 'var(--admin-text-secondary)' }}>{cap(p.role)}</td>
                       <td className="px-4 py-2.5 text-xs" style={{ color: 'var(--admin-text-secondary)' }}>{cap(p.battingStyle)}</td>

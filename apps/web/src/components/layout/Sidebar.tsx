@@ -3,7 +3,7 @@ import { ArrowUpRight, CalendarDays } from 'lucide-react';
 import { fetchNews } from '../../services/news';
 import { newsHref } from '../../utils/newsConstraints';
 import { formatScheduled } from '../../utils/helpers';
-import AdSlot from '../AdSlot';
+import DummyAd from '../advertisements/DummyAd';
 
 export default async function Sidebar() {
   const allNews = await fetchNews();
@@ -45,7 +45,9 @@ export default async function Sidebar() {
         </div>
       </section>
 
-      <AdSlot slot="sidebar" format="rectangle" />
+      <div className="flex justify-center lg:justify-start">
+        <DummyAd size="medium-rectangle" placement="layout-sidebar" />
+      </div>
     </aside>
   );
 }

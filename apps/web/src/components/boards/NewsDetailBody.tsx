@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { ArrowLeft, ArrowRight, Calendar, Clock, Newspaper, Tag, User } from 'lucide-react';
 import Badge from '../Badge';
-import AdSlot from '../AdSlot';
+import DummyAd from '../advertisements/DummyAd';
 import RemoteImage from '../RemoteImage';
 import ShareButton from '../ShareButton';
 import FavoriteButton from '../FavoriteButton';
@@ -14,15 +14,15 @@ import { newsLocale } from '../../utils/locale';
 import { newsHref } from '../../utils/newsConstraints';
 
 /**
- * Splits already-sanitized article HTML at a paragraph boundary near the middle
- * so a sponsored slot can sit inside the article. Short articles are left whole
- * so the slot never lands immediately under the heading.
+ * Splits already-sanitized article HTML after four paragraphs
+ * so an in-article advertisement can sit inside longer stories.
+ * Short articles are left whole.
  */
 function splitAtParagraph(html: string): [string, string] {
   const parts = html.split('</p>');
-  if (parts.length < 4) return [html, ''];
-  const mid = Math.ceil(parts.length / 2);
-  return [`${parts.slice(0, mid).join('</p>')}</p>`, parts.slice(mid).join('</p>')];
+  if (parts.length < 5) return [html, ''];
+  const cut = 4;
+  return [`${parts.slice(0, cut).join('</p>')}</p>`, parts.slice(cut).join('</p>')];
 }
 
 const proseClass = `prose prose-sm max-w-none text-base leading-8 text-mtext tiptap-content
@@ -94,8 +94,8 @@ export default function NewsDetailBody({ item, related = [], authorHref, related
         </NewsCopy>
       </nav>
 
-      <div className="grid grid-cols-1 gap-10 lg:grid-cols-3">
-        <article className="min-w-0 lg:col-span-2">
+      <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-8">
+        <article className="min-w-0">
           <header className="mb-8">
             <div className="flex flex-wrap items-center gap-2">
               {categoryName && (
@@ -178,7 +178,9 @@ export default function NewsDetailBody({ item, related = [], authorHref, related
 
             {contentAfterAd && (
               <>
-                <AdSlot slot="news-detail-mid" format="inline" className="my-8" />
+                <div className="my-8 flex justify-center">
+                  <DummyAd size="large-rectangle" placement="news-detail-inarticle" />
+                </div>
                 <div
                   className={`${proseClass} news-copy`}
                   dir={locale.dir}
@@ -229,15 +231,14 @@ export default function NewsDetailBody({ item, related = [], authorHref, related
               </div>
             )}
 
-            <div className="mt-12">
-              <CommentsSection targetType="news" targetId={item.id} />
-            </div>
           </div>
         </article>
 
-        <aside className="min-w-0 lg:col-span-1">
-          <div className="space-y-8 lg:sticky lg:top-20">
-            <AdSlot slot="news-detail-sidebar" format="rectangle" />
+        <aside className="min-w-0 lg:sticky lg:top-16 lg:z-10 lg:self-start">
+          <div className="space-y-8 lg:max-h-[calc(100dvh-5rem)] lg:overflow-y-auto">
+            <div className="flex justify-center lg:justify-start">
+              <DummyAd size="medium-rectangle" placement="news-detail-sidebar" />
+            </div>
 
             {related.length > 0 && (
               <section>
@@ -292,6 +293,16 @@ export default function NewsDetailBody({ item, related = [], authorHref, related
             )}
           </div>
         </aside>
+      </div>
+
+      {related.length > 0 ? (
+        <div className="mt-10">
+          <DummyAd size="leaderboard" placement="news-detail-after-related" />
+        </div>
+      ) : null}
+
+      <div className="mt-12">
+        <CommentsSection targetType="news" targetId={item.id} />
       </div>
     </div>
   );

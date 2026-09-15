@@ -1,6 +1,5 @@
 import { Suspense } from 'react';
 import ToursBoard from '../../components/boards/ToursBoard';
-import AdSlot from '../../components/AdSlot';
 import { ToursPageSkeleton } from '../../components/skeletons/Skeletons';
 
 export const revalidate = 3600;
@@ -16,7 +15,6 @@ export default function ToursPage() {
       <Suspense fallback={<ToursPageSkeleton />}>
         <ToursBoard />
       </Suspense>
-      <AdSlot slot="tours-bottom" format="leaderboard" className="mt-8" />
     </div>
   );
 }

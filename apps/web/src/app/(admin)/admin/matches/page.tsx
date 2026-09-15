@@ -5,7 +5,7 @@ import { Trophy, Search } from 'lucide-react';
 import { fetchMatchesPage } from '../../../../services/matches';
 import type { Match } from '../../../../types';
 import Pagination from '../../../../components/admin/AdminPagination';
-import { AdminPageHeader, LoadingState, EmptyState, StatusBadge, AdminInput } from '../../../../components/admin/AdminShared';
+import { AdminPageHeader, LoadingState, EmptyState, StatusBadge, AdminInput, AdminEntityLink } from '../../../../components/admin/AdminShared';
 import { getInitials } from '../../../../utils/helpers';
 
 export default function MatchesPage() {
@@ -78,7 +78,7 @@ export default function MatchesPage() {
       <AdminPageHeader title="Matches" subtitle="View and manage match schedules, scores and results." />
 
       <div className="flex flex-col gap-3 rounded-lg p-3 md:flex-row md:items-center" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
-        <div className="relative flex-1">
+        <div className="relative w-full max-w-md">
           <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--admin-text-muted)' }} />
           <AdminInput type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search by team, tournament or venue..." style={{ paddingLeft: '2.25rem' }} />
         </div>
@@ -100,7 +100,7 @@ export default function MatchesPage() {
         <EmptyState icon={<Trophy size={28} />} title="No matches found" message="No matches match your current filters." />
       ) : (
         <div className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
-          <div className="overflow-x-auto">
+          <div className="table-scroll">
             <table className="w-full text-left text-xs">
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--admin-border)', background: 'var(--admin-table-header)' }}>
@@ -123,12 +123,24 @@ export default function MatchesPage() {
                       onMouseEnter={(e) => e.currentTarget.style.background = 'var(--admin-table-row-hover)'}
                       onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
                       <td className="px-4 py-2.5">
-                        <TeamMatchup home={homeLabel} away={awayLabel} />
+                        {m.matchId || m.id ? (
+                          <AdminEntityLink href={`/matches/${m.matchId || m.id}`}>
+                            <TeamMatchup home={homeLabel} away={awayLabel} />
+                          </AdminEntityLink>
+                        ) : (
+                          <TeamMatchup home={homeLabel} away={awayLabel} />
+                        )}
                       </td>
                       <td className="px-4 py-2.5 font-mono font-bold" style={{ color: 'var(--admin-text)' }}>
                         {inn ? `${inn.runs}/${inn.wickets} (${inn.overs})` : '—'}
                       </td>
-                      <td className="px-4 py-2.5" style={{ color: 'var(--admin-text-secondary)' }}>{m.tournament || '—'}</td>
+                      <td className="px-4 py-2.5" style={{ color: 'var(--admin-text-secondary)' }}>
+                        {m.tournamentId ? (
+                          <AdminEntityLink href={`/tournaments/${m.tournamentId}`}>{m.tournament || 'Tournament'}</AdminEntityLink>
+                        ) : (
+                          m.tournament || '—'
+                        )}
+                      </td>
                       <td className="px-4 py-2.5 max-w-[120px] truncate" style={{ color: 'var(--admin-text-muted)' }}>{m.venue || '—'}</td>
                       <td className="px-4 py-2.5 font-mono" style={{ color: 'var(--admin-text-muted)' }}>
                         {m.scheduled ? new Date(m.scheduled).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}
@@ -154,12 +166,12 @@ function TeamMatchup({ home, away }: { home: string; away: string }) {
     <div className="flex items-center gap-2 whitespace-nowrap">
       <span className="flex items-center gap-1.5">
         <TeamBadge code={home} />
-        <span className="text-[13px] font-semibold" style={{ color: 'var(--admin-text)' }}>{home}</span>
+        <span className="text-[13px] font-semibold">{home}</span>
       </span>
       <span className="text-[11px] font-bold uppercase" style={{ color: 'var(--admin-text-muted)' }}>vs</span>
       <span className="flex items-center gap-1.5">
         <TeamBadge code={away} />
-        <span className="text-[13px] font-semibold" style={{ color: 'var(--admin-text)' }}>{away}</span>
+        <span className="text-[13px] font-semibold">{away}</span>
       </span>
     </div>
   );

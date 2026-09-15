@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { Clock, Globe, Radio, Signal, User } from 'lucide-react';
-import Badge from '../Badge';
+import { StatusBadge } from '../Badge';
 import LiveIndicator from '../LiveIndicator';
-import AdSlot from '../AdSlot';
 import EmptyState from '../EmptyState';
 import ErrorState from '../ErrorState';
 import Pagination from '../Pagination';
@@ -125,7 +124,7 @@ export default function LiveStreamsBoard() {
             <StreamPlayer stream={featured} />
             <div className="rounded-2xl bg-card p-5 ring-1 ring-lborder">
               <div className="flex flex-wrap items-center gap-2">
-                {featured.status === 'live' ? <LiveIndicator label="LIVE" /> : <Badge tone="neutral">{featured.status}</Badge>}
+                {featured.status === 'live' ? <LiveIndicator /> : <StatusBadge status={featured.status} />}
                 {featured.host && (
                   <span className="inline-flex items-center gap-1.5 rounded-lg bg-elevated px-3 py-1.5 text-xs font-semibold text-mtext">
                     <User size={13} className="text-accent" /> {featured.host}
@@ -140,7 +139,6 @@ export default function LiveStreamsBoard() {
               <h2 className="mt-2 text-lg font-bold text-mtext">{featured.title}</h2>
             </div>
             <CommentsSection targetType="stream" targetId={featured.id} />
-            <AdSlot slot="streams-below-player" format="leaderboard" />
           </div>
           <div className="space-y-4">
             <div className="rounded-2xl bg-card p-4 ring-1 ring-lborder">
@@ -202,7 +200,7 @@ function StreamPlayer({ stream }: { stream: Stream }) {
             </div>
             {stream.status === 'live' && (
               <div className="absolute left-4 top-4 z-10">
-                <LiveIndicator label="LIVE" />
+                <LiveIndicator />
               </div>
             )}
             <div className="absolute inset-x-4 bottom-4 z-10 flex items-center justify-between text-xs font-semibold text-white/70">

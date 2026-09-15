@@ -18,6 +18,38 @@ import { useAuth } from '../../../../components/AuthProvider';
 
 const LIMIT = 20;
 
+const ROLE_FILTERS = [
+  { key: 'all', label: 'All' },
+  { key: 'superadmin', label: 'Superadmin' },
+  { key: 'admin', label: 'Admins' },
+  { key: 'user', label: 'Users' },
+] as const;
+
+type RoleFilter = (typeof ROLE_FILTERS)[number]['key'];
+
+function roleRank(user: AdminUser) {
+  if (user.isSuperAdmin) return 0;
+  if (user.isAdmin) return 1;
+  return 2;
+}
+
+function sortUsers(list: AdminUser[]) {
+  return [...list].sort((a, b) => {
+    const rank = roleRank(a) - roleRank(b);
+    if (rank !== 0) return rank;
+    const an = (a.displayName || a.username || '').toLowerCase();
+    const bn = (b.displayName || b.username || '').toLowerCase();
+    return an.localeCompare(bn);
+  });
+}
+
+function matchesRole(user: AdminUser, role: RoleFilter) {
+  if (role === 'all') return true;
+  if (role === 'superadmin') return Boolean(user.isSuperAdmin);
+  if (role === 'admin') return Boolean(user.isAdmin) && !user.isSuperAdmin;
+  return !user.isAdmin && !user.isSuperAdmin;
+}
+
 export default function UsersPage() {
   const [q, setQ] = useState('');
   const [page, setPage] = useState(1);
@@ -27,6 +59,7 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [roleFilter, setRoleFilter] = useState<RoleFilter>('all');
   const { user: me } = useAuth();
 
   const load = (nextPage = page, query = q) => {
@@ -34,7 +67,7 @@ export default function UsersPage() {
     setError(false);
     fetchAdminUsers({ page: nextPage, limit: LIMIT, q: query || undefined })
       .then((res) => {
-        setUsers(res.items);
+        setUsers(sortUsers(res.items));
         setTotal(res.total);
         setTotalPages(Math.max(1, res.totalPages));
         setPage(nextPage);
@@ -53,7 +86,7 @@ export default function UsersPage() {
     setBusyId(user.id);
     try {
       const updated = await updateAdminUser(user.id, input);
-      setUsers((list) => list.map((item) => (item.id === user.id ? { ...item, ...updated } : item)));
+      setUsers((list) => sortUsers(list.map((item) => (item.id === user.id ? { ...item, ...updated } : item))));
       toast.success('User updated.');
     } catch {
       toast.error('Could not update this user.');
@@ -78,12 +111,14 @@ export default function UsersPage() {
     }
   };
 
+  const visible = users.filter((user) => matchesRole(user, roleFilter));
+
   return (
     <div className="space-y-5">
       <AdminPageHeader title="Users" subtitle="Toggle admin access and email verification. Superadmin accounts are read-only." />
 
-      <div className="flex items-center gap-3 rounded-lg p-3" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
-        <div className="relative flex-1">
+      <div className="flex flex-col gap-3 rounded-lg p-3 md:flex-row md:items-center" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
+        <div className="relative w-full max-w-md">
           <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--admin-text-muted)' }} />
           <AdminInput
             value={q}
@@ -95,17 +130,34 @@ export default function UsersPage() {
             style={{ paddingLeft: '2.25rem' }}
           />
         </div>
+        <div className="flex flex-wrap gap-1.5">
+          {ROLE_FILTERS.map((item) => (
+            <button
+              key={item.key}
+              type="button"
+              onClick={() => setRoleFilter(item.key)}
+              className="rounded-md px-3 py-1.5 text-xs font-semibold transition-colors"
+              style={{
+                background: roleFilter === item.key ? 'var(--admin-accent)' : 'var(--admin-input-bg)',
+                color: roleFilter === item.key ? 'var(--color-brand-fg)' : 'var(--admin-text-secondary)',
+                border: roleFilter === item.key ? 'none' : '1px solid var(--admin-border)',
+              }}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {loading ? (
         <LoadingState />
       ) : error ? (
         <ErrorState message="Could not load users." onRetry={() => load(page, q)} />
-      ) : users.length === 0 ? (
+      ) : visible.length === 0 ? (
         <EmptyState icon={<Users size={28} />} title="No users found" />
       ) : (
         <div className="overflow-hidden rounded-lg" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
-          <div className="overflow-x-auto">
+          <div className="table-scroll">
             <table className="w-full text-left text-sm">
               <thead>
                 <tr style={{ background: 'var(--admin-table-header)', borderBottom: '1px solid var(--admin-border)' }}>
@@ -117,7 +169,7 @@ export default function UsersPage() {
                 </tr>
               </thead>
               <tbody>
-                {users.map((user) => {
+                {visible.map((user) => {
                   const name = user.displayName || user.username;
                   const busy = busyId === user.id;
                   const locked = Boolean(user.isSuperAdmin);

@@ -33,21 +33,21 @@ import Logo from '../../../components/Logo';
 import { AdminChromeSkeleton } from '../../../components/skeletons/Skeletons';
 
 const adminNav = [
-  { to: '/admin', label: 'Overview', icon: LayoutDashboard },
-  { to: '/admin/news', label: 'News', icon: FileText },
+  { to: '/admin', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/admin/authors', label: 'Authors', icon: PenLine },
   { to: '/admin/categories', label: 'Categories', icon: Tag },
-  { to: '/admin/matches', label: 'Matches', icon: Trophy },
+  { to: '/admin/news', label: 'News', icon: FileText },
+  { to: '/admin/comments', label: 'Comments', icon: MessageSquare },
+  { to: '/admin/gallery', label: 'Gallery', icon: ImageIcon },
   { to: '/admin/teams', label: 'Teams', icon: Users },
   { to: '/admin/players', label: 'Players', icon: UserCircle },
+  { to: '/admin/matches', label: 'Matches', icon: Trophy },
   { to: '/admin/tournaments', label: 'Tournaments', icon: Newspaper },
   { to: '/admin/streams', label: 'Streams', icon: Radio },
-  { to: '/admin/authors', label: 'Authors', icon: PenLine },
-  { to: '/admin/editorial', label: 'Editorial', icon: ScrollText },
-  { to: '/admin/gallery', label: 'Gallery', icon: ImageIcon },
-  { to: '/admin/comments', label: 'Comments', icon: MessageSquare },
-  { to: '/admin/contact', label: 'Contact', icon: Inbox },
-  { to: '/admin/newsletter', label: 'Newsletter', icon: Mail },
   { to: '/admin/users', label: 'Users', icon: UserCircle },
+  { to: '/admin/newsletter', label: 'Newsletter', icon: Mail },
+  { to: '/admin/editorial', label: 'Editorial', icon: ScrollText },
+  { to: '/admin/contact', label: 'Contact', icon: Inbox },
   { to: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 
@@ -90,7 +90,10 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     );
   }
 
-  const isActive = (to: string) => (to === '/admin' ? pathname === '/admin' : pathname.startsWith(to));
+  const isActive = (to: string) => {
+    if (to === '/admin') return pathname === '/admin';
+    return pathname === to || pathname.startsWith(`${to}/`);
+  };
   const userName = user?.displayName || user?.username || 'Admin';
   const userInitials = userName.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2);
 
@@ -221,7 +224,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        <main id="admin-content" className="flex-1 p-4 sm:p-6">{children}</main>
+        <main id="admin-content" className="min-w-0 flex-1 overflow-x-hidden p-3 sm:p-6">{children}</main>
       </div>
     </div>
   );

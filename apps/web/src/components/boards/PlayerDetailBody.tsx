@@ -11,6 +11,7 @@ import TeamLogo from '../TeamLogo';
 import RemoteImage from '../RemoteImage';
 import FavoriteButton from '../FavoriteButton';
 import ShareButton from '../ShareButton';
+import DummyAd from '../advertisements/DummyAd';
 import { getInitials } from '../../utils/helpers';
 import type { NewsArticle } from '../../types';
 import { newsHref } from '../../utils/newsConstraints';
@@ -55,11 +56,11 @@ export default function PlayerDetailBody({ player, relatedNews = [] }: Props) {
       <header className="rounded-md border border-lborder bg-card p-5 sm:p-6">
         <div className="flex items-center justify-between border-b border-lborder pb-3">
           <div className="flex items-center gap-2">
-            <span className="rounded border border-accent/25 bg-accent/10 px-2.5 py-1 text-xs font-medium uppercase tracking-wider text-accent">
+            <span className="rounded border border-accent/25 bg-accent/10 px-2.5 py-1 text-xs font-medium tracking-wider text-accent">
               {role}
             </span>
             {player.nationality && (
-              <span className="rounded border border-lborder bg-secondary px-2.5 py-1 text-xs font-medium uppercase tracking-wider text-stext">
+              <span className="rounded border border-lborder bg-secondary px-2.5 py-1 text-xs font-medium tracking-wider text-stext">
                 {player.nationality}
               </span>
             )}
@@ -152,6 +153,8 @@ export default function PlayerDetailBody({ player, relatedNews = [] }: Props) {
         </div>
       </header>
 
+      <DummyAd size="leaderboard" placement="player-detail-after-intro" />
+
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard compact label="Player ID" value={String(player.id || '').split(':').pop() || '—'} sub="Provider id" icon={User} />
         <StatCard compact label="Role" value={role} sub="Squad" />
@@ -188,19 +191,24 @@ export default function PlayerDetailBody({ player, relatedNews = [] }: Props) {
       )}
 
       {relatedNews.length > 0 && (
-        <section className="rounded-md border border-lborder bg-card p-4">
-          <h3 className="mb-3 text-sm font-bold uppercase tracking-widest text-stext">Related news</h3>
-          <ul className="space-y-2">
-            {relatedNews.map((article) => (
-              <li key={article.id}>
-                <Link href={newsHref(article)} className="text-sm font-semibold text-mtext hover:text-accent">
-                  {article.title}
-                </Link>
-                <p className="text-xs text-stext">{article.date}</p>
-              </li>
-            ))}
-          </ul>
-        </section>
+        <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+          <section className="min-w-0 rounded-md border border-lborder bg-card p-4">
+            <h3 className="mb-3 text-sm font-bold uppercase tracking-widest text-stext">Related news</h3>
+            <ul className="space-y-2">
+              {relatedNews.map((article) => (
+                <li key={article.id}>
+                  <Link href={newsHref(article)} className="text-sm font-semibold text-mtext hover:text-accent">
+                    {article.title}
+                  </Link>
+                  <p className="text-xs text-stext">{article.date}</p>
+                </li>
+              ))}
+            </ul>
+          </section>
+          <div className="flex justify-center lg:justify-start">
+            <DummyAd size="medium-rectangle" placement="player-detail-sidebar" />
+          </div>
+        </div>
       )}
     </div>
   );

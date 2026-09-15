@@ -152,7 +152,8 @@ export default function AuthorsPage() {
         <EmptyState icon={<PenLine size={28} />} title="No authors yet" message="Create an editorial author to attach to news." />
       ) : (
         <div className="overflow-hidden rounded-lg" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
-          <table className="w-full text-left text-sm">
+          <div className="table-scroll">
+            <table className="w-full text-left text-sm">
             <thead>
               <tr style={{ background: 'var(--admin-table-header)', borderBottom: '1px solid var(--admin-border)' }}>
                 <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Author</th>
@@ -208,6 +209,7 @@ export default function AuthorsPage() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 

@@ -1,9 +1,10 @@
 'use client';
 
+import { Fragment } from 'react';
 import { Calendar, ChevronLeft, ChevronRight, Clock, MapPin } from 'lucide-react';
 import { StatusBadge } from '../Badge';
 import LiveIndicator from '../LiveIndicator';
-import AdSlot from '../AdSlot';
+import DummyAd from '../advertisements/DummyAd';
 import EmptyState from '../EmptyState';
 import ErrorState from '../ErrorState';
 import Pagination from '../Pagination';
@@ -184,11 +185,15 @@ export default function ScheduleBoard({
       ) : events.length > 0 ? (
         <>
           <div className="fade-in grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {events.map((record) => (
-              <ScheduleCard key={record.eventId} record={record} />
+            {events.map((record, index) => (
+              <Fragment key={record.eventId}>
+                <ScheduleCard record={record} />
+                {events.length >= 4 && index === 3 ? (
+                  <DummyAd size="large-rectangle" placement="schedule-infeed" inFeed />
+                ) : null}
+              </Fragment>
             ))}
           </div>
-          <AdSlot slot="schedule-below-grid" format="leaderboard" className="pt-2" />
           <Pagination
             page={activeMeta.page}
             totalPages={activeMeta.totalPages}
