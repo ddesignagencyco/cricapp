@@ -318,11 +318,11 @@ export default function NewsBoard({
         </>
       ) : !featured ? (
         <EmptyState
-          title="No articles found"
+          title="No news articles found"
           message={
             selectedCategory === 'all'
               ? 'No news articles available at the moment. Check back soon.'
-              : `No articles in "${selectedCategory}". Check back soon for new updates.`
+              : `No news articles in "${selectedCategory}". Check back soon for new updates.`
           }
         />
       ) : null}

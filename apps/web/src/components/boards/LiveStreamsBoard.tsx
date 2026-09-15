@@ -22,7 +22,7 @@ function buildEmbedUrl(stream: Stream): string | null {
   if (stream.embedType === 'twitch' && stream.embedId) {
     return `https://player.twitch.tv/?channel=${stream.embedId}&parent=${hostname}`;
   }
-  return toPlayerEmbedUrl(raw, { autoplay: true, hostname });
+  return toPlayerEmbedUrl(raw, { autoplay: false, hostname });
 }
 
 const TABS = [
