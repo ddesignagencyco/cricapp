@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { getInitials, getTeam } from '../utils/helpers';
+import RemoteImage from './RemoteImage';
+import { getInitials, getPslLogo } from '../utils/helpers';
 
 interface TeamLogoProps {
   teamId?: string;
@@ -13,38 +14,51 @@ interface TeamLogoProps {
   link?: boolean;
 }
 
-export default function TeamLogo({ teamId, name, code, color, size = 'md', className = '', link = true }: TeamLogoProps) {
-  const team = teamId ? getTeam(teamId) : null;
-  const displayName = name || team?.name || code || '';
-  const accent = color || team?.colors?.primary || '#00C2FF';
-  const initials = getInitials(displayName);
-  const logo = team?.logo || null;
-  const sizes: Record<string, string> = {
-    xs: 'h-8 w-8',
-    sm: 'h-10 w-10',
-    md: 'h-14 w-14',
-    lg: 'h-20 w-20',
-    xl: 'h-28 w-28',
-  };
-  const border = 'border-2';
-  const cls = `relative grid shrink-0 place-items-center overflow-hidden rounded-full ${sizes[size]} ${className}`;
+function hueFromName(name: string) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  return Math.abs(hash % 360);
+}
 
-  const inner = logo ? (
-    <img
-      src={logo}
-      alt={displayName}
-      title={displayName}
-      className={`h-full w-full rounded-full object-cover ${border}`}
-      style={{ borderColor: accent }}
-    />
-  ) : (
-    <span
-      className={`grid h-full w-full place-items-center rounded-full font-extrabold tracking-tight ${border}`}
-      style={{ color: accent, borderColor: accent }}
-      title={displayName}
-    >
-      {initials}
-    </span>
+export default function TeamLogo({ teamId, name, code, color, size = 'md', className = '', link = true }: TeamLogoProps) {
+  const displayName = name || code || '';
+  const abbr = (code || '').replace(/[^a-zA-Z0-9]/g, '');
+  const initials = (abbr.length >= 2 && abbr.length <= 4 ? abbr : getInitials(displayName)).slice(0, 2).toUpperCase();
+  const pslLogo = getPslLogo(code || '') || getPslLogo(teamId || '');
+  const logo = pslLogo || null;
+  const hue = hueFromName(displayName);
+  const sizes: Record<string, string> = {
+    xs: 'h-6 w-6 text-xs',
+    sm: 'h-8 w-8 text-xs',
+    search: 'h-10 w-10 text-[11px]',
+    md: 'h-11 w-11 text-sm',
+    lg: 'h-16 w-16 text-xl',
+    xl: 'h-24 w-24 text-3xl',
+  };
+  const cls = `group relative shrink-0 ${sizes[size]} ${className}`;
+
+  const inner = (
+    <div className="relative h-full w-full transition-transform duration-500 group-hover:scale-105">
+      {logo ? (
+        <RemoteImage
+          src={logo}
+          alt={displayName}
+          title={displayName}
+          fill
+          sizes="96px"
+          className="rounded-full border border-white/10 bg-white object-contain p-0.5"
+          style={color ? { borderColor: color } : undefined}
+        />
+      ) : (
+        <span
+          className="relative grid h-full w-full place-items-center rounded-full font-bold tracking-tight text-white"
+          style={{ backgroundImage: `linear-gradient(135deg, hsl(${hue}, 75%, 50%), hsl(${(hue + 40) % 360}, 85%, 35%))` }}
+          title={displayName}
+        >
+          {initials}
+        </span>
+      )}
+    </div>
   );
 
   if (!link || !teamId) {

@@ -1,0 +1,49 @@
+'use client';
+
+import { usePathname } from 'next/navigation';
+import type { ReactNode } from 'react';
+import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
+import ScrollTopButton from '../components/ScrollTopButton';
+import DummyAd from './advertisements/DummyAd';
+import { shouldHideDummyAds } from '../lib/advertisements/placements';
+
+function isNewsArticlePath(pathname: string) {
+  return /^\/(ur\/)?news\/.+/.test(pathname);
+}
+
+function showGlobalTopAd(pathname: string) {
+  if (shouldHideDummyAds(pathname)) return false;
+  if (pathname === '/') return false;
+  if (pathname.startsWith('/matches/') && pathname !== '/matches') return false;
+  if (isNewsArticlePath(pathname)) return false;
+  if (pathname.startsWith('/authors/')) return false;
+  if (pathname.startsWith('/teams/') && pathname !== '/teams') return false;
+  if (pathname.startsWith('/players/') && pathname !== '/players') return false;
+  if (pathname.startsWith('/tournaments/') && pathname !== '/tournaments') return false;
+  if (pathname.startsWith('/editorial/')) return false;
+  return true;
+}
+
+export default function ClientLayout({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  const isAdmin = pathname.startsWith('/admin');
+
+  if (isAdmin) {
+    return <>{children}</>;
+  }
+
+  return (
+    <>
+      <Navbar />
+      {showGlobalTopAd(pathname) ? (
+        <div className="mx-auto w-full min-w-0 max-w-7xl px-4 py-5 sm:px-6">
+          <DummyAd size="leaderboard" placement={`global-top:${pathname}`} />
+        </div>
+      ) : null}
+      <main id="main-content" className="min-h-screen min-w-0 flex-1">{children}</main>
+      <Footer />
+      <ScrollTopButton />
+    </>
+  );
+}

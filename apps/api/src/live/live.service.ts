@@ -10,43 +10,67 @@ export interface LiveUpdate {
   ts: number;
 }
 
+const MATCH_CHANNEL_PATTERN = 'match:*';
+
 /**
- * Bridges Redis pub/sub (events emitted by the ingestion service) into an
- * RxJS stream consumed by SSE clients. Subscribes to match channels (including
- * the currently-live matches, refreshed periodically) and forwards every
- * message onto the shared stream.
+ * Bridges Redis pub/sub (ingestion PUBLISH on match:{id}) into Socket.IO.
+ * Pattern-subscribes so newly live matches are received immediately.
  */
 @Injectable()
 export class LiveService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(LiveService.name);
   private readonly updates = new Subject<LiveUpdate>();
   private readonly subscribed = new Set<string>();
+  private patternSubscribed = false;
   private refreshTimer: NodeJS.Timeout | null = null;
 
   constructor(private readonly redis: RedisService) {}
 
   onModuleInit() {
-    this.redis.subscriber.on('message', (channel, payload) => {
-      const matchId = channel.replace(/^match:/, '');
-      let parsed: unknown = payload;
-      try {
-        parsed = JSON.parse(payload);
-      } catch {
-        // keep raw string payload
-      }
-      const data = typeof parsed === 'object' && parsed !== null ? parsed : { raw: payload };
-      this.updates.next({ type: 'match_update', matchId, data, ts: Date.now() });
+    this.redis.subscriber.on('pmessage', (_pattern: string, channel: string, payload: string) => {
+      this.forward(channel, payload);
+    });
+    this.redis.subscriber.on('message', (channel: string, payload: string) => {
+      this.forward(channel, payload);
     });
 
-    // Subscribe to currently-live matches and refresh regularly so newly
-    // started matches are picked up automatically.
-    void this.refreshLiveSubscriptions();
-    this.refreshTimer = setInterval(() => {
-      void this.refreshLiveSubscriptions();
-    }, 30000);
+    void this.redis.subscriber
+      .psubscribe(MATCH_CHANNEL_PATTERN)
+      .then(() => {
+        this.patternSubscribed = true;
+        this.logger.log(`Listening on Redis pattern ${MATCH_CHANNEL_PATTERN}`);
+      })
+      .catch((err: Error) => {
+        this.logger.warn(
+          `psubscribe failed, falling back to live-set polling: ${err.message}`,
+        );
+        void this.refreshLiveSubscriptions();
+        this.refreshTimer = setInterval(() => {
+          void this.refreshLiveSubscriptions();
+        }, 5000);
+      });
   }
 
-  /** Keep a subscription on every currently-live match channel. */
+  private forward(channel: string, payload: string): void {
+    let parsed: unknown = payload;
+    try {
+      parsed = JSON.parse(payload);
+    } catch {
+      // keep raw string payload
+    }
+    const data =
+      typeof parsed === 'object' && parsed !== null ? parsed : { raw: payload };
+    const fromPayload =
+      typeof data === 'object' &&
+      data !== null &&
+      'matchId' in data &&
+      typeof (data as { matchId?: unknown }).matchId === 'string'
+        ? (data as { matchId: string }).matchId
+        : '';
+    const matchId = fromPayload || channel.replace(/^match:/, '');
+    this.updates.next({ type: 'match_update', matchId, data, ts: Date.now() });
+  }
+
   private async refreshLiveSubscriptions(): Promise<void> {
     let liveIds: string[] = [];
     try {
@@ -66,21 +90,24 @@ export class LiveService implements OnModuleInit, OnModuleDestroy {
     return this.updates.asObservable();
   }
 
-  /** Subscribe to a match channel so updates for it reach this process. */
   async subscribeToMatch(matchId: string): Promise<void> {
     if (this.subscribed.has(matchId)) return;
-    await this.redis.subscriber.subscribe(`match:${matchId}`);
+    if (!this.patternSubscribed) {
+      await this.redis.subscriber.subscribe(redisKeys.matchChannel(matchId));
+    }
     this.subscribed.add(matchId);
-    this.logger.log(`Subscribed to match:${matchId}`);
+    this.logger.log(`Subscribed to ${redisKeys.matchChannel(matchId)}`);
   }
 
-  /** Subscribe to every currently-live match channel (used by the global stream). */
   async subscribeToAllLive(): Promise<void> {
     await this.refreshLiveSubscriptions();
   }
 
   async onModuleDestroy() {
     if (this.refreshTimer) clearInterval(this.refreshTimer);
+    if (this.patternSubscribed) {
+      await this.redis.subscriber?.punsubscribe(MATCH_CHANNEL_PATTERN);
+    }
     await this.redis.subscriber?.unsubscribe();
     this.updates.complete();
   }

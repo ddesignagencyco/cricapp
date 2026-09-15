@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { MapPin, Shield } from 'lucide-react';
+import { ChevronRight, MapPin, Shield } from 'lucide-react';
 import Badge from './Badge';
+import RemoteImage from './RemoteImage';
 import { getInitials } from '../utils/helpers';
 
 interface PlayerCardProps {
@@ -15,52 +16,89 @@ const roleTone: Record<string, string> = {
   Bowler: 'live',
   'All-rounder': 'upcoming',
   'All Rounder': 'upcoming',
-  'Wicketkeeper': 'playoffs',
+  Wicketkeeper: 'playoffs',
   'Wicket-Keeper': 'playoffs',
+  Player: 'upcoming',
+  Manager: 'cancelled',
+  Coach: 'cancelled',
+  Captain: 'gold',
 };
 
+function formatPlayerRole(rawRole: string): string {
+  if (!rawRole) return 'Player';
+  const clean = rawRole.replace(/_/g, ' ').trim();
+  return clean
+    .split(' ')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(' ');
+}
+
 export default function PlayerCard({ player }: PlayerCardProps) {
-  const name = player.fullName || player.name || '';
-  const role = player.role || '';
-  const nationality = player.nationality || '';
+  const name = player.fullName || player.name || 'Cricket Player';
+  const rawRole = player.role || 'Player';
+  const role = formatPlayerRole(rawRole);
+  const nationality = player.nationality || player.country || '';
   const teamName = player.team?.name || player.teamName || '';
   const initials = getInitials(name);
-  const tone = roleTone[role] || 'neutral';
+  const tone = roleTone[role] || roleTone[rawRole] || 'neutral';
+
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const hue = Math.abs(hash % 360);
 
   return (
     <Link
       href={`/players/${player.id}`}
-      className="group relative block overflow-hidden rounded-sm bg-card ring-1 ring-lborder transition-all duration-300 hover:-translate-y-1 hover:bg-elevated hover:ring-accent/40 hover:shadow-lg hover:shadow-accent/10"
+      className="group flex items-center gap-3 rounded-md border border-lborder bg-card p-3.5 transition-colors hover:border-accent/50 hover:bg-elevated"
     >
-      <div className="relative flex items-center gap-4 bg-gradient-to-r from-accent/15 via-secondary/30 to-transparent p-5 pb-4">
-        <div className="relative shrink-0">
-          <span className="grid h-16 w-16 place-items-center rounded-full border-2 border-accent bg-primary text-xl font-extrabold tracking-tight text-accent transition-transform duration-300 group-hover:scale-105">
-            {initials}
+      {player.profileUrl || player.avatarUrl ? (
+        <RemoteImage
+          src={player.profileUrl || player.avatarUrl}
+          alt={name}
+          width={48}
+          height={48}
+          className="h-12 w-12 shrink-0 rounded-full border border-lborder bg-secondary object-cover"
+        />
+      ) : (
+        <span
+          className="grid h-12 w-12 shrink-0 place-items-center rounded-full text-sm font-semibold text-white"
+          style={{
+            backgroundImage: `linear-gradient(135deg, hsl(${hue}, 68%, 46%), hsl(${(hue + 38) % 360}, 72%, 32%))`,
+          }}
+          aria-hidden="true"
+        >
+          {initials}
+        </span>
+      )}
+
+      <div className="min-w-0 flex-1">
+        <div className="flex min-w-0 items-center gap-2">
+          <h3 className="truncate text-sm font-semibold text-mtext transition-colors group-hover:text-accent">
+            {name}
+          </h3>
+          <Badge tone={tone}>{role}</Badge>
+        </div>
+        <div className="mt-1 flex min-w-0 items-center gap-3 text-xs text-stext">
+          <span className="flex min-w-0 items-center gap-1 truncate">
+            <Shield size={11} className="shrink-0" />
+            <span className="truncate">{teamName || 'Independent player'}</span>
           </span>
-          {role && (
-            <span className="absolute -bottom-1 -right-1 grid h-6 w-6 place-items-center rounded-full bg-accent text-white ring-2 ring-card">
-              <Shield size={12} />
+          {nationality && (
+            <span className="flex min-w-0 items-center gap-1 truncate">
+              <MapPin size={11} className="shrink-0" />
+              <span className="truncate">{nationality}</span>
             </span>
           )}
         </div>
-        <div className="min-w-0">
-          <h3 className="truncate text-base font-bold text-mtext group-hover:text-accent">
-            {name}
-          </h3>
-          {teamName && (
-            <p className="truncate text-xs font-semibold text-stext">{teamName}</p>
-          )}
-        </div>
       </div>
-      <div className="flex items-center justify-between gap-2 border-t border-lborder bg-primary/40 px-5 py-3">
-        <Badge tone={tone}>{role || 'Player'}</Badge>
-        {nationality && (
-          <span className="flex min-w-0 items-center gap-1 truncate text-[11px] text-stext">
-            <MapPin size={11} className="shrink-0" />
-            <span className="truncate">{nationality}</span>
-          </span>
-        )}
-      </div>
+
+      <ChevronRight
+        size={16}
+        className="shrink-0 text-stext transition-colors group-hover:text-accent"
+        aria-hidden="true"
+      />
     </Link>
   );
 }

@@ -1,3 +1,6 @@
+import EditorialDocument from '../../components/EditorialDocument';
+import { fetchEditorialPage } from '../../services/editorial';
+
 export const metadata = {
   title: 'Privacy Policy',
   description:
@@ -35,7 +38,10 @@ const sections = [
   },
 ];
 
-export default function PrivacyPage() {
+export default async function PrivacyPage() {
+  const cms = await fetchEditorialPage('privacy').catch(() => null);
+  if (cms?.content?.trim()) return <EditorialDocument page={cms} />;
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
       <div className="space-y-8">
@@ -60,7 +66,7 @@ export default function PrivacyPage() {
         <div className="rounded-2xl bg-card p-5 ring-1 ring-lborder">
           <p className="text-sm text-stext">
             If you have any questions about this Privacy Policy, please contact us at{' '}
-            <a href="mailto:privacy@pakcriczone.com" className="font-semibold text-accent hover:text-accent2">
+            <a href="mailto:privacy@pakcriczone.com" className="font-semibold text-accent">
               privacy@pakcriczone.com
             </a>
             .

@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { AppSkeletonTheme } from './skeletons/Skeletons';
 
 interface ThemeContextValue {
   theme: string;
@@ -24,6 +25,7 @@ export default function ThemeProvider({ children }: ThemeProviderProps) {
     const stored = localStorage.getItem('pak-criczone-theme');
     const preferred = stored || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
     document.documentElement.classList.toggle('light', preferred === 'light');
+    document.documentElement.style.colorScheme = preferred;
     return preferred;
   });
   const [mounted, setMounted] = useState(false);
@@ -37,13 +39,14 @@ export default function ThemeProvider({ children }: ThemeProviderProps) {
       const next = prev === 'dark' ? 'light' : 'dark';
       localStorage.setItem('pak-criczone-theme', next);
       document.documentElement.classList.toggle('light', next === 'light');
+      document.documentElement.style.colorScheme = next;
       return next;
     });
   }, []);
 
   return (
     <ThemeContext.Provider value={{ theme, toggle, mounted }}>
-      {children}
+      <AppSkeletonTheme>{children}</AppSkeletonTheme>
     </ThemeContext.Provider>
   );
 }

@@ -77,3 +77,17 @@ export function diffMatch(previous, next) {
 
   return events;
 }
+
+/**
+ * True when score, overs, status or last-ball changed.
+ * Thin diff events miss overs-only updates; the socket snapshot uses this.
+ */
+export function hasMatchChanged(previous, next) {
+  if (!previous) return true;
+  if (previous.status !== next.status) return true;
+  if ((previous.displayScore || "") !== (next.displayScore || "")) return true;
+  if ((previous.matchStatus || "") !== (next.matchStatus || "")) return true;
+  if (inningsKey(previous.currentInnings) !== inningsKey(next.currentInnings)) return true;
+  if (lastEventKey(previous.lastEvent) !== lastEventKey(next.lastEvent)) return true;
+  return false;
+}

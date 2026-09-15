@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { EVENT_TYPES, MATCH_STATUS } from "@cricapp/shared-types";
-import { diffMatch } from "../src/diff.js";
+import { diffMatch, hasMatchChanged } from "../src/diff.js";
 
 const base = {
   matchId: "sr:match:1",
@@ -65,5 +65,22 @@ describe("diffMatch", () => {
       events.map((e) => e.type),
       [EVENT_TYPES.WICKET],
     );
+  });
+
+  it("does not emit a thin event when only overs change", () => {
+    const next = {
+      ...base,
+      currentInnings: { ...base.currentInnings, overs: 12.1 },
+    };
+    assert.deepEqual(diffMatch(base, next), []);
+  });
+
+  it("detects overs-only snapshot changes for socket publish", () => {
+    const next = {
+      ...base,
+      currentInnings: { ...base.currentInnings, overs: 12.1 },
+    };
+    assert.equal(hasMatchChanged(base, next), true);
+    assert.equal(hasMatchChanged(base, { ...base, currentInnings: { ...base.currentInnings } }), false);
   });
 });

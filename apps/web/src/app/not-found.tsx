@@ -1,9 +1,13 @@
+'use client';
+
 import Link from 'next/link';
 import { Home, Search } from 'lucide-react';
+import HideDummyAds from '../components/advertisements/HideDummyAds';
 
 export default function NotFound() {
   return (
     <div className="mx-auto flex max-w-3xl flex-col items-center justify-center px-4 py-24 text-center">
+      <HideDummyAds />
       <p className="font-mono text-7xl font-black text-accent/30">404</p>
       <h1 className="mt-4 text-2xl font-black tracking-tight text-mtext">
         That page went for a duck
@@ -14,13 +18,13 @@ export default function NotFound() {
       <div className="mt-8 flex flex-wrap justify-center gap-3">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 rounded-xl bg-accent px-5 py-3 text-sm font-bold text-primary transition-transform hover:-translate-y-0.5"
+          className="btn-brand inline-flex items-center gap-2 rounded-md px-5 py-3 text-sm font-semibold transition-colors"
         >
           <Home size={16} /> Back to Home
         </Link>
         <Link
           href="/matches"
-          className="inline-flex items-center gap-2 rounded-xl bg-card px-5 py-3 text-sm font-bold text-mtext ring-1 ring-lborder transition-transform hover:-translate-y-0.5 hover:ring-accent/40"
+          className="inline-flex items-center gap-2 rounded-xl bg-card px-5 py-3 text-sm font-bold text-mtext ring-1 ring-lborder transition-colors hover:border-border-strong hover:bg-elevated"
         >
           <Search size={16} /> Find a Match
         </Link>
