@@ -9,7 +9,7 @@ import { startStreamsSync } from './streamsSync.js';
 import { createLogger } from './logger.js';
 
 export { computeRunRate, normalizeMatch, normalizeLineups } from './normalize.js';
-export { diffMatch } from './diff.js';
+export { diffMatch, hasMatchChanged } from './diff.js';
 export { saveMatch, saveTeamsPlayers, publishMatchState, publishEvents } from './store.js';
 export { pollOnce } from './poll.js';
 export { syncPsAll } from './pslSync.js';
