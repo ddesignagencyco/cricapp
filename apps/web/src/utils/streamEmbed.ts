@@ -122,3 +122,53 @@ export function providerChoiceFromName(name?: string | null): StreamProviderChoi
   const match = STREAM_PROVIDERS.find((item) => item.toLowerCase() === name.trim().toLowerCase());
   return match || CUSTOM_PROVIDER;
 }
+
+export function toPlayerEmbedUrl(
+  url: string,
+  opts: { autoplay?: boolean; hostname?: string } = {},
+): string | null {
+  const trimmed = url.trim();
+  if (!trimmed) return null;
+  const autoplay = opts.autoplay ? 1 : 0;
+
+  const youtubeId = youtubeVideoId(trimmed);
+  if (youtubeId) {
+    const params = new URLSearchParams({
+      rel: '0',
+      modestbranding: '1',
+      playsinline: '1',
+      iv_load_policy: '3',
+      autoplay: String(autoplay),
+    });
+    return `https://www.youtube-nocookie.com/embed/${youtubeId}?${params.toString()}`;
+  }
+
+  const vimeoId = vimeoVideoId(trimmed);
+  if (vimeoId) {
+    return `https://player.vimeo.com/video/${vimeoId}?autoplay=${autoplay}&title=0&byline=0&portrait=0`;
+  }
+
+  const dailyId = dailymotionVideoId(trimmed);
+  if (dailyId) {
+    return `https://www.dailymotion.com/embed/video/${dailyId}?autoplay=${autoplay}&ui-start-screen-info=0`;
+  }
+
+  if (/twitch\.tv/i.test(trimmed)) {
+    const parent = opts.hostname || (typeof window !== 'undefined' ? window.location.hostname : 'localhost');
+    try {
+      const parsed = new URL(trimmed);
+      const parts = parsed.pathname.split('/').filter(Boolean);
+      if (parts[0] === 'videos' && parts[1]) {
+        return `https://player.twitch.tv/?video=${parts[1]}&parent=${parent}&autoplay=${autoplay ? 'true' : 'false'}`;
+      }
+      if (parts[0]) {
+        return `https://player.twitch.tv/?channel=${parts[0]}&parent=${parent}&autoplay=${autoplay ? 'true' : 'false'}`;
+      }
+    } catch {
+      return null;
+    }
+  }
+
+  if (/\/embed\//i.test(trimmed) && /^https?:\/\//i.test(trimmed)) return trimmed;
+  return null;
+}

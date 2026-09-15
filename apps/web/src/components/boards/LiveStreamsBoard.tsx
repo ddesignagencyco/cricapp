@@ -12,28 +12,17 @@ import { fetchStreamsPage } from '../../services/streams';
 import type { Stream } from '../../types/index';
 import CommentsSection from '../CommentsSection';
 import { StreamsBodySkeleton } from '../skeletons/Skeletons';
-
-function youtubeId(url: string): string | null {
-  const match = url.match(/(?:youtube\.com\/(?:embed\/|watch\?v=)|youtu\.be\/)([A-Za-z0-9_-]{6,})/);
-  return match?.[1] || null;
-}
+import { toPlayerEmbedUrl } from '../../utils/streamEmbed';
+import RemoteImage from '../RemoteImage';
 
 function buildEmbedUrl(stream: Stream): string | null {
   const raw = stream.embedUrl || (stream as { streamUrl?: string }).streamUrl || '';
   if (!raw || raw === '#') return null;
-  const id = stream.embedId;
-  if (stream.embedType === 'youtube' || /youtube\.com|youtu\.be/.test(raw)) {
-    if (id) return `https://www.youtube.com/embed/${id}?autoplay=1`;
-    const extracted = youtubeId(raw);
-    if (extracted) return `https://www.youtube.com/embed/${extracted}?autoplay=1`;
-    if (raw.includes('/embed/')) return raw;
+  const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
+  if (stream.embedType === 'twitch' && stream.embedId) {
+    return `https://player.twitch.tv/?channel=${stream.embedId}&parent=${hostname}`;
   }
-  if (stream.embedType === 'twitch' && id) {
-    const parent = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
-    return `https://player.twitch.tv/?channel=${id}&parent=${parent}`;
-  }
-  if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
-  return null;
+  return toPlayerEmbedUrl(raw, { autoplay: true, hostname });
 }
 
 const TABS = [
@@ -136,7 +125,7 @@ export default function LiveStreamsBoard() {
                   </span>
                 )}
               </div>
-              <h2 className="mt-2 text-lg font-bold text-mtext">{featured.title}</h2>
+              <h2 className="mt-2 text-lg font-bold leading-snug text-mtext">{featured.title}</h2>
             </div>
             <CommentsSection targetType="stream" targetId={featured.id} />
           </div>
@@ -149,12 +138,23 @@ export default function LiveStreamsBoard() {
                     key={s.id}
                     type="button"
                     onClick={() => setActiveId(s.id)}
-                    className={`w-full rounded-xl p-3 text-left ring-1 transition-all ${
+                    className={`flex w-full items-start gap-3 rounded-xl p-2.5 text-left ring-1 transition-all ${
                       s.id === featured.id ? 'bg-accent/10 ring-accent/40' : 'bg-elevated ring-transparent hover:ring-lborder'
                     }`}
                   >
-                    <span className="truncate text-sm font-semibold text-mtext">{s.shortTitle || s.title}</span>
-                    <p className="mt-0.5 line-clamp-1 text-xs text-stext">{s.host || s.status}</p>
+                    <span className="relative h-12 w-[4.5rem] shrink-0 overflow-hidden rounded-md bg-secondary">
+                      {s.image ? (
+                        <RemoteImage src={s.image} alt="" fill sizes="72px" className="object-cover" />
+                      ) : (
+                        <span className="grid h-full w-full place-items-center text-stext">
+                          <Radio size={14} />
+                        </span>
+                      )}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="line-clamp-2 text-sm font-semibold leading-snug text-mtext">{s.shortTitle || s.title}</span>
+                      <p className="mt-0.5 truncate text-xs text-stext">{s.host || s.status}</p>
+                    </span>
                   </button>
                 ))}
               </div>

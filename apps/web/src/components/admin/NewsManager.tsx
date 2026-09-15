@@ -191,6 +191,7 @@ export default function NewsManager() {
               <tbody>
                 {filtered.map((a) => {
                   const authorName = a.authorRef?.name || a.author || '';
+                  const authorImage = a.authorRef?.avatarUrl || null;
                   return (
                   <tr
                     key={a.id}
@@ -217,7 +218,7 @@ export default function NewsManager() {
                     <td className="px-4 py-3">
                       {authorName ? (
                         <div className="flex min-w-0 items-center gap-2">
-                          <AdminAvatar name={authorName} size={26} />
+                          <AdminAvatar name={authorName} src={authorImage} size={26} />
                           <p className="truncate font-semibold" style={{ color: 'var(--admin-text)' }}>{authorName}</p>
                         </div>
                       ) : (

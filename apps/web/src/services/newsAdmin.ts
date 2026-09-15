@@ -27,7 +27,7 @@ export interface NewsArticleAdmin {
   isPublished: boolean;
   createdAt: string;
   category: NewsCategory | null;
-  authorRef?: { id: string; name: string; slug?: string } | null;
+  authorRef?: { id: string; name: string; slug?: string; avatarUrl?: string | null } | null;
   playerIds?: string[];
   teamIds?: string[];
   matchIds?: string[];
