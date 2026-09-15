@@ -1,5 +1,7 @@
 'use client';
 
+import Image from 'next/image';
+
 const REACTIONS = [
   { emoji: '🔥', label: 'Fire', src: '/reactions/fire.svg' },
   { emoji: '❤️', label: 'Love', src: '/reactions/love.svg' },
@@ -52,13 +54,14 @@ export default function ReactionBar({
               className="grid place-items-center rounded-full transition-transform duration-150 ease-[cubic-bezier(.17,.89,.32,1.49)] group-hover/react:-translate-y-1 group-hover/react:scale-125 group-active/react:scale-95"
               style={{ width: face + 8, height: face + 8 }}
             >
-              <img
+              <Image
                 src={src}
                 alt=""
                 width={face}
                 height={face}
                 draggable={false}
                 aria-hidden="true"
+                unoptimized
                 className="pointer-events-none select-none drop-shadow-[0_1px_1px_rgba(0,0,0,0.28)]"
                 style={{ width: face, height: face }}
               />

@@ -49,7 +49,7 @@ async function makeAd({ src, width, height, title, line, cta, filename, vertical
     .png({ compressionLevel: 8 })
     .toFile(path.join(OUT, filename));
 
-  console.log(`wrote ${filename} (${width}x${height})`);
+  console.warn(`wrote ${filename} (${width}x${height})`);
 }
 
 await makeAd({

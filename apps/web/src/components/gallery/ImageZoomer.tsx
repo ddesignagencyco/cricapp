@@ -92,6 +92,8 @@ export default function ImageZoomer({ src, alt, zoom, onZoomChange }: ImageZoome
           minHeight: '100%',
         }}
       >
+        {/* Native img: next/image + CSS zoom froze the gallery viewer. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={src}
           alt={alt}

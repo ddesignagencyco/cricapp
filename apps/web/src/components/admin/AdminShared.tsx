@@ -462,7 +462,7 @@ export function AdminMenu({
 }: {
   value: string;
   options: { value: string; label: string }[];
-  onChange: (value: string) => void;
+  onChange: (_value: string) => void;
   label: string;
 }) {
   const [open, setOpen] = useState(false);
