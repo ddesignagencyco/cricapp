@@ -61,6 +61,19 @@
   --color-info: #4DB4F0;
   --color-info-soft: #12314A;
   --color-live: #FB7185;
+
+  /* Status chips need a brighter fg than button-fill brand, plus a lifted
+     tint so they do not disappear into dark table rows. */
+  --color-badge-primary-fg: #7CC8F5;
+  --color-badge-primary-bg: #1A4568;
+  --color-badge-success-fg: #6EE7B7;
+  --color-badge-success-bg: #0F3D32;
+  --color-badge-warning-fg: #FCD34D;
+  --color-badge-warning-bg: #3F2F0C;
+  --color-badge-danger-fg: #FDA4AF;
+  --color-badge-danger-bg: #4A1A28;
+  --color-badge-neutral-fg: #E2E8F0;
+  --color-badge-neutral-bg: #2A3B52;
   /* Row/list hover must stay visible in both themes, so it is its own
      token. The elevated surface equals the card in light mode, so it
      cannot double as a hover colour. */
@@ -145,6 +158,17 @@
   --color-info: #1769A8;
   --color-info-soft: #E8F2FA;
   --color-live: #BE123C;
+
+  --color-badge-primary-fg: #1769A8;
+  --color-badge-primary-bg: #E8F2FA;
+  --color-badge-success-fg: #047857;
+  --color-badge-success-bg: #E7F6F0;
+  --color-badge-warning-fg: #B45309;
+  --color-badge-warning-bg: #FDF3E7;
+  --color-badge-danger-fg: #BE123C;
+  --color-badge-danger-bg: #FDECF1;
+  --color-badge-neutral-fg: #475467;
+  --color-badge-neutral-bg: #F0F3F8;
   --color-row-hover: #F2F6FA;
   --color-skeleton: #E7EBF1;
   --color-skeleton-highlight: #F6F8FB;

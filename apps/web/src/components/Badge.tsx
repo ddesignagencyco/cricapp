@@ -11,14 +11,30 @@ type PaletteName = 'primary' | 'success' | 'warning' | 'danger' | 'neutral';
  * without relying on opacity, which is what made these look washed out.
  */
 const palettes: Record<PaletteName, { fg: string; bg: string; ring: string }> = {
-  primary: { fg: 'var(--color-brand)', bg: 'var(--color-brand-soft)', ring: 'var(--color-brand)' },
-  success: { fg: 'var(--color-success)', bg: 'var(--color-success-soft)', ring: 'var(--color-success)' },
-  warning: { fg: 'var(--color-warning)', bg: 'var(--color-warning-soft)', ring: 'var(--color-warning)' },
-  danger: { fg: 'var(--color-danger)', bg: 'var(--color-danger-soft)', ring: 'var(--color-danger)' },
+  primary: {
+    fg: 'var(--color-badge-primary-fg)',
+    bg: 'var(--color-badge-primary-bg)',
+    ring: 'var(--color-badge-primary-fg)',
+  },
+  success: {
+    fg: 'var(--color-badge-success-fg)',
+    bg: 'var(--color-badge-success-bg)',
+    ring: 'var(--color-badge-success-fg)',
+  },
+  warning: {
+    fg: 'var(--color-badge-warning-fg)',
+    bg: 'var(--color-badge-warning-bg)',
+    ring: 'var(--color-badge-warning-fg)',
+  },
+  danger: {
+    fg: 'var(--color-badge-danger-fg)',
+    bg: 'var(--color-badge-danger-bg)',
+    ring: 'var(--color-badge-danger-fg)',
+  },
   neutral: {
-    fg: 'var(--color-text-secondary)',
-    bg: 'var(--color-neutral-soft)',
-    ring: 'var(--color-border-strong)',
+    fg: 'var(--color-badge-neutral-fg)',
+    bg: 'var(--color-badge-neutral-bg)',
+    ring: 'var(--color-badge-neutral-fg)',
   },
 };
 
@@ -131,7 +147,7 @@ export default function Badge({ children, tone = 'neutral', className = '', styl
       style={{
         background: current.bg,
         color: current.fg,
-        boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${current.ring} 34%, transparent)`,
+        boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${current.ring} 45%, transparent)`,
         ...style,
       }}
     >
