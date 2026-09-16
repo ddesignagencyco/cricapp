@@ -1,4 +1,5 @@
 import EditorialDocument from '../../../components/EditorialDocument';
+import EditorialLayout from '../../../components/EditorialLayout';
 import EmptyState from '../../../components/EmptyState';
 import { fetchEditorialPage } from '../../../services/editorial';
 import { notFound } from 'next/navigation';
@@ -18,9 +19,9 @@ export default async function EditorialSlugPage({ params }: { params: Promise<{ 
   if (!page) notFound();
   if (!page.content?.trim()) {
     return (
-      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+      <EditorialLayout title={page.title} slug={page.slug} updatedAt={page.updatedAt}>
         <EmptyState title={page.title} message="This page has no published content yet." />
-      </div>
+      </EditorialLayout>
     );
   }
   return <EditorialDocument page={page} />;

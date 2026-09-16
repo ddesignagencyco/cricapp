@@ -68,7 +68,7 @@ export default function AdminNewsletterPage() {
       </div>
 
       {loading ? (
-        <LoadingState />
+        <LoadingState variant="table" />
       ) : error ? (
         <ErrorState message="Could not load subscribers." onRetry={load} />
       ) : items.length === 0 ? (

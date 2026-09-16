@@ -12,19 +12,15 @@ import ErrorState from '../ErrorState';
 import Pagination from '../Pagination';
 import DummyAd from '../advertisements/DummyAd';
 import { DirectoryGridSkeleton } from '../skeletons/Skeletons';
+import { filterChipClass, filterChipCountClass } from '../ui/filterChip';
+import FavoriteButton from '../FavoriteButton';
+import ShareButton from '../ShareButton';
 
 const LIMIT = 20;
 
 interface Props {
   initialCountry?: string;
 }
-
-const chipClass = (active: boolean) =>
-  `flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition-colors ${
-    active
-      ? 'btn-brand'
-      : 'border border-lborder bg-card text-stext hover:bg-secondary hover:text-mtext'
-  }`;
 
 export default function TournamentsBoard({ initialCountry }: Props) {
   const router = useRouter();
@@ -161,9 +157,12 @@ export default function TournamentsBoard({ initialCountry }: Props) {
           <div className="relative max-w-md flex-1">
             <Search
               size={16}
+              aria-hidden="true"
               className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-stext"
             />
             <input
+              type="search"
+              aria-label="Search tournaments"
               value={localSearch}
               onChange={(e) => setLocalSearch(e.target.value)}
               onKeyDown={(e) => {
@@ -190,7 +189,12 @@ export default function TournamentsBoard({ initialCountry }: Props) {
 
         {formats.length > 0 && (
           <div className="flex flex-wrap items-center gap-1.5">
-            <button type="button" onClick={() => setFormatFilter('all')} className={chipClass(formatFilter === 'all')}>
+            <button
+              type="button"
+              onClick={() => setFormatFilter('all')}
+              aria-pressed={formatFilter === 'all'}
+              className={filterChipClass(formatFilter === 'all')}
+            >
               All Formats
             </button>
             {formats.map(([fmt, count]) => (
@@ -198,10 +202,11 @@ export default function TournamentsBoard({ initialCountry }: Props) {
                 key={fmt}
                 type="button"
                 onClick={() => setFormatFilter(formatFilter === fmt ? 'all' : fmt)}
-                className={chipClass(formatFilter === fmt)}
+                aria-pressed={formatFilter === fmt}
+                className={filterChipClass(formatFilter === fmt)}
               >
                 <span>{fmt.replace(/_/g, ' ')}</span>
-                <span className={formatFilter === fmt ? 'text-white/80' : 'text-stext'}>{count}</span>
+                <span className={filterChipCountClass(formatFilter === fmt)}>{count}</span>
               </button>
             ))}
           </div>
@@ -209,7 +214,12 @@ export default function TournamentsBoard({ initialCountry }: Props) {
 
         {categories.length > 0 && (
           <div className="flex flex-wrap items-center gap-1.5">
-            <button type="button" onClick={() => setCategoryFilter('all')} className={chipClass(categoryFilter === 'all')}>
+            <button
+              type="button"
+              onClick={() => setCategoryFilter('all')}
+              aria-pressed={categoryFilter === 'all'}
+              className={filterChipClass(categoryFilter === 'all')}
+            >
               All Regions
             </button>
             {categories.slice(0, 12).map(([cat, count]) => (
@@ -217,10 +227,11 @@ export default function TournamentsBoard({ initialCountry }: Props) {
                 key={cat}
                 type="button"
                 onClick={() => setCategoryFilter(categoryFilter === cat ? 'all' : cat)}
-                className={chipClass(categoryFilter === cat)}
+                aria-pressed={categoryFilter === cat}
+                className={filterChipClass(categoryFilter === cat)}
               >
                 <span>{cat}</span>
-                <span className={categoryFilter === cat ? 'text-white/80' : 'text-stext'}>{count}</span>
+                <span className={filterChipCountClass(categoryFilter === cat)}>{count}</span>
               </button>
             ))}
           </div>
@@ -289,39 +300,48 @@ function TournamentCard({ tournament }: { tournament: TournamentApi }) {
         : null;
 
   return (
-    <Link
-      href={`/tournaments/${tournament.id}`}
-      className="group flex items-center gap-3 rounded-md border border-lborder bg-card p-3.5 transition-colors hover:border-accent/50 hover:bg-elevated"
-    >
-      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-md border border-lborder bg-secondary text-accent">
-        <Trophy size={18} />
-      </span>
-      <div className="min-w-0 flex-1">
-        <div className="flex min-w-0 items-center gap-2">
-          <h3 className="min-w-0 truncate text-sm font-semibold text-mtext transition-colors group-hover:text-accent" title={tournament.name}>
-            {tournament.name}
-          </h3>
-          <span className="shrink-0 rounded border border-lborder bg-secondary px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-stext">
-            {format}
-          </span>
+    <div className="group flex items-center gap-2 rounded-md border border-lborder bg-card p-3.5 transition-colors hover:border-accent/50 hover:bg-[var(--color-row-hover)]">
+      <Link href={`/tournaments/${tournament.id}`} className="flex min-w-0 flex-1 items-center gap-3">
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-md border border-lborder bg-secondary text-accent">
+          <Trophy size={18} aria-hidden="true" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 items-center gap-2">
+            <h3 className="min-w-0 truncate text-sm font-semibold text-mtext transition-colors group-hover:text-accent" title={tournament.name}>
+              {tournament.name}
+            </h3>
+            <span className="shrink-0 rounded border border-lborder bg-secondary px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-stext">
+              {format}
+            </span>
+          </div>
+          <p className="mt-0.5 flex min-w-0 items-center gap-2 text-xs text-stext">
+            <span className="inline-flex min-w-0 items-center gap-1 truncate">
+              <MapPin size={11} className="shrink-0" />
+              <span className="truncate">
+                {category}
+                {gender ? ` · ${gender}` : ''}
+              </span>
+            </span>
+            {(seasonYear || season) && (
+              <span className="inline-flex shrink-0 items-center gap-1">
+                <Calendar size={11} />
+                {seasonYear || season}
+              </span>
+            )}
+          </p>
         </div>
-        <p className="mt-0.5 flex min-w-0 items-center gap-2 text-xs text-stext">
-          <span className="inline-flex min-w-0 items-center gap-1 truncate">
-            <MapPin size={11} className="shrink-0" />
-            <span className="truncate">
-              {category}
-              {gender ? ` · ${gender}` : ''}
-            </span>
-          </span>
-          {(seasonYear || season) && (
-            <span className="inline-flex shrink-0 items-center gap-1">
-              <Calendar size={11} />
-              {seasonYear || season}
-            </span>
-          )}
-        </p>
+        <ChevronRight size={16} className="shrink-0 text-stext transition-colors group-hover:text-accent" aria-hidden="true" />
+      </Link>
+      <div className="flex shrink-0 items-center gap-1">
+        <FavoriteButton targetType="tournament" targetId={tournament.id} compact />
+        <ShareButton
+          type="tournament"
+          id={tournament.id}
+          fallbackTitle={tournament.name}
+          href={`/tournaments/${encodeURIComponent(tournament.id)}`}
+          compact
+        />
       </div>
-      <ChevronRight size={16} className="shrink-0 text-stext transition-colors group-hover:text-accent" aria-hidden="true" />
-    </Link>
+    </div>
   );
 }

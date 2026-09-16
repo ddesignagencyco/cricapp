@@ -47,7 +47,7 @@ export default function ReactionBar({
             } ${
               active
                 ? 'border-accent/40 bg-accent/12 text-mtext shadow-[0_0_0_1px_rgba(56,189,248,0.12)]'
-                : 'border-lborder text-stext hover:border-accent/35 hover:bg-card hover:text-mtext hover:shadow-md'
+                : 'border-lborder text-stext hover:border-accent/35 hover:bg-[var(--color-row-hover)] hover:text-mtext hover:shadow-md'
             }`}
           >
             <span

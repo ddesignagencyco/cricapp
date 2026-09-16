@@ -20,7 +20,7 @@ export default function Tabs({ tabs, active, onChange, className = '', size = 'm
       className={
         isTags
           ? `flex flex-wrap gap-1.5 ${className}`
-          : `inline-flex w-full max-w-full flex-wrap gap-1 rounded-xl bg-card p-1 ring-1 ring-lborder sm:w-auto ${className}`
+          : `inline-flex w-full max-w-full flex-wrap gap-1 rounded-md bg-secondary p-1 ring-1 ring-lborder sm:w-auto ${className}`
       }
       role="tablist"
     >
@@ -34,24 +34,28 @@ export default function Tabs({ tabs, active, onChange, className = '', size = 'm
             role="tab"
             aria-selected={isActive}
             onClick={() => onChange(tab.key)}
-            className={`flex items-center gap-1.5 font-semibold transition-colors ${pad} ${
+            className={`flex items-center gap-1.5 font-semibold transition-colors duration-150 ${pad} ${
               isTags
                 ? `rounded-full border ${
                     isActive
-                      ? 'border-accent bg-accent/10 text-accent'
+                      ? 'border-accent bg-[var(--color-brand-soft)] text-accent'
                       : 'border-lborder bg-transparent text-stext hover:border-border-strong hover:text-mtext'
                   }`
-                : `rounded-lg ${
+                : `rounded-md ${
                     isActive
-                      ? 'bg-accent/15 text-accent ring-1 ring-inset ring-accent/25'
-                      : 'text-stext hover:bg-elevated hover:text-mtext'
+                      ? 'bg-[var(--color-brand-soft)] text-accent ring-1 ring-inset ring-accent/40'
+                      : 'text-stext hover:bg-[var(--color-row-hover)] hover:text-mtext'
                   }`
             }`}
           >
-            {Icon && <Icon size={size === 'sm' || isTags ? 14 : 16} strokeWidth={2.2} />}
+            {Icon && <Icon size={size === 'sm' || isTags ? 14 : 16} strokeWidth={2.2} aria-hidden="true" />}
             {tab.label}
             {typeof tab.count === 'number' && (
-              <span className={`rounded-full px-1.5 text-xs font-medium ${isActive ? 'bg-[var(--color-brand)] text-white' : 'bg-elevated text-stext'}`}>
+              <span
+                className={`rounded-full px-1.5 text-xs font-semibold tabular-nums ${
+                  isActive ? 'btn-brand' : 'bg-[var(--color-neutral-soft)] text-stext'
+                }`}
+              >
                 {tab.count}
               </span>
             )}

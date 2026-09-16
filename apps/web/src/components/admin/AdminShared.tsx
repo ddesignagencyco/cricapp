@@ -4,10 +4,11 @@ import { type ReactNode, forwardRef, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { Check, ChevronDown } from 'lucide-react';
-import { StatusBadge as SharedStatusBadge } from '../Badge';
+import Badge, { StatusBadge as SharedStatusBadge } from '../Badge';
 import { getInitials } from '../../utils/helpers';
 import RemoteImage from '../RemoteImage';
-import { AdminTableSkeleton } from '../skeletons/Skeletons';
+import { AdminLoadingBody, AdminTableSkeleton, type AdminLoadingVariant } from '../skeletons/Skeletons';
+import useFocusTrap from '../../hooks/useFocusTrap';
 
 export function AdminEntityLink({
   href,
@@ -127,8 +128,13 @@ export function StatCard({
 
 export { AdminTableSkeleton };
 
-export function LoadingState({ text: _text = 'Loading...' }: { text?: string }) {
-  return <AdminTableSkeleton />;
+export function LoadingState({
+  variant = 'table',
+}: {
+  text?: string;
+  variant?: AdminLoadingVariant;
+}) {
+  return <AdminLoadingBody variant={variant} />;
 }
 
 /* ─── Empty State ──────────────────────────────────────────── */
@@ -206,33 +212,20 @@ export function StatusBadge({ status }: { status: string }) {
 
 /* ─── Chip ─────────────────────────────────────────────────── */
 
-const CHIP_TONES: Record<string, { bg: string; fg: string }> = {
-  neutral: { bg: 'var(--admin-input-bg)', fg: 'var(--admin-text-secondary)' },
-  accent: { bg: 'var(--admin-info-bg)', fg: 'var(--admin-accent)' },
-  info: { bg: 'var(--admin-info-bg)', fg: 'var(--admin-info)' },
-  success: { bg: 'var(--admin-success-bg)', fg: 'var(--admin-success)' },
-  warning: { bg: 'var(--admin-warning-bg)', fg: 'var(--admin-warning)' },
-  danger: { bg: 'var(--admin-danger-bg)', fg: 'var(--admin-danger)' },
-};
-
 export function AdminChip({
   label,
   tone = 'neutral',
   icon,
 }: {
   label: string;
-  tone?: keyof typeof CHIP_TONES;
+  tone?: 'neutral' | 'primary' | 'accent' | 'info' | 'success' | 'warning' | 'danger';
   icon?: ReactNode;
 }) {
-  const colors = CHIP_TONES[tone] || CHIP_TONES.neutral;
   return (
-    <span
-      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap capitalize"
-      style={{ background: colors.bg, color: colors.fg }}
-    >
+    <Badge tone={tone} className="text-[11px] whitespace-nowrap">
       {icon}
       {label}
-    </span>
+    </Badge>
   );
 }
 
@@ -268,6 +261,7 @@ export function ConfirmDialog({
   danger?: boolean;
 }) {
   const cancelRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useFocusTrap<HTMLDivElement>(open);
 
   useEffect(() => {
     if (!open) return;
@@ -282,16 +276,17 @@ export function ConfirmDialog({
   if (!open) return null;
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: 'rgba(0,0,0,0.5)' }}
+      className="scrim fixed inset-0 z-50 flex items-center justify-center p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="confirm-dialog-title"
       aria-describedby="confirm-dialog-description"
     >
       <div
+        ref={dialogRef}
+        tabIndex={-1}
         className="w-full max-w-sm rounded-lg p-5"
-        style={{ background: 'var(--admin-card)', boxShadow: 'var(--admin-shadow-lg)' }}
+        style={{ background: 'var(--admin-card)', boxShadow: 'var(--elevation-overlay)' }}
       >
         <h3
           id="confirm-dialog-title"
@@ -300,7 +295,7 @@ export function ConfirmDialog({
         >
           {title}
         </h3>
-        <p id="confirm-dialog-description" className="mt-2 text-xs" style={{ color: 'var(--admin-text-secondary)' }}>
+        <p id="confirm-dialog-description" className="mt-2 text-xs font-medium" style={{ color: 'var(--admin-text-secondary)' }}>
           {message}
         </p>
         <div className="mt-4 flex justify-end gap-2">
@@ -339,16 +334,14 @@ const inputBase: React.CSSProperties = {
   color: 'var(--admin-text)',
   fontSize: '0.8125rem',
   lineHeight: '1.5',
-  outline: 'none',
-  boxShadow: 'none',
-  transition: 'border-color 0.15s',
+  transition: 'border-color 150ms ease, box-shadow 150ms ease',
 };
 
 export const AdminInput = forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(
-  ({ style, onFocus, onBlur, ...props }, ref) => (
+  ({ style, onFocus, onBlur, className = '', ...props }, ref) => (
     <input
       ref={ref}
-      className="outline-none ring-0 focus:outline-none focus:ring-0"
+      className={`admin-control ${className}`.trim()}
       style={{ ...inputBase, padding: '0.5rem 0.75rem', ...style }}
       onFocus={onFocus}
       onBlur={onBlur}
@@ -363,7 +356,7 @@ export const AdminSelect = forwardRef<HTMLSelectElement, React.SelectHTMLAttribu
     <span className={`relative inline-flex w-full ${className || ''}`} style={style}>
       <select
         ref={ref}
-        className="w-full appearance-none outline-none ring-0 focus:outline-none focus:ring-0"
+        className="admin-control w-full appearance-none"
         style={{ ...inputBase, padding: '0.5rem 2rem 0.5rem 0.75rem' }}
         {...props}
       >
@@ -388,30 +381,41 @@ export function RequiredStar() {
   );
 }
 
+/**
+ * The caption is always a real `<label>`. By default the control is nested
+ * inside it, which associates the two without needing ids. Pass `htmlFor`
+ * for controls that must not be nested (a composite widget such as
+ * react-select), and the label points at them by id instead.
+ */
 export function AdminField({
   label,
   hint,
   required,
+  htmlFor,
   children,
 }: {
   label: string;
   hint?: string;
   required?: boolean;
+  htmlFor?: string;
   children: ReactNode;
 }) {
+  const Wrapper = htmlFor ? 'div' : 'label';
+  const Caption = htmlFor ? 'label' : 'span';
+
   return (
-    <div className="block min-w-0">
-      <span className="mb-1.5 block text-xs font-semibold" style={{ color: 'var(--admin-text-secondary)' }}>
+    <Wrapper className="block min-w-0">
+      <Caption htmlFor={htmlFor} className="mb-1.5 block text-xs font-semibold" style={{ color: 'var(--admin-text-secondary)' }}>
         {label}
         {required ? <RequiredStar /> : null}
-      </span>
+      </Caption>
       {children}
       {hint ? (
-        <span className="mt-1.5 block text-[11px] leading-snug" style={{ color: 'var(--admin-text-muted)' }}>
+        <span className="mt-1.5 block text-[11px] font-medium leading-snug" style={{ color: 'var(--admin-text-muted)' }}>
           {hint}
         </span>
       ) : null}
-    </div>
+    </Wrapper>
   );
 }
 

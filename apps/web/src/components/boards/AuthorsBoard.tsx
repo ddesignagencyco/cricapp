@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ChevronRight, Newspaper, Search } from 'lucide-react';
 import EmptyState from '../EmptyState';
 import RemoteImage from '../RemoteImage';
+import ShareButton from '../ShareButton';
 import type { PublicAuthor } from '../../services/authors';
 import { getInitials } from '../../utils/helpers';
 
@@ -39,6 +40,7 @@ export default function AuthorsBoard({ authors }: { authors: PublicAuthor[] }) {
         <div className="relative w-full sm:w-64">
           <Search
             size={15}
+            aria-hidden="true"
             className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-stext"
           />
           <input
@@ -68,10 +70,8 @@ export default function AuthorsBoard({ authors }: { authors: PublicAuthor[] }) {
               const hue = avatarHue(author.name);
               return (
                 <li key={author.slug} className="min-h-0">
-                  <Link
-                    href={`/authors/${author.slug}`}
-                    className="group flex h-full items-center gap-3 rounded-md border border-lborder bg-card p-3.5 transition-colors hover:border-accent/50 hover:bg-elevated"
-                  >
+                  <div className="group flex h-full items-center gap-2 rounded-md border border-lborder bg-card p-3.5 transition-colors hover:border-accent/50 hover:bg-[var(--color-row-hover)]">
+                    <Link href={`/authors/${author.slug}`} className="flex min-w-0 flex-1 items-center gap-3">
                     {author.avatarUrl ? (
                       <RemoteImage
                         src={author.avatarUrl}
@@ -106,7 +106,13 @@ export default function AuthorsBoard({ authors }: { authors: PublicAuthor[] }) {
                       className="shrink-0 text-stext transition-colors group-hover:text-accent"
                       aria-hidden="true"
                     />
-                  </Link>
+                    </Link>
+                    <ShareButton
+                      fallbackTitle={author.name}
+                      href={`/authors/${encodeURIComponent(author.slug)}`}
+                      compact
+                    />
+                  </div>
                 </li>
               );
             })}

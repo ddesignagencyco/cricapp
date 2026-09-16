@@ -20,7 +20,7 @@ export default function PointsTable({ rows = [], favoriteTeamId }: PointsTablePr
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl bg-card ring-1 ring-lborder">
+    <div className="elev-card overflow-hidden rounded-2xl bg-card ring-1 ring-lborder">
       <div className="overflow-x-auto">
         <table className="w-full min-w-[520px] text-left text-sm">
           <thead>
@@ -45,7 +45,7 @@ export default function PointsTable({ rows = [], favoriteTeamId }: PointsTablePr
               return (
                 <tr
                   key={row.teamId}
-                  className={`border-b border-lborder/60 transition-colors last:border-0 hover:bg-elevated/60 ${rowStyle}`}
+                  className={`border-b border-lborder/60 transition-colors last:border-0 hover:bg-[var(--color-row-hover)] ${rowStyle}`}
                 >
                   <td className="px-4 py-3 font-mono text-sm font-medium tabular-nums text-muted-foreground">{i + 1}</td>
                   <td className="px-4 py-3">

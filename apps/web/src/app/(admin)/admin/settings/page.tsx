@@ -50,17 +50,20 @@ const selectStyles = {
     ...base,
     minHeight: '38px',
     backgroundColor: 'var(--admin-input-bg)',
-    borderColor: state.isFocused ? 'var(--admin-accent)' : 'var(--admin-border)',
+    borderColor: state.isFocused ? 'var(--color-focus-ring)' : 'var(--admin-border)',
     borderRadius: '0.375rem',
-    boxShadow: 'none',
+    boxShadow: state.isFocused
+      ? '0 0 0 3px color-mix(in srgb, var(--color-focus-ring) 28%, transparent)'
+      : 'none',
     fontSize: '0.8125rem',
-    '&:hover': { borderColor: 'var(--admin-accent)' },
+    '&:hover': { borderColor: 'var(--admin-border-strong)' },
   }),
   option: (base: Record<string, unknown>, state: { isFocused: boolean; isSelected: boolean }) => ({
     ...base,
     backgroundColor: state.isSelected || state.isFocused ? 'var(--admin-accent)' : 'var(--admin-input-bg)',
     color: state.isSelected || state.isFocused ? 'var(--color-brand-fg)' : 'var(--admin-text)',
     fontSize: '0.8125rem',
+    fontWeight: 500,
     padding: '8px 12px',
   }),
   menu: (base: Record<string, unknown>) => ({
@@ -68,6 +71,7 @@ const selectStyles = {
     backgroundColor: 'var(--admin-card)',
     border: '1px solid var(--admin-border)',
     borderRadius: '0.375rem',
+    boxShadow: 'var(--elevation-overlay)',
     overflow: 'hidden',
     zIndex: 30,
   }),
@@ -246,16 +250,17 @@ export default function SettingsPage() {
               const selected = options.find((option) => option.value === item.platform) || null;
               return (
                 <div key={`${item.platform}-${index}`} className="grid grid-cols-1 items-end gap-2 sm:grid-cols-[14rem_1fr_auto]">
-                  <AdminField label="Platform">
+                  <AdminField label="Platform" htmlFor={`social-platform-${index}`}>
                     <Select
+                      inputId={`social-platform-${index}`}
                       value={selected}
                       onChange={(option) => updateSocial(index, { platform: option?.value || '' })}
                       options={options}
                       formatOptionLabel={(option) => <PlatformLabel id={option.value} label={option.label} />}
                       isSearchable={false}
+                      menuPlacement="top"
                       classNamePrefix="react-select"
                       styles={selectStyles as never}
-                      aria-label="Platform"
                     />
                   </AdminField>
                   <AdminField label="URL or handle">

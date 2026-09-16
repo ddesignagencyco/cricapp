@@ -6,11 +6,13 @@ import toast from 'react-hot-toast';
 import { getShareLink, type ShareType } from '../services/sharing';
 
 interface ShareButtonProps {
-  type: ShareType;
-  id: string;
+  type?: ShareType;
+  id?: string;
   fallbackTitle: string;
   compact?: boolean;
   className?: string;
+  /** Site path to share. Used for authors (no share API) and tours (no detail page). */
+  href?: string;
 }
 
 function siteShareUrl(apiUrl: string): string {
@@ -23,19 +25,23 @@ function siteShareUrl(apiUrl: string): string {
   }
 }
 
-export default function ShareButton({ type, id, fallbackTitle, compact = false, className = '' }: ShareButtonProps) {
+export default function ShareButton({ type, id, fallbackTitle, compact = false, className = '', href }: ShareButtonProps) {
   const [busy, setBusy] = useState(false);
 
   const share = async () => {
     setBusy(true);
     try {
-      const link = await getShareLink(type, id);
-      const url = siteShareUrl(link.url);
-      const shareData: ShareData = {
-        title: link.ogTitle || fallbackTitle,
-        text: link.ogDescription || fallbackTitle,
-        url,
-      };
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      let url = href ? `${origin}${href}` : typeof window !== 'undefined' ? window.location.href : '';
+      let title = fallbackTitle;
+      let text = fallbackTitle;
+      if (type && id) {
+        const link = await getShareLink(type, id);
+        url = href ? `${origin}${href}` : siteShareUrl(link.url);
+        title = link.ogTitle || fallbackTitle;
+        text = link.ogDescription || fallbackTitle;
+      }
+      const shareData: ShareData = { title, text, url };
       if (typeof navigator !== 'undefined' && navigator.share) {
         await navigator.share(shareData);
       } else if (typeof navigator !== 'undefined' && navigator.clipboard) {
@@ -61,10 +67,14 @@ export default function ShareButton({ type, id, fallbackTitle, compact = false, 
     return (
       <button
         type="button"
-        onClick={share}
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          void share();
+        }}
         disabled={busy}
         title={`Share ${fallbackTitle}`}
-        className={`grid h-9 w-9 place-items-center rounded-xl border border-lborder bg-secondary text-stext transition-all hover:border-accent/40 hover:bg-card hover:text-mtext disabled:opacity-60 ${className}`}
+        className={`grid h-9 w-9 place-items-center rounded-xl border border-lborder bg-secondary text-stext transition-all hover:border-accent/40 hover:bg-[var(--color-row-hover)] hover:text-mtext disabled:opacity-60 ${className}`}
         aria-label={`Share ${fallbackTitle}`}
       >
         {busy ? <Loader2 size={16} className="animate-spin" /> : <Share2 size={16} />}
@@ -75,9 +85,13 @@ export default function ShareButton({ type, id, fallbackTitle, compact = false, 
   return (
     <button
       type="button"
-      onClick={share}
+      onClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        void share();
+      }}
       disabled={busy}
-      className={`inline-flex items-center gap-2 rounded bg-elevated px-4 py-2 text-sm font-bold text-mtext ring-1 ring-lborder transition-colors hover:bg-card disabled:opacity-60 ${className}`}
+      className={`inline-flex items-center gap-2 rounded bg-elevated px-4 py-2 text-sm font-bold text-mtext ring-1 ring-lborder transition-colors hover:bg-[var(--color-row-hover)] disabled:opacity-60 ${className}`}
     >
       {busy ? <Loader2 size={15} className="animate-spin" /> : <Share2 size={15} />}
       Share

@@ -45,7 +45,7 @@ export default function PlayersPage() {
         </div>
       </div>
 
-      {loading ? <LoadingState /> : filtered.length === 0 ? (
+      {loading ? <LoadingState variant="people" /> : filtered.length === 0 ? (
         <EmptyState icon={<UserCircle size={28} />} title="No players found" />
       ) : (
         <div className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>

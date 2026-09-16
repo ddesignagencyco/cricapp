@@ -491,10 +491,10 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
                           type="button"
                           onClick={() => removeTag(tag)}
                           aria-label={`Remove tag ${tag}`}
-                          className="grid h-4 w-4 place-items-center rounded transition-colors hover:bg-rose-500/15 hover:text-rose-500"
+                          className="tag-remove grid h-4 w-4 place-items-center rounded transition-colors duration-150"
                           style={{ color: 'var(--admin-text-muted)' }}
                         >
-                          <X size={11} />
+                          <X size={11} aria-hidden="true" />
                         </button>
                       </span>
                     </li>

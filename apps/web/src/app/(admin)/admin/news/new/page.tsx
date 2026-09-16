@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
+import { EditorSkeleton } from '../../../../../components/skeletons/Skeletons';
 import NewsEditor from '../../../../../components/admin/NewsEditor';
 
 export const metadata: Metadata = {
@@ -8,5 +9,5 @@ export const metadata: Metadata = {
 };
 
 export default function AdminNewArticlePage() {
-  return <Suspense fallback={null}><NewsEditor mode="create" /></Suspense>;
+  return <Suspense fallback={<EditorSkeleton />}><NewsEditor mode="create" /></Suspense>;
 }

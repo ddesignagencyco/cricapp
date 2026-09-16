@@ -40,7 +40,7 @@ const footerCols = [
 
 export default function Footer() {
   return (
-    <footer className="mt-16 border-t border-lborder bg-secondary">
+    <footer className="mt-16 border-t border-lborder bg-card">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
         <div className="grid grid-cols-2 items-start gap-x-8 gap-y-10 sm:grid-cols-3 lg:grid-cols-[1.4fr_repeat(3,minmax(0,1fr))_1.15fr]">
           <div className="col-span-2 sm:col-span-3 lg:col-span-1">
@@ -81,17 +81,17 @@ export default function Footer() {
               <button
                 type="button"
                 disabled
-                className="inline-flex w-full cursor-not-allowed items-center justify-center gap-2 rounded bg-card px-3 py-2.5 text-xs font-medium text-stext ring-1 ring-lborder opacity-70"
+                className="inline-flex w-full cursor-not-allowed items-center justify-center gap-2 rounded bg-secondary px-3 py-2.5 text-xs font-semibold text-[var(--color-text-disabled)] ring-1 ring-lborder"
               >
-                <Download size={14} />
+                <Download size={14} aria-hidden="true" />
                 App Store soon
               </button>
               <button
                 type="button"
                 disabled
-                className="inline-flex w-full cursor-not-allowed items-center justify-center gap-2 rounded bg-card px-3 py-2.5 text-xs font-medium text-stext ring-1 ring-lborder opacity-70"
+                className="inline-flex w-full cursor-not-allowed items-center justify-center gap-2 rounded bg-secondary px-3 py-2.5 text-xs font-semibold text-[var(--color-text-disabled)] ring-1 ring-lborder"
               >
-                <Download size={14} />
+                <Download size={14} aria-hidden="true" />
                 Google Play soon
               </button>
             </div>

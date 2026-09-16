@@ -389,7 +389,7 @@ function MeetingTableRow({ meeting }: { meeting: ParsedMeeting }) {
   );
 
   return (
-    <tr className="border-b border-lborder/70 hover:bg-elevated/60">
+    <tr className="border-b border-lborder/70 hover:bg-[var(--color-row-hover)]">
       <td className="whitespace-nowrap px-3 py-2.5 text-stext">{formatH2HDate(meeting.scheduled) || 'TBD'}</td>
       <td className="px-3 py-2.5">{fixture}</td>
       <td className="px-3 py-2.5 text-stext">{meeting.tournament || 'Cricket'}</td>

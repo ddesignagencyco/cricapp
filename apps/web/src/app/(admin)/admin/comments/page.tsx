@@ -86,7 +86,7 @@ export default function CommentsPage() {
       />
 
       {loading ? (
-        <LoadingState />
+        <LoadingState variant="table" />
       ) : error ? (
         <ErrorState message="Could not load reported comments." onRetry={load} />
       ) : reports.length === 0 ? (

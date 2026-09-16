@@ -25,6 +25,7 @@ import { fetchMatchesPage } from '../../../services/matches';
 import { fetchNewsAdmin } from '../../../services/newsAdmin';
 import type { Match } from '../../../types';
 import { AdminAvatar, AdminEntityLink, LoadingState, StatusBadge } from '../../../components/admin/AdminShared';
+import Badge from '../../../components/Badge';
 import {
   fetchAdminAnalytics,
   fetchAdminUsers,
@@ -104,7 +105,7 @@ export default function AdminDashboard() {
   };
 
   const userName = user?.displayName || user?.username || 'Admin';
-  if (loading) return <LoadingState />;
+  if (loading) return <LoadingState variant="dashboard" />;
 
   return (
     <div className="space-y-6">
@@ -327,15 +328,9 @@ export default function AdminDashboard() {
                         </td>
                         <td className="hidden px-4 py-2.5 sm:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>{u.email}</td>
                         <td className="px-4 py-2.5 text-right">
-                          <span
-                            className="rounded-full px-2 py-0.5 text-[11px] font-bold"
-                            style={{
-                              background: u.isSuperAdmin || u.isAdmin ? 'var(--admin-accent)' : 'var(--admin-input-bg)',
-                              color: u.isSuperAdmin || u.isAdmin ? 'var(--color-brand-fg)' : 'var(--admin-text-secondary)',
-                            }}
-                          >
+                          <Badge tone={u.isSuperAdmin || u.isAdmin ? 'primary' : 'neutral'}>
                             {u.isSuperAdmin ? 'Superadmin' : u.isAdmin ? 'Admin' : 'Member'}
-                          </span>
+                          </Badge>
                         </td>
                       </tr>
                     );

@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { formatPlayerName } from '../utils/helpers';
 import type { LeaderGroup } from '../types/index';
 
 interface Props {
@@ -6,7 +6,8 @@ interface Props {
 }
 
 function findGroup(leaders: LeaderGroup[], stat: string): LeaderGroup | undefined {
-  return leaders.find((group) => group.stat === stat);
+  return leaders.find((group) => group.stat === stat)
+    || leaders.find((group) => group.stat === (stat === 'top_runs' ? 'highest_score' : stat));
 }
 
 export default function TopPerformers({ leaders }: Props) {
@@ -17,8 +18,8 @@ export default function TopPerformers({ leaders }: Props) {
 
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-      <LeaderList title="Most Runs" unit="runs" group={runs} />
-      <LeaderList title="Most Wickets" unit="wkts" group={wickets} />
+      <LeaderList title="Most Runs" unit="Runs" group={runs} />
+      <LeaderList title="Most Wickets" unit="Wkts" group={wickets} />
     </div>
   );
 }
@@ -37,38 +38,32 @@ function LeaderList({
 
   return (
     <div className="overflow-hidden rounded-md border border-lborder bg-card">
-      <div className="flex items-center justify-between border-b border-lborder px-4 py-3">
-        <h3 className="text-sm font-semibold text-mtext">{title}</h3>
-        <Link
-          href="/psl"
-          className="text-xs font-medium text-accent transition-colors"
-        >
-          Full list
-        </Link>
-      </div>
-
-      <ul>
-        {entries.map((entry, index) => (
-          <li
-            key={entry.playerId || `${entry.playerName}-${index}`}
-            className="flex items-center gap-3 border-b border-lborder/60 px-4 py-2.5 last:border-0"
-          >
-            <span className="w-4 shrink-0 text-right font-mono text-xs text-stext">
-              {index + 1}
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-mtext">{entry.playerName}</p>
-              {entry.teamName && (
-                <p className="truncate text-xs text-stext">{entry.teamName}</p>
-              )}
-            </div>
-            <span className="shrink-0 font-mono text-sm font-semibold text-mtext">
-              {entry.value}
-              <span className="ml-1 text-xs font-normal text-stext">{unit}</span>
-            </span>
-          </li>
-        ))}
-      </ul>
+      <table className="w-full text-left text-sm">
+        <thead>
+          <tr>
+            <th className="w-10 px-4 py-2.5">#</th>
+            <th className="px-4 py-2.5">{title}</th>
+            <th className="px-4 py-2.5 text-right">{unit}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {entries.map((entry, index) => (
+            <tr
+              key={entry.playerId || `${entry.playerName}-${index}`}
+              className="border-b border-lborder/60 last:border-0"
+            >
+              <td className="px-4 py-2.5 font-mono text-xs text-stext">{index + 1}</td>
+              <td className="px-4 py-2.5">
+                <p className="truncate font-medium text-mtext">{formatPlayerName(entry.playerName)}</p>
+                {entry.teamName ? <p className="truncate text-xs text-stext">{entry.teamName}</p> : null}
+              </td>
+              <td className="px-4 py-2.5 text-right font-mono text-sm font-semibold text-mtext">
+                {entry.value}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

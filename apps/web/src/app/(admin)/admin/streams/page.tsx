@@ -18,6 +18,7 @@ import {
 } from '../../../../components/admin/AdminShared';
 import AdminPagination from '../../../../components/admin/AdminPagination';
 import { createStream, deleteStream, fetchStreamsPage, updateStream, type StreamInput } from '../../../../services/streams';
+import Badge from '../../../../components/Badge';
 import type { Stream } from '../../../../types/index';
 import RemoteImage from '../../../../components/RemoteImage';
 import {
@@ -387,7 +388,7 @@ export default function AdminStreamsPage() {
       </form>
 
       {loading ? (
-        <LoadingState />
+        <LoadingState variant="table" />
       ) : error ? (
         <ErrorState message="Could not load streams." onRetry={() => load(page)} />
       ) : items.length === 0 ? (
@@ -431,7 +432,7 @@ export default function AdminStreamsPage() {
                     </td>
                     <td className="px-4 py-3" style={{ color: 'var(--admin-text-secondary)' }}>{stream.host || '—'}</td>
                     <td className="px-4 py-3">
-                      <StatusBadge status={stream.status} />
+                      {stream.status === 'ended' ? <Badge>Ended</Badge> : <StatusBadge status={stream.status} />}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex justify-end gap-1.5">

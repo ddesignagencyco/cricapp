@@ -41,7 +41,7 @@ function BrandLockup() {
 export default function AuthShell({ title, subtitle, children, footer }: AuthShellProps) {
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-10">
-      <div className="grid min-w-0 overflow-hidden rounded-2xl bg-card ring-1 ring-lborder shadow-card-dark lg:grid-cols-2">
+      <div className="elev-raised grid min-w-0 overflow-hidden rounded-2xl bg-card ring-1 ring-lborder lg:grid-cols-2">
         {/* Visual panel */}
         <aside className="relative h-44 overflow-hidden sm:h-56 lg:h-auto lg:min-h-[640px]">
           <Image
@@ -53,7 +53,7 @@ export default function AuthShell({ title, subtitle, children, footer }: AuthShe
             className="object-cover"
             priority
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#07111F] via-[#07111F]/80 to-[#0B1F3A]/40" />
+          <div className="hero-scrim-up absolute inset-0" />
 
           <div className="relative flex h-full flex-col justify-between p-5 sm:p-7 lg:p-9">
             <div className="flex items-center justify-between gap-3">
@@ -69,28 +69,28 @@ export default function AuthShell({ title, subtitle, children, footer }: AuthShe
             <div className="hidden lg:block">
               <h2 className="text-3xl font-black leading-tight tracking-tight text-white">
                 Every Run. Every Ball.
-                <span className="block text-accent2">Live.</span>
+                <span className="text-on-media-accent block">Live.</span>
               </h2>
-              <p className="mt-3 max-w-sm text-sm leading-relaxed text-white/70">
+              <p className="text-on-media-muted mt-3 max-w-sm text-sm leading-relaxed">
                 Join thousands of fans tracking Pakistan cricket and the PSL on PAK CRICZONE.
               </p>
 
               <ul className="mt-7 space-y-4">
                 {HIGHLIGHTS.map(({ icon: Icon, title: heading, text }) => (
                   <li key={heading} className="flex gap-3">
-                    <span className="grid h-8 w-8 shrink-0 place-items-center rounded bg-white/10 text-accent2 ring-1 ring-white/15">
-                      <Icon size={15} />
+                    <span className="text-on-media-accent grid h-8 w-8 shrink-0 place-items-center rounded bg-white/10 ring-1 ring-white/15">
+                      <Icon size={15} aria-hidden="true" />
                     </span>
                     <div className="min-w-0">
                       <p className="text-xs font-bold uppercase tracking-wider text-white">{heading}</p>
-                      <p className="mt-0.5 text-xs leading-relaxed text-white/60">{text}</p>
+                      <p className="text-on-media-muted mt-0.5 text-xs leading-relaxed">{text}</p>
                     </div>
                   </li>
                 ))}
               </ul>
             </div>
 
-            <p className="hidden text-[11px] font-semibold uppercase tracking-wider text-white/50 lg:block">
+            <p className="text-on-media-muted hidden text-[11px] font-semibold uppercase tracking-wider lg:block">
               Live scores · PSL 2026 · Teams · Player stats
             </p>
           </div>

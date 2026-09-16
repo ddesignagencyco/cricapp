@@ -20,17 +20,15 @@ interface ThemeProviderProps {
 }
 
 export default function ThemeProvider({ children }: ThemeProviderProps) {
-  const [theme, setTheme] = useState(() => {
-    if (typeof window === 'undefined') return 'dark';
+  const [theme, setTheme] = useState('dark');
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
     const stored = localStorage.getItem('pak-criczone-theme');
     const preferred = stored || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
     document.documentElement.classList.toggle('light', preferred === 'light');
     document.documentElement.style.colorScheme = preferred;
-    return preferred;
-  });
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
+    setTheme(preferred);
     setMounted(true);
   }, []);
 

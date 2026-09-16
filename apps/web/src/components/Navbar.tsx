@@ -174,7 +174,7 @@ export default function Navbar() {
             <button
               type="button"
               onClick={toggle}
-              className="grid h-9 w-9 place-items-center rounded text-stext transition-colors hover:bg-card hover:text-mtext"
+              className="grid h-9 w-9 place-items-center rounded text-stext transition-colors hover:bg-[var(--color-row-hover)] hover:text-mtext"
               aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
             >
               {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
@@ -187,7 +187,7 @@ export default function Navbar() {
               setSearchOpen((s) => !s);
               setMobileOpen(false);
             }}
-            className="grid h-9 w-9 place-items-center rounded text-stext transition-colors hover:bg-card hover:text-mtext"
+            className="grid h-9 w-9 place-items-center rounded text-stext transition-colors hover:bg-[var(--color-row-hover)] hover:text-mtext"
             aria-label="Search"
           >
             <Search size={18} />
@@ -203,7 +203,7 @@ export default function Navbar() {
                 type="button"
                 onClick={toggleMenu}
                 className={`grid h-9 w-9 place-items-center rounded transition-colors ${
-                  menuOpen ? 'bg-card text-accent' : 'text-stext hover:bg-card hover:text-mtext'
+                  menuOpen ? 'bg-card text-accent' : 'text-stext hover:bg-[var(--color-row-hover)] hover:text-mtext'
                 }`}
                 aria-label="Account menu"
                 aria-expanded={menuOpen}
@@ -288,7 +288,7 @@ export default function Navbar() {
                 className={`grid h-9 w-9 place-items-center rounded transition-colors ${
                   menuOpen || pathname.startsWith('/login') || pathname.startsWith('/register')
                     ? 'bg-card text-accent'
-                    : 'text-stext hover:bg-card hover:text-mtext'
+                    : 'text-stext hover:bg-[var(--color-row-hover)] hover:text-mtext'
                 }`}
                 aria-label="Sign in menu"
                 aria-expanded={menuOpen}
@@ -321,7 +321,7 @@ export default function Navbar() {
                     <Link
                       href="/register"
                       role="menuitem"
-                      className="flex items-center justify-center gap-2 rounded-md px-3 py-2.5 text-sm font-semibold text-mtext transition-colors hover:bg-elevated"
+                      className="flex items-center justify-center gap-2 rounded-md px-3 py-2.5 text-sm font-semibold text-mtext transition-colors hover:bg-[var(--color-row-hover)]"
                       style={{ border: '1px solid var(--color-lborder)' }}
                       onClick={() => setMenuOpen(false)}
                     >
@@ -351,7 +351,7 @@ export default function Navbar() {
               setMenuOpen(false);
               setSearchOpen(false);
             }}
-            className="grid h-9 w-9 place-items-center rounded text-mtext transition-colors hover:bg-card lg:hidden"
+            className="grid h-9 w-9 place-items-center rounded text-mtext transition-colors hover:bg-[var(--color-row-hover)] lg:hidden"
             aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
             aria-expanded={mobileOpen}
             aria-controls="mobile-navigation"
@@ -409,7 +409,7 @@ export default function Navbar() {
                     <button
                       type="button"
                       onClick={handleLogout}
-                      className="flex w-full items-center gap-3 rounded px-3 py-3 text-left text-sm font-semibold text-danger hover:bg-card"
+                      className="flex w-full items-center gap-3 rounded px-3 py-3 text-left text-sm font-semibold text-danger hover:bg-[var(--color-row-hover)]"
                     >
                       <span className="grid h-9 w-9 place-items-center rounded bg-danger/10">
                         <LogOut size={16} />
@@ -503,7 +503,7 @@ function ProfileMenuLink({
       role="menuitem"
       aria-current={active ? 'page' : undefined}
       className={`flex items-center gap-3 rounded-md px-2.5 py-2 transition-colors ${
-        active ? 'bg-accent/10 text-accent' : 'text-mtext hover:bg-elevated'
+        active ? 'bg-accent/10 text-accent' : 'text-mtext hover:bg-[var(--color-row-hover)]'
       }`}
     >
       <span
@@ -537,7 +537,7 @@ function MobileNavLink({ item, active }: { item: NavItem; active: boolean }) {
       href={item.to}
       aria-current={active ? 'page' : undefined}
       className={`flex items-center gap-3 rounded px-3 py-2.5 text-sm font-semibold transition-colors ${
-        active ? 'bg-accent/10 text-accent' : 'text-mtext hover:bg-card'
+        active ? 'bg-accent/10 text-accent' : 'text-mtext hover:bg-[var(--color-row-hover)]'
       }`}
     >
       <span

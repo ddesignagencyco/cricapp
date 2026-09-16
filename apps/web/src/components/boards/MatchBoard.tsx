@@ -126,8 +126,10 @@ export default function MatchBoard() {
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-lborder pb-3">
         <Tabs tabs={TABS} active={tab} onChange={handleTabChange} />
         <div className="relative w-full max-w-xs">
-          <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-stext" />
+          <Search size={14} aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-stext" />
           <input
+            type="search"
+            aria-label="Search matches"
             value={localSearch}
             onChange={(e) => setLocalSearch(e.target.value)}
             onKeyDown={(e) => {

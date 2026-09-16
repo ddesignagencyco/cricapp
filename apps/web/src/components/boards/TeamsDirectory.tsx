@@ -100,12 +100,12 @@ export default function TeamsDirectory() {
           </div>
 
           {/* Quick Count Badge */}
-          <div className="flex items-center gap-3 rounded-2xl border border-lborder/80 bg-secondary/80 px-5 py-3.5 shadow-inner">
-            <div className="grid h-11 w-11 place-items-center rounded-md bg-[var(--color-brand)] text-white">
-              <Users size={20} />
+          <div className="flex items-center gap-3 rounded-md border border-lborder bg-secondary px-5 py-3.5">
+            <div className="btn-brand grid h-11 w-11 place-items-center rounded-md">
+              <Users size={20} aria-hidden="true" />
             </div>
             <div>
-              <div className="text-2xl font-black text-mtext">{total || teams.length}</div>
+              <div className="text-2xl font-black tabular-nums text-mtext">{total || teams.length}</div>
               <div className="text-xs font-semibold uppercase tracking-wider text-stext">
                 Registered Teams
               </div>
@@ -125,16 +125,19 @@ export default function TeamsDirectory() {
         <div className="relative flex-1 max-w-md">
           <Search
             size={16}
+            aria-hidden="true"
             className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-stext"
           />
           <input
+            type="search"
+            aria-label="Search teams"
             value={localSearch}
             onChange={(e) => setLocalSearch(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter') handleSearchSubmit(localSearch);
             }}
             placeholder="Search teams by name, abbreviation or country..."
-            className="w-full rounded-2xl border border-lborder bg-card py-2.5 pl-10 pr-4 text-xs text-mtext outline-none transition focus:border-[var(--color-focus-ring)] focus:bg-elevated focus:ring-2 focus:ring-[var(--color-focus-ring)]/30"
+            className="w-full rounded-md border border-lborder bg-card py-2.5 pl-10 pr-4 text-sm text-mtext outline-none transition-colors focus:border-[var(--color-focus-ring)] focus:ring-2 focus:ring-[var(--color-focus-ring)]/30"
           />
         </div>
       </div>

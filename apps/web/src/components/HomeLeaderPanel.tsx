@@ -47,7 +47,7 @@ export function LeaderPanel({ group }: { group: any }) {
             {entries.map((row, i) => (
               <tr
                 key={row.playerId || i}
-                className="border-b border-lborder/30 transition-colors last:border-0 hover:bg-elevated/60"
+                className="border-b border-lborder/30 transition-colors last:border-0 hover:bg-[var(--color-row-hover)]"
               >
                 <td className="px-4 py-2.5 text-center font-mono text-xs text-stext">{i + 1}</td>
                 <td className="px-4 py-2.5">

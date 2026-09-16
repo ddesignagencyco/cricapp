@@ -119,6 +119,16 @@ export function cap(s?: string | null): string {
   return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
 }
 
+/** SportRadar often sends "Khan, Yasir" — show "Yasir Khan". */
+export function formatPlayerName(name?: string | null): string {
+  if (!name) return 'Player';
+  if (name.includes(',')) {
+    const [last, first] = name.split(',').map((part) => part.trim());
+    if (first && last) return `${first} ${last}`;
+  }
+  return name.trim();
+}
+
 const pslLogos: Record<string, string> = {
   isl: 'https://psl-t20.com/wp-content/uploads/2016/01/psl-islamabad-united.png',
   hyd: 'https://psl-t20.com/wp-content/uploads/2026/03/Hyderabad-Kingsmen-logo-1.png',

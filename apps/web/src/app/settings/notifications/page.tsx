@@ -226,7 +226,7 @@ export default function NotificationSettingsPage() {
         </div>
         <a
           href="#preferences"
-          className="inline-flex shrink-0 items-center gap-2 rounded-md border border-lborder bg-card px-4 py-2 text-sm font-semibold text-mtext hover:bg-elevated"
+          className="inline-flex shrink-0 items-center gap-2 rounded-md border border-lborder bg-card px-4 py-2 text-sm font-semibold text-mtext hover:bg-[var(--color-row-hover)]"
         >
           <Bell size={14} />
           Notification settings
@@ -238,17 +238,19 @@ export default function NotificationSettingsPage() {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="inline-flex items-center gap-2 rounded-md bg-secondary px-3 py-1.5 text-xs font-semibold text-accent">
               All
-              <span className="rounded bg-accent/15 px-1.5 py-0.5">{total}</span>
+              <span className="rounded bg-[var(--color-brand-soft)] px-1.5 py-0.5 tabular-nums">{total}</span>
             </div>
-            <label className="relative block min-w-0 sm:w-64">
-              <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-stext" />
+            <div className="relative block min-w-0 sm:w-64">
+              <Search size={14} aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-stext" />
               <input
+                type="search"
+                aria-label="Search notifications"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search notifications…"
-                className="w-full rounded-md border border-lborder bg-elevated py-2 pl-9 pr-3 text-sm text-mtext outline-none focus:border-[var(--color-focus-ring)] focus:ring-2 focus:ring-[var(--color-focus-ring)]/30"
+                className="w-full rounded-md border border-lborder bg-card py-2 pl-9 pr-3 text-sm text-mtext outline-none transition-colors hover:border-border-strong focus:border-[var(--color-focus-ring)] focus:ring-2 focus:ring-[var(--color-focus-ring)]/30"
               />
-            </label>
+            </div>
           </div>
 
           {filtered.length === 0 ? (

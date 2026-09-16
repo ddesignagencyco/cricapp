@@ -53,7 +53,7 @@ interface FieldErrors {
 }
 
 const inputClass =
-  'w-full rounded-2xl border border-lborder bg-input py-3 pl-10 pr-4 text-sm text-mtext outline-none transition-colors placeholder:text-stext/70 focus:border-[var(--color-focus-ring)] focus:bg-card focus:ring-2 focus:ring-[var(--color-focus-ring)]/30';
+  'w-full rounded-md border border-lborder bg-input py-3 pl-10 pr-4 text-sm text-mtext outline-none transition-colors hover:border-border-strong focus:border-[var(--color-focus-ring)] focus:ring-2 focus:ring-[var(--color-focus-ring)]/30 aria-invalid:border-danger disabled:cursor-not-allowed disabled:opacity-60';
 
 function errorMessage(error: unknown): string {
   if (error instanceof ApiError) return error.message;
@@ -117,7 +117,11 @@ function TextField({
           className={inputClass}
         />
       </div>
-      {error && <p id={errorId} className="text-xs font-semibold text-danger">{error}</p>}
+        {error && (
+          <p id={errorId} role="alert" className="text-xs font-semibold text-danger">
+            {error}
+          </p>
+        )}
     </div>
   );
 }
@@ -125,7 +129,7 @@ function TextField({
 export default function AuthForm({ mode, token = '', tokenId = '', initialEmail = '' }: AuthFormProps) {
   const router = useRouter();
   const params = useSearchParams();
-  const { refresh } = useAuth();
+  const { refresh, isAuthenticated, loading: authLoading } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState('');
@@ -137,6 +141,13 @@ export default function AuthForm({ mode, token = '', tokenId = '', initialEmail 
   const [errors, setErrors] = useState<FieldErrors>({});
   const [verified, setVerified] = useState(false);
   const [unverifiedLogin, setUnverifiedLogin] = useState(false);
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (isAuthenticated && (mode === 'login' || mode === 'register')) {
+      router.replace('/profile');
+    }
+  }, [authLoading, isAuthenticated, mode, router]);
 
   useEffect(() => {
     if (mode !== 'verify') return;

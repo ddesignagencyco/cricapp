@@ -193,7 +193,7 @@ export default function GalleryBoard({ initialTab = 'images' }: GalleryBoardProp
       {loading ? (
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
           {Array.from({ length: 12 }).map((_, index) => (
-            <div key={index} className="aspect-square animate-pulse rounded-lg bg-secondary" />
+            <div key={index} className="aspect-square animate-pulse rounded-lg bg-[var(--color-skeleton)]" />
           ))}
         </div>
       ) : error ? (

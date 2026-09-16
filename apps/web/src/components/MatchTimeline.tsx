@@ -114,7 +114,7 @@ export function parseTimelineEvents(rawPayload: Record<string, unknown> | null |
   if (!raw) return [];
 
   return raw
-    .map((item) => {
+    .map((item): TimelineEvent | null => {
       const rec = asRecord(item);
       if (!rec) return null;
       const batting = asRecord(rec.batting_params);
@@ -150,9 +150,9 @@ export function parseTimelineEvents(rawPayload: Record<string, unknown> | null |
         misfielded: fielding?.misfielded === true,
         bowlingFrom: humanize(str(bowling?.bowling_from)),
         deliveryType: humanize(str(bowling?.delivery_type)),
-      } satisfies TimelineEvent;
+      };
     })
-    .filter((event): event is TimelineEvent => Boolean(event));
+    .filter((event): event is TimelineEvent => event !== null);
 }
 
 export function extractBalls(payload: Record<string, unknown> | null | undefined): (string | number | null)[] {
@@ -309,10 +309,10 @@ function matchSummary(payload: Record<string, unknown> | null | undefined): {
 
 function rowTone(event: TimelineEvent): string {
   const type = event.type.toLowerCase();
-  if (type.includes('wicket') || event.dismissal) return 'border-l-2 border-l-danger bg-danger/5';
-  if (type === 'six') return 'border-l-2 border-l-[var(--color-gold,#d4a017)] bg-[var(--color-gold,#d4a017)]/10';
-  if (type === 'boundary' || event.runs === 4) return 'border-l-2 border-l-accent bg-accent/5';
-  if (event.dropped) return 'border-l-2 border-l-warning bg-warning/5';
+  if (type.includes('wicket') || event.dismissal) return 'border-l-2 border-l-danger bg-[var(--color-danger-soft)]';
+  if (type === 'six') return 'border-l-2 border-l-gold bg-[var(--color-warning-soft)]';
+  if (type === 'boundary' || event.runs === 4) return 'border-l-2 border-l-accent bg-[var(--color-brand-soft)]';
+  if (event.dropped) return 'border-l-2 border-l-warning bg-[var(--color-warning-soft)]';
   return '';
 }
 

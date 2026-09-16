@@ -159,7 +159,7 @@ export default function AuthorsPage() {
       </form>
 
       {loading ? (
-        <LoadingState />
+        <LoadingState variant="people" />
       ) : error ? (
         <ErrorState message="Could not load authors." onRetry={load} />
       ) : authors.length === 0 ? (

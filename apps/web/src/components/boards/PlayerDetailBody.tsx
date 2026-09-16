@@ -132,7 +132,7 @@ export default function PlayerDetailBody({ player, relatedNews = [] }: Props) {
           {team && (
             <Link
               href={`/teams/${team.id}`}
-              className="group flex min-w-[220px] shrink-0 items-center gap-3 rounded-lg border border-lborder bg-secondary px-4 py-3 transition-colors hover:border-accent/50 hover:bg-elevated"
+              className="group flex min-w-[220px] shrink-0 items-center gap-3 rounded-lg border border-lborder bg-secondary px-4 py-3 transition-colors hover:border-accent/50 hover:bg-[var(--color-row-hover)]"
             >
               {team.logoUrl ? (
                 <RemoteImage src={team.logoUrl} alt={team.name} width={48} height={48} className="h-12 w-12 rounded-full border border-lborder bg-white object-contain p-0.5" />

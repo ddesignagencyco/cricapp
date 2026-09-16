@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { Calendar, MapPin, Users, ChevronRight, Trophy, TrendingUp } from 'lucide-react';
+import { Calendar, MapPin, Users, ChevronRight, TrendingUp } from 'lucide-react';
 import TeamLogo from './TeamLogo';
 import DummyAd from './advertisements/DummyAd';
 
@@ -29,20 +29,13 @@ export default function PslSpotlight({ standings = [] }: PslSpotlightProps) {
           <div className="relative overflow-hidden">
             <Image
               src="/banner2.png"
-              alt="PSL 2026"
+              alt="HBL PSL 2026 — Bigger. Brighter. Together."
               width={2103}
               height={748}
               sizes="100vw"
               className="h-auto w-full object-contain"
+              priority
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#07111F]/80 via-[#07111F]/30 to-transparent" />
-            <div className="absolute bottom-0 left-0 p-4 sm:p-5">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/90 px-3 py-1 text-xs font-bold tracking-wider text-white">
-                <Trophy size={11} />
-                Pakistan Super League
-              </span>
-              <h3 className="mt-2 text-xl font-black text-white sm:text-2xl">{PSL_DATA.season}</h3>
-            </div>
           </div>
 
           <div className="flex flex-col gap-4 p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
@@ -105,7 +98,7 @@ export default function PslSpotlight({ standings = [] }: PslSpotlightProps) {
                   rows.map((row, i) => (
                     <tr
                       key={row.teamId || i}
-                      className="border-b border-lborder transition-colors last:border-0 hover:bg-elevated"
+                      className="border-b border-lborder transition-colors last:border-0 hover:bg-[var(--color-row-hover)]"
                     >
                       <td className="px-4 py-2.5 text-center font-mono text-sm font-medium tabular-nums text-muted-foreground">{i + 1}</td>
                       <td className="px-4 py-2.5">

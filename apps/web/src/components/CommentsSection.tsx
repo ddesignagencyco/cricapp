@@ -190,32 +190,36 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
 
       {isAuthenticated ? (
         <form onSubmit={submit} noValidate className="mb-5">
-          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-stext">
+          <label htmlFor="comment-body" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-stext">
             Comment <span className="text-danger">*</span>
           </label>
           <textarea
+            id="comment-body"
             rows={3}
             value={body}
             onChange={(e) => setBody(e.target.value)}
             placeholder={`Share your thoughts as ${user?.displayName || user?.username || 'a fan'}…`}
             maxLength={1000}
-            className="w-full resize-none rounded bg-elevated px-3.5 py-2.5 text-sm text-mtext ring-1 ring-lborder outline-none transition focus:ring-2 focus:ring-[var(--color-focus-ring)]/30"
+            className="w-full resize-none rounded bg-card px-3.5 py-2.5 text-sm text-mtext ring-1 ring-lborder outline-none transition-colors hover:ring-[var(--color-border-strong)] focus:ring-2 focus:ring-[var(--color-focus-ring)]/30"
           />
           <div className="mt-2 flex items-center justify-between">
-            <span className="text-xs text-stext">{body.length}/1000</span>
+            <span className="text-xs font-medium tabular-nums text-stext">{body.length}/1000</span>
             <button
               type="submit"
               disabled={submitting}
-              className="btn-brand inline-flex items-center gap-2 rounded px-4 py-2 text-xs font-bold transition-colors disabled:opacity-60"
+              className="btn-brand inline-flex items-center gap-2 rounded px-4 py-2 text-xs font-bold disabled:opacity-60"
             >
-              {submitting ? <Loader2 size={13} className="animate-spin" /> : <Flame size={13} />}
+              {submitting ? <Loader2 size={13} aria-hidden="true" className="animate-spin" /> : <Flame size={13} aria-hidden="true" />}
               Post comment
             </button>
           </div>
         </form>
       ) : (
-        <p className="mb-5 rounded bg-elevated px-4 py-3 text-center text-sm text-stext ring-1 ring-lborder">
-          <Link href={`/login?returnTo=${encodeURIComponent(pathname || '/')}`} className="font-semibold text-accent">
+        <p className="mb-5 rounded bg-secondary px-4 py-3 text-center text-sm text-stext ring-1 ring-lborder">
+          <Link
+            href={`/login?returnTo=${encodeURIComponent(pathname || '/')}`}
+            className="font-semibold text-accent underline underline-offset-2 hover:text-[var(--color-brand-hover)]"
+          >
             Sign in
           </Link>{' '}
           to join the conversation.
@@ -225,13 +229,13 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
       {loading ? (
         <CommentListSkeleton />
       ) : loadError ? (
-        <p className="py-6 text-center text-sm text-danger">{loadError}</p>
+        <p role="alert" className="py-6 text-center text-sm font-semibold text-danger">{loadError}</p>
       ) : comments.length === 0 ? (
-        <p className="py-6 text-center text-sm text-stext">No comments yet. Be the first to share your take.</p>
+        <p className="py-6 text-center text-sm font-medium text-stext">No comments yet. Be the first to share your take.</p>
       ) : (
         <ul className="space-y-3">
           {comments.map((comment) => (
-            <li key={comment.id} className="rounded bg-elevated/60 p-3.5 ring-1 ring-lborder/60">
+            <li key={comment.id} className="rounded bg-secondary p-3.5 ring-1 ring-lborder">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-2.5">
                   {(() => {
@@ -264,7 +268,7 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
                     type="button"
                     onClick={() => setDeleteTarget(comment)}
                     disabled={busyId === comment.id}
-                    className="shrink-0 rounded p-1.5 text-danger hover:bg-card disabled:opacity-50"
+                    className="shrink-0 rounded p-1.5 text-danger hover:bg-[var(--color-row-hover)] disabled:opacity-50"
                     aria-label="Delete comment"
                   >
                     {busyId === comment.id ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}

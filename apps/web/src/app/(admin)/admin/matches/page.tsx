@@ -96,7 +96,7 @@ export default function MatchesPage() {
         </div>
       </div>
 
-      {loading ? <LoadingState /> : filtered.length === 0 ? (
+      {loading ? <LoadingState variant="table" /> : filtered.length === 0 ? (
         <EmptyState icon={<Trophy size={28} />} title="No matches found" message="No matches match your current filters." />
       ) : (
         <div className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>

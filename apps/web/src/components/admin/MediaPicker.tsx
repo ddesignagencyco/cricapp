@@ -5,6 +5,7 @@ import { ImageIcon, Loader2, Upload, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import RemoteImage from '../RemoteImage';
 import AdminPagination from './AdminPagination';
+import useFocusTrap from '../../hooks/useFocusTrap';
 import {
   fetchGalleryPage,
   uploadGalleryMedia,
@@ -33,6 +34,7 @@ export default function MediaPicker({
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+  const dialogRef = useFocusTrap<HTMLDivElement>(open);
 
   const load = useCallback((nextPage: number) => {
     setLoading(true);
@@ -88,8 +90,7 @@ export default function MediaPicker({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: 'rgba(0,0,0,0.55)' }}
+      className="scrim fixed inset-0 z-50 flex items-center justify-center p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="media-picker-title"
@@ -98,8 +99,10 @@ export default function MediaPicker({
       }}
     >
       <div
+        ref={dialogRef}
+        tabIndex={-1}
         className="flex max-h-[85vh] w-full max-w-xl flex-col overflow-hidden rounded-lg"
-        style={{ background: 'var(--admin-card)', boxShadow: 'var(--admin-shadow-lg)' }}
+        style={{ background: 'var(--admin-card)', boxShadow: 'var(--elevation-overlay)' }}
         onClick={(event) => event.stopPropagation()}
       >
         <div
@@ -143,11 +146,11 @@ export default function MediaPicker({
 
         <div className="space-y-3 overflow-y-auto p-4">
           {loading ? (
-            <p className="py-8 text-center text-xs" style={{ color: 'var(--admin-text-muted)' }}>Loading gallery…</p>
+            <p className="py-8 text-center text-xs font-medium" style={{ color: 'var(--admin-text-muted)' }}>Loading gallery…</p>
           ) : items.length === 0 ? (
             <div className="rounded-lg px-4 py-8 text-center" style={{ border: '1px dashed var(--admin-border)' }}>
-              <ImageIcon size={24} className="mx-auto mb-2" style={{ color: 'var(--admin-text-muted)' }} />
-              <p className="text-xs" style={{ color: 'var(--admin-text-secondary)' }}>
+              <ImageIcon size={24} aria-hidden="true" className="mx-auto mb-2" style={{ color: 'var(--admin-text-muted)' }} />
+              <p className="text-xs font-medium" style={{ color: 'var(--admin-text-secondary)' }}>
                 Upload an image or add one in Gallery first.
               </p>
             </div>
@@ -161,7 +164,7 @@ export default function MediaPicker({
                   onClick={() => pick(item.url)}
                   className="group overflow-hidden rounded-md text-left disabled:opacity-50"
                   style={{ border: '1px solid var(--admin-border)' }}
-                  title={item.title || item.url}
+                  aria-label={item.title ? `Select ${item.title}` : 'Select image'}
                 >
                   <RemoteImage
                     src={item.thumbnailUrl || item.url}

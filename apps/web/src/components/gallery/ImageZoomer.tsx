@@ -61,6 +61,11 @@ export default function ImageZoomer({ src, alt, zoom, onZoomChange }: ImageZoome
   return (
     <div
       ref={scrollerRef}
+      // Focusable so the pan area can be scrolled with the keyboard, and
+      // Enter/Space mirror the click-to-zoom affordance.
+      tabIndex={0}
+      role="group"
+      aria-label={zoomed ? 'Zoomed image. Press Enter to zoom out, arrow keys to pan' : 'Image. Press Enter to zoom in'}
       className="absolute inset-0 overflow-auto overscroll-contain"
       style={{ cursor: zoomed ? 'grab' : 'zoom-in' }}
       onPointerDown={(event) => {
@@ -81,6 +86,11 @@ export default function ImageZoomer({ src, alt, zoom, onZoomChange }: ImageZoome
       }}
       onDoubleClick={() => {
         if (zoomed) onZoomChange(MIN_ZOOM);
+      }}
+      onKeyDown={(event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        onZoomChange(zoomed ? MIN_ZOOM : CLICK_ZOOM);
       }}
     >
       <div

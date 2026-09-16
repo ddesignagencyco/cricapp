@@ -42,7 +42,7 @@ export default function MatchCardCompact({ match }: MatchCardCompactProps) {
     <Link
       href={`/matches/${match.matchId || match.id}`}
       prefetch={false}
-      className="group block rounded-md border border-lborder bg-card px-3.5 py-3 transition-colors hover:border-accent/50 hover:bg-elevated"
+      className="elev-card group block rounded-md border border-lborder bg-card px-3.5 py-3 transition-colors hover:border-accent/50 hover:bg-[var(--color-row-hover)]"
     >
       <div className="mb-2 flex items-center justify-between gap-3">
         <p className="min-w-0 truncate text-xs font-semibold uppercase tracking-wide text-stext">

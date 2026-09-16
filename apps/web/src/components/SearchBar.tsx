@@ -8,7 +8,8 @@ import toast from 'react-hot-toast';
 import { searchAll } from '../services/search';
 import type { Match, SearchResults, TournamentApi } from '../types/index';
 import { PlayerSearchAvatar, TeamSearchAvatar, TypeSearchAvatar } from './SearchAvatars';
-import Skeleton from 'react-loading-skeleton';
+import { Skeleton } from './skeletons/Skeletons';
+import useFocusTrap from '../hooks/useFocusTrap';
 
 interface SearchBarProps {
   autoFocus?: boolean;
@@ -46,6 +47,7 @@ export default function SearchBar({ autoFocus = false, onDone }: SearchBarProps)
   const [results, setResults] = useState<SearchResults | null>(null);
   const [loading, setLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const dialogRef = useFocusTrap<HTMLDivElement>(true);
   const router = useRouter();
 
   useEffect(() => {
@@ -101,19 +103,21 @@ export default function SearchBar({ autoFocus = false, onDone }: SearchBarProps)
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[100] flex items-start justify-center bg-black/70 px-4 pt-16 backdrop-blur-sm sm:pt-20"
+      className="scrim fixed inset-0 z-[100] flex items-start justify-center px-4 pt-16 sm:pt-20"
       onMouseDown={(event) => {
         if (event.currentTarget === event.target) onDone?.();
       }}
     >
       <div
+        ref={dialogRef}
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-labelledby="global-search-title"
-        className="w-full max-w-xl overflow-hidden rounded-md border border-lborder bg-elevated shadow-sm"
+        className="elev-overlay w-full max-w-xl overflow-hidden rounded-md border border-lborder bg-card"
       >
         <div className="flex items-center gap-3 border-b border-lborder px-4 py-3">
-          <Search size={18} className="shrink-0 text-accent" />
+          <Search size={18} aria-hidden="true" className="shrink-0 text-accent" />
           <div className="min-w-0 flex-1">
             <label id="global-search-title" htmlFor="global-search-input" className="sr-only">
               Search PakCricZone
@@ -121,7 +125,7 @@ export default function SearchBar({ autoFocus = false, onDone }: SearchBarProps)
             <input
               ref={inputRef}
               id="global-search-input"
-              type="text"
+              type="search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               onKeyDown={(event) => {
@@ -130,7 +134,7 @@ export default function SearchBar({ autoFocus = false, onDone }: SearchBarProps)
               placeholder="Search players, teams, matches or tournaments"
               autoFocus={autoFocus}
               autoComplete="off"
-              className="w-full bg-transparent text-sm text-mtext outline-none placeholder:text-stext/70 sm:text-base"
+              className="w-full bg-transparent text-sm text-mtext outline-none sm:text-base"
             />
           </div>
           <kbd className="hidden rounded border border-lborder px-1.5 py-0.5 text-[10px] font-semibold text-stext sm:block">
@@ -139,16 +143,16 @@ export default function SearchBar({ autoFocus = false, onDone }: SearchBarProps)
           <button
             type="button"
             onClick={() => onDone?.()}
-            className="rounded p-1.5 text-stext hover:bg-elevated hover:text-mtext"
+            className="rounded p-1.5 text-stext transition-colors duration-150 hover:bg-[var(--color-row-hover)] hover:text-mtext"
             aria-label="Close search"
           >
-            <X size={16} />
+            <X size={16} aria-hidden="true" />
           </button>
         </div>
 
         <div className="max-h-[min(60vh,520px)] overflow-y-auto p-2 sm:p-3">
           {!query.trim() && (
-            <p className="px-3 py-10 text-center text-sm text-stext">Search across the PakCricZone archive.</p>
+            <p className="px-3 py-10 text-center text-sm font-medium text-stext">Search across the PakCricZone archive.</p>
           )}
           {loading && (
             <div className="space-y-2 p-2">
@@ -282,7 +286,7 @@ function ResultButton({
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-elevated focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
+      className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-[var(--color-row-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]"
     >
       {avatar}
       <span className="min-w-0 flex-1">

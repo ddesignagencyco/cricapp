@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Clock, Globe, Radio, Signal, User } from 'lucide-react';
-import { StatusBadge } from '../Badge';
+import Badge, { StatusBadge } from '../Badge';
 import LiveIndicator from '../LiveIndicator';
 import EmptyState from '../EmptyState';
 import ErrorState from '../ErrorState';
@@ -113,7 +113,13 @@ export default function LiveStreamsBoard() {
             <StreamPlayer stream={featured} />
             <div className="rounded-2xl bg-card p-5 ring-1 ring-lborder">
               <div className="flex flex-wrap items-center gap-2">
-                {featured.status === 'live' ? <LiveIndicator /> : <StatusBadge status={featured.status} />}
+                {featured.status === 'live' ? (
+                  <LiveIndicator />
+                ) : featured.status === 'ended' ? (
+                  <Badge>Ended</Badge>
+                ) : (
+                  <StatusBadge status={featured.status} />
+                )}
                 {featured.host && (
                   <span className="inline-flex items-center gap-1.5 rounded-lg bg-elevated px-3 py-1.5 text-xs font-semibold text-mtext">
                     <User size={13} className="text-accent" /> {featured.host}
@@ -152,8 +158,17 @@ export default function LiveStreamsBoard() {
                       )}
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="line-clamp-2 text-sm font-semibold leading-snug text-mtext">{s.shortTitle || s.title}</span>
-                      <p className="mt-0.5 truncate text-xs text-stext">{s.host || s.status}</p>
+                      <span className="mb-1 inline-flex">
+                        {s.status === 'live' ? (
+                          <LiveIndicator />
+                        ) : s.status === 'ended' ? (
+                          <Badge>Ended</Badge>
+                        ) : (
+                          <StatusBadge status={s.status} />
+                        )}
+                      </span>
+                      <span className="line-clamp-2 block text-sm font-semibold leading-snug text-mtext">{s.shortTitle || s.title}</span>
+                      {s.host ? <p className="mt-0.5 truncate text-xs text-stext">{s.host}</p> : null}
                     </span>
                   </button>
                 ))}
@@ -188,13 +203,13 @@ function StreamPlayer({ stream }: { stream: Stream }) {
             style={stream.image ? { backgroundImage: `url(${stream.image})` } : undefined}
           >
             {stream.image && (
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#07111F]/70 via-transparent to-[#07111F]/40" />
+              <div className="hero-scrim-up pointer-events-none absolute inset-0" />
             )}
             <div className="relative z-10 flex flex-col items-center">
-              <div className="grid h-20 w-20 place-items-center rounded-full bg-[#07111F]/50 ring-2 ring-accent/40">
-                <Radio size={34} className="text-accent" />
+              <div className="hero-tile text-on-media-accent grid h-20 w-20 place-items-center rounded-full ring-2 ring-white/25">
+                <Radio size={34} aria-hidden="true" />
               </div>
-              <p className="mt-3 text-sm font-bold uppercase tracking-widest text-white/80">
+              <p className="text-on-media mt-3 text-sm font-bold uppercase tracking-widest">
                 Stream URL is not embeddable
               </p>
             </div>
@@ -203,9 +218,9 @@ function StreamPlayer({ stream }: { stream: Stream }) {
                 <LiveIndicator />
               </div>
             )}
-            <div className="absolute inset-x-4 bottom-4 z-10 flex items-center justify-between text-xs font-semibold text-white/70">
-              <span className="flex items-center gap-1.5"><Signal size={12} /> Source unavailable</span>
-              <span className="flex items-center gap-1.5"><Globe size={12} /> {stream.host || 'External'}</span>
+            <div className="text-on-media-muted absolute inset-x-4 bottom-4 z-10 flex items-center justify-between text-xs font-semibold">
+              <span className="flex items-center gap-1.5"><Signal size={12} aria-hidden="true" /> Source unavailable</span>
+              <span className="flex items-center gap-1.5"><Globe size={12} aria-hidden="true" /> {stream.host || 'External'}</span>
             </div>
           </div>
         )}

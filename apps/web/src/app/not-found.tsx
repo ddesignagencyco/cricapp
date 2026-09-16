@@ -24,7 +24,7 @@ export default function NotFound() {
         </Link>
         <Link
           href="/matches"
-          className="inline-flex items-center gap-2 rounded-xl bg-card px-5 py-3 text-sm font-bold text-mtext ring-1 ring-lborder transition-colors hover:border-border-strong hover:bg-elevated"
+          className="inline-flex items-center gap-2 rounded-xl bg-card px-5 py-3 text-sm font-bold text-mtext ring-1 ring-lborder transition-colors hover:border-border-strong hover:bg-[var(--color-row-hover)]"
         >
           <Search size={16} /> Find a Match
         </Link>

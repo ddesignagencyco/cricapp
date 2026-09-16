@@ -160,7 +160,7 @@ export default function AdminGalleryPage() {
       </form>
 
       {loading ? (
-        <LoadingState />
+        <LoadingState variant="gallery" />
       ) : error ? (
         <ErrorState message="Could not load gallery." onRetry={() => load(page, filter)} />
       ) : items.length === 0 ? (

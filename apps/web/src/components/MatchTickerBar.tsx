@@ -156,7 +156,7 @@ function TickerCard({ match }: { match: any }) {
 
   const status = match.status;
   const isLive = status === 'live';
-  const isCompleted = status === 'completed';
+  const isCompleted = status === 'completed' || status === 'ended';
   const isUpcoming = status === 'upcoming';
 
   const tournament = match.tournamentName || match.tournament || 'Cricket';
@@ -187,7 +187,7 @@ function TickerCard({ match }: { match: any }) {
     <Link
       href={`/matches/${match.matchId || match.id}`}
       prefetch={false}
-      className="group flex w-[260px] shrink-0 flex-col overflow-hidden rounded-xl bg-card p-3 ring-1 ring-lborder transition-colors hover:bg-elevated hover:ring-border-strong"
+      className="elev-raised group flex w-[260px] shrink-0 flex-col overflow-hidden rounded-xl bg-card p-3 ring-1 ring-lborder transition-colors hover:bg-[var(--color-row-hover)] hover:ring-border-strong"
     >
       <div className="mb-2 flex items-center justify-between gap-2">
         <span className="min-w-0 truncate text-xs font-semibold tracking-wide text-stext">

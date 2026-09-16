@@ -55,13 +55,17 @@ export default function FavoriteButton({ targetType, targetId, compact = false, 
     return (
       <button
         type="button"
-        onClick={toggle}
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          void toggle();
+        }}
         disabled={loading || busy}
         title={favorite ? 'Remove from favorites' : 'Add to favorites'}
         className={`grid h-9 w-9 place-items-center rounded-xl border transition-all disabled:opacity-60 ${
           favorite
             ? 'border-danger/40 bg-danger/10 text-danger shadow-sm'
-            : 'border-lborder bg-secondary text-stext hover:border-accent/40 hover:bg-card hover:text-mtext'
+            : 'border-lborder bg-secondary text-stext hover:border-accent/40 hover:bg-[var(--color-row-hover)] hover:text-mtext'
         } ${className}`}
         aria-label={favorite ? 'Remove from favorites' : 'Add to favorites'}
         aria-pressed={Boolean(favorite)}
@@ -74,7 +78,11 @@ export default function FavoriteButton({ targetType, targetId, compact = false, 
   return (
     <button
       type="button"
-      onClick={toggle}
+      onClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        void toggle();
+      }}
       disabled={loading || busy}
       className={`inline-flex items-center gap-2 rounded px-4 py-2 text-sm font-bold transition-colors disabled:opacity-60 ${
         favorite

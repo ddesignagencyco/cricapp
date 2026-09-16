@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { apiGet } from './api/client';
 
-export type ShareType = 'match' | 'news' | 'player' | 'team';
+export type ShareType = 'match' | 'news' | 'player' | 'team' | 'tour' | 'tournament';
 
 export interface ShareLink {
   url: string;

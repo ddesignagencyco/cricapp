@@ -158,9 +158,12 @@ export default function PlayerDirectory({ initialPlayers = [], initialTotal = 0 
         <div className="relative flex-1 max-w-md">
           <Search
             size={16}
+            aria-hidden="true"
             className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-stext"
           />
           <input
+            type="search"
+            aria-label="Search players"
             value={localSearch}
             onChange={(e) => setLocalSearch(e.target.value)}
             onKeyDown={(e) => {

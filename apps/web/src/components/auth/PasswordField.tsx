@@ -37,7 +37,7 @@ export default function PasswordField({ id, label, name, value, onChange, autoCo
           aria-invalid={Boolean(error)}
           aria-describedby={error ? errorId : undefined}
           style={visible ? ({ WebkitTextSecurity: 'none' } as CSSProperties) : undefined}
-          className="auth-password-input w-full rounded-2xl border border-lborder bg-input py-3 pl-10 pr-12 text-sm text-mtext outline-none transition-colors placeholder:text-stext/70 focus:border-[var(--color-focus-ring)] focus:bg-card focus:ring-2 focus:ring-[var(--color-focus-ring)]/30"
+            className="auth-password-input w-full rounded-md border border-lborder bg-input py-3 pl-10 pr-12 text-sm text-mtext outline-none transition-colors hover:border-border-strong focus:border-[var(--color-focus-ring)] focus:ring-2 focus:ring-[var(--color-focus-ring)]/30 aria-invalid:border-danger disabled:cursor-not-allowed disabled:opacity-60"
         />
         <button
           type="button"
@@ -50,7 +50,11 @@ export default function PasswordField({ id, label, name, value, onChange, autoCo
           {visible ? <EyeOff size={16} /> : <Eye size={16} />}
         </button>
       </div>
-      {error && <p id={errorId} className="text-xs font-semibold text-danger">{error}</p>}
+      {error && (
+        <p id={errorId} role="alert" className="text-xs font-semibold text-danger">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

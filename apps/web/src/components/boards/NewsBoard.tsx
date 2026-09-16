@@ -344,7 +344,7 @@ function ArticleCard({ item, language }: { item: NewsArticle; language: 'en' | '
   return (
     <Link
       href={newsHref(item)}
-      className="group flex h-full flex-col overflow-hidden rounded-md border border-lborder bg-card transition-colors hover:border-border-strong hover:bg-elevated"
+      className="group flex h-full flex-col overflow-hidden rounded-md border border-lborder bg-card transition-colors hover:border-border-strong hover:bg-[var(--color-row-hover)]"
     >
       <div
         className="relative aspect-[16/9] overflow-hidden bg-secondary media-fallback"

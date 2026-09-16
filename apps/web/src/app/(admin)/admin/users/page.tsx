@@ -12,6 +12,7 @@ import {
   ErrorState,
   LoadingState,
 } from '../../../../components/admin/AdminShared';
+import Badge from '../../../../components/Badge';
 import AdminPagination from '../../../../components/admin/AdminPagination';
 import { deleteAdminUser, fetchAdminUsers, updateAdminUser, type AdminUser } from '../../../../services/admin';
 import { useAuth } from '../../../../components/AuthProvider';
@@ -150,7 +151,7 @@ export default function UsersPage() {
       </div>
 
       {loading ? (
-        <LoadingState />
+        <LoadingState variant="people" />
       ) : error ? (
         <ErrorState message="Could not load users." onRetry={() => load(page, q)} />
       ) : visible.length === 0 ? (
@@ -192,12 +193,7 @@ export default function UsersPage() {
                       <td className="px-4 py-3" style={{ color: 'var(--admin-text-secondary)' }}>{user.email}</td>
                       <td className="px-4 py-3">
                         {locked ? (
-                          <span
-                            className="rounded-full px-2 py-0.5 text-[11px] font-bold"
-                            style={{ background: 'var(--admin-accent)', color: 'var(--color-brand-fg)' }}
-                          >
-                            Superadmin
-                          </span>
+                          <Badge tone="primary">Superadmin</Badge>
                         ) : (
                           <div className="flex items-center gap-2.5">
                             <AdminToggle
@@ -206,15 +202,9 @@ export default function UsersPage() {
                               label={user.isAdmin ? 'Remove admin' : 'Make admin'}
                               onChange={() => patch(user, { isAdmin: !user.isAdmin })}
                             />
-                            <span
-                              className="rounded-full px-2 py-0.5 text-[11px] font-bold"
-                              style={{
-                                background: user.isAdmin ? 'var(--admin-accent)' : 'var(--admin-input-bg)',
-                                color: user.isAdmin ? 'var(--color-brand-fg)' : 'var(--admin-text-secondary)',
-                              }}
-                            >
+                            <Badge tone={user.isAdmin ? 'primary' : 'neutral'}>
                               {user.isAdmin ? 'Admin' : 'Member'}
-                            </span>
+                            </Badge>
                           </div>
                         )}
                       </td>

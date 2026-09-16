@@ -11,6 +11,7 @@ import Newsletter from '../../components/Newsletter';
 import AdSlot from '../../components/AdSlot';
 import RemoteImage from '../../components/RemoteImage';
 import NewsCopy from '../../components/NewsCopy';
+import Badge, { StatusBadge } from '../../components/Badge';
 
 import { fetchLiveMatches, fetchMatches } from '../../services/matches';
 import { fetchNews } from '../../services/news';
@@ -105,7 +106,14 @@ export default async function HomePage() {
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {streams.slice(0, 3).map((stream) => (
               <Link key={stream.id} href="/streams" className="group overflow-hidden rounded-2xl bg-card ring-1 ring-lborder hover:ring-border-strong">
-                <div className="relative aspect-video bg-secondary">
+                <div className="flex items-center border-b border-lborder px-3 py-2">
+                  {stream.status === 'ended' ? (
+                    <Badge>Ended</Badge>
+                  ) : (
+                    <StatusBadge status={stream.status || 'upcoming'} />
+                  )}
+                </div>
+                <div className="relative aspect-video bg-[var(--color-skeleton)]">
                   {stream.image ? (
                     <RemoteImage src={stream.image} alt={stream.title} fill sizes="400px" fit="contain" className="news-image" />
                   ) : (
@@ -114,11 +122,10 @@ export default async function HomePage() {
                   <span className="absolute inset-0 grid place-items-center">
                     <span className="grid h-11 w-11 place-items-center rounded-full bg-black/55 text-sm text-white">▶</span>
                   </span>
-                  <span className="absolute left-2 top-2 rounded-full bg-black/55 px-2 py-0.5 text-[10px] font-bold tracking-wide text-white">
-                    {stream.status || 'Video'}
-                  </span>
                 </div>
-                <p className="line-clamp-2 p-3 text-sm font-semibold text-mtext group-hover:text-accent">{stream.title}</p>
+                <div className="p-3">
+                  <p className="line-clamp-2 text-sm font-semibold text-mtext group-hover:text-accent">{stream.title}</p>
+                </div>
               </Link>
             ))}
           </div>
@@ -182,7 +189,7 @@ export default async function HomePage() {
             {newsList[0] && (
               <Link
                 href={newsHref(newsList[0])}
-                className="group overflow-hidden rounded-2xl bg-card ring-1 ring-lborder transition-colors hover:bg-elevated hover:ring-border-strong"
+                className="group overflow-hidden rounded-2xl bg-card ring-1 ring-lborder transition-colors hover:bg-[var(--color-row-hover)] hover:ring-border-strong"
               >
                 <div className="relative bg-secondary">
                   {newsList[0].image ? (
@@ -224,7 +231,7 @@ export default async function HomePage() {
                 <Link
                   key={item.id}
                   href={newsHref(item)}
-                  className="group flex gap-3 overflow-hidden rounded-xl bg-card p-2.5 ring-1 ring-lborder transition-colors hover:bg-elevated hover:ring-border-strong sm:gap-4 sm:p-3"
+                  className="group flex gap-3 overflow-hidden rounded-xl bg-card p-2.5 ring-1 ring-lborder transition-colors hover:bg-[var(--color-row-hover)] hover:ring-border-strong sm:gap-4 sm:p-3"
                 >
                   <div className="relative h-16 w-20 shrink-0 overflow-hidden rounded-lg bg-secondary sm:h-20 sm:w-24">
                     {item.image ? (

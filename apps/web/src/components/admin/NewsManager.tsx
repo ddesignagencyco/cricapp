@@ -166,7 +166,7 @@ export default function NewsManager() {
 
       {/* Table */}
       {loading ? (
-        <LoadingState />
+        <LoadingState variant="news" />
       ) : error ? (
         <ErrorState message={error} onRetry={load} />
       ) : filtered.length === 0 ? (

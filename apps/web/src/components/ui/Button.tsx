@@ -47,7 +47,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         case 'secondary':
           return {
             className:
-              'transition-colors duration-150 hover:bg-[var(--color-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+              'transition-colors duration-150 hover:bg-[var(--color-row-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
             inlineStyle: {
               background: 'var(--color-surface-elevated)',
               color: 'var(--color-text-primary)',
@@ -57,7 +57,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         case 'outline':
           return {
             className:
-              'transition-colors duration-150 hover:border-[var(--color-border-strong)] hover:bg-[var(--color-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+              'transition-colors duration-150 hover:border-[var(--color-border-strong)] hover:bg-[var(--color-row-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
             inlineStyle: {
               background: 'transparent',
               color: 'var(--color-text-primary)',
@@ -67,7 +67,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         case 'ghost':
           return {
             className:
-              'transition-colors duration-150 hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
+              'transition-colors duration-150 hover:bg-[var(--color-row-hover)] hover:text-[var(--color-text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)]',
             inlineStyle: {
               background: 'transparent',
               color: 'var(--color-text-secondary)',
@@ -82,6 +82,10 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
               color: 'var(--color-brand-fg)',
             },
           };
+        default: {
+          const exhaustive: never = variant;
+          return exhaustive;
+        }
       }
     };
 

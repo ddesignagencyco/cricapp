@@ -3,34 +3,64 @@ import LiveIndicator, { BlinkingDot } from './LiveIndicator';
 
 export { BlinkingDot };
 
-const toneStyles: Record<string, { bg: string; fg: string; ring: string }> = {
-  live: { bg: 'var(--color-danger-soft)', fg: 'var(--color-danger)', ring: 'var(--color-danger)' },
-  upcoming: { bg: 'var(--color-info-soft)', fg: 'var(--color-info)', ring: 'var(--color-info)' },
-  completed: { bg: 'var(--color-success-soft)', fg: 'var(--color-success)', ring: 'var(--color-success)' },
-  published: { bg: 'var(--color-success-soft)', fg: 'var(--color-success)', ring: 'var(--color-success)' },
-  active: { bg: 'var(--color-success-soft)', fg: 'var(--color-success)', ring: 'var(--color-success)' },
-  approved: { bg: 'var(--color-success-soft)', fg: 'var(--color-success)', ring: 'var(--color-success)' },
-  draft: { bg: 'var(--color-surface-muted)', fg: 'var(--color-text-muted)', ring: 'var(--color-border)' },
-  pending: { bg: 'var(--color-warning-soft)', fg: 'var(--color-warning)', ring: 'var(--color-warning)' },
-  scheduled: { bg: 'var(--color-warning-soft)', fg: 'var(--color-warning)', ring: 'var(--color-warning)' },
-  postponed: { bg: 'var(--color-warning-soft)', fg: 'var(--color-warning)', ring: 'var(--color-warning)' },
-  in_review: { bg: 'var(--color-info-soft)', fg: 'var(--color-info)', ring: 'var(--color-info)' },
-  rejected: { bg: 'var(--color-danger-soft)', fg: 'var(--color-danger)', ring: 'var(--color-danger)' },
-  failed: { bg: 'var(--color-danger-soft)', fg: 'var(--color-danger)', ring: 'var(--color-danger)' },
-  error: { bg: 'var(--color-danger-soft)', fg: 'var(--color-danger)', ring: 'var(--color-danger)' },
-  cancelled: { bg: 'var(--color-surface-muted)', fg: 'var(--color-text-muted)', ring: 'var(--color-border)' },
-  ended: { bg: 'var(--color-surface-muted)', fg: 'var(--color-text-muted)', ring: 'var(--color-border)' },
-  spam: { bg: 'var(--color-warning-soft)', fg: 'var(--color-warning)', ring: 'var(--color-warning)' },
-  hate: { bg: 'var(--color-danger-soft)', fg: 'var(--color-danger)', ring: 'var(--color-danger)' },
-  harassment: { bg: 'var(--color-danger-soft)', fg: 'var(--color-danger)', ring: 'var(--color-danger)' },
-  abandoned: { bg: 'var(--color-surface-muted)', fg: 'var(--color-text-muted)', ring: 'var(--color-border)' },
-  inactive: { bg: 'var(--color-surface-muted)', fg: 'var(--color-text-muted)', ring: 'var(--color-border)' },
-  neutral: { bg: 'var(--color-surface-muted)', fg: 'var(--color-text-secondary)', ring: 'var(--color-border)' },
-  gold: { bg: 'var(--color-warning-soft)', fg: 'var(--color-warning)', ring: 'var(--color-warning)' },
-  playoffs: { bg: 'var(--color-info-soft)', fg: 'var(--color-info)', ring: 'var(--color-info)' },
-  qualified: { bg: 'var(--color-success-soft)', fg: 'var(--color-success)', ring: 'var(--color-success)' },
-  eliminated: { bg: 'var(--color-danger-soft)', fg: 'var(--color-danger)', ring: 'var(--color-danger)' },
+type PaletteName = 'primary' | 'success' | 'warning' | 'danger' | 'neutral';
+
+/**
+ * Each tone pairs a solid foreground with its own pre-mixed soft surface.
+ * Both are theme tokens, so a badge is contrast-checked in light and dark
+ * without relying on opacity, which is what made these look washed out.
+ */
+const palettes: Record<PaletteName, { fg: string; bg: string; ring: string }> = {
+  primary: { fg: 'var(--color-brand)', bg: 'var(--color-brand-soft)', ring: 'var(--color-brand)' },
+  success: { fg: 'var(--color-success)', bg: 'var(--color-success-soft)', ring: 'var(--color-success)' },
+  warning: { fg: 'var(--color-warning)', bg: 'var(--color-warning-soft)', ring: 'var(--color-warning)' },
+  danger: { fg: 'var(--color-danger)', bg: 'var(--color-danger-soft)', ring: 'var(--color-danger)' },
+  neutral: {
+    fg: 'var(--color-text-secondary)',
+    bg: 'var(--color-neutral-soft)',
+    ring: 'var(--color-border-strong)',
+  },
 };
+
+const tonePalette: Record<string, PaletteName> = {
+  primary: 'primary',
+  accent: 'primary',
+  info: 'primary',
+  upcoming: 'primary',
+  in_review: 'primary',
+  playoffs: 'primary',
+  success: 'success',
+  completed: 'success',
+  published: 'success',
+  active: 'success',
+  approved: 'success',
+  qualified: 'success',
+  warning: 'warning',
+  pending: 'warning',
+  scheduled: 'warning',
+  postponed: 'warning',
+  spam: 'warning',
+  gold: 'warning',
+  danger: 'danger',
+  live: 'danger',
+  cancelled: 'danger',
+  canceled: 'danger',
+  rejected: 'danger',
+  failed: 'danger',
+  error: 'danger',
+  hate: 'danger',
+  harassment: 'danger',
+  eliminated: 'danger',
+  abandoned: 'danger',
+  inactive: 'neutral',
+  draft: 'neutral',
+  unknown: 'neutral',
+  neutral: 'neutral',
+};
+
+function resolvePalette(tone: string): PaletteName {
+  return tonePalette[tone.toLowerCase()] || 'neutral';
+}
 
 function titleCase(value: string): string {
   return value
@@ -47,8 +77,9 @@ const statusLabels: Record<string, string> = {
   upcoming: 'Upcoming',
   completed: 'Completed',
   closed: 'Completed',
-  ended: 'Ended',
+  ended: 'Completed',
   cancelled: 'Cancelled',
+  canceled: 'Cancelled',
   postponed: 'Postponed',
   abandoned: 'Abandoned',
   published: 'Published',
@@ -70,7 +101,9 @@ const statusLabels: Record<string, string> = {
 /** Provider aliases that should inherit another tone's colours. */
 const statusToneAliases: Record<string, string> = {
   closed: 'completed',
+  ended: 'completed',
   not_started: 'upcoming',
+  canceled: 'cancelled',
 };
 
 export function normalizeStatus(status?: string | null): { label: string; tone: string } {
@@ -78,7 +111,7 @@ export function normalizeStatus(status?: string | null): { label: string; tone: 
   const tone = statusToneAliases[normalized] || normalized;
   return {
     label: statusLabels[normalized] || statusLabels[tone] || titleCase(status || '') || 'Unknown',
-    tone: tone in toneStyles ? tone : 'neutral',
+    tone: tone in tonePalette ? tone : 'neutral',
   };
 }
 
@@ -89,7 +122,7 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 }
 
 export default function Badge({ children, tone = 'neutral', className = '', style, ...rest }: BadgeProps) {
-  const current = toneStyles[tone.toLowerCase()] || toneStyles.neutral;
+  const current = palettes[resolvePalette(tone)];
   const classes = className.replace(/\buppercase\b/g, '').replace(/\s+/g, ' ').trim();
   return (
     <span
@@ -98,7 +131,7 @@ export default function Badge({ children, tone = 'neutral', className = '', styl
       style={{
         background: current.bg,
         color: current.fg,
-        boxShadow: `inset 0 0 0 1px ${current.ring}33`,
+        boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${current.ring} 34%, transparent)`,
         ...style,
       }}
     >

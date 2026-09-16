@@ -19,8 +19,8 @@ const roleTone: Record<string, string> = {
   Wicketkeeper: 'playoffs',
   'Wicket-Keeper': 'playoffs',
   Player: 'upcoming',
-  Manager: 'cancelled',
-  Coach: 'cancelled',
+  Manager: 'neutral',
+  Coach: 'neutral',
   Captain: 'gold',
 };
 
@@ -51,7 +51,7 @@ export default function PlayerCard({ player }: PlayerCardProps) {
   return (
     <Link
       href={`/players/${player.id}`}
-      className="group flex items-center gap-3 rounded-md border border-lborder bg-card p-3.5 transition-colors hover:border-accent/50 hover:bg-elevated"
+      className="elev-card group flex items-center gap-3 rounded-md border border-lborder bg-card p-3.5 transition-colors hover:border-accent/50 hover:bg-[var(--color-row-hover)]"
     >
       {player.profileUrl || player.avatarUrl ? (
         <RemoteImage

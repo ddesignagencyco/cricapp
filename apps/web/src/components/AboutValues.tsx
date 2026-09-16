@@ -27,7 +27,7 @@ const values = [
 
 export function AboutValues() {
   return (
-    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       {values.map((v) => (
         <div key={v.title} className="rounded-2xl bg-card p-6 ring-1 ring-lborder">
           <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-accent">

@@ -77,7 +77,7 @@ export default function AdminContactPage() {
       </div>
 
       {loading ? (
-        <LoadingState />
+        <LoadingState variant="table" />
       ) : error ? (
         <ErrorState message="Could not load submissions." onRetry={load} />
       ) : items.length === 0 ? (

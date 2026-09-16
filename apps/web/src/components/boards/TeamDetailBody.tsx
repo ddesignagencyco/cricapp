@@ -309,7 +309,7 @@ function SportEventRow({ event }: { event: SportEventRecord }) {
   const href = event.eventId ? `/matches/${event.eventId}` : undefined;
 
   const inner = (
-    <div className="flex items-center justify-between gap-3 rounded-md border border-lborder bg-card p-3.5 transition-colors hover:border-accent/40 hover:bg-elevated">
+    <div className="flex items-center justify-between gap-3 rounded-md border border-lborder bg-card p-3.5 transition-colors hover:border-accent/40 hover:bg-[var(--color-row-hover)]">
       <div className="min-w-0">
         <p className="truncate text-sm font-semibold text-mtext">{eventTitle(event)}</p>
         <p className="mt-0.5 text-xs text-stext">

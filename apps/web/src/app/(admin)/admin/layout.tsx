@@ -99,11 +99,11 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
   const sidebar = (
     <div className="flex h-full min-h-0 w-full flex-col" style={{ width: 240, minWidth: 240, background: 'var(--admin-sidebar)' }}>
-      <div className="flex h-14 shrink-0 items-center justify-center px-2" style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
+      <div className="flex h-14 shrink-0 items-center justify-center px-2" style={{ borderBottom: '1px solid var(--admin-sidebar-border)' }}>
         <Logo to="/admin" size="lg" />
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-0.5">
+      <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-0.5" aria-label="Admin sections">
         {adminNav.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.to);
@@ -112,29 +112,28 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
               key={item.to}
               href={item.to}
               aria-current={active ? 'page' : undefined}
-              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors"
+              className="admin-nav-link flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-semibold transition-colors duration-150"
               style={{
-                background: active ? 'var(--admin-accent)' : 'transparent',
-                color: active ? 'var(--color-brand-fg)' : 'var(--admin-sidebar-muted)',
+                background: active ? 'var(--admin-sidebar-active)' : 'transparent',
+                color: active ? 'var(--admin-sidebar-active-fg)' : 'var(--admin-sidebar-muted)',
+                boxShadow: active ? 'inset 0 0 0 1px rgba(255, 255, 255, 0.16)' : undefined,
               }}
             >
-              <Icon size={18} />
+              <Icon size={18} aria-hidden="true" />
               <span>{item.label}</span>
             </Link>
           );
         })}
       </nav>
 
-      <div className="px-3 py-3" style={{ borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
+      <div className="px-3 py-3" style={{ borderTop: '1px solid var(--admin-sidebar-border)' }}>
         <button
           type="button"
           onClick={() => { logout(); router.push('/'); }}
-          className="mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:text-[var(--admin-sidebar-text)]"
+          className="admin-nav-link mt-1 flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-semibold transition-colors duration-150"
           style={{ color: 'var(--admin-sidebar-muted)' }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--admin-sidebar-hover)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
         >
-          <LogOut size={18} />
+          <LogOut size={18} aria-hidden="true" />
           Logout
         </button>
       </div>
@@ -158,8 +157,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       {mobileOpen && (
         <button
           type="button"
-          className="fixed inset-0 z-40 lg:hidden"
-          style={{ background: 'rgba(0,0,0,0.5)' }}
+          className="scrim fixed inset-0 z-40 lg:hidden"
           onClick={() => setMobileOpen(false)}
           aria-label="Close navigation"
         />
@@ -167,13 +165,16 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
       {/* Mobile sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 z-50 flex h-dvh transform transition-transform duration-200 lg:hidden ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        id="admin-mobile-nav"
+        aria-hidden={!mobileOpen}
+        className={`fixed inset-y-0 left-0 z-50 flex h-dvh transform transition-transform duration-200 lg:hidden ${mobileOpen ? 'translate-x-0' : 'pointer-events-none -translate-x-full'}`}
       >
         <div className="relative flex h-full min-h-0 flex-col">
           <button type="button" onClick={() => setMobileOpen(false)}
-            className="absolute right-2 top-3 z-10 grid h-8 w-8 place-items-center rounded-lg text-white/60 hover:text-white"
+            className="on-media absolute right-2 top-3 z-10 grid h-8 w-8 place-items-center rounded-md transition-colors hover:bg-[var(--admin-sidebar-hover)]"
+            style={{ color: 'var(--admin-sidebar-muted)' }}
             aria-label="Close navigation">
-            <X size={18} />
+            <X size={18} aria-hidden="true" />
           </button>
           {sidebar}
         </div>
@@ -184,9 +185,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         {/* Top bar */}
         <header className="sticky top-0 z-20 flex h-14 items-center gap-4 px-4 sm:px-6" style={{ background: 'var(--admin-topbar)', borderBottom: '1px solid var(--admin-border)' }}>
           <button type="button" onClick={() => setMobileOpen(true)}
-            className="grid h-9 w-9 place-items-center rounded-lg lg:hidden" style={{ color: 'var(--admin-text-secondary)' }}
-            aria-label="Open navigation" aria-expanded={mobileOpen}>
-            <Menu size={18} />
+            className="admin-icon-btn grid h-9 w-9 place-items-center rounded-md lg:hidden"
+            aria-label="Open navigation" aria-expanded={mobileOpen} aria-controls="admin-mobile-nav">
+            <Menu size={18} aria-hidden="true" />
           </button>
 
           <div className="flex-1" />
@@ -195,31 +196,31 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           <button
             type="button"
             onClick={toggle}
-            className="grid h-9 w-9 place-items-center rounded-lg transition-colors"
-            style={{ color: 'var(--admin-text-secondary)' }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--admin-input-bg)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
-            title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            className="admin-icon-btn grid h-9 w-9 place-items-center rounded-md"
             aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
           >
-            {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
+            {theme === 'dark' ? <Sun size={17} aria-hidden="true" /> : <Moon size={17} aria-hidden="true" />}
           </button>
 
           <a href="/" target="_blank"
-            className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors"
-            style={{ border: '1px solid var(--admin-border)', color: 'var(--admin-text-secondary)' }}
+            className="admin-icon-btn inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold"
+            style={{ border: '1px solid var(--admin-border)' }}
             rel="noopener noreferrer">
-            <Eye size={14} />
+            <Eye size={14} aria-hidden="true" />
             View site
           </a>
 
           <div className="flex items-center gap-2">
-            <div className="grid h-8 w-8 place-items-center rounded-full text-xs font-bold" style={{ background: 'var(--admin-accent)', color: 'var(--color-brand-fg)' }}>
+            <div
+              aria-hidden="true"
+              className="grid h-8 w-8 place-items-center rounded-full text-xs font-bold"
+              style={{ background: 'var(--admin-accent)', color: 'var(--color-brand-fg)' }}
+            >
               {userInitials}
             </div>
             <div className="hidden sm:block">
               <p className="text-xs font-semibold" style={{ color: 'var(--admin-text)' }}>{userName}</p>
-              <p className="text-xs" style={{ color: 'var(--admin-text-secondary)' }}>{user?.isSuperAdmin ? 'Superadmin' : user?.isAdmin ? 'Administrator' : 'Editor'}</p>
+              <p className="text-xs font-medium" style={{ color: 'var(--admin-text-secondary)' }}>{user?.isSuperAdmin ? 'Superadmin' : user?.isAdmin ? 'Administrator' : 'Editor'}</p>
             </div>
           </div>
         </header>

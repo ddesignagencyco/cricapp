@@ -34,8 +34,18 @@ export default function TeamLogo({ teamId, name, code, color, size = 'md', class
     md: 'h-11 w-11 text-sm',
     lg: 'h-16 w-16 text-xl',
     xl: 'h-24 w-24 text-3xl',
+    '2xl': 'h-32 w-32 text-4xl',
   };
-  const cls = `group relative shrink-0 ${sizes[size]} ${className}`;
+  const pixels: Record<string, number> = {
+    xs: 24,
+    sm: 32,
+    search: 40,
+    md: 44,
+    lg: 64,
+    xl: 96,
+    '2xl': 128,
+  };
+  const cls = `group relative shrink-0 ${sizes[size] || sizes.md} ${className}`;
 
   const inner = (
     <div className="relative h-full w-full transition-transform duration-500 group-hover:scale-105">
@@ -45,7 +55,7 @@ export default function TeamLogo({ teamId, name, code, color, size = 'md', class
           alt={displayName}
           title={displayName}
           fill
-          sizes="96px"
+          sizes={`${pixels[size] || 96}px`}
           className="rounded-full border border-white/10 bg-white object-contain p-0.5"
           style={color ? { borderColor: color } : undefined}
         />

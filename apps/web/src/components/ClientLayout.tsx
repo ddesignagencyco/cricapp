@@ -12,6 +12,15 @@ function isNewsArticlePath(pathname: string) {
   return /^\/(ur\/)?news\/.+/.test(pathname);
 }
 
+function isEditorialPath(pathname: string) {
+  return (
+    pathname.startsWith('/editorial/') ||
+    pathname === '/about' ||
+    pathname === '/privacy' ||
+    pathname === '/terms'
+  );
+}
+
 function showGlobalTopAd(pathname: string) {
   if (shouldHideDummyAds(pathname)) return false;
   if (pathname === '/') return false;
@@ -21,7 +30,7 @@ function showGlobalTopAd(pathname: string) {
   if (pathname.startsWith('/teams/') && pathname !== '/teams') return false;
   if (pathname.startsWith('/players/') && pathname !== '/players') return false;
   if (pathname.startsWith('/tournaments/') && pathname !== '/tournaments') return false;
-  if (pathname.startsWith('/editorial/')) return false;
+  if (isEditorialPath(pathname)) return false;
   return true;
 }
 

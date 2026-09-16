@@ -12,15 +12,11 @@ import ErrorState from '../ErrorState';
 import Pagination from '../Pagination';
 import DummyAd from '../advertisements/DummyAd';
 import { DirectoryGridSkeleton } from '../skeletons/Skeletons';
+import { filterChipClass, filterChipCountClass } from '../ui/filterChip';
+import FavoriteButton from '../FavoriteButton';
+import ShareButton from '../ShareButton';
 
 const LIMIT = 20;
-
-const chipClass = (active: boolean) =>
-  `flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition-colors ${
-    active
-      ? 'btn-brand'
-      : 'border border-lborder bg-card text-stext hover:bg-secondary hover:text-mtext'
-  }`;
 
 export default function ToursBoard() {
   const router = useRouter();
@@ -132,9 +128,12 @@ export default function ToursBoard() {
           <div className="relative max-w-md flex-1">
             <Search
               size={16}
+              aria-hidden="true"
               className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-stext"
             />
             <input
+              type="search"
+              aria-label="Search tours"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search tours by series name, country or category…"
@@ -155,7 +154,12 @@ export default function ToursBoard() {
 
         {categories.length > 0 && (
           <div className="flex flex-wrap items-center gap-1.5">
-            <button type="button" onClick={() => setCountryFilter('all')} className={chipClass(countryFilter === 'all')}>
+            <button
+              type="button"
+              onClick={() => setCountryFilter('all')}
+              aria-pressed={countryFilter === 'all'}
+              className={filterChipClass(countryFilter === 'all')}
+            >
               All Regions
             </button>
             {categories.slice(0, 14).map(([cat, count]) => (
@@ -163,10 +167,11 @@ export default function ToursBoard() {
                 key={cat}
                 type="button"
                 onClick={() => setCountryFilter(countryFilter === cat ? 'all' : cat)}
-                className={chipClass(countryFilter === cat)}
+                aria-pressed={countryFilter === cat}
+                className={filterChipClass(countryFilter === cat)}
               >
                 <span>{cat}</span>
-                <span className={countryFilter === cat ? 'text-white/80' : 'text-stext'}>{count}</span>
+                <span className={filterChipCountClass(countryFilter === cat)}>{count}</span>
               </button>
             ))}
           </div>
@@ -224,27 +229,36 @@ function TourCard({ tour }: { tour: Tour }) {
   const countryParam = encodeURIComponent(country);
 
   return (
-    <Link
-      href={`/tournaments?country=${countryParam}`}
-      className="group flex items-center gap-3 rounded-md border border-lborder bg-card p-3.5 transition-colors hover:border-accent/50 hover:bg-elevated"
-    >
-      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-md border border-lborder bg-secondary text-accent">
-        <Trophy size={18} />
-      </span>
-      <div className="min-w-0 flex-1">
-        <h3 className="truncate text-sm font-semibold text-mtext transition-colors group-hover:text-accent" title={tour.name}>
-          {tour.name}
-        </h3>
-        <p className="mt-0.5 flex min-w-0 items-center gap-2 text-xs text-stext">
-          <span className="inline-flex min-w-0 items-center gap-1 truncate">
-            <MapPin size={11} className="shrink-0" />
-            <span className="truncate">{country}</span>
-          </span>
-          {code && <span className="shrink-0 font-mono uppercase">{code}</span>}
-          <span className="truncate">{sport}</span>
-        </p>
+    <div className="group flex items-center gap-2 rounded-md border border-lborder bg-card p-3.5 transition-colors hover:border-accent/50 hover:bg-[var(--color-row-hover)]">
+      <Link href={`/tournaments?country=${countryParam}`} className="flex min-w-0 flex-1 items-center gap-3">
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-md border border-lborder bg-secondary text-accent">
+          <Trophy size={18} aria-hidden="true" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate text-sm font-semibold text-mtext transition-colors group-hover:text-accent" title={tour.name}>
+            {tour.name}
+          </h3>
+          <p className="mt-0.5 flex min-w-0 items-center gap-2 text-xs text-stext">
+            <span className="inline-flex min-w-0 items-center gap-1 truncate">
+              <MapPin size={11} className="shrink-0" />
+              <span className="truncate">{country}</span>
+            </span>
+            {code && <span className="shrink-0 font-mono uppercase">{code}</span>}
+            <span className="truncate">{sport}</span>
+          </p>
+        </div>
+        <ChevronRight size={16} className="shrink-0 text-stext transition-colors group-hover:text-accent" aria-hidden="true" />
+      </Link>
+      <div className="flex shrink-0 items-center gap-1">
+        <FavoriteButton targetType="tour" targetId={tour.id} compact />
+        <ShareButton
+          type="tour"
+          id={tour.id}
+          fallbackTitle={tour.name}
+          href={`/tournaments?country=${countryParam}`}
+          compact
+        />
       </div>
-      <ChevronRight size={16} className="shrink-0 text-stext transition-colors group-hover:text-accent" aria-hidden="true" />
-    </Link>
+    </div>
   );
 }

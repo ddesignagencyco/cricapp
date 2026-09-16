@@ -8,6 +8,7 @@ import { fetchPublicAuthor } from '../../../services/authors';
 import { sharePageMetadata } from '../../../services/sharing';
 import { newsHref } from '../../../utils/newsConstraints';
 import { getInitials } from '../../../utils/helpers';
+import AuthorActions from '../../../components/AuthorActions';
 
 function avatarHue(name: string) {
   let h = 0;
@@ -82,9 +83,12 @@ export default async function AuthorDetailPage({
             {author.bio ? <p className="mt-2 max-w-2xl text-sm leading-relaxed text-stext">{author.bio}</p> : null}
           </div>
 
-          <div className="shrink-0 rounded-md border border-lborder bg-secondary px-5 py-3 text-center sm:min-w-28">
-            <p className="text-2xl font-semibold tabular-nums text-mtext">{author.articleCount}</p>
-            <p className="mt-0.5 text-xs font-medium uppercase tracking-wider text-stext">Published</p>
+          <div className="flex shrink-0 items-center gap-3">
+            <AuthorActions name={author.name} slug={author.slug} />
+            <div className="rounded-md border border-lborder bg-secondary px-5 py-3 text-center sm:min-w-28">
+              <p className="text-2xl font-semibold tabular-nums text-mtext">{author.articleCount}</p>
+              <p className="mt-0.5 text-xs font-medium uppercase tracking-wider text-stext">Published</p>
+            </div>
           </div>
         </div>
       </header>

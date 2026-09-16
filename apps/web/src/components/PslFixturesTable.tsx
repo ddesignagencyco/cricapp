@@ -40,7 +40,7 @@ export default function PslFixturesTable({ matches }: Props) {
                 return (
                   <tr
                     key={m.matchId}
-                    className="border-b border-lborder last:border-0 transition-colors hover:bg-elevated"
+                    className="border-b border-lborder last:border-0 transition-colors hover:bg-[var(--color-row-hover)]"
                   >
                     <td className="px-4 py-3 text-center font-mono text-sm font-medium tabular-nums text-muted-foreground">{start + i + 1}</td>
                     <td className="px-4 py-3">

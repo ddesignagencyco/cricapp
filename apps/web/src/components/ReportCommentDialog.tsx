@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Flag, Loader2, X } from 'lucide-react';
+import useFocusTrap from '../hooks/useFocusTrap';
 
 export const REPORT_REASONS = [
   { id: 'spam', label: 'Spam', hint: 'Promotional or repeated junk.' },
@@ -36,6 +37,7 @@ export default function ReportCommentDialog({
 }: ReportCommentDialogProps) {
   const [reasonId, setReasonId] = useState<ReportReasonId>('spam');
   const [details, setDetails] = useState('');
+  const dialogRef = useFocusTrap<HTMLDivElement>(open);
 
   useEffect(() => {
     if (!open) return;
@@ -54,16 +56,18 @@ export default function ReportCommentDialog({
 
   return (
     <div
-      className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm"
+      className="scrim fixed inset-0 z-[80] flex items-center justify-center px-4"
       onMouseDown={(event) => {
         if (event.currentTarget === event.target && !loading) onCancel();
       }}
     >
       <div
+        ref={dialogRef}
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-labelledby="report-comment-title"
-        className="w-full max-w-md overflow-hidden rounded-md border border-lborder bg-elevated shadow-sm"
+        className="elev-overlay w-full max-w-md overflow-hidden rounded-md border border-lborder bg-card"
       >
         <div className="flex items-start justify-between gap-3 border-b border-lborder px-4 py-3">
           <div>
@@ -77,15 +81,15 @@ export default function ReportCommentDialog({
             type="button"
             onClick={onCancel}
             disabled={loading}
-            className="rounded p-1 text-stext hover:bg-elevated hover:text-mtext disabled:opacity-50"
+            className="rounded p-1 text-stext hover:bg-secondary hover:text-mtext disabled:opacity-50"
             aria-label="Close report dialog"
           >
-            <X size={16} />
+            <X size={16} aria-hidden="true" />
           </button>
         </div>
 
         {commentBody && (
-          <p className="mx-4 mt-3 line-clamp-3 rounded bg-elevated px-3 py-2 text-xs text-stext">“{commentBody}”</p>
+          <p className="mx-4 mt-3 line-clamp-3 rounded bg-secondary px-3 py-2 text-xs text-stext">“{commentBody}”</p>
         )}
 
         <form
@@ -101,8 +105,10 @@ export default function ReportCommentDialog({
             {REPORT_REASONS.map((option) => (
               <label
                 key={option.id}
-                className={`flex cursor-pointer items-start gap-3 rounded-md border px-3 py-2 ${
-                  reasonId === option.id ? 'border-accent bg-accent/5' : 'border-lborder bg-elevated/40'
+                className={`flex cursor-pointer items-start gap-3 rounded-md border px-3 py-2 transition-colors duration-150 ${
+                  reasonId === option.id
+                    ? 'border-accent bg-[var(--color-brand-soft)]'
+                    : 'border-lborder bg-secondary hover:border-[var(--color-border-strong)]'
                 }`}
               >
                 <input
@@ -131,9 +137,9 @@ export default function ReportCommentDialog({
               value={details}
               onChange={(event) => setDetails(event.target.value.slice(0, 200))}
               placeholder={reasonId === 'other' ? 'Tell moderators what is wrong…' : 'Add context if it helps'}
-              className="mt-1.5 w-full resize-none rounded-md border border-lborder bg-elevated px-3 py-2 text-sm text-mtext outline-none focus:border-[var(--color-focus-ring)] focus:ring-2 focus:ring-[var(--color-focus-ring)]/30"
+              className="mt-1.5 w-full resize-none rounded-md border border-lborder bg-card px-3 py-2 text-sm text-mtext outline-none focus:border-[var(--color-focus-ring)] focus:ring-2 focus:ring-[var(--color-focus-ring)]/30"
             />
-            <p className="mt-1 text-right text-[11px] text-stext">{details.length}/200</p>
+            <p className="mt-1 text-right text-[11px] font-medium tabular-nums text-stext">{details.length}/200</p>
           </div>
 
           <div className="flex justify-end gap-2 pt-1">

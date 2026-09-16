@@ -85,7 +85,7 @@ export default function TournamentsPage() {
         </div>
       </div>
 
-      {loading ? <LoadingState /> : tournaments.length === 0 ? (
+      {loading ? <LoadingState variant="table" /> : tournaments.length === 0 ? (
         <EmptyState icon={<Trophy size={28} />} title="No tournaments found" message="Try a different name or clear the search." />
       ) : (
         <div className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>

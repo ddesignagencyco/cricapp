@@ -10,9 +10,11 @@ import {
   Newspaper,
   Shield,
   Trash2,
+  Trophy,
   UserRound,
   ArrowRight,
   Sparkles,
+  Globe,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { listFavorites, removeFavorite, type FavoriteItem } from '../../services/favorites';
@@ -22,10 +24,11 @@ import RemoteImage from '../../components/RemoteImage';
 import Badge, { StatusBadge } from '../../components/Badge';
 import { formatScheduled, getInitials } from '../../utils/helpers';
 import { ConfirmDialog } from '../../components/admin/AdminShared';
-import type { Team, Player, Match, NewsArticle } from '../../types/index';
+import type { Team, Player, Match, NewsArticle, Tour, TournamentApi } from '../../types/index';
 import { FavoritesPageSkeleton } from '../../components/skeletons/Skeletons';
 import { newsHref } from '../../utils/newsConstraints';
 import NewsCopy from '../../components/NewsCopy';
+import { str } from '../../utils/extract';
 
 interface EnrichedFavorite {
   item: FavoriteItem;
@@ -33,6 +36,8 @@ interface EnrichedFavorite {
   player?: Player | null;
   match?: Match | null;
   news?: NewsArticle | null;
+  tour?: Tour | null;
+  tournament?: TournamentApi | null;
   loading: boolean;
 }
 
@@ -43,7 +48,9 @@ export default function FavoritesPage() {
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
-  const [activeTab, setActiveTab] = useState<'all' | 'team' | 'player' | 'match' | 'news'>('all');
+  const [activeTab, setActiveTab] = useState<
+    'all' | 'team' | 'player' | 'match' | 'news' | 'tour' | 'tournament'
+  >('all');
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -65,6 +72,8 @@ export default function FavoritesPage() {
             player: item.targetType === 'player' ? ((target as Player) || null) : undefined,
             match: item.targetType === 'match' ? ((target as Match) || null) : undefined,
             news: item.targetType === 'news' ? (mapFavoriteNews(target) || null) : undefined,
+            tour: item.targetType === 'tour' ? ((target as Tour) || null) : undefined,
+            tournament: item.targetType === 'tournament' ? ((target as TournamentApi) || null) : undefined,
           };
         }
         setEnrichedMap(initial);
@@ -108,6 +117,8 @@ export default function FavoritesPage() {
       player: favorites.filter((f) => f.targetType === 'player').length,
       match: favorites.filter((f) => f.targetType === 'match').length,
       news: favorites.filter((f) => f.targetType === 'news').length,
+      tour: favorites.filter((f) => f.targetType === 'tour').length,
+      tournament: favorites.filter((f) => f.targetType === 'tournament').length,
     };
   }, [favorites]);
 
@@ -123,7 +134,7 @@ export default function FavoritesPage() {
         </div>
         <h1 className="mt-6 text-2xl font-black tracking-tight text-mtext">Your Favorites Library</h1>
         <p className="mt-2 text-sm text-stext leading-relaxed">
-          Sign in to save teams, players, matches, and news.
+          Sign in to save teams, players, matches, news, tours and tournaments.
         </p>
         <Link
           href="/login?returnTo=/favorites"
@@ -150,7 +161,7 @@ export default function FavoritesPage() {
               Favorites
             </h1>
             <p className="text-sm text-stext max-w-2xl">
-              Keep track of matches, teams, players, and news you care about.
+              Keep track of matches, teams, players, news, tours and tournaments you care about.
             </p>
           </div>
 
@@ -199,6 +210,20 @@ export default function FavoritesPage() {
             icon={<Newspaper size={14} />}
             count={counts.news}
           />
+          <TabButton
+            active={activeTab === 'tour'}
+            onClick={() => setActiveTab('tour')}
+            label="Tours"
+            icon={<Globe size={14} />}
+            count={counts.tour}
+          />
+          <TabButton
+            active={activeTab === 'tournament'}
+            onClick={() => setActiveTab('tournament')}
+            label="Tournaments"
+            icon={<Trophy size={14} />}
+            count={counts.tournament}
+          />
         </div>
       </header>
 
@@ -212,32 +237,44 @@ export default function FavoritesPage() {
             {activeTab === 'all' ? 'No favorites added yet' : `No favorite ${activeTab}s saved yet`}
           </h2>
           <p className="mt-1.5 max-w-md text-sm text-stext">
-            Explore teams, players, matches, or news and tap the heart to save them here.
+            Explore teams, players, matches, news, tours or tournaments and tap the heart to save them here.
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <Link
               href="/matches"
-              className="rounded-xl border border-lborder bg-secondary px-4 py-2 text-xs font-bold text-mtext transition-colors hover:bg-card hover:text-accent"
+              className="rounded-xl border border-lborder bg-secondary px-4 py-2 text-xs font-bold text-mtext transition-colors hover:bg-[var(--color-row-hover)] hover:text-accent"
             >
               Browse Matches
             </Link>
             <Link
               href="/teams"
-              className="rounded-xl border border-lborder bg-secondary px-4 py-2 text-xs font-bold text-mtext transition-colors hover:bg-card hover:text-accent"
+              className="rounded-xl border border-lborder bg-secondary px-4 py-2 text-xs font-bold text-mtext transition-colors hover:bg-[var(--color-row-hover)] hover:text-accent"
             >
               Explore Teams
             </Link>
             <Link
               href="/players"
-              className="rounded-xl border border-lborder bg-secondary px-4 py-2 text-xs font-bold text-mtext transition-colors hover:bg-card hover:text-accent"
+              className="rounded-xl border border-lborder bg-secondary px-4 py-2 text-xs font-bold text-mtext transition-colors hover:bg-[var(--color-row-hover)] hover:text-accent"
             >
               Discover Players
             </Link>
             <Link
               href="/news"
-              className="rounded-xl border border-lborder bg-secondary px-4 py-2 text-xs font-bold text-mtext transition-colors hover:bg-card hover:text-accent"
+              className="rounded-xl border border-lborder bg-secondary px-4 py-2 text-xs font-bold text-mtext transition-colors hover:bg-[var(--color-row-hover)] hover:text-accent"
             >
               Read News
+            </Link>
+            <Link
+              href="/tours"
+              className="rounded-xl border border-lborder bg-secondary px-4 py-2 text-xs font-bold text-mtext transition-colors hover:bg-[var(--color-row-hover)] hover:text-accent"
+            >
+              Browse Tours
+            </Link>
+            <Link
+              href="/tournaments"
+              className="rounded-xl border border-lborder bg-secondary px-4 py-2 text-xs font-bold text-mtext transition-colors hover:bg-[var(--color-row-hover)] hover:text-accent"
+            >
+              Browse Tournaments
             </Link>
           </div>
         </div>
@@ -290,6 +327,28 @@ export default function FavoritesPage() {
                   showImage={activeTab === 'news'}
                   isBusy={busyId === fav.id}
                   onRemove={() => setDeleteTarget({ id: fav.id, name: data?.news?.title || 'News' })}
+                />
+              );
+            }
+            if (fav.targetType === 'tour') {
+              return (
+                <FavoriteTourCard
+                  key={fav.id}
+                  fav={fav}
+                  tour={data?.tour}
+                  isBusy={busyId === fav.id}
+                  onRemove={() => setDeleteTarget({ id: fav.id, name: data?.tour?.name || 'Tour' })}
+                />
+              );
+            }
+            if (fav.targetType === 'tournament') {
+              return (
+                <FavoriteTournamentCard
+                  key={fav.id}
+                  fav={fav}
+                  tournament={data?.tournament}
+                  isBusy={busyId === fav.id}
+                  onRemove={() => setDeleteTarget({ id: fav.id, name: data?.tournament?.name || 'Tournament' })}
                 />
               );
             }
@@ -353,7 +412,7 @@ function TabButton({
       className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition-all ${
         active
           ? 'btn-brand shadow-sm'
-          : 'bg-secondary text-stext hover:bg-elevated hover:text-mtext'
+          : 'bg-secondary text-stext hover:bg-[var(--color-row-hover)] hover:text-mtext'
       }`}
     >
       {icon}
@@ -391,7 +450,7 @@ function FavoriteCardFrame({
   children: React.ReactNode;
 }) {
   return (
-    <div className="group relative flex h-full min-h-[230px] flex-col overflow-hidden rounded-md border border-lborder bg-card transition-colors hover:border-accent/40 hover:bg-elevated">
+    <div className="group relative flex h-full min-h-[230px] flex-col overflow-hidden rounded-md border border-lborder bg-card transition-colors hover:border-accent/40 hover:bg-[var(--color-row-hover)]">
       <div className="flex items-center justify-between gap-2 px-5 pt-4">
         <Badge tone="neutral">{label}</Badge>
         <button
@@ -661,3 +720,86 @@ function FavoriteNewsCard({
     </FavoriteCardFrame>
   );
 }
+
+function FavoriteTourCard({
+  fav: _fav,
+  tour,
+  isBusy,
+  onRemove,
+}: {
+  fav: FavoriteItem;
+  tour?: Tour | null;
+  isBusy: boolean;
+  onRemove: () => void;
+}) {
+  const name = tour?.name || 'Tour';
+  const country = str(tour?.category) || 'International';
+  const sport = str(tour?.sport) || 'Cricket';
+  const href = `/tournaments?country=${encodeURIComponent(country)}`;
+
+  return (
+    <FavoriteCardFrame
+      label="Tour"
+      href={href}
+      actionLabel="Browse related tournaments"
+      isBusy={isBusy}
+      onRemove={onRemove}
+    >
+      <div className="flex items-center gap-3.5">
+        <FavoriteAvatar>
+          <Globe size={18} className="text-accent" />
+        </FavoriteAvatar>
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate text-base font-bold text-mtext transition-colors group-hover:text-accent">
+            {name}
+          </h3>
+          <p className="mt-0.5 truncate text-xs font-semibold text-stext">
+            {country} · {sport}
+          </p>
+        </div>
+      </div>
+    </FavoriteCardFrame>
+  );
+}
+
+function FavoriteTournamentCard({
+  fav,
+  tournament,
+  isBusy,
+  onRemove,
+}: {
+  fav: FavoriteItem;
+  tournament?: TournamentApi | null;
+  isBusy: boolean;
+  onRemove: () => void;
+}) {
+  const name = tournament?.name || 'Tournament';
+  const category = str(tournament?.category) || 'International';
+  const format = str(tournament?.type).replace(/_/g, ' ') || 'Cricket';
+  const gender = tournament?.gender || '';
+
+  return (
+    <FavoriteCardFrame
+      label="Tournament"
+      href={`/tournaments/${fav.targetId}`}
+      actionLabel="View tournament"
+      isBusy={isBusy}
+      onRemove={onRemove}
+    >
+      <div className="flex items-center gap-3.5">
+        <FavoriteAvatar>
+          <Trophy size={18} className="text-accent" />
+        </FavoriteAvatar>
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate text-base font-bold text-mtext transition-colors group-hover:text-accent">
+            {name}
+          </h3>
+          <p className="mt-0.5 truncate text-xs font-semibold text-stext">
+            {[format, category, gender].filter(Boolean).join(' · ')}
+          </p>
+        </div>
+      </div>
+    </FavoriteCardFrame>
+  );
+}
+

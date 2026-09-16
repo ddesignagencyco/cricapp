@@ -136,7 +136,7 @@ export default function ScheduleBoard({
             <button
               type="button"
               onClick={prevDate}
-              className="grid h-8 w-8 place-items-center rounded text-stext transition-colors hover:bg-elevated hover:text-accent"
+              className="grid h-8 w-8 place-items-center rounded text-stext transition-colors hover:bg-[var(--color-row-hover)] hover:text-accent"
               aria-label="Previous day"
             >
               <ChevronLeft size={16} />
@@ -157,7 +157,7 @@ export default function ScheduleBoard({
             <button
               type="button"
               onClick={nextDate}
-              className="grid h-8 w-8 place-items-center rounded text-stext transition-colors hover:bg-elevated hover:text-accent"
+              className="grid h-8 w-8 place-items-center rounded text-stext transition-colors hover:bg-[var(--color-row-hover)] hover:text-accent"
               aria-label="Next day"
             >
               <ChevronRight size={16} />
@@ -168,7 +168,7 @@ export default function ScheduleBoard({
             <button
               type="button"
               onClick={() => jumpDay(-1)}
-              className="rounded border border-lborder bg-card px-2.5 py-1 text-xs font-medium text-stext transition-colors hover:bg-elevated hover:text-mtext"
+              className="rounded border border-lborder bg-card px-2.5 py-1 text-xs font-medium text-stext transition-colors hover:bg-[var(--color-row-hover)] hover:text-mtext"
             >
               Yesterday
             </button>
@@ -186,7 +186,7 @@ export default function ScheduleBoard({
             <button
               type="button"
               onClick={() => jumpDay(1)}
-              className="rounded border border-lborder bg-card px-2.5 py-1 text-xs font-medium text-stext transition-colors hover:bg-elevated hover:text-mtext"
+              className="rounded border border-lborder bg-card px-2.5 py-1 text-xs font-medium text-stext transition-colors hover:bg-[var(--color-row-hover)] hover:text-mtext"
             >
               Tomorrow
             </button>
@@ -485,7 +485,7 @@ function ScheduleCard({ record }: { record: SportEventRecord }) {
   );
 
   const className =
-    'flex h-full flex-col rounded-md border border-lborder bg-card p-3.5 transition-colors hover:border-accent/50 hover:bg-elevated';
+    'flex h-full flex-col rounded-md border border-lborder bg-card p-3.5 transition-colors hover:border-accent/50 hover:bg-[var(--color-row-hover)]';
 
   if (!href) {
     return <div className={className}>{body}</div>;

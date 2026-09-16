@@ -6,6 +6,8 @@ import { Calendar, CalendarDays, MapPin, Trophy } from 'lucide-react';
 import EmptyState from '../../../components/EmptyState';
 import DummyAd from '../../../components/advertisements/DummyAd';
 import { StatusBadge } from '../../../components/Badge';
+import FavoriteButton from '../../../components/FavoriteButton';
+import ShareButton from '../../../components/ShareButton';
 import { APP_TIME_ZONE } from '../../../utils/helpers';
 import type { SportEventRecord, TournamentSeason } from '../../../types/index';
 
@@ -93,6 +95,7 @@ function seasonLabel(season: TournamentSeason): string {
 
 interface TournamentDetailPageClientProps {
   tournament: Record<string, unknown> & {
+    id?: string;
     name?: string;
     type?: string | { name?: string };
     gender?: string;
@@ -120,6 +123,7 @@ export default function TournamentDetailPageClient({
       ? typeRaw.replace(/_/g, ' ')
       : typeRaw?.name || '';
   const selectedSeason = seasons.find((item) => item.id === seasonId) || seasons[0];
+  const tournamentId = String(tournament.id || '');
   const results = useMemo(
     () => (seasonId && resultsBySeason[seasonId]) || [],
     [resultsBySeason, seasonId],
@@ -161,7 +165,21 @@ export default function TournamentDetailPageClient({
             <Trophy size={22} />
           </span>
           <div className="min-w-0 flex-1">
-            <h1 className="text-2xl font-semibold text-mtext">{tournament.name}</h1>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <h1 className="text-2xl font-semibold text-mtext">{tournament.name}</h1>
+              {tournamentId ? (
+                <div className="flex shrink-0 items-center gap-2">
+                  <FavoriteButton targetType="tournament" targetId={tournamentId} compact />
+                  <ShareButton
+                    type="tournament"
+                    id={tournamentId}
+                    fallbackTitle={String(tournament.name || 'Tournament')}
+                    href={`/tournaments/${encodeURIComponent(tournamentId)}`}
+                    compact
+                  />
+                </div>
+              ) : null}
+            </div>
             <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-stext">
               {category && (
                 <span className="inline-flex items-center gap-1">

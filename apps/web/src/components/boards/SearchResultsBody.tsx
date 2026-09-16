@@ -112,20 +112,21 @@ export default function SearchResultsBody() {
         </p>
 
         <div className="relative mt-5 max-w-2xl">
-          <Search size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-accent" />
+          <Search size={16} aria-hidden="true" className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-accent" />
           <input
-            type="text"
+            type="search"
+            aria-label="Search players, teams, matches or tournaments"
             value={inputVal}
             onChange={(e) => setInputVal(e.target.value)}
             placeholder="Search players, teams, matches or tournaments…"
             autoComplete="off"
-            className="w-full rounded-md border border-lborder bg-elevated py-3 pl-10 pr-20 text-sm text-mtext outline-none placeholder:text-stext/70 focus:border-[var(--color-focus-ring)] focus:ring-2 focus:ring-[var(--color-focus-ring)]/30"
+            className="w-full rounded-md border border-lborder bg-card py-3 pl-10 pr-20 text-sm text-mtext outline-none focus:border-[var(--color-focus-ring)] focus:ring-2 focus:ring-[var(--color-focus-ring)]/30"
           />
           {inputVal ? (
             <button
               type="button"
               onClick={() => setInputVal('')}
-              className="absolute right-2 top-1/2 inline-flex -translate-y-1/2 items-center gap-1 rounded px-2 py-1 text-xs font-semibold text-stext hover:bg-card hover:text-mtext"
+              className="absolute right-2 top-1/2 inline-flex -translate-y-1/2 items-center gap-1 rounded px-2 py-1 text-xs font-semibold text-stext hover:bg-[var(--color-row-hover)] hover:text-mtext"
               aria-label="Clear search"
             >
               <X size={12} />
@@ -229,7 +230,7 @@ function FilterChip({
       type="button"
       onClick={onClick}
       className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
-        active ? 'btn-brand' : 'border border-lborder bg-card text-stext hover:bg-elevated hover:text-mtext'
+        active ? 'btn-brand' : 'border border-lborder bg-card text-stext hover:bg-[var(--color-row-hover)] hover:text-mtext'
       }`}
     >
       {label}
@@ -283,7 +284,7 @@ function SearchCard({
     <Link
       href={href}
       prefetch={false}
-      className="group flex items-center gap-3 rounded-md border border-lborder bg-card px-3.5 py-3 transition-colors hover:border-accent/40 hover:bg-elevated"
+      className="group flex items-center gap-3 rounded-md border border-lborder bg-card px-3.5 py-3 transition-colors hover:border-accent/40 hover:bg-[var(--color-row-hover)]"
     >
       {avatar}
       <span className="min-w-0 flex-1">

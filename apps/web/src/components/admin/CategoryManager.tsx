@@ -209,7 +209,7 @@ export default function CategoryManager() {
 
           {/* Table */}
           {loading ? (
-            <LoadingState />
+            <LoadingState variant="table" />
           ) : filteredCategories.length === 0 ? (
             <div className="rounded-lg border border-dashed p-8 text-center" style={{ borderColor: 'var(--admin-border)', background: 'var(--admin-card)' }}>
               <FolderArchive size={28} className="mx-auto mb-2" style={{ color: 'var(--admin-text-muted)' }} />

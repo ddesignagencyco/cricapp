@@ -91,7 +91,7 @@ export default function AdminEditorialPage() {
 
       {error ? <ErrorState message="Could not list editorial pages." onRetry={loadList} /> : null}
       {loading ? (
-        <LoadingState />
+        <LoadingState variant="editorial" />
       ) : (
         <form
           className="space-y-3 rounded-lg p-4"

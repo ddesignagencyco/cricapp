@@ -1,5 +1,5 @@
-import { AdminPageSkeleton } from '../../../components/skeletons/Skeletons';
+import { AdminRouteSkeleton } from '../../../components/skeletons/Skeletons';
 
 export default function Loading() {
-  return <AdminPageSkeleton />;
+  return <AdminRouteSkeleton variant="dashboard" />;
 }

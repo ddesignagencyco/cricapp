@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import Link from 'next/link';
 import { ChevronDown, ChevronUp, X } from 'lucide-react';
 import RemoteImage from '../RemoteImage';
+import useFocusTrap from '../../hooks/useFocusTrap';
 import { buildGalleryEmbedUrl } from '../../utils/galleryEmbed';
 import type { GalleryShort } from './galleryTypes';
 
@@ -18,6 +19,7 @@ interface ShortsViewerProps {
 export default function ShortsViewer({ items, index, onClose, onIndexChange, layout = 'portrait' }: ShortsViewerProps) {
   const item = items[index];
   const embed = buildGalleryEmbedUrl(item?.embedUrl || item?.rawUrl);
+  const dialogRef = useFocusTrap<HTMLDivElement>(Boolean(item));
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -37,9 +39,16 @@ export default function ShortsViewer({ items, index, onClose, onIndexChange, lay
   if (!item) return null;
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/94 p-3" role="dialog" aria-modal="true" aria-label="Short">
-      <button type="button" onClick={onClose} className="absolute right-4 top-4 grid h-9 w-9 place-items-center rounded-full bg-white/10 text-white" aria-label="Close short">
-        <X size={18} />
+    <div
+      ref={dialogRef}
+      tabIndex={-1}
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-black/94 p-3"
+      role="dialog"
+      aria-modal="true"
+      aria-label={item.title || 'Short'}
+    >
+      <button type="button" onClick={onClose} className="btn-on-media on-media absolute right-4 top-4 grid h-9 w-9 place-items-center rounded-full" aria-label="Close short">
+        <X size={18} aria-hidden="true" />
       </button>
       <div className={`relative max-w-full overflow-hidden rounded-2xl bg-secondary ring-1 ring-white/10 ${
         layout === 'landscape'
@@ -57,23 +66,23 @@ export default function ShortsViewer({ items, index, onClose, onIndexChange, lay
         ) : item.image ? (
           <RemoteImage src={item.image} alt={item.title} fill sizes="420px" fit="contain" className="news-image" />
         ) : (
-          <div className="grid h-full place-items-center text-sm text-white/60">No preview</div>
+          <div className="text-on-media-muted grid h-full place-items-center text-sm font-medium">No preview</div>
         )}
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-4">
-          <p className="text-sm font-semibold text-white">{item.title}</p>
+          <p className="text-on-media text-sm font-semibold">{item.title}</p>
           {item.href && (
-            <Link href={item.href} className="mt-1 inline-block text-xs font-semibold text-white/80 hover:underline">
+            <Link href={item.href} className="text-on-media on-media mt-1 inline-block text-xs font-semibold underline underline-offset-2">
               View source
             </Link>
           )}
         </div>
       </div>
       <div className="absolute right-4 top-1/2 hidden -translate-y-1/2 flex-col gap-2 sm:flex">
-        <button type="button" disabled={index === 0} onClick={() => onIndexChange(index - 1)} className="grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white disabled:opacity-30" aria-label="Previous short">
-          <ChevronUp size={18} />
+        <button type="button" disabled={index === 0} onClick={() => onIndexChange(index - 1)} className="btn-on-media on-media grid h-10 w-10 place-items-center rounded-full" aria-label="Previous short">
+          <ChevronUp size={18} aria-hidden="true" />
         </button>
-        <button type="button" disabled={index === items.length - 1} onClick={() => onIndexChange(index + 1)} className="grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white disabled:opacity-30" aria-label="Next short">
-          <ChevronDown size={18} />
+        <button type="button" disabled={index === items.length - 1} onClick={() => onIndexChange(index + 1)} className="btn-on-media on-media grid h-10 w-10 place-items-center rounded-full" aria-label="Next short">
+          <ChevronDown size={18} aria-hidden="true" />
         </button>
       </div>
     </div>
