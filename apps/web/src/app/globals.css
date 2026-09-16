@@ -12,8 +12,8 @@
   --color-secondary: #142238;
   --color-card: #0E1A2B;
   --color-elevated: #142238;
-  --color-accent: #65A9D9;
-  --color-accent2: #82BDE5;
+  --color-accent: #4DB4F0;
+  --color-accent2: #7CC8F5;
   --color-gold: #FBBF24;
   --color-mtext: #F8FAFC;
   --color-stext: #CBD5E1;
@@ -39,13 +39,13 @@
   --color-input: #142238;
   --color-input-border: #3A4D67;
 
-  --color-brand: #65A9D9;
-  --color-brand-hover: #82BDE5;
-  /* Dark-theme brand is a light blue, so text sitting on a filled
-     brand surface must be dark, not white. */
-  --color-brand-fg: #08111F;
+  /* Filled buttons/pills: saturated cricket blue with white labels.
+     Accent (below) stays lighter so links still read on dark surfaces. */
+  --color-brand: #1878C0;
+  --color-brand-hover: #136EB0;
+  --color-brand-fg: #FFFFFF;
   --color-brand-soft: #12314A;
-  --color-focus-ring: #65A9D9;
+  --color-focus-ring: #4DB4F0;
 
   /* Filled table/section headers keep a deep brand navy in dark mode
      so they read as brand blue without becoming a bright band. */
@@ -58,7 +58,7 @@
   --color-warning-soft: #33280A;
   --color-danger-soft: #3A1420;
   --color-neutral-soft: #1B2B42;
-  --color-info: #65A9D9;
+  --color-info: #4DB4F0;
   --color-info-soft: #12314A;
   --color-live: #FB7185;
   /* Row/list hover must stay visible in both themes, so it is its own

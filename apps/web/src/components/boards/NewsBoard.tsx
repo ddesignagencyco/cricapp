@@ -175,13 +175,13 @@ export default function NewsBoard({
         <div className="inline-flex shrink-0 self-start rounded-md border border-lborder bg-card p-0.5 text-xs font-semibold">
           <Link
             href={newsListHref('en')}
-            className={`rounded px-2.5 py-1 ${language === 'en' ? 'bg-accent text-white' : 'text-stext hover:text-mtext'}`}
+            className={`rounded px-2.5 py-1 ${language === 'en' ? 'btn-brand' : 'text-stext hover:text-mtext'}`}
           >
             EN
           </Link>
           <Link
             href={newsListHref('ur')}
-            className={`rounded px-2.5 py-1 ${language === 'ur' ? 'bg-accent text-white' : 'text-stext hover:text-mtext'}`}
+            className={`rounded px-2.5 py-1 ${language === 'ur' ? 'btn-brand' : 'text-stext hover:text-mtext'}`}
           >
             اردو
           </Link>

@@ -228,7 +228,7 @@ export default function Navbar() {
                     </div>
                     <div className="mt-2.5 flex flex-wrap gap-1.5">
                       {isSuperAdmin ? (
-                        <span className="inline-flex items-center gap-1 rounded bg-accent px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-white">
+                        <span className="inline-flex items-center gap-1 rounded bg-[var(--color-brand)] px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-[var(--color-brand-fg)]">
                           <ShieldCheck size={10} /> Superadmin
                         </span>
                       ) : isAdmin ? (

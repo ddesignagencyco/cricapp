@@ -194,11 +194,11 @@ export default function ProfilePage() {
                   className="h-28 w-28 rounded-full border border-lborder object-cover"
                 />
               ) : (
-                <span className="grid h-28 w-28 place-items-center rounded-full bg-accent text-2xl font-semibold text-white">
+                <span className="grid h-28 w-28 place-items-center rounded-full bg-[var(--color-brand)] text-2xl font-semibold text-[var(--color-brand-fg)]">
                   {initials}
                 </span>
               )}
-              <span className="absolute bottom-0 right-0 grid h-8 w-8 place-items-center rounded-full bg-accent text-white ring-2 ring-card">
+              <span className="absolute bottom-0 right-0 grid h-8 w-8 place-items-center rounded-full bg-[var(--color-brand)] text-[var(--color-brand-fg)] ring-2 ring-card">
                 {uploading ? <Loader2 size={14} className="animate-spin" /> : <Camera size={14} />}
               </span>
             </button>

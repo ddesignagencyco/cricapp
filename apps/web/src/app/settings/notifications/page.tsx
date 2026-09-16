@@ -382,7 +382,7 @@ export default function NotificationSettingsPage() {
                                 disabled={busy}
                                 onClick={() => togglePref(device, pref.key)}
                                 className={`relative h-5 w-9 shrink-0 rounded-full transition-colors disabled:opacity-60 ${
-                                  on ? 'bg-accent' : 'bg-lborder'
+                                  on ? 'bg-[var(--color-brand)]' : 'bg-lborder'
                                 }`}
                               >
                                 <span
