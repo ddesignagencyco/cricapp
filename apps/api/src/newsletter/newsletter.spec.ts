@@ -73,11 +73,42 @@ describe('NewsletterModule (integration)', () => {
     expect(updated.unsubscribedAt).toBeTruthy();
   });
 
+  it('links an active subscription to its registered user', async () => {
+    const user = await ctx.prisma.user.create({
+      data: {
+        email: 'Fan@Example.com',
+        username: 'newsletter-fan',
+        passwordHash: 'unused',
+      },
+    });
+
+    await ctx.agent
+      .post('/newsletter/subscribe')
+      .send({ email: 'fan@example.com' })
+      .expect(201);
+
+    const subscriber =
+      await ctx.prisma.newsletterSubscriber.findUniqueOrThrow({
+        where: { email: 'fan@example.com' },
+      });
+    expect(subscriber.userId).toBe(user.id);
+    expect(subscriber.status).toBe('active');
+  });
+
   it('lists subscribers for admins without exposing unsubscribe tokens', async () => {
     await ctx.prisma.newsletterSubscriber.create({
       data: {
         email: 'fan@example.com',
         unsubscribeToken: crypto.randomUUID(),
+        userId: (
+          await ctx.prisma.user.create({
+            data: {
+              email: 'fan@example.com',
+              username: 'subscriber',
+              passwordHash: 'unused',
+            },
+          })
+        ).id,
       },
     });
 
@@ -87,6 +118,7 @@ describe('NewsletterModule (integration)', () => {
       .expect(200);
     expect(response.body.meta.totalRecords).toBe(1);
     expect(response.body.data[0].email).toBe('fan@example.com');
+    expect(response.body.data[0].user.username).toBe('subscriber');
     expect(response.body.data[0].unsubscribeToken).toBeUndefined();
   });
 });

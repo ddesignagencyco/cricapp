@@ -21,13 +21,54 @@ export class GalleryService {
     private readonly media: MediaService,
   ) {}
 
+  private async referencedAssetUrls(): Promise<string[]> {
+    const [users, authors, teams, players, articles] = await Promise.all([
+      this.prisma.user.findMany({
+        where: { avatarUrl: { not: null } },
+        select: { avatarUrl: true },
+      }),
+      this.prisma.author.findMany({
+        where: { avatarUrl: { not: null } },
+        select: { avatarUrl: true },
+      }),
+      this.prisma.team.findMany({
+        where: { logoUrl: { not: null } },
+        select: { logoUrl: true },
+      }),
+      this.prisma.player.findMany({
+        where: { profileUrl: { not: null } },
+        select: { profileUrl: true },
+      }),
+      this.prisma.newsArticle.findMany({
+        where: { imageUrl: { not: null } },
+        select: { imageUrl: true },
+      }),
+    ]);
+
+    return [
+      ...users.map(({ avatarUrl }) => avatarUrl),
+      ...authors.map(({ avatarUrl }) => avatarUrl),
+      ...teams.map(({ logoUrl }) => logoUrl),
+      ...players.map(({ profileUrl }) => profileUrl),
+      ...articles.map(({ imageUrl }) => imageUrl),
+    ].filter((url): url is string => Boolean(url));
+  }
+
+  private async galleryWhere(type?: GalleryListQuery['type']) {
+    const referencedUrls = await this.referencedAssetUrls();
+    return {
+      ...(type ? { type } : {}),
+      ...(referencedUrls.length ? { url: { notIn: referencedUrls } } : {}),
+    };
+  }
+
   async list(query: GalleryListQuery) {
     const { page, limit, skip } = getPaginationOffset(
       query.page,
       query.limit,
       query.offset,
     );
-    const where = query.type ? { type: query.type } : {};
+    const where = await this.galleryWhere(query.type);
     const [rows, total] = await Promise.all([
       this.prisma.galleryMedia.findMany({
         where,
@@ -41,7 +82,12 @@ export class GalleryService {
   }
 
   async getById(id: string) {
-    const media = await this.prisma.galleryMedia.findUnique({ where: { id } });
+    const media = await this.prisma.galleryMedia.findFirst({
+      where: {
+        id,
+        ...(await this.galleryWhere()),
+      },
+    });
     if (!media) throw new NotFoundException('Gallery media not found');
     return media;
   }

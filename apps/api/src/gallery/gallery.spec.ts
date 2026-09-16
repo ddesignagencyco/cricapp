@@ -70,6 +70,51 @@ describe('GalleryModule (integration)', () => {
     expect(response.body.data[0].duration).toBe(20);
   });
 
+  it('excludes media reused by profiles or editorial content', async () => {
+    const visible = await ctx.prisma.galleryMedia.create({
+      data: {
+        type: 'image',
+        url: 'https://cdn.example.com/gallery-only.jpg',
+        publicId: 'gallery/visible',
+        resourceType: 'image',
+      },
+    });
+    const profile = await ctx.prisma.galleryMedia.create({
+      data: {
+        type: 'image',
+        url: 'https://cdn.example.com/profile.jpg',
+        publicId: 'gallery/profile',
+        resourceType: 'image',
+      },
+    });
+    const article = await ctx.prisma.galleryMedia.create({
+      data: {
+        type: 'image',
+        url: 'https://cdn.example.com/article.jpg',
+        publicId: 'gallery/article',
+        resourceType: 'image',
+      },
+    });
+    await ctx.prisma.user.update({
+      where: { email: 'admin@example.com' },
+      data: { avatarUrl: profile.url },
+    });
+    await ctx.prisma.newsArticle.create({
+      data: {
+        title: 'Article with image',
+        slug: 'article-with-image',
+        content: 'Body',
+        imageUrl: article.url,
+      },
+    });
+
+    const response = await ctx.agent.get('/gallery').expect(200);
+    expect(response.body.meta.totalRecords).toBe(1);
+    expect(response.body.data[0].id).toBe(visible.id);
+    await ctx.agent.get(`/gallery/${profile.id}`).expect(404);
+    await ctx.agent.get(`/gallery/${article.id}`).expect(404);
+  });
+
   it('requires matching media type before a Cloudinary upload', async () => {
     const png = Buffer.from(
       'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',

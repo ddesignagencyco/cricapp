@@ -130,4 +130,61 @@ describe('FavoritesModule (integration)', () => {
       .send({ targetType: 'news', targetId: draft.id })
       .expect(400);
   });
+
+  it('favorites and expands tours and tournaments', async () => {
+    await ctx.prisma.tour.create({
+      data: { id: 'sr:tour:1', name: 'World Cricket Tour' },
+    });
+    await ctx.prisma.tournament.create({
+      data: {
+        id: 'sr:tournament:1',
+        name: 'International Cup',
+        tourId: 'sr:tour:1',
+      },
+    });
+
+    await ctx.agent
+      .post('/favorites')
+      .set('Authorization', `Bearer ${userToken}`)
+      .send({ targetType: 'tour', targetId: 'sr:tour:1' })
+      .expect(201);
+    await ctx.agent
+      .post('/favorites')
+      .set('Authorization', `Bearer ${userToken}`)
+      .send({
+        targetType: 'tournament',
+        targetId: 'sr:tournament:1',
+      })
+      .expect(201);
+
+    const response = await ctx.agent
+      .get('/favorites?expand=true')
+      .set('Authorization', `Bearer ${userToken}`)
+      .expect(200);
+    expect(response.body.data).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          targetType: 'tour',
+          target: expect.objectContaining({ name: 'World Cricket Tour' }),
+        }),
+        expect.objectContaining({
+          targetType: 'tournament',
+          target: expect.objectContaining({ name: 'International Cup' }),
+        }),
+      ]),
+    );
+  });
+
+  it('rejects missing tours and tournaments', async () => {
+    await ctx.agent
+      .post('/favorites')
+      .set('Authorization', `Bearer ${userToken}`)
+      .send({ targetType: 'tour', targetId: 'missing-tour' })
+      .expect(400);
+    await ctx.agent
+      .post('/favorites')
+      .set('Authorization', `Bearer ${userToken}`)
+      .send({ targetType: 'tournament', targetId: 'missing-tournament' })
+      .expect(400);
+  });
 });

@@ -25,10 +25,29 @@ export class NewsletterService {
 
   async subscribe(dto: SubscribeNewsletterDto) {
     const email = dto.email.trim().toLowerCase();
-    const existing = await this.prisma.newsletterSubscriber.findUnique({
-      where: { email },
-    });
+    const [existing, user] = await Promise.all([
+      this.prisma.newsletterSubscriber.findUnique({ where: { email } }),
+      this.prisma.user.findFirst({
+        where: { email: { equals: email, mode: 'insensitive' } },
+        select: { id: true },
+      }),
+    ]);
+    if (user) {
+      await this.prisma.newsletterSubscriber.updateMany({
+        where: {
+          userId: user.id,
+          ...(existing ? { id: { not: existing.id } } : {}),
+        },
+        data: { userId: null },
+      });
+    }
     if (existing?.status === 'active') {
+      if (existing.userId !== user?.id) {
+        await this.prisma.newsletterSubscriber.update({
+          where: { id: existing.id },
+          data: { userId: user?.id ?? null },
+        });
+      }
       return { message: 'Subscription confirmed.' };
     }
 
@@ -40,8 +59,9 @@ export class NewsletterService {
         unsubscribeToken,
         subscribedAt: new Date(),
         unsubscribedAt: null,
+        userId: user?.id ?? null,
       },
-      create: { email, unsubscribeToken },
+      create: { email, unsubscribeToken, userId: user?.id },
     });
 
     const appUrl = this.config.get<string>('APP_URL', 'http://localhost:3000');
@@ -89,11 +109,19 @@ export class NewsletterService {
         select: {
           id: true,
           email: true,
+          userId: true,
           status: true,
           subscribedAt: true,
           unsubscribedAt: true,
           createdAt: true,
           updatedAt: true,
+          user: {
+            select: {
+              id: true,
+              username: true,
+              displayName: true,
+            },
+          },
         },
         orderBy: { subscribedAt: 'desc' },
         skip,

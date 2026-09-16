@@ -1,5 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import {
+  SHARE_TARGET_TYPES,
+  type ShareTargetType,
+} from './dto/sharing.dto.js';
 
 const BASE_URL = process.env.APP_URL ?? 'https://cricapp.com';
 
@@ -8,12 +12,16 @@ export class SharingService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getShareLink(type: string, id: string) {
-    await this.trackShare(type, id);
+    if (!SHARE_TARGET_TYPES.includes(type as ShareTargetType)) {
+      throw new BadRequestException('Unsupported share type');
+    }
+    const shareType = type as ShareTargetType;
+    await this.trackShare(shareType, id);
 
     let ogTitle = 'CricApp';
     let ogDescription = 'Cricket scores, news and live streams';
 
-    switch (type) {
+    switch (shareType) {
       case 'match': {
         const match = await this.prisma.match.findUnique({ where: { matchId: id } });
         if (match) {
@@ -51,15 +59,50 @@ export class SharingService {
         }
         break;
       }
+      case 'tour': {
+        const tour = await this.prisma.tour.findUnique({ where: { id } });
+        if (tour) {
+          ogTitle = `${tour.name} — CricApp`;
+          ogDescription = 'Cricket tour schedules, tournaments and results';
+        }
+        break;
+      }
+      case 'tournament': {
+        const tournament = await this.prisma.tournament.findUnique({
+          where: { id },
+        });
+        if (tournament) {
+          ogTitle = `${tournament.name} — CricApp`;
+          ogDescription = [
+            tournament.type,
+            tournament.gender,
+            'fixtures, results and standings',
+          ]
+            .filter(Boolean)
+            .join(' • ');
+        }
+        break;
+      }
+      default: {
+        const exhaustiveCheck: never = shareType;
+        throw new BadRequestException(
+          `Unsupported share type: ${exhaustiveCheck}`,
+        );
+      }
     }
 
-    const path = type === 'match' ? 'matches' : type === 'news' ? 'news' : `${type}s`;
+    const path =
+      shareType === 'match'
+        ? 'matches'
+        : shareType === 'news'
+          ? 'news'
+          : `${shareType}s`;
 
     return {
       url: `${BASE_URL}/${path}/${id}`,
       ogTitle,
       ogDescription,
-      ogImage: `${BASE_URL}/api/og/${type}/${id}`,
+      ogImage: `${BASE_URL}/api/og/${shareType}/${id}`,
     };
   }
 

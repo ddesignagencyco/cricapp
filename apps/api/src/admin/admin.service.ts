@@ -54,13 +54,19 @@ export class AdminService {
           emailVerified: true,
           createdAt: true,
           updatedAt: true,
+          newsletterSubscription: {
+            select: { status: true },
+          },
         },
       }),
       this.prisma.user.count({ where }),
     ]);
 
     return {
-      data,
+      data: data.map(({ newsletterSubscription, ...user }) => ({
+        ...user,
+        newsletterActive: newsletterSubscription?.status === 'active',
+      })),
       meta: { page, limit, totalRecords: total, totalPages: Math.ceil(total / limit) },
     };
   }
