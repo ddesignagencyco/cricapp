@@ -1,7 +1,27 @@
 -- CreateSchema
--- Baseline: matches table is owned by services/ingestion (data/init.sql).
--- This migration only creates the read-layer team/player tables plus indexes
--- on the existing matches table.
+-- The matches table is normally created by services/ingestion (data/init.sql)
+-- via the postgres docker entrypoint on a fresh volume. To make this migration
+-- replayable (incl. the prisma shadow database used by `prisma migrate dev`)
+-- we create it here idempotently. This is a no-op when init.sql already ran.
+CREATE TABLE IF NOT EXISTS "matches" (
+    "match_id" TEXT NOT NULL,
+    "status" TEXT NOT NULL,
+    "teams" JSONB NOT NULL,
+    "team_names" JSONB NOT NULL,
+    "tournament" TEXT,
+    "venue" TEXT,
+    "scheduled" TEXT,
+    "current_innings" JSONB,
+    "last_event" JSONB NOT NULL,
+    "display_score" TEXT,
+    "match_status" TEXT,
+    "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "matches_pkey" PRIMARY KEY ("match_id")
+);
+
+-- Read-layer tables plus indexes on the (now guaranteed to exist) matches table.
 
 -- CreateTable teams
 CREATE TABLE "teams" (

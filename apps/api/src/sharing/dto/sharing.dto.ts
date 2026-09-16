@@ -1,11 +1,21 @@
 import { IsString, IsIn } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
+export const SHARE_TARGET_TYPES = [
+  'match',
+  'news',
+  'player',
+  'team',
+  'tour',
+  'tournament',
+] as const;
+export type ShareTargetType = (typeof SHARE_TARGET_TYPES)[number];
+
 export class ShareLinkDto {
-  @ApiProperty({ example: 'match' })
+  @ApiProperty({ example: 'match', enum: SHARE_TARGET_TYPES })
   @IsString()
-  @IsIn(['match', 'news', 'player', 'team'])
-  type: string;
+  @IsIn(SHARE_TARGET_TYPES)
+  type: ShareTargetType;
 
   @ApiProperty({ example: 'sr:match:12345' })
   @IsString()

@@ -1,6 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import { Mail, MapPin, MessageSquare } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { submitContact } from '../../services/contact';
+import { ApiError } from '../../services/api/client';
 
 const contactMethods = [
   {
@@ -24,50 +28,93 @@ const contactMethods = [
 ];
 
 function ContactForm() {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [message, setMessage] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (name.trim().length < 2) {
+      toast.error('Please enter your name.');
+      return;
+    }
+    if (!email.trim()) {
+      toast.error('Please enter your email.');
+      return;
+    }
+    if (message.trim().length < 5) {
+      toast.error('Message must be at least 5 characters.');
+      return;
+    }
+    setBusy(true);
+    try {
+      const res = await submitContact({ name: name.trim(), email: email.trim(), message: message.trim() });
+      toast.success(res.message || 'Message sent.');
+      setName('');
+      setEmail('');
+      setMessage('');
+    } catch (error) {
+      toast.error(error instanceof ApiError ? error.message : 'Could not send the message.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <div className="rounded-2xl bg-card p-6 ring-1 ring-lborder">
       <h2 className="text-lg font-bold text-mtext">Send a Message</h2>
-      <form
-        onSubmit={(e) => e.preventDefault()}
-        className="mt-4 space-y-4"
-      >
+      <form onSubmit={(e) => void onSubmit(e)} noValidate className="mt-4 space-y-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div>
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-stext">
-              Name
+            <label htmlFor="contact-name" className="mb-1 block text-xs font-semibold uppercase tracking-wider text-stext">
+              Name <span className="text-danger">*</span>
             </label>
             <input
+              id="contact-name"
+              name="name"
               type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               placeholder="Your name"
-              className="w-full rounded-lg bg-elevated px-4 py-2.5 text-sm text-mtext ring-1 ring-lborder outline-none transition-colors focus:ring-accent"
+              className="w-full rounded-lg bg-elevated px-4 py-2.5 text-sm text-mtext ring-1 ring-lborder outline-none transition-colors focus:ring-[var(--color-focus-ring)]"
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-stext">
-              Email
+            <label htmlFor="contact-email" className="mb-1 block text-xs font-semibold uppercase tracking-wider text-stext">
+              Email <span className="text-danger">*</span>
             </label>
             <input
+              id="contact-email"
+              name="email"
               type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
-              className="w-full rounded-lg bg-elevated px-4 py-2.5 text-sm text-mtext ring-1 ring-lborder outline-none transition-colors focus:ring-accent"
+              className="w-full rounded-lg bg-elevated px-4 py-2.5 text-sm text-mtext ring-1 ring-lborder outline-none transition-colors focus:ring-[var(--color-focus-ring)]"
             />
           </div>
         </div>
         <div>
-          <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-stext">
-            Message
+          <label htmlFor="contact-message" className="mb-1 block text-xs font-semibold uppercase tracking-wider text-stext">
+            Message <span className="text-danger">*</span>
           </label>
           <textarea
+            id="contact-message"
+            name="message"
             rows={5}
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
             placeholder="How can we help?"
-            className="w-full resize-none rounded-lg bg-elevated px-4 py-2.5 text-sm text-mtext ring-1 ring-lborder outline-none transition-colors focus:ring-accent"
+            className="w-full resize-none rounded-lg bg-elevated px-4 py-2.5 text-sm text-mtext ring-1 ring-lborder outline-none transition-colors focus:ring-[var(--color-focus-ring)]"
           />
         </div>
         <button
           type="submit"
-          className="rounded-lg bg-accent px-6 py-2.5 text-sm font-bold text-white transition-colors hover:bg-accent2"
+          disabled={busy}
+          className="btn-brand rounded px-6 py-2.5 text-sm font-medium disabled:opacity-60"
         >
-          Send Message
+          {busy ? 'Sending…' : 'Send message'}
         </button>
       </form>
     </div>

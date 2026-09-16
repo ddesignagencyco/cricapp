@@ -1,4 +1,5 @@
 import ContactBody from '../../components/boards/ContactBody';
+import Newsletter from '../../components/Newsletter';
 
 export const metadata = {
   title: 'Contact',
@@ -20,6 +21,7 @@ export default function ContactPage() {
           </p>
         </div>
         <ContactBody />
+        <Newsletter />
       </div>
     </div>
   );

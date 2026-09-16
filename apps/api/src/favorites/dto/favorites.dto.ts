@@ -1,13 +1,23 @@
 import { IsString, IsIn, IsOptional, IsBoolean } from 'class-validator';
-import { Type, Transform } from 'class-transformer';
+import { Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginationQuery } from '../../common/dto/pagination.query.js';
 
+export const FAVORITE_TARGET_TYPES = [
+  'team',
+  'player',
+  'match',
+  'news',
+  'tour',
+  'tournament',
+] as const;
+export type FavoriteTargetType = (typeof FAVORITE_TARGET_TYPES)[number];
+
 export class AddFavoriteDto {
-  @ApiProperty({ enum: ['team', 'player', 'match', 'news'] })
+  @ApiProperty({ enum: FAVORITE_TARGET_TYPES })
   @IsString()
-  @IsIn(['team', 'player', 'match', 'news'])
-  targetType: string;
+  @IsIn(FAVORITE_TARGET_TYPES)
+  targetType: FavoriteTargetType;
 
   @ApiProperty({ example: 'sr:team:1' })
   @IsString()
@@ -15,10 +25,11 @@ export class AddFavoriteDto {
 }
 
 export class FavoriteListQuery extends PaginationQuery {
-  @ApiPropertyOptional({ enum: ['team', 'player', 'match', 'news'], description: 'Filter by type' })
+  @ApiPropertyOptional({ enum: FAVORITE_TARGET_TYPES, description: 'Filter by type' })
   @IsOptional()
   @IsString()
-  targetType?: string;
+  @IsIn(FAVORITE_TARGET_TYPES)
+  targetType?: FavoriteTargetType;
 
   @ApiPropertyOptional({ description: 'Include expanded target entity details' })
   @IsOptional()

@@ -1,12 +1,13 @@
 import './globals.css';
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
 import ScrollToTop from '../components/ScrollToTop';
-import ScrollTopButton from '../components/ScrollTopButton';
 import JsonLd from './json-ld';
 import ThemeProvider from '../components/ThemeProvider';
+import AuthProvider from '../components/AuthProvider';
+import ClientLayout from '../components/ClientLayout';
+import { Toaster } from 'react-hot-toast';
 
 export const metadata = {
+  metadataBase: new URL('https://pakcriczone.com'),
   title: {
     default: 'PAK CRICZONE — Cricket Live Scores & PSL Hub',
     template: '%s | PAK CRICZONE',
@@ -41,13 +42,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('pak-criczone-theme')||(window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');document.documentElement.classList.toggle('light',t==='light');}catch(e){}})();`,
+            __html: `(function(){try{var t=localStorage.getItem('pak-criczone-theme')||(window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');document.documentElement.classList.toggle('light',t==='light');document.documentElement.style.colorScheme=t;}catch(e){}})();`,
           }}
         />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&family=Noto+Nastaliq+Urdu:wght@400;500;600;700&display=swap"
           rel="stylesheet"
         />
       </head>
@@ -63,10 +64,33 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}
         />
         <ThemeProvider>
-          <Navbar />
-          <main className="min-h-screen flex-1">{children}</main>
-          <Footer />
-          <ScrollTopButton />
+          <AuthProvider>
+            <ClientLayout>{children}</ClientLayout>
+            <Toaster
+              position="top-right"
+              gutter={10}
+              containerStyle={{ top: 16, right: 16, zIndex: 80 }}
+              toastOptions={{
+                duration: 3200,
+                className: 'pcz-toast',
+                style: {
+                  background: 'transparent',
+                  color: 'inherit',
+                  border: 'none',
+                  boxShadow: 'none',
+                  padding: 0,
+                },
+                success: {
+                  className: 'pcz-toast pcz-toast--success',
+                  iconTheme: { primary: 'var(--color-brand)', secondary: 'var(--color-surface-elevated)' },
+                },
+                error: {
+                  className: 'pcz-toast pcz-toast--error',
+                  iconTheme: { primary: 'var(--color-danger)', secondary: 'var(--color-surface-elevated)' },
+                },
+              }}
+            />
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

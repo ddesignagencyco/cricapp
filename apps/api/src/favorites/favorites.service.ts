@@ -85,6 +85,37 @@ export class FavoritesService {
         if (article) target = article;
         break;
       }
+      case 'tour': {
+        const tour = await this.prisma.tour.findUnique({
+          where: { id: row.targetId },
+          select: {
+            id: true,
+            name: true,
+            category: true,
+            sport: true,
+          },
+        });
+        if (tour) target = tour;
+        break;
+      }
+      case 'tournament': {
+        const tournament = await this.prisma.tournament.findUnique({
+          where: { id: row.targetId },
+          select: {
+            id: true,
+            name: true,
+            type: true,
+            gender: true,
+            category: true,
+            currentSeason: true,
+            sport: true,
+            tourId: true,
+            parentId: true,
+          },
+        });
+        if (tournament) target = tournament;
+        break;
+      }
     }
 
     return { ...row, target };
@@ -126,6 +157,20 @@ export class FavoritesService {
         throw new BadRequestException('Published news article not found');
       }
       dto = { ...dto, targetId: article.id };
+    }
+    if (dto.targetType === 'tour') {
+      const tour = await this.prisma.tour.findUnique({
+        where: { id: dto.targetId },
+        select: { id: true },
+      });
+      if (!tour) throw new BadRequestException('Tour not found');
+    }
+    if (dto.targetType === 'tournament') {
+      const tournament = await this.prisma.tournament.findUnique({
+        where: { id: dto.targetId },
+        select: { id: true },
+      });
+      if (!tournament) throw new BadRequestException('Tournament not found');
     }
 
     const existing = await this.prisma.favorite.findUnique({

@@ -1,11 +1,13 @@
 import Link from 'next/link';
 import { ArrowUpRight, CalendarDays } from 'lucide-react';
 import { fetchNews } from '../../services/news';
+import { newsHref } from '../../utils/newsConstraints';
 import { formatScheduled } from '../../utils/helpers';
-import AdBanner from '../AdBanner';
+import DummyAd from '../advertisements/DummyAd';
 
-export default function Sidebar() {
-  const latest = fetchNews().slice(0, 5);
+export default async function Sidebar() {
+  const allNews = await fetchNews();
+  const latest = allNews.slice(0, 5);
   return (
     <aside className="space-y-6">
       <section className="rounded-2xl bg-card p-5 ring-1 ring-lborder">
@@ -15,7 +17,7 @@ export default function Sidebar() {
           </h2>
           <Link
             href="/news"
-            className="flex items-center gap-1 text-xs font-semibold text-accent transition-colors hover:text-accent2"
+            className="flex items-center gap-1 text-xs font-semibold text-accent transition-colors"
           >
             All news <ArrowUpRight size={14} />
           </Link>
@@ -25,13 +27,13 @@ export default function Sidebar() {
             latest.map((item) => (
               <Link
                 key={item.id}
-                href={`/news/${item.id}`}
+                href={newsHref(item)}
                 className="group block py-3 first:pt-0 last:pb-0"
               >
                 <p className="line-clamp-2 text-sm font-semibold text-mtext transition-colors group-hover:text-accent">
                   {item.title}
                 </p>
-                <p className="mt-1 flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-stext">
+                <p className="mt-1 flex items-center gap-1.5 text-xs uppercase tracking-wider text-stext">
                   <CalendarDays size={12} />
                   {formatScheduled(item.date).date} • {item.category}
                 </p>
@@ -43,7 +45,9 @@ export default function Sidebar() {
         </div>
       </section>
 
-      <AdBanner variant="vertical" />
+      <div className="flex justify-center lg:justify-start">
+        <DummyAd size="medium-rectangle" placement="layout-sidebar" />
+      </div>
     </aside>
   );
 }
