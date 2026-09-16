@@ -23,9 +23,69 @@ const THIN_EVENT_TYPES = new Set([
 
 let sharedSocket: Socket | null = null;
 let sharedRefCount = 0;
+let debugBound = false;
 
 function socketUrl(): string {
   return CLIENT_BASE.replace(/\/$/, '');
+}
+
+function liveLog(event: string, detail?: unknown): void {
+  if (detail === undefined) {
+    console.warn(`[live-socket] ${event}`);
+    return;
+  }
+  console.warn(`[live-socket] ${event}`, detail);
+}
+
+function summarizePayload(payload: LiveUpdate | null | undefined): Record<string, unknown> {
+  const data =
+    payload?.data && typeof payload.data === 'object'
+      ? (payload.data as Record<string, unknown>)
+      : {};
+  const innings =
+    data.currentInnings && typeof data.currentInnings === 'object'
+      ? (data.currentInnings as Record<string, unknown>)
+      : {};
+  return {
+    type: payload?.type,
+    matchId: payload?.matchId || data.matchId,
+    thin: isThinEvent(data),
+    snapshot: Boolean(unwrapSnapshot(data)),
+    status: data.status,
+    displayScore: data.displayScore,
+    overs: innings.overs,
+    ts: payload?.ts,
+  };
+}
+
+function bindSocketDebug(socket: Socket): void {
+  if (debugBound) return;
+  debugBound = true;
+  liveLog('connecting', { url: `${socketUrl()}/matches` });
+  socket.on('connect', () => {
+    liveLog('connected', {
+      id: socket.id,
+      transport: socket.io.engine.transport.name,
+    });
+  });
+  socket.on('disconnect', (reason) => {
+    liveLog('disconnected', reason);
+  });
+  socket.on('connect_error', (err) => {
+    liveLog('connect_error', err.message);
+  });
+  socket.io.on('reconnect_attempt', (attempt) => {
+    liveLog('reconnect_attempt', attempt);
+  });
+  socket.on('ready', (payload: unknown) => {
+    liveLog('ready', payload);
+  });
+  socket.on('live:update', (payload: LiveUpdate) => {
+    liveLog('live:update', summarizePayload(payload));
+  });
+  socket.on('match:update', (payload: LiveUpdate) => {
+    liveLog('match:update', summarizePayload(payload));
+  });
 }
 
 function acquireMatchesSocket(): Socket {
@@ -37,6 +97,7 @@ function acquireMatchesSocket(): Socket {
       reconnectionDelay: 2000,
       reconnectionDelayMax: 15000,
     });
+    bindSocketDebug(sharedSocket);
   }
   sharedRefCount += 1;
   return sharedSocket;
@@ -47,6 +108,7 @@ function releaseMatchesSocket(): void {
   if (sharedRefCount > 0 || !sharedSocket) return;
   sharedSocket.disconnect();
   sharedSocket = null;
+  debugBound = false;
 }
 
 function isThinEvent(data: unknown): boolean {
@@ -130,7 +192,6 @@ export function useMatchStream(matchId?: string | null, enabled = true): LiveUpd
         emitHydrated(id, snapshot, incoming.ts);
         return;
       }
-
       const prev = pending.get(id);
       if (prev) clearTimeout(prev);
       pending.set(
@@ -153,7 +214,12 @@ export function useMatchStream(matchId?: string | null, enabled = true): LiveUpd
     socket.on('match:update', onMatch);
 
     const subscribe = () => {
-      if (!matchId) return;
+      liveLog('socket ready', { connected: socket.connected, id: socket.id });
+      if (!matchId) {
+        liveLog('listening for all live:update events');
+        return;
+      }
+      liveLog('subscribe:match', matchId);
       socket.emit('subscribe:match', { matchId });
     };
 

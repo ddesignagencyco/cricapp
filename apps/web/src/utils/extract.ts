@@ -1,9 +1,16 @@
-/** Safely extract a string from a value that might be a string, object with .name, or undefined. */
+export function isSportRadarId(value: string): boolean {
+  return /^sr:[a-z0-9]+:/i.test(value.trim());
+}
+
+/** Safely extract a display string. SportRadar ids like `sr:tournament:123` are skipped. */
 export function str(v: unknown): string {
-  if (typeof v === 'string') return v;
+  if (typeof v === 'string') {
+    const text = v.trim();
+    return !text || isSportRadarId(text) ? '' : text;
+  }
   if (v && typeof v === 'object') {
     const o = v as Record<string, unknown>;
-    return (o.name as string) || (o.title as string) || '';
+    return str(o.name) || str(o.title) || str(o.city_name) || str(o.country_name);
   }
   return '';
 }

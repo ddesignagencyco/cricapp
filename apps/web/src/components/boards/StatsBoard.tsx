@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { BarChart3, Target, Flame, Trophy, Zap } from 'lucide-react';
+import { Target, Flame, Trophy, Zap } from 'lucide-react';
 import Tabs from '../Tabs';
 import EmptyState from '../EmptyState';
 import { cap } from '../../utils/helpers';
@@ -29,29 +29,15 @@ const statLabels: Record<string, string> = {
 
 interface Props {
   leaders?: any[];
-  season?: string;
 }
 
-export default function StatsBoard({ leaders = [], season }: Props) {
+export default function StatsBoard({ leaders = [] }: Props) {
   const [tab, setTab] = useState('batting');
 
   const grouped = leaders.filter((g) => g.category === tab);
 
   return (
     <>
-      <header className="mb-8">
-        <div className="flex items-center gap-2 text-accent">
-          <BarChart3 size={18} />
-          <span className="text-xs font-bold uppercase tracking-widest text-stext">
-            {season ? `Season ${season} Leaders` : 'Season Leaders'}
-          </span>
-        </div>
-        <h1 className="mt-1 text-3xl font-black tracking-tight sm:text-4xl">Statistics</h1>
-        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-stext">
-          The best of the season — runs, wickets, strike rates and more.
-        </p>
-      </header>
-
       <div className="mb-6">
         <Tabs tabs={statsTabs} active={tab} onChange={setTab} />
       </div>

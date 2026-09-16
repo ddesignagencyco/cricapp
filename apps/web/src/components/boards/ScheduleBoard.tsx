@@ -1,6 +1,7 @@
 'use client';
 
-import { Fragment } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { Calendar, ChevronLeft, ChevronRight, Clock, MapPin } from 'lucide-react';
 import { StatusBadge } from '../Badge';
 import LiveIndicator from '../LiveIndicator';
@@ -11,7 +12,7 @@ import Pagination from '../Pagination';
 import Tabs from '../Tabs';
 import RemoteImage from '../RemoteImage';
 import { APP_TIME_ZONE, getPslLogo, toKarachiISODate } from '../../utils/helpers';
-import { str } from '../../utils/extract';
+import { isSportRadarId, str } from '../../utils/extract';
 import type { SportEventRecord } from '../../types/index';
 import type { PageMeta } from '../../services/api/client';
 import { MatchCardGridSkeleton } from '../skeletons/Skeletons';
@@ -96,6 +97,28 @@ export default function ScheduleBoard({
   const goToToday = () => onDateChange(toKarachiISODate());
 
   const isToday = date === toKarachiISODate();
+  const [tournamentFilter, setTournamentFilter] = useState('all');
+
+  useEffect(() => {
+    setTournamentFilter('all');
+  }, [date, tab]);
+
+  const tournamentTabs = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const record of events) {
+      const name = tournamentNameFromRecord(record);
+      counts.set(name, (counts.get(name) || 0) + 1);
+    }
+    return [
+      { key: 'all', label: 'All', count: events.length },
+      ...[...counts.entries()].map(([name, count]) => ({ key: name, label: name, count })),
+    ];
+  }, [events]);
+
+  const visibleEvents =
+    tournamentFilter === 'all'
+      ? events
+      : events.filter((record) => tournamentNameFromRecord(record) === tournamentFilter);
 
   return (
     <div className="space-y-5">
@@ -171,27 +194,38 @@ export default function ScheduleBoard({
         </div>
       </header>
 
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-lborder pb-3">
-        <Tabs tabs={tabs} active={tab} onChange={onTabChange} />
-        <p className="text-xs text-stext">
-          <span className="font-semibold text-mtext">{activeMeta.total || events.length}</span> matches
-        </p>
+      <div className="space-y-3 border-b border-lborder pb-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Tabs tabs={tabs} active={tab} onChange={onTabChange} />
+          <p className="text-xs text-stext">
+            <span className="font-semibold text-mtext">{visibleEvents.length}</span> matches
+          </p>
+        </div>
+        {tournamentTabs.length > 2 ? (
+          <Tabs
+            tabs={tournamentTabs}
+            active={tournamentTabs.some((item) => item.key === tournamentFilter) ? tournamentFilter : 'all'}
+            onChange={setTournamentFilter}
+            variant="tags"
+            size="sm"
+          />
+        ) : null}
       </div>
 
       {loading ? (
         <MatchCardGridSkeleton />
       ) : errorMessage ? (
         <ErrorState message={errorMessage} onRetry={onRetry} />
-      ) : events.length > 0 ? (
+      ) : visibleEvents.length > 0 ? (
         <>
           <div className="fade-in grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {events.map((record, index) => (
-              <Fragment key={record.eventId}>
+            {visibleEvents.map((record, index) => (
+              <div key={record.eventId} className="contents">
                 <ScheduleCard record={record} />
-                {events.length >= 4 && index === 3 ? (
+                {visibleEvents.length >= 4 && index === 3 ? (
                   <DummyAd size="large-rectangle" placement="schedule-infeed" inFeed />
                 ) : null}
-              </Fragment>
+              </div>
             ))}
           </div>
           <Pagination
@@ -213,6 +247,87 @@ export default function ScheduleBoard({
         />
       )}
     </div>
+  );
+}
+
+const FORMAT_LABELS: Record<string, string> = {
+  t10: 'T10',
+  t20: 'T20',
+  t20i: 'T20I',
+  odi: 'ODI',
+  list_a: 'List A',
+  test: 'Test',
+  first_class: 'First Class',
+};
+
+function payloadEvent(record: SportEventRecord): {
+  ev: Record<string, unknown>;
+  st: Record<string, unknown>;
+} {
+  const p = record.payload || {};
+  return {
+    ev: (p.sport_event || p) as Record<string, unknown>,
+    st: (p.sport_event_status || {}) as Record<string, unknown>,
+  };
+}
+
+function competitorLabel(side: Record<string, unknown> | undefined, fallback: string): string {
+  if (!side) return fallback;
+  const name = str(side.name);
+  if (name) return name;
+  const abbr = str(side.abbreviation);
+  if (abbr) return abbr;
+  return fallback;
+}
+
+function competitorCode(side: Record<string, unknown> | undefined): string {
+  const abbr = str(side?.abbreviation);
+  return abbr && !isSportRadarId(abbr) ? abbr : '';
+}
+
+function tournamentNameFromEvent(ev: Record<string, unknown>): string {
+  const context = (ev.sport_event_context || {}) as Record<string, unknown>;
+  return (
+    str(ev.tournament) ||
+    str(context.competition) ||
+    str(ev.season) ||
+    str(context.season) ||
+    'Match'
+  );
+}
+
+function formatLabel(tournament: Record<string, unknown> | undefined): string {
+  const raw = String(tournament?.format || tournament?.type || '').trim().toLowerCase();
+  if (!raw || isSportRadarId(raw)) return '';
+  return FORMAT_LABELS[raw] || raw.replace(/_/g, ' ').toUpperCase();
+}
+
+function roundLabel(round: Record<string, unknown>, fallback?: unknown): string {
+  const named = str(round.name) || str(fallback);
+  if (named) {
+    return named.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  }
+  const type = str(round.type);
+  if (type && type !== 'group') {
+    return type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  }
+  const n = Number(round.number);
+  if (!Number.isNaN(n) && n > 0) return `Round ${n}`;
+  return '';
+}
+
+function tournamentNameFromRecord(record: SportEventRecord): string {
+  const { ev } = payloadEvent(record);
+  return tournamentNameFromEvent(ev);
+}
+
+function venueLabel(ev: Record<string, unknown>): string {
+  const venue = (ev.venue || {}) as Record<string, unknown>;
+  return (
+    str(ev.venue) ||
+    [str(venue.city_name) || str(venue.city), str(venue.country_name) || str(venue.country)]
+      .filter(Boolean)
+      .join(', ')
   );
 }
 
@@ -293,51 +408,37 @@ function sideTotal(
 }
 
 function ScheduleCard({ record }: { record: SportEventRecord }) {
-  const p = record.payload || {};
-  const ev = (p.sport_event || p) as Record<string, unknown>;
-  const st = (p.sport_event_status || {}) as Record<string, unknown>;
+  const { ev, st } = payloadEvent(record);
   const comps = (ev.competitors || []) as Array<Record<string, unknown>>;
-  const home = comps.find((c) => c.qualifier === 'home') || comps[0] || {};
-  const away = comps.find((c) => c.qualifier === 'away') || comps[1] || {};
-  const venue = (ev.venue || {}) as Record<string, unknown>;
+  const home = comps.find((c) => c.qualifier === 'home') || comps[0];
+  const away = comps.find((c) => c.qualifier === 'away') || comps[1];
   const tournament = ev.tournament as Record<string, unknown> | undefined;
   const coverage = (ev.coverage || {}) as Record<string, unknown>;
   const scores = (st.period_scores || []) as Array<Record<string, unknown>>;
-  const winner = st.winner;
 
-  const homeName = (home.name as string) || 'TBD';
-  const awayName = (away.name as string) || 'TBD';
-  const homeAbbr = (home.abbreviation as string) || (home.id as string)?.slice(-3) || '';
-  const awayAbbr = (away.abbreviation as string) || (away.id as string)?.slice(-3) || '';
-  const context = (ev.sport_event_context || {}) as Record<string, unknown>;
-  const tournamentName =
-    str(ev.tournament) ||
-    str(context.competition) ||
-    str(context.season) ||
-    str(ev.season) ||
-    'Match';
-  const format = (tournament?.format as string) || '';
-  const roundInfo = (ev.tournament_round || {}) as Record<string, unknown>;
-  const roundNumber = Number(roundInfo.number);
-  const round =
-    (ev.round as string) || (Number.isNaN(roundNumber) ? '' : `Round ${roundNumber}`);
-  const isLive = Boolean(coverage.live);
-  const displayScore = (st.display_score as string) || '';
-  const matchStatus = (st.match_status as string) || '';
-  const result = (st.result as string) || (st.match_result_text as string) || '';
-  const winnerName = !winner ? '' : typeof winner === 'string' ? winner : str(winner);
-  const location = str(ev.venue) || [str(venue.city), str(venue.country)].filter(Boolean).join(', ');
-  const { date: eventDate, time } = formatScheduled(record.scheduled);
-
+  const homeName = competitorLabel(home, 'TBD');
+  const awayName = competitorLabel(away, 'TBD');
+  const homeAbbr = competitorCode(home);
+  const awayAbbr = competitorCode(away);
+  const tournamentName = tournamentNameFromEvent(ev);
+  const format = formatLabel(tournament);
+  const round = roundLabel((ev.tournament_round || {}) as Record<string, unknown>, ev.round);
+  const isLive = Boolean(coverage.live) || record.status === 'live';
+  const displayScore = str(st.display_score);
+  const matchStatus = str(st.match_status) || str(record.status);
+  const result = str(st.match_result_text) || str(st.result);
+  const location = venueLabel(ev);
+  const { date: eventDate, time } = formatScheduled(record.scheduled || str(ev.scheduled));
   const homeScore = sideTotal(scores, 'home');
   const awayScore = sideTotal(scores, 'away');
-  const outcome = result || (winnerName ? `${winnerName} won` : '');
+  const outcome = result || displayScore;
+  const href = record.eventId ? `/matches/${record.eventId}` : undefined;
 
-  return (
-    <div className="flex flex-col rounded-md border border-lborder bg-card p-3.5 transition-colors hover:border-accent/50 hover:bg-elevated">
+  const body = (
+    <>
       <div className="mb-2.5 flex items-center justify-between gap-2">
         <p className="min-w-0 truncate text-xs font-semibold uppercase tracking-wide text-stext" title={tournamentName}>
-          {tournamentName || 'Match'}
+          {tournamentName}
         </p>
         {isLive ? (
           <LiveIndicator label="Live" className="shrink-0" />
@@ -351,11 +452,9 @@ function ScheduleCard({ record }: { record: SportEventRecord }) {
         <TeamRow code={awayAbbr} name={awayName} score={awayScore} />
       </div>
 
-      {(outcome || displayScore) && (
-        <p className="mt-2.5 truncate text-xs font-medium text-mtext">
-          {outcome || displayScore}
-        </p>
-      )}
+      {outcome ? (
+        <p className="mt-2.5 truncate text-xs font-medium text-mtext">{outcome}</p>
+      ) : null}
 
       <div className="mt-2.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-t border-lborder pt-2 text-xs">
         <span className="flex min-w-0 items-center gap-3">
@@ -371,8 +470,8 @@ function ScheduleCard({ record }: { record: SportEventRecord }) {
               {time}
             </span>
           )}
-          {format && <span className="truncate font-medium text-muted-foreground">{format}</span>}
-          {round && <span className="truncate font-medium text-muted-foreground">{round}</span>}
+          {format && <span className="truncate font-medium text-stext">{format}</span>}
+          {round && <span className="truncate font-medium text-stext">{round}</span>}
         </span>
 
         {location && (
@@ -382,6 +481,19 @@ function ScheduleCard({ record }: { record: SportEventRecord }) {
           </span>
         )}
       </div>
-    </div>
+    </>
+  );
+
+  const className =
+    'flex h-full flex-col rounded-md border border-lborder bg-card p-3.5 transition-colors hover:border-accent/50 hover:bg-elevated';
+
+  if (!href) {
+    return <div className={className}>{body}</div>;
+  }
+
+  return (
+    <Link href={href} prefetch={false} className={className}>
+      {body}
+    </Link>
   );
 }

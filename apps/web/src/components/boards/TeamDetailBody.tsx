@@ -16,6 +16,7 @@ import { StatusBadge } from '../Badge';
 import { fetchTeamRosterPage } from '../../services/teams';
 import type { NewsArticle, Player, SportEventRecord } from '../../types/index';
 import { formatScheduled } from '../../utils/helpers';
+import { isSportRadarId, str } from '../../utils/extract';
 import { newsHref } from '../../utils/newsConstraints';
 
 const teamTabs = [
@@ -254,19 +255,57 @@ export default function TeamDetailBody({
   );
 }
 
+function competitorName(side: Record<string, unknown> | undefined): string {
+  if (!side) return '';
+  const name = typeof side.name === 'string' ? side.name.trim() : '';
+  if (name && !isSportRadarId(name)) return name;
+  const abbr = typeof side.abbreviation === 'string' ? side.abbreviation.trim() : '';
+  return abbr || '';
+}
+
 function eventTitle(event: SportEventRecord): string {
   const payload = event.payload || {};
   const names = payload.teamNames;
-  if (Array.isArray(names) && names.length >= 2) return `${names[0]} vs ${names[1]}`;
-  if (typeof payload.title === 'string' && payload.title) return payload.title;
-  if (typeof payload.tournament === 'string' && payload.tournament) return payload.tournament;
-  return event.eventId || 'Match';
+  if (Array.isArray(names) && names.length >= 2) {
+    const home = String(names[0] || '').trim();
+    const away = String(names[1] || '').trim();
+    if (home && away && !isSportRadarId(home) && !isSportRadarId(away)) {
+      return `${home} vs ${away}`;
+    }
+  }
+
+  const ev = (payload.sport_event || payload) as Record<string, unknown>;
+  const comps = (ev.competitors || []) as Array<Record<string, unknown>>;
+  if (comps.length >= 2) {
+    const home = comps.find((c) => c.qualifier === 'home') || comps[0];
+    const away = comps.find((c) => c.qualifier === 'away') || comps[1];
+    const homeName = competitorName(home);
+    const awayName = competitorName(away);
+    if (homeName && awayName) return `${homeName} vs ${awayName}`;
+  }
+
+  if (typeof payload.title === 'string' && payload.title && !isSportRadarId(payload.title)) {
+    return payload.title;
+  }
+  const tournament = str(ev.tournament) || str(payload.tournament);
+  if (tournament) return tournament;
+  return 'Match';
 }
 
 function SportEventRow({ event }: { event: SportEventRecord }) {
   const payload = event.payload || {};
-  const { date, time } = formatScheduled(event.scheduled || (payload.scheduled as string) || '');
-  const score = (payload.displayScore as string) || (payload.result as string) || '';
+  const ev = (payload.sport_event || payload) as Record<string, unknown>;
+  const st = (payload.sport_event_status || {}) as Record<string, unknown>;
+  const { date, time } = formatScheduled(
+    event.scheduled || (ev.scheduled as string) || (payload.scheduled as string) || '',
+  );
+  const score =
+    (typeof payload.displayScore === 'string' && payload.displayScore) ||
+    (typeof payload.result === 'string' && payload.result) ||
+    (typeof st.match_result_text === 'string' && st.match_result_text) ||
+    (typeof st.display_score === 'string' && st.display_score) ||
+    '';
+  const venue = str(ev.venue) || str(payload.venue);
   const href = event.eventId ? `/matches/${event.eventId}` : undefined;
 
   const inner = (
@@ -274,11 +313,15 @@ function SportEventRow({ event }: { event: SportEventRecord }) {
       <div className="min-w-0">
         <p className="truncate text-sm font-semibold text-mtext">{eventTitle(event)}</p>
         <p className="mt-0.5 text-xs text-stext">
-          {[date, time, payload.venue].filter(Boolean).join(' · ') || 'Schedule TBA'}
+          {[date, time, venue].filter(Boolean).join(' · ') || 'Schedule TBA'}
         </p>
       </div>
       <div className="flex shrink-0 items-center gap-2">
-        {score ? <span className="font-mono text-xs font-bold text-accent">{score}</span> : null}
+        {score ? (
+          <span className="max-w-[12rem] truncate text-right text-xs font-semibold text-accent" title={score}>
+            {score}
+          </span>
+        ) : null}
         <StatusBadge status={event.status || (payload.status as string) || ''} />
       </div>
     </div>

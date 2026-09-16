@@ -19,7 +19,6 @@ import toast from 'react-hot-toast';
 import {
   createCategory,
   createNews,
-  createNewsTranslation,
   fetchNewsArticle,
   fetchNewsCategories,
   updateNews,
@@ -263,42 +262,6 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
     }
   };
 
-  const saveTranslation = async () => {
-    if (mode !== 'edit' || !id) return;
-    const other = form.language === 'ur' ? 'en' : 'ur';
-    const title = form.title.trim();
-    const slug = form.slug.trim();
-    if (!title || isEmptyRichText(form.content)) {
-      toast.error('Title and content are required for a translation.');
-      return;
-    }
-    setSaving(true);
-    const payload: NewsInput = {
-      title,
-      content: form.content.trim(),
-      language: other,
-      isPublished: false,
-    };
-    if (slug) payload.slug = `${slug}-${other}`;
-    if (form.summary.trim()) payload.summary = form.summary.trim();
-    if (form.imageUrl.trim()) payload.imageUrl = form.imageUrl.trim();
-    if (form.author.trim()) payload.author = form.author.trim();
-    if (form.authorId.trim()) payload.authorId = form.authorId.trim();
-    if (form.source.trim()) payload.source = form.source.trim();
-    if (form.categoryId.trim()) payload.categoryId = form.categoryId.trim();
-    try {
-      const created = await createNewsTranslation(id, payload);
-      toast.success(`Linked ${other === 'ur' ? 'Urdu' : 'English'} draft created.`);
-      router.push(`/admin/news/${created.id}/edit`);
-    } catch (err: unknown) {
-      const error = err && typeof err === 'object' ? (err as Record<string, unknown>) : null;
-      const body = error?.body && typeof error.body === 'object' ? (error.body as Record<string, unknown>) : null;
-      toast.error(typeof body?.message === 'string' ? body.message : 'Could not create the translation.');
-    } finally {
-      setSaving(false);
-    }
-  };
-
   if (loading) {
     return <EditorSkeleton />;
   }
@@ -345,17 +308,6 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
             {saving ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
             Publish Live
           </button>
-          {mode === 'edit' ? (
-            <button
-              type="button"
-              disabled={saving}
-              onClick={() => void saveTranslation()}
-              className="inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-xs font-bold transition-colors disabled:opacity-50"
-              style={{ border: '1px solid var(--admin-border)', color: 'var(--admin-accent)' }}
-            >
-              Create {form.language === 'ur' ? 'English' : 'Urdu'} translation
-            </button>
-          ) : null}
         </div>
       </div>
 

@@ -356,11 +356,24 @@ export interface PslSchedule {
   round?: string;
 }
 
+export interface PslSquadPlayer {
+  playerId: string;
+  playerName: string;
+  playerShortName?: string | null;
+  role?: string | null;
+  battingStyle?: string | null;
+  bowlingStyle?: string | null;
+  nationality?: string | null;
+  dateOfBirth?: string | null;
+  jerseyNumber?: number | null;
+}
+
 export interface PslSquad {
   teamId: string;
   teamName: string;
   teamAbbr: string;
-  players: Player[];
+  manager?: string | null;
+  players: PslSquadPlayer[];
 }
 
 /* ─── Tours ───────────────────────────────────────────────── */

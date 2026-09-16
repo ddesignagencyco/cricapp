@@ -1,11 +1,13 @@
 'use client';
 
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Calendar, CalendarDays, MapPin, Trophy } from 'lucide-react';
 import EmptyState from '../../../components/EmptyState';
 import DummyAd from '../../../components/advertisements/DummyAd';
 import { StatusBadge } from '../../../components/Badge';
 import { APP_TIME_ZONE } from '../../../utils/helpers';
+import type { SportEventRecord, TournamentSeason } from '../../../types/index';
 
 function getCategoryName(cat: unknown): string {
   if (!cat) return '';
@@ -85,17 +87,31 @@ function TournamentResultCard({ record }: { record: Record<string, unknown> & { 
   );
 }
 
+function seasonLabel(season: TournamentSeason): string {
+  return season.name || season.year || season.id;
+}
+
 interface TournamentDetailPageClientProps {
-  tournament: any;
-  seasons: any[];
-  results: any[];
+  tournament: Record<string, unknown> & {
+    name?: string;
+    type?: string | { name?: string };
+    gender?: string;
+    category?: unknown;
+    currentSeason?: unknown;
+    countryCode?: string;
+  };
+  seasons: TournamentSeason[];
+  resultsBySeason: Record<string, SportEventRecord[]>;
+  initialSeasonId: string;
 }
 
 export default function TournamentDetailPageClient({
   tournament,
   seasons,
-  results,
+  resultsBySeason,
+  initialSeasonId,
 }: TournamentDetailPageClientProps) {
+  const [seasonId, setSeasonId] = useState(initialSeasonId || seasons[0]?.id || '');
   const category = getCategoryName(tournament.category) || 'International';
   const season = getSeasonName(tournament.currentSeason);
   const typeRaw = tournament.type;
@@ -103,6 +119,15 @@ export default function TournamentDetailPageClient({
     typeof typeRaw === 'string'
       ? typeRaw.replace(/_/g, ' ')
       : typeRaw?.name || '';
+  const selectedSeason = seasons.find((item) => item.id === seasonId) || seasons[0];
+  const results = useMemo(
+    () => (seasonId && resultsBySeason[seasonId]) || [],
+    [resultsBySeason, seasonId],
+  );
+  const totalResults = useMemo(
+    () => Object.values(resultsBySeason).reduce((sum, items) => sum + (items?.length || 0), 0),
+    [resultsBySeason],
+  );
 
   return (
     <div className="mx-auto max-w-7xl space-y-5 px-4 py-8 sm:px-6">
@@ -157,7 +182,7 @@ export default function TournamentDetailPageClient({
               <p className="text-xs font-medium uppercase tracking-wider text-stext">Seasons</p>
             </div>
             <div className="min-w-24 rounded-md border border-lborder bg-secondary px-3.5 py-3 text-center">
-              <p className="font-mono text-lg font-semibold text-mtext">{results?.length || 0}</p>
+              <p className="font-mono text-lg font-semibold text-mtext">{totalResults}</p>
               <p className="text-xs font-medium uppercase tracking-wider text-stext">Results</p>
             </div>
           </div>
@@ -170,19 +195,36 @@ export default function TournamentDetailPageClient({
         <h2 className="mb-3 text-lg font-semibold text-mtext">Seasons</h2>
         {seasons && seasons.length > 0 ? (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {seasons.map((s) => (
-              <div key={s.id} className="rounded-md border border-lborder bg-card p-3.5">
-                <p className="truncate text-sm font-semibold text-mtext">{s.name || s.year || s.id}</p>
-                {(s.startDate || s.endDate) && (
-                  <p className="mt-1 inline-flex items-center gap-1 text-xs text-stext">
-                    <Calendar size={11} />
-                    {formatScheduled(s.startDate)}
-                    {s.startDate && s.endDate ? ' — ' : ''}
-                    {formatScheduled(s.endDate)}
+            {seasons.map((item) => {
+              const active = item.id === selectedSeason?.id;
+              const count = resultsBySeason[item.id]?.length || 0;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setSeasonId(item.id)}
+                  aria-pressed={active}
+                  className={`rounded-md border p-3.5 text-left transition-colors ${
+                    active
+                      ? 'border-accent/50 bg-accent/10'
+                      : 'border-lborder bg-card hover:border-accent/40 hover:bg-elevated'
+                  }`}
+                >
+                  <p className="truncate text-sm font-semibold text-mtext">{seasonLabel(item)}</p>
+                  {(item.startDate || item.endDate) && (
+                    <p className="mt-1 inline-flex items-center gap-1 text-xs text-stext">
+                      <Calendar size={11} />
+                      {formatScheduled(item.startDate)}
+                      {item.startDate && item.endDate ? ' — ' : ''}
+                      {formatScheduled(item.endDate)}
+                    </p>
+                  )}
+                  <p className="mt-1.5 text-xs font-medium text-stext">
+                    {count} {count === 1 ? 'result' : 'results'}
                   </p>
-                )}
-              </div>
-            ))}
+                </button>
+              );
+            })}
           </div>
         ) : (
           <EmptyState
@@ -193,9 +235,37 @@ export default function TournamentDetailPageClient({
       </section>
 
       <section>
-        <h2 className="mb-3 text-lg font-semibold text-mtext">
-          Results <span className="text-sm font-normal text-stext">({results?.length || 0})</span>
-        </h2>
+        <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <h2 className="text-lg font-semibold text-mtext">
+            Results
+            <span className="ml-2 text-sm font-normal text-stext">
+              {selectedSeason ? seasonLabel(selectedSeason) : ''}
+              {selectedSeason ? ` (${results.length})` : ''}
+            </span>
+          </h2>
+          {seasons.length > 1 && (
+            <div className="flex flex-wrap items-center gap-2">
+              {seasons.map((item) => {
+                const active = item.id === selectedSeason?.id;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setSeasonId(item.id)}
+                    aria-current={active ? 'true' : undefined}
+                    className={`rounded-full px-4 py-1.5 text-xs font-bold transition-all ${
+                      active
+                        ? 'btn-brand pointer-events-none'
+                        : 'bg-card text-stext ring-1 ring-lborder hover:bg-elevated hover:text-mtext'
+                    }`}
+                  >
+                    {item.year || seasonLabel(item)}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
         {results && results.length > 0 ? (
           results.length >= 6 ? (
             <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
@@ -218,7 +288,11 @@ export default function TournamentDetailPageClient({
         ) : (
           <EmptyState
             title="No results available"
-            message="Match results for this tournament are not available yet."
+            message={
+              selectedSeason
+                ? `Match results for ${seasonLabel(selectedSeason)} are not available yet.`
+                : 'Match results for this tournament are not available yet.'
+            }
           />
         )}
       </section>

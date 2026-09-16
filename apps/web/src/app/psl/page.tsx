@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import SectionHeader from '../../components/SectionHeader';
 import Badge from '../../components/Badge';
 import PointsTable from '../../components/PointsTable';
@@ -7,6 +6,7 @@ import StatsBoard from '../../components/boards/StatsBoard';
 import PslSeasonFilter from '../../components/PslSeasonFilter';
 import PslFixturesTable from '../../components/PslFixturesTable';
 import DummyAd from '../../components/advertisements/DummyAd';
+import PslSquadsBoard from '../../components/PslSquadsBoard';
 import { formatScheduled } from '../../utils/helpers';
 import { fetchPslStandings, fetchPslLeaders, fetchPslSchedule, fetchPslSquads, fetchPslSeasons } from '../../services/psl';
 
@@ -101,34 +101,22 @@ export default async function PSLPage({ searchParams }: { searchParams: Promise<
 
       {/* Full Leaders / Stats */}
       <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
-        <StatsBoard leaders={leaders || []} season={seasonLabel} />
+        <SectionHeader
+          title="Statistics"
+          subtitle={seasonLabel ? `${seasonLabel} Leaders` : 'Season leaders'}
+          icon="trendingup"
+        />
+        <StatsBoard leaders={leaders || []} />
       </section>
 
-      {/* Franchises */}
+      {/* Squads */}
       <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
-        <SectionHeader title="The Franchises" subtitle="PSL Teams" icon="users" to="/teams" actionLabel="All teams" />
-        {squads.length > 0 ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {squads.map((s) => (
-              <Link
-                key={s.teamId}
-                href={`/teams/${s.teamId}`}
-                className="group flex flex-col items-center justify-center rounded-md bg-card p-6 text-center ring-1 ring-lborder transition-colors hover:bg-elevated hover:ring-accent/30"
-              >
-                <TeamLogo teamId={s.teamId} name={s.teamName} code={s.teamAbbr} size="lg" link={false} />
-                <h3 className="mt-4 text-base font-bold text-mtext group-hover:text-accent transition-colors">{s.teamName}</h3>
-                <p className="mt-1 text-xs font-semibold uppercase tracking-wider text-stext">
-                  {s.teamAbbr} • {s.players?.length || 0} players
-                </p>
-              </Link>
-            ))}
-          </div>
-        ) : (
-          <div className="rounded-2xl bg-card px-6 py-10 text-center ring-1 ring-lborder">
-            <p className="text-sm font-semibold text-mtext">No team data available</p>
-            <p className="mt-1 text-xs text-stext">Squads will appear once rosters are confirmed.</p>
-          </div>
-        )}
+        <SectionHeader
+          title="Squads"
+          subtitle={seasonLabel ? `${seasonLabel} rosters` : 'Franchise rosters'}
+          icon="users"
+        />
+        <PslSquadsBoard squads={squads || []} />
       </section>
 
       {/* Playoffs */}

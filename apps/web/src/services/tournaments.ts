@@ -21,11 +21,18 @@ export async function fetchTournamentById(tournamentId: string): Promise<Tournam
 }
 
 export async function fetchTournamentSeasons(tournamentId: string): Promise<TournamentSeason[]> {
-  const res = await apiGet(`/tournaments/${tournamentId}/seasons`);
+  const res = await apiGet(`/tournaments/${tournamentId}/seasons`, { page: 1, limit: 100 });
   return extractPage<TournamentSeason>(res).items;
 }
 
-export async function fetchTournamentResults(tournamentOrSeasonId: string): Promise<SportEventRecord[]> {
-  const res = await apiGet(`/tournaments/${tournamentOrSeasonId}/results`);
+export async function fetchTournamentResults(
+  tournamentOrSeasonId: string,
+  params: { page?: number; limit?: number } = {},
+): Promise<SportEventRecord[]> {
+  const res = await apiGet(`/tournaments/${tournamentOrSeasonId}/results`, {
+    page: 1,
+    limit: 100,
+    ...params,
+  });
   return extractPage<SportEventRecord>(res).items;
 }
