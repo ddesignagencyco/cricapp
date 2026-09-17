@@ -39,6 +39,7 @@ import {
   backfillTours,
   saveSportEventRecords,
   saveMatchTimeline,
+  saveMatchLineup,
   saveHeadToHead,
   saveTeamProfile,
   savePlayerProfile,
@@ -135,6 +136,7 @@ export async function syncMatchTimeline(matchId) {
 
 export async function syncMatchLineups(matchId) {
   const raw = await fetchMatchLineups(matchId);
+  await saveMatchLineup(matchId, raw);
   const { teams, players } = normalizeLineups(raw);
   if (teams.length || players.length) {
     const res = await saveTeamsPlayers({ teams, players });

@@ -554,6 +554,65 @@ model EmailVerificationToken {
   @@map("email_verification_tokens")
 }
 
+// --- Phase 13: AI Prediction Centre (append-only; never update result rows) --
+
+model PredictionRun {
+  id           String   @id @default(uuid())
+  matchId      String   @map("match_id")
+  stage        String
+  modelVersion String   @map("model_version")
+  createdAt    DateTime @default(now()) @map("created_at")
+  features     PredictionFeature?
+  result       PredictionResult?
+
+  @@index([matchId, stage, createdAt])
+  @@map("prediction_runs")
+}
+
+model PredictionFeature {
+  runId    String        @id @map("run_id")
+  snapshot Json
+  run      PredictionRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@map("prediction_features")
+}
+
+model PredictionResult {
+  runId        String        @id @map("run_id")
+  homeWinProb  Float         @map("home_win_prob")
+  awayWinProb  Float         @map("away_win_prob")
+  confidence   Float
+  calibrationBand String     @default("low") @map("calibration_band")
+  explanation  Json
+  scoreRange   Json?         @map("score_range")
+  topBatters   Json?         @map("top_batters")
+  topBowlers   Json?         @map("top_bowlers")
+  xi           Json?
+  momentum     Float?
+  pressureIndex Float?       @map("pressure_index")
+  partnershipProjection Json? @map("partnership_projection")
+  wicketRisk   Float?        @map("wicket_risk")
+  run          PredictionRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@map("prediction_results")
+}
+
+model PredictionCalibration {
+  id           String   @id @default(uuid())
+  modelVersion String   @map("model_version")
+  stage        String
+  slope        Float
+  intercept    Float
+  sampleSize   Int      @map("sample_size")
+  brierScore   Float?   @map("brier_score")
+  accuracy     Float?
+  source       String   @default("auto")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([modelVersion, createdAt])
+  @@map("prediction_calibrations")
+}
+
 // --- Newsletter & Contact --------------------------------------------------
 
 model NewsletterSubscriber {

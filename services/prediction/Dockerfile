@@ -24,10 +24,10 @@ RUN addgroup --system --gid 1001 cricapp && \
 
 COPY --from=deps /app/node_modules ./node_modules
 
-COPY services/ingestion ./services/ingestion
+COPY services/prediction ./services/prediction
 COPY packages/shared-types ./packages/shared-types
 
 RUN chown -R cricapp:cricapp /app
 USER cricapp
 
-CMD ["node", "services/ingestion/src/index.js"]
+CMD ["node", "services/prediction/src/index.js"]

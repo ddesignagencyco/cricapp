@@ -2,9 +2,9 @@ name: CI
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, dev]
   push:
-    branches: [main]
+    branches: [main, dev]
 
 jobs:
   lint-and-test:
@@ -70,6 +70,9 @@ jobs:
 
       - name: Test API
         run: npm run test --workspace @cricapp/api
+
+      - name: Test prediction
+        run: npm run test --workspace @cricapp/prediction
 
       - name: Test ingestion
         run: npm run test --workspace @cricapp/ingestion
