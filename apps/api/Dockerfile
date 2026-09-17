@@ -7,7 +7,10 @@ WORKDIR /app
 
 COPY package.json package-lock.json ./
 COPY apps/api/package.json ./apps/api/
+COPY apps/web/package.json ./apps/web/
 COPY packages/shared-types/package.json ./packages/shared-types/
+COPY services/ingestion/package.json ./services/ingestion/
+COPY services/prediction/package.json ./services/prediction/
 
 RUN npm ci
 

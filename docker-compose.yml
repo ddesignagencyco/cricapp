@@ -22,6 +22,21 @@ services:
     volumes:
       - redis_data:/data
 
+  # Optional workers: docker compose --profile workers up -d
+  prediction:
+    profiles: ["workers"]
+    build:
+      context: .
+      dockerfile: services/prediction/Dockerfile
+    container_name: cricapp-prediction
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      DATABASE_URL: postgresql://cricapp:cricapp_dev_password@postgres:5432/cricapp
+      REDIS_URL: redis://redis:6379
+
 volumes:
   postgres_data:
   redis_data:

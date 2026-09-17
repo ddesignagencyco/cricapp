@@ -89,6 +89,31 @@ services:
     networks:
       - cricapp
 
+  prediction:
+    build:
+      context: .
+      dockerfile: services/prediction/Dockerfile
+    container_name: cricapp-prediction
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-cricapp}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-cricapp}
+      REDIS_URL: redis://redis:6379
+      PREMATCH_INTERVAL_MS: ${PREMATCH_INTERVAL_MS:-900000}
+      PREMATCH_HORIZON_HOURS: ${PREMATCH_HORIZON_HOURS:-720}
+      LIVE_THROTTLE_MS: ${LIVE_THROTTLE_MS:-15000}
+      LIVE_REFRESH_MS: ${LIVE_REFRESH_MS:-5000}
+      CALIBRATION_INTERVAL_MS: ${CALIBRATION_INTERVAL_MS:-3600000}
+      CALIBRATION_MIN_SAMPLES: ${CALIBRATION_MIN_SAMPLES:-8}
+      PREMATCH_CALIBRATION_LOCKED: ${PREMATCH_CALIBRATION_LOCKED:-false}
+    networks:
+      - cricapp
+
 volumes:
   postgres_data:
   redis_data:

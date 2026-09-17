@@ -3,7 +3,7 @@
 > **Purpose:** This file is the single source of truth for project progress. It is structured in phases, each broken into **Frontend**, **Backend**, and **Ingestion** task groups. Check a box (`- [x]`) when that task is verified complete. This file is meant to be read and updated by AI coding agents as well as humans — keep task descriptions atomic and unambiguous so an agent can pick up any unchecked box and know exactly what "done" means.
 >
 > **Baseline source:** Progress Report dated Sep 8, 2026 (Day 8 of development).
-> **Last updated:** Sep 14, 2026 — backend APIs for Socket.IO live matches, newsletter, contact-us, Unicode Urdu slugs, and Cloudinary gallery media. Live Sportradar poll still paused pending a new API key.
+> **Last updated:** Sep 17, 2026 — merged origin/dev (admin panel, Socket.IO, newsletter, contact, gallery) with prediction backend (Phase 13) complete except frontend. Live Sportradar poll still depends on a working API key.
 
 **Legend:**
 - `[x]` = Complete / verified
@@ -15,7 +15,7 @@
 ## PHASE 1 — Architecture & Project Foundation
 
 ### 1.1 Monorepo & Structure
-- [x] Set up monorepo with `apps/web`, `apps/api`, `services/ingestion`, `packages/shared-types`
+- [x] Set up monorepo with `apps/web`, `apps/api`, `services/ingestion`, `services/prediction`, `packages/shared-types`
 - [x] Ensure each service is independently deployable
 - [x] Create `@cricapp/shared-types` package (canonical types, Redis key factories, PSL config)
 
@@ -90,6 +90,7 @@
 ### 3.3 Normalization, Diffing & Persistence
 - [x] `CanonicalMatch` normalization from raw Sportradar payloads
 - [x] Lineup normalization into teams + players
+- [x] Persist raw match lineups (`kind = 'match_lineup'` on `sport_event_records`) for prediction XI
 - [x] Event diffing (started, status_change, runs, wicket, milestone)
 - [x] Redis pub/sub for real-time event publishing
 - [x] PostgreSQL upserts for 13+ tables
@@ -103,6 +104,8 @@
 - [x] Unit tests — PSL normalizers (`test/psl.test.js`)
 - [x] Unit tests — reference normalizers (`test/reference.test.js`)
 - [x] Integration tests for full sync pipeline (`test/integration.test.js`) — mock Sportradar → `pollOnce()` → DB + Redis verified
+- [x] Prediction worker unit tests (`services/prediction/test/*`) — scoring, features, live, settle, auto-calibration
+- [x] CI job `Test prediction` (`npm run test --workspace @cricapp/prediction`)
 
 ---
 
@@ -434,7 +437,8 @@
 ## PHASE 11 — Testing & QA
 
 - [x] Ingestion integration tests (full pipeline, see Phase 3.4)
-- [x] Backend API integration/e2e tests per module — suites for auth, admin, news, tours, matches, streams, comments; isolated `cricapp_test` DB (`npm test` no longer truncates development data)
+- [x] Backend API integration/e2e tests per module — suites for auth, admin, news, tours, matches, streams, comments, predictions; isolated `cricapp_test` DB (`npm test` no longer truncates development data)
+- [x] Prediction worker tests (prematch, live, features, settle, calibrate)
 - [x] Manual API smoke (Sep 11, 2026): cookie login, unverified 403, category CRUD, 50-word title reject, tours pagination, live-match status filter, stream comments, admin analytics, Cloudinary upload `201`
 - [x] Manual API smoke (Sep 10, 2026): search, signup + `/auth/me`, publish news + get by slug
 - [ ] Frontend component tests for critical UI (ScoreBoard, LiveBoard, MatchDetailBody)
@@ -459,41 +463,54 @@
 
 ## PHASE 13 — AI Prediction Centre (SRS Phase 4)
 
-> Predictions must come from statistical / ML models on structured sports data. An LLM may explain results but must not invent probabilities.
+> Predictions must come from statistical / ML models on structured sports data. A language model may explain results but must not invent probabilities. Worker reads `matches` + related sports tables (not `tours` / `tournaments` catalogues). Model versions: `prematch-logit-v2`, `live-resource-v2`.
 
 ### 13.1 Schema & storage
-- [ ] `prediction_runs` table (matchId, timestamp, modelVersion, stage: pre_match | live)
-- [ ] `prediction_features` table (input snapshot JSON used for that run)
-- [ ] `prediction_results` table (winner probs, score range, top batter/bowler, XI probs, confidence)
-- [ ] Do not delete or silently overwrite incorrect historical predictions
+- [x] `prediction_runs` table (matchId, timestamp, modelVersion, stage: pre_match | live)
+- [x] `prediction_features` table (input snapshot JSON used for that run)
+- [x] `prediction_results` table (winner probs, score range, top batter/bowler, XI, confidence band, live extras)
+- [x] `prediction_calibrations` table (append-only Platt slope/intercept fits)
+- [x] Do not delete or silently overwrite incorrect historical predictions
 
-### 13.2 Pre-match prediction service
-- [ ] Feature extraction from sports DB (form, venue, H2H, squad)
-- [ ] Match winner probability + confidence / calibration band
-- [ ] Projected first-innings or final score range
-- [ ] Top batter and top wicket-taker probabilities
-- [ ] Playing XI probability from squad availability
-- [ ] Pitch / venue / weather impact fields (when data exists)
-- [ ] Toss-adjusted prediction after toss
+### 13.2 Pre-match prediction service (`services/prediction`)
+- [x] Independently deployable worker (Postgres + Redis, 15-minute upcoming cycle, ~30-day horizon)
+- [x] Feature extraction from sports DB (form, venue, H2H, PSL table, squad/lineup, leaders)
+- [x] Match winner probability + confidence / calibration band (`low` / `medium` / `high`)
+- [x] Projected first-innings score range persisted (not NULL)
+- [x] Top batter and top wicket-taker probabilities (leader ranks + role prior)
+- [x] Playing XI probability (confirmed `match_lineup` when ingested; else squad heuristic)
+- [x] Pitch / venue / weather impact on score and win edge when provider text exists
+- [x] Toss-adjusted prediction after toss
+- [x] Auto-recalibration from settled pre-match runs (hourly Platt fit; skip if sample small or unchanged; lockable via env)
 
 ### 13.3 Live prediction service
-- [ ] Win probability updated during the match
-- [ ] Probability history by over / major event
-- [ ] Live projected score range
-- [ ] Match momentum / pressure index
-- [ ] Partnership projection and wicket-risk (if model quality supports)
-- [ ] Measurable "why did the prediction change?" explanation payload
+- [x] Win probability updated on Redis live events (runs / wicket / status / match started)
+- [x] Probability history by over / major event (`GET .../history` and `.../chart`)
+- [x] Live projected score range persisted
+- [x] Match momentum / pressure index
+- [x] Partnership projection and wicket-risk (baseline heuristic; monitor before public claims)
+- [x] Factor-attribution “why it changed” payload (not only boundary/wicket tags)
 
-### 13.4 API
-- [ ] `GET /predictions/:matchId` — latest pre-match + live
-- [ ] `GET /predictions/:matchId/history` — time series of runs
-- [ ] `GET /predictions/performance` — public accuracy by format and confidence band
-- [ ] Admin: model version list + prediction-history review
+### 13.4 API (`apps/api`)
+- [x] `GET /predictions/performance` — accuracy / Brier by format and confidence band
+- [x] `GET /predictions/:matchId` — latest pre-match + live
+- [x] `GET /predictions/:matchId/history` — time series of runs
+- [x] `GET /predictions/:matchId/chart` — chart-ready series by over / major event
+- [x] Admin JWT + AdminGuard: `GET /admin/predictions/model-versions`
+- [x] Admin: `GET /admin/predictions/runs` (paginated) and `GET /admin/predictions/runs/:runId` (snapshot review)
+- [x] Admin: `GET /admin/predictions/calibration` (reliability bins + latest fit)
+- [x] Prediction API integration tests (`apps/api/src/predictions/predictions.spec.ts`)
 
-### 13.5 Frontend (after API)
+### 13.5 Frontend (after API) — not started (web directory intentionally untouched)
 - [ ] `/predictions/[match-slug]` page
 - [ ] Probability chart and explanation UI
 - [ ] Public prediction-performance page
+- [ ] Admin CMS screens for model monitoring / history review
+- [ ] LLM natural-language explanation of stored factors (optional; must not invent probs)
+
+### 13.6 Still backend-quality (not more 8.1–8.4 columns)
+- [ ] Empirically trained player / live models once enough settled outcomes exist
+- [ ] Public accuracy claims only after performance sample is large enough (SRS: avoid unsupported claims)
 
 ---
 
@@ -558,13 +575,13 @@
 | 8. Live Streams Module | Full-stack | ~50% (backend + stream comments; frontend + licensing pending) |
 | 9. User System & Engagement | Full-stack | ~70% (cookie auth, verify-before-login, superadmin, SMTP; **frontend auth UI pending**) |
 | 10. Technical Debt | Cross-cutting | ~40% |
-| 11. Testing & QA | Cross-cutting | ~68% (isolated test DB + Sep 14 full backend suite: 106 tests) |
+| 11. Testing & QA | Cross-cutting | ~70% (isolated test DB + Sep 14 backend suite + prediction worker tests) |
 | 12. Deployment & Launch | DevOps | ~40% |
-| 13. AI Prediction Centre | Backend+ML | **0% — not started** |
+| 13. AI Prediction Centre | Backend+ML | **~85% backend done; frontend 0%; quality/calibration continues as matches settle** |
 | 14. Odds Intelligence | Backend | **0% — not started** |
 | 15. Interactive Tools | Backend+Frontend | **~10%** (H2H UI on match + team pages; `/tools/{slug}` not started) |
 
-**Overall project completion (updated Sep 14, 2026): sports + CMS backend is production-shaped for sessions, editorial, and admin dashboards. Frontend auth/CMS wiring and Predictions/Odds remain the next large domains.**
+**Overall (updated Sep 17, 2026): sports + CMS backend is production-shaped for sessions, editorial, admin dashboards, newsletter/gallery. Prediction APIs/worker are in place (frontend still open). Odds remain the next large backend domain after prediction UI.**
 
 ---
 
