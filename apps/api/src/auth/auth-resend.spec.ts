@@ -29,6 +29,8 @@ class MockRedisService {
       on: () => {},
       subscribe: async () => {},
       unsubscribe: async () => {},
+      psubscribe: async () => {},
+      punsubscribe: async () => {},
     };
   }
 }

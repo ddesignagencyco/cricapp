@@ -33,6 +33,8 @@ class MockRedisService {
       on: () => {},
       subscribe: async () => {},
       unsubscribe: async () => {},
+      psubscribe: async () => {},
+      punsubscribe: async () => {},
     };
   }
 }
@@ -79,6 +81,10 @@ export async function cleanDatabase(prisma: PrismaService): Promise<void> {
     'prediction_features',
     'prediction_runs',
     'prediction_calibrations',
+    'gallery_media',
+    'contact_submissions',
+    'newsletter_subscribers',
+    'editorial_pages',
     'notification_logs',
     'share_stats',
     'news_article_players',

@@ -1,19 +1,17 @@
 import MatchBoard from '../../components/boards/MatchBoard';
-import { fetchMatches } from '../../services/matches';
 
 export const metadata = {
   title: 'Matches',
   description:
-    'Browse live, upcoming and completed fixtures across PSL 2026 and international cricket.',
+    'Browse live, upcoming, and completed matches across domestic and international cricket.',
 };
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 30;
 
-export default async function MatchesPage() {
-  const matches = await fetchMatches();
+export default function MatchesPage() {
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-      <MatchBoard matches={matches} />
+    <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
+      <MatchBoard />
     </div>
   );
 }

@@ -3,6 +3,8 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service.js';
 import {
   getPaginationOffset,
@@ -16,12 +18,15 @@ import type {
   UpdateAuthorDto,
   CreateCategoryDto,
   UpdateCategoryDto,
+  UpsertEditorialPageDto,
+  AuthorArticlesQuery,
 } from './dto/news.dto.js';
 
 function slugify(text: string): string {
   return text
+    .normalize('NFKC')
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/[^\p{L}\p{N}]+/gu, '-')
     .replace(/(^-|-$)/g, '');
 }
 
@@ -36,7 +41,10 @@ const articleInclude = {
 
 @Injectable()
 export class NewsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly config: ConfigService,
+  ) {}
 
   private validateTitle(title: string): void {
     const wordCount = title.trim().split(/\s+/).filter(Boolean).length;
@@ -45,7 +53,19 @@ export class NewsService {
     }
   }
 
-  private toSummary(row: any) {
+  private articleHref(language: string, slug: string): string {
+    const baseUrl = this.config
+      .get<string>('PUBLIC_WEB_URL', 'https://pakcriczone.com')
+      .replace(/\/$/, '');
+    return `${baseUrl}${language === 'ur' ? '/ur' : ''}/news/${encodeURIComponent(slug)}`;
+  }
+
+  private toSummary(
+    row: any,
+    variants: any[] = [],
+    includeEditorialDrafts = false,
+  ) {
+    const translatedRows = variants.length ? variants : [row];
     return {
       id: row.id,
       title: row.title,
@@ -61,9 +81,23 @@ export class NewsService {
       metaTitle: row.metaTitle,
       metaDescription: row.metaDescription,
       canonicalUrl: row.canonicalUrl,
+      translationGroupId: row.translationGroupId,
+      ...(includeEditorialDrafts
+        ? {
+            pushNotificationTitle: row.pushNotificationTitle,
+            pushNotificationBody: row.pushNotificationBody,
+            socialCopy: row.socialCopy,
+          }
+        : {}),
+      translations: translatedRows.map((variant) => ({
+        language: variant.language,
+        slug: variant.slug,
+        href: this.articleHref(variant.language, variant.slug),
+      })),
       publishedAt: row.publishedAt,
       isPublished: row.isPublished,
       createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
       category: row.category
         ? { id: row.category.id, name: row.category.name, slug: row.category.slug }
         : null,
@@ -81,6 +115,37 @@ export class NewsService {
       matchIds: row.linkedMatches?.map((m: { matchId: string }) => m.matchId) ?? [],
       seriesIds: row.linkedSeries?.map((s: { tournamentId: string }) => s.tournamentId) ?? [],
     };
+  }
+
+  private async translationVariants(rows: any[]) {
+    const groupIds = [
+      ...new Set(rows.map((row) => row.translationGroupId).filter(Boolean)),
+    ] as string[];
+    if (!groupIds.length) return new Map<string, any[]>();
+    const variants = await this.prisma.newsArticle.findMany({
+      where: {
+        translationGroupId: { in: groupIds },
+        isPublished: true,
+      },
+      select: { translationGroupId: true, language: true, slug: true },
+      orderBy: { language: 'asc' },
+    });
+    const grouped = new Map<string, any[]>();
+    for (const variant of variants) {
+      const group = grouped.get(variant.translationGroupId!) ?? [];
+      group.push(variant);
+      grouped.set(variant.translationGroupId!, group);
+    }
+    return grouped;
+  }
+
+  private async summarize(row: any, includeEditorialDrafts = false) {
+    const grouped = await this.translationVariants([row]);
+    return this.toSummary(
+      row,
+      row.translationGroupId ? grouped.get(row.translationGroupId) : undefined,
+      includeEditorialDrafts,
+    );
   }
 
   private buildWhere(query: NewsListQuery, opts?: { includeUnpublished?: boolean }) {
@@ -112,6 +177,9 @@ export class NewsService {
     if (query.seriesId) {
       where.linkedSeries = { some: { tournamentId: query.seriesId } };
     }
+    if (query.authorId) {
+      where.authorId = query.authorId;
+    }
     return where;
   }
 
@@ -130,7 +198,21 @@ export class NewsService {
       this.prisma.newsArticle.count({ where }),
     ]);
 
-    return createPaginatedResponse(rows.map((r) => this.toSummary(r)), total, page, limit);
+    const grouped = await this.translationVariants(rows);
+    return createPaginatedResponse(
+      rows.map((row) =>
+        this.toSummary(
+          row,
+          row.translationGroupId
+            ? grouped.get(row.translationGroupId)
+            : undefined,
+          opts?.includeUnpublished ?? false,
+        ),
+      ),
+      total,
+      page,
+      limit,
+    );
   }
 
   async getByIdOrSlug(idOrSlug: string, opts?: { includeUnpublished?: boolean }) {
@@ -142,7 +224,7 @@ export class NewsService {
       include: articleInclude,
     });
     if (!row) throw new NotFoundException(`Article ${idOrSlug} not found`);
-    return this.toSummary(row);
+    return this.summarize(row);
   }
 
   private async validateCategory(categoryId?: string) {
@@ -157,33 +239,50 @@ export class NewsService {
     if (!author) throw new BadRequestException(`Author ${authorId} does not exist`);
   }
 
-  private entityLinkData(dto: CreateNewsDto | UpdateNewsDto) {
-    const data: Record<string, unknown> = {};
-    if (dto.playerIds !== undefined) {
-      data.linkedPlayers = {
-        deleteMany: {},
-        create: dto.playerIds.map((playerId) => ({ playerId })),
-      };
+  private async validateTranslationGroup(
+    translationGroupId: string | undefined,
+    language: string | undefined,
+    excludeId?: string,
+  ) {
+    if (!translationGroupId) return;
+    const duplicate = await this.prisma.newsArticle.findFirst({
+      where: {
+        translationGroupId,
+        language: language ?? 'en',
+        ...(excludeId ? { id: { not: excludeId } } : {}),
+      },
+    });
+    if (duplicate) {
+      throw new BadRequestException(
+        `This translation group already has a ${language ?? 'en'} article`,
+      );
     }
-    if (dto.teamIds !== undefined) {
-      data.linkedTeams = {
-        deleteMany: {},
-        create: dto.teamIds.map((teamId) => ({ teamId })),
-      };
-    }
-    if (dto.matchIds !== undefined) {
-      data.linkedMatches = {
-        deleteMany: {},
-        create: dto.matchIds.map((matchId) => ({ matchId })),
-      };
-    }
-    if (dto.seriesIds !== undefined) {
-      data.linkedSeries = {
-        deleteMany: {},
-        create: dto.seriesIds.map((tournamentId) => ({ tournamentId })),
-      };
-    }
-    return data;
+  }
+
+  private entityLinkData(
+    dto: CreateNewsDto | UpdateNewsDto,
+    mode: 'create' | 'update',
+  ) {
+    const nest = (ids: string[] | undefined, key: string) => {
+      if (ids === undefined) return undefined;
+      const create = ids.map((id) => ({ [key]: id }));
+      return mode === 'update' ? { deleteMany: {}, create } : { create };
+    };
+
+    return {
+      ...(dto.playerIds !== undefined && {
+        linkedPlayers: nest(dto.playerIds, 'playerId'),
+      }),
+      ...(dto.teamIds !== undefined && {
+        linkedTeams: nest(dto.teamIds, 'teamId'),
+      }),
+      ...(dto.matchIds !== undefined && {
+        linkedMatches: nest(dto.matchIds, 'matchId'),
+      }),
+      ...(dto.seriesIds !== undefined && {
+        linkedSeries: nest(dto.seriesIds, 'tournamentId'),
+      }),
+    };
   }
 
   private articleScalars(dto: CreateNewsDto | UpdateNewsDto) {
@@ -194,7 +293,36 @@ export class NewsService {
       seriesIds: _s,
       ...scalars
     } = dto as CreateNewsDto;
-    return scalars;
+    return Object.fromEntries(
+      Object.entries(scalars).filter(([, value]) => value !== undefined && value !== ''),
+    );
+  }
+
+  private async validateLinkedEntities(dto: CreateNewsDto | UpdateNewsDto) {
+    const missing = async (
+      ids: string[] | undefined,
+      label: string,
+      count: (ids: string[]) => Promise<number>,
+    ) => {
+      if (!ids?.length) return;
+      const unique = [...new Set(ids)];
+      if (unique.length !== (await count(unique))) {
+        throw new BadRequestException(`One or more ${label} ids are invalid`);
+      }
+    };
+
+    await missing(dto.playerIds, 'player', (ids) =>
+      this.prisma.player.count({ where: { id: { in: ids } } }),
+    );
+    await missing(dto.teamIds, 'team', (ids) =>
+      this.prisma.team.count({ where: { id: { in: ids } } }),
+    );
+    await missing(dto.matchIds, 'match', (ids) =>
+      this.prisma.match.count({ where: { matchId: { in: ids } } }),
+    );
+    await missing(dto.seriesIds, 'series', (ids) =>
+      this.prisma.tournament.count({ where: { id: { in: ids } } }),
+    );
   }
 
   async create(dto: CreateNewsDto, _userId: string) {
@@ -205,6 +333,11 @@ export class NewsService {
 
     await this.validateCategory(dto.categoryId);
     await this.validateAuthor(dto.authorId);
+    await this.validateLinkedEntities(dto);
+    await this.validateTranslationGroup(
+      dto.translationGroupId,
+      dto.language,
+    );
 
     const publishedAt = dto.isPublished ? new Date() : null;
     const scalars = this.articleScalars(dto);
@@ -216,11 +349,11 @@ export class NewsService {
         language: dto.language ?? 'en',
         isPublished: dto.isPublished ?? false,
         publishedAt,
-        ...this.entityLinkData(dto),
-      },
+        ...this.entityLinkData(dto, 'create'),
+      } as any,
       include: articleInclude,
     });
-    return this.toSummary(row);
+    return this.summarize(row, true);
   }
 
   async update(id: string, dto: UpdateNewsDto) {
@@ -229,6 +362,12 @@ export class NewsService {
 
     await this.validateCategory(dto.categoryId);
     await this.validateAuthor(dto.authorId);
+    await this.validateLinkedEntities(dto);
+    await this.validateTranslationGroup(
+      dto.translationGroupId ?? existing.translationGroupId ?? undefined,
+      dto.language ?? existing.language,
+      existing.id,
+    );
 
     if (dto.title) this.validateTitle(dto.title);
     const scalars = this.articleScalars(dto);
@@ -241,14 +380,146 @@ export class NewsService {
       if (slugOwner) throw new BadRequestException('Article slug is already in use');
     }
     if (dto.isPublished && !existing.isPublished) data.publishedAt = new Date();
-    Object.assign(data, this.entityLinkData(dto));
+    Object.assign(data, this.entityLinkData(dto, 'update'));
 
     const row = await this.prisma.newsArticle.update({
       where: { id },
-      data,
+      data: data as any,
       include: articleInclude,
     });
-    return this.toSummary(row);
+    return this.summarize(row, true);
+  }
+
+  async createTranslation(
+    sourceId: string,
+    dto: CreateNewsDto,
+    _userId: string,
+  ) {
+    const source = await this.prisma.newsArticle.findUnique({
+      where: { id: sourceId },
+    });
+    if (!source) throw new NotFoundException(`Article ${sourceId} not found`);
+    if (!dto.language) {
+      throw new BadRequestException('A translation language is required');
+    }
+    if (dto.language === source.language) {
+      throw new BadRequestException(
+        `The source article is already in ${source.language}`,
+      );
+    }
+
+    this.validateTitle(dto.title);
+    await this.validateCategory(dto.categoryId);
+    await this.validateAuthor(dto.authorId);
+    await this.validateLinkedEntities(dto);
+
+    const slug = dto.slug ?? slugify(dto.title);
+    if (await this.prisma.newsArticle.findUnique({ where: { slug } })) {
+      throw new BadRequestException('An article with this title already exists');
+    }
+
+    const translationGroupId = source.translationGroupId ?? randomUUID();
+    await this.validateTranslationGroup(translationGroupId, dto.language);
+    const scalars = this.articleScalars(dto);
+    const row = await this.prisma.$transaction(async (tx) => {
+      if (!source.translationGroupId) {
+        await tx.newsArticle.update({
+          where: { id: source.id },
+          data: { translationGroupId },
+        });
+      }
+      return tx.newsArticle.create({
+        data: {
+          ...scalars,
+          slug,
+          translationGroupId,
+          language: dto.language!,
+          isPublished: dto.isPublished ?? false,
+          publishedAt: dto.isPublished ? new Date() : null,
+          ...this.entityLinkData(dto, 'create'),
+        } as any,
+        include: articleInclude,
+      });
+    });
+    return this.summarize(row, true);
+  }
+
+  async getSeoPayload(idOrSlug: string) {
+    const article = await this.getByIdOrSlug(idOrSlug);
+    const url =
+      article.canonicalUrl ??
+      this.articleHref(article.language, article.slug);
+    return {
+      canonicalUrl: url,
+      hreflang: article.translations,
+      jsonLd: {
+        '@context': 'https://schema.org',
+        '@type': 'NewsArticle',
+        headline: article.title,
+        description: article.metaDescription ?? article.summary,
+        image: article.imageUrl ? [article.imageUrl] : undefined,
+        datePublished: article.publishedAt,
+        dateModified: article.updatedAt ?? article.createdAt,
+        inLanguage: article.language,
+        mainEntityOfPage: { '@type': 'WebPage', '@id': url },
+        author: article.authorRef
+          ? {
+              '@type': 'Person',
+              name: article.authorRef.name,
+              url: `${this.config.get<string>('PUBLIC_WEB_URL', 'https://pakcriczone.com').replace(/\/$/, '')}/authors/${article.authorRef.slug}`,
+            }
+          : article.author
+            ? { '@type': 'Person', name: article.author }
+            : { '@type': 'Organization', name: 'PakCricZone' },
+        publisher: {
+          '@type': 'Organization',
+          name: 'PakCricZone',
+        },
+      },
+    };
+  }
+
+  async googleNewsSitemap() {
+    const since = new Date(Date.now() - 48 * 60 * 60 * 1000);
+    const articles = await this.prisma.newsArticle.findMany({
+      where: { isPublished: true, publishedAt: { gte: since } },
+      orderBy: { publishedAt: 'desc' },
+      take: 1000,
+      select: {
+        slug: true,
+        title: true,
+        language: true,
+        publishedAt: true,
+      },
+    });
+    const escapeXml = (value: string) =>
+      value.replace(/[<>&'"]/g, (character) => ({
+        '<': '&lt;',
+        '>': '&gt;',
+        '&': '&amp;',
+        "'": '&apos;',
+        '"': '&quot;',
+      })[character]!);
+    const urls = articles
+      .map(
+        (article) => `<url>
+  <loc>${escapeXml(this.articleHref(article.language, article.slug))}</loc>
+  <news:news>
+    <news:publication>
+      <news:name>PakCricZone</news:name>
+      <news:language>${article.language}</news:language>
+    </news:publication>
+    <news:publication_date>${article.publishedAt!.toISOString()}</news:publication_date>
+    <news:title>${escapeXml(article.title)}</news:title>
+  </news:news>
+</url>`,
+      )
+      .join('\n');
+    return `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">
+${urls}
+</urlset>`;
   }
 
   async remove(id: string) {
@@ -310,7 +581,58 @@ export class NewsService {
   }
 
   async listAuthors() {
-    return this.prisma.author.findMany({ orderBy: { name: 'asc' } });
+    const authors = await this.prisma.author.findMany({
+      orderBy: { name: 'asc' },
+      include: {
+        _count: {
+          select: { articles: { where: { isPublished: true } } },
+        },
+      },
+    });
+    return authors.map(({ _count, ...author }) => ({
+      ...author,
+      articleCount: _count.articles,
+    }));
+  }
+
+  async getAuthor(idOrSlug: string, query: AuthorArticlesQuery) {
+    const author = await this.prisma.author.findFirst({
+      where: { OR: [{ id: idOrSlug }, { slug: idOrSlug }] },
+    });
+    if (!author) throw new NotFoundException(`Author ${idOrSlug} not found`);
+    const { page, limit, skip } = getPaginationOffset(
+      query.page,
+      query.limit,
+      query.offset,
+    );
+    const where = { authorId: author.id, isPublished: true };
+    const [rows, total] = await Promise.all([
+      this.prisma.newsArticle.findMany({
+        where,
+        include: articleInclude,
+        orderBy: [{ publishedAt: 'desc' }, { createdAt: 'desc' }],
+        skip,
+        take: limit,
+      }),
+      this.prisma.newsArticle.count({ where }),
+    ]);
+    const grouped = await this.translationVariants(rows);
+    return {
+      author,
+      articles: createPaginatedResponse(
+        rows.map((row) =>
+          this.toSummary(
+            row,
+            row.translationGroupId
+              ? grouped.get(row.translationGroupId)
+              : undefined,
+          ),
+        ),
+        total,
+        page,
+        limit,
+      ),
+    };
   }
 
   async createAuthor(dto: CreateAuthorDto) {
@@ -332,5 +654,36 @@ export class NewsService {
     if (dto.name) data.slug = slugify(dto.name);
 
     return this.prisma.author.update({ where: { id }, data });
+  }
+
+  async removeAuthor(id: string) {
+    const author = await this.prisma.author.findUnique({ where: { id } });
+    if (!author) throw new NotFoundException(`Author ${id} not found`);
+    await this.prisma.author.delete({ where: { id } });
+    return { deleted: true };
+  }
+
+  async listEditorialPages() {
+    return this.prisma.editorialPage.findMany({
+      select: { slug: true, title: true, updatedAt: true },
+      orderBy: { title: 'asc' },
+    });
+  }
+
+  async getEditorialPage(slug: string) {
+    const page = await this.prisma.editorialPage.findUnique({ where: { slug } });
+    if (!page) throw new NotFoundException(`Editorial page ${slug} not found`);
+    return page;
+  }
+
+  async upsertEditorialPage(slug: string, dto: UpsertEditorialPageDto) {
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
+      throw new BadRequestException('Editorial page slug is invalid');
+    }
+    return this.prisma.editorialPage.upsert({
+      where: { slug },
+      create: { slug, title: dto.title, content: dto.content },
+      update: { title: dto.title, content: dto.content },
+    });
   }
 }

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import {
   getPaginationOffset,
@@ -62,6 +62,60 @@ export class FavoritesService {
         }
         break;
       }
+      case 'news': {
+        const article = await this.prisma.newsArticle.findFirst({
+          where: {
+            OR: [{ id: row.targetId }, { slug: row.targetId }],
+            isPublished: true,
+          },
+          select: {
+            id: true,
+            title: true,
+            slug: true,
+            summary: true,
+            imageUrl: true,
+            language: true,
+            publishedAt: true,
+            authorId: true,
+            author: true,
+            authorRef: { select: { id: true, name: true, slug: true } },
+            category: { select: { id: true, name: true, slug: true } },
+          },
+        });
+        if (article) target = article;
+        break;
+      }
+      case 'tour': {
+        const tour = await this.prisma.tour.findUnique({
+          where: { id: row.targetId },
+          select: {
+            id: true,
+            name: true,
+            category: true,
+            sport: true,
+          },
+        });
+        if (tour) target = tour;
+        break;
+      }
+      case 'tournament': {
+        const tournament = await this.prisma.tournament.findUnique({
+          where: { id: row.targetId },
+          select: {
+            id: true,
+            name: true,
+            type: true,
+            gender: true,
+            category: true,
+            currentSeason: true,
+            sport: true,
+            tourId: true,
+            parentId: true,
+          },
+        });
+        if (tournament) target = tournament;
+        break;
+      }
     }
 
     return { ...row, target };
@@ -91,6 +145,34 @@ export class FavoritesService {
   }
 
   async add(userId: string, dto: AddFavoriteDto) {
+    if (dto.targetType === 'news') {
+      const article = await this.prisma.newsArticle.findFirst({
+        where: {
+          OR: [{ id: dto.targetId }, { slug: dto.targetId }],
+          isPublished: true,
+        },
+        select: { id: true },
+      });
+      if (!article) {
+        throw new BadRequestException('Published news article not found');
+      }
+      dto = { ...dto, targetId: article.id };
+    }
+    if (dto.targetType === 'tour') {
+      const tour = await this.prisma.tour.findUnique({
+        where: { id: dto.targetId },
+        select: { id: true },
+      });
+      if (!tour) throw new BadRequestException('Tour not found');
+    }
+    if (dto.targetType === 'tournament') {
+      const tournament = await this.prisma.tournament.findUnique({
+        where: { id: dto.targetId },
+        select: { id: true },
+      });
+      if (!tournament) throw new BadRequestException('Tournament not found');
+    }
+
     const existing = await this.prisma.favorite.findUnique({
       where: { userId_targetType_targetId: { userId, targetType: dto.targetType, targetId: dto.targetId } },
     });

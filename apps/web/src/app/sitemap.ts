@@ -3,20 +3,26 @@ import { fetchMatches } from '../services/matches';
 import { fetchTeams } from '../services/teams';
 import { fetchPlayers } from '../services/players';
 import { fetchNews } from '../services/news';
+import { newsHref } from '../utils/newsConstraints';
+import { fetchTournaments } from '../services/tournaments';
+import { fetchPublicAuthors } from '../services/authors';
 
 const baseUrl = 'https://pakcriczone.com';
 
 const staticRoutes = [
   '',
   '/matches',
+  '/schedules',
   '/psl',
   '/teams',
   '/players',
-  '/points-table',
-  '/stats',
   '/news',
+  '/gallery',
   '/streams',
+  '/tours',
+  '/tournaments',
   '/about',
+  '/authors',
   '/contact',
   '/privacy',
   '/terms',
@@ -24,12 +30,14 @@ const staticRoutes = [
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date().toISOString();
-  const [matches, teams, players] = await Promise.all([
+  const [matches, teams, players, news, tournaments, authors] = await Promise.all([
     fetchMatches().catch(() => []),
     fetchTeams().catch(() => []),
     fetchPlayers().catch(() => []),
+    fetchNews().catch(() => []),
+    fetchTournaments().catch(() => []),
+    fetchPublicAuthors().catch(() => []),
   ]);
-  const news = fetchNews();
 
   const entries = staticRoutes.map((route) => ({
     url: `${baseUrl}${route}`,
@@ -59,9 +67,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
-  const otherEntries = (news && news.length > 0)
-    ? [{ url: `${baseUrl}/news`, lastModified: now, changeFrequency: 'daily' as MetadataRoute.Sitemap[number]['changeFrequency'], priority: 0.6 }]
-    : [];
+  const newsEntries = (news || []).map((article) => ({
+    url: `${baseUrl}${newsHref(article)}`,
+    lastModified: now,
+    changeFrequency: 'weekly' as MetadataRoute.Sitemap[number]['changeFrequency'],
+    priority: 0.6,
+  }));
 
-  return [...entries, ...matchEntries, ...teamEntries, ...playerEntries, ...otherEntries];
+  const tournamentEntries = (tournaments || []).map((tournament) => ({
+    url: `${baseUrl}/tournaments/${tournament.id}`,
+    lastModified: now,
+    changeFrequency: 'weekly' as MetadataRoute.Sitemap[number]['changeFrequency'],
+    priority: 0.6,
+  }));
+
+  const authorEntries = (authors || []).map((author) => ({
+    url: `${baseUrl}/authors/${author.slug}`,
+    lastModified: now,
+    changeFrequency: 'weekly' as MetadataRoute.Sitemap[number]['changeFrequency'],
+    priority: 0.5,
+  }));
+
+  return [...entries, ...matchEntries, ...teamEntries, ...playerEntries, ...newsEntries, ...tournamentEntries, ...authorEntries];
 }

@@ -33,7 +33,11 @@ export async function saveMatch(match) {
   );
 }
 
-export async function publishMatchState(match) {
+/**
+ * SET caches the snapshot for REST. PUBLISH (when broadcast=true) is what
+ * Socket.IO listens to — SET does not notify subscribers.
+ */
+export async function publishMatchState(match, { broadcast = false } = {}) {
   const key = redisKeys.matchState(match.matchId);
   await redis.set(key, JSON.stringify(match), 'EX', REDIS_TTL.MATCH_STATE);
 
@@ -41,6 +45,10 @@ export async function publishMatchState(match) {
     await redis.sadd(redisKeys.liveMatches(), match.matchId);
   } else {
     await redis.srem(redisKeys.liveMatches(), match.matchId);
+  }
+
+  if (broadcast) {
+    await redis.publish(redisKeys.matchChannel(match.matchId), JSON.stringify(match));
   }
 }
 

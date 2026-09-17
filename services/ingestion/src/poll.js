@@ -1,6 +1,6 @@
 import { PROVIDERS } from './schemas.js';
 import { normalizeMatch } from './normalize.js';
-import { diffMatch } from './diff.js';
+import { diffMatch, hasMatchChanged } from './diff.js';
 import { saveMatch, saveMatchTimeline, publishMatchState, publishEvents } from './store.js';
 import { getCallStats } from './sportradar.js';
 import redis, { redisKeys } from './redis.js';
@@ -58,12 +58,15 @@ async function processLiveMatch(id) {
   const previous = await readPrevious(next.matchId);
 
   const events = diffMatch(previous, next);
+  const changed = hasMatchChanged(previous, next);
 
   await saveMatch(next);
-  await publishMatchState(next);
+  await publishMatchState(next, { broadcast: changed });
   if (events.length) {
     await publishEvents(events);
     console.log(`[ingest] ${next.matchId}: ${events.map((e) => e.type).join(', ')}`);
+  } else if (changed) {
+    console.log(`[ingest] ${next.matchId}: snapshot`);
   }
 
   if (DELTAS_ENABLED) {

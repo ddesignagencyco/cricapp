@@ -1,18 +1,95 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #07111F;
-  --color-secondary: #0A1728;
-  --color-card: #0D1B2A;
-  --color-elevated: #122238;
-  --color-accent: #22C55E;
-  --color-accent2: #4ADE80;
-  --color-gold: #FFD166;
-  --color-mtext: #F5F7FA;
-  --color-stext: #94A3B8;
-  --color-lborder: #1E334A;
-  --color-danger: #FF4D6D;
-  --color-shadow: #000;
+  /* ============================================================
+     Dark theme is the default. Every colour below is contrast
+     checked against its own surface: body/secondary text and all
+     status colours clear WCAG AA 4.5:1, borders clear 3:1.
+     ============================================================ */
+
+  /* Legacy Tailwind names — mapped to the same semantic roles */
+  --color-primary: #08111F;
+  --color-secondary: #142238;
+  --color-card: #0E1A2B;
+  --color-elevated: #142238;
+  --color-accent: #4DB4F0;
+  --color-accent2: #7CC8F5;
+  --color-gold: #FBBF24;
+  --color-mtext: #F8FAFC;
+  --color-stext: #CBD5E1;
+  --color-lborder: #2A3B52;
+  --color-danger: #FB7185;
+  --color-shadow: #000000;
+
+  --color-background: #08111F;
+  --color-foreground: #F8FAFC;
+  --color-surface: #0E1A2B;
+  --color-surface-elevated: #142238;
+  --color-surface-muted: #142238;
+
+  --color-text-primary: #F8FAFC;
+  --color-text-secondary: #CBD5E1;
+  --color-text-muted: #A8B4C5;
+  --color-text-disabled: #7E8CA0;
+  --color-muted-foreground: #A8B4C5;
+  --color-disabled-foreground: #7E8CA0;
+
+  --color-border: #2A3B52;
+  --color-border-strong: #3A4D67;
+  --color-input: #142238;
+  --color-input-border: #3A4D67;
+
+  /* Filled buttons/pills: saturated cricket blue with white labels.
+     Accent (below) stays lighter so links still read on dark surfaces. */
+  --color-brand: #1878C0;
+  --color-brand-hover: #136EB0;
+  --color-brand-fg: #FFFFFF;
+  --color-brand-soft: #12314A;
+  --color-focus-ring: #4DB4F0;
+
+  /* Filled table/section headers keep a deep brand navy in dark mode
+     so they read as brand blue without becoming a bright band. */
+  --color-table-header: #12314A;
+  --color-table-header-fg: #F8FAFC;
+
+  --color-success: #34D399;
+  --color-success-soft: #0C2E26;
+  --color-warning: #FBBF24;
+  --color-warning-soft: #33280A;
+  --color-danger-soft: #3A1420;
+  --color-neutral-soft: #1B2B42;
+  --color-info: #4DB4F0;
+  --color-info-soft: #12314A;
+  --color-live: #FB7185;
+
+  /* Status chips need a brighter fg than button-fill brand, plus a lifted
+     tint so they do not disappear into dark table rows. */
+  --color-badge-primary-fg: #7CC8F5;
+  --color-badge-primary-bg: #1A4568;
+  --color-badge-success-fg: #6EE7B7;
+  --color-badge-success-bg: #0F3D32;
+  --color-badge-warning-fg: #FCD34D;
+  --color-badge-warning-bg: #3F2F0C;
+  --color-badge-danger-fg: #FDA4AF;
+  --color-badge-danger-bg: #4A1A28;
+  --color-badge-neutral-fg: #E2E8F0;
+  --color-badge-neutral-bg: #2A3B52;
+  /* Row/list hover must stay visible in both themes, so it is its own
+     token. The elevated surface equals the card in light mode, so it
+     cannot double as a hover colour. */
+  --color-row-hover: #18283F;
+  --color-skeleton: #1B2B42;
+  --color-skeleton-highlight: #263952;
+  /* Placeholders drawn on a permanently dark surface (filled table headers,
+     the admin sidebar). Not theme-dependent, so declared only once. */
+  --color-skeleton-on-dark: rgb(255 255 255 / 0.2);
+  --color-skeleton-on-dark-highlight: rgb(255 255 255 / 0.38);
+
+  /* Restrained two-layer elevation: tight contact shadow + soft ambient. */
+  --elevation-surface: 0 1px 2px rgb(0 0 0 / 0.28);
+  --elevation-card: 0 1px 2px rgb(0 0 0 / 0.28), 0 10px 24px rgb(0 0 0 / 0.18);
+  --elevation-raised: 0 1px 2px rgb(0 0 0 / 0.32), 0 16px 34px rgb(0 0 0 / 0.26);
+  --elevation-overlay: 0 8px 20px rgb(0 0 0 / 0.36), 0 24px 56px rgb(0 0 0 / 0.32);
 
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
@@ -23,42 +100,279 @@
   --radius-xs: 0.25rem;
   --radius-sm: 0.25rem;
   --radius-md: 0.25rem;
-  --radius-lg: 0.25rem;
-  --radius-xl: 0.25rem;
-  --radius-2xl: 0.25rem;
-  --radius-3xl: 0.25rem;
+  --radius-lg: 0.375rem;
+  --radius-xl: 0.375rem;
+  --radius-2xl: 0.375rem;
+  --radius-3xl: 0.375rem;
 }
 
-/* Light theme overrides */
+/* Light theme overrides. Page body stays pure white; only grouped
+   surfaces step down to the tinted secondary surface. */
 .light {
-  --color-primary: #F8FAFC;
-  --color-secondary: #F1F5F9;
+  --color-primary: #FFFFFF;
+  --color-secondary: #F6F8FB;
   --color-card: #FFFFFF;
-  --color-elevated: #F1F5F9;
-  --color-accent: #15803D;
-  --color-accent2: #16A34A;
+  --color-elevated: #FFFFFF;
+  --color-accent: #1769A8;
+  --color-accent2: #125989;
   --color-gold: #B45309;
-  --color-mtext: #0F172A;
-  --color-stext: #64748B;
-  --color-lborder: #E2E8F0;
-  --color-danger: #E11D48;
-  --color-shadow: #0F172A;
+  --color-mtext: #101828;
+  --color-stext: #475467;
+  --color-lborder: #D8DEE8;
+  --color-danger: #BE123C;
+  --color-shadow: #101828;
+
+  --color-background: #FFFFFF;
+  --color-foreground: #101828;
+  --color-surface: #FFFFFF;
+  --color-surface-elevated: #FFFFFF;
+  --color-surface-muted: #F6F8FB;
+
+  --color-text-primary: #101828;
+  --color-text-secondary: #475467;
+  --color-text-muted: #667085;
+  --color-text-disabled: #8A94A6;
+  --color-muted-foreground: #667085;
+  --color-disabled-foreground: #8A94A6;
+
+  --color-border: #D8DEE8;
+  --color-border-strong: #C5CEDA;
+  --color-input: #FFFFFF;
+  --color-input-border: #C5CEDA;
+
+  --color-brand: #1769A8;
+  --color-brand-hover: #125989;
+  --color-brand-fg: #FFFFFF;
+  --color-brand-soft: #E8F2FA;
+  --color-focus-ring: #3B82B9;
+
+  --color-table-header: #1769A8;
+  --color-table-header-fg: #FFFFFF;
+
+  --color-success: #047857;
+  --color-success-soft: #E7F6F0;
+  --color-warning: #B45309;
+  --color-warning-soft: #FDF3E7;
+  --color-danger-soft: #FDECF1;
+  --color-neutral-soft: #F0F3F8;
+  --color-info: #1769A8;
+  --color-info-soft: #E8F2FA;
+  --color-live: #BE123C;
+
+  --color-badge-primary-fg: #1769A8;
+  --color-badge-primary-bg: #E8F2FA;
+  --color-badge-success-fg: #047857;
+  --color-badge-success-bg: #E7F6F0;
+  --color-badge-warning-fg: #B45309;
+  --color-badge-warning-bg: #FDF3E7;
+  --color-badge-danger-fg: #BE123C;
+  --color-badge-danger-bg: #FDECF1;
+  --color-badge-neutral-fg: #475467;
+  --color-badge-neutral-bg: #F0F3F8;
+  --color-row-hover: #F2F6FA;
+  --color-skeleton: #E7EBF1;
+  --color-skeleton-highlight: #F6F8FB;
+
+  --elevation-surface: 0 1px 2px rgb(16 24 40 / 0.05);
+  --elevation-card: 0 1px 2px rgb(16 24 40 / 0.05), 0 6px 18px rgb(16 24 40 / 0.06);
+  --elevation-raised: 0 1px 2px rgb(16 24 40 / 0.06), 0 12px 28px rgb(16 24 40 / 0.09);
+  --elevation-overlay: 0 6px 16px rgb(16 24 40 / 0.1), 0 20px 48px rgb(16 24 40 / 0.14);
 }
 
 * {
   border-color: var(--color-lborder);
 }
 
+input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']),
+textarea,
+select {
+  border-color: var(--color-input-border);
+}
+
+/* ============================================================
+   Tables — one shared treatment for every table in the app
+   (public tables, points tables, scorecards, admin CMS lists).
+   ============================================================ */
+table thead,
+table thead tr {
+  background-color: var(--color-table-header);
+  color: var(--color-table-header-fg);
+}
+
+table thead th {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-align: left;
+  color: var(--color-table-header-fg) !important;
+}
+
+table tbody td {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+}
+
+/* Numeric columns line up regardless of which table they live in. */
+table td:not(:first-child),
+table th:not(:first-child) {
+  font-variant-numeric: tabular-nums;
+}
+
+::placeholder {
+  color: var(--color-text-muted);
+  opacity: 1;
+}
+
 html {
   scroll-behavior: smooth;
+  color-scheme: dark;
+}
+
+.light {
+  color-scheme: light;
 }
 
 body {
-  background-color: var(--color-primary);
-  color: var(--color-mtext);
+  background-color: var(--color-background);
+  color: var(--color-foreground, var(--color-mtext));
   font-family: var(--font-sans);
+  font-size: 0.9375rem;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Long team / tournament / venue names must never widen the page. */
+  overflow-wrap: break-word;
+}
+
+/* ============================================================
+   Typography hierarchy. Lives in @layer base so Tailwind colour
+   utilities (text-white, text-mtext, …) can still override it
+   on photography and filled brand bars.
+   ============================================================ */
+@layer base {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: var(--color-text-primary);
+    text-wrap: balance;
+  }
+}
+
+label,
+th,
+caption {
+  font-weight: 600;
+}
+
+small {
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+/* Scores, overs and statistics align in columns wherever they appear. */
+[data-numeric],
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* ============================================================
+   Keyboard focus. Every interactive control gets a visible ring,
+   not just the ones that opt in locally.
+   ============================================================ */
+:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+a:focus-visible,
+button:focus-visible,
+summary:focus-visible,
+[role="button"]:focus-visible,
+[role="tab"]:focus-visible,
+[role="menuitem"]:focus-visible,
+[role="option"]:focus-visible,
+[role="switch"]:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 1px;
+  border-color: var(--color-focus-ring);
+}
+
+/* Controls placed on dark photographic overlays need a light ring
+   to stay visible in both themes. */
+.on-media:focus-visible {
+  outline: 2px solid #FFFFFF;
+  outline-offset: 2px;
+}
+
+/* ============================================================
+   Elevation utilities — the only sanctioned shadows.
+   ============================================================ */
+.elev-surface {
+  box-shadow: var(--elevation-surface);
+}
+
+.elev-card {
+  box-shadow: var(--elevation-card);
+}
+
+.elev-raised {
+  box-shadow: var(--elevation-raised);
+}
+
+.elev-overlay {
+  box-shadow: var(--elevation-overlay);
+}
+
+/* Autofill must not repaint inputs white in dark mode. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-text-fill-color: var(--color-text-primary);
+  -webkit-box-shadow: 0 0 0 1000px var(--color-input) inset;
+  caret-color: var(--color-text-primary);
+  transition: background-color 9999s ease-out 0s;
+}
+
+a,
+button,
+label,
+summary,
+select,
+[role="button"],
+[role="tab"],
+[role="option"],
+[role="menuitem"],
+[role="link"],
+[role="switch"],
+[role="checkbox"],
+input[type="checkbox"],
+input[type="radio"],
+input[type="file"],
+input[type="submit"],
+input[type="button"],
+input[type="reset"] {
+  cursor: pointer;
+}
+
+a[aria-disabled="true"],
+button:disabled,
+[disabled],
+[aria-disabled="true"] {
+  cursor: not-allowed;
 }
 
 /* Scrollbar styling */
@@ -66,47 +380,103 @@ body {
   width: 10px;
   height: 10px;
 }
+
 ::-webkit-scrollbar-track {
-  background: var(--color-primary);
+  background: var(--color-background);
 }
+
 ::-webkit-scrollbar-thumb {
   background: var(--color-lborder);
   border-radius: 5px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-stext);
 }
 
 /* Utility classes */
 .text-accent-grad {
-  background: linear-gradient(135deg, #07111F 0%, #0D1B2A 55%, #064E3B 100%);
-}
-.light .text-accent-grad {
-  background: linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 55%, #BBF7D0 100%);
+  background: linear-gradient(135deg,
+      var(--color-background) 0%,
+      var(--color-surface) 55%,
+      var(--color-surface-elevated) 100%);
 }
 
 .hero-grad {
   background-image:
-    linear-gradient(rgba(4, 10, 20, 0.68), rgba(4, 10, 20, 0.68)),
-    url('/banner2.jpg');
+    /* linear-gradient(rgba(4, 10, 20, 0.68), rgba(4, 10, 20, 0.68)), */
+    url('/banner.png');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
 }
+
 .light .hero-grad {
   background-image:
-    linear-gradient(rgba(4, 10, 20, 0.68), rgba(4, 10, 20, 0.68)),
-    url('/banner2.jpg');
+    /* linear-gradient(rgba(4, 10, 20, 0.68), rgba(4, 10, 20, 0.68)), */
+    url('/banner.png');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
 }
 
 .hero-title {
-  color: #F5F7FA;
+  color: #F5F7FA !important;
 }
+
 .hero-lead {
-  color: #CBD5E1;
+  color: #CBD5E1 !important;
+}
+
+.hero-kicker {
+  color: #C3D3E4 !important;
+}
+
+.hero-highlight {
+  color: #A9D3EE !important;
+}
+
+/* Legibility scrims over hero photography. Fixed dark values in both
+   themes, because the underlying image never changes. */
+.hero-scrim {
+  background: linear-gradient(to right,
+      rgb(8 17 31 / 0.9),
+      rgb(8 17 31 / 0.7) 55%,
+      rgb(8 17 31 / 0.4));
+}
+
+.hero-scrim-up {
+  background: linear-gradient(to top,
+      rgb(8 17 31 / 0.95),
+      rgb(8 17 31 / 0.8) 50%,
+      rgb(8 17 31 / 0.4));
+}
+
+.hero-tile {
+  background: rgb(8 17 31 / 0.7);
+}
+
+.hero-tile:hover {
+  background: rgb(8 17 31 / 0.82);
+}
+
+.hero-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 0.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(7, 17, 31, 0.45);
+  color: #F8FAFC;
+  padding: 0.375rem 0.875rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.hero-chip--accent {
+  border-color: rgba(169, 211, 238, 0.55);
+  background: rgba(18, 49, 74, 0.55);
+  color: #E3F0FA;
 }
 
 .hero-content .tone-neutral,
@@ -118,66 +488,177 @@ body {
 
 .hero-grad-home {
   background-image:
-    linear-gradient(rgba(4, 10, 20, 0.55), rgba(4, 10, 20, 0.55)),
-    url('/banner.jpg');
+    /* linear-gradient(rgba(4, 10, 20, 0.55), rgba(4, 10, 20, 0.55)), */
+    url('/banner.png');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
 }
+
 .light .hero-grad-home {
   background-image:
-    linear-gradient(rgba(4, 10, 20, 0.55), rgba(4, 10, 20, 0.55)),
-    url('/banner.jpg');
+    /* linear-gradient(rgba(4, 10, 20, 0.55), rgba(4, 10, 20, 0.55)), */
+    url('/banner.png');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+}
+
+/* Solid brand button/pill fill. */
+.btn-brand {
+  background-color: var(--color-brand);
+  color: var(--color-brand-fg);
+  box-shadow: var(--elevation-surface);
+  transition: background-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.btn-brand:hover:not(:disabled) {
+  background-color: var(--color-brand-hover);
+}
+
+.btn-brand:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: none;
+}
+
+.btn-brand:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-background), 0 0 0 4px var(--color-focus-ring);
+}
+
+.btn-brand:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.media-fallback {
+  background: var(--color-surface-muted);
+}
+
+.news-copy[lang="ur"],
+.news-copy[dir="rtl"] {
+  direction: rtl;
+  text-align: right;
+  font-family: "Noto Nastaliq Urdu", "Noto Naskh Arabic", var(--font-sans);
+  line-height: 2.45;
+}
+
+/* Nastaliq reads much larger than Latin at the same px size */
+h1.news-copy[lang="ur"],
+h1.news-copy[dir="rtl"] {
+  font-size: 1.375rem !important;
+  line-height: 1.8 !important;
+  font-weight: 600 !important;
+  letter-spacing: 0 !important;
+}
+
+@media (min-width: 640px) {
+  h1.news-copy[lang="ur"],
+  h1.news-copy[dir="rtl"] {
+    font-size: 1.625rem !important;
+  }
+}
+
+h2.news-copy[lang="ur"],
+h2.news-copy[dir="rtl"],
+h3.news-copy[lang="ur"],
+h3.news-copy[dir="rtl"] {
+  font-size: 1.125rem !important;
+  line-height: 1.8 !important;
+  font-weight: 600 !important;
+}
+
+@media (min-width: 640px) {
+  h2.news-copy[lang="ur"],
+  h2.news-copy[dir="rtl"],
+  h3.news-copy[lang="ur"],
+  h3.news-copy[dir="rtl"] {
+    font-size: 1.25rem !important;
+  }
+}
+
+.news-copy-card[lang="ur"],
+.news-copy-card[dir="rtl"] {
+  font-size: 0.8125rem !important;
+  line-height: 1.7 !important;
+  font-weight: 600 !important;
+  letter-spacing: 0 !important;
+}
+
+.prose.news-copy[lang="ur"],
+.prose.news-copy[dir="rtl"] {
+  font-size: 1rem;
+  line-height: 2.65;
+}
+
+.prose.news-copy[lang="ur"] p,
+.prose.news-copy[dir="rtl"] p {
+  line-height: 2.7 !important;
+  margin-block: 1.35rem;
+}
+
+.prose.news-copy[lang="ur"] li,
+.prose.news-copy[dir="rtl"] li {
+  line-height: 2.55 !important;
+}
+
+.news-copy[lang="en"],
+.news-copy[dir="ltr"] {
+  direction: ltr;
+  text-align: left;
+}
+
+.news-copy[dir="rtl"] blockquote {
+  border-inline-start: 3px solid var(--color-accent);
+  padding-inline-start: 1rem;
+  padding-inline-end: 0;
 }
 
 .shadow-card-dark {
-  box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.3);
-}
-.light .shadow-card-dark {
-  box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.08);
-}
-
-.tabular-nums {
-  font-variant-numeric: tabular-nums;
+  box-shadow: var(--elevation-surface);
 }
 
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
 
+.react-loading-skeleton {
+  --base-color: var(--color-skeleton) !important;
+  --highlight-color: var(--color-skeleton-highlight) !important;
+  background-color: var(--color-skeleton) !important;
+  background-image: linear-gradient(
+    90deg,
+    var(--color-skeleton),
+    var(--color-skeleton-highlight),
+    var(--color-skeleton)
+  ) !important;
+  --animation-duration: 1.35s;
+}
+
 .skeleton {
   position: relative;
   overflow: hidden;
-  background: var(--color-elevated);
+  background: var(--color-skeleton);
 }
+
 .skeleton::after {
   content: "";
   position: absolute;
   inset: 0;
   transform: translateX(-100%);
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.08),
-    transparent
-  );
+  background: linear-gradient(90deg,
+      transparent,
+      var(--color-skeleton-highlight),
+      transparent);
   animation: shimmer 1.5s infinite;
 }
-.light .skeleton::after {
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(0, 0, 0, 0.06),
-    transparent
-  );
-}
+
 @keyframes shimmer {
   100% {
     transform: translateX(100%);
@@ -185,18 +666,19 @@ body {
 }
 
 @keyframes pulse-live {
+
   0%,
   100% {
     opacity: 1;
-    box-shadow: 0 0 0 0 rgba(0, 230, 118, 0.6);
   }
+
   50% {
-    opacity: 0.7;
-    box-shadow: 0 0 0 6px rgba(0, 230, 118, 0);
+    opacity: 0.25;
   }
 }
+
 .live-pulse {
-  animation: pulse-live 1.6s infinite;
+  animation: pulse-live 1.4s ease-in-out infinite;
 }
 
 @keyframes live-ping {
@@ -204,20 +686,31 @@ body {
     transform: scale(1);
     opacity: 0.85;
   }
+
   70%,
   100% {
     transform: scale(3.4);
     opacity: 0;
   }
 }
+
 .live-ping {
   animation: live-ping 1.4s cubic-bezier(0, 0, 0.2, 1) infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .live-ping,
-  .live-pulse {
-    animation: none;
+
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
@@ -226,11 +719,13 @@ body {
     opacity: 0;
     transform: translateY(8px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
+
 .fade-in {
   animation: fade-in 0.35s ease-out both;
 }
@@ -240,11 +735,565 @@ body {
     opacity: 0;
     transform: translateY(16px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
+
 .slide-up {
   animation: slide-up 0.4s ease-out both;
+}
+
+/* Ticker scrollbar hide */
+.ticker-scroll {
+  scroll-behavior: smooth;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.ticker-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* Countdown digit flip */
+.countdown-digit {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* ============================
+   Semantic Root Variables & Aliases
+   (Single Source of Truth for Public & Admin)
+   ============================ */
+:root {
+  /* Common semantic variables mapped to Tailwind theme tokens */
+  --background: var(--color-background);
+  --surface: var(--color-surface);
+  --surface-elevated: var(--color-surface-elevated);
+  --surface-muted: var(--color-surface-muted);
+
+  --text-primary: var(--color-text-primary);
+  --text-secondary: var(--color-text-secondary);
+  --text-muted: var(--color-text-muted);
+
+  --border: var(--color-border);
+  --border-strong: var(--color-border-strong);
+
+  --foreground: var(--color-foreground);
+  --muted: var(--color-surface-muted);
+  --muted-foreground: var(--color-text-muted);
+  --disabled-foreground: var(--color-text-disabled);
+  --secondary-foreground: var(--color-text-secondary);
+  --input: var(--color-input);
+  --input-border: var(--color-input-border);
+  --primary: var(--color-brand);
+  --primary-hover: var(--color-brand-hover);
+  --primary-foreground: var(--color-brand-fg);
+  --focus-ring: var(--color-focus-ring);
+
+  --success: var(--color-success);
+  --success-soft: var(--color-success-soft);
+  --warning: var(--color-warning);
+  --warning-soft: var(--color-warning-soft);
+  --danger: var(--color-danger);
+  --danger-soft: var(--color-danger-soft);
+  --info: var(--color-info);
+  --info-soft: var(--color-info-soft);
+
+  --live: var(--color-live);
+  --elevation-1: var(--elevation-surface);
+  --elevation-2: var(--elevation-card);
+  --elevation-3: var(--elevation-raised);
+
+  /* Admin Aliases: 100% synchronized with master semantic variables.
+     The sidebar keeps a fixed deep-navy identity in both themes, so its
+     own values are literal rather than theme-derived. */
+  --admin-bg: var(--color-background);
+  --admin-surface: var(--color-surface-muted);
+  --admin-sidebar: #0B2B45;
+  --admin-sidebar-hover: rgba(255, 255, 255, 0.08);
+  --admin-sidebar-text: #F8FAFC;
+  --admin-sidebar-muted: #C3D7E6;
+  --admin-sidebar-border: rgba(255, 255, 255, 0.1);
+  --admin-sidebar-active: #1B6FB0;
+  --admin-sidebar-active-fg: #FFFFFF;
+  --admin-card: var(--color-surface);
+  --admin-card-hover: var(--color-surface-elevated);
+  --admin-border: var(--color-border);
+  --admin-border-light: var(--color-border-strong);
+  --admin-text: var(--color-text-primary);
+  --admin-text-secondary: var(--color-text-secondary);
+  --admin-text-muted: var(--color-text-muted);
+  --admin-accent: var(--color-brand);
+  --admin-accent-hover: var(--color-brand-hover);
+  --admin-success: var(--color-success);
+  --admin-success-bg: var(--color-success-soft);
+  --admin-info: var(--color-brand);
+  --admin-info-bg: var(--color-brand-soft);
+  --admin-table-header-fg: var(--color-table-header-fg);
+  --admin-warning: var(--color-warning);
+  --admin-warning-bg: var(--color-warning-soft);
+  --admin-danger: var(--color-danger);
+  --admin-danger-bg: var(--color-danger-soft);
+  --admin-input-bg: var(--color-input);
+  --admin-border-strong: var(--color-border-strong);
+  --admin-table-header: var(--color-table-header);
+  --admin-table-row-hover: var(--color-row-hover);
+  --admin-shadow: var(--elevation-surface);
+  --admin-shadow-lg: var(--elevation-card);
+  --admin-topbar: var(--color-surface);
+}
+
+/* Admin sidebar nav items: hover only lifts inactive entries so the
+   active brand fill is never washed over. */
+.admin-nav-link:hover:not([aria-current="page"]) {
+  background: var(--admin-sidebar-hover);
+  color: var(--admin-sidebar-text);
+}
+
+.admin-nav-link:focus-visible {
+  outline: 2px solid #FFFFFF;
+  outline-offset: -2px;
+}
+
+/* Admin inputs/selects: hover and focus are visible instead of suppressed. */
+.admin-control:hover:not(:disabled):not(:focus) {
+  border-color: var(--admin-border-strong);
+}
+
+.admin-control:focus {
+  outline: none;
+  border-color: var(--color-focus-ring);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-focus-ring) 28%, transparent);
+}
+
+.admin-control:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.admin-control[aria-invalid="true"] {
+  border-color: var(--admin-danger);
+}
+
+.tag-remove:hover {
+  background: var(--admin-danger-bg);
+  color: var(--admin-danger);
+}
+
+/* Admin top-bar icon buttons */
+.admin-icon-btn {
+  color: var(--admin-text-secondary);
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.admin-icon-btn:hover {
+  background: var(--admin-input-bg);
+  color: var(--admin-text);
+}
+
+/* Shared modal scrim */
+.scrim {
+  background: rgb(8 17 31 / 0.6);
+}
+
+/* ============================================================
+   Text sitting on photography or a dark media overlay. These
+   surfaces are dark in both themes, so the values are fixed and
+   muted copy uses a lighter grey rather than opacity.
+   ============================================================ */
+.text-on-media {
+  color: #FFFFFF;
+}
+
+.text-on-media-muted {
+  color: #D3DCE6;
+}
+
+/* Brand accent for media overlays. The themed accent flips to a dark blue
+   in light mode and would disappear against photography, so overlays use
+   this fixed light blue instead. */
+.text-on-media-accent {
+  color: #A9D3EE;
+}
+
+.hover\:text-on-media-accent:hover {
+  color: #A9D3EE;
+}
+
+.btn-on-media {
+  background: rgb(255 255 255 / 0.14);
+  color: #FFFFFF;
+  transition: background-color 160ms ease;
+}
+
+.btn-on-media:hover:not(:disabled) {
+  background: rgb(255 255 255 / 0.26);
+}
+
+.btn-on-media:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* TipTap Editor Styles */
+.tiptap-editor {
+  min-height: 300px;
+}
+.tiptap-editor .ProseMirror {
+  min-height: 300px;
+  padding: 1rem;
+  outline: none;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+.tiptap-editor .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: var(--admin-text-muted);
+  pointer-events: none;
+  height: 0;
+}
+.tiptap-editor .ProseMirror[dir="rtl"],
+.tiptap-editor .ProseMirror[lang="ur"],
+.news-copy[dir="rtl"] .ProseMirror,
+.news-copy[lang="ur"] .ProseMirror {
+  direction: rtl;
+  text-align: right;
+  font-family: "Noto Nastaliq Urdu", "Noto Naskh Arabic", var(--font-sans);
+  font-size: 0.9375rem;
+  line-height: 2.4;
+}
+.tiptap-editor .ProseMirror[dir="rtl"] p.is-editor-empty:first-child::before,
+.news-copy[dir="rtl"] .ProseMirror p.is-editor-empty:first-child::before {
+  float: right;
+}
+.news-copy[dir="rtl"] .ProseMirror ul,
+.news-copy[dir="rtl"] .ProseMirror ol,
+.tiptap-editor .ProseMirror[dir="rtl"] ul,
+.tiptap-editor .ProseMirror[dir="rtl"] ol {
+  padding-left: 0;
+  padding-right: 1.5rem;
+}
+.news-copy[dir="rtl"] .ProseMirror blockquote,
+.tiptap-editor .ProseMirror[dir="rtl"] blockquote {
+  border-left: none;
+  padding-left: 0;
+  border-right: 3px solid var(--admin-accent);
+  padding-right: 1rem;
+}
+.tiptap-editor .ProseMirror h1 { font-size: 1.5rem; font-weight: 800; margin: 1rem 0 0.5rem; }
+.tiptap-editor .ProseMirror h2 { font-size: 1.25rem; font-weight: 700; margin: 0.75rem 0 0.5rem; }
+.tiptap-editor .ProseMirror h3 { font-size: 1.1rem; font-weight: 600; margin: 0.75rem 0 0.5rem; }
+.tiptap-editor .ProseMirror p { margin: 0.5rem 0; }
+.tiptap-editor .ProseMirror ul { list-style: disc; padding-left: 1.5rem; margin: 0.5rem 0; }
+.tiptap-editor .ProseMirror ol { list-style: decimal; padding-left: 1.5rem; margin: 0.5rem 0; }
+.tiptap-editor .ProseMirror li { margin: 0.25rem 0; }
+.tiptap-editor .ProseMirror blockquote {
+  border-left: 3px solid var(--admin-accent);
+  padding-left: 1rem;
+  margin: 0.75rem 0;
+  color: var(--admin-text-secondary);
+  font-style: italic;
+}
+.tiptap-editor .ProseMirror pre {
+  background: var(--admin-input-bg);
+  border: 1px solid var(--admin-border);
+  border-radius: 0.375rem;
+  padding: 0.75rem 1rem;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.8rem;
+  overflow-x: auto;
+  margin: 0.75rem 0;
+}
+.tiptap-editor .ProseMirror code {
+  background: var(--admin-input-bg);
+  border: 1px solid var(--admin-border);
+  border-radius: 0.25rem;
+  padding: 0.15rem 0.35rem;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.85em;
+}
+.tiptap-editor .ProseMirror img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  margin: 0.75rem 0;
+}
+.tiptap-editor .ProseMirror a {
+  color: var(--admin-accent);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.tiptap-editor .ProseMirror hr {
+  border: none;
+  border-top: 1px solid var(--admin-border);
+  margin: 1rem 0;
+}
+.tiptap-editor .ProseMirror mark {
+  background: rgba(255,212,0,0.3);
+  border-radius: 0.15rem;
+  padding: 0.1rem 0.2rem;
+}
+
+/* Public TipTap HTML — same formatting as the admin editor */
+.tiptap-content {
+  word-break: break-word;
+  color: var(--color-mtext);
+  font-size: 1rem;
+  line-height: 1.75;
+}
+.tiptap-content h1 {
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 1.75rem 0 0.75rem;
+  color: var(--color-mtext);
+}
+.tiptap-content h2 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  margin: 1.5rem 0 0.6rem;
+  color: var(--color-mtext);
+}
+.tiptap-content h3 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 1.25rem 0 0.5rem;
+  color: var(--color-mtext);
+}
+.tiptap-content h1:first-child,
+.tiptap-content h2:first-child,
+.tiptap-content h3:first-child {
+  margin-top: 0;
+}
+.tiptap-content p {
+  min-height: 1.5rem;
+  margin: 0.75rem 0;
+}
+.tiptap-content p:empty::before,
+.tiptap-content p > br:only-child::before {
+  content: "\00a0";
+}
+.tiptap-content strong,
+.tiptap-content b {
+  font-weight: 700;
+  color: var(--color-mtext);
+}
+.tiptap-content em,
+.tiptap-content i {
+  font-style: italic;
+}
+.tiptap-content u {
+  text-decoration: underline;
+}
+.tiptap-content s {
+  text-decoration: line-through;
+}
+.tiptap-content ul {
+  list-style: disc;
+  padding-left: 1.5rem;
+  margin: 0.75rem 0;
+}
+.tiptap-content ol {
+  list-style: decimal;
+  padding-left: 1.5rem;
+  margin: 0.75rem 0;
+}
+.tiptap-content li {
+  margin: 0.3rem 0;
+}
+.tiptap-content li p {
+  margin: 0.2rem 0;
+}
+.tiptap-content blockquote {
+  border-left: 3px solid var(--color-accent);
+  padding-left: 1rem;
+  margin: 1rem 0;
+  color: var(--color-stext);
+  font-style: italic;
+}
+.tiptap-content pre {
+  background: var(--color-elevated);
+  border: 1px solid var(--color-lborder);
+  border-radius: 0.375rem;
+  padding: 0.75rem 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+.tiptap-content code {
+  background: var(--color-elevated);
+  border: 1px solid var(--color-lborder);
+  border-radius: 0.25rem;
+  padding: 0.15rem 0.35rem;
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+.tiptap-content pre code {
+  background: none;
+  border: 0;
+  padding: 0;
+}
+.tiptap-content a {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.tiptap-content hr {
+  border: none;
+  border-top: 1px solid var(--color-lborder);
+  margin: 1.5rem 0;
+}
+
+.editorial-doc {
+  color: var(--color-stext);
+  font-size: 1.0625rem;
+  line-height: 1.85;
+}
+
+.editorial-doc h1,
+.editorial-doc h2,
+.editorial-doc h3 {
+  color: var(--color-mtext);
+  letter-spacing: -0.02em;
+  scroll-margin-top: 6rem;
+}
+
+.editorial-doc h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 2.25rem 0 0.85rem;
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid var(--color-lborder);
+}
+
+.editorial-doc h3 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin: 1.75rem 0 0.6rem;
+}
+
+.editorial-doc p {
+  min-height: 0;
+  margin: 0 0 1.15rem;
+}
+
+.editorial-doc p:empty {
+  display: none;
+}
+
+.editorial-doc ul,
+.editorial-doc ol {
+  margin: 0 0 1.25rem;
+}
+
+.editorial-doc li {
+  margin: 0.45rem 0;
+}
+
+.editorial-doc a {
+  text-underline-offset: 3px;
+}
+
+.news-image {
+  object-fit: contain !important;
+  object-position: center !important;
+}
+
+.tiptap-content img,
+.news-copy img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+/* Edge/Chrome draw a native reveal control over our eye button and then
+   React resets type="password", so the toggle appears broken. */
+.auth-password-input::-ms-reveal,
+.auth-password-input::-ms-clear {
+  display: none;
+}
+
+.pcz-toast {
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 10px !important;
+  max-width: min(380px, calc(100vw - 24px)) !important;
+  padding: 12px 14px !important;
+  background: var(--color-surface-elevated) !important;
+  color: var(--color-text-primary) !important;
+  border: 1px solid var(--color-border) !important;
+  border-left: 3px solid var(--color-info) !important;
+  border-radius: 6px !important;
+  box-shadow: var(--elevation-overlay) !important;
+  font-family: var(--font-sans) !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+}
+
+.pcz-toast > div {
+  margin: 0 !important;
+}
+
+.pcz-toast--success {
+  border-left-color: var(--color-brand) !important;
+}
+
+.pcz-toast--error {
+  border-left-color: var(--color-danger) !important;
+}
+
+/* Horizontal table scroll: bar stays visible while content overflows. */
+.table-scroll,
+:has(> table) {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--admin-text-muted, var(--color-stext)) var(--admin-input-bg, var(--color-lborder));
+}
+
+.table-scroll::-webkit-scrollbar,
+:has(> table)::-webkit-scrollbar {
+  display: block;
+  height: 10px;
+  width: 10px;
+}
+
+.table-scroll::-webkit-scrollbar-track,
+:has(> table)::-webkit-scrollbar-track {
+  background: var(--admin-input-bg, var(--color-elevated));
+  border-radius: 999px;
+}
+
+.table-scroll::-webkit-scrollbar-thumb,
+:has(> table)::-webkit-scrollbar-thumb {
+  background: var(--admin-text-muted, var(--color-stext));
+  border-radius: 999px;
+}
+
+.table-scroll::-webkit-scrollbar-thumb:hover,
+:has(> table)::-webkit-scrollbar-thumb:hover {
+  background: var(--admin-text, var(--color-mtext));
+}
+
+@media (max-width: 767px) {
+  table {
+    width: 100%;
+    min-width: max-content;
+  }
+
+  table th {
+    white-space: nowrap;
+  }
+}
+
+html[data-hide-dummy-ads] [data-ad-placement] {
+  display: none !important;
 }

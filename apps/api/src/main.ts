@@ -45,6 +45,8 @@ async function bootstrap() {
     .addTag('head-to-head', 'Team versus team meetings')
     .addTag('auth', 'Signup, login and current user profile')
     .addTag('news', 'Admin-managed news articles and categories')
+    .addTag('authors', 'Public editorial author profiles')
+    .addTag('editorial', 'Editorial and correction policy content')
     .addTag('streams', 'Live stream metadata')
     .addTag('sharing', 'Share links with OG meta')
     .addTag('favorites', 'User favorites / bookmarks')
@@ -53,6 +55,9 @@ async function bootstrap() {
     .addTag('search', 'Unified search across players, teams, matches and tournaments')
     .addTag('predictions', 'Pre-match and live statistical winner probabilities')
     .addTag('admin', 'Admin CMS, moderation and platform analytics')
+    .addTag('newsletter', 'Newsletter subscription management')
+    .addTag('contact', 'Contact-us submissions')
+    .addTag('gallery', 'Images, shorts and videos')
     .addCookieAuth('cricapp_access_token', {
       type: 'apiKey',
       in: 'cookie',

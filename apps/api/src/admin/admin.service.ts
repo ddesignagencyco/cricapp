@@ -54,13 +54,19 @@ export class AdminService {
           emailVerified: true,
           createdAt: true,
           updatedAt: true,
+          newsletterSubscription: {
+            select: { status: true },
+          },
         },
       }),
       this.prisma.user.count({ where }),
     ]);
 
     return {
-      data,
+      data: data.map(({ newsletterSubscription, ...user }) => ({
+        ...user,
+        newsletterActive: newsletterSubscription?.status === 'active',
+      })),
       meta: { page, limit, totalRecords: total, totalPages: Math.ceil(total / limit) },
     };
   }
@@ -246,6 +252,9 @@ export class AdminService {
       pendingReports,
       articleCount,
       shareTotal,
+      newsletterCount,
+      contactCount,
+      galleryCount,
     ] = await Promise.all([
       this.prisma.user.count(),
       this.prisma.match.count(),
@@ -263,6 +272,9 @@ export class AdminService {
       this.prisma.commentReport.count({ where: { status: 'pending' } }),
       this.prisma.newsArticle.count({ where: { isPublished: true } }),
       this.prisma.shareStat.aggregate({ _sum: { count: true } }),
+      this.prisma.newsletterSubscriber.count({ where: { status: 'active' } }),
+      this.prisma.contactSubmission.count({ where: { status: 'new' } }),
+      this.prisma.galleryMedia.count(),
     ]);
 
     return {
@@ -279,6 +291,7 @@ export class AdminService {
           team: 0,
           player: 0,
           match: 0,
+          news: 0,
           ...Object.fromEntries(
             favoriteTypes.map((type) => [
               type.targetType,
@@ -291,6 +304,9 @@ export class AdminService {
       pendingReports,
       publishedArticles: articleCount,
       totalShares: shareTotal._sum.count ?? 0,
+      activeNewsletterSubscribers: newsletterCount,
+      newContactSubmissions: contactCount,
+      galleryItems: galleryCount,
     };
   }
 

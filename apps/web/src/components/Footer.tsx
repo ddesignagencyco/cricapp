@@ -1,80 +1,63 @@
 'use client';
 
 import Link from 'next/link';
-import { AtSign, Camera, Mail, Video } from 'lucide-react';
+import { Download } from 'lucide-react';
 import Logo from './Logo';
+
+const CURRENT_YEAR = new Date().getFullYear();
 
 const footerCols = [
   {
     title: 'Cricket',
     links: [
       { label: 'Matches', to: '/matches' },
-      { label: 'Live Streams', to: '/streams' },
-      { label: 'Points Table', to: '/points-table' },
-      { label: 'Statistics', to: '/stats' },
-      { label: 'News', to: '/news' },
+      { label: 'Teams', to: '/teams' },
+      { label: 'Players', to: '/players' },
+      { label: 'Authors', to: '/authors' },
+      { label: 'Gallery', to: '/gallery' },
+      { label: 'Contact', to: '/contact' },
     ],
   },
   {
-    title: 'PSL 2026',
+    title: 'PSL & More',
     links: [
-      { label: 'PSL Overview', to: '/psl' },
-      { label: 'Teams', to: '/teams' },
-      { label: 'Players', to: '/players' },
-      { label: 'Schedule', to: '/matches' },
+      { label: 'PSL Hub', to: '/psl' },
+      { label: 'Tournaments', to: '/tournaments' },
+      { label: 'Tours', to: '/tours' },
     ],
   },
   {
     title: 'Company',
     links: [
       { label: 'About', to: '/about' },
-      { label: 'Contact', to: '/contact' },
       { label: 'Privacy Policy', to: '/privacy' },
       { label: 'Terms of Service', to: '/terms' },
+      { label: 'Editorial Policy', to: '/editorial/editorial-policy' },
+      { label: 'Corrections', to: '/editorial/corrections' },
     ],
   },
 ];
 
-const socials = [
-  { icon: Video, label: 'Watch' },
-  { icon: Camera, label: 'Photos' },
-  { icon: AtSign, label: 'Social' },
-  { icon: Mail, label: 'Mail' },
-];
-
 export default function Footer() {
   return (
-    <footer className="mt-16 border-t border-lborder bg-secondary">
+    <footer className="mt-16 border-t border-lborder bg-card">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
-        <div className="grid grid-cols-1 gap-10 md:grid-cols-[1.5fr_1fr_1fr_1fr]">
-          <div>
-            <Logo size="lg" />
-            <p className="mt-4 max-w-xs text-sm text-stext">
-              Every Run. Every Ball. Live. Your home for cricket live scores, PSL fixtures, teams, players and in-depth statistics.
+        <div className="grid grid-cols-2 items-start gap-x-8 gap-y-10 sm:grid-cols-3 lg:grid-cols-[1.4fr_repeat(3,minmax(0,1fr))_1.15fr]">
+          <div className="col-span-2 sm:col-span-3 lg:col-span-1">
+            <Logo size="xl" />
+            <p className="mt-4 max-w-xs text-sm leading-relaxed text-stext">
+              Every Run. Every Ball. Live. Your home for cricket live scores, PSL fixtures, teams, players and in-depth analysis.
             </p>
-            <div className="mt-5 flex gap-2">
-              {socials.map((s) => (
-                <a
-                  key={s.label}
-                  href="#"
-                  onClick={(e) => e.preventDefault()}
-                  aria-label={s.label}
-                  className="grid h-9 w-9 place-items-center rounded-lg bg-card text-stext ring-1 ring-lborder transition-colors hover:text-accent hover:ring-accent/40"
-                >
-                  <s.icon size={16} />
-                </a>
-              ))}
-            </div>
           </div>
 
           {footerCols.map((col) => (
             <div key={col.title}>
-              <p className="mb-4 text-sm font-bold uppercase tracking-widest text-stext">
+              <p className="mb-4 text-xs font-bold uppercase tracking-wider text-stext">
                 {col.title}
               </p>
               <ul className="space-y-2.5">
                 {col.links.map((link) => (
-                  <li key={link.label}>
+                  <li key={link.to}>
                     <Link
                       href={link.to}
                       className="text-sm text-stext transition-colors hover:text-accent"
@@ -86,6 +69,41 @@ export default function Footer() {
               </ul>
             </div>
           ))}
+
+          <div>
+            <p className="mb-4 text-xs font-bold uppercase tracking-wider text-stext">
+              Get the app
+            </p>
+            <p className="mb-4 text-sm leading-relaxed text-stext">
+              Live scores, news and more on the go.
+            </p>
+            <div className="flex w-full max-w-[14rem] flex-col gap-2">
+              <button
+                type="button"
+                disabled
+                className="inline-flex w-full cursor-not-allowed items-center justify-center gap-2 rounded bg-secondary px-3 py-2.5 text-xs font-semibold text-[var(--color-text-disabled)] ring-1 ring-lborder"
+              >
+                <Download size={14} aria-hidden="true" />
+                App Store soon
+              </button>
+              <button
+                type="button"
+                disabled
+                className="inline-flex w-full cursor-not-allowed items-center justify-center gap-2 rounded bg-secondary px-3 py-2.5 text-xs font-semibold text-[var(--color-text-disabled)] ring-1 ring-lborder"
+              >
+                <Download size={14} aria-hidden="true" />
+                Google Play soon
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="border-t border-lborder">
+        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6">
+          <p className="text-center text-xs text-stext">
+            &copy; {CURRENT_YEAR} PakCricZone. All rights reserved.
+          </p>
         </div>
       </div>
     </footer>

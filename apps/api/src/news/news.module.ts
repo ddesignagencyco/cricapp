@@ -1,9 +1,21 @@
 import { Module } from '@nestjs/common';
-import { NewsController } from './news.controller.js';
+import {
+  NewsController,
+  AuthorsController,
+  AuthorsAdminController,
+  EditorialPagesController,
+  EditorialPagesAdminController,
+} from './news.controller.js';
 import { NewsService } from './news.service.js';
 
 @Module({
-  controllers: [NewsController],
+  controllers: [
+    NewsController,
+    AuthorsController,
+    AuthorsAdminController,
+    EditorialPagesController,
+    EditorialPagesAdminController,
+  ],
   providers: [NewsService],
   exports: [NewsService],
 })

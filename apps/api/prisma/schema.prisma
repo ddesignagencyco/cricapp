@@ -282,6 +282,7 @@ model User {
   notificationLogs NotificationLog[]
   passwordResetTokens PasswordResetToken[]
   emailVerificationToken EmailVerificationToken?
+  newsletterSubscription NewsletterSubscriber?
 
   @@map("users")
 }
@@ -326,6 +327,10 @@ model NewsArticle {
   metaTitle       String?  @map("meta_title")
   metaDescription String?  @map("meta_description")
   canonicalUrl    String?  @map("canonical_url")
+  translationGroupId String? @map("translation_group_id")
+  pushNotificationTitle String? @map("push_notification_title")
+  pushNotificationBody  String? @db.Text @map("push_notification_body")
+  socialCopy      String?  @db.Text @map("social_copy")
   publishedAt     DateTime? @map("published_at")
   isPublished     Boolean  @default(false) @map("is_published")
   createdAt       DateTime @default(now()) @map("created_at")
@@ -340,7 +345,20 @@ model NewsArticle {
   @@index([publishedAt])
   @@index([categoryId])
   @@index([language])
+  @@index([translationGroupId])
+  @@unique([translationGroupId, language])
   @@map("news_articles")
+}
+
+model EditorialPage {
+  id        String   @id @default(uuid())
+  slug      String   @unique
+  title     String
+  content   String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("editorial_pages")
 }
 
 model NewsArticlePlayer {
@@ -593,4 +611,60 @@ model PredictionCalibration {
 
   @@index([modelVersion, createdAt])
   @@map("prediction_calibrations")
+}
+
+// --- Newsletter & Contact --------------------------------------------------
+
+model NewsletterSubscriber {
+  id              String    @id @default(uuid())
+  email           String    @unique
+  userId          String?   @unique @map("user_id")
+  status          String    @default("active")
+  unsubscribeToken String   @unique @map("unsubscribe_token")
+  subscribedAt    DateTime  @default(now()) @map("subscribed_at")
+  unsubscribedAt  DateTime? @map("unsubscribed_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  user            User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@map("newsletter_subscribers")
+}
+
+model ContactSubmission {
+  id        String   @id @default(uuid())
+  name      String
+  email     String
+  message   String   @db.Text
+  status    String   @default("new")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("contact_submissions")
+}
+
+// --- Gallery ---------------------------------------------------------------
+
+model GalleryMedia {
+  id           String   @id @default(uuid())
+  title        String?
+  caption      String?  @db.Text
+  type         String
+  url          String
+  publicId     String   @unique @map("public_id")
+  resourceType String   @map("resource_type")
+  thumbnailUrl String?  @map("thumbnail_url")
+  duration     Float?
+  width        Int?
+  height       Int?
+  format       String?
+  bytes        Int?
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([type])
+  @@index([createdAt])
+  @@map("gallery_media")
 }
