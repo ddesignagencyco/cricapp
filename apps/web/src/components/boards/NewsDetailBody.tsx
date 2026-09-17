@@ -1,17 +1,19 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowLeft, ArrowRight, Calendar, Clock, Newspaper, Tag, User } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Calendar, Clock, Newspaper, Tag } from 'lucide-react';
 import Badge from '../Badge';
 import DummyAd from '../advertisements/DummyAd';
 import RemoteImage from '../RemoteImage';
 import ShareButton from '../ShareButton';
 import FavoriteButton from '../FavoriteButton';
 import CommentsSection from '../CommentsSection';
+import { AuthorByline } from '../PersonAvatar';
 import { sanitizeArticleHtml } from '../../utils/sanitizeHtml';
 import NewsCopy from '../NewsCopy';
 import { newsLocale } from '../../utils/locale';
 import { newsHref } from '../../utils/newsConstraints';
+import { authorAvatarFromArticle } from '../../services/authors';
 
 /**
  * Splits already-sanitized article HTML after four paragraphs
@@ -127,16 +129,13 @@ export default function NewsDetailBody({ item, related = [], authorHref, related
               </NewsCopy>
             )}
             <div className="mt-6 flex flex-wrap items-center gap-5 border-b border-lborder pb-6 text-xs text-stext">
-              <span className="flex items-center gap-1.5">
-                <User size={14} className="text-accent" />
-                {authorHref ? (
-                  <Link href={authorHref} className="font-semibold text-accent">
-                    {item.author}
-                  </Link>
-                ) : (
-                  item.author
-                )}
-              </span>
+              <AuthorByline
+                name={item.author}
+                src={authorAvatarFromArticle(item)}
+                href={authorHref}
+                size={22}
+                className="text-xs"
+              />
               <span className="flex items-center gap-1.5">
                 <Calendar size={14} /> {item.date}
               </span>

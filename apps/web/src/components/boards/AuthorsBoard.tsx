@@ -4,16 +4,9 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { ChevronRight, Newspaper, Search } from 'lucide-react';
 import EmptyState from '../EmptyState';
-import RemoteImage from '../RemoteImage';
+import PersonAvatar from '../PersonAvatar';
 import ShareButton from '../ShareButton';
 import type { PublicAuthor } from '../../services/authors';
-import { getInitials } from '../../utils/helpers';
-
-function avatarHue(name: string) {
-  let h = 0;
-  for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
-  return Math.abs(h % 360);
-}
 
 export default function AuthorsBoard({ authors }: { authors: PublicAuthor[] }) {
   const [query, setQuery] = useState('');
@@ -66,31 +59,11 @@ export default function AuthorsBoard({ authors }: { authors: PublicAuthor[] }) {
           </p>
           <ul className="grid auto-rows-fr grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map((author) => {
-              const initials = getInitials(author.name);
-              const hue = avatarHue(author.name);
               return (
                 <li key={author.slug} className="min-h-0">
                   <div className="group flex h-full items-center gap-2 rounded-md border border-lborder bg-card p-3.5 transition-colors hover:border-accent/50 hover:bg-[var(--color-row-hover)]">
                     <Link href={`/authors/${author.slug}`} className="flex min-w-0 flex-1 items-center gap-3">
-                    {author.avatarUrl ? (
-                      <RemoteImage
-                        src={author.avatarUrl}
-                        alt={author.name}
-                        width={48}
-                        height={48}
-                        className="h-12 w-12 shrink-0 rounded-full border border-lborder bg-secondary object-cover"
-                      />
-                    ) : (
-                      <span
-                        className="grid h-12 w-12 shrink-0 place-items-center rounded-full text-sm font-semibold text-white"
-                        style={{
-                          backgroundImage: `linear-gradient(135deg, hsl(${hue}, 68%, 46%), hsl(${(hue + 38) % 360}, 72%, 32%))`,
-                        }}
-                        aria-hidden="true"
-                      >
-                        {initials}
-                      </span>
-                    )}
+                    <PersonAvatar name={author.name} src={author.avatarUrl} size={48} />
                     <div className="min-w-0 flex-1">
                       <h2 className="truncate text-sm font-semibold text-mtext transition-colors group-hover:text-accent">
                         {author.name}

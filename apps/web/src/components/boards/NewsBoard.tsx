@@ -8,7 +8,6 @@ import {
   Calendar,
   Clock,
   Newspaper,
-  User,
   Tag as TagIcon,
   Flame,
 } from 'lucide-react';
@@ -19,8 +18,10 @@ import Pagination from '../Pagination';
 import DummyAd from '../advertisements/DummyAd';
 import RemoteImage from '../RemoteImage';
 import NewsCopy from '../NewsCopy';
+import { AuthorByline } from '../PersonAvatar';
 import type { NewsArticle } from '../../types';
 import { newsHref } from '../../utils/newsConstraints';
+import { authorAvatarFromArticle } from '../../services/authors';
 
 const categoryTone: Record<string, string> = {
   'Match Report': 'live',
@@ -258,10 +259,11 @@ export default function NewsBoard({
               <div className="mt-7 flex flex-wrap items-center justify-between gap-4 border-t border-lborder pt-4 text-xs text-stext">
                 <div className="flex flex-wrap items-center gap-3">
                   {featured.author && (
-                    <span className="flex items-center gap-1.5 font-medium text-mtext">
-                      <User size={14} className="text-accent" />
-                      {featured.author}
-                    </span>
+                    <AuthorByline
+                      name={featured.author}
+                      src={authorAvatarFromArticle(featured)}
+                      size={20}
+                    />
                   )}
                   {featured.date && (
                     <span className="flex items-center gap-1.5">
@@ -411,12 +413,10 @@ function ArticleCard({ item, language }: { item: NewsArticle; language: 'en' | '
           </div>
         )}
 
-        <div className="mt-auto flex items-center justify-between border-t border-lborder pt-3 text-xs text-stext">
-          <span className="flex items-center gap-1.5 font-medium">
+        <div className="mt-auto flex items-center justify-between gap-2 border-t border-lborder pt-3 text-xs text-stext">
+          <AuthorByline name={item.author} src={authorAvatarFromArticle(item)} size={18} />
+          <span className="flex shrink-0 items-center gap-1.5">
             <Calendar size={12} className="text-accent" /> {item.date || 'Recent'}
-          </span>
-          <span className="flex items-center gap-1.5">
-            <Clock size={12} /> {item.readTime || '3 min read'}
           </span>
         </div>
       </div>
