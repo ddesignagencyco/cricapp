@@ -309,6 +309,14 @@ select:focus-visible {
   border-color: var(--color-focus-ring);
 }
 
+textarea#comment-body:focus,
+textarea#comment-body:focus-visible {
+  outline: none;
+  outline-offset: 0;
+  border-color: transparent;
+  box-shadow: none;
+}
+
 /* Controls placed on dark photographic overlays need a light ring
    to stay visible in both themes. */
 .on-media:focus-visible {

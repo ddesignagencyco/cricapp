@@ -7,14 +7,8 @@ import NewsCopy from '../../../components/NewsCopy';
 import { fetchPublicAuthor } from '../../../services/authors';
 import { sharePageMetadata } from '../../../services/sharing';
 import { newsHref } from '../../../utils/newsConstraints';
-import { getInitials } from '../../../utils/helpers';
 import AuthorActions from '../../../components/AuthorActions';
-
-function avatarHue(name: string) {
-  let h = 0;
-  for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
-  return Math.abs(h % 360);
-}
+import PersonAvatar from '../../../components/PersonAvatar';
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -40,8 +34,6 @@ export default async function AuthorDetailPage({
   const data = await fetchPublicAuthor(slug, { page, limit: 24 }).catch(() => null);
   if (!data) notFound();
   const { author, articles, totalPages } = data;
-  const initials = getInitials(author.name);
-  const hue = avatarHue(author.name);
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6">
@@ -55,25 +47,7 @@ export default async function AuthorDetailPage({
 
       <header className="rounded-md border border-lborder bg-card p-5 sm:p-6">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-          {author.avatarUrl ? (
-            <RemoteImage
-              src={author.avatarUrl}
-              alt={author.name}
-              width={80}
-              height={80}
-              className="h-20 w-20 shrink-0 rounded-full border border-lborder bg-secondary object-cover"
-            />
-          ) : (
-            <span
-              className="grid h-20 w-20 shrink-0 place-items-center rounded-full text-xl font-semibold text-white"
-              style={{
-                backgroundImage: `linear-gradient(135deg, hsl(${hue}, 68%, 46%), hsl(${(hue + 38) % 360}, 72%, 32%))`,
-              }}
-              aria-hidden="true"
-            >
-              {initials}
-            </span>
-          )}
+          <PersonAvatar name={author.name} src={author.avatarUrl} size={80} />
 
           <div className="min-w-0 flex-1">
             <span className="rounded border border-accent/25 bg-accent/10 px-2.5 py-1 text-xs font-medium tracking-wider text-accent">

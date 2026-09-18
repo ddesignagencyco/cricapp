@@ -144,20 +144,34 @@ export default function TournamentDetailPageClient({
       </nav>
 
       <header className="rounded-md border border-lborder bg-card p-5 sm:p-6">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="rounded border border-accent/25 bg-accent/10 px-2.5 py-1 text-xs font-medium tracking-wider text-accent">
-            Tournament
-          </span>
-          {format && (
-            <span className="rounded border border-lborder bg-secondary px-2.5 py-1 text-xs font-medium tracking-wider text-stext">
-              {format}
+        <div className="flex items-center justify-between gap-3 border-b border-lborder pb-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded border border-accent/25 bg-accent/10 px-2.5 py-1 text-xs font-medium tracking-wider text-accent">
+              Tournament
             </span>
-          )}
-          {tournament.gender && (
-            <span className="rounded border border-lborder bg-secondary px-2.5 py-1 text-xs font-medium capitalize text-stext">
-              {tournament.gender}
-            </span>
-          )}
+            {format && (
+              <span className="rounded border border-lborder bg-secondary px-2.5 py-1 text-xs font-medium tracking-wider text-stext">
+                {format}
+              </span>
+            )}
+            {tournament.gender && (
+              <span className="rounded border border-lborder bg-secondary px-2.5 py-1 text-xs font-medium capitalize text-stext">
+                {tournament.gender}
+              </span>
+            )}
+          </div>
+          {tournamentId ? (
+            <div className="flex shrink-0 items-center gap-2">
+              <FavoriteButton targetType="tournament" targetId={tournamentId} compact />
+              <ShareButton
+                type="tournament"
+                id={tournamentId}
+                fallbackTitle={String(tournament.name || 'Tournament')}
+                href={`/tournaments/${encodeURIComponent(tournamentId)}`}
+                compact
+              />
+            </div>
+          ) : null}
         </div>
 
         <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center">
@@ -165,21 +179,7 @@ export default function TournamentDetailPageClient({
             <Trophy size={22} />
           </span>
           <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <h1 className="text-2xl font-semibold text-mtext">{tournament.name}</h1>
-              {tournamentId ? (
-                <div className="flex shrink-0 items-center gap-2">
-                  <FavoriteButton targetType="tournament" targetId={tournamentId} compact />
-                  <ShareButton
-                    type="tournament"
-                    id={tournamentId}
-                    fallbackTitle={String(tournament.name || 'Tournament')}
-                    href={`/tournaments/${encodeURIComponent(tournamentId)}`}
-                    compact
-                  />
-                </div>
-              ) : null}
-            </div>
+            <h1 className="text-2xl font-semibold text-mtext">{tournament.name}</h1>
             <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-stext">
               {category && (
                 <span className="inline-flex items-center gap-1">

@@ -31,6 +31,7 @@ import {
 import { useAuth } from '../../../components/AuthProvider';
 import { useTheme } from '../../../components/ThemeProvider';
 import Logo from '../../../components/Logo';
+import { AdminAvatar } from '../../../components/admin/AdminShared';
 import { AdminChromeSkeleton } from '../../../components/skeletons/Skeletons';
 
 const adminNav = [
@@ -97,7 +98,6 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     return pathname === to || pathname.startsWith(`${to}/`);
   };
   const userName = user?.displayName || user?.username || 'Admin';
-  const userInitials = userName.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2);
 
   const sidebar = (
     <div className="flex h-full min-h-0 w-full flex-col" style={{ width: 240, minWidth: 240, background: 'var(--admin-sidebar)' }}>
@@ -105,7 +105,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         <Logo to="/admin" size="lg" />
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-0.5" aria-label="Admin sections">
+      <nav className="flex-1 overflow-y-auto no-scrollbar px-3 py-3 space-y-0.5" aria-label="Admin sections">
         {adminNav.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.to);
@@ -213,13 +213,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           </a>
 
           <div className="flex items-center gap-2">
-            <div
-              aria-hidden="true"
-              className="grid h-8 w-8 place-items-center rounded-full text-xs font-bold"
-              style={{ background: 'var(--admin-accent)', color: 'var(--color-brand-fg)' }}
-            >
-              {userInitials}
-            </div>
+            <AdminAvatar name={userName} src={user?.avatarUrl} size={32} />
             <div className="hidden sm:block">
               <p className="text-xs font-semibold" style={{ color: 'var(--admin-text)' }}>{userName}</p>
               <p className="text-xs font-medium" style={{ color: 'var(--admin-text-secondary)' }}>{user?.isSuperAdmin ? 'Superadmin' : user?.isAdmin ? 'Administrator' : 'Editor'}</p>

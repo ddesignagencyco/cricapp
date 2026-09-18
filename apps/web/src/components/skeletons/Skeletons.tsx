@@ -172,24 +172,24 @@ export function NewsCardSkeleton() {
   );
 }
 
-export function CommentListSkeleton({ count = 3 }: { count?: number }) {
+export function CommentListSkeleton({ count = 2 }: { count?: number }) {
   return (
-    <ul className="space-y-3">
+    <ul className="divide-y divide-lborder">
       {Array.from({ length: count }).map((_, i) => (
-        <li key={i} className="rounded bg-elevated/60 p-3.5 ring-1 ring-lborder/60">
-          <div className="flex items-center gap-2.5">
+        <li key={i} className="py-3">
+          <div className="flex items-start gap-2.5">
             <Skeleton circle width={28} height={28} />
             <div className="min-w-0 flex-1">
-              <Skeleton width={120} height={10} />
-              <Skeleton width={88} height={8} className="mt-1.5" />
+              <Skeleton width={110} height={10} />
+              <Skeleton width={72} height={8} className="mt-1.5" />
+              <Skeleton height={10} className="mt-2" />
+              <div className="mt-2 flex gap-1">
+                <Skeleton width={28} height={20} borderRadius={999} />
+                <Skeleton width={28} height={20} borderRadius={999} />
+                <Skeleton width={28} height={20} borderRadius={999} />
+                <Skeleton width={28} height={20} borderRadius={999} />
+              </div>
             </div>
-          </div>
-          <Skeleton count={2} height={10} className="mt-3" />
-          <div className="mt-3 flex gap-1.5">
-            <Skeleton width={52} height={24} borderRadius={999} />
-            <Skeleton width={52} height={24} borderRadius={999} />
-            <Skeleton width={52} height={24} borderRadius={999} />
-            <Skeleton width={52} height={24} borderRadius={999} />
           </div>
         </li>
       ))}
@@ -534,23 +534,44 @@ export function ProfilePageSkeleton() {
 export function FavoritesPageSkeleton() {
   return (
     <Page>
-      <Card className="mb-8 p-6 sm:p-8">
-        <Skeleton width={120} height={10} />
-        <Skeleton width={180} height={32} className="mt-2" />
-        <div className="mt-6 flex flex-wrap gap-2">
-          <Skeleton width={110} height={32} borderRadius={999} />
-          <Skeleton width={80} height={32} borderRadius={999} />
-          <Skeleton width={88} height={32} borderRadius={999} />
+      <Card className="mb-8 overflow-hidden p-6 sm:p-8">
+        <Skeleton width={100} height={10} />
+        <Skeleton width={160} height={32} className="mt-2" />
+        <div className="mt-5 flex flex-wrap gap-2">
+          <Skeleton width={90} height={28} borderRadius={8} />
+          <Skeleton width={75} height={28} borderRadius={8} />
+          <Skeleton width={80} height={28} borderRadius={8} />
+        </div>
+        <div className="mt-4 flex gap-1.5 border-t border-lborder/50 pt-3">
+          <Skeleton width={50} height={28} borderRadius={8} />
+          <Skeleton width={60} height={28} borderRadius={8} />
+          <Skeleton width={55} height={28} borderRadius={8} />
         </div>
       </Card>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <Card key={i} className="p-4">
-            <Skeleton height={96} />
-            <Skeleton width="70%" height={14} className="mt-3" />
-          </Card>
-        ))}
-      </div>
+      {Array.from({ length: 2 }).map((_, s) => (
+        <div key={s} className="mb-8">
+          <div className="mb-4 flex items-center gap-2.5">
+            <Skeleton width={32} height={32} borderRadius={8} />
+            <Skeleton width={80} height={18} />
+            <Skeleton width={24} height={20} borderRadius={6} />
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Card key={i} className="p-4">
+                <div className="flex items-center gap-4">
+                  <Skeleton width={56} height={56} borderRadius={12} />
+                  <div className="flex-1">
+                    <Skeleton width="70%" height={14} />
+                    <Skeleton width="50%" height={10} className="mt-2" />
+                  </div>
+                </div>
+                <Skeleton height={1} className="mt-3" />
+                <Skeleton width="40%" height={10} className="mt-3" />
+              </Card>
+            ))}
+          </div>
+        </div>
+      ))}
     </Page>
   );
 }

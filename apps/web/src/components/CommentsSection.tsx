@@ -3,10 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Flag, Flame, Loader2, MessageSquare, SmilePlus, Trash2 } from 'lucide-react';
+import { Flag, Loader2, MessageSquare, Send, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ReactionBar from './ReactionBar';
 import { CommentListSkeleton } from './skeletons/Skeletons';
+import { getInitials } from '../utils/helpers';
 import {
   createComment,
   deleteComment,
@@ -205,51 +206,50 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
     }
   };
 
+  const composerName = user?.displayName || user?.username || 'a fan';
+
   return (
-    <section className="rounded bg-card p-5 ring-1 ring-lborder sm:p-6">
-      <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <h2 className="flex items-center gap-2 text-sm font-bold text-mtext">
-          <MessageSquare size={16} className="text-accent" />
+    <section className="rounded-md border border-lborder bg-card p-3.5 sm:p-4">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <h2 className="flex items-center gap-2 text-sm font-semibold text-mtext">
+          <MessageSquare size={15} className="text-accent" />
           Comments
-          <span className="rounded bg-elevated px-2 py-0.5 text-xs font-semibold text-stext">{total}</span>
+          <span className="rounded bg-secondary px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-stext">{total}</span>
         </h2>
-        <div className="overflow-visible rounded-md border border-lborder bg-elevated/70 px-3 py-2.5 sm:min-w-[280px]">
-          <p className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-stext">
-            <SmilePlus size={12} className="text-accent" />
-            Reactions
-          </p>
-          <ReactionBar counts={counts} onReact={react} />
-        </div>
+        <ReactionBar size="xs" counts={counts} onReact={react} />
       </div>
 
       {isAuthenticated ? (
-        <form onSubmit={submit} noValidate className="mb-5">
-          <label htmlFor="comment-body" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-stext">
-            Comment <span className="text-danger">*</span>
-          </label>
-          <textarea
-            id="comment-body"
-            rows={3}
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            placeholder={`Share your thoughts as ${user?.displayName || user?.username || 'a fan'}…`}
-            maxLength={1000}
-            className="w-full resize-none rounded bg-card px-3.5 py-2.5 text-sm text-mtext ring-1 ring-lborder outline-none transition-colors hover:ring-[var(--color-border-strong)] focus:ring-2 focus:ring-[var(--color-focus-ring)]/30"
-          />
-          <div className="mt-2 flex items-center justify-between">
-            <span className="text-xs font-medium tabular-nums text-stext">{body.length}/1000</span>
+        <form onSubmit={submit} noValidate className="mb-3 rounded-md border border-lborder bg-secondary/50 p-2.5">
+          <div className="flex items-start gap-2.5">
+            <CommentAvatar name={composerName} />
+            <label htmlFor="comment-body" className="sr-only">
+              Comment
+            </label>
+            <textarea
+              id="comment-body"
+              rows={2}
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              placeholder={`Share your thoughts as ${composerName}…`}
+              maxLength={1000}
+              className="min-h-[52px] w-full resize-none bg-transparent text-sm leading-snug text-mtext shadow-none outline-none ring-0 placeholder:text-stext focus:border-transparent focus:outline-none focus:ring-0 focus-visible:border-transparent focus-visible:outline-none focus-visible:ring-0"
+            />
+          </div>
+          <div className="mt-2 flex items-center justify-end gap-2.5">
+            <span className="text-[11px] font-medium tabular-nums text-stext">{body.length}/1000</span>
             <button
               type="submit"
-              disabled={submitting}
-              className="btn-brand inline-flex items-center gap-2 rounded px-4 py-2 text-xs font-bold disabled:opacity-60"
+              disabled={submitting || !body.trim()}
+              className="btn-brand inline-flex h-8 items-center gap-1.5 rounded-md px-3 text-xs font-semibold disabled:opacity-60"
             >
-              {submitting ? <Loader2 size={13} aria-hidden="true" className="animate-spin" /> : <Flame size={13} aria-hidden="true" />}
-              Post comment
+              {submitting ? <Loader2 size={12} aria-hidden="true" className="animate-spin" /> : <Send size={12} aria-hidden="true" />}
+              Post
             </button>
           </div>
         </form>
       ) : (
-        <p className="mb-5 rounded bg-secondary px-4 py-3 text-center text-sm text-stext ring-1 ring-lborder">
+        <p className="mb-3 rounded-md bg-secondary px-3 py-2 text-center text-xs text-stext">
           <Link
             href={`/login?returnTo=${encodeURIComponent(pathname || '/')}`}
             className="font-semibold text-accent underline underline-offset-2 hover:text-[var(--color-brand-hover)]"
@@ -261,12 +261,13 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
       )}
 
       {loading ? (
-        <CommentListSkeleton />
+        <CommentListSkeleton count={2} />
       ) : loadError ? (
-        <p role="alert" className="py-6 text-center text-sm font-semibold text-danger">{loadError}</p>
+        <p role="alert" className="py-3 text-center text-xs font-semibold text-danger">{loadError}</p>
       ) : comments.length === 0 ? (
-        <p className="py-6 text-center text-sm font-medium text-stext">No comments yet. Be the first to share your take.</p>
+        <p className="py-3 text-center text-xs text-stext">No comments yet. Be the first to share your take.</p>
       ) : (
+<<<<<<< HEAD
         <ul className="space-y-3">
           {comments.map((comment) => (
             <li
@@ -302,43 +303,63 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
                       {new Date(comment.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} ·{' '}
                       {new Date(comment.createdAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
                     </p>
+=======
+        <ul className="divide-y divide-lborder">
+          {comments.map((comment) => {
+            const name = comment.user?.displayName || comment.user?.username || 'User';
+            return (
+              <li key={comment.id} className="py-3 first:pt-1 last:pb-0">
+                <div className="flex items-start gap-2.5">
+                  <CommentAvatar name={name} />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="truncate text-xs font-semibold text-mtext">{name}</p>
+                        <p className="text-[11px] text-stext">
+                          {new Date(comment.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                          {' · '}
+                          {new Date(comment.createdAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                        </p>
+                      </div>
+                      {(isAdmin || user?.id === comment.userId) && (
+                        <button
+                          type="button"
+                          onClick={() => setDeleteTarget(comment)}
+                          disabled={busyId === comment.id}
+                          className="shrink-0 rounded p-1 text-stext hover:bg-danger/10 hover:text-danger disabled:opacity-50"
+                          aria-label="Delete comment"
+                        >
+                          {busyId === comment.id ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
+                        </button>
+                      )}
+                    </div>
+                    <p className="mt-1 whitespace-pre-wrap break-words text-sm leading-snug text-mtext">{comment.body}</p>
+                    <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2">
+                      <ReactionBar
+                        size="xs"
+                        counts={commentCounts[comment.id]}
+                        onReact={(emoji) => reactToComment(comment, emoji)}
+                      />
+                      {isAuthenticated && !isAdmin && user?.id !== comment.userId && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (reportedIds.includes(comment.id)) return;
+                            setReportTarget(comment);
+                          }}
+                          disabled={reportedIds.includes(comment.id) || busyId === comment.id}
+                          className="inline-flex items-center gap-1 rounded px-1 py-0.5 text-[11px] text-stext hover:text-danger disabled:cursor-default disabled:opacity-70 disabled:hover:text-stext"
+                        >
+                          <Flag size={11} /> {reportedIds.includes(comment.id) ? 'Reported' : 'Report'}
+                        </button>
+                      )}
+                    </div>
+>>>>>>> 48030560175c0467a617b14773cb30bc5f1a7287
                   </div>
                 </div>
-                {(isAdmin || user?.id === comment.userId) && (
-                  <button
-                    type="button"
-                    onClick={() => setDeleteTarget(comment)}
-                    disabled={busyId === comment.id}
-                    className="shrink-0 rounded p-1.5 text-danger hover:bg-[var(--color-row-hover)] disabled:opacity-50"
-                    aria-label="Delete comment"
-                  >
-                    {busyId === comment.id ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
-                  </button>
-                )}
-              </div>
-              <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed text-mtext">{comment.body}</p>
-              <div className="mt-3 flex flex-wrap items-center justify-between gap-2 overflow-visible border-t border-lborder/70 pt-2.5">
-                <ReactionBar
-                  size="sm"
-                  counts={commentCounts[comment.id]}
-                  onReact={(emoji) => reactToComment(comment, emoji)}
-                />
-                {isAuthenticated && !isAdmin && user?.id !== comment.userId && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (reportedIds.includes(comment.id)) return;
-                      setReportTarget(comment);
-                    }}
-                    disabled={reportedIds.includes(comment.id) || busyId === comment.id}
-                    className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] text-stext hover:text-danger disabled:cursor-default disabled:opacity-70 disabled:hover:text-stext"
-                  >
-                    <Flag size={11} /> {reportedIds.includes(comment.id) ? 'Reported' : 'Report'}
-                  </button>
-                )}
-              </div>
-            </li>
-          ))}
+              </li>
+            );
+          })}
         </ul>
       )}
 
@@ -379,5 +400,21 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
         onSubmit={submitReport}
       />
     </section>
+  );
+}
+
+function CommentAvatar({ name }: { name: string }) {
+  const seed = name.trim() || '?';
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) hash = seed.charCodeAt(i) + ((hash << 5) - hash);
+  const hue = Math.abs(hash % 360);
+  return (
+    <span
+      className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[10px] font-semibold text-white"
+      style={{ backgroundImage: `linear-gradient(135deg, hsl(${hue}, 68%, 46%), hsl(${(hue + 38) % 360}, 72%, 32%))` }}
+      aria-hidden="true"
+    >
+      {getInitials(seed)}
+    </span>
   );
 }
