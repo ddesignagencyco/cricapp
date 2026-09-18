@@ -40,9 +40,29 @@ export default function WinProbabilityBar({
           </p>
         </div>
       </div>
-      <div className="flex h-2.5 overflow-hidden rounded-full bg-secondary ring-1 ring-lborder">
-        <div className={`h-full transition-all ${homeBar}`} style={{ width: `${home}%` }} />
-        <div className={`h-full transition-all ${awayBar}`} style={{ width: `${away}%` }} />
+      <div
+        className={`flex overflow-hidden rounded-full bg-secondary ring-1 ring-lborder ${compact ? 'h-7' : 'h-9'}`}
+      >
+        <div
+          className={`flex h-full min-w-0 items-center justify-center transition-all ${homeBar}`}
+          style={{ width: `${home}%` }}
+        >
+          {home >= 14 ? (
+            <span className={`font-mono font-black tabular-nums text-[var(--color-card)] ${compact ? 'text-[11px]' : 'text-xs'}`}>
+              {asPercent(homeWinProb)}
+            </span>
+          ) : null}
+        </div>
+        <div
+          className={`flex h-full min-w-0 items-center justify-center transition-all ${awayBar}`}
+          style={{ width: `${away}%` }}
+        >
+          {away >= 14 ? (
+            <span className={`font-mono font-black tabular-nums text-[var(--color-card)] ${compact ? 'text-[11px]' : 'text-xs'}`}>
+              {asPercent(awayWinProb)}
+            </span>
+          ) : null}
+        </div>
       </div>
     </div>
   );

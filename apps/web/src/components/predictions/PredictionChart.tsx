@@ -24,7 +24,7 @@ export default function PredictionChart({ points, homeLabel, awayLabel, preMatch
   const selected = series[selectedIndex];
   const width = 860;
   const height = 268;
-  const pad = { t: 28, r: 62, b: 40, l: 44 };
+  const pad = { t: 46, r: 78, b: 40, l: 44 };
   const lastOver = Math.max(0, ...series.map((point) => point.x));
   const maxOver = axisMax(lastOver);
   const toX = (over: number) => pad.l + (over / maxOver) * (width - pad.l - pad.r);
@@ -36,6 +36,8 @@ export default function PredictionChart({ points, homeLabel, awayLabel, preMatch
   const firstX = toX(first.x);
   const lastX = toX(last.x);
   const showStartLabels = lastX - firstX > 90;
+  const startYs = spreadLabelYs(toY(Number(first.homeWinProb)), toY(Number(first.awayWinProb)));
+  const endYs = spreadLabelYs(toY(Number(last.homeWinProb)), toY(Number(last.awayWinProb)));
   const ticks = overTicks(lastOver, maxOver);
   const homeHigh = Number(last.homeWinProb) >= Number(last.awayWinProb);
   const homeColor = homeHigh ? 'var(--color-success)' : 'var(--color-danger)';
@@ -110,20 +112,36 @@ export default function PredictionChart({ points, homeLabel, awayLabel, preMatch
 
           {showStartLabels && (
             <>
-              <text x={firstX + 10} y={toY(Number(first.homeWinProb)) - 8} className={`${homeFill} text-[11px] font-semibold`}>
-                {asPercent(first.homeWinProb)}
-              </text>
-              <text x={firstX + 10} y={toY(Number(first.awayWinProb)) + 16} className={`${awayFill} text-[11px] font-semibold`}>
-                {asPercent(first.awayWinProb)}
-              </text>
+              <PercentLabel
+                x={firstX - 10}
+                y={startYs.homeY}
+                anchor="end"
+                className={`${homeFill} text-[11px] font-semibold`}
+                value={asPercent(first.homeWinProb)}
+              />
+              <PercentLabel
+                x={firstX - 10}
+                y={startYs.awayY}
+                anchor="end"
+                className={`${awayFill} text-[11px] font-semibold`}
+                value={asPercent(first.awayWinProb)}
+              />
             </>
           )}
-          <text x={lastX + 10} y={toY(Number(last.homeWinProb)) + 4} className={`${homeFill} text-[12px] font-bold`}>
-            {asPercent(last.homeWinProb)}
-          </text>
-          <text x={lastX + 10} y={toY(Number(last.awayWinProb)) + 4} className={`${awayFill} text-[12px] font-bold`}>
-            {asPercent(last.awayWinProb)}
-          </text>
+          <PercentLabel
+            x={lastX + 12}
+            y={endYs.homeY}
+            anchor="start"
+            className={`${homeFill} text-[12px] font-bold`}
+            value={asPercent(last.homeWinProb)}
+          />
+          <PercentLabel
+            x={lastX + 12}
+            y={endYs.awayY}
+            anchor="start"
+            className={`${awayFill} text-[12px] font-bold`}
+            value={asPercent(last.awayWinProb)}
+          />
 
           {ticks.map((tick) => (
             <text key={tick.key} x={toX(tick.over)} y={height - 8} textAnchor="middle" className="fill-stext text-[10px]">
@@ -132,8 +150,8 @@ export default function PredictionChart({ points, homeLabel, awayLabel, preMatch
           ))}
         </svg>
 
-        <div className="pointer-events-none absolute left-12 right-16 top-2 flex justify-center sm:left-14">
-          <div className="rounded-full bg-card/95 px-3 py-1 text-[11px] font-medium text-stext ring-1 ring-lborder">
+        <div className="pointer-events-none absolute inset-x-10 top-1.5 z-10 flex justify-center sm:inset-x-14">
+          <div className="rounded-full bg-card px-3 py-1.5 text-[11px] font-medium text-stext ring-1 ring-lborder">
             {stageLabel(selected.stage)}
             {selected.x > 0 ? ` · ${selected.x} ov` : ''}
             {' · '}
@@ -178,6 +196,44 @@ function buildSeries(points: PredictionChartPoint[], preMatch: PredictionRun | n
   }
 
   return series.sort((a, b) => a.x - b.x || String(a.createdAt || '').localeCompare(String(b.createdAt || '')));
+}
+
+function spreadLabelYs(homeY: number, awayY: number, minGap = 16): { homeY: number; awayY: number } {
+  if (Math.abs(homeY - awayY) >= minGap) return { homeY, awayY };
+  const mid = (homeY + awayY) / 2;
+  if (homeY <= awayY) {
+    return { homeY: mid - minGap / 2, awayY: mid + minGap / 2 };
+  }
+  return { homeY: mid + minGap / 2, awayY: mid - minGap / 2 };
+}
+
+function PercentLabel({
+  x,
+  y,
+  value,
+  className,
+  anchor,
+}: {
+  x: number;
+  y: number;
+  value: string;
+  className: string;
+  anchor: 'start' | 'end';
+}) {
+  return (
+    <text
+      x={x}
+      y={y}
+      textAnchor={anchor}
+      dominantBaseline="middle"
+      className={className}
+      stroke="var(--color-card)"
+      strokeWidth="5"
+      paintOrder="stroke"
+    >
+      {value}
+    </text>
+  );
 }
 
 function linePath(points: ReadonlyArray<readonly [number, number]>): string {

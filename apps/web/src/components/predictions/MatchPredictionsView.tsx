@@ -19,7 +19,6 @@ import {
   mergeChartPoints,
   predictionSituation,
   stageLabel,
-  timeAgo,
 } from '../../lib/predictions';
 import { mergeMatchLivePayload, useMatchStream } from '../../hooks/useMatchStream';
 import {
@@ -162,9 +161,6 @@ export default function MatchPredictionsView({
             <StatusBadge status={match.status} />
           </p>
         </div>
-        <p className="text-xs text-stext sm:text-right">
-          Statistical model output · last run {timeAgo(featured.createdAt)}
-        </p>
       </header>
 
       <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_300px]">
@@ -346,8 +342,8 @@ export default function MatchPredictionsView({
                         <th className="px-4 py-3">Time</th>
                         <th className="px-4 py-3">Stage</th>
                         <th className="px-4 py-3 text-center">Over</th>
-                        <th className="px-4 py-3 text-center">{sides.homeCode}</th>
-                        <th className="px-4 py-3 text-center">{sides.awayCode}</th>
+                        <th className="px-4 py-3 text-center">{sides.homeName}</th>
+                        <th className="px-4 py-3 text-center">{sides.awayName}</th>
                         <th className="px-4 py-3">Confidence</th>
                       </tr>
                     </thead>
@@ -382,7 +378,7 @@ export default function MatchPredictionsView({
               <MetaRow label="Model" value={featured.modelVersion} />
               <MetaRow label="Confidence" value={String(featured.confidence)} />
               <MetaRow label="Calibration band" value={title(featured.calibrationBand)} />
-              <MetaRow label="Saved" value={timeAgo(featured.createdAt)} />
+              <MetaRow label="Saved" value={clock(featured.createdAt)} />
             </div>
           </Panel>
 
@@ -496,16 +492,30 @@ function MetaRow({ label, value }: { label: string; value: string }) {
 }
 
 function WinSplit({ home, away }: { home: number; away: number }) {
+  const homePct = clampPct(home);
+  const awayPct = clampPct(away);
   return (
-    <div className="flex h-2.5 overflow-hidden rounded-full bg-secondary ring-1 ring-lborder">
+    <div className="flex h-9 overflow-hidden rounded-full bg-secondary ring-1 ring-lborder">
       <div
-        className={`h-full transition-all ${probTone(home, away) === 'high' ? 'bg-success' : 'bg-danger'}`}
-        style={{ width: `${clampPct(home)}%` }}
-      />
+        className={`flex h-full min-w-0 items-center justify-center transition-all ${probTone(home, away) === 'high' ? 'bg-success' : 'bg-danger'}`}
+        style={{ width: `${homePct}%` }}
+      >
+        {homePct >= 14 ? (
+          <span className="font-mono text-xs font-black tabular-nums text-[var(--color-card)]">
+            {asPercent(home)}
+          </span>
+        ) : null}
+      </div>
       <div
-        className={`h-full transition-all ${probTone(away, home) === 'high' ? 'bg-success' : 'bg-danger'}`}
-        style={{ width: `${clampPct(away)}%` }}
-      />
+        className={`flex h-full min-w-0 items-center justify-center transition-all ${probTone(away, home) === 'high' ? 'bg-success' : 'bg-danger'}`}
+        style={{ width: `${awayPct}%` }}
+      >
+        {awayPct >= 14 ? (
+          <span className="font-mono text-xs font-black tabular-nums text-[var(--color-card)]">
+            {asPercent(away)}
+          </span>
+        ) : null}
+      </div>
     </div>
   );
 }

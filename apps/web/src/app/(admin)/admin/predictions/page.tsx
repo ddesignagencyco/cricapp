@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { Loader2 } from 'lucide-react';
 import AdminPagination from '../../../../components/admin/AdminPagination';
 import {
   AdminEntityLink,
@@ -57,14 +58,24 @@ export default function AdminPredictionsPage() {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
     setLoadingCal(true);
     fetchAdminPredictionCalibration({
       modelVersion: calModel || undefined,
       bins: 10,
     })
-      .then(setCalibration)
-      .catch(() => setCalibration(null))
-      .finally(() => setLoadingCal(false));
+      .then((next) => {
+        if (!cancelled) setCalibration(next);
+      })
+      .catch(() => {
+        if (!cancelled) setCalibration(null);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingCal(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [calModel]);
 
   const loadRuns = useCallback((nextPage: number) => {
@@ -154,9 +165,22 @@ export default function AdminPredictionsPage() {
       </section>
 
       <section className="rounded-lg p-4" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-sm font-semibold" style={{ color: 'var(--admin-text)' }}>Calibration</h2>
+        <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm font-semibold" style={{ color: 'var(--admin-text)' }}>Calibration</h2>
+              {loadingCal ? (
+                <Loader2 size={13} className="animate-spin" style={{ color: 'var(--admin-text-muted)' }} aria-hidden="true" />
+              ) : null}
+            </div>
+            <p className="mt-0.5 text-xs" style={{ color: 'var(--admin-text-muted)' }}>
+              Reliability of settled pre-match guesses. This does not filter the run table below.
+            </p>
+          </div>
           <div className="w-56">
+            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>
+              Score this model
+            </label>
             <AdminSelect value={calModel} onChange={(e) => setCalModel(e.target.value)}>
               <option value="">Default pre-match model</option>
               {modelOptions.map((version) => (
@@ -165,12 +189,14 @@ export default function AdminPredictionsPage() {
             </AdminSelect>
           </div>
         </div>
-        {loadingCal ? (
-          <LoadingState />
+        {loadingCal && !calibration ? (
+          <div className="flex justify-center py-8" aria-busy="true" aria-label="Loading calibration">
+            <Loader2 size={16} className="animate-spin" style={{ color: 'var(--admin-text-muted)' }} />
+          </div>
         ) : !calibration ? (
           <EmptyState title="Calibration unavailable" message="Could not load reliability bins." />
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-3" aria-busy={loadingCal}>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               <Stat label="Model" value={calibration.modelVersion} />
               <Stat label="Sample" value={String(calibration.sampleSize)} />
@@ -261,7 +287,7 @@ export default function AdminPredictionsPage() {
                 setPage(1);
               }}
             >
-              <option value="">All models</option>
+              <option value="">All run models</option>
               {modelOptions.map((version) => (
                 <option key={version} value={version}>{version}</option>
               ))}
@@ -296,11 +322,25 @@ export default function AdminPredictionsPage() {
                 </thead>
                 <tbody>
                   {runs.map((run) => {
-                    const id = (run as PredictionRun & { matchId?: string }).matchId;
+                    const id = run.matchId;
+                    const name = run.matchName;
                     return (
                       <tr key={run.runId} style={{ borderBottom: '1px solid var(--admin-border)' }}>
-                        <td className="px-3 py-2.5 font-mono">
-                          {id ? <AdminEntityLink href={`/predictions/${id}`}>{id}</AdminEntityLink> : '—'}
+                        <td className="px-3 py-2.5">
+                          {id ? (
+                            <div className="min-w-[12rem]">
+                              <AdminEntityLink href={`/predictions/${id}`}>
+                                {name || id}
+                              </AdminEntityLink>
+                              {name ? (
+                                <p className="mt-0.5 font-mono text-[11px]" style={{ color: 'var(--admin-text-muted)' }}>
+                                  {id}
+                                </p>
+                              ) : null}
+                            </div>
+                          ) : (
+                            '—'
+                          )}
                         </td>
                         <td className="px-3 py-2.5">{stageLabel(run.stage)}</td>
                         <td className="px-3 py-2.5 font-mono">{run.modelVersion}</td>
@@ -415,7 +455,16 @@ function RunDetailBody({ run }: { run: AdminPredictionRunDetail }) {
       </div>
 
       {run.matchId && (
-        <AdminEntityLink href={`/predictions/${run.matchId}`}>Open this match on the public site</AdminEntityLink>
+        <div>
+          {run.matchName ? (
+            <p className="mb-1 text-sm font-semibold" style={{ color: 'var(--admin-text)' }}>
+              {run.matchName}
+            </p>
+          ) : null}
+          <AdminEntityLink href={`/predictions/${run.matchId}`}>
+            Open this match on the public site
+          </AdminEntityLink>
+        </div>
       )}
 
       {situation.length > 0 && (

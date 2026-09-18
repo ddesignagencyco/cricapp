@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { BarChart3, Calendar, Clock, MapPin, Radio, Sparkles, Trophy, Users } from 'lucide-react';
+import { Activity, BarChart3, Calendar, Clock, MapPin, Radio, Sparkles, Target, Trophy, Users } from 'lucide-react';
 import LiveIndicator from '../LiveIndicator';
 import { StatusBadge } from '../Badge';
 import Tabs from '../Tabs';
@@ -171,7 +171,9 @@ export default function MatchDetailBody({ match: initialMatch, headToHead: initi
   const homeName = home.name;
   const awayName = away.name;
 
+  console.log("match", match);
   const inn = match.currentInnings;
+  console.log("inn", inn);
   const battingCode = inn?.battingTeam;
   const sideMatches = (side: { code: string; name: string; raw: string }, value: string) => {
     const needle = String(value || '').replace(/^sr:competitor:/, '').toLowerCase();
@@ -291,17 +293,28 @@ export default function MatchDetailBody({ match: initialMatch, headToHead: initi
         {hasInnings && (
           <div className="relative mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-secondary/80 p-3.5 border border-lborder/60 text-xs font-semibold text-stext">
             <div className="flex items-center gap-3">
-              <span className="flex items-center gap-1.5 text-mtext">
+              <span className="flex items-center gap-1.5 text-mtext" title="Current innings score">
                 <BarChart3 size={15} className="text-accent" />
                 <span className="font-bold text-accent">{battingCode || 'Batting'}</span> {inn.runs}/{inn.wickets}
               </span>
               <span>·</span>
-              <span className="flex items-center gap-1.5">
+              <span className="flex items-center gap-1.5" title="Overs bowled and run rate">
                 <Users size={14} className="text-accent" /> {inn.overs} ov (RR {inn.runRate})
+              </span>
+              <span>·</span>
+              <span className="flex items-center gap-1.5" title="Official match status">
+                <Activity size={14} className="text-accent" /> {match.matchStatus?.toUpperCase()}
+              </span>
+              <span>·</span>
+              <span className="flex items-center gap-1.5" title="Currently batting">
+                <Target size={14} className="text-accent" /> {inn.battingTeam?.toUpperCase()}
               </span>
             </div>
             {match.lastEvent?.type && match.lastEvent.type !== 'none' && (
-              <span className="rounded-lg bg-card px-2.5 py-1 text-xs font-bold text-mtext border border-lborder/60">
+              <span
+                className="rounded-lg bg-card px-2.5 py-1 text-xs font-bold text-mtext border border-lborder/60"
+                title="Last ball"
+              >
                 Last: {match.lastEvent.type} +{match.lastEvent.runs ?? 0}
               </span>
             )}
