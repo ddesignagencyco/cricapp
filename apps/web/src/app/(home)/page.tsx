@@ -110,7 +110,7 @@ export default async function HomePage() {
       return run ? ({ match, run } satisfies HomePredictionPick) : null;
     })
   );
-  const predictionPicks = predictionRows.filter((row): row is HomePredictionPick => row != null);
+  const predictionPicks = predictionRows.filter((row): row is HomePredictionPick => row !== null);
 
   return (
     <div className="min-h-screen">

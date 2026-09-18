@@ -6,6 +6,7 @@ import {
   bandTone,
   explanationReasons,
   favoriteLabel,
+  isNil,
   stageLabel,
   xiNames,
 } from '../../lib/predictions';
@@ -30,7 +31,7 @@ function PlayerList({ title, players }: { title: string; players: PredictionPlay
         {players.slice(0, 5).map((player, index) => (
           <li key={`${playerName(player)}-${index}`} className="flex items-center justify-between gap-3 text-sm">
             <span className="truncate font-semibold text-mtext">{playerName(player)}</span>
-            {player.probability != null && (
+            {!isNil(player.probability) && (
               <span className="font-mono text-xs font-bold text-accent">{asPercent(Number(player.probability))}</span>
             )}
           </li>
@@ -70,12 +71,12 @@ export default function PredictionRunPanel({ run, sides }: Props) {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Stat label="Favorite" value={favoriteLabel(run, sides)} />
         <Stat label="Model confidence" value={asPercent(run.confidence)} />
-        {run.momentum != null && <Stat label="Momentum" value={run.momentum.toFixed(2)} />}
-        {run.pressureIndex != null && <Stat label="Pressure" value={asPercent(run.pressureIndex)} />}
-        {run.wicketRisk != null && <Stat label="Wicket risk" value={asPercent(run.wicketRisk)} />}
+        {!isNil(run.momentum) && <Stat label="Momentum" value={run.momentum.toFixed(2)} />}
+        {!isNil(run.pressureIndex) && <Stat label="Pressure" value={asPercent(run.pressureIndex)} />}
+        {!isNil(run.wicketRisk) && <Stat label="Wicket risk" value={asPercent(run.wicketRisk)} />}
       </div>
 
-      {range && (range.expected != null || range.low != null) && (
+      {range && (!isNil(range.expected) || !isNil(range.low)) && (
         <div className="rounded-2xl bg-secondary/70 p-4 ring-1 ring-lborder">
           <p className="text-xs font-bold uppercase tracking-widest text-stext">
             {String(range.type || 'score range').replace(/_/g, ' ')}
@@ -88,10 +89,10 @@ export default function PredictionRunPanel({ run, sides }: Props) {
         </div>
       )}
 
-      {partnership && partnership.expectedAdditionalRuns != null && (
+      {partnership && !isNil(partnership.expectedAdditionalRuns) && (
         <p className="text-sm text-stext">
           Partnership projection: <span className="font-semibold text-mtext">{partnership.expectedAdditionalRuns} runs</span>
-          {partnership.horizonBalls != null ? ` over the next ${partnership.horizonBalls} balls` : ''}.
+          {!isNil(partnership.horizonBalls) ? ` over the next ${partnership.horizonBalls} balls` : ''}.
         </p>
       )}
 

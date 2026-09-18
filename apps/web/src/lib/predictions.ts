@@ -2,8 +2,12 @@ import { formatCricketOvers, getInitials } from '../utils/helpers';
 import type { Match } from '../types';
 import type { MatchSideLabels, PredictionChartPoint, PredictionRun } from '../types/predictions';
 
+export function isNil(value: unknown): value is null | undefined {
+  return value === null || value === undefined;
+}
+
 export function finiteNum(value: unknown): number | null {
-  if (value == null || value === '') return null;
+  if (isNil(value) || value === '') return null;
   const n = typeof value === 'number' ? value : Number(value);
   return Number.isFinite(n) ? n : null;
 }
@@ -25,7 +29,7 @@ export interface PredictionSituation {
 }
 
 export function asPercent(value: number | null | undefined): string {
-  if (value == null || Number.isNaN(Number(value))) return '—';
+  if (isNil(value) || Number.isNaN(Number(value))) return '—';
   const pct = Number(value) * 100;
   const tenths = Math.round(pct * 10) / 10;
   return Number.isInteger(tenths) ? `${tenths}%` : `${tenths.toFixed(1)}%`;
@@ -59,7 +63,7 @@ export function matchSides(match: Match | Record<string, unknown> | null | undef
   const record = (match || {}) as Record<string, unknown>;
   const teams = record.teams;
   const teamNames = Array.isArray(record.teamNames) ? record.teamNames.map(String) : [];
-  const isObj = teams != null && typeof teams === 'object' && !Array.isArray(teams);
+  const isObj = !isNil(teams) && typeof teams === 'object' && !Array.isArray(teams);
   const obj = isObj ? (teams as { home?: Record<string, unknown>; away?: Record<string, unknown> }) : null;
   const arr = Array.isArray(teams) ? teams.map(String) : [];
 
@@ -135,14 +139,14 @@ export function normalizeChartPoint(raw: PredictionChartPoint | Record<string, u
   const homeWinProb = Number(row.homeWinProb);
   const awayWinProb = Number(row.awayWinProb);
   if (!Number.isFinite(homeWinProb) || !Number.isFinite(awayWinProb)) return null;
-  const overNum = row.over == null || row.over === '' ? Number.NaN : Number(row.over);
-  const momentumNum = row.momentum == null || row.momentum === '' ? Number.NaN : Number(row.momentum);
-  const pressureNum = row.pressureIndex == null || row.pressureIndex === '' ? Number.NaN : Number(row.pressureIndex);
+  const overNum = isNil(row.over) || row.over === '' ? Number.NaN : Number(row.over);
+  const momentumNum = isNil(row.momentum) || row.momentum === '' ? Number.NaN : Number(row.momentum);
+  const pressureNum = isNil(row.pressureIndex) || row.pressureIndex === '' ? Number.NaN : Number(row.pressureIndex);
   return {
-    runId: row.runId != null ? String(row.runId) : undefined,
-    stage: row.stage != null ? String(row.stage) : undefined,
-    modelVersion: row.modelVersion != null ? String(row.modelVersion) : undefined,
-    createdAt: row.createdAt != null ? String(row.createdAt) : undefined,
+    runId: !isNil(row.runId) ? String(row.runId) : undefined,
+    stage: !isNil(row.stage) ? String(row.stage) : undefined,
+    modelVersion: !isNil(row.modelVersion) ? String(row.modelVersion) : undefined,
+    createdAt: !isNil(row.createdAt) ? String(row.createdAt) : undefined,
     over: Number.isFinite(overNum) ? overNum : null,
     homeWinProb,
     awayWinProb,
@@ -208,7 +212,7 @@ export function predictionSituation(
   const innRuns = finiteNum(inn.runs);
   const innWkts = finiteNum(inn.wickets);
   const innOvers = finiteNum(inn.overs);
-  const innEmpty = (innRuns == null || innRuns === 0) && (innWkts == null || innWkts === 0);
+  const innEmpty = (innRuns === null || innRuns === 0) && (innWkts === null || innWkts === 0);
   const modelOver = finiteNum(explanation.over);
   const inning = finiteNum(explanation.inning);
   const requiredRuns = finiteNum(explanation.requiredRuns);
@@ -228,19 +232,19 @@ export function predictionSituation(
   let scoreLine = '';
   if (displayScore) {
     scoreLine = `${battingName} ${displayScore}`;
-  } else if (!innEmpty && innRuns != null && innWkts != null) {
+  } else if (!innEmpty && innRuns !== null && innWkts !== null) {
     scoreLine = `${battingName} ${innRuns}/${innWkts}`;
-    if (innOvers != null && innOvers > 0) {
+    if (innOvers !== null && innOvers > 0) {
       scoreLine += ` · ${formatCricketOvers(innOvers) || innOvers} overs`;
     }
   }
 
   const chasing =
-    inning === 2 && requiredRuns != null && requiredRuns > 0 && remainingBalls != null && remainingBalls > 0;
+    inning === 2 && requiredRuns !== null && requiredRuns > 0 && remainingBalls !== null && remainingBalls > 0;
   const needLine = chasing ? `${battingName} need ${requiredRuns} from ${remainingBalls} balls` : '';
 
   const inningsLabel = inning === 1 ? '1st innings' : inning === 2 ? '2nd innings' : '';
-  const snapshotNote = modelOver != null
+  const snapshotNote = modelOver !== null
     ? `Model snapshot at ${modelOver} ov${inningsLabel ? ` · ${inningsLabel}` : ''}`
     : '';
 
@@ -249,7 +253,7 @@ export function predictionSituation(
     needLine,
     snapshotNote,
     requiredRunRate,
-    wicketsInHand: modelWickets == null ? null : Math.max(0, 10 - modelWickets),
+    wicketsInHand: modelWickets === null ? null : Math.max(0, 10 - modelWickets),
     modelOver,
     inning,
     wicketsLost: modelWickets,

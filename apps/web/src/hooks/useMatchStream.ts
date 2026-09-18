@@ -126,7 +126,7 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 }
 
 function mergeTeams(prev: unknown, incoming: unknown): unknown {
-  if (incoming == null) return prev;
+  if (incoming === undefined || incoming === null) return prev;
   if (Array.isArray(incoming)) {
     if (isPlainObject(prev)) return prev;
     return incoming;
@@ -149,8 +149,8 @@ function keepRicherOvers(prevInn: unknown, incomingInn: Record<string, unknown>)
 
   const prevBalls = cricketOversToBalls(prevOvers);
   const nextBalls = cricketOversToBalls(nextOvers);
-  if (prevBalls == null) return nextOvers;
-  if (nextBalls == null) return prevOvers;
+  if (prevBalls === null) return nextOvers;
+  if (nextBalls === null) return prevOvers;
   if (nextBalls >= prevBalls) return nextOvers;
 
   const prevRuns = Number(prev?.runs);

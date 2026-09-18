@@ -152,7 +152,7 @@ export function cricketOversToBalls(overs: unknown): number | null {
 
 export function formatCricketOvers(overs: unknown): string {
   const balls = cricketOversToBalls(overs);
-  if (balls == null) return '';
+  if (balls === null) return '';
   const whole = Math.floor(balls / 6);
   const rem = balls % 6;
   return rem === 0 ? String(whole) : `${whole}.${rem}`;

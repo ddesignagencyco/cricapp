@@ -328,7 +328,7 @@ function FavoriteCard({
   fav: FavoriteItem;
   data?: EnrichedFavorite;
   isBusy: boolean;
-  onRemove: (name: string) => void;
+  onRemove: (_name: string) => void;
 }) {
   switch (fav.targetType) {
     case 'team': {

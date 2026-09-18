@@ -14,6 +14,7 @@ import {
   explanationReasons,
   factorAttributions,
   featuredRun,
+  isNil,
   matchSides,
   mergeChartPoints,
   predictionSituation,
@@ -237,23 +238,23 @@ export default function MatchPredictionsView({
               <CardTitle icon={Zap} title="Why the model moved" />
               {situation.snapshotNote && <p className="mt-1 text-xs text-stext">{situation.snapshotNote}</p>}
               <div className="mt-4 space-y-3 text-sm">
-                {situation.modelOver != null && <MetaRow label="Over" value={String(situation.modelOver)} />}
-                {situation.inning != null && <MetaRow label="Innings" value={situation.inning === 1 ? '1st' : String(situation.inning)} />}
+                {situation.modelOver !== null && <MetaRow label="Over" value={String(situation.modelOver)} />}
+                {situation.inning !== null && <MetaRow label="Innings" value={situation.inning === 1 ? '1st' : String(situation.inning)} />}
                 <MetaRow label="Batting" value={situation.battingLabel} />
-                <MetaRow label="Wickets lost" value={situation.wicketsLost == null ? '—' : String(situation.wicketsLost)} />
-                <MetaRow label="Wickets in hand" value={situation.wicketsInHand == null ? '—' : String(situation.wicketsInHand)} />
-                <MetaRow label="Required run rate" value={situation.requiredRunRate != null ? situation.requiredRunRate.toFixed(2) : '—'} />
-                {situation.remainingBalls != null && <MetaRow label="Balls remaining" value={String(situation.remainingBalls)} />}
-                {situation.resourcesLeft != null && <MetaRow label="Resources left" value={asPercent(situation.resourcesLeft)} />}
+                <MetaRow label="Wickets lost" value={situation.wicketsLost === null ? '—' : String(situation.wicketsLost)} />
+                <MetaRow label="Wickets in hand" value={situation.wicketsInHand === null ? '—' : String(situation.wicketsInHand)} />
+                <MetaRow label="Required run rate" value={situation.requiredRunRate !== null ? situation.requiredRunRate.toFixed(2) : '—'} />
+                {situation.remainingBalls !== null && <MetaRow label="Balls remaining" value={String(situation.remainingBalls)} />}
+                {situation.resourcesLeft !== null && <MetaRow label="Resources left" value={asPercent(situation.resourcesLeft)} />}
                 <MetaRow
                   label="Momentum"
                   value={
-                    featured.momentum == null
+                    isNil(featured.momentum)
                       ? '—'
                       : `${featured.momentum > 0 ? '+' : ''}${featured.momentum} ${featured.momentum >= 0 ? sides.homeCode : sides.awayCode}`
                   }
                 />
-                {situation.deltaFromPrevious != null && (
+                {situation.deltaFromPrevious !== null && (
                   <MetaRow
                     label="Delta from previous"
                     value={`${situation.deltaFromPrevious > 0 ? '+' : ''}${situation.deltaFromPrevious}`}
@@ -276,18 +277,18 @@ export default function MatchPredictionsView({
               </p>
               <div className="mt-4 space-y-3 text-sm">
                 {range?.type && <MetaRow label="Type" value={String(range.type).replace(/_/g, ' ')} />}
-                <MetaRow label="Expected" value={range?.expected != null ? String(range.expected) : '—'} />
-                {situation.projectedTotal != null && <MetaRow label="Projected total" value={String(situation.projectedTotal)} />}
+                <MetaRow label="Expected" value={!isNil(range?.expected) ? String(range.expected) : '—'} />
+                {situation.projectedTotal !== null && <MetaRow label="Projected total" value={String(situation.projectedTotal)} />}
                 {range?.unit && <MetaRow label="Unit" value={range.unit} />}
                 <MetaRow
                   label="Pressure"
-                  value={`${pressureLabel(featured.pressureIndex)}${featured.pressureIndex != null ? ` (${featured.pressureIndex})` : ''}`}
+                  value={`${pressureLabel(featured.pressureIndex)}${!isNil(featured.pressureIndex) ? ` (${featured.pressureIndex})` : ''}`}
                 />
-                <MetaRow label="Wicket risk" value={featured.wicketRisk == null ? '—' : asPercent(featured.wicketRisk)} />
-                {partnership?.expectedAdditionalRuns != null && (
+                <MetaRow label="Wicket risk" value={isNil(featured.wicketRisk) ? '—' : asPercent(featured.wicketRisk)} />
+                {!isNil(partnership?.expectedAdditionalRuns) && (
                   <MetaRow
                     label="Partnership"
-                    value={`${partnership.expectedAdditionalRuns} runs${partnership.horizonBalls != null ? ` / ${partnership.horizonBalls} balls` : ''}`}
+                    value={`${partnership.expectedAdditionalRuns} runs${!isNil(partnership.horizonBalls) ? ` / ${partnership.horizonBalls} balls` : ''}`}
                   />
                 )}
                 {partnership?.reliability && <MetaRow label="Partnership reliability" value={partnership.reliability} />}
@@ -304,7 +305,7 @@ export default function MatchPredictionsView({
                     {topBatters.slice(0, 5).map((player, index) => (
                       <li key={`${player.playerName || player.name}-${index}`} className="flex justify-between gap-3">
                         <span className="truncate text-mtext">{String(player.playerName || player.name || 'Player')}</span>
-                        {player.probability != null && (
+                        {!isNil(player.probability) && (
                           <span className="font-mono text-xs font-bold text-accent">{asPercent(Number(player.probability))}</span>
                         )}
                       </li>
@@ -319,7 +320,7 @@ export default function MatchPredictionsView({
                     {topBowlers.slice(0, 5).map((player, index) => (
                       <li key={`${player.playerName || player.name}-${index}`} className="flex justify-between gap-3">
                         <span className="truncate text-mtext">{String(player.playerName || player.name || 'Player')}</span>
-                        {player.probability != null && (
+                        {!isNil(player.probability) && (
                           <span className="font-mono text-xs font-bold text-accent">{asPercent(Number(player.probability))}</span>
                         )}
                       </li>
@@ -406,7 +407,7 @@ export default function MatchPredictionsView({
                 <MetaRow label="Accuracy" value={asPercent(performance.accuracy)} />
                 <MetaRow
                   label="Brier score"
-                  value={performance.brierScore == null ? '—' : Number(performance.brierScore).toFixed(3)}
+                  value={isNil(performance.brierScore) ? '—' : Number(performance.brierScore).toFixed(3)}
                 />
                 <MetaRow label="Settled sample" value={String(performance.sampleSize)} />
               </div>
@@ -572,7 +573,7 @@ function clampPct(value: number): number {
 }
 
 function pressureLabel(value?: number | null): string {
-  if (value == null) return '—';
+  if (isNil(value)) return '—';
   if (value >= 0.66) return 'High';
   if (value >= 0.33) return 'Moderate';
   return 'Low';

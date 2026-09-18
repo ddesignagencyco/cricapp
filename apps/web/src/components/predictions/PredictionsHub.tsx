@@ -2,7 +2,7 @@ import SectionHeader from '../SectionHeader';
 import Badge from '../Badge';
 import EmptyState from '../EmptyState';
 import PredictionMatchCard from './PredictionMatchCard';
-import { asPercent, bandTone } from '../../lib/predictions';
+import { asPercent, bandTone, isNil } from '../../lib/predictions';
 import type { Match } from '../../types';
 import type { MatchPredictions, PredictionChartPoint, PredictionPerformance } from '../../types/predictions';
 
@@ -39,7 +39,7 @@ export default function PredictionsHub({ performance, live, upcoming }: Props) {
             <PerformanceStat label="Accuracy" value={asPercent(performance.accuracy)} />
             <PerformanceStat
               label="Brier score"
-              value={performance.brierScore == null ? '—' : Number(performance.brierScore).toFixed(3)}
+              value={isNil(performance.brierScore) ? '—' : Number(performance.brierScore).toFixed(3)}
             />
             <PerformanceStat label="Sample" value={String(sample)} />
           </div>

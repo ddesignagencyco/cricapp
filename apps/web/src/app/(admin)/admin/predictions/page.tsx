@@ -12,7 +12,7 @@ import {
   LoadingState,
   StatusBadge,
 } from '../../../../components/admin/AdminShared';
-import { asPercent, stageLabel } from '../../../../lib/predictions';
+import { asPercent, isNil, stageLabel } from '../../../../lib/predictions';
 import {
   fetchAdminPredictionCalibration,
   fetchAdminPredictionModels,
@@ -174,7 +174,7 @@ export default function AdminPredictionsPage() {
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               <Stat label="Model" value={calibration.modelVersion} />
               <Stat label="Sample" value={String(calibration.sampleSize)} />
-              <Stat label="ECE" value={calibration.expectedCalibrationError == null ? '—' : String(calibration.expectedCalibrationError)} />
+              <Stat label="ECE" value={isNil(calibration.expectedCalibrationError) ? '—' : String(calibration.expectedCalibrationError)} />
               <Stat label="Bins" value={String(calibration.bins.length)} />
             </div>
             {calibration.latestFit && (
@@ -184,11 +184,11 @@ export default function AdminPredictionsPage() {
                 <Stat label="Fit sample" value={String(calibration.latestFit.sampleSize)} />
                 <Stat
                   label="Fit accuracy"
-                  value={calibration.latestFit.accuracy == null ? '—' : asPercent(calibration.latestFit.accuracy)}
+                  value={isNil(calibration.latestFit.accuracy) ? '—' : asPercent(calibration.latestFit.accuracy)}
                 />
                 <Stat
                   label="Fit Brier"
-                  value={calibration.latestFit.brierScore == null ? '—' : String(calibration.latestFit.brierScore)}
+                  value={isNil(calibration.latestFit.brierScore) ? '—' : String(calibration.latestFit.brierScore)}
                 />
                 <Stat label="Fit source" value={calibration.latestFit.source || '—'} />
                 <Stat label="Fit saved" value={when(calibration.latestFit.createdAt)} />
@@ -428,21 +428,21 @@ function RunDetailBody({ run }: { run: AdminPredictionRunDetail }) {
         </Section>
       )}
 
-      {range && (range.low != null || range.expected != null) && (
+      {range && (!isNil(range.low) || !isNil(range.expected)) && (
         <Section title="What score it expected">
           <p className="text-sm" style={{ color: 'var(--admin-text)' }}>
             {rangeLabel(range.type)} between {range.low ?? '—'} and {range.high ?? '—'}
-            {range.expected != null ? `, most likely ${range.expected}` : ''}
+            {!isNil(range.expected) ? `, most likely ${range.expected}` : ''}
             {range.unit ? ` ${range.unit}` : ''}.
           </p>
         </Section>
       )}
 
-      {partnership?.expectedAdditionalRuns != null && (
+      {!isNil(partnership?.expectedAdditionalRuns) && (
         <Section title="Next partnership">
           <p className="text-sm" style={{ color: 'var(--admin-text)' }}>
             About {partnership.expectedAdditionalRuns} more runs
-            {partnership.horizonBalls != null ? ` in the next ${partnership.horizonBalls} balls` : ''}.
+            {!isNil(partnership.horizonBalls) ? ` in the next ${partnership.horizonBalls} balls` : ''}.
             {partnership.reliability ? ` Reliability: ${partnership.reliability}.` : ''}
           </p>
         </Section>
@@ -539,12 +539,6 @@ function rangeLabel(type?: string): string {
   return type ? type.replace(/_/g, ' ') : 'Score';
 }
 
-function pressureWords(value: number): string {
-  if (value >= 0.66) return 'High';
-  if (value >= 0.33) return 'Moderate';
-  return 'Low';
-}
-
 function readableSituation(explanation: Record<string, unknown>): Array<{ label: string; value: string }> {
   const rows: Array<{ label: string; value: string }> = [];
   const over = explanation.over;
@@ -556,16 +550,16 @@ function readableSituation(explanation: Record<string, unknown>): Array<{ label:
   const resourcesLeft = explanation.resourcesLeft;
   const projectedTotal = explanation.projectedTotal;
   const battingIsHome = explanation.battingIsHome;
-  if (over != null && over !== '') rows.push({ label: 'Over', value: String(over) });
-  if (inning != null && inning !== '') rows.push({ label: 'Innings', value: Number(inning) === 1 ? '1st innings' : `${inning}` });
+  if (!isNil(over) && over !== '') rows.push({ label: 'Over', value: String(over) });
+  if (!isNil(inning) && inning !== '') rows.push({ label: 'Innings', value: Number(inning) === 1 ? '1st innings' : `${inning}` });
   if (battingIsHome === true) rows.push({ label: 'Batting side', value: 'Home' });
   if (battingIsHome === false) rows.push({ label: 'Batting side', value: 'Away' });
-  if (wickets != null && wickets !== '') rows.push({ label: 'Wickets down', value: String(wickets) });
-  if (remainingBalls != null && remainingBalls !== '') rows.push({ label: 'Balls left', value: String(remainingBalls) });
-  if (requiredRuns != null && requiredRuns !== '') rows.push({ label: 'Runs still needed', value: String(requiredRuns) });
-  if (requiredRunRate != null && requiredRunRate !== '') rows.push({ label: 'Required run rate', value: String(requiredRunRate) });
-  if (resourcesLeft != null && resourcesLeft !== '') rows.push({ label: 'Resources left', value: asPercent(Number(resourcesLeft)) });
-  if (projectedTotal != null && projectedTotal !== '') rows.push({ label: 'Projected total', value: String(projectedTotal) });
+  if (!isNil(wickets) && wickets !== '') rows.push({ label: 'Wickets down', value: String(wickets) });
+  if (!isNil(remainingBalls) && remainingBalls !== '') rows.push({ label: 'Balls left', value: String(remainingBalls) });
+  if (!isNil(requiredRuns) && requiredRuns !== '') rows.push({ label: 'Runs still needed', value: String(requiredRuns) });
+  if (!isNil(requiredRunRate) && requiredRunRate !== '') rows.push({ label: 'Required run rate', value: String(requiredRunRate) });
+  if (!isNil(resourcesLeft) && resourcesLeft !== '') rows.push({ label: 'Resources left', value: asPercent(Number(resourcesLeft)) });
+  if (!isNil(projectedTotal) && projectedTotal !== '') rows.push({ label: 'Projected total', value: String(projectedTotal) });
   return rows;
 }
 
@@ -603,7 +597,7 @@ function humanKey(key: string): string {
 }
 
 function flattenRecord(value: unknown, prefix = ''): Array<{ key: string; value: string }> {
-  if (value == null) return [];
+  if (isNil(value)) return [];
   if (typeof value !== 'object') {
     return [{ key: prefix || 'value', value: String(value) }];
   }
@@ -615,7 +609,7 @@ function flattenRecord(value: unknown, prefix = ''): Array<{ key: string; value:
   if (entries.length === 0) return prefix ? [{ key: prefix, value: '{}' }] : [];
   return entries.flatMap(([key, nested]) => {
     const path = prefix ? `${prefix}.${key}` : key;
-    if (nested != null && typeof nested === 'object') return flattenRecord(nested, path);
-    return [{ key: path, value: nested == null ? '—' : String(nested) }];
+    if (!isNil(nested) && typeof nested === 'object') return flattenRecord(nested, path);
+    return [{ key: path, value: isNil(nested) ? '—' : String(nested) }];
   });
 }
