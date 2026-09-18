@@ -608,6 +608,7 @@ model PredictionCalibration {
   brierScore   Float?   @map("brier_score")
   accuracy     Float?
   source       String   @default("auto")
+  params       Json?
   createdAt    DateTime @default(now()) @map("created_at")
 
   @@index([modelVersion, createdAt])

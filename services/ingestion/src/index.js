@@ -1,6 +1,7 @@
 import { PROVIDERS } from './schemas.js';
 import db, { shutdown as shutdownDb } from './db.js';
 import redis, { shutdown as shutdownRedis } from './redis.js';
+import { redisKeys } from '@cricapp/shared-types';
 import { pollOnce } from './poll.js';
 import { syncPsAll } from './pslSync.js';
 import { startReferenceSync } from './refSync.js';
@@ -32,6 +33,15 @@ async function runPslSync(reason) {
   if (pslSyncInFlight) {
     log.info('psl sync already running — skip', { reason });
     return;
+  }
+  try {
+    const liveCount = await redis.scard(redisKeys.liveMatches());
+    if (liveCount > 0 && String(process.env.PAUSE_PSL_SYNC_WHEN_LIVE || 'true').toLowerCase() !== 'false') {
+      log.info('psl sync paused while live matches are active', { reason, liveCount });
+      return;
+    }
+  } catch {
+    // continue
   }
   pslSyncInFlight = true;
   try {

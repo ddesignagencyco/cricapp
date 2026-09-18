@@ -142,6 +142,17 @@ export class PredictionPerformanceDto {
 
   @ApiProperty({ type: [ConfidenceBandAccuracyDto] })
   byConfidenceBand: ConfidenceBandAccuracyDto[];
+
+  @ApiProperty({
+    description: 'True only when sampleSize meets the publish threshold (default 200).',
+  })
+  claimReady: boolean;
+
+  @ApiProperty()
+  publishMinSamples: number;
+
+  @ApiProperty()
+  guidance: string;
 }
 
 export class PredictionChartDto {

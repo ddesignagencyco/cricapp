@@ -8,7 +8,12 @@ import { extractLiveFeatures, extractPrematchFeatures, listUpcomingMatchIds } fr
 import { scorePrematch } from './prematch.js';
 import { scoreLive } from './live.js';
 import { latestFeatureSnapshot, latestLiveResult, persistPrediction } from './persist.js';
-import { recalibratePrematch, resolvePrematchCalibration } from './calibrate.js';
+import {
+  recalibrateAllFormats,
+  resolveLiveScales,
+  resolvePrematchCalibration,
+  resolvePrematchWeights,
+} from './calibrate.js';
 
 const log = createLogger('prediction');
 const PREMATCH_INTERVAL_MS = Number(process.env.PREMATCH_INTERVAL_MS || 900000);
@@ -70,12 +75,17 @@ export async function runPrematch(matchId) {
     log.warn('prematch skipped — match not found', { matchId });
     return null;
   }
-  const calibration = await resolvePrematchCalibration(query);
+  const [calibration, weightPack] = await Promise.all([
+    resolvePrematchCalibration(query, snapshot.format),
+    resolvePrematchWeights(query),
+  ]);
   snapshot.calibration = {
     slope: calibration.slope,
     intercept: calibration.intercept,
     source: calibration.source,
+    format: snapshot.format,
   };
+  snapshot.weights = weightPack.weights;
   const previousSnapshot = await latestFeatureSnapshot(
     query,
     matchId,
@@ -104,6 +114,7 @@ export async function runLive(matchId) {
     log.warn('live skipped — match not found', { matchId });
     return null;
   }
+  snapshot.liveScales = await resolveLiveScales(query);
   const fingerprint = liveFingerprint(snapshot);
   if (liveFingerprints.get(matchId) === fingerprint) {
     return null;
@@ -125,16 +136,47 @@ export async function runLive(matchId) {
 }
 
 export async function recalibrateModels() {
-  const result = await recalibratePrematch(query);
-  if (result.applied) {
+  const result = await recalibrateAllFormats(query);
+  if (result.global?.applied) {
     log.info('prematch recalibrated', {
-      slope: result.slope,
-      intercept: result.intercept,
-      sampleSize: result.sampleSize,
-      brierScore: result.brierScore,
+      slope: result.global.slope,
+      intercept: result.global.intercept,
+      sampleSize: result.global.sampleSize,
+      brierScore: result.global.brierScore,
     });
   } else {
-    log.info('prematch calibration skipped', { reason: result.reason, sampleSize: result.sampleSize });
+    log.info('prematch calibration skipped', {
+      reason: result.global?.reason,
+      sampleSize: result.global?.sampleSize,
+    });
+  }
+  for (const formatFit of result.byFormat ?? []) {
+    if (formatFit.applied) {
+      log.info('prematch format recalibrated', {
+        format: formatFit.format,
+        slope: formatFit.slope,
+        sampleSize: formatFit.sampleSize,
+      });
+    }
+  }
+  if (result.weights?.applied) {
+    log.info('prematch weights fitted', {
+      sampleSize: result.weights.sampleSize,
+      accuracy: result.weights.accuracy,
+      weights: result.weights.weights,
+    });
+  } else {
+    log.info('prematch weights skipped', {
+      reason: result.weights?.reason,
+      sampleSize: result.weights?.sampleSize,
+    });
+  }
+  if (result.liveScales?.applied) {
+    log.info('live scales fitted', {
+      sampleSize: result.liveScales.sampleSize,
+      firstInningsScale: result.liveScales.firstInningsScale,
+      chaseScale: result.liveScales.chaseScale,
+    });
   }
   return result;
 }
