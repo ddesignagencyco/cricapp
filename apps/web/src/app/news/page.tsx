@@ -19,22 +19,25 @@ export default async function NewsPage({
   const category = params.category?.trim() || undefined;
   const tag = params.tag?.trim() || undefined;
   const language = params.lang === 'ur' ? 'ur' : 'en';
-  const [result, categories] = await Promise.all([
-    fetchNewsPage({ page, limit: PAGE_SIZE, category, tag, language }),
+  const [newsResult, categories] = await Promise.all([
+    fetchNewsPage({ page, limit: PAGE_SIZE, category, tag, language })
+      .then((result) => ({ result, loadError: false as const }))
+      .catch(() => ({ result: { items: [], total: 0, totalPages: 1 }, loadError: true as const })),
     fetchNewsCategories().catch(() => []),
   ]);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
       <NewsBoard
-        items={result.items}
+        items={newsResult.result.items}
         categories={categories}
         page={page}
-        total={result.total}
-        totalPages={result.totalPages}
+        total={newsResult.result.total}
+        totalPages={newsResult.result.totalPages}
         limit={PAGE_SIZE}
         selectedCategory={category || 'all'}
         language={language}
+        loadError={newsResult.loadError}
       />
     </div>
   );

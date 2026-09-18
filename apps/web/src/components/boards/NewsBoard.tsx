@@ -14,6 +14,7 @@ import {
 import Badge from '../Badge';
 import Tabs from '../Tabs';
 import EmptyState from '../EmptyState';
+import ErrorState from '../ErrorState';
 import Pagination from '../Pagination';
 import DummyAd from '../advertisements/DummyAd';
 import RemoteImage from '../RemoteImage';
@@ -66,6 +67,7 @@ interface Props {
   limit: number;
   selectedCategory?: string;
   language?: 'en' | 'ur';
+  loadError?: boolean;
 }
 
 export default function NewsBoard({
@@ -77,6 +79,7 @@ export default function NewsBoard({
   limit,
   selectedCategory = 'all',
   language = 'en',
+  loadError = false,
 }: Props) {
   const pathname = usePathname();
   const router = useRouter();
@@ -189,7 +192,14 @@ export default function NewsBoard({
         </div>
       </div>
 
-      {featured && (
+      {loadError ? (
+        <ErrorState
+          title="Server unavailable"
+          message="Can't reach the API, so stories aren't listed. Start the backend or try again."
+        />
+      ) : null}
+
+      {!loadError && featured && (
         <Link
           href={newsHref(featured)}
           className="group mb-10 block overflow-hidden rounded-md border border-lborder bg-card transition-colors hover:border-border-strong"
@@ -289,7 +299,7 @@ export default function NewsBoard({
         </Link>
       )}
 
-      {filtered.length > 0 ? (
+      {!loadError && filtered.length > 0 ? (
         <>
           <div className="mb-4 flex items-end justify-between gap-4">
             <div>
@@ -318,7 +328,7 @@ export default function NewsBoard({
             </div>
           ) : null}
         </>
-      ) : !featured ? (
+      ) : !loadError && !featured ? (
         <EmptyState
           title="No news articles found"
           message={
@@ -328,13 +338,15 @@ export default function NewsBoard({
           }
         />
       ) : null}
-      <Pagination
-        page={page}
-        totalPages={totalPages}
-        total={total}
-        limit={limit}
-        onPageChange={(nextPage) => updateQuery(selectedCategory, nextPage)}
-      />
+      {!loadError && (
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          total={total}
+          limit={limit}
+          onPageChange={(nextPage) => updateQuery(selectedCategory, nextPage)}
+        />
+      )}
     </>
   );
 }
