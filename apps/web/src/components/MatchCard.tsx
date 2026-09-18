@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Calendar, Clock, MapPin } from 'lucide-react';
 import { StatusBadge, BlinkingDot } from './Badge';
 import RemoteImage from './RemoteImage';
-import { formatScheduled, getInitials, getPslLogo } from '../utils/helpers';
+import { formatCricketOvers, formatScheduled, getInitials, getPslLogo } from '../utils/helpers';
 
 interface MatchCardProps {
   match: any;
@@ -60,7 +60,7 @@ function liveSideScore(match: any, side: { code: string; name: string }) {
   const display = String(match.displayScore || '').trim();
   const runs = Number(inn.runs);
   const wickets = Number(inn.wickets);
-  const overs = inn.overs !== null && inn.overs !== undefined ? String(inn.overs) : '';
+  const overs = inn.overs !== null && inn.overs !== undefined ? formatCricketOvers(inn.overs) || String(inn.overs) : '';
   const missingBattingStats =
     (!Number.isFinite(runs) || runs === 0) &&
     (!Number.isFinite(wickets) || wickets === 0) &&
@@ -143,7 +143,7 @@ export default function MatchCard({ match, compact: _compact = false, showVenue 
           {isLive && inn ? (
             <span className="truncate font-semibold tabular-nums text-danger">
               <BlinkingDot className="mr-1.5 align-middle" />
-              {inn.overs !== null && inn.overs !== undefined ? `${inn.overs} ov` : 'In play'}
+              {inn.overs !== null && inn.overs !== undefined ? `${formatCricketOvers(inn.overs) || inn.overs} ov` : 'In play'}
               {Number(inn.runRate) > 0 ? ` · RR ${inn.runRate}` : ''}
             </span>
           ) : (

@@ -8,6 +8,7 @@ import PslFixturesTable from '../../components/PslFixturesTable';
 import DummyAd from '../../components/advertisements/DummyAd';
 import PslSquadsBoard from '../../components/PslSquadsBoard';
 import { formatScheduled } from '../../utils/helpers';
+import ErrorState from '../../components/ErrorState';
 import { fetchPslStandings, fetchPslLeaders, fetchPslSchedule, fetchPslSquads, fetchPslSeasons } from '../../services/psl';
 
 export const revalidate = 60;
@@ -33,7 +34,38 @@ export default async function PSLPage({ searchParams }: { searchParams: Promise<
   const rawSeason = Array.isArray(params.season) ? params.season[params.season.length - 1] : params.season;
   const selectedSeason = rawSeason || '';
 
-  const seasons = await fetchPslSeasons();
+  const seasons = await fetchPslSeasons().catch(() => null);
+  if (!seasons) {
+    return (
+      <div className="min-h-screen">
+        <section className="relative overflow-hidden">
+          <div className="hero-grad absolute inset-0" />
+          <div className="hero-content relative mx-auto max-w-7xl px-4 py-14 sm:px-6">
+            <div className="max-w-2xl">
+              <div className="mb-4 flex items-center gap-2">
+                <span className="hero-kicker text-xs font-semibold capitalize tracking-wide">
+                  Pakistan Super League
+                </span>
+              </div>
+              <h1 className="hero-title text-4xl font-black tracking-tight sm:text-5xl">
+                PAKISTAN <span className="hero-highlight">SUPER LEAGUE</span>
+              </h1>
+              <p className="hero-lead mt-4 max-w-xl text-sm leading-relaxed sm:text-base">
+                Six franchises, one mission. Follow the PSL with fixtures, tables and player stats.
+              </p>
+            </div>
+          </div>
+        </section>
+        <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
+          <ErrorState
+            title="Server unavailable"
+            message="Can't reach the API, so PSL seasons, tables and fixtures aren't listed. Start the backend or try again."
+          />
+        </section>
+      </div>
+    );
+  }
+
   const latestSeason = seasons[seasons.length - 1];
   const currentSeason = selectedSeason
     ? seasons.find((s) => s.id === selectedSeason) || latestSeason
@@ -43,12 +75,43 @@ export default async function PSLPage({ searchParams }: { searchParams: Promise<
 
   const seasonParam = activeSeasonId ? { season: activeSeasonId } : {};
 
-  const [standings, leaders, schedule, squads] = await Promise.all([
+  const [standingsResult, leadersResult, scheduleResult, squadsResult] = await Promise.allSettled([
     fetchPslStandings(seasonParam),
     fetchPslLeaders(seasonParam),
     fetchPslSchedule(seasonParam),
     fetchPslSquads(seasonParam),
   ]);
+
+  const pslLoadError = [standingsResult, leadersResult, scheduleResult, squadsResult].every(
+    (result) => result.status === 'rejected',
+  );
+  if (pslLoadError) {
+    return (
+      <div className="min-h-screen">
+        <section className="relative overflow-hidden">
+          <div className="hero-grad absolute inset-0" />
+          <div className="hero-content relative mx-auto max-w-7xl px-4 py-14 sm:px-6">
+            <div className="max-w-2xl">
+              <h1 className="hero-title text-4xl font-black tracking-tight sm:text-5xl">
+                PAKISTAN <span className="hero-highlight">SUPER LEAGUE</span>
+              </h1>
+            </div>
+          </div>
+        </section>
+        <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
+          <ErrorState
+            title="Server unavailable"
+            message="Can't reach the API, so PSL tables and fixtures aren't listed. Start the backend or try again."
+          />
+        </section>
+      </div>
+    );
+  }
+
+  const standings = standingsResult.status === 'fulfilled' ? standingsResult.value : [];
+  const leaders = leadersResult.status === 'fulfilled' ? leadersResult.value : [];
+  const schedule = scheduleResult.status === 'fulfilled' ? scheduleResult.value : [];
+  const squads = squadsResult.status === 'fulfilled' ? squadsResult.value : [];
 
   const pointsRows = [...(standings || [])].sort((a, b) => (a.rank ?? 999) - (b.rank ?? 999));
 

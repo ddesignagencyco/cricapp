@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   Calendar,
   Heart,
@@ -15,20 +15,22 @@ import {
   ArrowRight,
   Sparkles,
   Globe,
+  ChevronRight,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { listFavorites, removeFavorite, type FavoriteItem } from '../../services/favorites';
+import { listFavorites, removeFavorite, type FavoriteItem, type FavoriteTarget } from '../../services/favorites';
 import { useAuth } from '../../components/AuthProvider';
-import TeamLogo from '../../components/TeamLogo';
 import RemoteImage from '../../components/RemoteImage';
-import Badge, { StatusBadge } from '../../components/Badge';
-import { formatScheduled, getInitials } from '../../utils/helpers';
+import { StatusBadge } from '../../components/Badge';
+import Tabs from '../../components/Tabs';
+import EmptyState from '../../components/EmptyState';
+import { formatScheduled, getInitials, getPslLogo } from '../../utils/helpers';
 import { ConfirmDialog } from '../../components/admin/AdminShared';
-import type { Team, Player, Match, NewsArticle, Tour, TournamentApi } from '../../types/index';
+import type { Team, Player, Match, NewsArticle, Tour, TournamentApi, TabItem } from '../../types/index';
 import { FavoritesPageSkeleton } from '../../components/skeletons/Skeletons';
 import { newsHref } from '../../utils/newsConstraints';
 import NewsCopy from '../../components/NewsCopy';
-import { str } from '../../utils/extract';
+import { isSportRadarId, str } from '../../utils/extract';
 
 interface EnrichedFavorite {
   item: FavoriteItem;
@@ -38,8 +40,24 @@ interface EnrichedFavorite {
   news?: NewsArticle | null;
   tour?: Tour | null;
   tournament?: TournamentApi | null;
-  loading: boolean;
 }
+
+type TabKey = 'all' | FavoriteTarget;
+
+const SECTION_ORDER: {
+  key: FavoriteTarget;
+  label: string;
+  icon: typeof Shield;
+  href: string;
+  emptyHint: string;
+}[] = [
+  { key: 'team', label: 'Teams', icon: Shield, href: '/teams', emptyHint: 'Explore teams and tap the heart to save them.' },
+  { key: 'player', label: 'Players', icon: UserRound, href: '/players', emptyHint: 'Browse players and tap the heart to save them.' },
+  { key: 'match', label: 'Matches', icon: Calendar, href: '/matches', emptyHint: 'Follow matches and tap the heart to save them.' },
+  { key: 'news', label: 'News', icon: Newspaper, href: '/news', emptyHint: 'Read articles and tap the heart to save them.' },
+  { key: 'tour', label: 'Tours', icon: Globe, href: '/tours', emptyHint: 'Discover tours and tap the heart to save them.' },
+  { key: 'tournament', label: 'Tournaments', icon: Trophy, href: '/tournaments', emptyHint: 'Follow tournaments and tap the heart to save them.' },
+];
 
 export default function FavoritesPage() {
   const { isAuthenticated, loading: authLoading } = useAuth();
@@ -48,9 +66,7 @@ export default function FavoritesPage() {
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
-  const [activeTab, setActiveTab] = useState<
-    'all' | 'team' | 'player' | 'match' | 'news' | 'tour' | 'tournament'
-  >('all');
+  const [activeTab, setActiveTab] = useState<TabKey>('all');
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -64,22 +80,20 @@ export default function FavoritesPage() {
         setFavorites(items);
         const initial: Record<string, EnrichedFavorite> = {};
         for (const item of items) {
-          const target = item.target as Record<string, unknown> | undefined;
+          const target = asRecord(item.target);
           initial[item.id] = {
             item,
-            loading: false,
-            team: item.targetType === 'team' ? ((target as Team) || null) : undefined,
-            player: item.targetType === 'player' ? ((target as Player) || null) : undefined,
-            match: item.targetType === 'match' ? ((target as Match) || null) : undefined,
-            news: item.targetType === 'news' ? (mapFavoriteNews(target) || null) : undefined,
-            tour: item.targetType === 'tour' ? ((target as Tour) || null) : undefined,
-            tournament: item.targetType === 'tournament' ? ((target as TournamentApi) || null) : undefined,
+            team: item.targetType === 'team' ? (target as Team | null) : undefined,
+            player: item.targetType === 'player' ? (target as Player | null) : undefined,
+            match: item.targetType === 'match' ? (target as Match | null) : undefined,
+            news: item.targetType === 'news' ? mapFavoriteNews(target) : undefined,
+            tour: item.targetType === 'tour' ? (target as Tour | null) : undefined,
+            tournament: item.targetType === 'tournament' ? (target as TournamentApi | null) : undefined,
           };
         }
         setEnrichedMap(initial);
       })
       .catch(() => {
-        // Silently handle load errors; do not spam toasts
         setFavorites([]);
       })
       .finally(() => setLoading(false));
@@ -105,13 +119,8 @@ export default function FavoritesPage() {
     }
   };
 
-  const filteredItems = useMemo(() => {
-    if (activeTab === 'all') return favorites;
-    return favorites.filter((f) => f.targetType === activeTab);
-  }, [favorites, activeTab]);
-
-  const counts = useMemo(() => {
-    return {
+  const counts = useMemo(
+    () => ({
       all: favorites.length,
       team: favorites.filter((f) => f.targetType === 'team').length,
       player: favorites.filter((f) => f.targetType === 'player').length,
@@ -119,8 +128,41 @@ export default function FavoritesPage() {
       news: favorites.filter((f) => f.targetType === 'news').length,
       tour: favorites.filter((f) => f.targetType === 'tour').length,
       tournament: favorites.filter((f) => f.targetType === 'tournament').length,
+    }),
+    [favorites],
+  );
+
+  const grouped = useMemo(() => {
+    const map: Record<FavoriteTarget, FavoriteItem[]> = {
+      team: [],
+      player: [],
+      match: [],
+      news: [],
+      tour: [],
+      tournament: [],
     };
+    for (const favorite of favorites) {
+      map[favorite.targetType].push(favorite);
+    }
+    return map;
   }, [favorites]);
+
+  const visibleSections = useMemo(() => {
+    if (activeTab === 'all') return SECTION_ORDER.filter((section) => counts[section.key] > 0);
+    return SECTION_ORDER.filter((section) => section.key === activeTab);
+  }, [activeTab, counts]);
+
+  const tabs: TabItem[] = useMemo(
+    () => [
+      { key: 'all', label: 'All', count: counts.all },
+      ...SECTION_ORDER.map((section) => ({
+        key: section.key,
+        label: section.label,
+        count: counts[section.key],
+      })),
+    ],
+    [counts],
+  );
 
   if (authLoading || loading) {
     return <FavoritesPageSkeleton />;
@@ -129,18 +171,23 @@ export default function FavoritesPage() {
   if (!isAuthenticated) {
     return (
       <div className="mx-auto flex min-h-[60vh] max-w-lg flex-col items-center justify-center px-4 py-16 text-center">
-        <div className="grid h-16 w-16 place-items-center rounded-2xl bg-accent/10 text-accent ring-1 ring-accent/25">
-          <Heart size={32} />
+        <div className="relative mb-6">
+          <div className="grid h-20 w-20 place-items-center rounded-md bg-accent/10 text-accent ring-1 ring-accent/20">
+            <Heart size={36} />
+          </div>
+          <div className="absolute -bottom-1 -right-1 grid h-8 w-8 place-items-center rounded-full bg-brand text-white shadow-lg">
+            <Sparkles size={14} />
+          </div>
         </div>
-        <h1 className="mt-6 text-2xl font-black tracking-tight text-mtext">Your Favorites Library</h1>
-        <p className="mt-2 text-sm text-stext leading-relaxed">
-          Sign in to save teams, players, matches, news, tours and tournaments.
+        <h1 className="text-2xl font-black tracking-tight text-mtext sm:text-3xl">Your Favorites</h1>
+        <p className="mt-3 max-w-sm text-sm leading-relaxed text-stext">
+          Sign in to save teams, players, matches, news, tours and tournaments you care about — all in one place.
         </p>
         <Link
           href="/login?returnTo=/favorites"
-          className="btn-brand mt-6 inline-flex items-center gap-2 rounded-md px-6 py-3 text-sm font-semibold shadow-sm transition-colors"
+          className="btn-brand mt-8 inline-flex items-center gap-2 rounded-md px-7 py-3 text-sm font-bold shadow-md transition-all hover:shadow-lg"
         >
-          Sign In Now
+          Sign In
           <ArrowRight size={16} />
         </Link>
       </div>
@@ -148,211 +195,112 @@ export default function FavoritesPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-      {/* Page Header */}
-      <header className="relative mb-8 overflow-hidden rounded-3xl border border-lborder bg-card p-6 shadow-sm sm:p-8">
-        <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-2 text-accent">
-              <Sparkles size={16} />
-              <span className="text-xs font-bold uppercase tracking-widest text-stext">Personalized Hub</span>
-            </div>
-            <h1 className="text-2xl font-black tracking-tight text-mtext sm:text-4xl">
-              Favorites
-            </h1>
-            <p className="text-sm text-stext max-w-2xl">
-              Keep track of matches, teams, players, news, tours and tournaments you care about.
+    <div className="mx-auto max-w-7xl space-y-5 px-4 py-8 sm:px-6">
+      <header className="rounded-md border border-lborder bg-card p-5 sm:p-6">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="max-w-2xl">
+            <p className="inline-flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-accent">
+              <Heart size={13} fill="currentColor" className="text-danger" />
+              Your collection
+            </p>
+            <h1 className="mt-2 text-2xl font-semibold text-mtext">Favorites</h1>
+            <p className="mt-1 text-sm leading-relaxed text-stext">
+              Everything you follow — teams, players, matches, news, tours and tournaments — in one place.
             </p>
           </div>
-
-          <div className="flex shrink-0 items-center gap-3">
-            <div className="flex items-center gap-2 rounded-2xl border border-lborder bg-secondary px-4 py-2.5">
-              <Heart size={18} className="text-danger" fill="currentColor" />
-              <span className="text-sm font-black text-mtext">{counts.all}</span>
-              <span className="text-xs font-semibold text-stext">Saved</span>
+          {counts.all > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {SECTION_ORDER.filter((section) => counts[section.key] > 0).map((section) => {
+                const Icon = section.icon;
+                return (
+                  <button
+                    key={section.key}
+                    type="button"
+                    onClick={() => setActiveTab(section.key)}
+                    className="inline-flex items-center gap-1.5 rounded-md border border-lborder bg-secondary px-3 py-1.5 text-xs font-semibold text-mtext transition-colors hover:border-accent/40 hover:text-accent"
+                  >
+                    <Icon size={13} className="text-accent" />
+                    <span>{counts[section.key]}</span>
+                    <span className="text-stext">{section.label}</span>
+                  </button>
+                );
+              })}
             </div>
-          </div>
-        </div>
-
-        {/* Filter Tabs */}
-        <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-lborder/60 pt-5">
-          <TabButton
-            active={activeTab === 'all'}
-            onClick={() => setActiveTab('all')}
-            label="All Favorites"
-            count={counts.all}
-          />
-          <TabButton
-            active={activeTab === 'team'}
-            onClick={() => setActiveTab('team')}
-            label="Teams"
-            icon={<Shield size={14} />}
-            count={counts.team}
-          />
-          <TabButton
-            active={activeTab === 'player'}
-            onClick={() => setActiveTab('player')}
-            label="Players"
-            icon={<UserRound size={14} />}
-            count={counts.player}
-          />
-          <TabButton
-            active={activeTab === 'match'}
-            onClick={() => setActiveTab('match')}
-            label="Matches"
-            icon={<Calendar size={14} />}
-            count={counts.match}
-          />
-          <TabButton
-            active={activeTab === 'news'}
-            onClick={() => setActiveTab('news')}
-            label="News"
-            icon={<Newspaper size={14} />}
-            count={counts.news}
-          />
-          <TabButton
-            active={activeTab === 'tour'}
-            onClick={() => setActiveTab('tour')}
-            label="Tours"
-            icon={<Globe size={14} />}
-            count={counts.tour}
-          />
-          <TabButton
-            active={activeTab === 'tournament'}
-            onClick={() => setActiveTab('tournament')}
-            label="Tournaments"
-            icon={<Trophy size={14} />}
-            count={counts.tournament}
-          />
+          )}
         </div>
       </header>
 
-      {/* Main Content Grid */}
-      {filteredItems.length === 0 ? (
-        <div className="flex min-h-[380px] flex-col items-center justify-center rounded-3xl border border-dashed border-lborder bg-card/50 px-4 py-16 text-center">
-          <div className="grid h-14 w-14 place-items-center rounded-2xl bg-elevated text-stext">
-            <Heart size={26} />
+      <Tabs
+        size="sm"
+        active={activeTab}
+        onChange={(key) => setActiveTab(isTabKey(key) ? key : 'all')}
+        tabs={tabs}
+      />
+
+      {favorites.length === 0 ? (
+        <EmptyState
+          icon={Heart}
+          title="No favorites yet"
+          message="Start exploring and tap the heart icon on any team, player, match, or article to save it here."
+        >
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-2.5">
+            {SECTION_ORDER.slice(0, 5).map((section) => (
+              <Link
+                key={section.key}
+                href={section.href}
+                className="rounded-md border border-lborder bg-secondary px-4 py-2 text-xs font-bold text-mtext transition-colors hover:border-accent/40 hover:text-accent"
+              >
+                {section.label}
+              </Link>
+            ))}
           </div>
-          <h2 className="mt-4 text-lg font-bold text-mtext">
-            {activeTab === 'all' ? 'No favorites added yet' : `No favorite ${activeTab}s saved yet`}
-          </h2>
-          <p className="mt-1.5 max-w-md text-sm text-stext">
-            Explore teams, players, matches, news, tours or tournaments and tap the heart to save them here.
-          </p>
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-            <Link
-              href="/matches"
-              className="rounded-xl border border-lborder bg-secondary px-4 py-2 text-xs font-bold text-mtext transition-colors hover:bg-[var(--color-row-hover)] hover:text-accent"
-            >
-              Browse Matches
-            </Link>
-            <Link
-              href="/teams"
-              className="rounded-xl border border-lborder bg-secondary px-4 py-2 text-xs font-bold text-mtext transition-colors hover:bg-[var(--color-row-hover)] hover:text-accent"
-            >
-              Explore Teams
-            </Link>
-            <Link
-              href="/players"
-              className="rounded-xl border border-lborder bg-secondary px-4 py-2 text-xs font-bold text-mtext transition-colors hover:bg-[var(--color-row-hover)] hover:text-accent"
-            >
-              Discover Players
-            </Link>
-            <Link
-              href="/news"
-              className="rounded-xl border border-lborder bg-secondary px-4 py-2 text-xs font-bold text-mtext transition-colors hover:bg-[var(--color-row-hover)] hover:text-accent"
-            >
-              Read News
-            </Link>
-            <Link
-              href="/tours"
-              className="rounded-xl border border-lborder bg-secondary px-4 py-2 text-xs font-bold text-mtext transition-colors hover:bg-[var(--color-row-hover)] hover:text-accent"
-            >
-              Browse Tours
-            </Link>
-            <Link
-              href="/tournaments"
-              className="rounded-xl border border-lborder bg-secondary px-4 py-2 text-xs font-bold text-mtext transition-colors hover:bg-[var(--color-row-hover)] hover:text-accent"
-            >
-              Browse Tournaments
-            </Link>
-          </div>
-        </div>
+        </EmptyState>
       ) : (
-        <div className="grid auto-rows-fr grid-cols-1 items-stretch gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
-          {filteredItems.map((fav) => {
-            const data = enrichedMap[fav.id];
-            if (fav.targetType === 'team') {
+        <div className="space-y-8">
+          {visibleSections.map((section) => {
+            const items = grouped[section.key];
+            if (items.length === 0) {
               return (
-                <FavoriteTeamCard
-                  key={fav.id}
-                  fav={fav}
-                  team={data?.team}
-                  loading={data?.loading}
-                  isBusy={busyId === fav.id}
-                  onRemove={() => setDeleteTarget({ id: fav.id, name: data?.team?.name || 'Team' })}
+                <SectionEmpty
+                  key={section.key}
+                  icon={section.icon}
+                  label={section.label}
+                  hint={section.emptyHint}
+                  href={section.href}
                 />
               );
             }
-            if (fav.targetType === 'player') {
-              return (
-                <FavoritePlayerCard
-                  key={fav.id}
-                  fav={fav}
-                  player={data?.player}
-                  loading={data?.loading}
-                  isBusy={busyId === fav.id}
-                  onRemove={() => setDeleteTarget({ id: fav.id, name: data?.player?.fullName || data?.player?.name || 'Player' })}
-                />
-              );
-            }
-            if (fav.targetType === 'match') {
-              return (
-                <FavoriteMatchCard
-                  key={fav.id}
-                  fav={fav}
-                  match={data?.match}
-                  loading={data?.loading}
-                  isBusy={busyId === fav.id}
-                  onRemove={() => setDeleteTarget({ id: fav.id, name: 'Match' })}
-                />
-              );
-            }
-            if (fav.targetType === 'news') {
-              return (
-                <FavoriteNewsCard
-                  key={fav.id}
-                  fav={fav}
-                  news={data?.news}
-                  showImage={activeTab === 'news'}
-                  isBusy={busyId === fav.id}
-                  onRemove={() => setDeleteTarget({ id: fav.id, name: data?.news?.title || 'News' })}
-                />
-              );
-            }
-            if (fav.targetType === 'tour') {
-              return (
-                <FavoriteTourCard
-                  key={fav.id}
-                  fav={fav}
-                  tour={data?.tour}
-                  isBusy={busyId === fav.id}
-                  onRemove={() => setDeleteTarget({ id: fav.id, name: data?.tour?.name || 'Tour' })}
-                />
-              );
-            }
-            if (fav.targetType === 'tournament') {
-              return (
-                <FavoriteTournamentCard
-                  key={fav.id}
-                  fav={fav}
-                  tournament={data?.tournament}
-                  isBusy={busyId === fav.id}
-                  onRemove={() => setDeleteTarget({ id: fav.id, name: data?.tournament?.name || 'Tournament' })}
-                />
-              );
-            }
-            return null;
+            return (
+              <section key={section.key}>
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="grid h-8 w-8 place-items-center rounded-md bg-accent/10 text-accent">
+                      <section.icon size={16} />
+                    </div>
+                    <h2 className="text-lg font-semibold text-mtext">{section.label}</h2>
+                    <span className="rounded-md bg-secondary px-2 py-0.5 text-xs font-bold text-stext">{items.length}</span>
+                  </div>
+                  <Link
+                    href={section.href}
+                    className="group/link flex items-center gap-1 text-xs font-bold text-accent transition-colors hover:text-accent"
+                  >
+                    Browse more
+                    <ChevronRight size={14} className="transition-transform group-hover/link:translate-x-0.5" />
+                  </Link>
+                </div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
+                  {items.map((fav) => (
+                    <FavoriteCard
+                      key={fav.id}
+                      fav={fav}
+                      data={enrichedMap[fav.id]}
+                      isBusy={busyId === fav.id}
+                      onRemove={(name) => setDeleteTarget({ id: fav.id, name })}
+                    />
+                  ))}
+                </div>
+              </section>
+            );
           })}
         </div>
       )}
@@ -371,18 +319,513 @@ export default function FavoritesPage() {
   );
 }
 
-function mapFavoriteNews(target: Record<string, unknown> | undefined): NewsArticle | null {
+function FavoriteCard({
+  fav,
+  data,
+  isBusy,
+  onRemove,
+}: {
+  fav: FavoriteItem;
+  data?: EnrichedFavorite;
+  isBusy: boolean;
+  onRemove: (_name: string) => void;
+}) {
+  switch (fav.targetType) {
+    case 'team': {
+      const name = humanLabel(data?.team?.name, humanLabel(data?.team?.abbr, 'Cricket Team'));
+      return <TeamFavCard fav={fav} team={data?.team} name={name} isBusy={isBusy} onRemove={() => onRemove(name)} />;
+    }
+    case 'player': {
+      const name = humanLabel(
+        data?.player?.fullName,
+        humanLabel(data?.player?.name, humanLabel(data?.player?.shortName, 'Cricket Player')),
+      );
+      return <PlayerFavCard fav={fav} player={data?.player} name={name} isBusy={isBusy} onRemove={() => onRemove(name)} />;
+    }
+    case 'match': {
+      const sides = matchSides(data?.match);
+      return (
+        <MatchFavCard
+          fav={fav}
+          match={data?.match}
+          home={sides.home}
+          away={sides.away}
+          isBusy={isBusy}
+          onRemove={() => onRemove(`${sides.home.name} vs ${sides.away.name}`)}
+        />
+      );
+    }
+    case 'news': {
+      const name = humanLabel(data?.news?.title, 'News');
+      return <NewsFavCard fav={fav} news={data?.news} name={name} isBusy={isBusy} onRemove={() => onRemove(name)} />;
+    }
+    case 'tour': {
+      const name = humanLabel(data?.tour?.name, 'Tour');
+      return <TourFavCard fav={fav} tour={data?.tour} name={name} isBusy={isBusy} onRemove={() => onRemove(name)} />;
+    }
+    case 'tournament': {
+      const name = humanLabel(data?.tournament?.name, 'Tournament');
+      return (
+        <TournamentFavCard
+          fav={fav}
+          tournament={data?.tournament}
+          name={name}
+          isBusy={isBusy}
+          onRemove={() => onRemove(name)}
+        />
+      );
+    }
+    default: {
+      const _exhaustive: never = fav.targetType;
+      void _exhaustive;
+      return null;
+    }
+  }
+}
+
+function TeamFavCard({
+  fav,
+  team,
+  name,
+  isBusy,
+  onRemove,
+}: {
+  fav: FavoriteItem;
+  team?: Team | null;
+  name: string;
+  isBusy: boolean;
+  onRemove: () => void;
+}) {
+  const code = shortCode(team?.abbr || team?.code);
+  const country = humanLabel(team?.country, humanLabel(team?.city, 'Cricket team'));
+  const href = `/teams/${fav.targetId}`;
+  const logo = typeof team?.logoUrl === 'string' ? team.logoUrl : typeof team?.logo === 'string' ? team.logo : getPslLogo(code) || getPslLogo(String(team?.id || fav.targetId));
+  const initials = code || getInitials(name);
+
+  return (
+    <FavShell isBusy={isBusy} onRemove={onRemove}>
+      <Link href={href} className="flex min-w-0 flex-1 items-center gap-3">
+        {logo ? (
+          <RemoteImage
+            src={logo}
+            alt={name}
+            width={44}
+            height={44}
+            className="h-11 w-11 shrink-0 rounded-full border border-lborder bg-white object-contain p-1"
+          />
+        ) : (
+          <Avatar hue={hueFrom(name)} initials={initials} />
+        )}
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 items-baseline gap-2">
+            <h3 className="min-w-0 truncate text-sm font-semibold text-mtext transition-colors group-hover:text-accent">{name}</h3>
+            {code && <span className="shrink-0 font-mono text-xs uppercase text-stext">{code}</span>}
+          </div>
+          <p className="mt-0.5 flex items-center gap-1 truncate text-xs text-stext">
+            <Globe size={11} className="shrink-0" />
+            {country}
+          </p>
+        </div>
+      </Link>
+    </FavShell>
+  );
+}
+
+function PlayerFavCard({
+  fav,
+  player,
+  name,
+  isBusy,
+  onRemove,
+}: {
+  fav: FavoriteItem;
+  player?: Player | null;
+  name: string;
+  isBusy: boolean;
+  onRemove: () => void;
+}) {
+  const role = formatRole(player?.role);
+  const nationality = humanLabel(player?.nationality, humanLabel(player?.country, ''));
+  const teamName = humanLabel(player?.team?.name, humanLabel(player?.teamName, 'Independent player'));
+  const href = `/players/${fav.targetId}`;
+  const photo = typeof player?.profileUrl === 'string' ? player.profileUrl : '';
+
+  return (
+    <FavShell isBusy={isBusy} onRemove={onRemove}>
+      <Link href={href} className="flex min-w-0 flex-1 items-center gap-3">
+        {photo ? (
+          <RemoteImage
+            src={photo}
+            alt={name}
+            width={48}
+            height={48}
+            className="h-12 w-12 shrink-0 rounded-full border border-lborder bg-secondary object-cover"
+          />
+        ) : (
+          <Avatar hue={hueFrom(name)} initials={getInitials(name)} size="lg" />
+        )}
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 items-center gap-2">
+            <h3 className="truncate text-sm font-semibold text-mtext transition-colors group-hover:text-accent">{name}</h3>
+            <span className="shrink-0 rounded border border-lborder bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-stext">
+              {role}
+            </span>
+          </div>
+          <p className="mt-1 flex min-w-0 items-center gap-3 text-xs text-stext">
+            <span className="flex min-w-0 items-center gap-1 truncate">
+              <Shield size={11} className="shrink-0" />
+              <span className="truncate">{teamName}</span>
+            </span>
+            {nationality && (
+              <span className="flex min-w-0 items-center gap-1 truncate">
+                <MapPin size={11} className="shrink-0" />
+                <span className="truncate">{nationality}</span>
+              </span>
+            )}
+          </p>
+        </div>
+      </Link>
+    </FavShell>
+  );
+}
+
+function MatchFavCard({
+  fav,
+  match,
+  home,
+  away,
+  isBusy,
+  onRemove,
+}: {
+  fav: FavoriteItem;
+  match?: Match | null;
+  home: MatchSide;
+  away: MatchSide;
+  isBusy: boolean;
+  onRemove: () => void;
+}) {
+  const tournament = humanLabel(match?.tournamentName, humanLabel(match?.tournament, 'Cricket'));
+  const status = typeof match?.status === 'string' ? match.status : '';
+  const { date, time } = formatScheduled(match?.scheduled);
+  const venue = humanLabel(match?.venue, '');
+  const href = `/matches/${fav.targetId}`;
+
+  return (
+    <div className="elev-card group flex h-full flex-col rounded-md border border-lborder bg-card p-3.5 transition-colors hover:border-accent/50 hover:bg-[var(--color-row-hover)]">
+      <div className="mb-2.5 flex items-center justify-between gap-2">
+        <p className="min-w-0 truncate text-xs font-semibold uppercase tracking-wide text-stext">{tournament}</p>
+        <div className="flex shrink-0 items-center gap-1">
+          {status && <StatusBadge status={status} />}
+          <RemoveBtn isBusy={isBusy} onRemove={onRemove} always />
+        </div>
+      </div>
+
+      <Link href={href} prefetch={false} className="block space-y-1.5">
+        <MatchTeamRow name={home.name} code={home.code} />
+        <MatchTeamRow name={away.name} code={away.code} />
+      </Link>
+
+      <div className="mt-2.5 flex items-center justify-between gap-3 border-t border-lborder pt-2 text-xs text-stext">
+        <span className="inline-flex min-w-0 items-center gap-1 font-semibold tabular-nums text-accent">
+          <Calendar size={12} />
+          {date || 'TBD'}
+          {time ? ` · ${time}` : ''}
+        </span>
+        {venue && (
+          <span className="inline-flex max-w-[48%] items-center gap-1 truncate">
+            <MapPin size={12} className="shrink-0" />
+            <span className="truncate">{venue}</span>
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function NewsFavCard({
+  fav,
+  news,
+  name,
+  isBusy,
+  onRemove,
+}: {
+  fav: FavoriteItem;
+  news?: NewsArticle | null;
+  name: string;
+  isBusy: boolean;
+  onRemove: () => void;
+}) {
+  const href = news ? newsHref(news) : `/news/${fav.targetId}`;
+  const category = humanLabel(news?.category, 'News');
+
+  return (
+    <div className="group flex h-full flex-col overflow-hidden rounded-md border border-lborder bg-card transition-colors hover:border-accent/50 hover:bg-[var(--color-row-hover)]">
+      <div className="relative aspect-[16/9] overflow-hidden bg-secondary">
+        {news?.image ? (
+          <RemoteImage
+            src={news.image}
+            alt={name}
+            fill
+            sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+            className="object-cover"
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center text-stext/40">
+            <Newspaper size={36} />
+          </div>
+        )}
+        <div className="absolute top-2.5 right-2.5">
+          <RemoveBtn isBusy={isBusy} onRemove={onRemove} always />
+        </div>
+        <div className="absolute bottom-2.5 left-2.5">
+          <span className="rounded bg-elevated px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-stext ring-1 ring-lborder">
+            {category}
+          </span>
+        </div>
+      </div>
+      <Link href={href} className="flex flex-1 flex-col p-4">
+        <NewsCopy
+          as="h3"
+          language={news?.language}
+          text={name}
+          className="line-clamp-2 text-sm font-semibold text-mtext transition-colors group-hover:text-accent"
+        >
+          {name}
+        </NewsCopy>
+        {news?.excerpt && (
+          <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-stext">{news.excerpt}</p>
+        )}
+        <div className="mt-3 flex items-center gap-3 text-[11px] text-stext">
+          {news?.date && <span>{news.date}</span>}
+          {news?.author && <span>by {news.author}</span>}
+        </div>
+      </Link>
+    </div>
+  );
+}
+
+function TourFavCard({
+  tour,
+  name,
+  isBusy,
+  onRemove,
+}: {
+  fav: FavoriteItem;
+  tour?: Tour | null;
+  name: string;
+  isBusy: boolean;
+  onRemove: () => void;
+}) {
+  const country = humanLabel(str(tour?.category), 'International');
+  const sport = humanLabel(str(tour?.sport), 'Cricket');
+  const href = `/tournaments?country=${encodeURIComponent(country)}`;
+
+  return (
+    <FavShell isBusy={isBusy} onRemove={onRemove}>
+      <Link href={href} className="flex min-w-0 flex-1 items-center gap-3">
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-md border border-lborder bg-secondary text-accent">
+          <Globe size={18} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate text-sm font-semibold text-mtext transition-colors group-hover:text-accent">{name}</h3>
+          <p className="mt-0.5 truncate text-xs text-stext">
+            {country} · {sport}
+          </p>
+        </div>
+      </Link>
+    </FavShell>
+  );
+}
+
+function TournamentFavCard({
+  fav,
+  tournament,
+  name,
+  isBusy,
+  onRemove,
+}: {
+  fav: FavoriteItem;
+  tournament?: TournamentApi | null;
+  name: string;
+  isBusy: boolean;
+  onRemove: () => void;
+}) {
+  const category = humanLabel(str(tournament?.category), 'International');
+  const format = humanLabel(str(tournament?.type).replace(/_/g, ' '), 'Cricket').toUpperCase();
+  const gender = humanLabel(tournament?.gender, '');
+  const href = `/tournaments/${fav.targetId}`;
+
+  return (
+    <FavShell isBusy={isBusy} onRemove={onRemove}>
+      <Link href={href} className="flex min-w-0 flex-1 items-center gap-3">
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-md border border-lborder bg-secondary text-accent">
+          <Trophy size={18} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 items-center gap-2">
+            <h3 className="min-w-0 truncate text-sm font-semibold text-mtext transition-colors group-hover:text-accent">{name}</h3>
+            <span className="shrink-0 rounded border border-lborder bg-secondary px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-stext">
+              {format}
+            </span>
+          </div>
+          <p className="mt-0.5 truncate text-xs text-stext">
+            {category}
+            {gender ? ` · ${gender}` : ''}
+          </p>
+        </div>
+      </Link>
+    </FavShell>
+  );
+}
+
+function FavShell({
+  children,
+  isBusy,
+  onRemove,
+}: {
+  children: ReactNode;
+  isBusy: boolean;
+  onRemove: () => void;
+}) {
+  return (
+    <div className="elev-card group flex items-center gap-2 rounded-md border border-lborder bg-card p-3.5 transition-colors hover:border-accent/50 hover:bg-[var(--color-row-hover)]">
+      {children}
+      <RemoveBtn isBusy={isBusy} onRemove={onRemove} always />
+    </div>
+  );
+}
+
+function SectionEmpty({
+  icon: Icon,
+  label,
+  hint,
+  href,
+}: {
+  icon: typeof Shield;
+  label: string;
+  hint: string;
+  href: string;
+}) {
+  return (
+    <section>
+      <div className="mb-4 flex items-center gap-2.5">
+        <div className="grid h-8 w-8 place-items-center rounded-md bg-accent/10 text-accent">
+          <Icon size={16} />
+        </div>
+        <h2 className="text-lg font-semibold text-mtext">{label}</h2>
+      </div>
+      <div className="flex items-center gap-4 rounded-md border border-dashed border-lborder bg-card/30 px-5 py-4">
+        <Heart size={18} className="shrink-0 text-stext" />
+        <p className="flex-1 text-sm text-stext">{hint}</p>
+        <Link
+          href={href}
+          className="shrink-0 rounded-md border border-lborder bg-secondary px-3 py-1.5 text-xs font-bold text-accent transition-colors hover:bg-[var(--color-row-hover)]"
+        >
+          Browse
+        </Link>
+      </div>
+    </section>
+  );
+}
+
+function RemoveBtn({ isBusy, onRemove, always = false }: { isBusy: boolean; onRemove: () => void; always?: boolean }) {
+  return (
+    <button
+      type="button"
+      onClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        onRemove();
+      }}
+      disabled={isBusy}
+      title="Remove from favorites"
+      className={`grid h-8 w-8 shrink-0 place-items-center rounded-md text-stext transition-colors hover:bg-danger/10 hover:text-danger disabled:opacity-50 ${
+        always ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+      }`}
+    >
+      {isBusy ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+    </button>
+  );
+}
+
+function Avatar({ hue, initials, size = 'md' }: { hue: number; initials: string; size?: 'md' | 'lg' }) {
+  const dim = size === 'lg' ? 'h-12 w-12 text-sm' : 'h-11 w-11 text-sm';
+  return (
+    <span
+      className={`grid ${dim} shrink-0 place-items-center rounded-full font-semibold text-white`}
+      style={{ backgroundImage: `linear-gradient(135deg, hsl(${hue}, 68%, 46%), hsl(${(hue + 38) % 360}, 72%, 32%))` }}
+    >
+      {initials.slice(0, 2).toUpperCase()}
+    </span>
+  );
+}
+
+function MatchTeamRow({ name, code }: { name: string; code: string }) {
+  const pslLogo = getPslLogo(code);
+  const hue = hueFrom(code || name);
+  return (
+    <div className="flex items-center gap-2.5">
+      {pslLogo ? (
+        <RemoteImage
+          src={pslLogo}
+          alt={name}
+          width={28}
+          height={28}
+          className="h-7 w-7 shrink-0 rounded-full border border-lborder bg-white object-contain p-0.5"
+        />
+      ) : (
+        <span
+          className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[10px] font-semibold text-white"
+          style={{ backgroundImage: `linear-gradient(135deg, hsl(${hue}, 65%, 48%), hsl(${(hue + 28) % 360}, 75%, 32%))` }}
+        >
+          {getInitials(name || code)}
+        </span>
+      )}
+      <p className="min-w-0 flex-1 truncate text-sm font-semibold text-mtext">{name}</p>
+    </div>
+  );
+}
+
+interface MatchSide {
+  name: string;
+  code: string;
+}
+
+function matchSides(match?: Match | null): { home: MatchSide; away: MatchSide } {
+  return {
+    home: pickMatchSide(match, 0, 'Team A'),
+    away: pickMatchSide(match, 1, 'Team B'),
+  };
+}
+
+function pickMatchSide(match: Match | null | undefined, index: 0 | 1, fallback: string): MatchSide {
+  const teams = match?.teams as unknown;
+  const isObj = Boolean(teams && typeof teams === 'object' && !Array.isArray(teams));
+  const side = isObj
+    ? index === 0
+      ? (teams as { home?: { name?: string; code?: string; abbr?: string } }).home
+      : (teams as { away?: { name?: string; code?: string; abbr?: string } }).away
+    : null;
+  const rawCode = side?.code || side?.abbr || (Array.isArray(teams) ? String(teams[index] || '') : '');
+  const rawName = side?.name || match?.teamNames?.[index] || '';
+  const name = humanLabel(rawName, humanLabel(rawCode, fallback));
+  const code = shortCode(rawCode) || getInitials(name);
+  return { name, code };
+}
+
+function mapFavoriteNews(target: Record<string, unknown> | null): NewsArticle | null {
   if (!target?.id || !target.title) return null;
   const authorRef = target.authorRef as { name?: string } | undefined;
+  const category = target.category as { name?: string } | string | undefined;
   return {
     id: String(target.id),
     slug: typeof target.slug === 'string' ? target.slug : undefined,
     title: String(target.title),
-    category: typeof (target.category as { name?: string } | undefined)?.name === 'string'
-      ? String((target.category as { name: string }).name)
-      : 'News',
+    category: typeof category === 'string' ? category : humanLabel(category?.name, 'News'),
     type: '',
-    date: target.publishedAt ? new Date(String(target.publishedAt)).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '',
+    date: target.publishedAt
+      ? new Date(String(target.publishedAt)).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      : '',
     author: authorRef?.name || String(target.author || 'Editorial'),
     readTime: '',
     excerpt: String(target.summary || ''),
@@ -392,414 +835,48 @@ function mapFavoriteNews(target: Record<string, unknown> | undefined): NewsArtic
   };
 }
 
-function TabButton({
-  active,
-  onClick,
-  label,
-  icon,
-  count,
-}: {
-  active: boolean;
-  onClick: () => void;
-  label: string;
-  icon?: React.ReactNode;
-  count: number;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition-all ${
-        active
-          ? 'btn-brand shadow-sm'
-          : 'bg-secondary text-stext hover:bg-[var(--color-row-hover)] hover:text-mtext'
-      }`}
-    >
-      {icon}
-      <span>{label}</span>
-      <span
-        className={`rounded-full px-1.5 py-0.5 text-[11px] font-black ${
-          active ? 'bg-white/20 text-white' : 'bg-card text-stext'
-        }`}
-      >
-        {count}
-      </span>
-    </button>
-  );
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === 'object' ? (value as Record<string, unknown>) : null;
 }
 
-/* ─── Cards for Favorites ─────────────────────────────────── */
-
-function FavoriteCardFrame({
-  label,
-  href,
-  actionLabel,
-  isBusy,
-  onRemove,
-  prefetch,
-  image,
-  children,
-}: {
-  label: string;
-  href: string;
-  actionLabel: string;
-  isBusy: boolean;
-  onRemove: () => void;
-  prefetch?: boolean;
-  image?: React.ReactNode;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="group relative flex h-full min-h-[230px] flex-col overflow-hidden rounded-md border border-lborder bg-card transition-colors hover:border-accent/40 hover:bg-[var(--color-row-hover)]">
-      <div className="flex items-center justify-between gap-2 px-5 pt-4">
-        <Badge tone="neutral">{label}</Badge>
-        <button
-          type="button"
-          onClick={onRemove}
-          disabled={isBusy}
-          title="Remove from favorites"
-          className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-stext transition-colors hover:bg-danger/10 hover:text-danger disabled:opacity-50"
-        >
-          {isBusy ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
-        </button>
-      </div>
-      {image}
-      <div className="flex min-h-0 flex-1 flex-col px-5 pb-5 pt-3">
-        <Link href={href} prefetch={prefetch} className="block min-h-0 flex-1">
-          {children}
-        </Link>
-        <Link
-          href={href}
-          prefetch={prefetch}
-          className="mt-4 inline-flex w-full items-center justify-between border-t border-lborder/60 pt-3 text-xs font-bold text-accent"
-        >
-          <span>{actionLabel}</span>
-          <ArrowRight size={13} className="transition-transform group-hover:translate-x-1" />
-        </Link>
-      </div>
-    </div>
-  );
+function humanLabel(value: unknown, fallback: string): string {
+  const text = str(value);
+  if (text) return text;
+  if (typeof value === 'string' && isSportRadarId(value)) return fallback;
+  return fallback;
 }
 
-function FavoriteAvatar({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-full border border-lborder bg-secondary">
-      {children}
-    </div>
-  );
+function shortCode(value: unknown): string {
+  const text = str(value);
+  if (!text || text.length > 5) return '';
+  return text.toUpperCase();
 }
 
-function FavoriteTeamCard({
-  fav,
-  team,
-  loading: _loading,
-  isBusy,
-  onRemove,
-}: {
-  fav: FavoriteItem;
-  team?: Team | null;
-  loading?: boolean;
-  isBusy: boolean;
-  onRemove: () => void;
-}) {
-  const name = team?.name || team?.abbr || (fav.targetId.startsWith('sr:') ? 'Cricket Team' : fav.targetId);
-  const code = team?.abbr || team?.code || '';
-  const country = team?.country || team?.city || 'Cricket Club';
-
-  return (
-    <FavoriteCardFrame
-      label="Team"
-      href={`/teams/${fav.targetId}`}
-      actionLabel="View Team Squad"
-      isBusy={isBusy}
-      onRemove={onRemove}
-    >
-      <div className="flex items-center gap-3.5">
-        <FavoriteAvatar>
-          {team?.logoUrl ? (
-            <RemoteImage
-              src={String(team.logoUrl)}
-              alt={name}
-              width={48}
-              height={48}
-              className="h-12 w-12 object-cover"
-            />
-          ) : (
-            <TeamLogo teamId={fav.targetId} name={name} code={code} size="md" link={false} />
-          )}
-        </FavoriteAvatar>
-        <div className="min-w-0 flex-1">
-          <h3 className="truncate text-base font-bold text-mtext transition-colors group-hover:text-accent">
-            {name}
-          </h3>
-          <p className="mt-0.5 truncate text-xs font-semibold text-stext">
-            {code ? `${code} · ${country}` : country}
-          </p>
-        </div>
-      </div>
-    </FavoriteCardFrame>
-  );
+function formatRole(raw?: string): string {
+  const clean = String(raw || 'Player').replace(/_/g, ' ').trim();
+  return clean
+    .split(' ')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
 }
 
-function FavoritePlayerCard({
-  fav,
-  player,
-  loading: _loading,
-  isBusy,
-  onRemove,
-}: {
-  fav: FavoriteItem;
-  player?: Player | null;
-  loading?: boolean;
-  isBusy: boolean;
-  onRemove: () => void;
-}) {
-  const name = player?.fullName || player?.name || player?.shortName || (fav.targetId.startsWith('sr:') ? 'Cricket Player' : fav.targetId);
-  const role = String(player?.role || 'Player').replace(/_/g, ' ');
-  const nationality = player?.nationality || player?.country || '';
-  const team = player?.team?.name || player?.teamName || '';
-  const initials = getInitials(name);
-  let hue = 0;
-  for (let i = 0; i < name.length; i++) hue = name.charCodeAt(i) + ((hue << 5) - hue);
-  hue = Math.abs(hue % 360);
-
-  return (
-    <FavoriteCardFrame
-      label="Player"
-      href={`/players/${fav.targetId}`}
-      actionLabel="View Player Profile"
-      isBusy={isBusy}
-      onRemove={onRemove}
-    >
-      <div className="flex items-center gap-3.5">
-        <FavoriteAvatar>
-          <span
-            className="grid h-12 w-12 place-items-center text-sm font-black text-white"
-            style={{ backgroundImage: `linear-gradient(135deg, hsl(${hue}, 75%, 50%), hsl(${(hue + 40) % 360}, 85%, 35%))` }}
-          >
-            {initials}
-          </span>
-        </FavoriteAvatar>
-        <div className="min-w-0 flex-1">
-          <h3 className="truncate text-base font-bold text-mtext transition-colors group-hover:text-accent">
-            {name}
-          </h3>
-          <p className="mt-0.5 truncate text-xs text-stext">
-            {[role, nationality, team].filter(Boolean).join(' • ') || 'Player'}
-          </p>
-        </div>
-      </div>
-    </FavoriteCardFrame>
-  );
+function hueFrom(seed: string): number {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) hash = seed.charCodeAt(i) + ((hash << 5) - hash);
+  return Math.abs(hash % 360);
 }
 
-function FavoriteMatchCard({
-  fav,
-  match,
-  loading: _loading,
-  isBusy,
-  onRemove,
-}: {
-  fav: FavoriteItem;
-  match?: Match | null;
-  loading?: boolean;
-  isBusy: boolean;
-  onRemove: () => void;
-}) {
-  const codes = match?.teams || [];
-  const names = match?.teamNames || [];
-  const homeCode = codes[0] || '';
-  const awayCode = codes[1] || '';
-  const homeName = (names[0] && !names[0].startsWith('sr:')) ? names[0] : homeCode || 'Team A';
-  const awayName = (names[1] && !names[1].startsWith('sr:')) ? names[1] : awayCode || 'Team B';
-  const tournament = match?.tournament || match?.tournamentName || 'Match Fixture';
-  const status = match?.status || '';
-  const { date, time } = formatScheduled(match?.scheduled);
-
-  return (
-    <FavoriteCardFrame
-      label="Match"
-      href={`/matches/${fav.targetId}`}
-      actionLabel="Match Scorecard & Details"
-      isBusy={isBusy}
-      onRemove={onRemove}
-      prefetch={false}
-    >
-      <div className="flex items-start gap-3.5">
-        <FavoriteAvatar>
-          <Calendar size={18} className="text-accent" />
-        </FavoriteAvatar>
-        <div className="min-w-0 flex-1">
-          <div className="mb-1 flex flex-wrap items-center gap-1.5">
-            {status ? <StatusBadge status={status} /> : null}
-            <p className="truncate text-[11px] font-bold uppercase tracking-wider text-accent">
-              {tournament}
-            </p>
-          </div>
-          <h3 className="truncate text-base font-bold text-mtext transition-colors group-hover:text-accent">
-            {homeName} vs {awayName}
-          </h3>
-          {(date || time) && (
-            <p className="mt-1 flex items-center gap-1.5 text-xs text-stext">
-              <span>{date}</span>
-              {time ? <span>· {time}</span> : null}
-            </p>
-          )}
-          {match?.venue ? (
-            <p className="mt-0.5 flex items-center gap-1.5 truncate text-[11px] text-stext">
-              <MapPin size={11} className="shrink-0" />
-              <span className="truncate">{match.venue}</span>
-            </p>
-          ) : null}
-        </div>
-      </div>
-    </FavoriteCardFrame>
-  );
+function isTabKey(value: string): value is TabKey {
+  switch (value) {
+    case 'all':
+    case 'team':
+    case 'player':
+    case 'match':
+    case 'news':
+    case 'tour':
+    case 'tournament':
+      return true;
+    default:
+      return false;
+  }
 }
-
-function FavoriteNewsCard({
-  fav,
-  news,
-  showImage = false,
-  isBusy,
-  onRemove,
-}: {
-  fav: FavoriteItem;
-  news?: NewsArticle | null;
-  showImage?: boolean;
-  isBusy: boolean;
-  onRemove: () => void;
-}) {
-  const title = news?.title || 'News';
-  const href = news ? newsHref(news) : `/news/${fav.targetId}`;
-  const image = showImage && news?.image ? (
-    <Link href={href} className="relative mx-5 mt-3 block aspect-[16/9] overflow-hidden rounded-md bg-secondary">
-      <RemoteImage src={news.image} alt={title} fill sizes="(min-width: 768px) 25vw, 100vw" className="object-cover" />
-    </Link>
-  ) : null;
-
-  return (
-    <FavoriteCardFrame
-      label="News"
-      href={href}
-      actionLabel="Read article"
-      isBusy={isBusy}
-      onRemove={onRemove}
-      image={image}
-    >
-      {showImage ? (
-        <div>
-          <NewsCopy
-            as="p"
-            language={news?.language}
-            text={title}
-            className="news-copy-card line-clamp-2 text-base font-bold text-mtext transition-colors group-hover:text-accent"
-          >
-            {title}
-          </NewsCopy>
-          {news?.date ? <p className="mt-1 text-xs text-stext">{news.date}</p> : null}
-        </div>
-      ) : (
-        <div className="flex items-center gap-3.5">
-          <FavoriteAvatar>
-            <Newspaper size={18} className="text-accent" />
-          </FavoriteAvatar>
-          <div className="min-w-0 flex-1">
-            <NewsCopy
-              as="h3"
-              language={news?.language}
-              text={title}
-              className="news-copy-card line-clamp-2 text-base font-bold text-mtext transition-colors group-hover:text-accent"
-            >
-              {title}
-            </NewsCopy>
-            {news?.date ? <p className="mt-0.5 truncate text-xs text-stext">{news.date}</p> : null}
-          </div>
-        </div>
-      )}
-    </FavoriteCardFrame>
-  );
-}
-
-function FavoriteTourCard({
-  fav: _fav,
-  tour,
-  isBusy,
-  onRemove,
-}: {
-  fav: FavoriteItem;
-  tour?: Tour | null;
-  isBusy: boolean;
-  onRemove: () => void;
-}) {
-  const name = tour?.name || 'Tour';
-  const country = str(tour?.category) || 'International';
-  const sport = str(tour?.sport) || 'Cricket';
-  const href = `/tournaments?country=${encodeURIComponent(country)}`;
-
-  return (
-    <FavoriteCardFrame
-      label="Tour"
-      href={href}
-      actionLabel="Browse related tournaments"
-      isBusy={isBusy}
-      onRemove={onRemove}
-    >
-      <div className="flex items-center gap-3.5">
-        <FavoriteAvatar>
-          <Globe size={18} className="text-accent" />
-        </FavoriteAvatar>
-        <div className="min-w-0 flex-1">
-          <h3 className="truncate text-base font-bold text-mtext transition-colors group-hover:text-accent">
-            {name}
-          </h3>
-          <p className="mt-0.5 truncate text-xs font-semibold text-stext">
-            {country} · {sport}
-          </p>
-        </div>
-      </div>
-    </FavoriteCardFrame>
-  );
-}
-
-function FavoriteTournamentCard({
-  fav,
-  tournament,
-  isBusy,
-  onRemove,
-}: {
-  fav: FavoriteItem;
-  tournament?: TournamentApi | null;
-  isBusy: boolean;
-  onRemove: () => void;
-}) {
-  const name = tournament?.name || 'Tournament';
-  const category = str(tournament?.category) || 'International';
-  const format = str(tournament?.type).replace(/_/g, ' ') || 'Cricket';
-  const gender = tournament?.gender || '';
-
-  return (
-    <FavoriteCardFrame
-      label="Tournament"
-      href={`/tournaments/${fav.targetId}`}
-      actionLabel="View tournament"
-      isBusy={isBusy}
-      onRemove={onRemove}
-    >
-      <div className="flex items-center gap-3.5">
-        <FavoriteAvatar>
-          <Trophy size={18} className="text-accent" />
-        </FavoriteAvatar>
-        <div className="min-w-0 flex-1">
-          <h3 className="truncate text-base font-bold text-mtext transition-colors group-hover:text-accent">
-            {name}
-          </h3>
-          <p className="mt-0.5 truncate text-xs font-semibold text-stext">
-            {[format, category, gender].filter(Boolean).join(' · ')}
-          </p>
-        </div>
-      </div>
-    </FavoriteCardFrame>
-  );
-}
-

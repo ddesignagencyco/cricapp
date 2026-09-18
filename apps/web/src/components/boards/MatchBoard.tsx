@@ -144,7 +144,11 @@ export default function MatchBoard() {
       {loading ? (
         <MatchCardGridSkeleton />
       ) : error ? (
-        <ErrorState message="Matches are temporarily unavailable." onRetry={() => setRetryKey((key) => key + 1)} />
+        <ErrorState
+          title="Server unavailable"
+          message="Can't reach the API, so matches aren't listed. Start the backend or try again."
+          onRetry={() => setRetryKey((key) => key + 1)}
+        />
       ) : visibleMatches.length > 0 ? (
         <>
           <div className="fade-in grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">

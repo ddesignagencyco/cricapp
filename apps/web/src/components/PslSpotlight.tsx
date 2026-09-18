@@ -22,7 +22,7 @@ const PSL_DATA = {
 export default function PslSpotlight({ standings = [] }: PslSpotlightProps) {
   const rows = standings.slice(0, 5);
   return (
-    <section className="mx-auto max-w-7xl px-4 pb-12 sm:px-6">
+    <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
       <div className="space-y-4">
         {/* PSL Spotlight */}
         <div className="overflow-hidden rounded-2xl bg-card ring-1 ring-lborder">

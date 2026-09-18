@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { io, type Socket } from 'socket.io-client';
 import { CLIENT_BASE } from '../services/api/client';
 import { fetchMatchById } from '../services/matches';
+import { cricketOversToBalls } from '../utils/helpers';
 
 export interface LiveUpdate {
   type: string;
@@ -120,6 +121,102 @@ function isThinEvent(data: unknown): boolean {
   return THIN_EVENT_TYPES.has(type) && !hasScoreFields;
 }
 
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function mergeTeams(prev: unknown, incoming: unknown): unknown {
+  if (incoming === undefined || incoming === null) return prev;
+  if (Array.isArray(incoming)) {
+    if (isPlainObject(prev)) return prev;
+    return incoming;
+  }
+  if (!isPlainObject(incoming)) return prev ?? incoming;
+  if (!isPlainObject(prev)) return incoming;
+  return {
+    ...prev,
+    home: { ...(isPlainObject(prev.home) ? prev.home : {}), ...(isPlainObject(incoming.home) ? incoming.home : {}) },
+    away: { ...(isPlainObject(prev.away) ? prev.away : {}), ...(isPlainObject(incoming.away) ? incoming.away : {}) },
+  };
+}
+
+function keepRicherOvers(prevInn: unknown, incomingInn: Record<string, unknown>): unknown {
+  const prev = isPlainObject(prevInn) ? prevInn : null;
+  const prevOvers = prev?.overs;
+  const nextOvers = incomingInn.overs;
+  if (nextOvers === undefined || nextOvers === null || nextOvers === '') return prevOvers;
+  if (prevOvers === undefined || prevOvers === null || prevOvers === '') return nextOvers;
+
+  const prevBalls = cricketOversToBalls(prevOvers);
+  const nextBalls = cricketOversToBalls(nextOvers);
+  if (prevBalls === null) return nextOvers;
+  if (nextBalls === null) return prevOvers;
+  if (nextBalls >= prevBalls) return nextOvers;
+
+  const prevRuns = Number(prev?.runs);
+  const nextRuns = Number(incomingInn.runs);
+  const newInnings =
+    Number.isFinite(prevRuns) && Number.isFinite(nextRuns) && nextRuns + 8 < prevRuns;
+  if (newInnings) return nextOvers;
+
+  // Socket often sends whole overs (7) after a richer cricket decimal (7.3).
+  return prevOvers;
+}
+
+function isEmptyInningsScore(inn: Record<string, unknown> | null): boolean {
+  if (!inn) return true;
+  const runs = Number(inn.runs);
+  const wickets = Number(inn.wickets);
+  return (!Number.isFinite(runs) || runs === 0) && (!Number.isFinite(wickets) || wickets === 0);
+}
+
+function mergeInnings(prev: unknown, incoming: unknown): unknown {
+  if (!isPlainObject(incoming)) return prev ?? incoming;
+  const prevInn = isPlainObject(prev) ? prev : null;
+  const base = prevInn ? { ...prevInn, ...incoming } : { ...incoming };
+  if (prevInn && isEmptyInningsScore(incoming) && !isEmptyInningsScore(prevInn)) {
+    base.runs = prevInn.runs;
+    base.wickets = prevInn.wickets;
+    base.overs = prevInn.overs;
+    return base;
+  }
+  base.overs = keepRicherOvers(prev, incoming);
+  return base;
+}
+
+export function mergeMatchLivePayload<T extends Record<string, unknown>>(
+  prev: T,
+  payload: Record<string, unknown>
+): T {
+  const next: Record<string, unknown> = { ...prev };
+  for (const [key, value] of Object.entries(payload)) {
+    if (value === undefined || value === null) continue;
+    if (key === 'type' && typeof value === 'string' && THIN_EVENT_TYPES.has(value)) continue;
+    if (key === 'teams') {
+      next.teams = mergeTeams(prev.teams, value);
+      continue;
+    }
+    if (key === 'teamNames') {
+      if (Array.isArray(value) && value.length >= 2 && value.some(Boolean)) next.teamNames = value;
+      continue;
+    }
+    if (key === 'currentInnings') {
+      next.currentInnings = mergeInnings(prev.currentInnings, value);
+      continue;
+    }
+    if (key === 'lastEvent' && isPlainObject(value)) {
+      next.lastEvent = { ...(isPlainObject(prev.lastEvent) ? prev.lastEvent : {}), ...value };
+      continue;
+    }
+    if ((key === 'displayScore' || key === 'tournament' || key === 'venue' || key === 'matchStatus') && value === '' && prev[key]) {
+      continue;
+    }
+    next[key] = value;
+  }
+  if (prev.matchId || payload.matchId) next.matchId = payload.matchId || prev.matchId;
+  return next as T;
+}
+
 function unwrapSnapshot(data: unknown): Record<string, unknown> | null {
   if (!data || typeof data !== 'object') return null;
   const rec = data as Record<string, unknown>;
@@ -148,7 +245,7 @@ export function mergeLiveUpdate<T extends { matchId?: string; id?: string; statu
   if (isThinEvent(payload)) return matches;
 
   const idx = matches.findIndex((m) => (m.matchId || m.id) === update.matchId);
-  const nextRow = { ...payload, matchId: update.matchId } as T;
+  const nextRow = mergeMatchLivePayload({ matchId: update.matchId } as T, payload);
 
   if (idx === -1) {
     if (nextRow.status === 'live') {
@@ -158,7 +255,7 @@ export function mergeLiveUpdate<T extends { matchId?: string; id?: string; statu
   }
 
   const next = [...matches];
-  next[idx] = { ...next[idx], ...payload, matchId: update.matchId };
+  next[idx] = mergeMatchLivePayload(next[idx] as T & Record<string, unknown>, payload);
   return next;
 }
 

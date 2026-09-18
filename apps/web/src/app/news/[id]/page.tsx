@@ -1,4 +1,5 @@
 import NewsDetailBody from '../../../components/boards/NewsDetailBody';
+import ErrorState from '../../../components/ErrorState';
 import JsonLd from '../../json-ld';
 import { authorSlugFromArticle } from '../../../services/authors';
 import { fetchMatchById } from '../../../services/matches';
@@ -12,7 +13,10 @@ import { newsHref } from '../../../utils/newsConstraints';
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [item, seo] = await Promise.all([fetchNewsById(id), fetchNewsSeo(id).catch(() => null)]);
+  const [item, seo] = await Promise.all([
+    fetchNewsById(id).catch(() => null),
+    fetchNewsSeo(id).catch(() => null),
+  ]);
   const languages: Record<string, string> = {};
   for (const alt of seo?.hreflang || []) {
     if (alt.language && alt.href) languages[alt.language] = alt.href;
@@ -33,11 +37,25 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
 export default async function NewsDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [item, allNews, seo] = await Promise.all([
-    fetchNewsById(id),
-    fetchNews(),
-    fetchNewsSeo(id).catch(() => null),
-  ]);
+  let item;
+  let allNews;
+  let seo;
+  try {
+    [item, allNews, seo] = await Promise.all([
+      fetchNewsById(id),
+      fetchNews().catch(() => []),
+      fetchNewsSeo(id).catch(() => null),
+    ]);
+  } catch {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
+        <ErrorState
+          title="Server unavailable"
+          message="Can't reach the API, so this story isn't loaded. Start the backend or try again."
+        />
+      </div>
+    );
+  }
   if (!item) notFound();
 
   const playerIds = (item.playerIds as string[] | undefined) || [];

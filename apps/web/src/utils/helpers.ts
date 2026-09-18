@@ -140,6 +140,24 @@ const pslLogos: Record<string, string> = {
   raw: 'https://psl-t20.com/wp-content/uploads/2026/03/Rawalpindiz-Logo.png'
 };
 
+/** Cricket decimal overs (15.3 = 15 overs + 3 balls) → legal balls. */
+export function cricketOversToBalls(overs: unknown): number | null {
+  if (overs === undefined || overs === null || overs === '') return null;
+  const n = typeof overs === 'number' ? overs : Number(overs);
+  if (!Number.isFinite(n) || n < 0) return null;
+  const whole = Math.floor(n + 1e-9);
+  const tenths = Math.round((n - whole) * 10);
+  return whole * 6 + Math.min(5, Math.max(0, tenths));
+}
+
+export function formatCricketOvers(overs: unknown): string {
+  const balls = cricketOversToBalls(overs);
+  if (balls === null) return '';
+  const whole = Math.floor(balls / 6);
+  const rem = balls % 6;
+  return rem === 0 ? String(whole) : `${whole}.${rem}`;
+}
+
 export function getPslLogo(codeOrId: string): string | null {
   if (!codeOrId) return null;
   const key = codeOrId.toLowerCase();

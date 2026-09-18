@@ -26,7 +26,7 @@ export class PredictionsController {
   @Get(':matchId/history')
   @ApiOperation({
     summary: 'Prediction history for a match',
-    description: 'Append-only time series of pre-match and live prediction runs.',
+    description: 'Append-only time series of pre-match and live prediction runs, with explanation copy.',
   })
   @ApiParam({ name: 'matchId', description: 'Provider match id (e.g. sr:match:58145219).' })
   @ApiResponse({ status: 200, description: 'Prediction runs in chronological order.', type: PredictionHistoryDto })
@@ -44,7 +44,7 @@ export class PredictionsController {
   @Get(':matchId')
   @ApiOperation({
     summary: 'Latest predictions for a match',
-    description: 'Latest pre-match and live winner probabilities.',
+    description: 'Latest pre-match and live winner probabilities plus explanation copy of those stored runs.',
   })
   @ApiParam({ name: 'matchId', description: 'Provider match id (e.g. sr:match:58145219).' })
   @ApiResponse({ status: 200, description: 'Latest pre-match and live predictions.', type: MatchPredictionsDto })

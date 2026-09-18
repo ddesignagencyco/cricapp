@@ -29,7 +29,7 @@ export default function Newsletter() {
   };
 
   return (
-    <section className="mx-auto max-w-7xl px-4 pb-12 sm:px-6">
+    <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
       <div className="overflow-hidden rounded-2xl bg-card ring-1 ring-lborder">
         <form
           onSubmit={(e) => void submit(e)}
