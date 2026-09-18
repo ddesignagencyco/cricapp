@@ -40,6 +40,8 @@ export interface PredictionRun {
   pressureIndex?: number | null;
   partnershipProjection?: PartnershipProjection | null;
   wicketRisk?: number | null;
+  narrative?: string | null;
+  narrativeSource?: string | null;
 }
 
 export interface MatchPredictions {

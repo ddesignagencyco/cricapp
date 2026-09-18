@@ -1,9 +1,8 @@
 import PredictionsHub from '../../components/predictions/PredictionsHub';
-import { featuredRun, mergeChartPoints } from '../../lib/predictions';
 import { fetchLiveMatches, fetchMatches } from '../../services/matches';
-import { fetchMatchPredictions, fetchPredictionChart, fetchPredictionHistory, fetchPredictionPerformance } from '../../services/predictions';
+import { fetchMatchPredictions } from '../../services/predictions';
 import type { Match } from '../../types';
-import type { MatchPredictions, PredictionChartPoint } from '../../types/predictions';
+import type { MatchPredictions } from '../../types/predictions';
 
 export const revalidate = 30;
 
@@ -24,25 +23,14 @@ async function matchCards(matches: Match[]) {
     items.map((match) => fetchMatchPredictions(String(match.matchId || match.id)).catch(() => null))
   );
 
-  return Promise.all(
-    items.map(async (match, index) => {
-      const cardPredictions = predictions[index] as MatchPredictions | null;
-      if (!featuredRun(cardPredictions)) {
-        return { match, predictions: cardPredictions, chartPoints: [] as PredictionChartPoint[] };
-      }
-      const matchId = String(match.matchId || match.id);
-      const [chart, history] = await Promise.all([
-        fetchPredictionChart(matchId).catch(() => null),
-        fetchPredictionHistory(matchId).catch(() => null),
-      ]);
-      return { match, predictions: cardPredictions, chartPoints: mergeChartPoints(chart?.points, history?.runs) };
-    })
-  );
+  return items.map((match, index) => ({
+    match,
+    predictions: predictions[index] as MatchPredictions | null,
+  }));
 }
 
 export default async function PredictionsPage() {
-  const [performance, liveMatches, upcomingMatches] = await Promise.all([
-    fetchPredictionPerformance().catch(() => null),
+  const [liveMatches, upcomingMatches] = await Promise.all([
     fetchLiveMatches().catch(() => []),
     fetchMatches({ status: 'upcoming', limit: 16 }).catch(() => []),
   ]);
@@ -52,5 +40,5 @@ export default async function PredictionsPage() {
     matchCards(upcomingMatches),
   ]);
 
-  return <PredictionsHub performance={performance} live={live} upcoming={upcoming} />;
+  return <PredictionsHub performance={null} live={live} upcoming={upcoming} />;
 }

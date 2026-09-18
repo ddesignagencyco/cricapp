@@ -5,7 +5,6 @@ import {
   fetchMatchPredictions,
   fetchPredictionChart,
   fetchPredictionHistory,
-  fetchPredictionPerformance,
 } from '../../../services/predictions';
 import { sharePageMetadata } from '../../../services/sharing';
 
@@ -30,15 +29,13 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 export default async function MatchPredictionPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const matchId = decodeMatchId(id);
-  const match = await fetchMatchById(matchId);
-  if (!match) return notFound();
-
-  const [predictions, chart, history, performance] = await Promise.all([
-    fetchMatchPredictions(matchId),
-    fetchPredictionChart(matchId),
-    fetchPredictionHistory(matchId),
-    fetchPredictionPerformance().catch(() => null),
+  const [match, predictions, chart, history] = await Promise.all([
+    fetchMatchById(matchId),
+    fetchMatchPredictions(matchId).catch(() => null),
+    fetchPredictionChart(matchId).catch(() => null),
+    fetchPredictionHistory(matchId).catch(() => null),
   ]);
+  if (!match) return notFound();
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
@@ -47,7 +44,6 @@ export default async function MatchPredictionPage({ params }: { params: Promise<
         initialPredictions={predictions}
         initialChart={chart}
         initialHistory={history}
-        initialPerformance={performance}
       />
     </div>
   );

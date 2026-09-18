@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, type ComponentType, type ReactNode } from 'react';
 import Link from 'next/link';
-import { Calendar, Info, Target, Trophy, TrendingUp, Users, Zap } from 'lucide-react';
+import { Calendar, FileText, Info, Target, Trophy, TrendingUp, Users, Zap } from 'lucide-react';
 import EmptyState from '../EmptyState';
 import Badge, { StatusBadge } from '../Badge';
 import TeamLogo from '../TeamLogo';
@@ -76,6 +76,19 @@ export default function MatchPredictionsView({
   }, [liveUpdate]);
 
   useEffect(() => {
+    if (initialPerformance) return;
+    let cancelled = false;
+    fetchPredictionPerformance()
+      .then((next) => {
+        if (!cancelled && next) setPerformance(next);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [initialPerformance]);
+
+  useEffect(() => {
     if (!matchId) return;
     let cancelled = false;
     const load = async (refresh: boolean) => {
@@ -96,7 +109,7 @@ export default function MatchPredictionsView({
         if (!cancelled && !refresh) setLoading(false);
       }
     };
-    if (!seeded || live) void load(seeded);
+    if (!seeded) void load(false);
     if (!live) return () => { cancelled = true; };
     const timer = window.setInterval(() => { void load(true); }, 30000);
     return () => {
@@ -219,6 +232,13 @@ export default function MatchPredictionsView({
               </div>
             </div>
           </Panel>
+
+          {featured.narrative ? (
+            <Panel>
+              <CardTitle icon={FileText} title="Summary" />
+              <p className="mt-4 text-sm leading-relaxed text-mtext">{featured.narrative}</p>
+            </Panel>
+          ) : null}
 
           <Panel>
             <PredictionChart
