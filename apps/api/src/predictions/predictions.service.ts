@@ -279,11 +279,18 @@ export class PredictionsService {
     }
 
     const sampleSize = usable.length;
+    const publishMinSamples = Number(process.env.PREDICTION_PUBLISH_MIN_SAMPLES || 200);
+    const claimReady = sampleSize >= publishMinSamples;
     return {
       modelVersion: PREDICTION_MODELS.PREMATCH,
       sampleSize,
       accuracy: sampleSize ? Number((correct / sampleSize).toFixed(4)) : null,
       brierScore: sampleSize ? Number((brier / sampleSize).toFixed(4)) : null,
+      claimReady,
+      publishMinSamples,
+      guidance: claimReady
+        ? 'Sample is large enough to quote accuracy carefully by format.'
+        : `Do not market a headline accuracy % until sampleSize >= ${publishMinSamples} settled matches.`,
       byFormat: [...byFormat.entries()].map(([format, v]) => ({
         format,
         sampleSize: v.sampleSize,

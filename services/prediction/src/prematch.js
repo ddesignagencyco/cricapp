@@ -11,6 +11,7 @@ export const PREMATCH_WEIGHTS = Object.freeze({
   venue: 0.25,
   toss: 0.15,
   conditions: 0.2,
+  xi: 0.35,
 });
 
 export function confidenceBand(confidence) {
@@ -66,7 +67,8 @@ export function prematchConfidence(snapshot) {
   const n = Math.min(snapshot.form?.homeN ?? 0, snapshot.form?.awayN ?? 0);
   if (n < 3) return 0.35;
   const h2hBoost = (snapshot.h2h?.meetings ?? 0) >= 3 ? 0.1 : 0;
-  const sample = 0.5 + 0.4 * (1 - Math.exp(-n / 8)) + h2hBoost;
+  const xiBoost = snapshot.playerProjections?.xi?.reliability === 'high' ? 0.05 : 0;
+  const sample = 0.5 + 0.4 * (1 - Math.exp(-n / 8)) + h2hBoost + xiBoost;
   return Math.min(0.9, Number(sample.toFixed(4)));
 }
 
@@ -76,16 +78,22 @@ export function scorePrematch(snapshot) {
   const tableEdge = snapshot.table?.used ? (snapshot.table.edge ?? 0) : 0;
   const venue = snapshot.venueEdge ?? 0;
   const toss = snapshot.toss?.edge ?? 0;
+  const xiEdge = snapshot.xiEdge ?? 0;
   const projection = projectedScore(snapshot);
   const conditionsEdge = projection.conditions.winEdge;
+  const weights = {
+    ...PREMATCH_WEIGHTS,
+    ...(snapshot.weights ?? {}),
+  };
 
   const z =
-    PREMATCH_WEIGHTS.form * formEdge +
-    PREMATCH_WEIGHTS.h2h * h2hEdge +
-    PREMATCH_WEIGHTS.table * tableEdge +
-    PREMATCH_WEIGHTS.venue * venue +
-    PREMATCH_WEIGHTS.toss * toss +
-    PREMATCH_WEIGHTS.conditions * conditionsEdge;
+    weights.form * formEdge +
+    weights.h2h * h2hEdge +
+    weights.table * tableEdge +
+    weights.venue * venue +
+    weights.toss * toss +
+    weights.conditions * conditionsEdge +
+    (weights.xi ?? 0.35) * xiEdge;
 
   const calibrationSlope = Number(snapshot.calibration?.slope ?? 1);
   const calibrationIntercept = Number(snapshot.calibration?.intercept ?? 0);
@@ -94,12 +102,13 @@ export function scorePrematch(snapshot) {
   const awayWinProb = Number((1 - homeWinProb).toFixed(4));
   const confidence = prematchConfidence(snapshot);
   const factorAttributions = [
-    { factor: 'form', contribution: Number((PREMATCH_WEIGHTS.form * formEdge).toFixed(4)) },
-    { factor: 'head_to_head', contribution: Number((PREMATCH_WEIGHTS.h2h * h2hEdge).toFixed(4)) },
-    { factor: 'table', contribution: Number((PREMATCH_WEIGHTS.table * tableEdge).toFixed(4)) },
-    { factor: 'venue', contribution: Number((PREMATCH_WEIGHTS.venue * venue).toFixed(4)) },
-    { factor: 'toss', contribution: Number((PREMATCH_WEIGHTS.toss * toss).toFixed(4)) },
-    { factor: 'conditions', contribution: Number((PREMATCH_WEIGHTS.conditions * conditionsEdge).toFixed(4)) },
+    { factor: 'form', contribution: Number((weights.form * formEdge).toFixed(4)) },
+    { factor: 'head_to_head', contribution: Number((weights.h2h * h2hEdge).toFixed(4)) },
+    { factor: 'table', contribution: Number((weights.table * tableEdge).toFixed(4)) },
+    { factor: 'venue', contribution: Number((weights.venue * venue).toFixed(4)) },
+    { factor: 'toss', contribution: Number((weights.toss * toss).toFixed(4)) },
+    { factor: 'conditions', contribution: Number((weights.conditions * conditionsEdge).toFixed(4)) },
+    { factor: 'xi', contribution: Number(((weights.xi ?? 0.35) * xiEdge).toFixed(4)) },
   ];
 
   return {
@@ -114,15 +123,23 @@ export function scorePrematch(snapshot) {
     explanation: {
       z: Number(z.toFixed(4)),
       calibratedZ: Number(calibratedZ.toFixed(4)),
-      calibration: { slope: calibrationSlope, intercept: calibrationIntercept },
+      calibration: {
+        slope: calibrationSlope,
+        intercept: calibrationIntercept,
+        format: snapshot.format ?? null,
+        source: snapshot.calibration?.source ?? null,
+      },
       formEdge: Number(formEdge.toFixed(4)),
       h2hEdge: Number(h2hEdge.toFixed(4)),
       tableEdge: Number(tableEdge.toFixed(4)),
       venueEdge: venue,
       tossEdge: toss,
+      xiEdge: Number(xiEdge.toFixed(4)),
       conditionsImpact: projection.conditions,
-      weights: PREMATCH_WEIGHTS,
+      weights,
       tossAdjusted: toss !== 0,
+      tossDecision: snapshot.toss?.decision ?? null,
+      parSource: snapshot.parSource ?? null,
       factorAttributions,
     },
   };

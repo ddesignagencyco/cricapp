@@ -113,6 +113,8 @@ describe('PredictionsModule (integration)', () => {
     const res = await ctx.agent.get('/predictions/performance').expect(200);
     expect(res.body.sampleSize).toBe(1);
     expect(res.body.accuracy).toBe(1);
+    expect(res.body.claimReady).toBe(false);
+    expect(res.body.guidance).toContain('Do not market');
     expect(res.body.modelVersion).toBe(PREDICTION_MODELS.PREMATCH);
     expect(res.body.byConfidenceBand).toEqual([
       expect.objectContaining({ band: 'medium', sampleSize: 1, accuracy: 1 }),
