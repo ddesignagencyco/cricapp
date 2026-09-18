@@ -67,6 +67,14 @@ export class PredictionRunDto {
 
   @ApiPropertyOptional()
   wicketRisk: number | null;
+
+  @ApiPropertyOptional({
+    description: 'Natural-language explanation of this stored run. Does not change probabilities.',
+  })
+  narrative: string | null;
+
+  @ApiPropertyOptional({ enum: ['template', 'llm'] })
+  narrativeSource: string | null;
 }
 
 export class MatchPredictionsDto {

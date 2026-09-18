@@ -18,6 +18,7 @@ const PREMATCH_HORIZON_HOURS = Number(process.env.PREMATCH_HORIZON_HOURS || 720)
 const CALIBRATION_INTERVAL_MS = Number(process.env.CALIBRATION_INTERVAL_MS || 3600000);
 
 const liveThrottle = new Map();
+const liveFingerprints = new Map();
 
 function shouldScoreLive(matchId, over) {
   const now = Date.now();
@@ -29,6 +30,38 @@ function shouldScoreLive(matchId, over) {
   if (now - prev.at < LIVE_THROTTLE_MS && prev.over === over) return false;
   liveThrottle.set(matchId, { at: now, over });
   return true;
+}
+
+function liveFingerprint(snapshot) {
+  const innings = snapshot.currentInnings ?? {};
+  return [
+    snapshot.currentInning ?? '',
+    innings.runs ?? '',
+    innings.wickets ?? '',
+    innings.overs ?? '',
+    snapshot.target ?? '',
+    snapshot.displayScore ?? '',
+    snapshot.remainingOvers ?? '',
+    snapshot.requiredRunRate ?? '',
+  ].join('|');
+}
+
+function isLiveTrigger(event) {
+  if (!event?.matchId) return false;
+  const type = event.type;
+  if (
+    type === EVENT_TYPES.RUNS ||
+    type === EVENT_TYPES.WICKET ||
+    type === EVENT_TYPES.STATUS_CHANGE ||
+    type === EVENT_TYPES.MATCH_STARTED
+  ) {
+    return true;
+  }
+  // Full match snapshot from ingestion publishMatchState({ broadcast: true }).
+  if (!type && (event.status === 'live' || event.currentInnings)) {
+    return true;
+  }
+  return false;
 }
 
 export async function runPrematch(matchId) {
@@ -71,6 +104,10 @@ export async function runLive(matchId) {
     log.warn('live skipped — match not found', { matchId });
     return null;
   }
+  const fingerprint = liveFingerprint(snapshot);
+  if (liveFingerprints.get(matchId) === fingerprint) {
+    return null;
+  }
   const over = snapshot.currentInnings?.overs ?? 0;
   if (!shouldScoreLive(matchId, over)) return null;
   const previous = await latestLiveResult(query, matchId);
@@ -82,6 +119,7 @@ export async function runLive(matchId) {
     snapshot,
     result,
   });
+  liveFingerprints.set(matchId, fingerprint);
   log.info('live scored', { matchId, runId: id, homeWinProb: result.homeWinProb });
   return id;
 }
@@ -128,24 +166,15 @@ export async function startLiveSubscriber() {
     log.error('redis subscriber error', { error: err.message });
   });
 
-  sub.on('message', (channel, message) => {
+  sub.on('message', (_channel, message) => {
     let event;
     try {
       event = JSON.parse(message);
     } catch {
       return;
     }
+    if (!isLiveTrigger(event)) return;
     const matchId = event.matchId;
-    if (!matchId) return;
-    const type = event.type;
-    if (
-      type !== EVENT_TYPES.RUNS &&
-      type !== EVENT_TYPES.WICKET &&
-      type !== EVENT_TYPES.STATUS_CHANGE &&
-      type !== EVENT_TYPES.MATCH_STARTED
-    ) {
-      return;
-    }
     runLive(matchId).catch((err) => log.error('live score failed', { matchId, error: err.message }));
   });
 
@@ -156,10 +185,12 @@ export async function startLiveSubscriber() {
       if (!subscribed.has(channel)) {
         await sub.subscribe(channel);
         subscribed.add(channel);
-        runLive(matchId).catch((err) =>
-          log.error('live initial score failed', { matchId, error: err.message }),
-        );
       }
+      // Re-read Redis/Postgres on every refresh so live % keeps moving even when
+      // ingestion only publishes untyped snapshots (or Redis events are sparse).
+      runLive(matchId).catch((err) =>
+        log.error('live refresh score failed', { matchId, error: err.message }),
+      );
     }
     for (const channel of [...subscribed]) {
       const matchId = channel.slice('match:'.length);
@@ -167,6 +198,7 @@ export async function startLiveSubscriber() {
         await sub.unsubscribe(channel);
         subscribed.delete(channel);
         liveThrottle.delete(matchId);
+        liveFingerprints.delete(matchId);
       }
     }
   }
@@ -206,6 +238,7 @@ async function main() {
   log.info('prediction service started', {
     prematchIntervalMs: PREMATCH_INTERVAL_MS,
     liveThrottleMs: LIVE_THROTTLE_MS,
+    liveRefreshMs: LIVE_REFRESH_MS,
     calibrationIntervalMs: CALIBRATION_INTERVAL_MS,
   });
 }
