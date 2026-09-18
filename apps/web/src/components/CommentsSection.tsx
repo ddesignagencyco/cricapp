@@ -267,48 +267,17 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
       ) : comments.length === 0 ? (
         <p className="py-3 text-center text-xs text-stext">No comments yet. Be the first to share your take.</p>
       ) : (
-<<<<<<< HEAD
-        <ul className="space-y-3">
-          {comments.map((comment) => (
-            <li
-              id={`comment-${comment.id}`}
-              className={`scroll-mt-28 rounded bg-secondary p-3.5 ring-1 ${
-                highlightId === comment.id
-                  ? 'ring-2 ring-accent ring-offset-2 ring-offset-card'
-                  : 'ring-lborder'
-              }`}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex min-w-0 items-center gap-2.5">
-                  {(() => {
-                    const displayName = comment.user?.displayName || comment.user?.username || '??';
-                    const raw = (comment.user?.displayName || comment.user?.username || '').trim();
-                    let h = 0;
-                    for (let i = 0; i < raw.length; i++) h = raw.charCodeAt(i) + ((h << 5) - h);
-                    const hue = Math.abs(h % 360);
-                    return (
-                      <span
-                        className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[10px] font-bold text-white"
-                        style={{ backgroundImage: `linear-gradient(135deg, hsl(${hue}, 75%, 50%), hsl(${(hue + 40) % 360}, 85%, 35%))` }}
-                      >
-                        {displayName.slice(0, 2).toUpperCase()}
-                      </span>
-                    );
-                  })()}
-                  <div className="min-w-0">
-                    <p className="truncate text-xs font-bold text-mtext">
-                      {comment.user?.displayName || comment.user?.username || 'User'}
-                    </p>
-                    <p className="text-xs text-stext">
-                      {new Date(comment.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} ·{' '}
-                      {new Date(comment.createdAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
-                    </p>
-=======
         <ul className="divide-y divide-lborder">
           {comments.map((comment) => {
             const name = comment.user?.displayName || comment.user?.username || 'User';
             return (
-              <li key={comment.id} className="py-3 first:pt-1 last:pb-0">
+              <li
+                key={comment.id}
+                id={`comment-${comment.id}`}
+                className={`scroll-mt-28 py-3 first:pt-1 last:pb-0 ${
+                  highlightId === comment.id ? 'rounded-md ring-2 ring-accent ring-offset-2 ring-offset-card' : ''
+                }`}
+              >
                 <div className="flex items-start gap-2.5">
                   <CommentAvatar name={name} />
                   <div className="min-w-0 flex-1">
@@ -354,7 +323,6 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
                         </button>
                       )}
                     </div>
->>>>>>> 48030560175c0467a617b14773cb30bc5f1a7287
                   </div>
                 </div>
               </li>
