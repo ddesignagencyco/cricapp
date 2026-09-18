@@ -26,6 +26,7 @@ import {
   ScrollText,
   Inbox,
   Mail,
+  Sparkles,
 } from 'lucide-react';
 import { useAuth } from '../../../components/AuthProvider';
 import { useTheme } from '../../../components/ThemeProvider';
@@ -42,6 +43,7 @@ const adminNav = [
   { to: '/admin/teams', label: 'Teams', icon: Users },
   { to: '/admin/players', label: 'Players', icon: UserCircle },
   { to: '/admin/matches', label: 'Matches', icon: Trophy },
+  { to: '/admin/predictions', label: 'Predictions', icon: Sparkles },
   { to: '/admin/tournaments', label: 'Tournaments', icon: Newspaper },
   { to: '/admin/streams', label: 'Streams', icon: Radio },
   { to: '/admin/users', label: 'Users', icon: UserCircle },

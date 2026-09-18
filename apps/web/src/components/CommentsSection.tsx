@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Flag, Flame, Loader2, MessageSquare, SmilePlus, Trash2 } from 'lucide-react';
@@ -29,6 +29,14 @@ interface CommentsSectionProps {
   targetId: string;
 }
 
+function highlightedCommentId(): string {
+  if (typeof window === 'undefined') return '';
+  const queryId = new URLSearchParams(window.location.search).get('comment')?.trim();
+  if (queryId) return queryId;
+  const hash = window.location.hash.replace(/^#/, '').trim();
+  return hash.startsWith('comment-') ? hash.slice('comment-'.length) : '';
+}
+
 export default function CommentsSection({ targetType, targetId }: CommentsSectionProps) {
   const { user, isAuthenticated, isAdmin } = useAuth();
   const pathname = usePathname();
@@ -46,6 +54,8 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
   const [reportedIds, setReportedIds] = useState<string[]>([]);
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [commentCounts, setCommentCounts] = useState<Record<string, Record<string, number>>>({});
+  const [highlightId, setHighlightId] = useState('');
+  const requestedPageRef = useRef(0);
 
   const load = useCallback((nextPage = 1, append = false) => {
     if (!append) setLoading(true);
@@ -85,6 +95,30 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    const syncHighlight = () => setHighlightId(highlightedCommentId());
+    syncHighlight();
+    window.addEventListener('hashchange', syncHighlight);
+    return () => window.removeEventListener('hashchange', syncHighlight);
+  }, [pathname]);
+
+  useEffect(() => {
+    requestedPageRef.current = 0;
+  }, [targetType, targetId, highlightId]);
+
+  useEffect(() => {
+    if (!highlightId || loading) return;
+    const node = document.getElementById(`comment-${highlightId}`);
+    if (node) {
+      node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    const nextPage = page + 1;
+    if (nextPage > totalPages || requestedPageRef.current >= nextPage) return;
+    requestedPageRef.current = nextPage;
+    load(nextPage, true);
+  }, [highlightId, comments, loading, page, totalPages, load]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -235,7 +269,14 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
       ) : (
         <ul className="space-y-3">
           {comments.map((comment) => (
-            <li key={comment.id} className="rounded bg-secondary p-3.5 ring-1 ring-lborder">
+            <li
+              id={`comment-${comment.id}`}
+              className={`scroll-mt-28 rounded bg-secondary p-3.5 ring-1 ${
+                highlightId === comment.id
+                  ? 'ring-2 ring-accent ring-offset-2 ring-offset-card'
+                  : 'ring-lborder'
+              }`}
+            >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-2.5">
                   {(() => {

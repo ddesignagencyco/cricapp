@@ -23,7 +23,7 @@ export default function LiveNowSection({ matches }: { matches: Match[] }) {
   if (live.length === 0) return null;
 
   return (
-    <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6 mt-8">
+    <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
       <SectionHeader
         title="Live Now"
         subtitle={`${live.length} match${live.length === 1 ? '' : 'es'} in progress`}

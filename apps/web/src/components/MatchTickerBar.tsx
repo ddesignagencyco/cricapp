@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Badge, { normalizeStatus } from './Badge';
 import LiveIndicator from './LiveIndicator';
-import { getInitials } from '../utils/helpers';
+import { formatCricketOvers, getInitials } from '../utils/helpers';
 import { mergeLiveUpdate, useMatchStream } from '../hooks/useMatchStream';
 
 interface MatchTickerBarProps {
@@ -67,22 +67,23 @@ export default function MatchTickerBar({ matches: initialMatches }: MatchTickerB
   return (
     <div className="border-b border-lborder">
       <div className="mx-auto max-w-full px-4 sm:px-6">
-        <div className="relative py-3">
-          {canScrollLeft ? (
+        <div className="flex items-center gap-3 py-3">
+          {overflows ? (
             <button
               type="button"
               onClick={() => scroll('left')}
-              className="absolute left-0 top-1/2 z-10 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full bg-elevated text-stext ring-1 ring-lborder transition-colors hover:text-mtext"
+              disabled={!canScrollLeft}
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-elevated text-stext ring-1 ring-lborder transition-colors hover:text-mtext disabled:invisible"
               aria-label="Scroll left"
             >
-              <ChevronLeft size={15} />
+              <ChevronLeft size={16} />
             </button>
           ) : null}
 
           <div
             ref={scrollRef}
-            className={`no-scrollbar flex gap-3 overflow-x-auto scroll-smooth py-2 ${
-              overflows ? 'px-11' : 'justify-center px-2'
+            className={`no-scrollbar min-w-0 flex-1 flex gap-3 overflow-x-auto scroll-smooth py-2 ${
+              overflows ? '' : 'justify-center'
             }`}
           >
             {matches.map((m) => (
@@ -90,14 +91,15 @@ export default function MatchTickerBar({ matches: initialMatches }: MatchTickerB
             ))}
           </div>
 
-          {canScrollRight ? (
+          {overflows ? (
             <button
               type="button"
               onClick={() => scroll('right')}
-              className="absolute right-0 top-1/2 z-10 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full bg-elevated text-stext ring-1 ring-lborder transition-colors hover:text-mtext"
+              disabled={!canScrollRight}
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-elevated text-stext ring-1 ring-lborder transition-colors hover:text-mtext disabled:invisible"
               aria-label="Scroll right"
             >
-              <ChevronRight size={15} />
+              <ChevronRight size={16} />
             </button>
           ) : null}
         </div>
@@ -211,7 +213,7 @@ function TickerCard({ match }: { match: any }) {
         <div className="mt-2 flex h-4 items-center justify-center gap-1.5 overflow-hidden text-xs text-stext">
           {isLive && overs !== '' ? (
             <span className="shrink-0 font-semibold text-danger">
-              {Number(overs)} ov
+              {formatCricketOvers(overs) || overs} ov
               {match.currentInnings?.runRate ? ` • RR ${Number(match.currentInnings.runRate).toFixed(2)}` : ''}
             </span>
           ) : null}

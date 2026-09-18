@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { BarChart3, Calendar, Clock, MapPin, Radio, Trophy, Users } from 'lucide-react';
+import { BarChart3, Calendar, Clock, MapPin, Radio, Sparkles, Trophy, Users } from 'lucide-react';
 import LiveIndicator from '../LiveIndicator';
 import { StatusBadge } from '../Badge';
 import Tabs from '../Tabs';
@@ -21,18 +21,21 @@ import { fetchHeadToHead } from '../../services/headToHead';
 import { fetchNews } from '../../services/news';
 import { fetchTeams } from '../../services/teams';
 import { getInitials } from '../../utils/helpers';
-import { useMatchStream } from '../../hooks/useMatchStream';
+import { mergeMatchLivePayload, useMatchStream } from '../../hooks/useMatchStream';
+import MatchPredictionTab from '../predictions/MatchPredictionTab';
 import type { NewsArticle, Team } from '../../types';
 import { newsHref } from '../../utils/newsConstraints';
 
 const detailTabs = [
   { key: 'live', label: 'Live Score', icon: Users },
+  { key: 'predictions', label: 'Predictions', icon: Sparkles },
   { key: 'timeline', label: 'Timeline', icon: Radio },
   { key: 'info', label: 'Match Info', icon: MapPin },
 ];
 
 const completedTabs = [
   { key: 'info', label: 'Match Info', icon: MapPin },
+  { key: 'predictions', label: 'Predictions', icon: Sparkles },
   { key: 'timeline', label: 'Timeline', icon: Radio },
   { key: 'result', label: 'Result', icon: Trophy },
 ];
@@ -98,7 +101,7 @@ export default function MatchDetailBody({ match: initialMatch, headToHead: initi
       liveUpdate.data && typeof liveUpdate.data === 'object'
         ? (liveUpdate.data as Record<string, unknown>)
         : {};
-    setMatch((prev: any) => ({ ...prev, ...payload }));
+    setMatch((prev: any) => mergeMatchLivePayload(prev, payload));
   }, [liveUpdate]);
 
   useEffect(() => {
@@ -370,6 +373,10 @@ export default function MatchDetailBody({ match: initialMatch, headToHead: initi
                 message={match.status || (isCompleted || isCancelled ? 'This match has finished or was cancelled.' : 'No live data available.')}
               />
             ))}
+
+          {tab === 'predictions' && (
+            <MatchPredictionTab match={match} />
+          )}
 
           {tab === 'timeline' && (
             <div className="rounded-2xl bg-card p-6 ring-1 ring-lborder">

@@ -22,6 +22,7 @@ import {
   Search,
   Shield,
   ShieldCheck,
+  Sparkles,
   Sun,
   Trophy,
   User,
@@ -45,6 +46,7 @@ type NavItem = {
 const liveItems: NavItem[] = [
   { to: '/', label: 'Home', icon: Home },
   { to: '/matches', label: 'Matches', icon: Activity },
+  { to: '/predictions', label: 'Predictions', icon: Sparkles },
   { to: '/streams', label: 'Streams', icon: Radio },
   { to: '/schedules', label: 'Schedule', icon: Calendar },
 ];

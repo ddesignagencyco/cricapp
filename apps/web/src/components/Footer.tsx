@@ -11,6 +11,7 @@ const footerCols = [
     title: 'Cricket',
     links: [
       { label: 'Matches', to: '/matches' },
+      { label: 'Predictions', to: '/predictions' },
       { label: 'Teams', to: '/teams' },
       { label: 'Players', to: '/players' },
       { label: 'Authors', to: '/authors' },
