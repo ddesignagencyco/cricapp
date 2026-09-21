@@ -17,6 +17,7 @@ import {
   fetchTournamentResults,
   fetchTournamentSeasons,
   fetchMatchLineups,
+  fetchMatchSummary,
 } from './sportradar.js';
 import { normalizeLineups } from './normalize.js';
 import {
@@ -40,6 +41,7 @@ import {
   saveSportEventRecords,
   saveMatchTimeline,
   saveMatchLineup,
+  saveMatchSummary,
   saveHeadToHead,
   saveTeamProfile,
   savePlayerProfile,
@@ -48,10 +50,17 @@ import {
   listActiveSeasonIds,
   listActiveTournamentIds,
   listEventIdsWithoutTimeline,
+  listEventIdsWithoutMatchSummary,
   listHeadToHeadPairs,
   listTeamsWithoutSync,
   materializeTeamEvents,
   listMatchesForRosterlessTeams,
+  listPlayerIdsNeedingProfile,
+  backfillTeamFieldsFromProfiles,
+  backfillTeamFieldsFromLineups,
+  backfillTeamManagersFromPlayers,
+  backfillPlayerFieldsFromLineups,
+  backfillPlayerFieldsFromProfiles,
 } from './store.js';
 import { createLogger } from './logger.js';
 import { shouldSync, markSynced, REF_CADENCE } from './refState.js';
@@ -96,6 +105,83 @@ export async function syncTournamentSeasonsFor(tournamentId) {
   return count;
 }
 
+/**
+ * Backfill daily schedule + results for each day in [daysBack .. today].
+ * Ignores Redis staleness — use for one-time / manual fills.
+ */
+export async function syncDailyRange({ daysBack = 30, delayMs = 500 } = {}) {
+  let totalSchedule = 0;
+  let totalResults = 0;
+  for (let i = daysBack; i >= 0; i -= 1) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const date = isoDate(d);
+    const { scheduleCount, resultCount } = await syncDaily({ date });
+    totalSchedule += scheduleCount;
+    totalResults += resultCount;
+    if (delayMs > 0) await new Promise((r) => setTimeout(r, delayMs));
+  }
+  log.info(`daily range (${daysBack}d): ${totalSchedule} scheduled, ${totalResults} results`);
+  return { totalSchedule, totalResults };
+}
+
+/**
+ * Fetch full Sportradar timelines until the queue is empty or maxCalls is hit.
+ */
+export async function backfillTimelines({ batchSize = 40, maxCalls = 500, delayMs = 1100 } = {}) {
+  let synced = 0;
+  while (synced < maxCalls) {
+    const ids = await listEventIdsWithoutTimeline({
+      limit: Math.min(batchSize, maxCalls - synced),
+    });
+    if (!ids.length) break;
+    for (const id of ids) {
+      if (synced >= maxCalls) break;
+      try {
+        await syncMatchTimeline(id);
+        await markSynced('timeline', id, REF_CADENCE.timeline);
+        synced += 1;
+      } catch (err) {
+        warn(`timeline backfill failed for ${id}: ${err.message}`);
+      }
+      if (delayMs > 0) await new Promise((r) => setTimeout(r, delayMs));
+    }
+  }
+  log.info(`timeline backfill: synced ${synced} match(es)`);
+  return synced;
+}
+
+function teamPairs(teamIds) {
+  const pairs = [];
+  const uniq = [...new Set(teamIds.filter(Boolean))];
+  for (let i = 0; i < uniq.length; i += 1) {
+    for (let j = i + 1; j < uniq.length; j += 1) {
+      pairs.push([uniq[i], uniq[j]]);
+    }
+  }
+  return pairs;
+}
+
+/**
+ * Head-to-head for all team pairs (e.g. PSL franchises). Ignores staleness.
+ */
+export async function backfillHeadToHead({ teamIds, delayMs = 1100 } = {}) {
+  const pairs = teamPairs(teamIds);
+  let synced = 0;
+  for (const [a, b] of pairs) {
+    try {
+      await syncHeadToHead(a, b);
+      await markSynced('headToHead', `${a}::${b}`, REF_CADENCE.headToHead);
+      synced += 1;
+    } catch (err) {
+      warn(`head-to-head backfill failed for ${a} vs ${b}: ${err.message}`);
+    }
+    if (delayMs > 0) await new Promise((r) => setTimeout(r, delayMs));
+  }
+  log.info(`head-to-head backfill: synced ${synced}/${pairs.length} pair(s)`);
+  return synced;
+}
+
 export async function syncDaily({ date = isoDate(), schedule = true, results = true } = {}) {
   let scheduleCount = 0;
   let resultCount = 0;
@@ -134,6 +220,13 @@ export async function syncMatchTimeline(matchId) {
   return { matchId };
 }
 
+export async function syncMatchSummary(matchId) {
+  const raw = await fetchMatchSummary(matchId);
+  await saveMatchSummary(matchId, raw);
+  log.info(`match summary synced for ${matchId}`);
+  return { matchId };
+}
+
 export async function syncMatchLineups(matchId) {
   const raw = await fetchMatchLineups(matchId);
   await saveMatchLineup(matchId, raw);
@@ -149,22 +242,6 @@ export async function syncTeamProfile(teamId) {
   const raw = await fetchTeamProfile(teamId);
   const norm = normalizeTeamProfile(teamId, raw);
   await saveTeamProfile(norm);
-  // Upsert the base team row so profile fields surface in the read API.
-  const info = norm.teamInfo;
-  if (info?.id) {
-    await saveTeamsPlayers({
-      teams: [
-        {
-          id: info.id,
-          name: info.name ?? 'Unknown',
-          abbr: info.abbreviation ?? null,
-          country: info.country ?? null,
-          logoUrl: null,
-          manager: norm.manager?.name ?? null,
-        },
-      ],
-    });
-  }
   return { teamId };
 }
 
@@ -231,9 +308,11 @@ export async function refSyncAll(options = {}) {
     tournamentIds = [],
     delay = 500,
     timelineLimit = 20,
+    summaryLimit = 20,
     seasonLimit = 10,
     teamLimit = 10,
     lineupLimit = 20,
+    playerProfileLimit = 15,
   } = options;
 
   await runStale('tours', null, REF_CADENCE.tours, syncTourList);
@@ -282,6 +361,11 @@ export async function refSyncAll(options = {}) {
 
   // Timelines: auto-derive match ids that still lack a timeline (most recent
   // first), plus any env-configured ones. Each is fetched once ever.
+  const derivedSummaryIds = await listEventIdsWithoutMatchSummary({ limit: summaryLimit });
+  for (const id of [...new Set([...derivedSummaryIds, ...matchIds])]) {
+    await runStale('matchSummary', id, REF_CADENCE.matchSummary, () => syncMatchSummary(id), delay);
+  }
+
   const derivedMatchIds = await listEventIdsWithoutTimeline({ limit: timelineLimit });
   for (const id of [...new Set([...derivedMatchIds, ...matchIds])]) {
     await runStale('timeline', id, REF_CADENCE.timeline, () => syncMatchTimeline(id), delay);
@@ -295,9 +379,22 @@ export async function refSyncAll(options = {}) {
     await runStale('lineups', id, REF_CADENCE.lineups, () => syncMatchLineups(id), delay);
   }
 
-  for (const id of playerIds) {
+  const derivedPlayerIds = await listPlayerIdsNeedingProfile({ limit: playerProfileLimit });
+  for (const id of [...new Set([...derivedPlayerIds, ...playerIds])]) {
     await runStale('playerProfile', id, REF_CADENCE.playerProfile, () => syncPlayerProfile(id), delay);
   }
+
+  const profileTeams = await safeRun(backfillTeamFieldsFromProfiles);
+  const lineupTeams = await safeRun(() => backfillTeamFieldsFromLineups({ limit: 100 }));
+  const managerRows = await safeRun(backfillTeamManagersFromPlayers);
+  if (profileTeams) log.info(`team fields backfilled from profiles (${profileTeams})`);
+  if (lineupTeams) log.info(`team fields backfilled from lineups (${lineupTeams})`);
+  if (managerRows) log.info(`team managers backfilled from players (${managerRows})`);
+
+  const playerLineupRows = await safeRun(() => backfillPlayerFieldsFromLineups({ limit: 100 }));
+  const playerProfileRows = await safeRun(backfillPlayerFieldsFromProfiles);
+  if (playerLineupRows) log.info(`player fields backfilled from lineups (${playerLineupRows})`);
+  if (playerProfileRows) log.info(`player fields backfilled from profiles (${playerProfileRows})`);
 
   const s = getCallStats();
   log.info('reference sync cycle complete', { calls: s.calls, retries: s.retries });

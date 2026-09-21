@@ -653,6 +653,7 @@ model GalleryMedia {
   title        String?
   caption      String?  @db.Text
   type         String
+  purpose      String   @default("gallery")
   url          String
   publicId     String   @unique @map("public_id")
   resourceType String   @map("resource_type")
@@ -666,6 +667,7 @@ model GalleryMedia {
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   @@index([type])
+  @@index([purpose])
   @@index([createdAt])
   @@map("gallery_media")
 }

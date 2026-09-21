@@ -62,10 +62,15 @@ export class MediaService {
   async uploadGalleryMedia(
     file: Express.Multer.File,
     type: 'image' | 'short' | 'video',
+    purpose: 'gallery' | 'editorial' = 'gallery',
   ): Promise<MediaUploadResult> {
     const resourceType = type === 'image' ? 'image' : 'video';
+    const folder =
+      purpose === 'editorial'
+        ? 'cricapp/articles'
+        : `cricapp/gallery/${type}`;
     const uploaded = await this.upload(file, {
-      folder: `cricapp/gallery/${type}`,
+      folder,
       resourceType,
     });
 

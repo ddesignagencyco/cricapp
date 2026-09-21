@@ -221,6 +221,14 @@ export class MatchesService {
       where: { matchId },
     });
 
+    if (row) {
+      return {
+        matchId: row.matchId,
+        payload: row.payload as Record<string, unknown>,
+      };
+    }
+
+    // Cold miss only — keep reads fast; ingestion backfill should populate timelines.
     if (this.sportradar.isConfigured) {
       try {
         const fresh = await this.sportradar.fetchMatchTimeline(matchId);
@@ -236,24 +244,11 @@ export class MatchesService {
         });
         return { matchId, payload: fresh };
       } catch (err) {
-        if (row) {
-          return {
-            matchId: row.matchId,
-            payload: row.payload as Record<string, unknown>,
-          };
-        }
         if (err instanceof ServiceUnavailableException) throw err;
         throw new NotFoundException(`Timeline for match ${matchId} not found`);
       }
     }
 
-    if (!row) {
-      throw new NotFoundException(`Timeline for match ${matchId} not found`);
-    }
-
-    return {
-      matchId: row.matchId,
-      payload: row.payload as Record<string, unknown>,
-    };
+    throw new NotFoundException(`Timeline for match ${matchId} not found`);
   }
 }

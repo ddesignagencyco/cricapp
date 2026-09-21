@@ -10,7 +10,7 @@ import { createLogger } from './logger.js';
 
 export { computeRunRate, normalizeMatch, normalizeLineups } from './normalize.js';
 export { diffMatch, hasMatchChanged } from './diff.js';
-export { saveMatch, saveTeamsPlayers, publishMatchState, publishEvents } from './store.js';
+export { saveMatch, saveMatchSummary, saveTeamsPlayers, publishMatchState, publishEvents } from './store.js';
 export { pollOnce } from './poll.js';
 export { syncPsAll } from './pslSync.js';
 
@@ -107,9 +107,11 @@ const refSyncOptions = () => ({
     .map((p) => p.split('::')),
   delay: Number(process.env.REF_SYNC_DELAY_MS || 500),
   timelineLimit: Number(process.env.REF_SYNC_MATCH_LIMIT || 20),
+  summaryLimit: Number(process.env.REF_SYNC_SUMMARY_LIMIT || 20),
   seasonLimit: Number(process.env.REF_SYNC_SEASON_LIMIT || 10),
   teamLimit: Number(process.env.REF_SYNC_TEAMS_LIMIT || 10),
   lineupLimit: Number(process.env.REF_SYNC_LINEUP_LIMIT || 20),
+  playerProfileLimit: Number(process.env.REF_SYNC_PLAYER_PROFILE_LIMIT || 15),
 });
 
 const REF_SYNC_START_DELAY_MS = Number(process.env.REF_SYNC_START_DELAY_MS || 300000);

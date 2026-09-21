@@ -26,6 +26,7 @@ import {
 import { AdminGuard } from '../auth/admin.guard.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import {
+  AdminGalleryListQuery,
   GalleryListQuery,
   UploadGalleryMediaDto,
 } from './dto/gallery.dto.js';
@@ -38,15 +39,27 @@ export class GalleryController {
   constructor(private readonly galleryService: GalleryService) {}
 
   @Get()
-  @ApiOperation({ summary: 'List gallery media, optionally filtered by type' })
+  @ApiOperation({
+    summary: 'List public gallery media (images, shorts, videos)',
+  })
   list(@Query() query: GalleryListQuery) {
-    return this.galleryService.list(query);
+    return this.galleryService.listPublic(query);
+  }
+
+  @Get('library')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiCookieAuth()
+  @ApiOperation({
+    summary: 'Admin media library (filter by purpose: gallery or editorial)',
+  })
+  listLibrary(@Query() query: AdminGalleryListQuery) {
+    return this.galleryService.listAdmin(query);
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get one gallery media item' })
+  @ApiOperation({ summary: 'Get one public gallery media item' })
   getById(@Param('id') id: string) {
-    return this.galleryService.getById(id);
+    return this.galleryService.getByIdPublic(id);
   }
 
   @Post()
@@ -67,6 +80,7 @@ export class GalleryController {
       properties: {
         file: { type: 'string', format: 'binary' },
         type: { type: 'string', enum: ['image', 'short', 'video'] },
+        purpose: { type: 'string', enum: ['gallery', 'editorial'] },
         title: { type: 'string' },
         caption: { type: 'string' },
       },

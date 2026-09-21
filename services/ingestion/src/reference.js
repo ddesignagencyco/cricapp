@@ -140,7 +140,7 @@ export function normalizeTeamProfile(teamId, raw) {
   return {
     teamId,
     manager: raw?.manager ?? null,
-    teamInfo: raw?.team ?? null,
+    teamInfo: raw ?? null,
   };
 }
 

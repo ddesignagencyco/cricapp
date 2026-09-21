@@ -28,11 +28,11 @@ async function main() {
   // 2. Reference sync (tours, tournaments, daily schedules, profiles, timelines)
   log.info('2/4 Reference sync...');
   await refSyncAll({
-    delay: 1000,          // 1s delay between calls (safe for trial)
-    timelineLimit: 10,    // limit initial timelines
-    seasonLimit: 5,
-    teamLimit: 5,
-    lineupLimit: 10,
+    delay: Number(process.env.BACKFILL_DELAY_MS || 1000),
+    timelineLimit: Number(process.env.BACKFILL_TIMELINE_BATCH || 10),
+    seasonLimit: Number(process.env.BACKFILL_SEASON_LIMIT || 5),
+    teamLimit: Number(process.env.BACKFILL_TEAM_PROFILE_LIMIT || 5),
+    lineupLimit: Number(process.env.BACKFILL_LINEUP_LIMIT || 10),
   });
   log.info('Reference sync done');
 

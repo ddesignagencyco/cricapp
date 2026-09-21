@@ -1,7 +1,13 @@
 import { PROVIDERS } from './schemas.js';
 import { normalizeMatch } from './normalize.js';
 import { diffMatch, hasMatchChanged } from './diff.js';
-import { saveMatch, saveMatchTimeline, publishMatchState, publishEvents } from './store.js';
+import {
+  saveMatch,
+  saveMatchSummary,
+  saveMatchTimeline,
+  publishMatchState,
+  publishEvents,
+} from './store.js';
 import { getCallStats } from './sportradar.js';
 import redis, { redisKeys } from './redis.js';
 import {
@@ -12,6 +18,8 @@ import {
 } from './sportradar.js';
 
 const DELTAS_ENABLED = process.env.LIVE_TIMELINE_DELTAS === 'true';
+const TIMELINE_SNAPSHOT_EVERY = Number(process.env.LIVE_TIMELINE_SNAPSHOT_EVERY || 0);
+const SNAPSHOT_KEY = (id) => `live:timeline:snapshot:n:${id}`;
 const SEQ_KEY = (id) => `live:timeline:lastSeq:${id}`;
 const BUF_KEY = (id) => `live:timeline:buf:${id}`;
 
@@ -46,13 +54,22 @@ async function captureLiveTimelineDelta(matchId) {
  */
 async function flushLiveTimelineIfFinished(matchId, status) {
   if (status === 'live') return;
-  await redis.del(BUF_KEY(matchId), SEQ_KEY(matchId));
+  await redis.del(BUF_KEY(matchId), SEQ_KEY(matchId), SNAPSHOT_KEY(matchId));
   try {
     const raw = await fetchMatchTimeline(matchId);
     await saveMatchTimeline(matchId, raw);
   } catch (err) {
     console.warn(`[ingest] full timeline fetch failed for ${matchId}: ${err.message}`);
   }
+}
+
+/** Periodic full timeline fetch during live play (when deltas are off or as backup). */
+async function maybeSnapshotLiveTimeline(matchId) {
+  if (TIMELINE_SNAPSHOT_EVERY <= 0) return;
+  const n = Number(await redis.incr(SNAPSHOT_KEY(matchId)));
+  if (n % TIMELINE_SNAPSHOT_EVERY !== 0) return;
+  const raw = await fetchMatchTimeline(matchId);
+  await saveMatchTimeline(matchId, raw);
 }
 
 async function processLiveMatch(id) {
@@ -63,6 +80,7 @@ async function processLiveMatch(id) {
   const events = diffMatch(previous, next);
   const changed = hasMatchChanged(previous, next);
 
+  await saveMatchSummary(next.matchId, summary);
   await saveMatch(next);
   await publishMatchState(next, { broadcast: changed });
   if (events.length) {
@@ -75,6 +93,11 @@ async function processLiveMatch(id) {
   if (DELTAS_ENABLED) {
     await captureLiveTimelineDelta(id);
     await flushLiveTimelineIfFinished(id, next.status);
+  } else {
+    await maybeSnapshotLiveTimeline(id);
+    if (next.status !== 'live') {
+      await redis.del(SNAPSHOT_KEY(id));
+    }
   }
 }
 
