@@ -9,6 +9,7 @@ import MatchCard from '../MatchCard';
 import EmptyState from '../EmptyState';
 import TeamLogo from '../TeamLogo';
 import RemoteImage from '../RemoteImage';
+import EntityAvatar from '../EntityAvatar';
 import FavoriteButton from '../FavoriteButton';
 import ShareButton from '../ShareButton';
 import DummyAd from '../advertisements/DummyAd';
@@ -89,24 +90,10 @@ export default function PlayerDetailBody({ player, relatedNews = [] }: Props) {
                 alt={name}
                 width={80}
                 height={80}
-                className="h-20 w-20 rounded-full border border-lborder bg-secondary object-cover"
+                className="h-20 w-20 rounded-full border border-lborder bg-entity-avatar object-cover"
               />
             ) : (
-              (() => {
-                let hash = 0;
-                for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-                const hue = Math.abs(hash % 360);
-                return (
-                  <div
-                    className="grid h-20 w-20 place-items-center rounded-full text-xl font-semibold text-white"
-                    style={{
-                      backgroundImage: `linear-gradient(135deg, hsl(${hue}, 75%, 50%), hsl(${(hue + 40) % 360}, 85%, 35%))`,
-                    }}
-                  >
-                    {initials}
-                  </div>
-                );
-              })()
+              <EntityAvatar className="h-20 w-20 text-xl">{initials}</EntityAvatar>
             )}
           </div>
 

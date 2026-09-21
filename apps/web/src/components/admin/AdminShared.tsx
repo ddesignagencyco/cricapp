@@ -7,6 +7,7 @@ import { Check, ChevronDown } from 'lucide-react';
 import Badge, { StatusBadge as SharedStatusBadge } from '../Badge';
 import { getInitials } from '../../utils/helpers';
 import RemoteImage from '../RemoteImage';
+import EntityAvatar from '../EntityAvatar';
 import { AdminLoader, AdminTableSkeleton, type AdminLoadingVariant } from '../skeletons/Skeletons';
 import useFocusTrap from '../../hooks/useFocusTrap';
 
@@ -23,8 +24,8 @@ export function AdminEntityLink({
     <Link
       href={href}
       prefetch={false}
-      className={`font-semibold transition-colors hover:underline ${className}`}
-      style={{ color: 'var(--admin-accent)' }}
+      className={`font-semibold text-inherit transition-colors hover:underline hover:text-[var(--admin-text)] ${className}`}
+      style={{ color: 'inherit' }}
     >
       {children}
     </Link>
@@ -627,15 +628,6 @@ export function AdminAvatar({
   src?: string | null;
   size?: number;
 }) {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  const hue = Math.abs(hash % 360);
-  const style = {
-    width: size,
-    height: size,
-    backgroundImage: `linear-gradient(135deg, hsl(${hue}, 75%, 50%), hsl(${(hue + 40) % 360}, 85%, 35%))`,
-  };
-
   if (src) {
     return (
       <RemoteImage
@@ -643,19 +635,20 @@ export function AdminAvatar({
         alt={name}
         width={size}
         height={size}
-        className="shrink-0 rounded-full object-cover"
+        className="shrink-0 rounded-full bg-entity-avatar object-cover"
         style={{ width: size, height: size, border: '1px solid var(--admin-border)' }}
       />
     );
   }
 
   return (
-    <span
-      className="grid shrink-0 place-items-center rounded-full font-bold text-white"
-      style={{ ...style, fontSize: Math.max(9, Math.round(size * 0.36)) }}
+    <EntityAvatar
+      className="font-bold"
+      title={name}
+      style={{ width: size, height: size, fontSize: Math.max(9, Math.round(size * 0.36)) }}
     >
       {getInitials(name || '?')}
-    </span>
+    </EntityAvatar>
   );
 }
 

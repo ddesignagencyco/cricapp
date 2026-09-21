@@ -8,6 +8,7 @@ import ScrollTopButton from '../components/ScrollTopButton';
 import MobileBottomNav from './MobileBottomNav';
 import DummyAd from './advertisements/DummyAd';
 import { shouldHideDummyAds } from '../lib/advertisements/placements';
+import type { SiteSettings } from '../services/siteSettings';
 
 function isNewsArticlePath(pathname: string) {
   return /^\/(ur\/)?news\/.+/.test(pathname) || pathname.startsWith('/cricket-news/');
@@ -36,7 +37,13 @@ function showGlobalTopAd(pathname: string) {
   return true;
 }
 
-export default function ClientLayout({ children }: { children: ReactNode }) {
+export default function ClientLayout({
+  children,
+  settings,
+}: {
+  children: ReactNode;
+  settings?: SiteSettings | null;
+}) {
   const pathname = usePathname();
   const isAdmin = pathname.startsWith('/admin');
 
@@ -52,8 +59,10 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
           <DummyAd size="leaderboard" placement={`global-top:${pathname}`} />
         </div>
       ) : null}
-      <main id="main-content" className="min-h-screen min-w-0 flex-1 pb-16 lg:pb-0">{children}</main>
-      <Footer />
+      <main id="main-content" className="min-h-screen min-w-0 flex-1 pb-16 lg:pb-0">
+        {children}
+      </main>
+      <Footer settings={settings} />
       <MobileBottomNav />
       <ScrollTopButton />
     </>

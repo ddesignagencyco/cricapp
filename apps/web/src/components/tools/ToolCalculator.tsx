@@ -1,8 +1,6 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
 import CompareBoard from '../boards/CompareBoard';
 import {
   battingAverage,
@@ -14,48 +12,80 @@ import {
   formatRate,
   netRunRate,
   requiredRunRate,
+  type FollowOnDays,
 } from '../../lib/cricketMath';
-import { TOOLS, type ToolDef } from '../../lib/toolsCatalog';
+import { type ToolDef } from '../../lib/toolsCatalog';
 import { ToolGlyph } from './toolIcons';
-
-function Field({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  onChange: (_next: string) => void;
-}) {
-  return (
-    <label className="block">
-      <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-stext">{label}</span>
-      <input
-        type="number"
-        inputMode="decimal"
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-md border border-lborder bg-secondary px-3 py-2.5 font-mono text-sm font-semibold tabular-nums text-mtext outline-none transition-colors focus:border-accent"
-      />
-    </label>
-  );
-}
-
-function num(value: string): number {
-  return Number(value) || 0;
-}
+import { Field, MoreTools, ResultBox, ToolIntro, num } from './ToolShared';
+import ToolDls from './ToolDls';
+import ToolFantasy from './ToolFantasy';
+import ToolOdds from './ToolOdds';
+import ToolPlayerCompare from './ToolPlayerCompare';
+import ToolStoredPrediction from './ToolStoredPrediction';
+import ToolWhatIf from './ToolWhatIf';
 
 export default function ToolCalculator({ tool }: { tool: ToolDef }) {
+  switch (tool.kind) {
+    case 'compare':
+    case 'h2h':
+      return (
+        <div className="space-y-6">
+          <ToolIntro tool={tool} />
+          <CompareBoard />
+          <MoreTools currentSlug={tool.slug} />
+        </div>
+      );
+    case 'player-compare':
+      return <ToolPlayerCompare tool={tool} />;
+    case 'dls':
+      return <ToolDls tool={tool} />;
+    case 'odds':
+    case 'implied':
+      return <ToolOdds tool={tool} />;
+    case 'fantasy':
+      return <ToolFantasy tool={tool} />;
+    case 'what-if':
+    case 'match-sim':
+      return <ToolWhatIf tool={tool} />;
+    case 'predictions':
+    case 'score-predictor':
+      return <ToolStoredPrediction tool={tool} />;
+    case 'nrr':
+    case 'rrr':
+    case 'crr':
+    case 'sr':
+    case 'bat-avg':
+    case 'bowl-avg':
+    case 'econ':
+    case 'follow-on':
+      return <SimpleCalculator tool={tool} />;
+    default: {
+      const _unused: never = tool.kind;
+      return _unused;
+    }
+  }
+}
+
+function SimpleCalculator({ tool }: { tool: ToolDef }) {
   const [a, setA] = useState('');
   const [b, setB] = useState('');
   const [c, setC] = useState('');
   const [d, setD] = useState('');
-  const [days, setDays] = useState<'4' | '5'>('5');
+  const [days, setDays] = useState<FollowOnDays>(5);
+  const [allOutFor, setAllOutFor] = useState(false);
+  const [allOutAgainst, setAllOutAgainst] = useState(false);
+  const [scheduled, setScheduled] = useState('50');
 
   const result = useMemo(() => {
     switch (tool.kind) {
       case 'nrr':
-        return formatRate(netRunRate(num(a), num(b), num(c), num(d)));
+        return formatRate(
+          netRunRate(num(a), num(b), num(c), num(d), {
+            allOutFor,
+            allOutAgainst,
+            scheduledOvers: num(scheduled),
+          })
+        );
       case 'rrr':
         return formatRate(requiredRunRate(num(a), num(b)));
       case 'crr':
@@ -69,52 +99,13 @@ export default function ToolCalculator({ tool }: { tool: ToolDef }) {
       case 'econ':
         return formatRate(bowlingEconomy(num(a), num(b)));
       case 'follow-on': {
-        const check = followOnLead(num(a), num(b), days === '4' ? 4 : 5);
+        const check = followOnLead(num(a), num(b), days);
         return `Lead ${check.lead}. Need ${check.needed}. ${check.enforced ? 'Follow-on available.' : 'Not yet.'}`;
       }
-      case 'compare':
-      case 'predictions':
+      default:
         return '';
-      default: {
-        const _unused: never = tool.kind;
-        void _unused;
-        return '';
-      }
     }
-  }, [tool.kind, a, b, c, d, days]);
-
-  const others = TOOLS.filter((item) => item.slug !== tool.slug).slice(0, 6);
-
-  if (tool.kind === 'compare') {
-    return (
-      <div className="space-y-6">
-        <ToolIntro tool={tool} />
-        <CompareBoard />
-        <MoreTools tools={others} />
-      </div>
-    );
-  }
-
-  if (tool.kind === 'predictions') {
-    return (
-      <div className="space-y-6">
-        <ToolIntro tool={tool} />
-        <div className="rounded-md border border-accent bg-card p-5 sm:p-6">
-          <p className="text-sm leading-relaxed text-mtext">
-            Win chances come from stored statistical runs. This tool does not invent a new probability.
-          </p>
-          <Link
-            href="/predictions"
-            className="btn-brand mt-5 inline-flex items-center gap-1.5 rounded-md px-4 py-2 text-sm font-bold"
-          >
-            Open Predictions
-            <ArrowRight size={14} />
-          </Link>
-        </div>
-        <MoreTools tools={others} />
-      </div>
-    );
-  }
+  }, [tool.kind, a, b, c, d, days, allOutFor, allOutAgainst, scheduled]);
 
   const fields = fieldsFor(tool.kind);
 
@@ -143,71 +134,43 @@ export default function ToolCalculator({ tool }: { tool: ToolDef }) {
                 />
               ))}
             </div>
+            {tool.kind === 'nrr' && (
+              <div className="space-y-2">
+                <Field label="Scheduled overs (if all out)" value={scheduled} onChange={setScheduled} />
+                <label className="flex items-center gap-2 text-sm text-mtext">
+                  <input type="checkbox" checked={allOutFor} onChange={(event) => setAllOutFor(event.target.checked)} />
+                  Batting side all out
+                </label>
+                <label className="flex items-center gap-2 text-sm text-mtext">
+                  <input type="checkbox" checked={allOutAgainst} onChange={(event) => setAllOutAgainst(event.target.checked)} />
+                  Bowling side dismissed opponents
+                </label>
+              </div>
+            )}
             {tool.kind === 'follow-on' && (
               <label className="block">
                 <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-stext">
                   Match length
                 </span>
                 <select
-                  value={days}
-                  onChange={(event) => setDays(event.target.value === '4' ? '4' : '5')}
+                  value={String(days)}
+                  onChange={(event) => setDays(Number(event.target.value) as FollowOnDays)}
                   className="w-full rounded-md border border-lborder bg-secondary px-3 py-2.5 text-sm font-semibold text-mtext outline-none focus:border-accent"
                 >
-                  <option value="5">5 days — need 200</option>
-                  <option value="4">4 days — need 150</option>
+                  <option value="5">5 days — 200</option>
+                  <option value="4">4 days — 150</option>
+                  <option value="3">3 days — 150</option>
+                  <option value="2">2 days — 100</option>
+                  <option value="1">1 day — 75</option>
                 </select>
               </label>
             )}
           </div>
-
-          <div className="rounded-md border border-lborder bg-secondary px-4 py-4">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-stext">Result</p>
-            <p className="mt-3 break-words font-mono text-3xl font-black leading-tight tabular-nums text-accent">
-              {result || '—'}
-            </p>
-          </div>
+          <ResultBox value={result} />
         </div>
       </div>
-      <MoreTools tools={others} />
+      <MoreTools currentSlug={tool.slug} />
     </div>
-  );
-}
-
-function ToolIntro({ tool }: { tool: ToolDef }) {
-  return (
-    <div className="flex items-start gap-3">
-      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-md border border-lborder bg-card text-accent">
-        <ToolGlyph kind={tool.kind} size={20} />
-      </span>
-      <div className="min-w-0">
-        <h1 className="text-2xl font-black tracking-tight text-mtext sm:text-3xl">{tool.title}</h1>
-        <p className="mt-1 text-sm text-stext">{tool.blurb}</p>
-      </div>
-    </div>
-  );
-}
-
-function MoreTools({ tools }: { tools: ToolDef[] }) {
-  if (tools.length === 0) return null;
-  return (
-    <section>
-      <h2 className="mb-3 text-sm font-bold text-mtext">More tools</h2>
-      <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
-        {tools.map((item) => (
-            <li key={item.slug}>
-              <Link
-                href={`/tools/${item.slug}`}
-                className="flex items-center gap-3 rounded-md border border-lborder bg-card px-3 py-2.5 transition-colors hover:border-accent"
-              >
-                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md border border-lborder bg-secondary text-accent">
-                  <ToolGlyph kind={item.kind} size={14} />
-                </span>
-                <span className="min-w-0 truncate text-sm font-semibold text-mtext">{item.title}</span>
-              </Link>
-            </li>
-        ))}
-      </ul>
-    </section>
   );
 }
 
@@ -216,7 +179,7 @@ function fieldsFor(kind: ToolDef['kind']): Array<{ key: 'a' | 'b' | 'c' | 'd'; l
     case 'nrr':
       return [
         { key: 'a', label: 'Runs for' },
-        { key: 'b', label: 'Overs faced' },
+        { key: 'b', label: 'Overs faced (e.g. 48.3)' },
         { key: 'c', label: 'Runs against' },
         { key: 'd', label: 'Overs bowled' },
       ];
@@ -228,7 +191,7 @@ function fieldsFor(kind: ToolDef['kind']): Array<{ key: 'a' | 'b' | 'c' | 'd'; l
     case 'crr':
       return [
         { key: 'a', label: 'Runs scored' },
-        { key: 'b', label: 'Overs faced' },
+        { key: 'b', label: 'Overs faced (e.g. 12.4)' },
       ];
     case 'sr':
       return [
@@ -248,20 +211,14 @@ function fieldsFor(kind: ToolDef['kind']): Array<{ key: 'a' | 'b' | 'c' | 'd'; l
     case 'econ':
       return [
         { key: 'a', label: 'Runs conceded' },
-        { key: 'b', label: 'Overs bowled' },
+        { key: 'b', label: 'Overs bowled (e.g. 8.3)' },
       ];
     case 'follow-on':
       return [
         { key: 'a', label: 'First-innings total' },
         { key: 'b', label: 'Opponent score' },
       ];
-    case 'compare':
-    case 'predictions':
+    default:
       return [];
-    default: {
-      const _unused: never = kind;
-      void _unused;
-      return [];
-    }
   }
 }

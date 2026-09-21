@@ -2,7 +2,7 @@ import ToolsHub from '../../components/tools/ToolsHub';
 
 export const metadata = {
   title: 'Cricket tools',
-  description: 'Run-rate, average and comparison calculators. Predictions stay on stored match runs.',
+  description: 'Cricket calculators from the SRS: run rates, DLS, averages, comparisons, fantasy points and odds conversion.',
 };
 
 export default function ToolsIndexPage() {

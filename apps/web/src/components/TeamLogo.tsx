@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import RemoteImage from './RemoteImage';
+import EntityAvatar from './EntityAvatar';
 import { getInitials, getPslLogo } from '../utils/helpers';
 
 interface TeamLogoProps {
@@ -14,19 +15,12 @@ interface TeamLogoProps {
   link?: boolean;
 }
 
-function hueFromName(name: string) {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  return Math.abs(hash % 360);
-}
-
 export default function TeamLogo({ teamId, name, code, color, size = 'md', className = '', link = true }: TeamLogoProps) {
   const displayName = name || code || '';
   const abbr = (code || '').replace(/[^a-zA-Z0-9]/g, '');
   const initials = (abbr.length >= 2 && abbr.length <= 4 ? abbr : getInitials(displayName)).slice(0, 2).toUpperCase();
   const pslLogo = getPslLogo(code || '') || getPslLogo(teamId || '');
   const logo = pslLogo || null;
-  const hue = hueFromName(displayName);
   const sizes: Record<string, string> = {
     xs: 'h-6 w-6 text-xs',
     sm: 'h-8 w-8 text-xs',
@@ -60,13 +54,9 @@ export default function TeamLogo({ teamId, name, code, color, size = 'md', class
           style={color ? { borderColor: color } : undefined}
         />
       ) : (
-        <span
-          className="relative grid h-full w-full place-items-center rounded-full font-bold tracking-tight text-white"
-          style={{ backgroundImage: `linear-gradient(135deg, hsl(${hue}, 75%, 50%), hsl(${(hue + 40) % 360}, 85%, 35%))` }}
-          title={displayName}
-        >
+        <EntityAvatar className="relative h-full w-full font-bold tracking-tight" title={displayName}>
           {initials}
-        </span>
+        </EntityAvatar>
       )}
     </div>
   );

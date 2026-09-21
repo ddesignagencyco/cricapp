@@ -1,19 +1,21 @@
 @import "tailwindcss";
 
+@custom-variant light (&:where(.light, .light *));
+
 @theme {
   /* ============================================================
      Dark theme is the default. Every colour below is contrast
      checked against its own surface: body/secondary text and all
      status colours clear WCAG AA 4.5:1, borders clear 3:1.
      ============================================================ */
-
+     /* #3B68FC */
   /* Legacy Tailwind names — mapped to the same semantic roles */
   --color-primary: #08111F;
   --color-secondary: #142238;
   --color-card: #0E1A2B;
   --color-elevated: #142238;
-  --color-accent: #4DB4F0;
-  --color-accent2: #7CC8F5;
+  --color-accent: #8BA4FF;
+  --color-accent2: #A8BBFF;
   --color-gold: #FBBF24;
   --color-mtext: #F8FAFC;
   --color-stext: #CBD5E1;
@@ -39,18 +41,20 @@
   --color-input: #142238;
   --color-input-border: #3A4D67;
 
-  /* Filled buttons/pills: saturated cricket blue with white labels.
-     Accent (below) stays lighter so links still read on dark surfaces. */
-  --color-brand: #1878C0;
-  --color-brand-hover: #136EB0;
+  /* Filled chrome uses #3B68FC + white. Accent is a lighter tint of the
+     same hue so links and active text still pass on dark surfaces. */
+  --color-brand: #3B68FC;
+  --color-brand-hover: #547CFF;
   --color-brand-fg: #FFFFFF;
-  --color-brand-soft: #12314A;
-  --color-focus-ring: #4DB4F0;
+  --color-brand-soft: #1A2554;
+  --color-focus-ring: #8BA4FF;
 
-  /* Filled table/section headers keep a deep brand navy in dark mode
-     so they read as brand blue without becoming a bright band. */
-  --color-table-header: #12314A;
-  --color-table-header-fg: #F8FAFC;
+  --color-table-header: #3B68FC;
+  --color-table-header-fg: #FFFFFF;
+
+  /* Letter avatars for teams, players and match sides — same in both themes. */
+  --color-entity-avatar: #3B68FC;
+  --color-entity-avatar-fg: #FFFFFF;
 
   --color-success: #34D399;
   --color-success-soft: #0C2E26;
@@ -58,14 +62,14 @@
   --color-warning-soft: #33280A;
   --color-danger-soft: #3A1420;
   --color-neutral-soft: #1B2B42;
-  --color-info: #4DB4F0;
-  --color-info-soft: #12314A;
+  --color-info: #8BA4FF;
+  --color-info-soft: #1A2554;
   --color-live: #FB7185;
 
   /* Status chips need a brighter fg than button-fill brand, plus a lifted
      tint so they do not disappear into dark table rows. */
-  --color-badge-primary-fg: #7CC8F5;
-  --color-badge-primary-bg: #1A4568;
+  --color-badge-primary-fg: #8BA4FF;
+  --color-badge-primary-bg: #1A2554;
   --color-badge-success-fg: #6EE7B7;
   --color-badge-success-bg: #0F3D32;
   --color-badge-warning-fg: #FCD34D;
@@ -84,6 +88,10 @@
      the admin sidebar). Not theme-dependent, so declared only once. */
   --color-skeleton-on-dark: rgb(255 255 255 / 0.2);
   --color-skeleton-on-dark-highlight: rgb(255 255 255 / 0.38);
+
+  --color-chrome: rgb(8 17 31 / 0.95);
+  --color-chrome-fg: #F8FAFC;
+  --color-chrome-border: #2A3B52;
 
   /* Restrained two-layer elevation: tight contact shadow + soft ambient. */
   --elevation-surface: 0 1px 2px rgb(0 0 0 / 0.28);
@@ -113,8 +121,8 @@
   --color-secondary: #F6F8FB;
   --color-card: #FFFFFF;
   --color-elevated: #FFFFFF;
-  --color-accent: #1769A8;
-  --color-accent2: #125989;
+  --color-accent: #3B68FC;
+  --color-accent2: #2A4FE0;
   --color-gold: #B45309;
   --color-mtext: #101828;
   --color-stext: #475467;
@@ -140,14 +148,17 @@
   --color-input: #FFFFFF;
   --color-input-border: #C5CEDA;
 
-  --color-brand: #1769A8;
-  --color-brand-hover: #125989;
+  --color-brand: #3B68FC;
+  --color-brand-hover: #2A4FE0;
   --color-brand-fg: #FFFFFF;
-  --color-brand-soft: #E8F2FA;
-  --color-focus-ring: #3B82B9;
+  --color-brand-soft: #E8EDFF;
+  --color-focus-ring: #3B68FC;
 
-  --color-table-header: #1769A8;
+  --color-table-header: #3B68FC;
   --color-table-header-fg: #FFFFFF;
+
+  --color-entity-avatar: #3B68FC;
+  --color-entity-avatar-fg: #FFFFFF;
 
   --color-success: #047857;
   --color-success-soft: #E7F6F0;
@@ -155,12 +166,12 @@
   --color-warning-soft: #FDF3E7;
   --color-danger-soft: #FDECF1;
   --color-neutral-soft: #F0F3F8;
-  --color-info: #1769A8;
-  --color-info-soft: #E8F2FA;
+  --color-info: #3B68FC;
+  --color-info-soft: #E8EDFF;
   --color-live: #BE123C;
 
-  --color-badge-primary-fg: #1769A8;
-  --color-badge-primary-bg: #E8F2FA;
+  --color-badge-primary-fg: #3B68FC;
+  --color-badge-primary-bg: #E8EDFF;
   --color-badge-success-fg: #047857;
   --color-badge-success-bg: #E7F6F0;
   --color-badge-warning-fg: #B45309;
@@ -169,9 +180,15 @@
   --color-badge-danger-bg: #FDECF1;
   --color-badge-neutral-fg: #475467;
   --color-badge-neutral-bg: #F0F3F8;
-  --color-row-hover: #F2F6FA;
+  --color-row-hover: #F0F3FF;
   --color-skeleton: #E7EBF1;
   --color-skeleton-highlight: #F6F8FB;
+
+  --color-chrome: var(--color-entity-avatar);
+  --color-chrome-fg: var(--color-entity-avatar-fg);
+  --color-chrome-muted: rgb(255 255 255 / 0.86);
+  --color-chrome-hover: rgb(255 255 255 / 0.14);
+  --color-chrome-border: rgb(255 255 255 / 0.18);
 
   --elevation-surface: 0 1px 2px rgb(16 24 40 / 0.05);
   --elevation-card: 0 1px 2px rgb(16 24 40 / 0.05), 0 6px 18px rgb(16 24 40 / 0.06);
@@ -212,6 +229,24 @@ table tbody td {
   color: var(--color-text-secondary);
 }
 
+/* Names in the first column are often links; keep them on the same
+   ink as the other cells instead of browser/theme blue. */
+table tbody a {
+  color: inherit;
+}
+
+table tbody a:hover {
+  color: var(--color-text-primary);
+}
+
+.admin-shell table tbody a {
+  color: inherit;
+}
+
+.admin-shell table tbody a:hover {
+  color: var(--admin-text);
+}
+
 /* Numeric columns line up regardless of which table they live in. */
 table td:not(:first-child),
 table th:not(:first-child) {
@@ -232,8 +267,47 @@ html {
   color-scheme: light;
 }
 
+.site-chrome {
+  background-color: rgb(8 17 31 / 0.95);
+  border-color: var(--color-lborder);
+  color: var(--color-mtext);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+
+.light .site-chrome {
+  background-color: var(--color-entity-avatar);
+  border-color: var(--color-chrome-border);
+  color: var(--color-entity-avatar-fg);
+}
+
+header.site-chrome .site-nav-link,
+header.site-chrome .site-nav-link:hover,
+header.site-chrome .site-nav-link[aria-current='page'],
+header.site-chrome .site-nav-icon,
+header.site-chrome .site-nav-icon:hover,
+header.site-chrome .site-nav-icon[aria-expanded='true'] {
+  color: #ffffff;
+}
+
+header.site-chrome .site-nav-link[aria-current='page']::after {
+  background-color: #ffffff;
+}
+
+header.site-chrome .site-nav-icon:hover,
+header.site-chrome .site-nav-icon[aria-expanded='true'] {
+  background-color: rgb(255 255 255 / 0.14);
+}
+
+.mobile-bottom-nav {
+  --color-mtext: #ffffff;
+  --color-stext: #ffffff;
+  --color-accent: #ffffff;
+}
+
 body {
   background-color: var(--color-background);
+  background-image: none;
   color: var(--color-foreground, var(--color-mtext));
   font-family: var(--font-sans);
   font-size: 0.9375rem;
@@ -242,6 +316,33 @@ body {
   -moz-osx-font-smoothing: grayscale;
   /* Long team / tournament / venue names must never widen the page. */
   overflow-wrap: break-word;
+}
+
+html.light,
+.light body {
+  background-color: var(--color-background);
+  background-image:
+    url('/bg-desktop.svg'),
+    radial-gradient(ellipse 70% 52% at 80% -8%, #d2dcff 0%, transparent 58%),
+    radial-gradient(ellipse 55% 46% at -4% 18%, rgb(210 220 255 / 0.5) 0%, transparent 56%),
+    radial-gradient(ellipse 48% 38% at 30% 0%, rgb(255 235 157 / 0.55) 0%, transparent 54%),
+    radial-gradient(ellipse 42% 34% at 100% 6%, rgb(255 235 157 / 0.28) 0%, transparent 52%),
+    radial-gradient(ellipse 34% 28% at 48% 4%, rgb(252 194 201 / 0.62) 0%, transparent 50%),
+    radial-gradient(ellipse 38% 30% at 12% 12%, rgb(252 194 201 / 0.4) 0%, transparent 52%),
+    radial-gradient(ellipse 64% 48% at 96% 108%, rgb(210 220 255 / 0.62) 0%, transparent 58%),
+    radial-gradient(ellipse 54% 42% at 0% 106%, rgb(252 194 201 / 0.4) 0%, transparent 55%),
+    radial-gradient(ellipse 46% 36% at 50% 110%, rgb(255 235 157 / 0.34) 0%, transparent 52%);
+  background-repeat: no-repeat;
+  background-position: center top;
+  background-size: cover;
+  background-attachment: fixed;
+}
+
+@media print {
+  html.light,
+  .light body {
+    background-image: none;
+  }
 }
 
 /* ============================================================
@@ -333,6 +434,89 @@ textarea#comment-body:focus-visible {
 
 .elev-card {
   box-shadow: var(--elevation-card);
+}
+
+.prediction-card {
+  box-shadow: var(--elevation-card);
+  transition:
+    box-shadow 180ms ease,
+    transform 180ms ease,
+    border-color 180ms ease;
+}
+
+.prediction-card:hover {
+  box-shadow: var(--elevation-raised);
+  transform: translateY(-3px);
+}
+
+.prediction-card:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 3px;
+}
+
+.tool-card {
+  background-color: var(--color-card);
+  border: 1px solid var(--color-lborder);
+  border-radius: 1.25rem;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.55),
+    0 10px 28px rgb(16 24 40 / 0.08),
+    0 2px 6px rgb(16 24 40 / 0.05);
+  transform: translateY(0);
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    border-color 180ms ease;
+}
+
+.tool-card:hover {
+  transform: translateY(-5px);
+  border-color: color-mix(in srgb, var(--color-brand) 35%, var(--color-lborder));
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.7),
+    0 18px 36px rgb(59 104 252 / 0.14),
+    0 6px 14px rgb(16 24 40 / 0.08);
+}
+
+.dark .tool-card,
+:root:not(.light) .tool-card {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.06),
+    0 14px 30px rgb(0 0 0 / 0.35),
+    0 2px 8px rgb(0 0 0 / 0.28);
+}
+
+:root:not(.light) .tool-card:hover {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.1),
+    0 20px 40px rgb(59 104 252 / 0.18),
+    0 8px 16px rgb(0 0 0 / 0.32);
+}
+
+.tool-orb {
+  box-shadow:
+    inset 0 2px 0 rgb(255 255 255 / 0.45),
+    inset 0 -8px 12px rgb(16 24 40 / 0.12),
+    0 10px 18px rgb(59 104 252 / 0.22);
+}
+
+.tool-input {
+  min-height: 3rem;
+  width: 100%;
+  border-radius: 0.85rem;
+  border: 1px solid var(--color-input-border);
+  background: var(--color-surface-muted);
+  padding: 0.7rem 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-mtext);
+}
+
+.tool-input:focus {
+  border-color: var(--color-brand);
+  outline: none;
+  box-shadow: 0 0 0 4px var(--color-brand-soft);
 }
 
 .elev-raised {
@@ -833,8 +1017,8 @@ h3.news-copy[dir="rtl"] {
   --admin-sidebar-text: #F8FAFC;
   --admin-sidebar-muted: #C3D7E6;
   --admin-sidebar-border: rgba(255, 255, 255, 0.1);
-  --admin-sidebar-active: #1B6FB0;
-  --admin-sidebar-active-fg: #FFFFFF;
+  --admin-sidebar-active: var(--color-table-header);
+  --admin-sidebar-active-fg: var(--color-table-header-fg);
   --admin-card: var(--color-surface);
   --admin-card-hover: var(--color-surface-elevated);
   --admin-border: var(--color-border);

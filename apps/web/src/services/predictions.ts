@@ -8,7 +8,6 @@ import type {
   PredictionChart,
   PredictionHistory,
   PredictionPerformance,
-  PredictionRun,
 } from '../types/predictions';
 
 function normalizeMatchId(id: string): string {
@@ -104,11 +103,11 @@ export async function fetchAdminPredictionRuns(
     stage?: string;
     modelVersion?: string;
   } = {}
-): Promise<{ items: PredictionRun[]; total: number; totalPages: number }> {
+): Promise<{ items: AdminPredictionRunDetail[]; total: number; totalPages: number }> {
   const res = await apiGet('/admin/predictions/runs', { page: 1, limit: 20, ...params }, {
     headers: authHeaders(),
   });
-  const { items, meta } = extractPage<PredictionRun>(res);
+  const { items, meta } = extractPage<AdminPredictionRunDetail>(res);
   return { items, total: meta.total, totalPages: meta.totalPages };
 }
 

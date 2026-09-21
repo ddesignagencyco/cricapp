@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Badge, { normalizeStatus } from './Badge';
 import LiveIndicator from './LiveIndicator';
+import EntityAvatar from './EntityAvatar';
 import { formatCricketOvers, getInitials } from '../utils/helpers';
 import { mergeLiveUpdate, useMatchStream } from '../hooks/useMatchStream';
 
@@ -189,7 +190,7 @@ function TickerCard({ match }: { match: any }) {
     <Link
       href={`/matches/${match.matchId || match.id}`}
       prefetch={false}
-      className="elev-raised group flex w-[260px] shrink-0 flex-col overflow-hidden rounded-xl bg-card p-3 ring-1 ring-lborder transition-colors hover:bg-[var(--color-row-hover)] hover:ring-border-strong"
+      className="group flex w-[260px] shrink-0 flex-col overflow-hidden rounded-xl bg-card p-3 ring-1 ring-lborder transition-colors hover:bg-[var(--color-row-hover)] hover:ring-border-strong"
     >
       <div className="mb-2 flex items-center justify-between gap-2">
         <span className="min-w-0 truncate text-xs font-semibold tracking-wide text-stext">
@@ -271,17 +272,7 @@ function scheduleTime(match: any): string {
 }
 
 function TeamMini({ label }: { label: string }) {
-  let hash = 0;
-  const key = label || '?';
-  for (let i = 0; i < key.length; i++) hash = key.charCodeAt(i) + ((hash << 5) - hash);
-  const hue = Math.abs(hash % 360);
-
   return (
-    <span
-      className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-white/10 text-xs font-black text-white"
-      style={{ backgroundImage: `linear-gradient(135deg, hsl(${hue}, 70%, 50%), hsl(${(hue + 40) % 360}, 80%, 35%))` }}
-    >
-      {getInitials(label)}
-    </span>
+    <EntityAvatar className="h-7 w-7 text-xs font-black">{getInitials(label)}</EntityAvatar>
   );
 }

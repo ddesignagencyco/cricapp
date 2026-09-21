@@ -34,8 +34,46 @@ export type SiteSettingsInput = {
   socials?: SiteSocialLink[];
 };
 
+export const EMPTY_SITE_SETTINGS: SiteSettings = {
+  email: null,
+  supportEmail: null,
+  phone: null,
+  whatsapp: null,
+  address: null,
+  city: null,
+  country: null,
+  mapsUrl: null,
+  workingHours: null,
+  socials: [],
+  updatedAt: null,
+};
+
+export function formatSiteLocation(settings: Pick<SiteSettings, 'address' | 'city' | 'country'>): string {
+  const street = settings.address?.trim() || '';
+  const place = [settings.city?.trim(), settings.country?.trim()].filter(Boolean).join(', ');
+  if (street && place) return `${street}, ${place}`;
+  return street || place;
+}
+
+export function publicSocials(settings: Pick<SiteSettings, 'socials'>): SiteSocialLink[] {
+  return (settings.socials || []).filter((item) => item.platform?.trim() && item.value?.trim());
+}
+
+export function mapsHref(url?: string | null): string | null {
+  const raw = url?.trim() || '';
+  return /^https?:\/\//i.test(raw) ? raw : null;
+}
+
 export function fetchSiteSettings(): Promise<SiteSettings> {
   return apiGet<SiteSettings>('/site-settings');
+}
+
+export async function loadSiteSettings(): Promise<SiteSettings> {
+  try {
+    return await apiGet<SiteSettings>('/site-settings', undefined, { revalidate: 60 });
+  } catch {
+    return EMPTY_SITE_SETTINGS;
+  }
 }
 
 export function saveSiteSettings(input: SiteSettingsInput): Promise<SiteSettings> {

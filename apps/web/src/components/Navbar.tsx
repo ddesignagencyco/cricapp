@@ -160,7 +160,7 @@ export default function Navbar() {
 
   return (
     <>
-    <header className="sticky top-0 z-40 h-14 shrink-0 border-b border-lborder bg-primary/95 backdrop-blur-md">
+    <header className="site-chrome sticky top-0 z-40 h-14 shrink-0 border-b">
       <a
         href="#main-content"
         className="btn-brand fixed left-3 top-3 z-50 -translate-y-20 rounded px-3 py-2 text-sm font-medium focus:translate-y-0"
@@ -176,7 +176,7 @@ export default function Navbar() {
               key={item.to}
               href={item.to}
               aria-current={isActive(item.to) ? 'page' : undefined}
-              className={`relative px-3 py-2 text-sm font-medium transition-colors ${isActive(item.to)
+              className={`site-nav-link relative px-3 py-2 text-sm font-medium transition-colors ${isActive(item.to)
                 ? 'text-accent after:absolute after:inset-x-2 after:-bottom-1 after:h-0.5 after:rounded-full after:bg-accent'
                 : 'text-stext hover:text-mtext'
                 }`}
@@ -191,7 +191,7 @@ export default function Navbar() {
             <button
               type="button"
               onClick={toggle}
-              className="grid h-9 w-9 place-items-center rounded text-stext transition-colors hover:bg-[var(--color-row-hover)] hover:text-mtext"
+              className="site-nav-icon grid h-9 w-9 place-items-center rounded text-stext transition-colors hover:bg-[var(--color-row-hover)] hover:text-mtext"
               aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
             >
               {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
@@ -204,7 +204,7 @@ export default function Navbar() {
               setSearchOpen((s) => !s);
               setMobileOpen(false);
             }}
-            className="grid h-9 w-9 place-items-center rounded text-stext transition-colors hover:bg-[var(--color-row-hover)] hover:text-mtext"
+            className="site-nav-icon grid h-9 w-9 place-items-center rounded text-stext transition-colors hover:bg-[var(--color-row-hover)] hover:text-mtext"
             aria-label="Search"
           >
             <Search size={18} />
@@ -219,8 +219,10 @@ export default function Navbar() {
               <button
                 type="button"
                 onClick={toggleMenu}
-                className={`grid h-9 w-9 place-items-center rounded transition-colors ${
-                  menuOpen ? 'bg-card text-accent' : 'text-stext hover:bg-[var(--color-row-hover)] hover:text-mtext'
+                className={`site-nav-icon grid h-9 w-9 place-items-center rounded transition-colors ${
+                  menuOpen
+                    ? 'bg-card text-accent'
+                    : 'text-stext hover:bg-[var(--color-row-hover)] hover:text-mtext'
                 }`}
                 aria-label="Account menu"
                 aria-expanded={menuOpen}
@@ -302,7 +304,7 @@ export default function Navbar() {
                   toggleMenu();
                   setMobileOpen(false);
                 }}
-                className={`grid h-9 w-9 place-items-center rounded transition-colors ${
+                className={`site-nav-icon grid h-9 w-9 place-items-center rounded transition-colors ${
                   menuOpen || pathname.startsWith('/login') || pathname.startsWith('/register')
                     ? 'bg-card text-accent'
                     : 'text-stext hover:bg-[var(--color-row-hover)] hover:text-mtext'
@@ -377,7 +379,7 @@ export default function Navbar() {
           />
           <div
             id="mobile-navigation"
-            className="fixed inset-x-0 top-14 bottom-14 z-[30] overflow-y-auto border-t border-lborder bg-primary lg:hidden"
+            className="site-chrome fixed inset-x-0 top-14 bottom-14 z-[30] overflow-y-auto border-t lg:hidden"
           >
             <div className="mx-auto max-w-7xl px-4 pb-8 pt-4 sm:px-6">
               <div className="mb-3 flex items-center justify-between">

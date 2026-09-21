@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Calendar, CalendarDays, MapPin, Newspaper, Trophy } from 'lucide-react';
+import { Calendar, CalendarDays, MapPin, Newspaper } from 'lucide-react';
 import EmptyState from '../../../components/EmptyState';
 import DummyAd from '../../../components/advertisements/DummyAd';
 import { StatusBadge } from '../../../components/Badge';
@@ -10,7 +10,8 @@ import FavoriteButton from '../../../components/FavoriteButton';
 import ShareButton from '../../../components/ShareButton';
 import Tabs from '../../../components/Tabs';
 import { RelatedNewsPanel, useLinkedNews } from '../../../components/boards/RelatedNewsPanel';
-import { APP_TIME_ZONE } from '../../../utils/helpers';
+import EntityAvatar from '../../../components/EntityAvatar';
+import { APP_TIME_ZONE, getInitials } from '../../../utils/helpers';
 import type { SportEventRecord, TournamentSeason } from '../../../types/index';
 
 function getCategoryName(cat: unknown): string {
@@ -183,9 +184,9 @@ export default function TournamentDetailPageClient({
         </div>
 
         <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center">
-          <span className="grid h-14 w-14 shrink-0 place-items-center rounded-md border border-lborder bg-secondary text-accent">
-            <Trophy size={22} />
-          </span>
+          <EntityAvatar className="h-14 w-14 text-lg">
+            {getInitials(String(tournament.name || 'Tournament'))}
+          </EntityAvatar>
           <div className="min-w-0 flex-1">
             <h1 className="text-2xl font-semibold text-mtext">{tournament.name}</h1>
             <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-stext">

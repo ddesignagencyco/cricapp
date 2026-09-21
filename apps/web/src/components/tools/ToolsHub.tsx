@@ -17,7 +17,7 @@ export default function ToolsHub() {
             </p>
             <h1 className="mt-2 text-3xl font-black tracking-tight text-mtext sm:text-4xl">Tools</h1>
             <p className="mt-2 max-w-xl text-sm text-stext">
-              Run rates, averages and a follow-on check. Win chances stay on Predictions — these pages do not invent match odds.
+              SRS calculators, comparisons and converters. Stored prediction tools only read existing model runs — they do not invent scores or odds.
             </p>
           </div>
           <p className="shrink-0 text-xs text-stext">

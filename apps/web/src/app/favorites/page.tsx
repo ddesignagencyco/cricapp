@@ -21,6 +21,7 @@ import toast from 'react-hot-toast';
 import { listFavorites, removeFavorite, type FavoriteItem, type FavoriteTarget } from '../../services/favorites';
 import { useAuth } from '../../components/AuthProvider';
 import RemoteImage from '../../components/RemoteImage';
+import EntityAvatar from '../../components/EntityAvatar';
 import { StatusBadge } from '../../components/Badge';
 import Tabs from '../../components/Tabs';
 import EmptyState from '../../components/EmptyState';
@@ -414,7 +415,7 @@ function TeamFavCard({
             className="h-11 w-11 shrink-0 rounded-full border border-lborder bg-white object-contain p-1"
           />
         ) : (
-          <Avatar hue={hueFrom(name)} initials={initials} />
+          <EntityAvatar className="h-11 w-11 text-sm">{initials.slice(0, 2).toUpperCase()}</EntityAvatar>
         )}
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 items-baseline gap-2">
@@ -459,10 +460,10 @@ function PlayerFavCard({
             alt={name}
             width={48}
             height={48}
-            className="h-12 w-12 shrink-0 rounded-full border border-lborder bg-secondary object-cover"
+            className="h-12 w-12 shrink-0 rounded-full border border-lborder bg-entity-avatar object-cover"
           />
         ) : (
-          <Avatar hue={hueFrom(name)} initials={getInitials(name)} size="lg" />
+          <EntityAvatar className="h-12 w-12 text-sm">{getInitials(name)}</EntityAvatar>
         )}
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 items-center gap-2">
@@ -623,9 +624,7 @@ function TourFavCard({
   return (
     <FavShell isBusy={isBusy} onRemove={onRemove}>
       <Link href={href} className="flex min-w-0 flex-1 items-center gap-3">
-        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-md border border-lborder bg-secondary text-accent">
-          <Globe size={18} />
-        </span>
+        <EntityAvatar className="h-11 w-11 text-sm">{getInitials(name)}</EntityAvatar>
         <div className="min-w-0 flex-1">
           <h3 className="truncate text-sm font-semibold text-mtext transition-colors group-hover:text-accent">{name}</h3>
           <p className="mt-0.5 truncate text-xs text-stext">
@@ -658,9 +657,7 @@ function TournamentFavCard({
   return (
     <FavShell isBusy={isBusy} onRemove={onRemove}>
       <Link href={href} className="flex min-w-0 flex-1 items-center gap-3">
-        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-md border border-lborder bg-secondary text-accent">
-          <Trophy size={18} />
-        </span>
+        <EntityAvatar className="h-11 w-11 text-sm">{getInitials(name)}</EntityAvatar>
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 items-center gap-2">
             <h3 className="min-w-0 truncate text-sm font-semibold text-mtext transition-colors group-hover:text-accent">{name}</h3>
@@ -748,21 +745,8 @@ function RemoveBtn({ isBusy, onRemove, always = false }: { isBusy: boolean; onRe
   );
 }
 
-function Avatar({ hue, initials, size = 'md' }: { hue: number; initials: string; size?: 'md' | 'lg' }) {
-  const dim = size === 'lg' ? 'h-12 w-12 text-sm' : 'h-11 w-11 text-sm';
-  return (
-    <span
-      className={`grid ${dim} shrink-0 place-items-center rounded-full font-semibold text-white`}
-      style={{ backgroundImage: `linear-gradient(135deg, hsl(${hue}, 68%, 46%), hsl(${(hue + 38) % 360}, 72%, 32%))` }}
-    >
-      {initials.slice(0, 2).toUpperCase()}
-    </span>
-  );
-}
-
 function MatchTeamRow({ name, code }: { name: string; code: string }) {
   const pslLogo = getPslLogo(code);
-  const hue = hueFrom(code || name);
   return (
     <div className="flex items-center gap-2.5">
       {pslLogo ? (
@@ -774,12 +758,7 @@ function MatchTeamRow({ name, code }: { name: string; code: string }) {
           className="h-7 w-7 shrink-0 rounded-full border border-lborder bg-white object-contain p-0.5"
         />
       ) : (
-        <span
-          className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[10px] font-semibold text-white"
-          style={{ backgroundImage: `linear-gradient(135deg, hsl(${hue}, 65%, 48%), hsl(${(hue + 28) % 360}, 75%, 32%))` }}
-        >
-          {getInitials(name || code)}
-        </span>
+        <EntityAvatar className="h-7 w-7 text-[10px]">{getInitials(name || code)}</EntityAvatar>
       )}
       <p className="min-w-0 flex-1 truncate text-sm font-semibold text-mtext">{name}</p>
     </div>
@@ -858,12 +837,6 @@ function formatRole(raw?: string): string {
     .split(' ')
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(' ');
-}
-
-function hueFrom(seed: string): number {
-  let hash = 0;
-  for (let i = 0; i < seed.length; i++) hash = seed.charCodeAt(i) + ((hash << 5) - hash);
-  return Math.abs(hash % 360);
 }
 
 function isTabKey(value: string): value is TabKey {

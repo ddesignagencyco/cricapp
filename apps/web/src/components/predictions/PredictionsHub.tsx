@@ -65,7 +65,7 @@ export default function PredictionsHub({
           <div>
             <h1 className="text-3xl font-black tracking-tight text-mtext sm:text-4xl">Predictions</h1>
             <p className="mt-2 max-w-xl text-sm text-stext">
-              Who looks more likely to win, before the toss and while the match is on.
+              Modelled win probabilities · Live and upcoming matches
             </p>
           </div>
           <p className="text-xs text-stext">
@@ -125,7 +125,7 @@ export default function PredictionsHub({
 
       {visible.length > 0 ? (
         <section>
-          <div className="grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid items-stretch gap-4 [grid-template-columns:repeat(auto-fill,minmax(min(100%,20rem),1fr))]">
             {visible.map(({ match, predictions, chartPoints }) => (
               <PredictionMatchCard
                 key={String(match.matchId || match.id)}
@@ -157,7 +157,7 @@ export default function PredictionsHub({
 
 function PerformanceStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-3xl border border-lborder bg-card p-5">
+    <div className="prediction-card rounded-xl border border-lborder/80 bg-card p-5">
       <p className="text-xs font-bold uppercase tracking-widest text-stext">{label}</p>
       <p className="mt-2 font-mono text-3xl font-black tabular-nums text-accent">{value}</p>
     </div>
@@ -173,7 +173,7 @@ function Breakdown({
 }) {
   if (rows.length === 0) return null;
   return (
-    <div className="rounded-3xl border border-lborder bg-card p-5">
+    <div className="prediction-card rounded-xl border border-lborder/80 bg-card p-5">
       <p className="mb-3 text-xs font-bold uppercase tracking-widest text-stext">{title}</p>
       <ul className="space-y-3">
         {rows.map((row) => (

@@ -1,6 +1,8 @@
 import Link from 'next/link';
+import { BarChart3 } from 'lucide-react';
 import TeamLogo from '../TeamLogo';
 import Badge from '../Badge';
+import LiveIndicator from '../LiveIndicator';
 import WinProbabilityBar from './WinProbabilityBar';
 import {
   asPercent,
@@ -32,14 +34,13 @@ function extraText(match: Match, key: string): string {
   return typeof value === 'string' ? value.trim() : '';
 }
 
-function RingMeter({ label, value }: { label: string; value: number | null }) {
-  const show = value !== null && Number(value) > 0;
-  const pct = show ? Math.max(0, Math.min(100, Number(value) * 100)) : 0;
-  const radius = 15;
+function RingMeter({ label, value }: { label: string; value: number }) {
+  const pct = Math.max(0, Math.min(100, Number(value) * 100));
+  const radius = 15.5;
   const circ = 2 * Math.PI * radius;
   return (
-    <div className={show ? 'text-center' : 'invisible'} aria-hidden={!show}>
-      <div className="relative mx-auto h-[3.25rem] w-[3.25rem]">
+    <div className="text-center">
+      <div className="relative mx-auto h-14 w-14">
         <svg viewBox="0 0 36 36" className="-rotate-90" aria-hidden="true">
           <circle
             cx="18"
@@ -47,7 +48,7 @@ function RingMeter({ label, value }: { label: string; value: number | null }) {
             r={radius}
             fill="none"
             stroke="var(--color-lborder)"
-            strokeWidth="3"
+            strokeWidth="2.4"
           />
           <circle
             cx="18"
@@ -55,17 +56,17 @@ function RingMeter({ label, value }: { label: string; value: number | null }) {
             r={radius}
             fill="none"
             stroke="var(--color-accent)"
-            strokeWidth="3"
+            strokeWidth="2.4"
             strokeLinecap="round"
             strokeDasharray={circ}
             strokeDashoffset={circ * (1 - pct / 100)}
           />
         </svg>
         <span className="absolute inset-0 grid place-items-center font-mono text-[11px] font-black tabular-nums text-mtext">
-          {show ? asPercent(value) : '—'}
+          {asPercent(value)}
         </span>
       </div>
-      <p className="mt-1.5 truncate text-[10px] font-semibold text-stext">{label}</p>
+      <p className="mt-1.5 truncate text-[10px] font-semibold tracking-wide text-stext">{label}</p>
     </div>
   );
 }
@@ -92,10 +93,21 @@ export default function PredictionMatchCard({ match, predictions }: Props) {
   const wicketRisk = run && !isNil(run.wicketRisk) ? Number(run.wicketRisk) : null;
   const lean = momentumLine(run?.momentum, sides);
   const live = run?.stage === 'live' || status === 'live';
-
+  const insight = [situation.needLine, lean, why].filter(Boolean).join(' ');
   const showPhase = Boolean(phase && phase !== 'Upcoming' && phase !== 'Live');
+  const inningsLabel =
+    situation.inning === 1 ? '1st innings' : situation.inning === 2 ? '2nd innings' : '';
+  const overLabel = situation.modelOver !== null ? `Over ${situation.modelOver}` : '';
+  const scoreMeta = [inningsLabel || (showPhase ? phase : ''), overLabel].filter(Boolean).join(' · ');
+  const meters = [
+    confidence !== null && confidence > 0 ? { label: 'Confidence', value: confidence } : null,
+    pressure !== null && pressure > 0 ? { label: 'Pressure', value: pressure } : null,
+    !finished && wicketRisk !== null && wicketRisk > 0
+      ? { label: 'Wicket soon', value: wicketRisk }
+      : null,
+  ].filter((row): row is { label: string; value: number } => row !== null);
   const facts = [
-    score ? { label: 'Score', value: score } : null,
+    !situation.scoreLine && score ? { label: 'Score', value: score } : null,
     showPhase ? { label: 'Status', value: phase } : null,
     situation.inning !== null
       ? { label: 'Innings', value: situation.inning === 1 ? '1st' : situation.inning === 2 ? '2nd' : String(situation.inning) }
@@ -122,39 +134,40 @@ export default function PredictionMatchCard({ match, predictions }: Props) {
   return (
     <Link
       href={href}
-      className="flex h-full flex-col rounded-md border border-lborder bg-card p-5 transition-colors hover:border-accent"
+      className="prediction-card flex h-full flex-col rounded-xl border border-lborder/80 bg-card p-5"
     >
-      <div className="mb-3 flex items-center justify-between gap-2">
-        <p className="truncate text-[11px] font-bold uppercase tracking-widest text-stext">
+      <div className="mb-4 flex items-center justify-between gap-2">
+        <p className="truncate text-[11px] font-bold uppercase tracking-[0.14em] text-stext">
           {String(match.tournament || 'Match')}
         </p>
-        <Badge tone={live ? 'live' : 'primary'}>
-          {run ? stageLabel(run.stage) : live ? 'Live' : 'Upcoming'}
-        </Badge>
+        {live ? (
+          <LiveIndicator label={run ? stageLabel(run.stage) : 'Live'} />
+        ) : (
+          <Badge tone="primary">{run ? stageLabel(run.stage) : 'Upcoming'}</Badge>
+        )}
       </div>
 
       <div className="mb-4 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-        <div className="flex min-w-0 items-center gap-2">
+        <div className="flex min-w-0 items-center gap-2.5">
           <TeamLogo code={sides.homeCode} name={sides.homeName} size="md" link={false} />
-          <div className="min-w-0">
-            <p className="font-mono text-[10px] font-bold tracking-wider text-stext">{sides.homeCode}</p>
-            <p className="truncate text-sm font-bold text-mtext">{sides.homeName}</p>
-          </div>
+          <p className="truncate text-sm font-semibold text-mtext">{sides.homeName}</p>
         </div>
-        <span className="text-[10px] font-bold text-stext">VS</span>
-        <div className="flex min-w-0 items-center justify-end gap-2 text-right">
-          <div className="min-w-0">
-            <p className="font-mono text-[10px] font-bold tracking-wider text-stext">{sides.awayCode}</p>
-            <p className="truncate text-sm font-bold text-mtext">{sides.awayName}</p>
-          </div>
+        <span className="text-[10px] font-bold uppercase tracking-widest text-stext">vs</span>
+        <div className="flex min-w-0 items-center justify-end gap-2.5 text-right">
+          <p className="truncate text-sm font-semibold text-mtext">{sides.awayName}</p>
           <TeamLogo code={sides.awayCode} name={sides.awayName} size="md" link={false} />
         </div>
       </div>
 
       {situation.scoreLine ? (
-        <p className="mb-3 truncate font-mono text-lg font-black tabular-nums text-mtext">
-          {situation.scoreLine}
-        </p>
+        <div className="mb-4">
+          <p className="truncate text-xl font-black tabular-nums tracking-tight text-mtext">
+            {situation.scoreLine}
+          </p>
+          {scoreMeta ? (
+            <p className="mt-1 text-xs font-medium text-stext">{scoreMeta}</p>
+          ) : null}
+        </div>
       ) : null}
 
       {run ? (
@@ -166,28 +179,33 @@ export default function PredictionMatchCard({ match, predictions }: Props) {
             awayWinProb={run.awayWinProb}
             compact
           />
-          <div className="mt-4 grid grid-cols-3 gap-2.5">
-            <RingMeter label="Confidence" value={confidence} />
-            <RingMeter label="Pressure" value={pressure !== null && pressure > 0 ? pressure : null} />
-            <RingMeter label="Wicket soon" value={!finished && wicketRisk !== null && wicketRisk > 0 ? wicketRisk : null} />
-          </div>
-          <div className="mt-3 min-h-10 space-y-1">
-            {situation.needLine ? (
-              <p className="line-clamp-2 text-xs font-semibold text-accent">{situation.needLine}</p>
-            ) : null}
-            {lean ? <p className="truncate text-xs font-semibold text-mtext">{lean}</p> : null}
-            {why ? <p className="line-clamp-2 text-xs text-stext">{why}</p> : null}
-          </div>
+          {meters.length > 0 ? (
+            <div
+              className={`mt-5 grid justify-items-center gap-4 ${
+                meters.length === 1 ? 'grid-cols-1' : meters.length === 2 ? 'grid-cols-2' : 'grid-cols-3'
+              }`}
+            >
+              {meters.map((meter) => (
+                <RingMeter key={meter.label} label={meter.label} value={meter.value} />
+              ))}
+            </div>
+          ) : null}
+          {insight ? (
+            <div className="mt-4 flex items-start gap-2.5 rounded-lg bg-surface-muted px-3 py-2.5">
+              <BarChart3 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent" strokeWidth={2.25} />
+              <p className="line-clamp-2 text-xs font-medium leading-relaxed text-stext">{insight}</p>
+            </div>
+          ) : null}
         </div>
       ) : (
         <p className="text-sm text-stext">Chance of winning not ready yet</p>
       )}
 
       {facts.length > 0 ? (
-        <div className="mt-auto grid grid-cols-2 gap-x-3 gap-y-3 border-t border-lborder pt-4">
+        <div className="mt-auto grid grid-cols-2 gap-x-5 gap-y-3 border-t border-lborder/80 pt-5">
           {facts.map((fact) => (
             <div key={fact.label} className="min-w-0">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-stext">{fact.label}</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-stext">{fact.label}</p>
               <p className="mt-0.5 truncate text-xs font-semibold text-mtext" title={fact.value}>
                 {fact.value}
               </p>

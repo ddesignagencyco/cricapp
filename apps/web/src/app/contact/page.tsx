@@ -1,5 +1,6 @@
 import ContactBody from '../../components/boards/ContactBody';
 import Newsletter from '../../components/Newsletter';
+import { loadSiteSettings } from '../../services/siteSettings';
 
 export const metadata = {
   title: 'Contact',
@@ -7,7 +8,9 @@ export const metadata = {
     'Get in touch with the PAK CRICZONE team for feedback, partnerships or general enquiries.',
 };
 
-export default function ContactPage() {
+export default async function ContactPage() {
+  const settings = await loadSiteSettings();
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
       <div className="space-y-10">
@@ -20,7 +23,7 @@ export default function ContactPage() {
             Drop us a message and we&apos;ll get back to you as soon as possible.
           </p>
         </div>
-        <ContactBody />
+        <ContactBody settings={settings} />
         <Newsletter />
       </div>
     </div>

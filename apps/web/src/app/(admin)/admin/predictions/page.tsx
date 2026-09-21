@@ -26,7 +26,6 @@ import type {
   AdminPredictionModelVersion,
   AdminPredictionRunDetail,
   PredictionPlayerPick,
-  PredictionRun,
 } from '../../../../types/predictions';
 import { formatScheduled } from '../../../../utils/helpers';
 
@@ -35,7 +34,7 @@ const LIMIT = 20;
 export default function AdminPredictionsPage() {
   const [models, setModels] = useState<AdminPredictionModelVersion[]>([]);
   const [calibration, setCalibration] = useState<AdminPredictionCalibration | null>(null);
-  const [runs, setRuns] = useState<PredictionRun[]>([]);
+  const [runs, setRuns] = useState<AdminPredictionRunDetail[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);

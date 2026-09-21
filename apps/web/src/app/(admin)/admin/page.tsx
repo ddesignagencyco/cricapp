@@ -39,6 +39,7 @@ import { asPercent, stageLabel } from '../../../lib/predictions';
 import { fetchAdminPredictionModels, fetchAdminPredictionRuns } from '../../../services/predictions';
 import type { AdminPredictionModelVersion, PredictionRun } from '../../../types/predictions';
 import { getInitials } from '../../../utils/helpers';
+import EntityAvatar from '../../../components/EntityAvatar';
 import NewsCopy from '../../../components/NewsCopy';
 
 function userRank(user: AdminUser): number {
@@ -564,7 +565,7 @@ function MatchPreviewTable({
                     onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--admin-table-row-hover)'; }}
                     onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
                   >
-                    <td className="px-4 py-2.5">
+                    <td className="px-4 py-2.5" style={{ color: 'var(--admin-text)' }}>
                       {m.matchId || m.id ? (
                         <AdminEntityLink href={`/matches/${m.matchId || m.id}`}>
                           <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
@@ -744,15 +745,7 @@ function MetricCard({
 
 function TeamBadge({ code }: { code: string }) {
   if (!code) return null;
-  let hash = 0;
-  for (let i = 0; i < code.length; i++) hash = code.charCodeAt(i) + ((hash << 5) - hash);
-  const hue = Math.abs(hash % 360);
   return (
-    <span
-      className="grid h-6 w-6 shrink-0 place-items-center rounded-full text-[10px] font-bold text-white"
-      style={{ backgroundImage: `linear-gradient(135deg, hsl(${hue}, 70%, 50%), hsl(${(hue + 40) % 360}, 80%, 35%))` }}
-    >
-      {getInitials(code)}
-    </span>
+    <EntityAvatar className="h-6 w-6 text-[10px] font-bold">{getInitials(code)}</EntityAvatar>
   );
 }

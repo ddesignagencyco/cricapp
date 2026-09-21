@@ -3,7 +3,17 @@
 import { useEffect, useState } from 'react';
 import { Heart, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { addFavorite, listFavorites, removeFavorite, type FavoriteItem, type FavoriteTarget } from '../services/favorites';
+import {
+  addFavorite,
+  loadFavoritesForHearts,
+  peekFavoriteCache,
+  rememberFavoriteAdded,
+  rememberFavoriteRemoved,
+  removeFavorite,
+  subscribeFavoriteCache,
+  type FavoriteItem,
+  type FavoriteTarget,
+} from '../services/favorites';
 import { useAuth } from './AuthProvider';
 
 interface FavoriteButtonProps {
@@ -20,12 +30,45 @@ export default function FavoriteButton({ targetType, targetId, compact = false, 
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (!isAuthenticated) return;
-    setLoading(true);
-    listFavorites(targetType)
-      .then((items) => setFavorite(items.find((f) => f.targetId === targetId) || null))
-      .catch(() => setFavorite(null))
-      .finally(() => setLoading(false));
+    if (!isAuthenticated) {
+      setFavorite(null);
+      setLoading(false);
+      return;
+    }
+
+    const apply = (items: FavoriteItem[]) => {
+      setFavorite(items.find((item) => item.targetId === targetId) || null);
+    };
+
+    const cached = peekFavoriteCache(targetType);
+    if (cached) {
+      apply(cached);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
+
+    let cancelled = false;
+    loadFavoritesForHearts(targetType)
+      .then((items) => {
+        if (!cancelled) apply(items);
+      })
+      .catch(() => {
+        if (!cancelled) setFavorite(null);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    const unsubscribe = subscribeFavoriteCache(() => {
+      const next = peekFavoriteCache(targetType);
+      if (next) apply(next);
+    });
+
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
   }, [isAuthenticated, targetType, targetId]);
 
   const toggle = async () => {
@@ -37,10 +80,12 @@ export default function FavoriteButton({ targetType, targetId, compact = false, 
     try {
       if (favorite) {
         await removeFavorite(favorite.id);
+        rememberFavoriteRemoved(targetType, favorite.id);
         setFavorite(null);
         toast.success('Removed from favorites.');
       } else {
         const added = await addFavorite(targetType, targetId);
+        rememberFavoriteAdded(added);
         setFavorite(added);
         toast.success('Added to favorites.');
       }

@@ -31,7 +31,7 @@ export default function MobileBottomNav() {
 
   return (
     <nav
-      className="mobile-bottom-nav fixed inset-x-0 bottom-0 z-40 border-t border-lborder bg-primary/95 backdrop-blur-md lg:hidden"
+      className="site-chrome mobile-bottom-nav fixed inset-x-0 bottom-0 z-40 border-t lg:hidden"
       aria-label="Primary"
     >
       <ul className="mx-auto grid max-w-lg grid-cols-5">

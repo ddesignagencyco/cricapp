@@ -57,7 +57,7 @@ export default function HomePredictions({ picks }: { picks: HomePredictionPick[]
       <div className={`grid grid-cols-1 gap-3 ${others.length > 0 ? 'lg:grid-cols-[1.4fr_0.8fr]' : ''}`}>
         <Link
           href={`/predictions/${featuredId}`}
-          className="overflow-hidden rounded-md border border-lborder bg-card p-5 transition-colors hover:border-accent sm:p-6"
+          className="prediction-card overflow-hidden rounded-xl border border-lborder/80 bg-card p-5 sm:p-6"
         >
           <div className="mb-5 flex flex-wrap items-center justify-between gap-2">
             <div className="flex flex-wrap items-center gap-2">
@@ -119,7 +119,7 @@ export default function HomePredictions({ picks }: { picks: HomePredictionPick[]
                 <Link
                   key={id}
                   href={`/predictions/${id}`}
-                  className="rounded-md border border-lborder bg-card px-4 py-3.5 transition-colors hover:border-accent"
+                  className="prediction-card rounded-xl border border-lborder/80 bg-card px-4 py-3.5"
                 >
                   <div className="mb-2 flex items-center justify-between gap-2">
                     <p className="truncate text-[11px] font-bold uppercase tracking-wider text-stext">

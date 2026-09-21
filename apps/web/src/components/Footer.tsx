@@ -1,8 +1,17 @@
 'use client';
 
 import Link from 'next/link';
-import { Download } from 'lucide-react';
+import { Download, Mail, MapPin, Phone } from 'lucide-react';
 import Logo from './Logo';
+import SiteSocialLinks from './SiteSocialLinks';
+import SocialBrandIcon from './admin/SocialBrandIcon';
+import {
+  formatSiteLocation,
+  mapsHref,
+  publicSocials,
+  type SiteSettings,
+} from '../services/siteSettings';
+import { phoneHref, whatsappHref } from '../lib/socialPlatforms';
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -40,7 +49,14 @@ const footerCols = [
   },
 ];
 
-export default function Footer() {
+export default function Footer({ settings }: { settings?: SiteSettings | null }) {
+  const location = settings ? formatSiteLocation(settings) : '';
+  const socials = settings ? publicSocials(settings) : [];
+  const email = settings?.email?.trim() || '';
+  const phone = settings?.phone?.trim() || '';
+  const whatsapp = settings?.whatsapp?.trim() || '';
+  const mapLink = mapsHref(settings?.mapsUrl);
+
   return (
     <footer className="mt-16 border-t border-lborder bg-card">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
@@ -50,6 +66,50 @@ export default function Footer() {
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-stext">
               Every Run. Every Ball. Live. Your home for cricket live scores, PSL fixtures, teams, players and in-depth analysis.
             </p>
+            {(email || phone || whatsapp || location) ? (
+              <ul className="mt-4 max-w-xs space-y-1.5 text-sm text-stext">
+                {email ? (
+                  <li>
+                    <a href={`mailto:${email}`} className="inline-flex items-center gap-2 hover:text-accent">
+                      <Mail size={13} className="shrink-0" />
+                      {email}
+                    </a>
+                  </li>
+                ) : null}
+                {phone ? (
+                  <li>
+                    <a href={phoneHref(phone)} className="inline-flex items-center gap-2 hover:text-accent">
+                      <Phone size={13} className="shrink-0" />
+                      {phone}
+                    </a>
+                  </li>
+                ) : null}
+                {whatsapp ? (
+                  <li>
+                    <a href={whatsappHref(whatsapp)} className="inline-flex items-center gap-2 hover:text-accent" target="_blank" rel="noopener noreferrer">
+                      <SocialBrandIcon id="whatsapp" size={16} />
+                      {whatsapp}
+                    </a>
+                  </li>
+                ) : null}
+                {location ? (
+                  <li>
+                    {mapLink ? (
+                      <a href={mapLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-start gap-2 hover:text-accent">
+                        <MapPin size={13} className="mt-0.5 shrink-0" />
+                        {location}
+                      </a>
+                    ) : (
+                      <span className="inline-flex items-start gap-2">
+                        <MapPin size={13} className="mt-0.5 shrink-0" />
+                        {location}
+                      </span>
+                    )}
+                  </li>
+                ) : null}
+              </ul>
+            ) : null}
+            <SiteSocialLinks socials={socials} className="mt-4" />
           </div>
 
           {footerCols.map((col) => (

@@ -118,7 +118,6 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
               style={{
                 background: active ? 'var(--admin-sidebar-active)' : 'transparent',
                 color: active ? 'var(--admin-sidebar-active-fg)' : 'var(--admin-sidebar-muted)',
-                boxShadow: active ? 'inset 0 0 0 1px rgba(255, 255, 255, 0.16)' : undefined,
               }}
             >
               <Icon size={18} aria-hidden="true" />
@@ -143,7 +142,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   );
 
   return (
-    <div className="flex min-h-screen" style={{ background: 'var(--admin-bg)' }}>
+    <div className="admin-shell flex min-h-screen" style={{ background: 'var(--admin-bg)' }}>
       <a
         href="#admin-content"
         className="btn-brand fixed left-3 top-3 z-[60] -translate-y-20 rounded px-3 py-2 text-sm font-medium focus:translate-y-0"

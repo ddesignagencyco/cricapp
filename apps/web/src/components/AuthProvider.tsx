@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { getCurrentUser, logout as logoutService } from '../services/auth';
+import { clearFavoriteCache } from '../services/favorites';
 import type { AuthUser } from '../types/auth';
 import { ApiError } from '../services/api/client';
 
@@ -36,6 +37,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
         // Keep going; session probe failed for a non-auth reason.
       }
       setUser(null);
+      clearFavoriteCache();
     } finally {
       setLoading(false);
     }
@@ -47,6 +49,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => {
     void logoutService();
+    clearFavoriteCache();
     setUser(null);
   }, []);
 

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Calendar, Clock, MapPin } from 'lucide-react';
 import { StatusBadge, BlinkingDot } from './Badge';
 import RemoteImage from './RemoteImage';
+import EntityAvatar from './EntityAvatar';
 import { formatCricketOvers, formatScheduled, getInitials, getPslLogo } from '../utils/helpers';
 
 interface MatchCardProps {
@@ -194,9 +195,6 @@ function TeamRow({
   live?: boolean;
 }) {
   const pslLogo = getPslLogo(code);
-  let hash = 0;
-  for (let i = 0; i < code.length; i++) hash = code.charCodeAt(i) + ((hash << 5) - hash);
-  const hue = Math.abs(hash % 360);
 
   return (
     <div className="flex items-center gap-2.5">
@@ -209,15 +207,9 @@ function TeamRow({
           className="h-7 w-7 shrink-0 rounded-full border border-lborder bg-white object-contain p-0.5"
         />
       ) : (
-        <span
-          className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[10px] font-semibold text-white"
-          style={{
-            backgroundImage: `linear-gradient(135deg, hsl(${hue}, 65%, 48%), hsl(${(hue + 28) % 360}, 75%, 32%))`,
-          }}
-          title={name}
-        >
+        <EntityAvatar className="h-7 w-7 text-[10px]" title={name}>
           {getInitials(name || code)}
-        </span>
+        </EntityAvatar>
       )}
       <p className={`min-w-0 flex-1 truncate text-sm font-semibold ${live ? 'text-accent' : 'text-mtext'}`}>
         {name}

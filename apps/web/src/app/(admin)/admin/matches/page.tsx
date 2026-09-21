@@ -6,6 +6,7 @@ import { fetchMatchesPage } from '../../../../services/matches';
 import type { Match } from '../../../../types';
 import Pagination from '../../../../components/admin/AdminPagination';
 import { AdminPageHeader, LoadingState, EmptyState, StatusBadge, AdminInput, AdminEntityLink } from '../../../../components/admin/AdminShared';
+import EntityAvatar from '../../../../components/EntityAvatar';
 import { getInitials } from '../../../../utils/helpers';
 
 export default function MatchesPage() {
@@ -122,7 +123,7 @@ export default function MatchesPage() {
                     <tr key={m.matchId || m.id} style={{ borderBottom: '1px solid var(--admin-border)' }}
                       onMouseEnter={(e) => e.currentTarget.style.background = 'var(--admin-table-row-hover)'}
                       onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
-                      <td className="px-4 py-2.5">
+                      <td className="px-4 py-2.5" style={{ color: 'var(--admin-text)' }}>
                         {m.matchId || m.id ? (
                           <AdminEntityLink href={`/matches/${m.matchId || m.id}`}>
                             <TeamMatchup home={homeLabel} away={awayLabel} />
@@ -179,13 +180,7 @@ function TeamMatchup({ home, away }: { home: string; away: string }) {
 
 function TeamBadge({ code }: { code: string }) {
   if (!code) return null;
-  let hash = 0;
-  for (let i = 0; i < code.length; i++) hash = code.charCodeAt(i) + ((hash << 5) - hash);
-  const hue = Math.abs(hash % 360);
   return (
-    <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs font-bold text-white"
-      style={{ backgroundImage: `linear-gradient(135deg, hsl(${hue}, 70%, 50%), hsl(${(hue + 40) % 360}, 80%, 35%))` }}>
-      {getInitials(code)}
-    </span>
+    <EntityAvatar className="h-6 w-6 text-xs font-bold">{getInitials(code)}</EntityAvatar>
   );
 }

@@ -85,13 +85,13 @@ export default function WinProbabilityBar({
       <div className={`flex items-end justify-between gap-3 ${compact ? 'mb-1.5' : 'mb-2.5'}`}>
         <div className="min-w-0">
           <p className="truncate text-xs font-semibold text-stext">{homeLabel}</p>
-          <p className={`font-mono font-black tabular-nums ${homeTone} ${compact ? 'text-lg' : 'text-2xl sm:text-3xl'}`}>
+          <p className={`font-mono font-black tabular-nums ${homeTone} ${compact ? 'text-2xl' : 'text-2xl sm:text-3xl'}`}>
             {asPercent(homeWinProb)}
           </p>
         </div>
         <div className="min-w-0 text-right">
           <p className="truncate text-xs font-semibold text-stext">{awayLabel}</p>
-          <p className={`font-mono font-black tabular-nums ${awayTone} ${compact ? 'text-lg' : 'text-2xl sm:text-3xl'}`}>
+          <p className={`font-mono font-black tabular-nums ${awayTone} ${compact ? 'text-2xl' : 'text-2xl sm:text-3xl'}`}>
             {asPercent(awayWinProb)}
           </p>
         </div>

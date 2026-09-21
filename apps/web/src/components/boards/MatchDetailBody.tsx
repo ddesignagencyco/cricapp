@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { BarChart3, Calendar, ClipboardList, Clock, FileText, MapPin, Newspaper, Radio, Sparkles, Trophy, Users } from 'lucide-react';
+import { BarChart3, Calendar, ClipboardList, Clock, FileText, MapPin, Newspaper, Radio, Sparkles, Swords, Trophy, Users } from 'lucide-react';
 import LiveIndicator from '../LiveIndicator';
 import { StatusBadge } from '../Badge';
 import Tabs from '../Tabs';
@@ -22,15 +22,15 @@ import {
   SquadsPanel,
   StatsPanel,
 } from './MatchCentrePanels';
-import { formatScheduled } from '../../utils/helpers';
+import { formatScheduled, getInitials } from '../../utils/helpers';
 import { matchStatusLabel } from '../../lib/predictions';
 import { fetchMatchTimeline, matchSideIds } from '../../services/matches';
 import { fetchHeadToHead } from '../../services/headToHead';
 import { fetchTeams } from '../../services/teams';
-import { getInitials } from '../../utils/helpers';
 import { mergeMatchLivePayload, useMatchStream } from '../../hooks/useMatchStream';
 import MatchPredictionTab from '../predictions/MatchPredictionTab';
-import type { Team } from '../../types';
+import { Skeleton } from '../skeletons/Skeletons';
+import type { HeadToHead, Team } from '../../types';
 import { decodeEntityId, useLinkedNews } from './RelatedNewsPanel';
 import { newsHref } from '../../utils/newsConstraints';
 
@@ -41,6 +41,7 @@ const detailTabs = [
   { key: 'squads', label: 'Squads', icon: FileText },
   { key: 'stats', label: 'Stats', icon: BarChart3 },
   { key: 'predictions', label: 'Predictions', icon: Sparkles },
+  { key: 'h2h', label: 'Head to Head', icon: Swords },
   { key: 'news', label: 'News', icon: Newspaper },
   { key: 'info', label: 'Match Info', icon: MapPin },
 ];
@@ -51,13 +52,13 @@ const completedTabs = [
   { key: 'commentary', label: 'Commentary', icon: Radio },
   { key: 'squads', label: 'Squads', icon: FileText },
   { key: 'stats', label: 'Stats', icon: BarChart3 },
+  { key: 'h2h', label: 'Head to Head', icon: Swords },
   { key: 'news', label: 'News', icon: Newspaper },
   { key: 'info', label: 'Match Info', icon: MapPin },
 ];
 
 interface Props {
   match: any;
-  headToHead?: any;
 }
 
 function looksLikeTeamId(value: string): boolean {
@@ -114,20 +115,33 @@ function displaySide(match: any, index: 0 | 1) {
   };
 }
 
-export default function MatchDetailBody({ match: initialMatch, headToHead: initialHeadToHead }: Props) {
+export default function MatchDetailBody({ match: initialMatch }: Props) {
   const [match, setMatch] = useState(initialMatch);
   const [tab, setTab] = useState(
     initialMatch?.status === 'completed' || initialMatch?.status === 'cancelled' ? 'result' : 'live'
   );
   const [timeline, setTimeline] = useState<Record<string, unknown> | null>(null);
-  const [headToHead, setHeadToHead] = useState(initialHeadToHead || null);
+  const [timelineLoading, setTimelineLoading] = useState(false);
+  const [timelineReady, setTimelineReady] = useState(false);
+  const [headToHead, setHeadToHead] = useState<HeadToHead | null>(null);
+  const [h2hLoading, setH2hLoading] = useState(false);
+  const [h2hReady, setH2hReady] = useState(false);
   const matchId = decodeEntityId(initialMatch?.matchId || initialMatch?.id);
   const { articles: relatedNews, loading: newsLoading } = useLinkedNews({ matchId });
   const liveUpdate = useMatchStream(matchId, initialMatch?.status === 'live');
+  const wantsTimeline = tab === 'commentary' || tab === 'timeline';
+  const wantsH2H = tab === 'h2h';
 
   useEffect(() => {
     setMatch(initialMatch);
   }, [initialMatch]);
+
+  useEffect(() => {
+    setTimeline(null);
+    setTimelineReady(false);
+    setHeadToHead(null);
+    setH2hReady(false);
+  }, [matchId]);
 
   useEffect(() => {
     if (!liveUpdate || liveUpdate.type === 'ping') return;
@@ -139,43 +153,64 @@ export default function MatchDetailBody({ match: initialMatch, headToHead: initi
   }, [liveUpdate]);
 
   useEffect(() => {
-    if (!matchId) return;
+    if (!wantsTimeline || !matchId || timelineReady) return;
     let cancelled = false;
+    setTimelineLoading(true);
     fetchMatchTimeline(matchId)
       .then((res) => {
         if (!cancelled) setTimeline(res?.payload || null);
       })
       .catch(() => {
         if (!cancelled) setTimeline(null);
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setTimelineReady(true);
+          setTimelineLoading(false);
+        }
       });
     return () => {
       cancelled = true;
     };
-  }, [matchId]);
+  }, [wantsTimeline, matchId, timelineReady]);
 
   useEffect(() => {
+    if (!wantsH2H || h2hReady) return;
     const sides = matchSideIds(initialMatch);
     const homeRaw = sides.home || initialMatch?.teams?.home?.code || initialMatch?.home?.code || (Array.isArray(initialMatch?.teams) ? initialMatch.teams[0] : '') || '';
     const awayRaw = sides.away || initialMatch?.teams?.away?.code || initialMatch?.away?.code || (Array.isArray(initialMatch?.teams) ? initialMatch.teams[1] : '') || '';
     let cancelled = false;
     const load = async () => {
-      let teamAId = homeRaw.startsWith('sr:competitor:') ? homeRaw : '';
-      let teamBId = awayRaw.startsWith('sr:competitor:') ? awayRaw : '';
-      if (!teamAId || !teamBId) {
-        const teams = await fetchTeams({ limit: 100 }).catch(() => [] as Team[]);
-        if (cancelled) return;
-        teamAId = resolveTeamId(homeRaw, teams);
-        teamBId = resolveTeamId(awayRaw, teams);
+      setH2hLoading(true);
+      try {
+        let teamAId = homeRaw.startsWith('sr:competitor:') ? homeRaw : '';
+        let teamBId = awayRaw.startsWith('sr:competitor:') ? awayRaw : '';
+        if (!teamAId || !teamBId) {
+          const teams = await fetchTeams({ limit: 100 }).catch(() => [] as Team[]);
+          if (cancelled) return;
+          teamAId = resolveTeamId(homeRaw, teams);
+          teamBId = resolveTeamId(awayRaw, teams);
+        }
+        if (!teamAId || !teamBId) {
+          if (!cancelled) setHeadToHead(null);
+          return;
+        }
+        const data = await fetchHeadToHead(teamAId, teamBId);
+        if (!cancelled) setHeadToHead(data);
+      } catch {
+        if (!cancelled) setHeadToHead(null);
+      } finally {
+        if (!cancelled) {
+          setH2hReady(true);
+          setH2hLoading(false);
+        }
       }
-      if (!teamAId || !teamBId) return;
-      const data = await fetchHeadToHead(teamAId, teamBId);
-      if (!cancelled) setHeadToHead(data);
     };
     void load();
     return () => {
       cancelled = true;
     };
-  }, [initialMatch]);
+  }, [wantsH2H, h2hReady, initialMatch]);
 
   const isLive = match?.status === 'live';
   const isUpcoming = match?.status === 'upcoming';
@@ -430,10 +465,22 @@ export default function MatchDetailBody({ match: initialMatch, headToHead: initi
           )}
 
           {(tab === 'commentary' || tab === 'timeline') && (
-            <div className="rounded-2xl bg-card p-6 ring-1 ring-lborder">
-              <h3 className="mb-4 text-sm font-bold uppercase tracking-widest text-stext">Ball-by-ball</h3>
-              <MatchTimeline payload={timeline} upcoming={isUpcoming} />
-            </div>
+            timelineLoading || !timelineReady ? (
+              <TabPanelLoader />
+            ) : (
+              <div className="rounded-2xl bg-card p-6 ring-1 ring-lborder">
+                <h3 className="mb-4 text-sm font-bold uppercase tracking-widest text-stext">Ball-by-ball</h3>
+                <MatchTimeline payload={timeline} upcoming={isUpcoming} />
+              </div>
+            )
+          )}
+
+          {tab === 'h2h' && (
+            h2hLoading || !h2hReady ? (
+              <TabPanelLoader />
+            ) : (
+              <HeadToHeadWidget data={headToHead} />
+            )
           )}
 
           {tab === 'scorecard' && <ScorecardPanel match={match} />}
@@ -497,7 +544,6 @@ export default function MatchDetailBody({ match: initialMatch, headToHead: initi
           <div className="flex justify-center lg:justify-start">
             <DummyAd size="medium-rectangle" placement="match-detail-sidebar" />
           </div>
-          <HeadToHeadWidget data={headToHead || null} />
           {relatedNews.length > 0 && (
             <div className="rounded-2xl bg-card p-4 ring-1 ring-lborder">
               <h3 className="mb-3 text-sm font-bold uppercase tracking-widest text-stext">Related news</h3>
@@ -518,6 +564,19 @@ export default function MatchDetailBody({ match: initialMatch, headToHead: initi
 
       <div className="mt-8">
         <CommentsSection targetType="match" targetId={String(match.matchId || match.id || '')} />
+      </div>
+    </div>
+  );
+}
+
+function TabPanelLoader() {
+  return (
+    <div className="rounded-2xl bg-card p-6 ring-1 ring-lborder" aria-busy="true">
+      <Skeleton height={18} width={160} />
+      <div className="mt-5 space-y-3">
+        <Skeleton height={40} />
+        <Skeleton height={40} />
+        <Skeleton height={40} />
       </div>
     </div>
   );
