@@ -15,11 +15,31 @@ export interface LastEvent {
   over: number;
 }
 
+export interface TeamSideScore {
+  code: string;
+  name: string;
+  score: string;
+  overs: string;
+}
+
+export interface TeamScores {
+  home: TeamSideScore;
+  away: TeamSideScore;
+}
+
+export type MatchTeams =
+  | string[]
+  | {
+      home: TeamSideScore;
+      away: TeamSideScore;
+    };
+
 export interface CanonicalMatch {
   matchId: string;
   status: MatchStatus;
-  teams: string[];
+  teams: MatchTeams;
   teamNames: string[];
+  teamScores?: TeamScores | null;
   tournament: string | null;
   venue: string | null;
   scheduled: string | null;

@@ -115,6 +115,7 @@ export async function cleanDatabase(prisma: PrismaService): Promise<void> {
     'psl_standings',
     'players',
     'teams',
+    'site_settings',
     'matches',
     'users',
   ];

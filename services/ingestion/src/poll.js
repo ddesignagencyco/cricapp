@@ -7,6 +7,7 @@ import redis, { redisKeys } from './redis.js';
 import {
   fetchLiveSchedule,
   fetchMatchSummary,
+  fetchMatchTimeline,
   fetchMatchTimelineDelta,
 } from './sportradar.js';
 
@@ -45,11 +46,13 @@ async function captureLiveTimelineDelta(matchId) {
  */
 async function flushLiveTimelineIfFinished(matchId, status) {
   if (status === 'live') return;
-  const entries = (await redis.lrange(BUF_KEY(matchId), 0, -1)).map(JSON.parse);
   await redis.del(BUF_KEY(matchId), SEQ_KEY(matchId));
-  if (!entries.length) return;
-  const norm = { matchId, payload: { sport_event_timeline: { timeline: entries } } };
-  await saveMatchTimeline(norm.matchId, norm.payload);
+  try {
+    const raw = await fetchMatchTimeline(matchId);
+    await saveMatchTimeline(matchId, raw);
+  } catch (err) {
+    console.warn(`[ingest] full timeline fetch failed for ${matchId}: ${err.message}`);
+  }
 }
 
 async function processLiveMatch(id) {

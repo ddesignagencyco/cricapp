@@ -182,6 +182,31 @@ describe("normalizeMatch", () => {
     assert.equal(match.currentInnings.runRate, 5.11);
     assert.equal(match.displayScore, "126/1");
     assert.equal(match.matchStatus, "first_innings_away_team");
+    assert.equal(match.teamScores.away.score, "126/1");
+    assert.equal(match.teamScores.home.score, "");
+  });
+
+  it("includes both sides when period_scores list multiple innings", () => {
+    const match = normalizeMatch(PROVIDERS.SPORTRADAR, {
+      sport_event: {
+        id: "sr:match:3",
+        competitors: [
+          { name: "India", abbreviation: "IND", qualifier: "home" },
+          { name: "Australia", abbreviation: "AUS", qualifier: "away" },
+        ],
+      },
+      sport_event_status: {
+        status: "closed",
+        current_inning: 2,
+        period_scores: [
+          { home_score: 180, home_wickets: 4, display_overs: 20, type: "inning", number: 1 },
+          { away_score: 181, away_wickets: 2, display_overs: 19.2, type: "inning", number: 2 },
+        ],
+      },
+    });
+
+    assert.equal(match.teamScores.home.score, "180/4");
+    assert.equal(match.teamScores.away.score, "181/2");
   });
 });
 
