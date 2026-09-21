@@ -3,12 +3,13 @@ import redis, { redisKeys, REDIS_TTL } from './redis.js';
 
 export async function saveMatch(match) {
   await query(
-    `INSERT INTO matches (match_id, status, teams, team_names, tournament, venue, scheduled, current_innings, last_event, display_score, match_status, created_at, updated_at)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,NOW(),NOW())
+    `INSERT INTO matches (match_id, status, teams, team_names, team_scores, tournament, venue, scheduled, current_innings, last_event, display_score, match_status, created_at, updated_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,NOW(),NOW())
      ON CONFLICT (match_id) DO UPDATE SET
        status = EXCLUDED.status,
        teams = EXCLUDED.teams,
        team_names = EXCLUDED.team_names,
+       team_scores = EXCLUDED.team_scores,
        tournament = EXCLUDED.tournament,
        venue = EXCLUDED.venue,
        scheduled = EXCLUDED.scheduled,
@@ -22,6 +23,7 @@ export async function saveMatch(match) {
       match.status,
       JSON.stringify(match.teams),
       JSON.stringify(match.teamNames),
+      JSON.stringify(match.teamScores ?? null),
       match.tournament,
       match.venue,
       match.scheduled,

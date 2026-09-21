@@ -54,6 +54,10 @@ function mockFetch() {
       return Response.json({ sport_event_timeline: { timeline: [] } });
     }
 
+    if (path.includes(`/matches/${TEST_MATCH_ID}/timeline.json`)) {
+      return Response.json({ sport_event_timeline: { timeline: [] } });
+    }
+
     return originalFetch(url);
   };
   return originalFetch;
@@ -64,6 +68,7 @@ describe('ingestion integration', () => {
 
   before(async () => {
     originalFetch = mockFetch();
+    await query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS team_scores JSONB`);
     // Clean up any previous test state
     await redis.del(redisKeys.matchState(TEST_MATCH_ID));
     await redis.srem(redisKeys.liveMatches(), TEST_MATCH_ID);

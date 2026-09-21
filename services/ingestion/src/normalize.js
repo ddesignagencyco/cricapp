@@ -19,15 +19,76 @@ export function normalizeMatch(providerName, raw) {
   }
 }
 
+function sideTotal(periodScores, side) {
+  let runs = 0;
+  let wickets = null;
+  let recorded = false;
+  let overs = '';
+
+  for (const inning of periodScores) {
+    const value = Number(inning[`${side}_score`]);
+    if (!Number.isNaN(value) && value > 0) {
+      runs += value;
+      recorded = true;
+      const w = Number(inning[`${side}_wickets`]);
+      if (!Number.isNaN(w) && w > 0) wickets = w;
+      if (inning.display_overs != null) overs = String(inning.display_overs);
+    }
+  }
+
+  if (!recorded) return { score: '', overs: '' };
+  const score = wickets !== null ? `${runs}/${wickets}` : String(runs);
+  return { score, overs };
+}
+
+function buildTeamScores(statusBlock, competitors) {
+  const homeComp = competitors.find((c) => c.qualifier === 'home') ?? competitors[0];
+  const awayComp = competitors.find((c) => c.qualifier === 'away') ?? competitors[1];
+  const periods = statusBlock.period_scores ?? [];
+  const homeTotals = sideTotal(periods, 'home');
+  const awayTotals = sideTotal(periods, 'away');
+
+  return {
+    home: {
+      code: homeComp?.abbreviation ?? '',
+      name: homeComp?.name ?? '',
+      score: homeTotals.score,
+      overs: homeTotals.overs,
+    },
+    away: {
+      code: awayComp?.abbreviation ?? '',
+      name: awayComp?.name ?? '',
+      score: awayTotals.score,
+      overs: awayTotals.overs,
+    },
+  };
+}
+
 function normalizeMock(raw) {
   const innings = raw.score[raw.score.length - 1];
   const battingTeam = innings.inning.split(' ')[0];
+
+  const teamScores = {
+    home: {
+      code: raw.teams?.[0] ?? '',
+      name: raw.teamNames?.[0] ?? raw.teams?.[0] ?? '',
+      score: battingTeam === (raw.teamNames?.[0] ?? raw.teams?.[0]) ? `${innings.r}/${innings.w}` : '',
+      overs: battingTeam === (raw.teamNames?.[0] ?? raw.teams?.[0]) ? String(innings.o) : '',
+    },
+    away: {
+      code: raw.teams?.[1] ?? '',
+      name: raw.teamNames?.[1] ?? raw.teams?.[1] ?? '',
+      score: battingTeam !== (raw.teamNames?.[0] ?? raw.teams?.[0]) ? `${innings.r}/${innings.w}` : '',
+      overs: battingTeam !== (raw.teamNames?.[0] ?? raw.teams?.[0]) ? String(innings.o) : '',
+    },
+  };
 
   return {
     matchId: raw.id,
     status: mapStatus(raw.status),
     teams: raw.teams,
     teamNames: raw.teamNames ?? raw.teams,
+    teamScores,
     tournament: raw.tournament ?? null,
     venue: raw.venue ?? null,
     scheduled: raw.scheduled ?? null,
@@ -101,12 +162,29 @@ function normalizeSportradar(raw) {
 
   const rawStatus = statusBlock.status ?? event.status ?? statusBlock.match_status ?? '';
   const canonicalStatus = mapSportradarStatus(rawStatus, statusBlock.match_status);
+  const teamScores = buildTeamScores(statusBlock, competitors);
+
+  if (currentInnings) {
+    const battingSide =
+      currentInnings.battingTeam === teamScores.home.code ||
+      currentInnings.battingTeam === teamScores.home.name
+        ? 'home'
+        : 'away';
+    const liveScore = `${currentInnings.runs}/${currentInnings.wickets}`;
+    const liveOvers =
+      currentInnings.overs !== null && currentInnings.overs !== undefined
+        ? String(currentInnings.overs)
+        : '';
+    teamScores[battingSide].score = liveScore;
+    teamScores[battingSide].overs = liveOvers;
+  }
 
   return {
     matchId: event.id ?? raw.id,
     status: canonicalStatus,
     teams,
     teamNames,
+    teamScores,
     tournament: event.tournament?.name ?? null,
     venue: event.venue?.name ?? raw.venue?.name ?? null,
     scheduled: event.scheduled ?? null,

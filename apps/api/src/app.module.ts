@@ -29,6 +29,8 @@ import { MediaModule } from './media/media.module.js';
 import { NewsletterModule } from './newsletter/newsletter.module.js';
 import { ContactModule } from './contact/contact.module.js';
 import { GalleryModule } from './gallery/gallery.module.js';
+import { SiteSettingsModule } from './site-settings/site-settings.module.js';
+import { SportradarModule } from './sportradar/sportradar.module.js';
 import { RequestLogger } from './common/request-logger.middleware.js';
 
 @Module({
@@ -48,6 +50,7 @@ import { RequestLogger } from './common/request-logger.middleware.js';
     }),
     PrismaModule,
     RedisModule,
+    SportradarModule,
     HealthModule,
     MatchesModule,
     TeamsModule,
@@ -72,6 +75,7 @@ import { RequestLogger } from './common/request-logger.middleware.js';
     NewsletterModule,
     ContactModule,
     GalleryModule,
+    SiteSettingsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

@@ -28,6 +28,20 @@ export class LastEventDto {
   over: number;
 }
 
+export class TeamSideScoreDto {
+  @ApiProperty()
+  code: string;
+
+  @ApiProperty()
+  name: string;
+
+  @ApiProperty({ description: 'Runs/wickets display, e.g. 182/4.' })
+  score: string;
+
+  @ApiProperty({ description: 'Decimal overs when available.' })
+  overs: string;
+}
+
 export class MatchSummaryDto {
   @ApiProperty({ description: 'Provider match id.' })
   matchId: string;
@@ -35,11 +49,19 @@ export class MatchSummaryDto {
   @ApiProperty({ enum: ['upcoming', 'live', 'completed', 'cancelled'] })
   status: string;
 
-  @ApiProperty({ type: [String] })
-  teams: string[];
+  @ApiProperty({
+    description:
+      'Team abbreviations, or `{ home, away }` objects with score/overs when available.',
+  })
+  teams: string[] | { home: TeamSideScoreDto; away: TeamSideScoreDto };
 
   @ApiProperty({ type: [String] })
   teamNames: string[];
+
+  @ApiPropertyOptional({
+    description: 'Per-side scores derived from Sportradar period_scores.',
+  })
+  teamScores?: { home: TeamSideScoreDto; away: TeamSideScoreDto } | null;
 
   @ApiPropertyOptional()
   tournament: string | null;

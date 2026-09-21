@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS matches (
   status          TEXT NOT NULL,
   teams           JSONB NOT NULL,
   team_names      JSONB NOT NULL,
+  team_scores     JSONB,
   tournament      TEXT,
   venue           TEXT,
   scheduled       TEXT,

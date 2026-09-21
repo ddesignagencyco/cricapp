@@ -16,6 +16,7 @@ model Match {
   status         String
   teams          Json
   teamNames      Json     @map("team_names")
+  teamScores     Json?    @map("team_scores")
   tournament     String?
   venue          String?
   scheduled      String?
@@ -680,4 +681,24 @@ model GalleryMedia {
   @@index([type])
   @@index([createdAt])
   @@map("gallery_media")
+}
+
+// --- Public site settings (admin CMS) --------------------------------------
+
+model SiteSettings {
+  id           String   @id @default("default")
+  email        String?
+  supportEmail String?  @map("support_email")
+  phone        String?
+  whatsapp     String?
+  address        String?
+  city         String?
+  country      String?
+  mapsUrl      String?  @map("maps_url")
+  workingHours String?  @map("working_hours")
+  socials      Json     @default("[]")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("site_settings")
 }

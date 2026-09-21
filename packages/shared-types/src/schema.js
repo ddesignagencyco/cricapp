@@ -18,11 +18,26 @@
  */
 
 /**
+ * @typedef {Object} TeamSideScore
+ * @property {string} code
+ * @property {string} name
+ * @property {string} score
+ * @property {string} overs
+ */
+
+/**
+ * @typedef {Object} TeamScores
+ * @property {TeamSideScore} home
+ * @property {TeamSideScore} away
+ */
+
+/**
  * @typedef {Object} CanonicalMatch
  * @property {string} matchId
  * @property {MatchStatus} status
- * @property {string[]} teams
+ * @property {string[] | { home: TeamSideScore, away: TeamSideScore }} teams
  * @property {string[]} teamNames
+ * @property {TeamScores | null} [teamScores]
  * @property {string | null} tournament
  * @property {string | null} venue
  * @property {string | null} scheduled
