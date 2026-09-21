@@ -153,7 +153,7 @@ async function loadEventPayload(query, matchId) {
     `SELECT payload FROM sport_event_records
      WHERE event_id = $1
        AND kind <> 'match_lineup'
-     ORDER BY updated_at DESC
+     ORDER BY CASE WHEN kind = 'match_summary' THEN 0 ELSE 1 END, updated_at DESC
      LIMIT 1`,
     [matchId],
   );

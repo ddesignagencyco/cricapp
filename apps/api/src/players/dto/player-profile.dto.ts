@@ -49,7 +49,7 @@ export class PlayerProfileDto {
   @ApiPropertyOptional()
   nationality: string | null;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: 'Sportradar profile image URL when available.' })
   profileUrl: string | null;
 
   @ApiPropertyOptional({ description: 'Country code from provider profile.' })

@@ -3,16 +3,22 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { MediaService } from '../media/media.service.js';
 import {
   createPaginatedResponse,
   getPaginationOffset,
 } from '../common/pagination/pagination.util.js';
+import { PUBLIC_GALLERY_PURPOSE } from './gallery.constants.js';
 import type {
+  AdminGalleryListQuery,
   GalleryListQuery,
   UploadGalleryMediaDto,
 } from './dto/gallery.dto.js';
+
+/** Cloudinary folder for article covers / avatars — never shown on public gallery. */
+const EDITORIAL_PUBLIC_ID_PREFIX = 'cricapp/articles/';
 
 @Injectable()
 export class GalleryService {
@@ -21,6 +27,7 @@ export class GalleryService {
     private readonly media: MediaService,
   ) {}
 
+  /** URLs referenced outside the public gallery (profiles, logos, news covers). */
   private async referencedAssetUrls(): Promise<string[]> {
     const [users, authors, teams, players, articles] = await Promise.all([
       this.prisma.user.findMany({
@@ -54,21 +61,35 @@ export class GalleryService {
     ].filter((url): url is string => Boolean(url));
   }
 
-  private async galleryWhere(type?: GalleryListQuery['type']) {
+  private async publicGalleryWhere(
+    type?: GalleryListQuery['type'],
+  ): Promise<Prisma.GalleryMediaWhereInput> {
     const referencedUrls = await this.referencedAssetUrls();
     return {
+      purpose: PUBLIC_GALLERY_PURPOSE,
       ...(type ? { type } : {}),
+      NOT: { publicId: { startsWith: EDITORIAL_PUBLIC_ID_PREFIX } },
       ...(referencedUrls.length ? { url: { notIn: referencedUrls } } : {}),
     };
   }
 
-  async list(query: GalleryListQuery) {
+  private adminGalleryWhere(
+    purpose: string,
+    type?: GalleryListQuery['type'],
+  ): Prisma.GalleryMediaWhereInput {
+    return {
+      purpose,
+      ...(type ? { type } : {}),
+    };
+  }
+
+  async listPublic(query: GalleryListQuery) {
     const { page, limit, skip } = getPaginationOffset(
       query.page,
       query.limit,
       query.offset,
     );
-    const where = await this.galleryWhere(query.type);
+    const where = await this.publicGalleryWhere(query.type);
     const [rows, total] = await Promise.all([
       this.prisma.galleryMedia.findMany({
         where,
@@ -81,18 +102,53 @@ export class GalleryService {
     return createPaginatedResponse(rows, total, page, limit);
   }
 
-  async getById(id: string) {
+  async listAdmin(query: AdminGalleryListQuery) {
+    const purpose = query.purpose ?? PUBLIC_GALLERY_PURPOSE;
+    const { page, limit, skip } = getPaginationOffset(
+      query.page,
+      query.limit,
+      query.offset,
+    );
+    const where = this.adminGalleryWhere(purpose, query.type);
+    const [rows, total] = await Promise.all([
+      this.prisma.galleryMedia.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.galleryMedia.count({ where }),
+    ]);
+    return createPaginatedResponse(rows, total, page, limit);
+  }
+
+  async getByIdPublic(id: string) {
+    const where = await this.publicGalleryWhere();
     const media = await this.prisma.galleryMedia.findFirst({
-      where: {
-        id,
-        ...(await this.galleryWhere()),
-      },
+      where: { id, ...where },
     });
     if (!media) throw new NotFoundException('Gallery media not found');
     return media;
   }
 
+  /** When a cover is attached to news (or similar), keep it out of the public gallery. */
+  async markEditorialByUrl(url: string | null | undefined) {
+    const trimmed = url?.trim();
+    if (!trimmed) return;
+    await this.prisma.galleryMedia.updateMany({
+      where: { url: trimmed },
+      data: { purpose: 'editorial' },
+    });
+  }
+
   async upload(file: Express.Multer.File, dto: UploadGalleryMediaDto) {
+    const purpose = dto.purpose ?? PUBLIC_GALLERY_PURPOSE;
+    if (purpose === 'editorial' && dto.type !== 'image') {
+      throw new BadRequestException(
+        'Editorial uploads only support type image',
+      );
+    }
+
     const expectsImage = dto.type === 'image';
     if (expectsImage !== file.mimetype.startsWith('image/')) {
       throw new BadRequestException(
@@ -102,13 +158,14 @@ export class GalleryService {
       );
     }
 
-    const uploaded = await this.media.uploadGalleryMedia(file, dto.type);
+    const uploaded = await this.media.uploadGalleryMedia(file, dto.type, purpose);
     try {
       return await this.prisma.galleryMedia.create({
         data: {
           title: dto.title?.trim() || null,
           caption: dto.caption?.trim() || null,
           type: dto.type,
+          purpose,
           url: uploaded.url,
           publicId: uploaded.publicId,
           resourceType: uploaded.resourceType,
@@ -129,7 +186,8 @@ export class GalleryService {
   }
 
   async remove(id: string) {
-    const media = await this.getById(id);
+    const media = await this.prisma.galleryMedia.findUnique({ where: { id } });
+    if (!media) throw new NotFoundException('Gallery media not found');
     await this.media.destroy(
       media.publicId,
       media.resourceType as 'image' | 'video',

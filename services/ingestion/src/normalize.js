@@ -1,4 +1,6 @@
 import { PROVIDERS } from './schemas.js';
+import { buildTeamFromCompetitor, managerDisplayName } from './teamMeta.js';
+import { buildPlayerFromLineupEntry, parseFullName } from './playerMeta.js';
 
 export function computeRunRate(runs, overs) {
   if (!overs) return 0;
@@ -227,28 +229,12 @@ function mapStatus(rawStatus) {
   return 'upcoming';
 }
 
-const ROLE_MAP = {
-  batsman: 'batsman',
-  bowler: 'bowler',
-  all_rounder: 'all_rounder',
-  wicketkeeper: 'wicketkeeper',
-};
-
 function abbrOf(name) {
   return name
     ?.split(/\s+/)
     .map((w) => w[0])
     .join('')
     .toUpperCase();
-}
-
-function parseFullName(name) {
-  const trimmed = (name || '').trim();
-  const idx = trimmed.indexOf(',');
-  if (idx === -1) return { fullName: trimmed, last: trimmed };
-  const last = trimmed.slice(0, idx).trim();
-  const rest = trimmed.slice(idx + 1).trim();
-  return { fullName: `${rest} ${last}`.trim(), last };
 }
 
 /**
@@ -270,50 +256,27 @@ export function normalizeLineups(raw) {
   for (const comp of competitors) {
     const qualifier = comp.qualifier === 'away' ? 'away' : 'home';
     const lineup = lineupByQualifier.get(qualifier);
+    const manager = lineup?.manager;
     const team = {
-      id: comp.id,
-      name: comp.name ?? comp.abbreviation ?? 'Unknown',
+      ...buildTeamFromCompetitor(comp, sportEvent),
       abbr: comp.abbreviation ?? abbrOf(comp.name) ?? 'TBD',
-      country: comp.country ?? null,
-      logoUrl: null,
+      manager: managerDisplayName(manager),
     };
     teams.push(team);
-
-    const manager = lineup?.manager;
     if (manager?.id) {
       players.push({
-        id: manager.id,
-        fullName: parseFullName(manager.name).fullName,
-        shortName: manager.name,
-        teamId: team.id,
-        birth: null,
-        nationality: manager.country_code ?? null,
+        ...buildPlayerFromLineupEntry(
+          { ...manager, type: 'manager', nationality: manager.country_code },
+          team.id,
+        ),
         role: 'manager',
-        battingStyle: null,
-        bowlingStyle: null,
-        profileUrl: null,
+        countryCode: manager.country_code ?? null,
       });
     }
 
     for (const p of lineup?.starting_lineup ?? []) {
-      const parsed = parseFullName(p.name);
-      players.push({
-        id: p.id,
-        fullName: parsed.fullName,
-        shortName: p.name,
-        teamId: team.id,
-        birth: p.date_of_birth ?? null,
-        nationality: p.nationality ?? p.country_code ?? null,
-        role:
-          p.type && ROLE_MAP[p.type]
-            ? ROLE_MAP[p.type]
-            : p.is_wicketkeeper
-              ? 'wicketkeeper'
-              : 'player',
-        battingStyle: null,
-        bowlingStyle: null,
-        profileUrl: null,
-      });
+      const row = buildPlayerFromLineupEntry(p, team.id);
+      if (row) players.push(row);
     }
   }
 

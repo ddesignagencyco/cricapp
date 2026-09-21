@@ -2,6 +2,7 @@ import { PSL, PSL_SEASONS } from "./schemas.js";
 import {
   fetchSeasonSchedule,
   fetchSeasonStandings,
+  fetchSeasonStandingsRaw,
   fetchSeasonLeaders,
   fetchTournamentInfo,
   fetchSeasonSquad,
@@ -19,6 +20,8 @@ import {
   saveSquad,
   cachePsData,
   clearSeasonData,
+  saveScopedProviderPayload,
+  saveTournamentTeams,
 } from "./store.js";
 
 const SEASON_ID_BY_YEAR = Object.fromEntries(
@@ -39,8 +42,13 @@ function parseFilter(raw) {
 }
 
 async function syncStandings(seasonId) {
-  const raw = await fetchSeasonStandings(seasonId);
-  const rows = normalizeStandings(raw);
+  const envelope = await fetchSeasonStandingsRaw(seasonId);
+  await saveScopedProviderPayload({
+    kind: "tournament_standings",
+    scopeKey: seasonId,
+    payload: envelope,
+  });
+  const rows = normalizeStandings(envelope.standings ?? []);
   const count = await saveStandings(seasonId, rows);
   if (count) await cachePsData(seasonId, "standings", rows);
   return count;
@@ -56,6 +64,11 @@ async function syncFixtures(seasonId) {
 
 async function syncLeaders(seasonId) {
   const raw = await fetchSeasonLeaders(seasonId);
+  await saveScopedProviderPayload({
+    kind: "tournament_leaders",
+    scopeKey: seasonId,
+    payload: raw,
+  });
   const groups = normalizeLeaders(raw);
   await clearSeasonData(seasonId);
   const count = await saveLeaders(seasonId, groups);
@@ -102,6 +115,8 @@ export async function syncPsAll(rawSeasonFilter) {
   let tournamentInfo = null;
   try {
     tournamentInfo = await fetchTournamentInfo(PSL.TOURNAMENT_ID);
+    const teamCount = await saveTournamentTeams(tournamentInfo);
+    if (teamCount) console.log(`[psl] tournament teams upserted (${teamCount})`);
   } catch (err) {
     console.error(`[psl] tournament info fetch failed`, err.message);
   }

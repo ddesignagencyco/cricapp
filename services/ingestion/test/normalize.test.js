@@ -238,6 +238,7 @@ describe("normalizeLineups", () => {
     assert.equal(teams.length, 2);
     assert.equal(teams[0].id, "sr:competitor:247863");
     assert.equal(teams[0].abbr, "ENG");
+    assert.equal(teams[0].manager, "Lane, Mark");
 
     const englandPlayers = players.filter((p) => p.teamId === "sr:competitor:247863");
     assert.equal(englandPlayers.length, 4); // manager + 3 players

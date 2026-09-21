@@ -116,6 +116,10 @@ export async function fetchSeasonStandings(seasonId) {
   return data.standings ?? [];
 }
 
+export async function fetchSeasonStandingsRaw(seasonId) {
+  return fetchJson(`tournaments/${seasonId}/standings.json`);
+}
+
 export async function fetchSeasonLeaders(seasonId) {
   const data = await fetchJson(`tournaments/${seasonId}/leaders.json`);
   return data;

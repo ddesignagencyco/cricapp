@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class SportEventRecordDto {
-  @ApiProperty({ description: 'The normalized kind: daily_schedule, daily_results, team_schedule, team_results, tournament_results.' })
+  @ApiProperty({ description: 'The normalized kind: daily_schedule, daily_results, team_schedule, team_results, tournament_results, match_summary, match_lineup, tournament_standings, tournament_leaders.' })
   kind: string;
 
   @ApiProperty({ description: 'Scope key: a date (YYYY-MM-DD), team id, or tournament/season id.' })
