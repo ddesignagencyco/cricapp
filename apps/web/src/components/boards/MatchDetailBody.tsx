@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Activity, BarChart3, Calendar, Clock, MapPin, Radio, Sparkles, Target, Trophy, Users } from 'lucide-react';
+import { BarChart3, Calendar, ClipboardList, Clock, FileText, MapPin, Newspaper, Radio, Sparkles, Trophy, Users } from 'lucide-react';
 import LiveIndicator from '../LiveIndicator';
 import { StatusBadge } from '../Badge';
 import Tabs from '../Tabs';
@@ -13,31 +13,46 @@ import FavoriteButton from '../FavoriteButton';
 import ShareButton from '../ShareButton';
 import CommentsSection from '../CommentsSection';
 import DummyAd from '../advertisements/DummyAd';
-import BallTracker from '../BallTracker';
-import MatchTimeline, { extractBalls } from '../MatchTimeline';
+import MatchTimeline, { matchSummary } from '../MatchTimeline';
+import {
+  LiveStrip,
+  MatchNewsPanel,
+  OversFromTimeline,
+  ScorecardPanel,
+  SquadsPanel,
+  StatsPanel,
+} from './MatchCentrePanels';
 import { formatScheduled } from '../../utils/helpers';
+import { matchStatusLabel } from '../../lib/predictions';
 import { fetchMatchTimeline, matchSideIds } from '../../services/matches';
 import { fetchHeadToHead } from '../../services/headToHead';
-import { fetchNews } from '../../services/news';
 import { fetchTeams } from '../../services/teams';
 import { getInitials } from '../../utils/helpers';
 import { mergeMatchLivePayload, useMatchStream } from '../../hooks/useMatchStream';
 import MatchPredictionTab from '../predictions/MatchPredictionTab';
-import type { NewsArticle, Team } from '../../types';
+import type { Team } from '../../types';
+import { decodeEntityId, useLinkedNews } from './RelatedNewsPanel';
 import { newsHref } from '../../utils/newsConstraints';
 
 const detailTabs = [
-  { key: 'live', label: 'Live Score', icon: Users },
+  { key: 'live', label: 'Live', icon: Users },
+  { key: 'scorecard', label: 'Scorecard', icon: ClipboardList },
+  { key: 'commentary', label: 'Commentary', icon: Radio },
+  { key: 'squads', label: 'Squads', icon: FileText },
+  { key: 'stats', label: 'Stats', icon: BarChart3 },
   { key: 'predictions', label: 'Predictions', icon: Sparkles },
-  { key: 'timeline', label: 'Timeline', icon: Radio },
+  { key: 'news', label: 'News', icon: Newspaper },
   { key: 'info', label: 'Match Info', icon: MapPin },
 ];
 
 const completedTabs = [
-  { key: 'info', label: 'Match Info', icon: MapPin },
-  { key: 'predictions', label: 'Predictions', icon: Sparkles },
-  { key: 'timeline', label: 'Timeline', icon: Radio },
   { key: 'result', label: 'Result', icon: Trophy },
+  { key: 'scorecard', label: 'Scorecard', icon: ClipboardList },
+  { key: 'commentary', label: 'Commentary', icon: Radio },
+  { key: 'squads', label: 'Squads', icon: FileText },
+  { key: 'stats', label: 'Stats', icon: BarChart3 },
+  { key: 'news', label: 'News', icon: Newspaper },
+  { key: 'info', label: 'Match Info', icon: MapPin },
 ];
 
 interface Props {
@@ -64,12 +79,29 @@ function resolveTeamId(raw: string, teams: Team[]): string {
   return looksLikeTeamId(raw) ? raw : '';
 }
 
+function usefulScore(value: unknown): string {
+  const text = String(value ?? '').trim();
+  if (!text || text === '—' || text === '0/0' || text === '0') return '';
+  return text;
+}
+
+function usefulResultText(value: unknown): string {
+  const text = usefulScore(value);
+  if (!text) return '';
+  const compact = text.toLowerCase().replace(/[_-]+/g, ' ').replace(/[.\s]+$/g, '').trim();
+  if (compact === 'ended' || compact === 'match ended' || compact === 'completed' || compact === 'finished') {
+    return '';
+  }
+  return text;
+}
+
 function displaySide(match: any, index: 0 | 1) {
   const teams = match.teams;
   const isObj = teams && typeof teams === 'object' && !Array.isArray(teams);
   const side = isObj ? (index === 0 ? teams.home : teams.away) : null;
-  const rawCode = side?.code || side?.abbr || (Array.isArray(teams) ? teams[index] : '') || '';
-  const rawName = side?.name || match.teamNames?.[index] || '';
+  const extra = index === 0 ? match.home : match.away;
+  const rawCode = side?.code || side?.abbr || extra?.code || (Array.isArray(teams) ? teams[index] : '') || '';
+  const rawName = side?.name || extra?.name || match.teamNames?.[index] || '';
   const name = String(rawName || '').replace(/^sr:competitor:/, '') || (index === 0 ? 'Team A' : 'Team B');
   const codeStr = String(rawCode || '').replace(/^sr:competitor:/, '');
   const badCode = !codeStr || /^sr:/.test(codeStr) || codeStr.length > 5;
@@ -77,18 +109,20 @@ function displaySide(match: any, index: 0 | 1) {
     name,
     code: badCode ? getInitials(name) : codeStr.toUpperCase(),
     raw: String(rawCode || rawName || ''),
+    score: usefulScore(side?.score || extra?.score),
+    overs: String(side?.overs || extra?.overs || '').trim(),
   };
 }
 
 export default function MatchDetailBody({ match: initialMatch, headToHead: initialHeadToHead }: Props) {
   const [match, setMatch] = useState(initialMatch);
   const [tab, setTab] = useState(
-    initialMatch?.status === 'completed' || initialMatch?.status === 'cancelled' ? 'info' : 'live'
+    initialMatch?.status === 'completed' || initialMatch?.status === 'cancelled' ? 'result' : 'live'
   );
   const [timeline, setTimeline] = useState<Record<string, unknown> | null>(null);
   const [headToHead, setHeadToHead] = useState(initialHeadToHead || null);
-  const [relatedNews, setRelatedNews] = useState<NewsArticle[]>([]);
-  const matchId = initialMatch?.matchId || initialMatch?.id;
+  const matchId = decodeEntityId(initialMatch?.matchId || initialMatch?.id);
+  const { articles: relatedNews, loading: newsLoading } = useLinkedNews({ matchId });
   const liveUpdate = useMatchStream(matchId, initialMatch?.status === 'live');
 
   useEffect(() => {
@@ -113,13 +147,6 @@ export default function MatchDetailBody({ match: initialMatch, headToHead: initi
       })
       .catch(() => {
         if (!cancelled) setTimeline(null);
-      });
-    fetchNews({ matchId, limit: 6 })
-      .then((items) => {
-        if (!cancelled) setRelatedNews(items);
-      })
-      .catch(() => {
-        if (!cancelled) setRelatedNews([]);
       });
     return () => {
       cancelled = true;
@@ -154,7 +181,12 @@ export default function MatchDetailBody({ match: initialMatch, headToHead: initi
   const isUpcoming = match?.status === 'upcoming';
   const isCompleted = match?.status === 'completed';
   const isCancelled = match?.status === 'cancelled';
+  const showPredictions = isLive || isUpcoming;
   const activeTabs = isCompleted || isCancelled ? completedTabs : detailTabs;
+
+  useEffect(() => {
+    if (!showPredictions && tab === 'predictions') setTab(isCompleted || isCancelled ? 'result' : 'live');
+  }, [showPredictions, tab, isCompleted, isCancelled]);
 
   if (!match) {
     return (
@@ -171,48 +203,71 @@ export default function MatchDetailBody({ match: initialMatch, headToHead: initi
   const homeName = home.name;
   const awayName = away.name;
 
-  console.log("match", match);
   const inn = match.currentInnings;
-  console.log("inn", inn);
-  const battingCode = inn?.battingTeam;
+  const battingCode = String(inn?.battingTeam || '');
   const sideMatches = (side: { code: string; name: string; raw: string }, value: string) => {
     const needle = String(value || '').replace(/^sr:competitor:/, '').toLowerCase();
-    return [side.code, side.name, side.raw].some((part) => String(part || '').replace(/^sr:competitor:/, '').toLowerCase() === needle);
+    if (!needle) return false;
+    return [side.code, side.name, side.raw].some((part) => {
+      const hay = String(part || '').replace(/^sr:competitor:/, '').toLowerCase();
+      return hay === needle || hay.startsWith(needle) || needle.startsWith(hay);
+    });
   };
-  const battingIsHome = Boolean(battingCode) && sideMatches(home, battingCode);
-  const hasInnings = inn && (inn.runs > 0 || inn.wickets > 0 || inn.overs > 0);
+  const phaseRaw = String(match.matchStatus || '');
+  const phase = matchStatusLabel(phaseRaw);
+  const battingFromStatus = /second_innings_home|first_innings_home|home_batting/i.test(phaseRaw)
+    ? 'home'
+    : /second_innings_away|first_innings_away|away_batting/i.test(phaseRaw)
+      ? 'away'
+      : null;
+  const battingIsHome = battingFromStatus === 'home'
+    || battingFromStatus === 'away'
+      ? battingFromStatus === 'home'
+      : Boolean(battingCode) && sideMatches(home, battingCode)
+        ? true
+        : Boolean(battingCode) && sideMatches(away, battingCode)
+          ? false
+          : true;
+  const timelineSummary = matchSummary(timeline);
+  const displayScore = usefulScore(match.displayScore) || usefulScore(timelineSummary.displayScore);
+  const parsedScore = String(displayScore).replace(/\s+/g, '').match(/^(\d+)\/(\d+)/);
+  const innRuns = Number(inn?.runs);
+  const innWkts = Number(inn?.wickets);
+  const innOvers = Number(inn?.overs);
+  const innRr = Number(inn?.runRate);
+  const usefulInnScore = Number.isFinite(innRuns) && innRuns > 0;
+  const scoreLine = usefulInnScore
+    ? `${innRuns}/${Number.isFinite(innWkts) ? innWkts : 0}`
+    : parsedScore
+      ? `${parsedScore[1]}/${parsedScore[2]}`
+      : '';
+  const usefulOvers = Number.isFinite(innOvers) && innOvers > 0;
+  const usefulRr = Number.isFinite(innRr) && innRr > 0;
+  const hasInnings = Boolean(scoreLine) || usefulOvers;
+  const battingLabel = battingIsHome ? homeCode : awayCode;
+  const resultText = usefulResultText(match.result) || usefulResultText(timelineSummary.result);
 
-  let homeScore = '';
-  let awayScore = '';
-  let homeOvers: string | number = '';
-  let awayOvers: string | number = '';
+  let homeScore = home.score || timelineSummary.homeScore;
+  let awayScore = away.score || timelineSummary.awayScore;
+  let homeOvers: string | number = home.overs;
+  let awayOvers: string | number = away.overs;
 
-  if (isUpcoming) {
-    homeScore = '';
-    awayScore = '';
-  } else if (isLive && hasInnings) {
+  if (!isUpcoming && scoreLine && !homeScore && !awayScore) {
     if (battingIsHome) {
-      homeScore = match.displayScore || '';
-      homeOvers = inn.overs;
+      homeScore = scoreLine;
+      homeOvers = usefulOvers ? innOvers : homeOvers;
     } else {
-      awayScore = match.displayScore || '';
-      awayOvers = inn.overs;
-    }
-  } else if (isCompleted && match.displayScore) {
-    if (battingIsHome) {
-      homeScore = match.displayScore;
-      homeOvers = inn?.overs ?? '';
-    } else if (battingCode) {
-      awayScore = match.displayScore;
-      awayOvers = inn?.overs ?? '';
+      awayScore = scoreLine;
+      awayOvers = usefulOvers ? innOvers : awayOvers;
     }
   }
 
-  const { date, time } = formatScheduled(match.scheduled);
+  const finalScoreLine = [homeScore && `${homeCode} ${homeScore}`, awayScore && `${awayCode} ${awayScore}`]
+    .filter(Boolean)
+    .join('  ·  ') || displayScore;
 
-  const breadcrumbName = (isCompleted || isCancelled)
-    ? `${homeName} vs ${awayName}`
-    : match.matchId?.replace(/^sr:match:/, 'Match #') || 'Match';
+  const { date, time } = formatScheduled(match.scheduled);
+  const breadcrumbName = `${homeName} vs ${awayName}`;
 
   return (
     <div className="mx-auto max-w-7xl space-y-3 px-4 py-8 sm:px-6">
@@ -222,7 +277,7 @@ export default function MatchDetailBody({ match: initialMatch, headToHead: initi
         <span className="text-mtext truncate max-w-[200px] sm:max-w-none font-medium">{breadcrumbName}</span>
       </nav>
 
-      <header className="relative overflow-hidden rounded-3xl border border-lborder bg-card p-6 shadow-sm sm:p-8">
+      <header className="relative overflow-hidden rounded-3xl border border-lborder bg-card p-4 shadow-sm sm:p-8">
         {isLive && (
           <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-danger" />
         )}
@@ -256,65 +311,52 @@ export default function MatchDetailBody({ match: initialMatch, headToHead: initi
         </div>
 
         {/* Big Stadium Scoreboard Matchup */}
-        <div className="relative mt-6 flex flex-col gap-6 sm:grid sm:grid-cols-[1fr_auto_1fr] sm:items-center sm:gap-8">
-          <div className="flex min-w-0 flex-1 justify-start">
-            <TeamSide
-              code={homeCode}
-              name={homeName}
-              score={homeScore}
-              overs={homeOvers}
-              align="left"
-            />
-          </div>
+        <div className="relative mt-5 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 sm:gap-8">
+          <TeamSide
+            code={homeCode}
+            name={homeName}
+            score={homeScore}
+            overs={homeOvers}
+            align="left"
+          />
 
           <div className="flex shrink-0 flex-col items-center justify-center">
-            <div className="grid h-12 w-12 place-items-center rounded-2xl border border-lborder bg-secondary shadow-inner">
-              <span className="font-mono text-xs font-black italic tracking-wider text-stext">VS</span>
+            <div className="grid h-9 w-9 place-items-center rounded-xl border border-lborder bg-secondary sm:h-12 sm:w-12 sm:rounded-2xl">
+              <span className="font-mono text-[10px] font-black italic tracking-wider text-stext sm:text-xs">VS</span>
             </div>
             {match.round && (
-              <span className="mt-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              <span className="mt-1 hidden text-xs font-semibold uppercase tracking-widest text-muted-foreground sm:block">
                 {match.round}
               </span>
             )}
           </div>
 
-          <div className="flex min-w-0 flex-1 justify-end">
-            <TeamSide
-              code={awayCode}
-              name={awayName}
-              score={awayScore}
-              overs={awayOvers}
-              align="right"
-            />
-          </div>
+          <TeamSide
+            code={awayCode}
+            name={awayName}
+            score={awayScore}
+            overs={awayOvers}
+            align="right"
+          />
         </div>
 
-        {/* Live innings detail ticker */}
-        {hasInnings && (
-          <div className="relative mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-secondary/80 p-3.5 border border-lborder/60 text-xs font-semibold text-stext">
-            <div className="flex items-center gap-3">
-              <span className="flex items-center gap-1.5 text-mtext" title="Current innings score">
-                <BarChart3 size={15} className="text-accent" />
-                <span className="font-bold text-accent">{battingCode || 'Batting'}</span> {inn.runs}/{inn.wickets}
+        {hasInnings && scoreLine && (
+          <div className="relative mt-5 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl border border-lborder/60 bg-secondary/80 p-3 text-xs font-semibold text-stext">
+            <span className="flex items-center gap-1.5 text-mtext">
+              <BarChart3 size={14} className="text-accent" />
+              <span className="font-bold text-accent">{battingLabel}</span> {scoreLine}
+            </span>
+            {usefulOvers && (
+              <span className="flex items-center gap-1.5">
+                <Users size={13} className="text-accent" />
+                {innOvers} ov{usefulRr ? ` · RR ${innRr}` : ''}
               </span>
-              <span>·</span>
-              <span className="flex items-center gap-1.5" title="Overs bowled and run rate">
-                <Users size={14} className="text-accent" /> {inn.overs} ov (RR {inn.runRate})
-              </span>
-              <span>·</span>
-              <span className="flex items-center gap-1.5" title="Official match status">
-                <Activity size={14} className="text-accent" /> {match.matchStatus?.toUpperCase()}
-              </span>
-              <span>·</span>
-              <span className="flex items-center gap-1.5" title="Currently batting">
-                <Target size={14} className="text-accent" /> {inn.battingTeam?.toUpperCase()}
-              </span>
-            </div>
+            )}
+            {phase && (
+              <span className="capitalize">{phase}</span>
+            )}
             {match.lastEvent?.type && match.lastEvent.type !== 'none' && (
-              <span
-                className="rounded-lg bg-card px-2.5 py-1 text-xs font-bold text-mtext border border-lborder/60"
-                title="Last ball"
-              >
+              <span className="rounded-lg border border-lborder/60 bg-card px-2 py-1 text-xs font-bold text-mtext">
                 Last: {match.lastEvent.type} +{match.lastEvent.runs ?? 0}
               </span>
             )}
@@ -358,9 +400,9 @@ export default function MatchDetailBody({ match: initialMatch, headToHead: initi
               <div className="rounded-3xl bg-secondary p-6 ring-1 ring-lborder">
                 <h3 className="mb-4 text-lg font-bold text-mtext">Live Score</h3>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                  <InfoStat label="Score" value={`${battingCode || '—'} ${match.displayScore || '—'}`} big />
-                  <InfoStat label="Overs" value={String(inn.overs)} />
-                  <InfoStat label="Run Rate" value={String(inn.runRate)} />
+                  <InfoStat label="Score" value={`${battingLabel} ${scoreLine || match.displayScore || '—'}`} big />
+                  <InfoStat label="Overs" value={usefulOvers ? String(innOvers) : '—'} />
+                  <InfoStat label="Run Rate" value={usefulRr ? String(innRr) : '—'} />
                 </div>
                 {match.lastEvent && (
                   <p className="mt-4 text-xs text-stext">
@@ -368,12 +410,8 @@ export default function MatchDetailBody({ match: initialMatch, headToHead: initi
                     {match.lastEvent.runs === 1 ? '' : 's'} · {match.lastEvent.type}
                   </p>
                 )}
-                {extractBalls(timeline).length > 0 && (
-                  <div className="mt-4">
-                    <p className="mb-2 text-xs font-bold uppercase tracking-wider text-stext">This over</p>
-                    <BallTracker balls={extractBalls(timeline)} />
-                  </div>
-                )}
+                <LiveStrip match={match} />
+                <OversFromTimeline timeline={timeline} />
               </div>
             ) : isUpcoming ? (
               <EmptyState
@@ -387,16 +425,26 @@ export default function MatchDetailBody({ match: initialMatch, headToHead: initi
               />
             ))}
 
-          {tab === 'predictions' && (
+          {tab === 'predictions' && showPredictions && (
             <MatchPredictionTab match={match} />
           )}
 
-          {tab === 'timeline' && (
+          {(tab === 'commentary' || tab === 'timeline') && (
             <div className="rounded-2xl bg-card p-6 ring-1 ring-lborder">
               <h3 className="mb-4 text-sm font-bold uppercase tracking-widest text-stext">Ball-by-ball</h3>
               <MatchTimeline payload={timeline} upcoming={isUpcoming} />
             </div>
           )}
+
+          {tab === 'scorecard' && <ScorecardPanel match={match} />}
+
+          {tab === 'squads' && (
+            <SquadsPanel match={match} homeName={homeName} awayName={awayName} />
+          )}
+
+          {tab === 'stats' && <StatsPanel match={match} />}
+
+          {tab === 'news' && <MatchNewsPanel articles={relatedNews} loading={newsLoading} />}
 
           {tab === 'info' && (
             <div className="rounded-2xl bg-card p-6 ring-1 ring-lborder">
@@ -415,16 +463,31 @@ export default function MatchDetailBody({ match: initialMatch, headToHead: initi
           {tab === 'result' && (isCompleted || isCancelled) && (
             <div className="rounded-2xl bg-card p-6 ring-1 ring-lborder">
               <h3 className="mb-4 text-sm font-bold uppercase tracking-widest text-stext">Match Result</h3>
-              {match.matchStatus && (
-                <p className="mb-4 text-sm font-semibold text-mtext">{match.matchStatus}</p>
-              )}
-              {match.displayScore ? (
-                <div className="rounded-xl bg-elevated p-4 ring-1 ring-lborder">
-                  <p className="text-xs font-bold uppercase tracking-widest text-stext mb-2">Final Score</p>
-                  <p className="font-mono text-2xl font-black tabular-nums text-mtext">{match.displayScore}</p>
+              {resultText ? (
+                <p className="mb-4 text-base font-semibold text-mtext">{resultText}</p>
+              ) : null}
+              {homeScore || awayScore || finalScoreLine ? (
+                <div className="space-y-3 rounded-xl bg-elevated p-4 ring-1 ring-lborder">
+                  <p className="text-xs font-bold uppercase tracking-widest text-stext">Final score</p>
+                  <div className="space-y-2">
+                    <p className="flex items-baseline justify-between gap-3">
+                      <span className="truncate text-sm font-semibold text-mtext">{homeName}</span>
+                      <span className="font-mono text-xl font-black tabular-nums text-mtext">{homeScore || '—'}</span>
+                    </p>
+                    <p className="flex items-baseline justify-between gap-3">
+                      <span className="truncate text-sm font-semibold text-mtext">{awayName}</span>
+                      <span className="font-mono text-xl font-black tabular-nums text-mtext">{awayScore || '—'}</span>
+                    </p>
+                  </div>
+                  {timelineSummary.scores.length > 0 ? (
+                    <p className="font-mono text-xs text-stext">{timelineSummary.scores.join(' · ')}</p>
+                  ) : null}
+                  {!homeScore && !awayScore && finalScoreLine ? (
+                    <p className="font-mono text-lg font-black tabular-nums text-mtext">{finalScoreLine}</p>
+                  ) : null}
                 </div>
               ) : (
-                <p className="text-sm text-stext">No final score available.</p>
+                <p className="text-sm text-stext">No final score stored for this match yet.</p>
               )}
             </div>
           )}
@@ -463,19 +526,17 @@ export default function MatchDetailBody({ match: initialMatch, headToHead: initi
 function TeamSide({ code, name, score, overs, align }: { code: string; name: string; score: string; overs: string | number; align: string }) {
   const right = align === 'right';
   return (
-    <div className={`flex min-w-0 items-center gap-3 sm:gap-5 ${right ? 'flex-row-reverse justify-end text-right' : 'justify-start text-left'}`}>
-      <TeamLogo code={code} name={name} size="md" className="h-12 w-12 sm:h-16 sm:w-16" link={false} />
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-black text-mtext sm:text-xl tracking-tight">{name}</p>
+    <div className={`flex min-w-0 items-center gap-2 sm:gap-4 ${right ? 'flex-row-reverse text-right' : 'text-left'}`}>
+      <TeamLogo code={code} name={name} size="sm" className="h-9 w-9 shrink-0 sm:h-14 sm:w-14" link={false} />
+      <div className="min-w-0">
+        <p className="truncate text-xs font-black tracking-tight text-mtext sm:text-lg">{name}</p>
         {score ? (
-          <div className={`mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-0 ${right ? 'justify-end' : 'justify-start'}`}>
-            <span className="font-mono text-2xl font-black tabular-nums leading-tight text-accent sm:text-4xl tracking-tighter">
-              {score}
-            </span>
-            {overs && <span className="font-mono text-xs font-bold text-stext sm:text-sm">{overs} ov</span>}
-          </div>
+          <p className="mt-0.5 font-mono text-xl font-black tabular-nums leading-none tracking-tighter text-accent sm:text-4xl">
+            {score}
+            {overs ? <span className="ml-1 font-mono text-[10px] font-bold text-stext sm:text-sm">{overs} ov</span> : null}
+          </p>
         ) : (
-          <p className="text-sm text-stext">—</p>
+          <p className="mt-0.5 text-sm text-stext">—</p>
         )}
       </div>
     </div>

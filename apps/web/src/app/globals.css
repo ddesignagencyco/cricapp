@@ -441,7 +441,7 @@ button:disabled,
 }
 
 .hero-highlight {
-  color: #A9D3EE !important;
+  color: #238fe2 !important;
 }
 
 /* Legibility scrims over hero photography. Fixed dark values in both
@@ -550,6 +550,15 @@ button:disabled,
   text-align: right;
   font-family: "Noto Nastaliq Urdu", "Noto Naskh Arabic", var(--font-sans);
   line-height: 2.45;
+}
+
+input.admin-control.news-copy[lang="ur"],
+input.admin-control.news-copy[dir="rtl"] {
+  min-height: 3.75rem !important;
+  height: 3.75rem !important;
+  padding: 0.9rem 0.9rem !important;
+  line-height: 1.9 !important;
+  font-family: "Noto Naskh Arabic", "Noto Nastaliq Urdu", var(--font-sans);
 }
 
 /* Nastaliq reads much larger than Latin at the same px size */

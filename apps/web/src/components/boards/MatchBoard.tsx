@@ -153,7 +153,7 @@ export default function MatchBoard() {
         <>
           <div className="fade-in grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {visibleMatches.map((m, index) => (
-              <Fragment key={m.matchId || m.id}>
+              <Fragment key={`${m.matchId || m.id || 'match'}-${index}`}>
                 <MatchCard match={m} />
                 {visibleMatches.length >= 4 && index === 3 ? (
                   <DummyAd size="medium-rectangle" placement="matches-infeed" inFeed />

@@ -2,12 +2,14 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Calendar, CalendarDays, MapPin, Trophy } from 'lucide-react';
+import { Calendar, CalendarDays, MapPin, Newspaper, Trophy } from 'lucide-react';
 import EmptyState from '../../../components/EmptyState';
 import DummyAd from '../../../components/advertisements/DummyAd';
 import { StatusBadge } from '../../../components/Badge';
 import FavoriteButton from '../../../components/FavoriteButton';
 import ShareButton from '../../../components/ShareButton';
+import Tabs from '../../../components/Tabs';
+import { RelatedNewsPanel, useLinkedNews } from '../../../components/boards/RelatedNewsPanel';
 import { APP_TIME_ZONE } from '../../../utils/helpers';
 import type { SportEventRecord, TournamentSeason } from '../../../types/index';
 
@@ -115,6 +117,7 @@ export default function TournamentDetailPageClient({
   initialSeasonId,
 }: TournamentDetailPageClientProps) {
   const [seasonId, setSeasonId] = useState(initialSeasonId || seasons[0]?.id || '');
+  const [tab, setTab] = useState('results');
   const category = getCategoryName(tournament.category) || 'International';
   const season = getSeasonName(tournament.currentSeason);
   const typeRaw = tournament.type;
@@ -124,6 +127,11 @@ export default function TournamentDetailPageClient({
       : typeRaw?.name || '';
   const selectedSeason = seasons.find((item) => item.id === seasonId) || seasons[0];
   const tournamentId = String(tournament.id || '');
+  const { articles: news, loading: newsLoading } = useLinkedNews({ seriesId: tournamentId });
+  const seriesTabs = [
+    { key: 'results', label: 'Results', icon: CalendarDays },
+    { key: 'news', label: 'News', icon: Newspaper },
+  ];
   const results = useMemo(
     () => (seasonId && resultsBySeason[seasonId]) || [],
     [resultsBySeason, seasonId],
@@ -209,6 +217,19 @@ export default function TournamentDetailPageClient({
 
       <DummyAd size="leaderboard" placement="tournament-detail-after-intro" />
 
+      <Tabs tabs={seriesTabs} active={tab} onChange={setTab} />
+
+      {tab === 'news' && (
+        <RelatedNewsPanel
+          articles={news}
+          loading={newsLoading}
+          emptyTitle="No series news"
+          emptyHint="Publish a story from Admin → News and link this series. Drafts do not appear here."
+        />
+      )}
+
+      {tab === 'results' && (
+      <div className="space-y-5">
       <section>
         <h2 className="mb-3 text-lg font-semibold text-mtext">Seasons</h2>
         {seasons && seasons.length > 0 ? (
@@ -314,6 +335,8 @@ export default function TournamentDetailPageClient({
           />
         )}
       </section>
+      </div>
+      )}
     </div>
   );
 }

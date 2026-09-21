@@ -17,7 +17,7 @@ export default function PredictionChart({ points, homeLabel, awayLabel, preMatch
   const [active, setActive] = useState<number | null>(null);
 
   if (series.length === 0) {
-    return <p className="py-10 text-center text-sm text-stext">No chart points from the prediction API yet.</p>;
+    return <p className="py-10 text-center text-sm text-stext">We do not have a chance-of-winning graph for this match yet.</p>;
   }
 
   const selectedIndex = active ?? series.length - 1;
@@ -51,7 +51,7 @@ export default function PredictionChart({ points, homeLabel, awayLabel, preMatch
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <CardTitle icon={TrendingUp} title="Probability timeline" />
+        <CardTitle icon={TrendingUp} title="How the chances have changed" />
         <div className="flex items-center gap-4 text-xs font-semibold text-stext">
           <span className="inline-flex items-center gap-1.5">
             <span className={`h-2 w-2 rounded-full ${homeDot}`} />

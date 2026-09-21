@@ -1,5 +1,7 @@
+import { redirect } from 'next/navigation';
 import NewsBoard from '../../components/boards/NewsBoard';
 import { fetchNewsCategories, fetchNewsPage } from '../../services/news';
+import { newsListPath } from '../../utils/newsConstraints';
 
 export const metadata = {
   title: 'News',
@@ -18,7 +20,10 @@ export default async function NewsPage({
   const page = Math.max(1, Number(params.page) || 1);
   const category = params.category?.trim() || undefined;
   const tag = params.tag?.trim() || undefined;
-  const language = params.lang === 'ur' ? 'ur' : 'en';
+  if (params.lang === 'ur') {
+    redirect(newsListPath('ur', { category, tag, page }));
+  }
+  const language = 'en';
   const [newsResult, categories] = await Promise.all([
     fetchNewsPage({ page, limit: PAGE_SIZE, category, tag, language })
       .then((result) => ({ result, loadError: false as const }))

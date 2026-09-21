@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Calendar, Swords } from 'lucide-react';
 import { HeadToHead } from '../types/index';
 import { formatH2HDate, isUpcomingMeeting, parseH2H, tallyH2H, type ParsedMeeting } from '../lib/headToHead';
+import { encodeEntityId } from '../utils/entityId';
 
 interface Props {
   data: HeadToHead | null;
@@ -35,7 +36,7 @@ export default function HeadToHeadWidget({ data }: Props) {
 
   const compareHref =
     teamA.id && teamB.id
-      ? `/teams?a=${encodeURIComponent(teamA.id)}&b=${encodeURIComponent(teamB.id)}#compare-teams`
+      ? `/teams?a=${encodeEntityId(teamA.id)}&b=${encodeEntityId(teamB.id)}#compare-teams`
       : '';
 
   return (

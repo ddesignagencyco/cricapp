@@ -12,6 +12,7 @@ const footerCols = [
     links: [
       { label: 'Matches', to: '/matches' },
       { label: 'Predictions', to: '/predictions' },
+      { label: 'Tools', to: '/tools' },
       { label: 'Teams', to: '/teams' },
       { label: 'Players', to: '/players' },
       { label: 'Authors', to: '/authors' },
@@ -22,7 +23,7 @@ const footerCols = [
   {
     title: 'PSL & More',
     links: [
-      { label: 'PSL Hub', to: '/psl' },
+      { label: 'PSL / Pakistan', to: '/psl' },
       { label: 'Tournaments', to: '/tournaments' },
       { label: 'Tours', to: '/tours' },
     ],

@@ -6,6 +6,7 @@ import {
   FileEdit,
   FilePlus2,
   FileText,
+  Languages,
   Loader2,
   Search,
   Trash2,
@@ -25,7 +26,7 @@ import {
 import { AdminAvatar, AdminInput, AdminSelect, ConfirmDialog, ErrorState, LoadingState } from './AdminShared';
 import Pagination from './AdminPagination';
 import RemoteImage from '../RemoteImage';
-import { newsHref } from '../../utils/newsConstraints';
+import { newsHref, otherNewsLanguage } from '../../utils/newsConstraints';
 import NewsCopy from '../NewsCopy';
 
 const PAGE_SIZE = 20;
@@ -212,6 +213,9 @@ export default function NewsManager() {
                           <Link href={`/admin/news/${a.id}/edit`} className="block" style={{ color: 'var(--admin-text)' }}>
                             <NewsCopy as="span" language={a.language} text={a.title} className="block truncate text-xs font-semibold">{a.title}</NewsCopy>
                           </Link>
+                          <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-muted)' }}>
+                            {a.language === 'ur' ? 'Urdu' : 'English'}
+                          </p>
                         </div>
                       </div>
                     </td>
@@ -267,6 +271,16 @@ export default function NewsManager() {
                         >
                           <FileEdit size={16} />
                         </Link>
+                        {(a.translations || []).some((row) => row.language === otherNewsLanguage(a.language)) ? null : (
+                          <Link
+                            href={`/admin/news/new?translateFrom=${a.id}`}
+                            className="grid h-8 w-8 place-items-center rounded-md"
+                            style={{ background: 'var(--admin-info-bg)', color: 'var(--admin-accent)' }}
+                            title={`Create ${otherNewsLanguage(a.language) === 'ur' ? 'Urdu' : 'English'} translation`}
+                          >
+                            <Languages size={16} />
+                          </Link>
+                        )}
                         <button
                           type="button"
                           disabled={busyId === a.id}

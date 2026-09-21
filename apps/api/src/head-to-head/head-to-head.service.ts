@@ -7,12 +7,20 @@ export interface HeadToHeadResult {
   payload: Record<string, unknown>;
 }
 
+function decodeTeamId(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
 @Injectable()
 export class HeadToHeadService {
   constructor(private readonly prisma: PrismaService) {}
 
   async get(teamAId: string, teamBId: string): Promise<HeadToHeadResult> {
-    const [a, b] = [teamAId, teamBId].sort();
+    const [a, b] = [decodeTeamId(teamAId), decodeTeamId(teamBId)].sort();
     const row = await this.prisma.headToHead.findUnique({
       where: { teamAId_teamBId: { teamAId: a, teamBId: b } },
     });

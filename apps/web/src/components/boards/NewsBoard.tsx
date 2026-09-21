@@ -21,7 +21,7 @@ import RemoteImage from '../RemoteImage';
 import NewsCopy from '../NewsCopy';
 import { AuthorByline } from '../PersonAvatar';
 import type { NewsArticle } from '../../types';
-import { newsHref } from '../../utils/newsConstraints';
+import { newsHref, newsListPath } from '../../utils/newsConstraints';
 import { authorAvatarFromArticle } from '../../services/authors';
 
 const categoryTone: Record<string, string> = {
@@ -141,14 +141,11 @@ export default function NewsBoard({
   const spotlightCategory = featured ? getCategoryName(featured.category) : '';
   const spotlightTags = featured ? getArticleTags(featured) : [];
 
-  const newsListHref = (lang: 'en' | 'ur') => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.delete('page');
-    if (lang === 'ur') params.set('lang', 'ur');
-    else params.delete('lang');
-    const query = params.toString();
-    return query ? `/news?${query}` : '/news';
-  };
+  const newsListHref = (lang: 'en' | 'ur') =>
+    newsListPath(lang, {
+      category: selectedCategory,
+      tag: searchParams.get('tag') || undefined,
+    });
 
   return (
     <>

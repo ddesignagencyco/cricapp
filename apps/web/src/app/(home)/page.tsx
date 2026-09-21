@@ -17,7 +17,7 @@ import HomePredictions, { type HomePredictionPick } from '../../components/predi
 import { featuredRun } from '../../lib/predictions';
 import { fetchLiveMatches, fetchMatches } from '../../services/matches';
 import { fetchNews } from '../../services/news';
-import { fetchMatchPredictions } from '../../services/predictions';
+import { fetchPredictionsByMatchIds } from '../../services/predictions';
 import { newsHref } from '../../utils/newsConstraints';
 import { fetchPslLeaders, fetchPslStandings } from '../../services/psl';
 import { fetchStreams } from '../../services/streams';
@@ -103,13 +103,13 @@ export default async function HomePage() {
     if (id) predictionCandidates.set(id, match);
   }
   const predictionMatches = [...predictionCandidates.values()].slice(0, 8);
-  const predictionRows = await Promise.all(
-    predictionMatches.map(async (match) => {
-      const predictions = await fetchMatchPredictions(String(match.matchId || match.id)).catch(() => null);
-      const run = featuredRun(predictions);
-      return run ? ({ match, run } satisfies HomePredictionPick) : null;
-    })
+  const predictionById = await fetchPredictionsByMatchIds(
+    predictionMatches.map((match) => String(match.matchId || match.id))
   );
+  const predictionRows = predictionMatches.map((match) => {
+    const run = featuredRun(predictionById.get(String(match.matchId || match.id)) ?? null);
+    return run ? ({ match, run } satisfies HomePredictionPick) : null;
+  });
   const predictionPicks = predictionRows.filter((row): row is HomePredictionPick => row !== null);
 
   return (

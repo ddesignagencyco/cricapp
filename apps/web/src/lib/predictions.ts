@@ -1,6 +1,12 @@
 import { formatCricketOvers, getInitials } from '../utils/helpers';
 import type { Match } from '../types';
-import type { MatchSideLabels, PredictionChartPoint, PredictionRun } from '../types/predictions';
+import type {
+  MatchSideLabels,
+  PartnershipProjection,
+  PredictionChartPoint,
+  PredictionRun,
+  PredictionScoreRange,
+} from '../types/predictions';
 
 export function isNil(value: unknown): value is null | undefined {
   return value === null || value === undefined;
@@ -26,6 +32,9 @@ export interface PredictionSituation {
   projectedTotal: number | null;
   deltaFromPrevious: number | null;
   battingLabel: string;
+  matchStatus: string;
+  parScore: number | null;
+  requiredRuns: number | null;
 }
 
 export function asPercent(value: number | null | undefined): string {
@@ -87,15 +96,25 @@ export function favoriteLabel(run: PredictionRun | null | undefined, sides: Matc
   return run.homeWinProb > run.awayWinProb ? sides.homeName : sides.awayName;
 }
 
+const PRIVATE_COPY = /\b(model|calibration|brier|stored run|logit|resource-v)\b/i;
+
+export function publicNarrative(text?: string | null): string {
+  if (!text) return '';
+  return text
+    .split(/(?<=[.!?])\s+/)
+    .map((sentence) => sentence.trim())
+    .filter((sentence) => sentence && !PRIVATE_COPY.test(sentence))
+    .join(' ')
+    .trim();
+}
+
 export function explanationReasons(explanation: Record<string, unknown> | null | undefined): string[] {
   if (!explanation) return [];
   const raw = explanation.reasons;
-  if (Array.isArray(raw)) {
-    return raw.map((item) => String(item)).filter(Boolean);
-  }
-  const attributions = explanation.factorAttributions;
-  if (!Array.isArray(attributions)) return [];
-  return factorAttributions(explanation);
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((item) => String(item).trim())
+    .filter((item) => item.length > 8 && !PRIVATE_COPY.test(item));
 }
 
 export function factorAttributions(explanation: Record<string, unknown> | null | undefined): string[] {
@@ -209,6 +228,9 @@ export function predictionSituation(
   const explanation = run?.explanation || {};
   const display = String(rec.displayScore || '').trim();
   const displayScore = /^\d+\s*\/\s*\d+/.test(display) ? display.replace(/\s+/g, '') : '';
+  const parsedScore = displayScore.match(/^(\d+)\/(\d+)/);
+  const scoreRuns = parsedScore ? Number(parsedScore[1]) : null;
+  const scoreWkts = parsedScore ? Number(parsedScore[2]) : null;
   const innRuns = finiteNum(inn.runs);
   const innWkts = finiteNum(inn.wickets);
   const innOvers = finiteNum(inn.overs);
@@ -218,7 +240,9 @@ export function predictionSituation(
   const requiredRuns = finiteNum(explanation.requiredRuns);
   const remainingBalls = finiteNum(explanation.remainingBalls);
   const requiredRunRate = finiteNum(explanation.requiredRunRate ?? rec.requiredRunRate);
-  const modelWickets = finiteNum(explanation.wickets);
+  const parScore = finiteNum(explanation.parScore);
+  const modelWickets = scoreWkts !== null ? scoreWkts : finiteNum(explanation.wickets);
+  const matchStatus = String(rec.matchStatus || rec.status || '').trim();
   const battingCode = String(inn.battingTeam || '').toUpperCase();
   const battingName =
     battingCode && battingCode === sides.homeCode
@@ -241,11 +265,15 @@ export function predictionSituation(
 
   const chasing =
     inning === 2 && requiredRuns !== null && requiredRuns > 0 && remainingBalls !== null && remainingBalls > 0;
-  const needLine = chasing ? `${battingName} need ${requiredRuns} from ${remainingBalls} balls` : '';
+  const needLine = chasing
+    ? `${battingName} need ${requiredRuns} from ${remainingBalls} balls`
+    : inning === 2 && requiredRuns !== null && requiredRuns > 0 && remainingBalls === 0
+      ? `${battingName} were chasing ${requiredRuns}${scoreRuns !== null ? ` · finished ${scoreRuns}` : ''}`
+      : '';
 
   const inningsLabel = inning === 1 ? '1st innings' : inning === 2 ? '2nd innings' : '';
   const snapshotNote = modelOver !== null
-    ? `Model snapshot at ${modelOver} ov${inningsLabel ? ` · ${inningsLabel}` : ''}`
+    ? `Score picture at ${modelOver} overs${inningsLabel ? ` · ${inningsLabel}` : ''}`
     : '';
 
   return {
@@ -262,7 +290,196 @@ export function predictionSituation(
     projectedTotal: finiteNum(explanation.projectedTotal),
     deltaFromPrevious: finiteNum(explanation.deltaFromPrevious),
     battingLabel: battingName,
+    matchStatus,
+    parScore,
+    requiredRuns,
   };
+}
+
+export function matchStatusLabel(status?: string | null): string {
+  const raw = String(status || '').trim().toLowerCase();
+  if (!raw) return '';
+  if (raw.includes('innings_break')) return 'Innings break';
+  if (raw.includes('first_innings')) return '1st innings';
+  if (raw.includes('second_innings')) return '2nd innings';
+  switch (raw) {
+    case 'live':
+      return 'Live';
+    case 'upcoming':
+    case 'not_started':
+    case 'not started':
+      return 'Upcoming';
+    case 'completed':
+      return 'Completed';
+    case 'cancelled':
+      return 'Cancelled';
+    default:
+      return raw.replace(/_/g, ' ');
+  }
+}
+
+export function inningsLooksOver(situation: PredictionSituation): boolean {
+  const phase = String(situation.matchStatus || '').toLowerCase();
+  if (phase.includes('innings_break')) return true;
+  if (situation.remainingBalls === 0) return true;
+  if (situation.resourcesLeft === 0) return true;
+  if (situation.modelOver !== null && situation.modelOver >= 50) return true;
+  return false;
+}
+
+export function usefulScoreRange(
+  range?: PredictionScoreRange | null,
+  currentRuns?: number | null
+): boolean {
+  if (!range) return false;
+  const low = Number(range.low);
+  const high = Number(range.high);
+  const expected = Number(range.expected);
+  const hasPositive = [low, high, expected].some((value) => Number.isFinite(value) && value > 0);
+  if (!hasPositive) return false;
+  if (currentRuns !== null && currentRuns !== undefined && Number.isFinite(high) && high > 0 && currentRuns > high + 20) {
+    return false;
+  }
+  return true;
+}
+
+export function usefulPartnership(partnership?: PartnershipProjection | null): boolean {
+  if (!partnership) return false;
+  const runs = Number(partnership.expectedAdditionalRuns);
+  const balls = Number(partnership.horizonBalls);
+  return Number.isFinite(runs) && runs > 0 && (!Number.isFinite(balls) || balls > 0);
+}
+
+export function scoreRangeTitle(type?: string | null): string {
+  switch ((type || '').toLowerCase().replace(/\s+/g, '_')) {
+    case 'chase_total':
+      return 'What the chasing side might finish on';
+    case 'first_innings_total':
+      return 'Likely first-innings total';
+    case 'projected_total':
+    case 'score_range':
+      return 'Likely team total';
+    default:
+      return 'What might happen next';
+  }
+}
+
+export function momentumLine(
+  momentum: number | null | undefined,
+  sides: MatchSideLabels
+): string {
+  if (isNil(momentum) || momentum === 0) return '';
+  const team = momentum > 0 ? sides.homeName : sides.awayName;
+  const abs = Math.abs(Number(momentum));
+  if (abs >= 1) return `${team} have a clear hold`;
+  if (abs >= 0.4) return `${team} have a slight hold`;
+  return `Tiny lean toward ${team}`;
+}
+
+function stringField(source: Record<string, unknown> | null | undefined, key: string): string {
+  if (!source) return '';
+  const value = source[key];
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+function storedText(value: unknown): string {
+  if (typeof value !== 'string') return '';
+  const text = value.trim();
+  if (!text || PRIVATE_COPY.test(text)) return '';
+  return text;
+}
+
+export function publicTossFact(
+  run: PredictionRun | null | undefined,
+  match: Match | Record<string, unknown> | null | undefined,
+  sides: MatchSideLabels
+): string | null {
+  const rec = (match || {}) as Record<string, unknown>;
+  const explanation = run?.explanation || {};
+  const listed = stringField(rec, 'toss') || stringField(rec, 'tossWinner') || stringField(rec, 'tossWonBy');
+  const decision = storedText(explanation.tossDecision);
+  const adjusted = explanation.tossAdjusted === true;
+  if (!adjusted && !listed && !decision) return null;
+  const who = listed
+    .replace(/\bhome\b/i, sides.homeName)
+    .replace(/\baway\b/i, sides.awayName);
+  if (adjusted) {
+    return ['Toss is already in this chance', who || decision].filter(Boolean).join(' · ');
+  }
+  return who || (decision ? `Toss: ${decision}` : null);
+}
+
+export function publicVenueWeatherFact(
+  run: PredictionRun | null | undefined,
+  match: Match | Record<string, unknown> | null | undefined
+): string | null {
+  const rec = (match || {}) as Record<string, unknown>;
+  const venue = [stringField(rec, 'venue'), stringField(rec, 'city')].filter(Boolean).join(', ');
+  const weather = stringField(rec, 'weather') || stringField(rec, 'weatherInfo');
+  const pitch = stringField(rec, 'pitch') || stringField(rec, 'pitchInfo');
+  const impact = run?.explanation?.conditionsImpact;
+  const reasons: string[] = [];
+  if (impact && typeof impact === 'object' && !Array.isArray(impact)) {
+    const factors = (impact as { factors?: unknown }).factors;
+    if (Array.isArray(factors)) {
+      for (const item of factors) {
+        if (!item || typeof item !== 'object') continue;
+        const reason = storedText((item as { reason?: unknown }).reason);
+        if (reason) reasons.push(reason);
+      }
+    }
+  }
+  const bits = [venue, weather, pitch, ...reasons].filter(Boolean);
+  if (bits.length === 0) return null;
+  return bits.join(' · ');
+}
+
+export function publicXiSnapshot(
+  run: PredictionRun | null | undefined
+): { home: string[]; away: string[]; note: string } | null {
+  if (!run?.xi || typeof run.xi !== 'object') return null;
+  const home = xiNames(run.xi, 'home');
+  const away = xiNames(run.xi, 'away');
+  if (home.length === 0 && away.length === 0) return null;
+  const reliability = storedText(run.xi.reliability);
+  const method = storedText(run.xi.method);
+  if (method === 'unavailable') return null;
+  const note = reliability === 'high' ? 'Confirmed listing' : 'Listed XI from the saved snapshot';
+  return { home, away, note };
+}
+
+export function namedPlayerPicks(
+  picks?: Array<{ playerName?: string; name?: string; probability?: number | null; [key: string]: unknown }> | null
+): Array<{ name: string; chance: string | null }> {
+  if (!Array.isArray(picks)) return [];
+  return picks
+    .map((player) => {
+      const name = String(player.playerName || player.name || '').trim();
+      if (!name || PRIVATE_COPY.test(name)) return null;
+      const chance = isNil(player.probability) || !Number.isFinite(Number(player.probability))
+        ? null
+        : asPercent(Number(player.probability));
+      return { name, chance };
+    })
+    .filter((row): row is { name: string; chance: string | null } => row !== null)
+    .slice(0, 5);
+}
+
+export function publicWhyChanged(
+  run: PredictionRun | null | undefined,
+  sides: MatchSideLabels
+): string | null {
+  if (!run) return null;
+  const explanation = run.explanation || {};
+  const reasons = explanationReasons(explanation);
+  const delta = finiteNum(explanation.deltaFromPrevious);
+  const bits: string[] = [];
+  if (delta !== null && delta !== 0) {
+    const team = delta > 0 ? sides.homeName : sides.awayName;
+    bits.push(`${team} chance moved ${delta > 0 ? '+' : ''}${asPercent(Math.abs(delta))} since the last update`);
+  }
+  if (reasons.length > 0) bits.push(reasons.join(' · '));
+  return bits.length > 0 ? bits.join('. ') : null;
 }
 
 export function timeAgo(iso?: string | null): string {

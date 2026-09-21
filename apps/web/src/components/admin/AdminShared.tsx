@@ -7,7 +7,7 @@ import { Check, ChevronDown } from 'lucide-react';
 import Badge, { StatusBadge as SharedStatusBadge } from '../Badge';
 import { getInitials } from '../../utils/helpers';
 import RemoteImage from '../RemoteImage';
-import { AdminLoadingBody, AdminTableSkeleton, type AdminLoadingVariant } from '../skeletons/Skeletons';
+import { AdminLoader, AdminTableSkeleton, type AdminLoadingVariant } from '../skeletons/Skeletons';
 import useFocusTrap from '../../hooks/useFocusTrap';
 
 export function AdminEntityLink({
@@ -129,12 +129,12 @@ export function StatCard({
 export { AdminTableSkeleton };
 
 export function LoadingState({
-  variant = 'table',
+  variant: _variant = 'table',
 }: {
   text?: string;
   variant?: AdminLoadingVariant;
 }) {
-  return <AdminLoadingBody variant={variant} />;
+  return <AdminLoader />;
 }
 
 /* ─── Empty State ──────────────────────────────────────────── */

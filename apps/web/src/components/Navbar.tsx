@@ -15,7 +15,6 @@ import {
   LayoutDashboard,
   LogIn,
   LogOut,
-  Menu,
   Moon,
   Newspaper,
   Radio,
@@ -25,6 +24,7 @@ import {
   Sparkles,
   Sun,
   Trophy,
+  Wrench,
   User,
   UserPlus,
   UserRound,
@@ -55,6 +55,7 @@ const exploreItems: NavItem[] = [
   { to: '/teams', label: 'Teams', icon: Shield },
   { to: '/players', label: 'Players', icon: UserRound },
   { to: '/psl', label: 'PSL', icon: Trophy },
+  { to: '/tools', label: 'Tools', icon: Wrench },
   { to: '/tours', label: 'Tours', icon: Globe },
   { to: '/tournaments', label: 'Tournaments', icon: Award },
   { to: '/news', label: 'News', icon: Newspaper },
@@ -100,6 +101,20 @@ export default function Navbar() {
     setSearchOpen(false);
     setMenuOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    const onToggle = () => {
+      setMobileOpen((open) => !open);
+      setMenuOpen(false);
+      setSearchOpen(false);
+    };
+    window.addEventListener('pcz:toggle-menu', onToggle);
+    return () => window.removeEventListener('pcz:toggle-menu', onToggle);
+  }, []);
+
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('pcz:menu-state', { detail: mobileOpen }));
+  }, [mobileOpen]);
 
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
@@ -197,7 +212,7 @@ export default function Navbar() {
           {isAuthenticated && user ? (
             <div
               ref={menuRef}
-              className="relative hidden sm:block"
+              className="relative hidden lg:block"
               onMouseEnter={openMenu}
               onMouseLeave={closeMenuSoon}
             >
@@ -277,7 +292,7 @@ export default function Navbar() {
           ) : (
             <div
               ref={menuRef}
-              className="relative"
+              className="relative hidden lg:block"
               onMouseEnter={openMenu}
               onMouseLeave={closeMenuSoon}
             >
@@ -346,20 +361,6 @@ export default function Navbar() {
             </div>
           )}
 
-          <button
-            type="button"
-            onClick={() => {
-              setMobileOpen((m) => !m);
-              setMenuOpen(false);
-              setSearchOpen(false);
-            }}
-            className="grid h-9 w-9 place-items-center rounded text-mtext transition-colors hover:bg-[var(--color-row-hover)] lg:hidden"
-            aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
-            aria-expanded={mobileOpen}
-            aria-controls="mobile-navigation"
-          >
-            {mobileOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
         </div>
       </nav>
     </header>
@@ -370,15 +371,26 @@ export default function Navbar() {
         <>
           <button
             type="button"
-            className="fixed inset-0 top-14 z-30 bg-black/50 lg:hidden"
+            className="fixed inset-x-0 top-14 bottom-14 z-[25] bg-black/50 lg:hidden"
             aria-label="Close menu"
             onClick={closeMobile}
           />
           <div
             id="mobile-navigation"
-            className="fixed inset-x-0 top-14 z-40 max-h-[calc(100dvh-3.5rem)] overflow-y-auto border-t border-lborder bg-primary lg:hidden"
+            className="fixed inset-x-0 top-14 bottom-14 z-[30] overflow-y-auto border-t border-lborder bg-primary lg:hidden"
           >
             <div className="mx-auto max-w-7xl px-4 pb-8 pt-4 sm:px-6">
+              <div className="mb-3 flex items-center justify-between">
+                <p className="text-sm font-semibold text-mtext">More</p>
+                <button
+                  type="button"
+                  onClick={closeMobile}
+                  className="grid h-9 w-9 place-items-center rounded text-stext hover:bg-[var(--color-row-hover)] hover:text-mtext"
+                  aria-label="Close more menu"
+                >
+                  <X size={18} />
+                </button>
+              </div>
               <MobileSection label="Live">
                 {liveItems.map((item) => (
                   <MobileNavLink key={item.to} item={item} active={isActive(item.to)} />

@@ -5,11 +5,12 @@ import type { ReactNode } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import ScrollTopButton from '../components/ScrollTopButton';
+import MobileBottomNav from './MobileBottomNav';
 import DummyAd from './advertisements/DummyAd';
 import { shouldHideDummyAds } from '../lib/advertisements/placements';
 
 function isNewsArticlePath(pathname: string) {
-  return /^\/(ur\/)?news\/.+/.test(pathname);
+  return /^\/(ur\/)?news\/.+/.test(pathname) || pathname.startsWith('/cricket-news/');
 }
 
 function isEditorialPath(pathname: string) {
@@ -51,8 +52,9 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
           <DummyAd size="leaderboard" placement={`global-top:${pathname}`} />
         </div>
       ) : null}
-      <main id="main-content" className="min-h-screen min-w-0 flex-1">{children}</main>
+      <main id="main-content" className="min-h-screen min-w-0 flex-1 pb-16 lg:pb-0">{children}</main>
       <Footer />
+      <MobileBottomNav />
       <ScrollTopButton />
     </>
   );

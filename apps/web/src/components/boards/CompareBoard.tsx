@@ -18,6 +18,7 @@ import {
 import TeamLogo from '../TeamLogo';
 import EmptyState from '../EmptyState';
 import ErrorState from '../ErrorState';
+import { decodeEntityId, withColonEntityQuery } from '../../utils/entityId';
 
 const selectStyles = {
   control: (base: Record<string, unknown>, state: { isFocused: boolean }) => ({
@@ -90,8 +91,8 @@ export default function CompareBoard() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const teamAId = searchParams.get('a') || '';
-  const teamBId = searchParams.get('b') || '';
+  const teamAId = decodeEntityId(searchParams.get('a'));
+  const teamBId = decodeEntityId(searchParams.get('b'));
 
   const [teams, setTeams] = useState<Team[]>([]);
   const [teamsError, setTeamsError] = useState(false);
@@ -105,11 +106,11 @@ export default function CompareBoard() {
   const setPair = useCallback(
     (nextA: string, nextB: string) => {
       const params = new URLSearchParams(searchParams.toString());
-      if (nextA) params.set('a', nextA);
+      if (nextA) params.set('a', decodeEntityId(nextA));
       else params.delete('a');
-      if (nextB) params.set('b', nextB);
+      if (nextB) params.set('b', decodeEntityId(nextB));
       else params.delete('b');
-      const qs = params.toString();
+      const qs = withColonEntityQuery(params);
       router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
     },
     [pathname, router, searchParams]

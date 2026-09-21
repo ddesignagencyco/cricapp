@@ -40,14 +40,14 @@ export default function HomePredictions({ picks }: { picks: HomePredictionPick[]
   const others = picks.filter((pick) => matchIdOf(pick.match) !== featuredId).slice(0, 3);
   const sides = matchSides(featured.match);
   const favorite = favoriteLabel(featured.run, sides);
-  const reason = explanationReasons(featured.explanation)[0] || '';
+  const reason = explanationReasons(featured.run.explanation)[0] || '';
   const even = lean(featured.run) < 0.04;
   const callLabel = featured.run.stage === 'live' || featured.match.status === 'live' ? 'Live lean' : 'Clearest call';
 
   return (
     <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
       <SectionHeader
-        title="Model desk"
+        title="Prediction desk"
         subtitle="Who the numbers favour right now — not a scorecard"
         icon="sparkles"
         to="/predictions"
@@ -57,11 +57,11 @@ export default function HomePredictions({ picks }: { picks: HomePredictionPick[]
       <div className={`grid grid-cols-1 gap-3 ${others.length > 0 ? 'lg:grid-cols-[1.4fr_0.8fr]' : ''}`}>
         <Link
           href={`/predictions/${featuredId}`}
-          className="group overflow-hidden rounded-3xl border border-accent/25 bg-card p-5 sm:p-6"
+          className="overflow-hidden rounded-md border border-lborder bg-card p-5 transition-colors hover:border-accent sm:p-6"
         >
           <div className="mb-5 flex flex-wrap items-center justify-between gap-2">
             <div className="flex flex-wrap items-center gap-2">
-              <Badge tone="gold">{callLabel}</Badge>
+              <Badge tone="primary">{callLabel}</Badge>
               <Badge tone={featured.run.stage === 'live' ? 'live' : 'primary'}>{stageLabel(featured.run.stage)}</Badge>
             </div>
             <p className="truncate text-xs font-bold uppercase tracking-widest text-stext">
@@ -77,7 +77,7 @@ export default function HomePredictions({ picks }: { picks: HomePredictionPick[]
                 <p className="truncate text-sm font-black text-mtext sm:text-base">{sides.homeName}</p>
               </div>
             </div>
-            <span className="text-[11px] font-black text-stext">VS</span>
+            <span className="text-[11px] font-bold text-stext">VS</span>
             <div className="flex min-w-0 items-center justify-end gap-2.5 text-right">
               <div className="min-w-0">
                 <p className="text-[11px] font-bold uppercase tracking-wider text-stext">{sides.awayCode}</p>
@@ -96,7 +96,7 @@ export default function HomePredictions({ picks }: { picks: HomePredictionPick[]
 
           <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-lborder/70 pt-4">
             <p className="text-sm font-bold text-mtext">
-              {even ? 'Too close to call' : `Model favourite · ${favorite}`}
+              {even ? 'Too close to call' : `Favourite · ${favorite}`}
             </p>
             {Number.isFinite(Number(featured.run.confidence)) && Number(featured.run.confidence) > 0 && (
               <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] font-semibold text-stext">
@@ -119,7 +119,7 @@ export default function HomePredictions({ picks }: { picks: HomePredictionPick[]
                 <Link
                   key={id}
                   href={`/predictions/${id}`}
-                  className="rounded-2xl border border-lborder bg-card px-4 py-3.5 transition-colors hover:border-accent/40"
+                  className="rounded-md border border-lborder bg-card px-4 py-3.5 transition-colors hover:border-accent"
                 >
                   <div className="mb-2 flex items-center justify-between gap-2">
                     <p className="truncate text-[11px] font-bold uppercase tracking-wider text-stext">

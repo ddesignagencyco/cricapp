@@ -142,5 +142,6 @@ export interface AdminPredictionCalibration {
 
 export interface AdminPredictionRunDetail extends PredictionRun {
   matchId?: string;
+  matchName?: string;
   features?: Record<string, unknown> | null;
 }

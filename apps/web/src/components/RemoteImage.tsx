@@ -33,22 +33,6 @@ export default function RemoteImage({
     ...(objectFit ? { objectFit, objectPosition: 'center' } : {}),
     ...style,
   };
-  const inlineSrc = src.startsWith('data:') || src.startsWith('blob:');
-
-  if (inlineSrc) {
-    return (
-      <img
-        src={src}
-        alt={alt}
-        width={fill ? undefined : width}
-        height={fill ? undefined : height}
-        className={className}
-        style={mergedStyle}
-        title={title}
-        onError={onError}
-      />
-    );
-  }
 
   if (fill) {
     return (

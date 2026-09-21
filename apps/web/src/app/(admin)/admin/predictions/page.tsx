@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode, type RefObjec
 import { Loader2 } from 'lucide-react';
 import AdminPagination from '../../../../components/admin/AdminPagination';
 import {
+  AdminChip,
   AdminEntityLink,
   AdminInput,
   AdminPageHeader,
@@ -13,7 +14,7 @@ import {
   LoadingState,
   StatusBadge,
 } from '../../../../components/admin/AdminShared';
-import { asPercent, isNil, stageLabel } from '../../../../lib/predictions';
+import { asPercent, isNil, stageLabel, xiNames } from '../../../../lib/predictions';
 import {
   fetchAdminPredictionCalibration,
   fetchAdminPredictionModels,
@@ -24,6 +25,7 @@ import type {
   AdminPredictionCalibration,
   AdminPredictionModelVersion,
   AdminPredictionRunDetail,
+  PredictionPlayerPick,
   PredictionRun,
 } from '../../../../types/predictions';
 import { formatScheduled } from '../../../../utils/helpers';
@@ -405,7 +407,7 @@ function RunDetail({
         <div>
           <h2 className="text-sm font-semibold" style={{ color: 'var(--admin-text)' }}>Selected run</h2>
           <p className="mt-0.5 text-xs" style={{ color: 'var(--admin-text-muted)' }}>
-            Plain-language summary of this stored model output.
+            Stored output only — no new probabilities.
           </p>
         </div>
         <button type="button" className="text-xs font-semibold" style={{ color: 'var(--admin-text-muted)' }} onClick={onClose}>
@@ -427,98 +429,193 @@ function RunDetailBody({ run }: { run: AdminPredictionRunDetail }) {
   const explanation = run.explanation || {};
   const range = run.scoreRange;
   const partnership = run.partnershipProjection;
-  const lean = run.homeWinProb === run.awayWinProb
-    ? 'The model called this even.'
+  const favourite = run.homeWinProb === run.awayWinProb
+    ? 'Even'
     : run.homeWinProb > run.awayWinProb
-      ? `The model favoured the home side (${asPercent(run.homeWinProb)} to win).`
-      : `The model favoured the away side (${asPercent(run.awayWinProb)} to win).`;
+      ? 'Home'
+      : 'Away';
   const situation = readableSituation(explanation);
   const factors = readableFactors(explanation);
+  const conditions = readableConditions(explanation);
+  const toss = readableToss(explanation, run.features);
+  const venue = asText(nested(run.features, 'venue')) || asText(nested(run.features, 'venue.name'));
+  const format = asText(nested(run.features, 'format'));
+  const batters = playerLines(run.topBatters);
+  const bowlers = playerLines(run.topBowlers);
+  const homeXi = xiNames(run.xi, 'home');
+  const awayXi = xiNames(run.xi, 'away');
+  const xiMeta = run.xi && typeof run.xi === 'object'
+    ? [asText(run.xi.reliability), asText(run.xi.method)].filter(Boolean).join(' · ')
+    : '';
   const reasons = Array.isArray(explanation.reasons)
     ? explanation.reasons.map(String).filter((reason) => reason && reason !== 'score')
     : [];
+  const delta = Number(explanation.deltaFromPrevious);
   const featureRows = flattenRecord(run.features);
+  const liveMeters = [
+    !isNil(run.momentum) ? { label: 'Momentum', value: asPercent(run.momentum) } : null,
+    !isNil(run.pressureIndex) ? { label: 'Pressure', value: asPercent(run.pressureIndex) } : null,
+    !isNil(run.wicketRisk) ? { label: 'Wicket risk', value: asPercent(run.wicketRisk) } : null,
+  ].filter((row): row is { label: string; value: string } => row !== null);
+  const homeShare = Math.max(0, Math.min(100, Number(run.homeWinProb) * 100));
+  const facts = [
+    toss ? { label: 'Toss', value: toss } : null,
+    venue ? { label: 'Venue', value: venue } : null,
+    format ? { label: 'Format', value: format } : null,
+    ...conditions.map((line) => ({ label: line.label, value: line.value })),
+    Number.isFinite(delta) && delta !== 0
+      ? { label: 'Change vs last live', value: `${delta > 0 ? '+' : ''}${asPercent(delta)} home` }
+      : null,
+    reasons.length > 0 ? { label: 'Change trigger', value: reasons.join(', ') } : null,
+    !isNil(partnership?.expectedAdditionalRuns)
+      ? {
+          label: 'Partnership',
+          value: `${partnership.expectedAdditionalRuns} more runs${!isNil(partnership.horizonBalls) ? ` / ${partnership.horizonBalls} balls` : ''}${partnership.reliability ? ` · ${partnership.reliability}` : ''}`,
+        }
+      : null,
+  ].filter((row): row is { label: string; value: string } => row !== null);
 
   return (
-    <div className="space-y-5">
-      <p className="text-sm" style={{ color: 'var(--admin-text)' }}>{lean}</p>
-      <p className="text-xs" style={{ color: 'var(--admin-text-secondary)' }}>
-        {stageLabel(run.stage)} run from {run.modelVersion}, saved {when(run.createdAt)}.
-        Confidence {prettyConfidence(run.confidence)} ({run.calibrationBand} band).
-      </p>
-
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Stat label="Home win chance" value={asPercent(run.homeWinProb)} />
-        <Stat label="Away win chance" value={asPercent(run.awayWinProb)} />
-        <Stat label="When it was scored" value={when(run.createdAt)} />
-        <Stat label="Model name" value={run.modelVersion} />
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <AdminChip label={stageLabel(run.stage)} tone="info" />
+        <AdminChip label={`${prettyConfidence(run.confidence)} ${run.calibrationBand}`} tone={bandChip(run.calibrationBand)} />
+        <AdminChip label={run.modelVersion} tone="neutral" />
+        <span className="text-xs" style={{ color: 'var(--admin-text-muted)' }}>{when(run.createdAt)}</span>
       </div>
 
       {run.matchId && (
-        <div>
-          {run.matchName ? (
-            <p className="mb-1 text-sm font-semibold" style={{ color: 'var(--admin-text)' }}>
-              {run.matchName}
-            </p>
-          ) : null}
-          <AdminEntityLink href={`/predictions/${run.matchId}`}>
-            Open this match on the public site
-          </AdminEntityLink>
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <p className="text-sm font-semibold" style={{ color: 'var(--admin-text)' }}>
+            {run.matchName || run.matchId}
+          </p>
+          <AdminEntityLink href={`/predictions/${run.matchId}`}>Open public match</AdminEntityLink>
         </div>
       )}
 
+      <div className="grid items-start gap-4 lg:grid-cols-2">
+        <Panel question="Who was favoured to win, and how sure was it?">
+          <p className="mb-3 text-sm" style={{ color: 'var(--admin-text)' }}>
+            Favoured <span className="font-semibold">{favourite}</span>
+            {' · '}
+            confidence {prettyConfidence(run.confidence)} ({run.calibrationBand})
+          </p>
+          <div className="mb-2 flex justify-between text-sm font-semibold" style={{ color: 'var(--admin-text)' }}>
+            <span>Home {asPercent(run.homeWinProb)}</span>
+            <span>Away {asPercent(run.awayWinProb)}</span>
+          </div>
+          <div className="flex h-2 overflow-hidden rounded-full" style={{ background: 'var(--admin-warning-bg)' }}>
+            <div className="h-full" style={{ width: `${homeShare}%`, background: 'var(--admin-accent)' }} />
+          </div>
+        </Panel>
+
+        {range && (!isNil(range.low) || !isNil(range.expected)) ? (
+          <Panel question="What score did it expect?">
+            <div className="grid grid-cols-3 gap-2">
+              <Stat label="Low" value={`${range.low ?? '—'}`} />
+              <Stat label="Likely" value={`${range.expected ?? '—'}`} />
+              <Stat label="High" value={`${range.high ?? '—'}`} />
+            </div>
+            <p className="mt-2 text-xs" style={{ color: 'var(--admin-text-muted)' }}>
+              {rangeLabel(range.type)}{range.unit ? ` · ${range.unit}` : ''}
+            </p>
+          </Panel>
+        ) : (
+          <div />
+        )}
+      </div>
+
+      {factors.length > 0 && (
+        <Panel question="What pushed the probability?">
+          <ul className="divide-y" style={{ borderColor: 'var(--admin-border)' }}>
+            {factors.map((factor) => (
+              <li key={factor.factor} className="flex flex-wrap items-start justify-between gap-2 py-2.5" style={{ borderColor: 'var(--admin-border)' }}>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium" style={{ color: 'var(--admin-text)' }}>{factor.question}</p>
+                  <p className="mt-0.5 text-xs" style={{ color: 'var(--admin-text-secondary)' }}>{factor.answer}</p>
+                </div>
+                <AdminChip label={factor.side} tone={factor.side === 'Home' ? 'info' : factor.side === 'Away' ? 'warning' : 'neutral'} />
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      )}
+
       {situation.length > 0 && (
-        <Section title="Match situation the model used">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <Panel question="What match situation was stored when this ran?">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {situation.map((row) => (
               <Stat key={row.label} label={row.label} value={row.value} />
             ))}
           </div>
-        </Section>
+        </Panel>
       )}
 
-      {range && (!isNil(range.low) || !isNil(range.expected)) && (
-        <Section title="What score it expected">
-          <p className="text-sm" style={{ color: 'var(--admin-text)' }}>
-            {rangeLabel(range.type)} between {range.low ?? '—'} and {range.high ?? '—'}
-            {!isNil(range.expected) ? `, most likely ${range.expected}` : ''}
-            {range.unit ? ` ${range.unit}` : ''}.
-          </p>
-        </Section>
-      )}
-
-      {!isNil(partnership?.expectedAdditionalRuns) && (
-        <Section title="Next partnership">
-          <p className="text-sm" style={{ color: 'var(--admin-text)' }}>
-            About {partnership.expectedAdditionalRuns} more runs
-            {!isNil(partnership.horizonBalls) ? ` in the next ${partnership.horizonBalls} balls` : ''}.
-            {partnership.reliability ? ` Reliability: ${partnership.reliability}.` : ''}
-          </p>
-        </Section>
-      )}
-
-      {factors.length > 0 && (
-        <Section title="What pushed the probability">
-          <ul className="space-y-1.5 text-sm" style={{ color: 'var(--admin-text)' }}>
-            {factors.map((factor) => (
-              <li key={factor.label}>
-                <span className="font-semibold">{factor.label}:</span> {factor.value}
-              </li>
+      {liveMeters.length > 0 && (
+        <Panel question="What live momentum, pressure and wicket-risk were stored?">
+          <div className="grid grid-cols-3 gap-2">
+            {liveMeters.map((row) => (
+              <Stat key={row.label} label={row.label} value={row.value} />
             ))}
-          </ul>
-        </Section>
+          </div>
+        </Panel>
       )}
 
-      {reasons.length > 0 && (
-        <p className="text-xs" style={{ color: 'var(--admin-text-secondary)' }}>
-          Trigger: {reasons.join(', ')}
-        </p>
+      {facts.length > 0 && (
+        <Panel question="Was toss, venue or weather already in this run?">
+          <dl>
+            {facts.map((row) => (
+              <div
+                key={`${row.label}-${row.value}`}
+                className="flex items-start justify-between gap-4 py-2"
+                style={{ borderBottom: '1px solid var(--admin-border)' }}
+              >
+                <dt className="shrink-0 text-xs" style={{ color: 'var(--admin-text-muted)' }}>{row.label}</dt>
+                <dd className="text-right text-sm" style={{ color: 'var(--admin-text)' }}>{row.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </Panel>
+      )}
+
+      {(batters.length > 0 || bowlers.length > 0) && (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {batters.length > 0 && (
+            <Panel question="Who was stored as most likely top batter?">
+              <PlayerList rows={batters} />
+            </Panel>
+          )}
+          {bowlers.length > 0 && (
+            <Panel question="Who was stored as most likely top wicket-taker?">
+              <PlayerList rows={bowlers} />
+            </Panel>
+          )}
+        </div>
+      )}
+
+      {(homeXi.length > 0 || awayXi.length > 0) && (
+        <Panel question="What playing XI snapshot was stored?" hint={xiMeta || undefined}>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {homeXi.length > 0 && (
+              <div>
+                <p className="mb-1 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-muted)' }}>Home</p>
+                <p className="text-sm leading-6" style={{ color: 'var(--admin-text)' }}>{homeXi.join(', ')}</p>
+              </div>
+            )}
+            {awayXi.length > 0 && (
+              <div>
+                <p className="mb-1 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-muted)' }}>Away</p>
+                <p className="text-sm leading-6" style={{ color: 'var(--admin-text)' }}>{awayXi.join(', ')}</p>
+              </div>
+            )}
+          </div>
+        </Panel>
       )}
 
       {featureRows.length > 0 && (
         <details>
           <summary className="cursor-pointer text-xs font-semibold" style={{ color: 'var(--admin-accent)' }}>
-            Show technical inputs
+            Technical inputs
           </summary>
           <div className="mt-2">
             <KvTable rows={featureRows.map((row) => ({ key: humanKey(row.key), value: row.value }))} />
@@ -529,12 +626,28 @@ function RunDetailBody({ run }: { run: AdminPredictionRunDetail }) {
   );
 }
 
-function Section({ title, children }: { title: string; children: ReactNode }) {
+function Panel({ question, hint, children }: { question: string; hint?: string; children: ReactNode }) {
   return (
-    <div>
-      <p className="mb-2 text-xs font-semibold" style={{ color: 'var(--admin-text-secondary)' }}>{title}</p>
+    <div className="rounded-md p-3" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-input-bg)' }}>
+      <div className="mb-3 flex items-baseline justify-between gap-2">
+        <p className="text-sm font-semibold" style={{ color: 'var(--admin-text)' }}>{question}</p>
+        {hint ? <p className="shrink-0 text-[11px]" style={{ color: 'var(--admin-text-muted)' }}>{hint}</p> : null}
+      </div>
       {children}
     </div>
+  );
+}
+
+function PlayerList({ rows }: { rows: Array<{ name: string; chance: string | null }> }) {
+  return (
+    <ul className="space-y-1 text-sm" style={{ color: 'var(--admin-text)' }}>
+      {rows.map((row) => (
+        <li key={row.name} className="flex justify-between gap-3">
+          <span className="truncate">{row.name}</span>
+          {row.chance ? <span className="font-mono text-xs">{row.chance}</span> : null}
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -612,12 +725,25 @@ function readableSituation(explanation: Record<string, unknown>): Array<{ label:
   return rows;
 }
 
-function readableFactors(explanation: Record<string, unknown>): Array<{ label: string; value: string }> {
-  const names: Record<string, string> = {
-    scoring_rate: 'Scoring rate',
-    wickets: 'Wickets',
-    chase_pressure: 'Chase pressure',
-    resources: 'Resources left',
+function readableFactors(explanation: Record<string, unknown>): Array<{
+  factor: string;
+  question: string;
+  answer: string;
+  side: 'Home' | 'Away' | 'None';
+  abs: number;
+}> {
+  const questions: Record<string, string> = {
+    form: 'Did recent form move the probability?',
+    head_to_head: 'Did head-to-head record move it?',
+    table: 'Did table position move it?',
+    venue: 'Did the venue move it?',
+    toss: 'Did the toss sit in this probability?',
+    conditions: 'Did pitch or weather move the win chance?',
+    xi: 'Did the stored XI move it?',
+    scoring_rate: 'Did the scoring rate move it?',
+    wickets: 'Did wickets move it?',
+    chase_pressure: 'Did chase pressure move it?',
+    resources: 'Did remaining resources move it?',
   };
   const raw = explanation.factorAttributions;
   if (!Array.isArray(raw)) return [];
@@ -626,14 +752,102 @@ function readableFactors(explanation: Record<string, unknown>): Array<{ label: s
       if (!item || typeof item !== 'object') return null;
       const row = item as { factor?: string; impact?: number; contribution?: number };
       const value = Number(row.contribution ?? row.impact ?? NaN);
-      if (!row.factor || !Number.isFinite(value) || value === 0) return null;
-      const direction = value > 0 ? 'helped the home side' : 'helped the away side';
+      if (!row.factor || !Number.isFinite(value)) return null;
+      const label = row.factor.replace(/_/g, ' ');
+      const side = value > 0 ? 'Home' : value < 0 ? 'Away' : 'None';
+      const display = `${value > 0 ? '+' : ''}${value.toFixed(2)}`;
       return {
-        label: names[row.factor] || row.factor.replace(/_/g, ' '),
-        value: `${direction} (${value > 0 ? '+' : ''}${value.toFixed(2)})`,
+        factor: row.factor,
+        question: questions[row.factor] || `Did ${label} move the probability?`,
+        answer: value === 0
+          ? `No pull either way (${display}).`
+          : `Yes — helped ${side.toLowerCase()} (${display}).`,
+        side,
+        abs: Math.abs(value),
       };
     })
-    .filter((row): row is { label: string; value: string } => row !== null);
+    .filter((row): row is { factor: string; question: string; answer: string; side: 'Home' | 'Away' | 'None'; abs: number } => row !== null)
+    .sort((a, b) => b.abs - a.abs);
+}
+
+function readableConditions(explanation: Record<string, unknown>): Array<{ label: string; value: string }> {
+  const impact = explanation.conditionsImpact;
+  if (!impact || typeof impact !== 'object') return [];
+  const rec = impact as { runs?: number; factors?: unknown };
+  const rows: Array<{ label: string; value: string }> = [];
+  if (Number.isFinite(Number(rec.runs)) && Number(rec.runs) !== 0) {
+    const runs = Number(rec.runs);
+    rows.push({ label: 'Conditions vs score', value: `${runs > 0 ? '+' : ''}${runs} runs` });
+  }
+  if (!Array.isArray(rec.factors)) return rows;
+  for (const item of rec.factors) {
+    if (!item || typeof item !== 'object') continue;
+    const row = item as { factor?: string; impactRuns?: number; reason?: string };
+    if (!row.factor) continue;
+    const runs = Number(row.impactRuns);
+    const shift = Number.isFinite(runs) ? `${runs > 0 ? '+' : ''}${runs} runs` : 'no shift';
+    rows.push({
+      label: row.factor.replace(/_/g, ' '),
+      value: row.reason ? `${shift} · ${row.reason}` : shift,
+    });
+  }
+  return rows;
+}
+
+function readableToss(explanation: Record<string, unknown>, features?: Record<string, unknown> | null): string | null {
+  const adjusted = explanation.tossAdjusted === true;
+  const decision = asText(explanation.tossDecision) || asText(nested(features, 'toss.decision'));
+  const wonBy = asText(nested(features, 'toss.wonBy')) || asText(nested(features, 'toss.won_by'));
+  if (!adjusted && !decision && !wonBy) return null;
+  if (!adjusted) return 'Stored, not adjusted';
+  return [wonBy ? `Won by ${wonBy}` : 'Included', decision].filter(Boolean).join(' · ');
+}
+
+function bandChip(band: string): 'success' | 'warning' | 'danger' | 'neutral' {
+  switch (band) {
+    case 'high':
+      return 'success';
+    case 'medium':
+      return 'warning';
+    case 'low':
+      return 'danger';
+    default:
+      return 'neutral';
+  }
+}
+
+function playerLines(picks?: PredictionPlayerPick[] | null): Array<{ name: string; chance: string | null }> {
+  if (!Array.isArray(picks)) return [];
+  return picks
+    .map((player, index) => {
+      const name = String(player.playerName || player.name || '').trim();
+      if (!name) return null;
+      const chance = isNil(player.probability) ? null : asPercent(Number(player.probability));
+      return { name: name || `Player ${index + 1}`, chance };
+    })
+    .filter((row): row is { name: string; chance: string | null } => row !== null)
+    .slice(0, 5);
+}
+
+function nested(source: Record<string, unknown> | null | undefined, path: string): unknown {
+  if (!source) return null;
+  return path.split('.').reduce<unknown>((current, key) => {
+    if (!current || typeof current !== 'object' || Array.isArray(current)) return null;
+    return (current as Record<string, unknown>)[key];
+  }, source);
+}
+
+function asText(value: unknown): string | null {
+  if (isNil(value) || value === '') return null;
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+    const text = String(value).trim();
+    return text || null;
+  }
+  if (typeof value === 'object' && !Array.isArray(value)) {
+    const rec = value as Record<string, unknown>;
+    return asText(rec.name ?? rec.venue ?? rec.info ?? rec.decision ?? null);
+  }
+  return null;
 }
 
 function humanKey(key: string): string {

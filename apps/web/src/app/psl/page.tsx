@@ -10,6 +10,9 @@ import PslSquadsBoard from '../../components/PslSquadsBoard';
 import { formatScheduled } from '../../utils/helpers';
 import ErrorState from '../../components/ErrorState';
 import { fetchPslStandings, fetchPslLeaders, fetchPslSchedule, fetchPslSquads, fetchPslSeasons } from '../../services/psl';
+import { fetchNews } from '../../services/news';
+import { newsHref } from '../../utils/newsConstraints';
+import Link from 'next/link';
 
 export const revalidate = 60;
 
@@ -75,11 +78,12 @@ export default async function PSLPage({ searchParams }: { searchParams: Promise<
 
   const seasonParam = activeSeasonId ? { season: activeSeasonId } : {};
 
-  const [standingsResult, leadersResult, scheduleResult, squadsResult] = await Promise.allSettled([
+  const [standingsResult, leadersResult, scheduleResult, squadsResult, newsResult] = await Promise.allSettled([
     fetchPslStandings(seasonParam),
     fetchPslLeaders(seasonParam),
     fetchPslSchedule(seasonParam),
     fetchPslSquads(seasonParam),
+    fetchNews({ category: 'psl', limit: 6 }),
   ]);
 
   const pslLoadError = [standingsResult, leadersResult, scheduleResult, squadsResult].every(
@@ -112,6 +116,7 @@ export default async function PSLPage({ searchParams }: { searchParams: Promise<
   const leaders = leadersResult.status === 'fulfilled' ? leadersResult.value : [];
   const schedule = scheduleResult.status === 'fulfilled' ? scheduleResult.value : [];
   const squads = squadsResult.status === 'fulfilled' ? squadsResult.value : [];
+  const pslNews = newsResult.status === 'fulfilled' ? newsResult.value : [];
 
   const pointsRows = [...(standings || [])].sort((a, b) => (a.rank ?? 999) - (b.rank ?? 999));
 
@@ -153,7 +158,7 @@ export default async function PSLPage({ searchParams }: { searchParams: Promise<
       </section>
 
       {/* Standings */}
-      <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
+      <section id="table" className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
         <SectionHeader title="Points Table" subtitle={seasonLabel ? `${seasonLabel} Standings` : 'Standings'} icon="trophy" />
         <PointsTable rows={pointsRows} />
       </section>
@@ -163,7 +168,7 @@ export default async function PSLPage({ searchParams }: { searchParams: Promise<
       </section>
 
       {/* Full Leaders / Stats */}
-      <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
+      <section id="stats" className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
         <SectionHeader
           title="Statistics"
           subtitle={seasonLabel ? `${seasonLabel} Leaders` : 'Season leaders'}
@@ -173,7 +178,7 @@ export default async function PSLPage({ searchParams }: { searchParams: Promise<
       </section>
 
       {/* Squads */}
-      <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
+      <section id="squads" className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
         <SectionHeader
           title="Squads"
           subtitle={seasonLabel ? `${seasonLabel} rosters` : 'Franchise rosters'}
@@ -211,7 +216,7 @@ export default async function PSLPage({ searchParams }: { searchParams: Promise<
       )}
 
       {/* Fixtures */}
-      <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
+      <section id="fixtures" className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
         <SectionHeader title="Fixtures" subtitle="Schedule" icon="calendar" />
         {regular.length > 0 ? (
           regular.length >= 8 ? (
@@ -233,6 +238,22 @@ export default async function PSLPage({ searchParams }: { searchParams: Promise<
           </div>
         )}
       </section>
+
+      {pslNews.length > 0 && (
+        <section id="news" className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
+          <SectionHeader title="PSL news" subtitle="Pakistan Super League stories" icon="newspaper" />
+          <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {pslNews.map((article) => (
+              <li key={article.id} className="rounded-2xl bg-card p-4 ring-1 ring-lborder">
+                <Link href={newsHref(article)} className="text-sm font-semibold text-mtext hover:text-accent">
+                  {article.title}
+                </Link>
+                {article.date ? <p className="mt-1 text-xs text-stext">{article.date}</p> : null}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </div>
   );
 }

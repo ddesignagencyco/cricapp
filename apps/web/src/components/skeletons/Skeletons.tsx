@@ -1,5 +1,6 @@
 'use client';
 
+import { Loader2 } from 'lucide-react';
 import { createContext, useContext, type CSSProperties, type ReactNode } from 'react';
 import 'react-loading-skeleton/dist/skeleton.css';
 
@@ -14,22 +15,6 @@ interface SkeletonTone {
 }
 
 const SkeletonToneContext = createContext<SkeletonTone>({});
-
-function SkeletonTheme({
-  children,
-  baseColor,
-  highlightColor,
-}: {
-  children: ReactNode;
-  baseColor?: string;
-  highlightColor?: string;
-}) {
-  return (
-    <SkeletonToneContext.Provider value={{ baseColor, highlightColor }}>
-      {children}
-    </SkeletonToneContext.Provider>
-  );
-}
 
 interface SkeletonProps {
   width?: string | number;
@@ -77,10 +62,6 @@ export function Skeleton({
 }
 
 export function AppSkeletonTheme({ children }: { children: ReactNode; theme?: string }) {
-  return children;
-}
-
-function AdminContentSkeletonTheme({ children }: { children: ReactNode }) {
   return children;
 }
 
@@ -783,187 +764,21 @@ export function AuthPageSkeleton() {
   );
 }
 
-function adminCardStyle(): CSSProperties {
-  return { border: '1px solid var(--admin-border)', background: 'var(--admin-card)' };
-}
-
-function AdminTheadRow({ cols }: { cols: number }) {
+export function AdminLoader({ fullPage = false }: { fullPage?: boolean }) {
   return (
-    <SkeletonTheme
-      baseColor="var(--color-skeleton-on-dark)"
-      highlightColor="var(--color-skeleton-on-dark-highlight)"
+    <div
+      className={`grid place-items-center ${fullPage ? 'min-h-screen' : 'min-h-[18rem]'}`}
+      style={fullPage ? { background: 'var(--admin-bg)' } : undefined}
+      aria-busy="true"
+      aria-label="Loading"
     >
-      <tr style={{ background: 'var(--admin-table-header)' }}>
-        {Array.from({ length: cols }).map((_, i) => (
-          <th key={i} className="px-4 py-3">
-            <Skeleton width={i === 0 ? 72 : 56} height={10} />
-          </th>
-        ))}
-      </tr>
-    </SkeletonTheme>
-  );
-}
-
-export function AdminTableSkeleton({
-  rows = 8,
-  cols = 5,
-  withAvatar = false,
-}: {
-  rows?: number;
-  cols?: number;
-  withAvatar?: boolean;
-}) {
-  return (
-    <div className="overflow-hidden rounded-lg" style={adminCardStyle()}>
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm">
-          <thead>
-            <AdminTheadRow cols={cols} />
-          </thead>
-          <tbody>
-            {Array.from({ length: rows }).map((_, r) => (
-              <tr key={r} style={{ borderBottom: '1px solid var(--admin-border)' }}>
-                {Array.from({ length: cols }).map((_, c) => (
-                  <td key={c} className="px-4 py-3">
-                    {withAvatar && c === 0 ? (
-                      <div className="flex items-center gap-2.5">
-                        <Skeleton circle width={28} height={28} />
-                        <Skeleton width="58%" height={10} />
-                      </div>
-                    ) : (
-                      <Skeleton width={c === 0 ? '70%' : c === cols - 1 ? 52 : '45%'} height={10} />
-                    )}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <Loader2
+        size={fullPage ? 28 : 24}
+        className="animate-spin"
+        style={{ color: 'var(--admin-accent)' }}
+        aria-hidden
+      />
     </div>
-  );
-}
-
-export function AdminNewsSkeleton() {
-  return (
-    <AdminTableSkeleton rows={8} cols={6} withAvatar />
-  );
-}
-
-export function AdminGallerySkeleton() {
-  return (
-    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-      {Array.from({ length: 12 }).map((_, i) => (
-        <div key={i} className="overflow-hidden rounded-lg" style={adminCardStyle()}>
-          <Skeleton height={96} className="!block !rounded-none" />
-          <div className="px-2 py-2">
-            <Skeleton width="80%" height={8} />
-            <Skeleton width="40%" height={8} className="mt-1.5" />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-export function AdminFormSkeleton() {
-  return (
-    <div className="space-y-4 rounded-lg p-4" style={adminCardStyle()}>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i}>
-            <Skeleton width={88} height={10} />
-            <Skeleton height={38} className="mt-2" />
-          </div>
-        ))}
-      </div>
-      <Skeleton width={120} height={14} className="mt-2" />
-      <Skeleton height={38} />
-      <Skeleton height={38} />
-      <Skeleton width={120} height={36} />
-    </div>
-  );
-}
-
-export function AdminEditorialSkeleton() {
-  return (
-    <div className="space-y-3 rounded-lg p-4" style={adminCardStyle()}>
-      <Skeleton width={64} height={10} />
-      <Skeleton height={38} />
-      <Skeleton width={72} height={10} className="mt-2" />
-      <Skeleton height={280} />
-      <Skeleton width={128} height={36} />
-    </div>
-  );
-}
-
-export function AdminCategoriesSkeleton() {
-  return (
-    <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[300px_1fr]">
-      <div className="rounded-lg p-4" style={adminCardStyle()}>
-        <Skeleton width={110} height={12} />
-        <Skeleton height={38} className="mt-4" />
-        <Skeleton height={32} className="mt-3" />
-      </div>
-      <AdminTableSkeleton rows={6} cols={5} />
-    </div>
-  );
-}
-
-export function AdminDashboardSkeleton() {
-  return (
-    <div className="space-y-6" aria-busy="true" aria-label="Loading">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <Skeleton width={220} height={28} />
-          <Skeleton width={260} height={12} className="mt-2" />
-        </div>
-        <div className="flex gap-2">
-          <Skeleton width={108} height={32} />
-          <Skeleton width={118} height={32} />
-        </div>
-      </div>
-      <div className="grid grid-cols-2 items-start gap-2 sm:grid-cols-3 xl:grid-cols-6">
-        {Array.from({ length: 12 }).map((_, i) => (
-          <div key={i} className="rounded-lg p-4" style={adminCardStyle()}>
-            <Skeleton width="50%" height={8} />
-            <Skeleton width="40%" height={22} className="mt-2" />
-          </div>
-        ))}
-      </div>
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_300px]">
-        <div className="space-y-5">
-          <AdminTableSkeleton rows={5} cols={5} withAvatar />
-          <AdminTableSkeleton rows={5} cols={4} withAvatar />
-        </div>
-        <div className="space-y-5">
-          <div className="rounded-lg p-4" style={adminCardStyle()}>
-            <Skeleton width={120} height={12} />
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="mt-3 flex gap-2.5">
-                <Skeleton width={24} height={24} />
-                <div className="min-w-0 flex-1">
-                  <Skeleton width="90%" height={10} />
-                  <Skeleton width="40%" height={8} className="mt-1.5" />
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="rounded-lg p-4" style={adminCardStyle()}>
-            <Skeleton width={140} height={12} />
-            <Skeleton width={48} height={28} className="mt-4" />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export function AdminPageSkeleton() {
-  return (
-    <AdminContentSkeletonTheme>
-      <AdminDashboardSkeleton />
-    </AdminContentSkeletonTheme>
   );
 }
 
@@ -978,150 +793,26 @@ export type AdminLoadingVariant =
   | 'editorial'
   | 'categories';
 
-export function AdminRouteSkeleton({ variant }: { variant: AdminLoadingVariant }) {
-  return (
-    <AdminContentSkeletonTheme>
-      <div className="space-y-5" aria-busy="true" aria-label="Loading">
-        {variant === 'dashboard' ? (
-          <AdminDashboardSkeleton />
-        ) : (
-          <>
-            <div>
-              <Skeleton width={168} height={28} />
-              <Skeleton width={240} height={12} className="mt-2" />
-            </div>
-            <AdminLoadingBody variant={variant} />
-          </>
-        )}
-      </div>
-    </AdminContentSkeletonTheme>
-  );
+export function AdminRouteSkeleton(_props: { variant?: AdminLoadingVariant }) {
+  return <AdminLoader />;
 }
 
-export function AdminLoadingBody({ variant }: { variant: AdminLoadingVariant }) {
-  switch (variant) {
-    case 'dashboard':
-      return <AdminDashboardSkeleton />;
-    case 'people':
-      return <AdminTableSkeleton withAvatar cols={5} />;
-    case 'news':
-      return <AdminNewsSkeleton />;
-    case 'gallery':
-      return <AdminGallerySkeleton />;
-    case 'editor':
-      return <EditorSkeleton />;
-    case 'form':
-      return <AdminFormSkeleton />;
-    case 'editorial':
-      return <AdminEditorialSkeleton />;
-    case 'categories':
-      return <AdminCategoriesSkeleton />;
-    case 'table':
-      return <AdminTableSkeleton />;
-    default: {
-      const _exhaustive: never = variant;
-      return _exhaustive;
-    }
-  }
+export function AdminLoadingBody(_props: { variant?: AdminLoadingVariant }) {
+  return <AdminLoader />;
 }
 
-const ADMIN_NAV_SKELETON_WIDTHS = [78, 68, 86, 72, 62, 70, 98, 74, 68, 104, 82, 58, 70];
+export function AdminPageSkeleton() {
+  return <AdminLoader />;
+}
+
+export function AdminTableSkeleton() {
+  return <AdminLoader />;
+}
 
 export function AdminChromeSkeleton() {
-  return (
-    <div className="flex min-h-screen" style={{ background: 'var(--admin-bg)' }} aria-busy="true" aria-label="Loading">
-      <aside
-        className="hidden lg:flex fixed inset-y-0 left-0 z-30 flex-col"
-        style={{
-          width: 240,
-          minWidth: 240,
-          background: 'var(--admin-sidebar)',
-          borderRight: '1px solid var(--admin-border)',
-        }}
-      >
-        <SkeletonTheme
-          baseColor="var(--color-skeleton-on-dark)"
-          highlightColor="var(--color-skeleton-on-dark-highlight)"
-        >
-          <div
-            className="flex h-14 shrink-0 items-center justify-center px-4"
-            style={{ borderBottom: '1px solid var(--admin-sidebar-border)' }}
-          >
-            <Skeleton width={128} height={26} />
-          </div>
-          <nav className="flex-1 space-y-0.5 overflow-hidden px-3 py-3">
-            {ADMIN_NAV_SKELETON_WIDTHS.map((width, i) => (
-              <div key={i} className="flex items-center gap-3 rounded-lg px-3 py-2.5">
-                <Skeleton circle width={18} height={18} />
-                <Skeleton width={width} height={12} />
-              </div>
-            ))}
-          </nav>
-          <div className="px-3 py-3" style={{ borderTop: '1px solid var(--admin-sidebar-border)' }}>
-            <div className="flex items-center gap-3 rounded-lg px-3 py-2.5">
-              <Skeleton circle width={18} height={18} />
-              <Skeleton width={56} height={12} />
-            </div>
-          </div>
-        </SkeletonTheme>
-      </aside>
-
-      <div className="flex flex-1 flex-col lg:pl-[240px]">
-        <AdminContentSkeletonTheme>
-          <header
-            className="sticky top-0 z-20 flex h-14 items-center gap-3 px-4 sm:px-6"
-            style={{ background: 'var(--admin-topbar)', borderBottom: '1px solid var(--admin-border)' }}
-          >
-            <div className="grid h-9 w-9 place-items-center lg:hidden">
-              <Skeleton width={18} height={14} />
-            </div>
-            <div className="flex-1" />
-            <Skeleton circle width={36} height={36} />
-            <Skeleton width={84} height={32} borderRadius={8} />
-            <Skeleton circle width={32} height={32} />
-            <div className="hidden sm:block">
-              <Skeleton width={76} height={10} />
-              <Skeleton width={92} height={8} className="mt-1.5" />
-            </div>
-          </header>
-        </AdminContentSkeletonTheme>
-        <main className="flex-1 p-4 sm:p-6">
-          <AdminPageSkeleton />
-        </main>
-      </div>
-    </div>
-  );
+  return <AdminLoader fullPage />;
 }
 
 export function EditorSkeleton() {
-  return (
-    <div className="space-y-5" aria-busy="true" aria-label="Loading">
-      <div className="flex items-center justify-between pb-4" style={{ borderBottom: '1px solid var(--admin-border)' }}>
-        <div className="flex items-center gap-3">
-          <Skeleton width={32} height={32} />
-          <div>
-            <Skeleton width={140} height={18} />
-            <Skeleton width={180} height={10} className="mt-1.5" />
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <Skeleton width={96} height={32} />
-          <Skeleton width={110} height={32} />
-        </div>
-      </div>
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-        <div className="space-y-4 lg:col-span-2">
-          <Skeleton height={40} />
-          <Skeleton height={320} />
-        </div>
-        <div className="space-y-3 rounded-lg p-4" style={adminCardStyle()}>
-          <Skeleton width="50%" height={12} />
-          <Skeleton height={36} />
-          <Skeleton height={36} />
-          <Skeleton height={36} />
-          <Skeleton height={120} />
-        </div>
-      </div>
-    </div>
-  );
+  return <AdminLoader />;
 }

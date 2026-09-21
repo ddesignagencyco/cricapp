@@ -1,4 +1,4 @@
-import { apiGet, apiGetOptional, extractPage } from './api/client';
+import { ApiError, apiGet, apiGetOptional, extractPage } from './api/client';
 import { authHeaders } from './auth';
 import type {
   AdminPredictionCalibration,
@@ -23,8 +23,51 @@ export async function fetchPredictionPerformance(): Promise<PredictionPerformanc
   return apiGet<PredictionPerformance>('/predictions/performance', undefined, { revalidate: 60 });
 }
 
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function mapPool<T, R>(items: T[], limit: number, worker: (_item: T) => Promise<R>): Promise<R[]> {
+  const results: R[] = new Array(items.length);
+  let next = 0;
+  const run = async () => {
+    while (next < items.length) {
+      const index = next;
+      next += 1;
+      results[index] = await worker(items[index]);
+    }
+  };
+  const size = Math.max(1, Math.min(limit, items.length));
+  await Promise.all(Array.from({ length: size }, () => run()));
+  return results;
+}
+
 export async function fetchMatchPredictions(matchId: string): Promise<MatchPredictions | null> {
-  return apiGetOptional<MatchPredictions>(`/predictions/${normalizeMatchId(matchId)}`);
+  const path = `/predictions/${normalizeMatchId(matchId)}`;
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    try {
+      return await apiGet<MatchPredictions>(path);
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 404) return null;
+      if (error instanceof ApiError && error.status === 429 && attempt < 3) {
+        await wait(450 * (attempt + 1));
+        continue;
+      }
+      return null;
+    }
+  }
+  return null;
+}
+
+export async function fetchPredictionsByMatchIds(
+  matchIds: string[]
+): Promise<Map<string, MatchPredictions | null>> {
+  const unique = [...new Set(matchIds.map((id) => String(id || '').trim()).filter(Boolean))];
+  const rows = await mapPool(unique, 2, async (id) => {
+    const predictions = await fetchMatchPredictions(id);
+    return [id, predictions] as const;
+  });
+  return new Map(rows);
 }
 
 export async function fetchPredictionHistory(matchId: string): Promise<PredictionHistory | null> {
