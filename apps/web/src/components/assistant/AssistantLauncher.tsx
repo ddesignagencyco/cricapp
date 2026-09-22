@@ -2,9 +2,9 @@
 
 import { useMemo, useState } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { Sparkles } from 'lucide-react';
 import { assistantContextFromLocation } from '../../lib/assistant';
 import AssistantPanel from './AssistantPanel';
+import CricketBallIcon from './CricketBallIcon';
 
 export default function AssistantLauncher() {
   const pathname = usePathname();
@@ -20,12 +20,12 @@ export default function AssistantLauncher() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="btn-brand fixed bottom-[4.75rem] right-3 z-50 inline-flex h-11 items-center gap-2 rounded-2xl px-3.5 text-sm font-bold shadow-sm ring-1 ring-white/20 sm:right-4 lg:bottom-6 lg:h-12"
+        className={`fixed bottom-20 right-3 z-[70] h-11 w-11 place-items-center rounded-full btn-brand shadow-sm ring-1 ring-white/20 sm:right-4 lg:bottom-6 ${open ? 'hidden sm:grid' : 'grid'}`}
         aria-haspopup="dialog"
         aria-expanded={open}
+        aria-label="Open PCZ Assistant"
       >
-        <Sparkles size={18} />
-        <span className="hidden sm:inline">Ask</span>
+        <CricketBallIcon size={20} />
       </button>
       <AssistantPanel open={open} onClose={() => setOpen(false)} context={context} />
     </>

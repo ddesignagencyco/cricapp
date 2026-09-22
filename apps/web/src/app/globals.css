@@ -47,6 +47,8 @@
   --color-brand-hover: #547CFF;
   --color-brand-fg: #FFFFFF;
   --color-brand-soft: #1A2554;
+  /* Match scroll-to-top / btn-brand in dark mode */
+  --color-assistant-header: #3B68FC;
   --color-focus-ring: #8BA4FF;
 
   --color-table-header: #3B68FC;
@@ -153,6 +155,7 @@
   --color-brand-hover: #2A4FE0;
   --color-brand-fg: #FFFFFF;
   --color-brand-soft: #E8EDFF;
+  --color-assistant-header: #3B68FC;
   --color-focus-ring: #3B68FC;
 
   --color-table-header: #3B68FC;
@@ -718,6 +721,18 @@ button:disabled,
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-stext);
+}
+
+.native-scrollbar {
+  scrollbar-width: auto;
+  scrollbar-color: auto;
+}
+
+.native-scrollbar::-webkit-scrollbar,
+.native-scrollbar::-webkit-scrollbar-track,
+.native-scrollbar::-webkit-scrollbar-thumb,
+.native-scrollbar::-webkit-scrollbar-thumb:hover {
+  all: revert;
 }
 
 /* Utility classes */
