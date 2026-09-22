@@ -1,9 +1,5 @@
 import { redisKeys, PSL } from '@cricapp/shared-types';
-import {
-  allottedBallsForFormat,
-  detectFormat,
-  parScoreForFormat,
-} from './format.js';
+import { allottedBallsForFormat, detectFormat } from './format.js';
 import { resolveParScore } from './pars.js';
 
 export {
