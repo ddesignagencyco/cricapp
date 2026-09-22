@@ -2,7 +2,7 @@ import db, { shutdown as shutdownDb } from './src/db.js';
 import redis, { shutdown as shutdownRedis } from './src/redis.js';
 import { pollOnce } from './src/poll.js';
 import { syncPsAll } from './src/pslSync.js';
-import { refSyncAll } from './src/refSync.js';
+import { refSyncAll, syncTourCatalog } from './src/refSync.js';
 import { startNewsSync } from './src/newsSync.js';
 import { createLogger } from './src/logger.js';
 
@@ -21,12 +21,17 @@ async function main() {
   log.info('=== Starting one-time DB fill ===');
 
   // 1. PSL sync (standings, fixtures, leaders, squads)
-  log.info('1/4 PSL sync...');
+  log.info('1/5 PSL sync...');
   const pslResults = await syncPsAll(process.env.PSL_SEASONS);
   log.info('PSL sync done', { results: pslResults.length });
 
-  // 2. Reference sync (tours, tournaments, daily schedules, profiles, timelines)
-  log.info('2/4 Reference sync...');
+  // 2. Tours + tournaments (force — Redis staleness must not skip an empty Postgres)
+  log.info('2/5 Tour catalog (tournaments + category tours)...');
+  const catalog = await syncTourCatalog({ force: true });
+  log.info('Tour catalog done', catalog);
+
+  // 3. Reference sync (daily schedules, profiles, timelines, …)
+  log.info('3/5 Reference sync...');
   await refSyncAll({
     delay: Number(process.env.BACKFILL_DELAY_MS || 1000),
     timelineLimit: Number(process.env.BACKFILL_TIMELINE_BATCH || 10),
@@ -36,13 +41,13 @@ async function main() {
   });
   log.info('Reference sync done');
 
-  // 3. News sync
-  log.info('3/4 News sync...');
+  // 4. News sync
+  log.info('4/5 News sync...');
   await startNewsSync();
   log.info('News sync done');
 
-  // 4. One poll cycle for live matches
-  log.info('4/4 Live match poll...');
+  // 5. One poll cycle for live matches
+  log.info('5/5 Live match poll...');
   const liveCount = await pollOnce();
   log.info('Poll cycle done', { liveMatches: liveCount });
 

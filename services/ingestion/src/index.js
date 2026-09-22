@@ -51,15 +51,25 @@ async function runPslSync(reason) {
   }
 }
 
+/** PSL standings/fixtures/leaders/squads feed the web UI and assistant — keep Postgres fresh. */
+const DEFAULT_PSL_SYNC_INTERVAL_MS = 3600000;
+
 async function startPslSync() {
   await runPslSync('startup');
-  const syncInterval = Number(process.env.PSL_SYNC_INTERVAL_MS || 0);
+  const configured = process.env.PSL_SYNC_INTERVAL_MS;
+  const syncInterval =
+    configured === undefined || configured === ''
+      ? DEFAULT_PSL_SYNC_INTERVAL_MS
+      : Number(configured);
   if (syncInterval > 0) {
     setInterval(() => {
       runPslSync('interval').catch((err) =>
         log.error('psl periodic sync failed', { error: err.message }),
       );
     }, syncInterval);
+    log.info('psl periodic sync scheduled', { intervalMs: syncInterval });
+  } else {
+    log.warn('psl periodic sync disabled (PSL_SYNC_INTERVAL_MS=0); startup sync only');
   }
 }
 
@@ -125,7 +135,8 @@ const refSyncOptions = () => ({
 });
 
 const REF_SYNC_START_DELAY_MS = Number(process.env.REF_SYNC_START_DELAY_MS || 300000);
-const PSL_START_DELAY_MS = Number(process.env.PSL_START_DELAY_MS || 120000);
+/** Default 0 — PSL is product-critical; reference sync stays delayed to spare trial quota. */
+const PSL_START_DELAY_MS = Number(process.env.PSL_START_DELAY_MS ?? 0);
 
 ping()
   .then(async () => {
@@ -139,9 +150,15 @@ ping()
       log.error('initial poll cycle failed', { error: err.message });
     }
 
-    setTimeout(() => {
+    const kickPsl = () => {
       startPslSync().catch((err) => log.error('psl sync start failed', { error: err.message }));
-    }, PSL_START_DELAY_MS);
+    };
+    if (PSL_START_DELAY_MS > 0) {
+      log.info('psl sync deferred', { delayMs: PSL_START_DELAY_MS });
+      setTimeout(kickPsl, PSL_START_DELAY_MS);
+    } else {
+      kickPsl();
+    }
 
     setTimeout(() => {
       startReferenceSync(refSyncOptions()).catch((err) =>

@@ -63,7 +63,8 @@ import {
   backfillPlayerFieldsFromProfiles,
 } from './store.js';
 import { createLogger } from './logger.js';
-import { shouldSync, markSynced, REF_CADENCE } from './refState.js';
+import { shouldSync, markSynced, clearSyncStamp, REF_CADENCE } from './refState.js';
+import { PSL } from './schemas.js';
 import { getCallStats } from './sportradar.js';
 import redis, { redisKeys } from './redis.js';
 
@@ -106,6 +107,26 @@ export async function syncTournamentList() {
   const count = await saveTournaments(rows);
   log.info(`tournaments synced (${count})`);
   return count;
+}
+
+/**
+ * Tours + tournaments catalog for the API / UI. Sportradar returns no rows in
+ * tours.json on our plan; `backfillTours()` synthesizes tours from tournament categories.
+ */
+export async function syncTourCatalog({ force = false } = {}) {
+  if (force) {
+    await clearSyncStamp('tours', null);
+    await clearSyncStamp('tournaments', null);
+  }
+  await syncTourList();
+  const tournamentCount = await syncTournamentList();
+  const tourCount = await backfillTours();
+  log.info('tour catalog complete', { tournaments: tournamentCount, toursFromCategories: tourCount });
+  if (force) {
+    await clearSyncStamp('tournamentSeasons', PSL.TOURNAMENT_ID);
+  }
+  await syncTournamentSeasonsFor(PSL.TOURNAMENT_ID);
+  return { tournaments: tournamentCount, toursFromCategories: tourCount };
 }
 
 export async function syncTournamentSeasonsFor(tournamentId) {

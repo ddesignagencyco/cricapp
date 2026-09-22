@@ -15,7 +15,9 @@
     "audit:coverage": "node --env-file-if-exists=.env scripts/audit-provider-coverage.js",
     "backfill": "node --env-file-if-exists=.env scripts/backfill-sportradar.mjs",
     "backfill:status": "node --env-file-if-exists=.env scripts/backfill-status.mjs",
-    "fill-db": "node --env-file-if-exists=.env fill-db.js"
+    "fill-db": "node --env-file-if-exists=.env fill-db.js",
+    "sync:psl": "node --env-file-if-exists=.env scripts/sync-psl.mjs",
+    "sync:tours": "node --env-file-if-exists=.env scripts/sync-tour-catalog.mjs"
   },
   "dependencies": {
     "@cricapp/shared-types": "*",

@@ -70,6 +70,11 @@ async function syncLeaders(seasonId) {
     payload: raw,
   });
   const groups = normalizeLeaders(raw);
+  const entryCount = groups.reduce((n, g) => n + (g.entries?.length ?? 0), 0);
+  if (entryCount === 0) {
+    console.warn(`[psl] leaders empty for ${seasonId}; keeping existing DB rows`);
+    return 0;
+  }
   await clearSeasonData(seasonId);
   const count = await saveLeaders(seasonId, groups);
   if (count) await cachePsData(seasonId, "leaders", groups);
@@ -98,13 +103,25 @@ async function syncSquads(seasonId, seasonInfo) {
 }
 
 async function syncOneSeason(season, tournamentInfo) {
-  await syncStandings(season.id);
-  console.log(`[psl] ${season.year}: standings persisted`);
-  await syncFixtures(season.id);
-  console.log(`[psl] ${season.year}: fixtures persisted`);
-  await syncLeaders(season.id);
-  console.log(`[psl] ${season.year}: leaders persisted`);
-  return syncSquads(season.id, tournamentInfo);
+  const steps = [
+    ["standings", () => syncStandings(season.id)],
+    ["fixtures", () => syncFixtures(season.id)],
+    ["leaders", () => syncLeaders(season.id)],
+  ];
+  for (const [label, fn] of steps) {
+    try {
+      const count = await fn();
+      console.log(`[psl] ${season.year}: ${label} persisted (${count} row(s))`);
+    } catch (err) {
+      console.error(`[psl] ${season.year}: ${label} failed`, err.message);
+    }
+  }
+  try {
+    return await syncSquads(season.id, tournamentInfo);
+  } catch (err) {
+    console.error(`[psl] ${season.year}: squads failed`, err.message);
+    return { teams: 0, players: 0 };
+  }
 }
 
 export async function syncPsAll(rawSeasonFilter) {

@@ -104,3 +104,11 @@ export {
 } from "./schema.js";
 
 export { redisKeys, REDIS_TTL } from "./redis.js";
+
+export type {
+  AssistantIntent,
+  AssistantSource,
+  AssistantSourceType,
+  AssistantUnavailable,
+  AssistantAnswer,
+} from "./assistant.js";
