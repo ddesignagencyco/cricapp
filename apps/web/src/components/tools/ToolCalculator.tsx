@@ -19,7 +19,9 @@ import { ToolGlyph } from './toolIcons';
 import { Field, MoreTools, ResultBox, ToolIntro, num } from './ToolShared';
 import ToolDls from './ToolDls';
 import ToolFantasy from './ToolFantasy';
+import ToolBookmakerMargin from './ToolBookmakerMargin';
 import ToolOdds from './ToolOdds';
+import ToolOddsMatch from './ToolOddsMatch';
 import ToolPlayerCompare from './ToolPlayerCompare';
 import ToolStoredPrediction from './ToolStoredPrediction';
 import ToolWhatIf from './ToolWhatIf';
@@ -40,8 +42,11 @@ export default function ToolCalculator({ tool }: { tool: ToolDef }) {
     case 'dls':
       return <ToolDls tool={tool} />;
     case 'odds':
-    case 'implied':
       return <ToolOdds tool={tool} />;
+    case 'implied':
+      return <ToolBookmakerMargin tool={tool} />;
+    case 'odds-match':
+      return <ToolOddsMatch tool={tool} />;
     case 'fantasy':
       return <ToolFantasy tool={tool} />;
     case 'what-if':

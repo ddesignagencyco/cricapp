@@ -17,7 +17,7 @@ export default function ToolsHub() {
             </p>
             <h1 className="mt-2 text-3xl font-black tracking-tight text-mtext sm:text-4xl">Tools</h1>
             <p className="mt-2 max-w-xl text-sm leading-relaxed text-stext">
-              Most tools run in the browser from the numbers you type. Player and H2H tools only read stored directory data.
+              Most tools run in the browser from the numbers you type. Odds, player and H2H tools call the API for licensed or stored data.
             </p>
           </div>
           <p className="shrink-0 text-xs text-stext">
@@ -55,10 +55,12 @@ export default function ToolsHub() {
                               className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
                                 source === 'formula'
                                   ? 'bg-secondary text-stext'
-                                  : 'bg-accent/10 text-accent'
+                                  : source === 'api'
+                                    ? 'bg-brand-soft text-accent'
+                                    : 'bg-accent/10 text-accent'
                               }`}
                             >
-                              {source === 'formula' ? 'Formula' : 'Stored'}
+                              {source === 'formula' ? 'Formula' : source === 'api' ? 'API' : 'Stored'}
                             </span>
                           </div>
                           <p className="mt-1.5 text-xs leading-relaxed text-stext">{tool.blurb}</p>

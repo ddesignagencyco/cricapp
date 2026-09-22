@@ -65,6 +65,8 @@ export function ToolGlyph({
       return <Coins size={size} strokeWidth={2.2} />;
     case 'implied':
       return <Percent size={size} strokeWidth={2.2} />;
+    case 'odds-match':
+      return <LineChart size={size} strokeWidth={2.2} />;
     case 'fantasy':
       return <Shirt size={size} strokeWidth={2.2} />;
     default: {

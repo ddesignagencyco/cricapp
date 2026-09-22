@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Calendar, ClipboardList, Clock, FileText, MapPin, Newspaper, Radio, Sparkles, Swords, Trophy, Users } from 'lucide-react';
+import { Calendar, ClipboardList, Clock, FileText, MapPin, Newspaper, Radio, Scale, Sparkles, Swords, Trophy, Users } from 'lucide-react';
 import LiveIndicator from '../LiveIndicator';
 import { StatusBadge } from '../Badge';
 import Tabs from '../Tabs';
@@ -30,6 +30,7 @@ import { fetchHeadToHead } from '../../services/headToHead';
 import { fetchTeams } from '../../services/teams';
 import { mergeMatchLivePayload, useMatchStream } from '../../hooks/useMatchStream';
 import MatchPredictionTab from '../predictions/MatchPredictionTab';
+import MatchOddsTab from '../odds/MatchOddsTab';
 import { Skeleton } from '../skeletons/Skeletons';
 import type { HeadToHead, Team } from '../../types';
 import { decodeEntityId, useLinkedNews } from './RelatedNewsPanel';
@@ -41,6 +42,7 @@ const detailTabs = [
   { key: 'commentary', label: 'Commentary', icon: Radio },
   { key: 'squads', label: 'Squads', icon: FileText },
   { key: 'predictions', label: 'Predictions', icon: Sparkles },
+  { key: 'odds', label: 'Odds', icon: Scale },
   { key: 'h2h', label: 'Head to Head', icon: Swords },
   { key: 'news', label: 'News', icon: Newspaper },
   { key: 'info', label: 'Match Info', icon: MapPin },
@@ -51,6 +53,7 @@ const completedTabs = [
   { key: 'scorecard', label: 'Scorecard', icon: ClipboardList },
   { key: 'commentary', label: 'Commentary', icon: Radio },
   { key: 'squads', label: 'Squads', icon: FileText },
+  { key: 'odds', label: 'Odds', icon: Scale },
   { key: 'h2h', label: 'Head to Head', icon: Swords },
   { key: 'news', label: 'News', icon: Newspaper },
   { key: 'info', label: 'Match Info', icon: MapPin },
@@ -442,6 +445,8 @@ export default function MatchDetailBody({ match: initialMatch }: Props) {
           {tab === 'predictions' && showPredictions && (
             <MatchPredictionTab match={match} />
           )}
+
+          {tab === 'odds' && !isCancelled && <MatchOddsTab match={match} />}
 
           {(tab === 'commentary' || tab === 'timeline') && (
             timelineLoading || !timelineReady ? (
