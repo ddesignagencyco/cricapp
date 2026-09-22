@@ -42,7 +42,7 @@ export async function upsertOddsMarket({
   sourceId,
   marketType = ODDS_MARKET_TYPE.MATCH_WINNER,
   marketKey = ODDS_MARKET_TYPE.MATCH_WINNER,
-  name = 'Match winner',
+  name = 'Match winner (incl. super over)',
   externalMarketId = null,
 }) {
   const id = randomUUID();

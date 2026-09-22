@@ -25,6 +25,22 @@ const CALIBRATION_INTERVAL_MS = Number(process.env.CALIBRATION_INTERVAL_MS || 36
 
 const liveThrottle = new Map();
 const liveFingerprints = new Map();
+/** Log once per process if Redis still lists an id with no Postgres row (then we srem). */
+const staleLiveWarned = new Set();
+
+async function dropStaleLiveMatchId(matchId) {
+  const removed = await redis.srem(redisKeys.liveMatches(), matchId);
+  liveThrottle.delete(matchId);
+  liveFingerprints.delete(matchId);
+  if (removed > 0) {
+    log.info('removed stale id from matches:live', { matchId });
+    return;
+  }
+  if (!staleLiveWarned.has(matchId)) {
+    staleLiveWarned.add(matchId);
+    log.warn('live skipped — match not found (not in matches:live)', { matchId });
+  }
+}
 
 function shouldScoreLive(matchId, over) {
   const now = Date.now();
@@ -112,7 +128,7 @@ export async function runPrematch(matchId) {
 export async function runLive(matchId) {
   const snapshot = await extractLiveFeatures(matchId, { query, redis });
   if (!snapshot) {
-    log.warn('live skipped — match not found', { matchId });
+    await dropStaleLiveMatchId(matchId);
     return null;
   }
   const skip = shouldSkipLivePrediction(snapshot);
