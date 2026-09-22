@@ -34,6 +34,10 @@ import {
   pickPlayerIdFromCandidates,
   playerNameSearchVariants,
 } from './assistant-player-resolve.util.js';
+import {
+  pickTeamIdFromCandidates,
+  teamNameSearchVariants,
+} from './assistant-team-resolve.util.js';
 
 @Injectable()
 export class AssistantQueryService {
@@ -756,10 +760,27 @@ export class AssistantQueryService {
     if (!query?.trim()) return null;
     const q = query.trim();
     if (q.startsWith('sr:competitor:') || q.startsWith('sr:team:')) return q;
-    const byId = await this.teams.search({ q, page: 1, limit: 1 });
-    const hit = byId.data[0];
-    if (hit) return hit.id;
-    return null;
+
+    const candidates: Array<{ id: string; name: string; abbr: string; country?: string | null }> =
+      [];
+    const seen = new Set<string>();
+    for (const variant of teamNameSearchVariants(q)) {
+      const res = await this.teams.search({ q: variant, page: 1, limit: 12 });
+      for (const row of res.data as Array<{
+        id: string;
+        name: string;
+        abbr: string;
+        country?: string | null;
+      }>) {
+        if (!seen.has(row.id)) {
+          seen.add(row.id);
+          candidates.push(row);
+        }
+      }
+      const picked = pickTeamIdFromCandidates(q, candidates);
+      if (picked) return picked;
+    }
+    return pickTeamIdFromCandidates(q, candidates);
   }
 
   private async resolvePlayerId(query: string | undefined): Promise<string | null> {
@@ -822,11 +843,11 @@ export class AssistantQueryService {
     upcomingCount: number;
   }): string {
     return (
-      `Head-to-head (${verified.teamAName} vs ${verified.teamBName}): ` +
-      `${verified.teamAName} ${verified.teamAWins}–${verified.teamBWins} ${verified.teamBName}` +
+      `Here's what our records show for ${verified.teamAName} against ${verified.teamBName}: ` +
+      `${verified.teamAName} lead ${verified.teamAWins}–${verified.teamBWins}` +
       (verified.draws ? ` (${verified.draws} no-result/draw)` : '') +
-      ` across ${verified.totalMeetings} completed meeting(s)` +
-      (verified.upcomingCount ? `; ${verified.upcomingCount} upcoming on record.` : '.')
+      ` in ${verified.totalMeetings} completed meeting(s)` +
+      (verified.upcomingCount ? `, with ${verified.upcomingCount} more scheduled.` : '.')
     );
   }
 
@@ -855,7 +876,11 @@ export class AssistantQueryService {
 
   templateUnavailable(topic: string, unavailable: AssistantUnavailable[]): string {
     const reasons = unavailable.map((u) => u.reason).join(' ');
-    return `I cannot answer ${topic} from stored data yet. ${reasons}`.trim();
+    return (
+      `I don't have enough in our database to answer that yet. ${reasons} ` +
+      `Try full team names (India vs Pakistan), PSL franchises (Lahore vs Karachi), ` +
+      `or player compare ("Compare players Babar Azam vs Mohammad Rizwan").`
+    ).trim();
   }
 
   templateRecentForm(verified: {
@@ -905,9 +930,9 @@ export class AssistantQueryService {
       return `${c.category} ${c.stat}: ${verified.playerA.name} ${c.playerAValue}, ${verified.playerB.name} ${c.playerBValue} (edge: ${leaderName})`;
     });
     return (
-      `PSL leader stats (${verified.seasonName}) — ${verified.playerA.name} vs ${verified.playerB.name}. ` +
+      `For ${verified.seasonName}, here's how ${verified.playerA.name} and ${verified.playerB.name} stack up in our PSL leader boards: ` +
       lines.join('; ') +
-      (verified.comparisons.length > 6 ? ` (+${verified.comparisons.length - 6} more stat pairs in verified payload.)` : '')
+      (verified.comparisons.length > 6 ? ` (Plus ${verified.comparisons.length - 6} more stat pairs in Details.)` : '')
     );
   }
 

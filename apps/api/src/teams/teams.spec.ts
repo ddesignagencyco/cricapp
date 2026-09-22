@@ -94,13 +94,24 @@ describe('TeamsModule (integration)', () => {
         eventId: 'sr:match:200',
         status: 'closed',
         scheduled: '2026-08-01T10:00:00Z',
-        payload: { result: 'won' },
+        payload: {
+          sport_event: { id: 'sr:match:200' },
+          sport_event_status: {
+            winner_id: 'sr:team:1',
+            toss_won_by: 'sr:team:1',
+            toss_decision: 'bat',
+            current_inning: 2,
+            match_result_text: 'England won by 10 runs',
+          },
+        },
       },
     });
 
     const res = await ctx.agent.get('/teams/ENG/results').expect(200);
     expect(res.body.data).toHaveLength(1);
     expect(res.body.data[0].eventId).toBe('sr:match:200');
+    expect(res.body.data[0].sportEventStatus.winnerId).toBe('sr:team:1');
+    expect(res.body.data[0].sportEventStatus.tossDecision).toBe('bat');
     expect(res.body.meta.totalRecords).toBe(1);
   });
 });

@@ -14,6 +14,20 @@ describe('assistant-intent.util', () => {
     expect(r.teamBQuery).toBeTruthy();
   });
 
+  it('routes short name vs queries to player compare', () => {
+    const r = detectAssistantIntent({ question: 'babar vs rizwan' });
+    expect(r.intent).toBe('player_compare');
+    expect(r.playerAQuery).toMatch(/babar/i);
+    expect(r.playerBQuery).toMatch(/rizwan/i);
+  });
+
+  it('keeps national shorthand on team head-to-head', () => {
+    const r = detectAssistantIntent({ question: 'ind vs pak' });
+    expect(r.intent).toBe('team_head_to_head');
+    expect(r.teamAQuery).toBe('ind');
+    expect(r.teamBQuery).toBe('pak');
+  });
+
   it('detects live win-prob explain', () => {
     const r = detectAssistantIntent({
       question: 'Why did win probability change for sr:match:abc-1?',

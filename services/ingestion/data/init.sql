@@ -12,6 +12,12 @@ CREATE TABLE IF NOT EXISTS matches (
   display_score   TEXT,
   match_status    TEXT,
   result_text     TEXT,
+  winner_id       TEXT,
+  toss_won_by     TEXT,
+  toss_decision   TEXT,
+  current_inning  INTEGER,
+  period_scores   JSONB,
+  display_overs   DOUBLE PRECISION,
   created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

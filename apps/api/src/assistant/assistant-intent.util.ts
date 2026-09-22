@@ -1,4 +1,5 @@
 import type { AssistantIntent } from '@cricapp/shared-types';
+import { looksLikePlayerVersusQuery } from './assistant-team-resolve.util.js';
 
 const MATCH_ID_RE = /\bsr:match:[\w-]+\b/i;
 const VS_SPLIT_RE = /\s+(?:vs\.?|versus)\s+/i;
@@ -85,6 +86,14 @@ export function detectAssistantIntent(input: {
     (VS_SPLIT_RE.test(q) && !matchId && !/\bplayers?\b/.test(lower))
   ) {
     const pair = parseTeamPairFromQuestion(q);
+    if (pair && looksLikePlayerVersusQuery(pair.teamAQuery, pair.teamBQuery)) {
+      return {
+        intent: 'player_compare',
+        playerAQuery: input.playerAId ?? pair.teamAQuery,
+        playerBQuery: input.playerBId ?? pair.teamBQuery,
+        season,
+      };
+    }
     return {
       intent: 'team_head_to_head',
       teamAQuery: input.teamAId ?? pair?.teamAQuery,

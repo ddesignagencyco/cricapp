@@ -223,6 +223,12 @@ function normalizeSportradar(raw) {
     (typeof statusBlock.result === 'string' ? statusBlock.result : null) ??
     null;
 
+  const displayOversRaw = statusBlock.display_overs;
+  const displayOvers =
+    displayOversRaw != null && displayOversRaw !== '' && !Number.isNaN(Number(displayOversRaw))
+      ? Number(displayOversRaw)
+      : null;
+
   return {
     matchId: event.id ?? raw.id,
     status,
@@ -237,6 +243,15 @@ function normalizeSportradar(raw) {
     displayScore: statusBlock.display_score ?? null,
     matchStatus: statusBlock.match_status ?? rawStatus,
     matchResult,
+    winnerId: statusBlock.winner_id ?? null,
+    tossWonBy: statusBlock.toss_won_by ?? null,
+    tossDecision: statusBlock.toss_decision ?? null,
+    currentInning:
+      statusBlock.current_inning != null && !Number.isNaN(Number(statusBlock.current_inning))
+        ? Number(statusBlock.current_inning)
+        : null,
+    periodScores: statusBlock.period_scores ?? null,
+    displayOvers,
   };
 }
 

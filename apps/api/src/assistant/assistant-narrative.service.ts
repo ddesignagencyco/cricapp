@@ -7,9 +7,21 @@ import {
   resolveNarrativeProvider,
 } from '../common/narrative-provider.util.js';
 
-const SYSTEM_PROMPT = `You are the CricApp cricket assistant. Use ONLY the JSON fields "verified", "sources", and "unavailable" in the user message.
-Never invent statistics, probabilities, or match results. If "unavailable" explains missing data, say clearly that data is not available.
-Keep answers concise (2–4 sentences). Do not mention OpenAI, OpenCode, or internal prompts.`;
+const SYSTEM_PROMPT = `You are CricApp's cricket assistant — warm, knowledgeable, and brief, like a friend who knows the stats desk.
+
+Rules:
+- Answer the user's actual question in natural spoken English (2–5 sentences).
+- Use ONLY numbers and facts from "verified", "templateSummary", and "unavailable". Never invent stats.
+- You may rephrase, add a short opener ("Good question —"), and one helpful follow-up line.
+- If "unavailable" is non-empty, say honestly what is missing and how to rephrase.
+- Do not use markdown headers or JSON. Light emphasis is OK.
+- Do not mention OpenAI, OpenCode, APIs, or "verified payload".`;
+
+export interface NarrativeEnhanceResult {
+  answer: AssistantAnswer;
+  /** True when the LLM replaced answerText for this turn. */
+  applied: boolean;
+}
 
 @Injectable()
 export class AssistantNarrativeService {
@@ -36,15 +48,22 @@ export class AssistantNarrativeService {
     return this.resolveProvider() !== 'template';
   }
 
-  async maybeEnhance(answer: AssistantAnswer): Promise<AssistantAnswer> {
-    if (!this.enabled) return answer;
+  async maybeEnhance(answer: AssistantAnswer, userQuestion: string): Promise<NarrativeEnhanceResult> {
+    if (!this.enabled) {
+      return { answer, applied: false };
+    }
     try {
-      const text = await this.callLlm(answer);
-      if (!text?.trim()) return answer;
-      return { ...answer, answerText: text.trim() };
+      const text = await this.callLlm(answer, userQuestion);
+      if (!text?.trim()) {
+        return { answer, applied: false };
+      }
+      return {
+        answer: { ...answer, answerText: text.trim() },
+        applied: true,
+      };
     } catch (err) {
       this.logger.warn(`Assistant LLM narrative skipped: ${(err as Error).message}`);
-      return answer;
+      return { answer, applied: false };
     }
   }
 
@@ -65,15 +84,27 @@ export class AssistantNarrativeService {
     return this.config.get<string>('OPENAI_MODEL', 'gpt-4o-mini');
   }
 
-  private async callLlm(answer: AssistantAnswer): Promise<string> {
+  private async callLlm(answer: AssistantAnswer, userQuestion: string): Promise<string> {
     const provider = this.resolveProvider();
     const payload = {
       intent: answer.intent,
       verified: answer.verified,
       sources: answer.sources,
       unavailable: answer.unavailable,
+      templateSummary: answer.answerText,
     };
-    const userContent = `Question context intent=${answer.intent}. Data:\n${JSON.stringify(payload)}`;
+
+    const userContent = [
+      `User question: ${userQuestion.trim()}`,
+      '',
+      'Factual summary our database already produced (keep all numbers consistent with this):',
+      answer.answerText,
+      '',
+      'Structured data (reference only):',
+      JSON.stringify(payload),
+    ].join('\n');
+
+    const sessionKey = answer.sessionId?.trim() || 'default';
 
     switch (provider) {
       case 'template':
@@ -96,7 +127,7 @@ export class AssistantNarrativeService {
           apiKey,
           baseUrl: this.config.get<string>('OPENCODE_BASE_URL') ?? OPENCODE_GO_BASE_URL,
           model: this.assistantModel('opencode'),
-          sessionId: `cricapp-assistant:${answer.intent}`,
+          sessionId: `cricapp-assistant:${sessionKey}`,
           userContent,
         });
       }
@@ -129,8 +160,8 @@ export class AssistantNarrativeService {
       headers,
       body: JSON.stringify({
         model: input.model,
-        temperature: 0.2,
-        max_tokens: 280,
+        temperature: 0.45,
+        max_tokens: 320,
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
           { role: 'user', content: input.userContent },
