@@ -18,7 +18,10 @@ import {
 } from './sportradar.js';
 
 const DELTAS_ENABLED = process.env.LIVE_TIMELINE_DELTAS === 'true';
-const TIMELINE_SNAPSHOT_EVERY = Number(process.env.LIVE_TIMELINE_SNAPSHOT_EVERY || 0);
+/** Full timeline.json during live play; 0 disables. Default 3 (~every 3 live poll cycles). */
+const TIMELINE_SNAPSHOT_EVERY = Number(
+  process.env.LIVE_TIMELINE_SNAPSHOT_EVERY ?? 3,
+);
 const SNAPSHOT_KEY = (id) => `live:timeline:snapshot:n:${id}`;
 const SEQ_KEY = (id) => `live:timeline:lastSeq:${id}`;
 const BUF_KEY = (id) => `live:timeline:buf:${id}`;
@@ -90,13 +93,20 @@ async function processLiveMatch(id) {
     console.log(`[ingest] ${next.matchId}: snapshot`);
   }
 
-  if (DELTAS_ENABLED) {
-    await captureLiveTimelineDelta(id);
+  if (next.status === 'live') {
+    await maybeSnapshotLiveTimeline(id);
+    if (DELTAS_ENABLED) {
+      await captureLiveTimelineDelta(id);
+    }
+  } else if (DELTAS_ENABLED) {
     await flushLiveTimelineIfFinished(id, next.status);
   } else {
-    await maybeSnapshotLiveTimeline(id);
-    if (next.status !== 'live') {
-      await redis.del(SNAPSHOT_KEY(id));
+    await redis.del(SNAPSHOT_KEY(id));
+    try {
+      const raw = await fetchMatchTimeline(id);
+      await saveMatchTimeline(id, raw);
+    } catch (err) {
+      console.warn(`[ingest] full timeline fetch failed for ${id}: ${err.message}`);
     }
   }
 }

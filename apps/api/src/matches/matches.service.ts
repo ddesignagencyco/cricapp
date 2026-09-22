@@ -21,6 +21,7 @@ import {
   teamScoresFromSportEventPayload,
 } from './match-summary-enrich.util.js';
 import { sportEventStatusFromPayload } from '../common/sport-event-status.util.js';
+import { isLiveTimelineBehindMatch } from './timeline-stale.util.js';
 
 export type MatchSummary = Pick<
   CanonicalMatch,
@@ -285,33 +286,66 @@ export class MatchesService {
     throw new NotFoundException(`Match ${matchId} not found`);
   }
 
-  async getTimeline(matchId: string): Promise<{ matchId: string; payload: Record<string, unknown> }> {
-    const row = await this.prisma.matchTimeline.findUnique({
-      where: { matchId },
-    });
+  private static readonly LIVE_TIMELINE_REFRESH_MIN_AGE_MS = 30_000;
 
-    if (row) {
-      return {
-        matchId: row.matchId,
-        payload: row.payload as Record<string, unknown>,
-      };
+  private async upsertTimelinePayload(
+    matchId: string,
+    fresh: Record<string, unknown>,
+  ): Promise<{ matchId: string; payload: Record<string, unknown> }> {
+    await this.prisma.matchTimeline.upsert({
+      where: { matchId },
+      create: {
+        matchId,
+        payload: fresh as Prisma.InputJsonValue,
+      },
+      update: {
+        payload: fresh as Prisma.InputJsonValue,
+      },
+    });
+    return { matchId, payload: fresh };
+  }
+
+  async getTimeline(matchId: string): Promise<{ matchId: string; payload: Record<string, unknown> }> {
+    const [row, matchRow] = await Promise.all([
+      this.prisma.matchTimeline.findUnique({ where: { matchId } }),
+      this.prisma.match.findUnique({ where: { matchId } }),
+    ]);
+
+    const storedPayload = row?.payload as Record<string, unknown> | undefined;
+
+    if (storedPayload && matchRow) {
+      const stale = isLiveTimelineBehindMatch(
+        {
+          status: matchRow.status,
+          displayScore: matchRow.displayScore,
+          displayOvers: matchRow.displayOvers,
+        },
+        storedPayload,
+      );
+      const ageMs = row ? Date.now() - row.updatedAt.getTime() : Number.POSITIVE_INFINITY;
+      if (
+        stale &&
+        ageMs >= MatchesService.LIVE_TIMELINE_REFRESH_MIN_AGE_MS &&
+        this.sportradar.isConfigured
+      ) {
+        try {
+          const fresh = await this.sportradar.fetchMatchTimeline(matchId);
+          return this.upsertTimelinePayload(matchId, fresh);
+        } catch (err) {
+          if (err instanceof ServiceUnavailableException) throw err;
+        }
+      }
+      return { matchId: row!.matchId, payload: storedPayload };
     }
 
-    // Cold miss only — keep reads fast; ingestion backfill should populate timelines.
+    if (storedPayload) {
+      return { matchId: row!.matchId, payload: storedPayload };
+    }
+
     if (this.sportradar.isConfigured) {
       try {
         const fresh = await this.sportradar.fetchMatchTimeline(matchId);
-        await this.prisma.matchTimeline.upsert({
-          where: { matchId },
-          create: {
-            matchId,
-            payload: fresh as Prisma.InputJsonValue,
-          },
-          update: {
-            payload: fresh as Prisma.InputJsonValue,
-          },
-        });
-        return { matchId, payload: fresh };
+        return this.upsertTimelinePayload(matchId, fresh);
       } catch (err) {
         if (err instanceof ServiceUnavailableException) throw err;
         throw new NotFoundException(`Timeline for match ${matchId} not found`);
