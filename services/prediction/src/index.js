@@ -7,6 +7,7 @@ import { createLogger } from './logger.js';
 import { extractLiveFeatures, extractPrematchFeatures, listUpcomingMatchIds } from './features.js';
 import { scorePrematch } from './prematch.js';
 import { scoreLive } from './live.js';
+import { battingIsHomeTeam, decidedWinProb, shouldSkipLivePrediction } from './liveGuard.js';
 import { latestFeatureSnapshot, latestLiveResult, persistPrediction } from './persist.js';
 import { recalibratePrematch, resolvePrematchCalibration } from './calibrate.js';
 
@@ -70,6 +71,51 @@ export async function runLive(matchId) {
   if (!snapshot) {
     log.warn('live skipped — match not found', { matchId });
     return null;
+  }
+  const skip = shouldSkipLivePrediction(snapshot);
+  if (skip) {
+    log.info('live skipped — match decided or stale snapshot', { matchId, reason: skip });
+    const decided = decidedWinProb(snapshot);
+    if (!decided) return null;
+    const previous = await latestLiveResult(query, matchId);
+    const result = {
+      ...decided,
+      confidence: 0.95,
+      calibrationBand: 'high',
+      explanation: {
+        over: snapshot.currentInnings?.overs ?? 0,
+        wickets: snapshot.currentInnings?.wickets ?? 0,
+        inning: snapshot.currentInning >= 2 ? 2 : 1,
+        battingIsHome: battingIsHomeTeam(snapshot) ?? false,
+        resourcesLeft: 0,
+        remainingBalls: 0,
+        requiredRunRate: null,
+        requiredRuns: null,
+        projectedTotal: null,
+        deltaFromPrevious: Number(
+          (decided.homeWinProb - (previous?.homeWinProb ?? decided.homeWinProb)).toFixed(4),
+        ),
+        reasons: ['match_decided'],
+        factorAttributions: [],
+        momentum: 0,
+        pressureIndex: 0,
+        wicketRisk: 0,
+      },
+      scoreRange: null,
+      momentum: 0,
+      pressureIndex: 0,
+      wicketRisk: 0,
+      partnershipProjection: null,
+    };
+    const id = await persistPrediction(query, {
+      matchId,
+      stage: PREDICTION_STAGE.LIVE,
+      modelVersion: PREDICTION_MODELS.LIVE,
+      snapshot,
+      result,
+    });
+    log.info('live locked at result', { matchId, runId: id, homeWinProb: result.homeWinProb });
+    return id;
   }
   const over = snapshot.currentInnings?.overs ?? 0;
   if (!shouldScoreLive(matchId, over)) return null;

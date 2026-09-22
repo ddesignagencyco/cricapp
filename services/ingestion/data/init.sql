@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS matches (
   last_event      JSONB,
   display_score   TEXT,
   match_status    TEXT,
+  result_text     TEXT,
   created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

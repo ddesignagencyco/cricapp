@@ -69,6 +69,7 @@ describe('ingestion integration', () => {
   before(async () => {
     originalFetch = mockFetch();
     await query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS team_scores JSONB`);
+    await query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS result_text TEXT`);
     // Clean up any previous test state
     await redis.del(redisKeys.matchState(TEST_MATCH_ID));
     await redis.srem(redisKeys.liveMatches(), TEST_MATCH_ID);

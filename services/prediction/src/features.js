@@ -148,8 +148,8 @@ function venueEdge({ venue, home, away }) {
 
 async function loadMatch(query, matchId) {
   const r = await query(
-    `SELECT match_id, status, teams, team_names, tournament, venue, scheduled,
-            current_innings, last_event, display_score, match_status
+    `SELECT match_id, status, teams, team_names, team_scores, tournament, venue, scheduled,
+            current_innings, last_event, display_score, match_status, result_text
      FROM matches WHERE match_id = $1`,
     [matchId],
   );
@@ -214,6 +214,8 @@ async function resolveTeams(query, match, eventPayload) {
     awayTeamId: away?.id ?? awayId,
     homeName: home?.name ?? names[0] ?? homeComp?.name ?? labels[0] ?? null,
     awayName: away?.name ?? names[1] ?? awayComp?.name ?? labels[1] ?? null,
+    homeAbbr: home?.abbr ?? homeComp?.abbreviation ?? labels[0] ?? null,
+    awayAbbr: away?.abbr ?? awayComp?.abbreviation ?? labels[1] ?? null,
     home,
     away,
   };
@@ -518,6 +520,7 @@ export async function extractLiveFeatures(matchId, { query, redis }) {
     status: match.status,
     teams: asList(match.teams),
     teamNames: asList(match.team_names),
+    teamScores: match.team_scores,
     tournament: match.tournament,
     venue: match.venue,
     scheduled: match.scheduled,
@@ -531,11 +534,39 @@ export async function extractLiveFeatures(matchId, { query, redis }) {
     ...sportEventStatus(eventPayload),
     ...sportEventStatus(timeline),
   };
-  const innings = canonical.currentInnings ?? null;
+  let innings = canonical.currentInnings ?? null;
+  const teamScores =
+    canonical.teamScores ??
+    match.team_scores ??
+    null;
   const format = detectFormat(canonical.tournament ?? match.tournament, canonical.matchStatus ?? match.match_status);
   const allottedOvers = status.allotted_overs || (format === 'odi' ? 50 : format === 'test' ? 90 : 20);
-  const currentInning = Number(status.current_inning ?? (String(canonical.matchStatus ?? '').includes('2') ? 2 : 1));
-  const target = Number(status.target ?? 0) || null;
+  let currentInning = Number(status.current_inning ?? 0);
+  if (!Number.isFinite(currentInning) || currentInning <= 0) {
+    currentInning = String(canonical.matchStatus ?? '').includes('2') ? 2 : 1;
+  }
+  let target = Number(status.target ?? 0) || null;
+  if (!target && currentInning >= 2 && teamScores?.home?.score) {
+    const m = String(teamScores.home.score).match(/^(\d+)/);
+    if (m) target = Number(m[1]) + 1;
+  }
+
+  if (innings && teamScores) {
+    const side = battingSideFromScores(innings.battingTeam, teamScores, teams);
+    const line = side ? teamScores[side]?.score : null;
+    const parsed = parseScoreLine(line);
+    if (
+      parsed &&
+      (((innings.runs ?? 0) === 0 && (innings.wickets ?? 0) === 0) ||
+        (parsed.wickets >= 10 && (innings.wickets ?? 0) < 10))
+    ) {
+      innings = {
+        ...innings,
+        runs: parsed.runs,
+        wickets: parsed.wickets,
+      };
+    }
+  }
 
   return {
     matchId,
@@ -543,6 +574,9 @@ export async function extractLiveFeatures(matchId, { query, redis }) {
     awayTeamId: teams.awayTeamId,
     homeName: teams.homeName,
     awayName: teams.awayName,
+    homeAbbr: teams.homeAbbr,
+    awayAbbr: teams.awayAbbr,
+    teamScores,
     venue: canonical.venue ?? match.venue,
     tournament: canonical.tournament ?? match.tournament,
     format,
@@ -560,4 +594,24 @@ export async function extractLiveFeatures(matchId, { query, redis }) {
     runRate: innings?.runRate ?? status.run_rate ?? null,
     conditions: conditionsFromPayload(timeline) ?? conditionsFromPayload(eventPayload),
   };
+}
+
+function parseScoreLine(score) {
+  if (!score || typeof score !== 'string') return null;
+  const m = score.match(/^(\d+)\/(\d+)/);
+  if (!m) return null;
+  return { runs: Number(m[1]), wickets: Number(m[2]) };
+}
+
+function battingSideFromScores(battingToken, teamScores, teams) {
+  const b = String(battingToken ?? '').toLowerCase();
+  const homeTokens = [teams.homeAbbr, teams.homeName, teamScores.home?.code, teamScores.home?.name]
+    .filter(Boolean)
+    .map((t) => String(t).toLowerCase());
+  const awayTokens = [teams.awayAbbr, teams.awayName, teamScores.away?.code, teamScores.away?.name]
+    .filter(Boolean)
+    .map((t) => String(t).toLowerCase());
+  if (awayTokens.some((t) => b === t || b.includes(t) || t.includes(b))) return 'away';
+  if (homeTokens.some((t) => b === t || b.includes(t) || t.includes(b))) return 'home';
+  return null;
 }

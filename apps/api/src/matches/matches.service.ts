@@ -16,6 +16,10 @@ import {
   createPaginatedResponse,
   getPaginationOffset,
 } from '../common/pagination/pagination.util.js';
+import {
+  resultTextFromPayload,
+  teamScoresFromSportEventPayload,
+} from './match-summary-enrich.util.js';
 
 export type MatchSummary = Pick<
   CanonicalMatch,
@@ -31,6 +35,7 @@ export type MatchSummary = Pick<
   | 'lastEvent'
   | 'displayScore'
   | 'matchStatus'
+  | 'result'
 >;
 
 @Injectable()
@@ -45,10 +50,10 @@ export class MatchesService {
     return Array.isArray(value) ? value.map(String) : [];
   }
 
-  private buildTeamsField(row: Match): CanonicalMatch['teams'] {
+  private buildTeamsField(row: Match, scoresOverride?: TeamScores | null): CanonicalMatch['teams'] {
     const abbrs = this.asStringArray(row.teams);
     const names = this.asStringArray(row.teamNames);
-    const scores = row.teamScores as TeamScores | null;
+    const scores = scoresOverride ?? (row.teamScores as TeamScores | null);
     if (!scores?.home && !scores?.away) {
       return abbrs;
     }
@@ -68,13 +73,13 @@ export class MatchesService {
     };
   }
 
-  private toSummary(row: Match): MatchSummary {
+  private toSummary(row: Match, overrides?: Partial<MatchSummary>): MatchSummary {
     return {
       matchId: row.matchId,
       status: row.status as CanonicalMatch['status'],
-      teams: this.buildTeamsField(row),
+      teams: overrides?.teams ?? this.buildTeamsField(row),
       teamNames: this.asStringArray(row.teamNames),
-      teamScores: (row.teamScores as TeamScores | null) ?? null,
+      teamScores: overrides?.teamScores ?? (row.teamScores as TeamScores | null) ?? null,
       tournament: row.tournament,
       venue: row.venue,
       scheduled: row.scheduled,
@@ -82,6 +87,30 @@ export class MatchesService {
       lastEvent: row.lastEvent as unknown as LastEvent,
       displayScore: row.displayScore,
       matchStatus: row.matchStatus,
+      result: overrides?.result ?? row.resultText ?? null,
+    };
+  }
+
+  private async enrichFromStoredSummary(row: Match): Promise<Partial<MatchSummary>> {
+    const needsScores = !row.teamScores;
+    const needsResult = !row.resultText;
+    if (!needsScores && !needsResult) return {};
+
+    const record = await this.prisma.sportEventRecord.findFirst({
+      where: {
+        eventId: row.matchId,
+        kind: { in: ['match_summary', 'daily_results', 'team_results', 'daily_schedule'] },
+      },
+      orderBy: [{ updatedAt: 'desc' }],
+    });
+    const payload = record?.payload as Record<string, unknown> | undefined;
+    if (!payload) return {};
+
+    return {
+      ...(needsScores
+        ? { teamScores: teamScoresFromSportEventPayload(payload) ?? undefined }
+        : {}),
+      ...(needsResult ? { result: resultTextFromPayload(payload) ?? undefined } : {}),
     };
   }
 
@@ -175,7 +204,16 @@ export class MatchesService {
       }),
       this.redis.smembers(redisKeys.liveMatches()),
     ]);
-    const summaries = rows.map((r) => this.toSummary(r));
+    const summaries = await Promise.all(
+      rows.map(async (r) => {
+        const patch = await this.enrichFromStoredSummary(r);
+        const summary = this.toSummary(r, patch);
+        if (patch.teamScores) {
+          return { ...summary, teams: this.buildTeamsField(r, patch.teamScores) };
+        }
+        return summary;
+      }),
+    );
 
     const authoritativeIds = new Set(rows.map((row) => row.matchId));
     const staleIds = liveIds.filter((id) => !authoritativeIds.has(id));
@@ -200,15 +238,21 @@ export class MatchesService {
     ]);
 
     if (row) {
-      const summary = this.toSummary(row);
+      const patch = await this.enrichFromStoredSummary(row);
+      const summary = this.toSummary(row, patch);
+      const mergedScores = patch.teamScores ?? summary.teamScores;
+      const mergedTeams = mergedScores
+        ? this.buildTeamsField(row, mergedScores)
+        : summary.teams;
       if (cached) {
         return {
           ...cached,
-          teams: summary.teams,
-          teamScores: summary.teamScores,
+          teams: mergedTeams,
+          teamScores: mergedScores,
+          result: summary.result,
         };
       }
-      return summary;
+      return { ...summary, teams: mergedTeams, teamScores: mergedScores };
     }
 
     if (cached) return cached as MatchSummary;
