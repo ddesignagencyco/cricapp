@@ -25,6 +25,7 @@ import { NotificationsModule } from './notifications/notifications.module.js';
 import { AdminModule } from './admin/admin.module.js';
 import { SearchModule } from './search/search.module.js';
 import { PredictionsModule } from './predictions/predictions.module.js';
+import { AssistantModule } from './assistant/assistant.module.js';
 import { MediaModule } from './media/media.module.js';
 import { NewsletterModule } from './newsletter/newsletter.module.js';
 import { ContactModule } from './contact/contact.module.js';
@@ -71,6 +72,7 @@ import { RequestLogger } from './common/request-logger.middleware.js';
     AdminModule,
     SearchModule,
     PredictionsModule,
+    AssistantModule,
     MediaModule,
     NewsletterModule,
     ContactModule,

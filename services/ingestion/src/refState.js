@@ -45,3 +45,8 @@ export async function shouldSync(category, id) {
 export async function markSynced(category, id, cadenceMs) {
   await redis.set(key(category, id), Date.now(), 'PX', cadenceMs);
 }
+
+/** One-shot fills: drop staleness so Postgres is repopulated even if Redis says fresh. */
+export async function clearSyncStamp(category, id) {
+  await redis.del(key(category, id));
+}

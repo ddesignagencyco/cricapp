@@ -561,6 +561,32 @@
 
 ---
 
+## PHASE 16 — Cricket AI Assistant (SRS §11)
+
+> Retrieve-then-explain: intent → verified DB reads → optional LLM narrative. No stats from model memory.
+
+### 16.1 Shared contract
+- [x] `AssistantIntent`, `AssistantAnswer`, `sources`, `unavailable` in `@cricapp/shared-types`
+
+### 16.2 API (`apps/api`)
+- [x] `POST /assistant/ask` — rule-based intent + slots
+- [x] `team_head_to_head` handler (HeadToHeadService + tally summary)
+- [x] `match_prediction_summary` handler (latest pre-match or live run)
+- [x] `live_win_prob_explain` handler (diff last two runs + explanation reasons)
+- [x] Optional LLM narrative when `ASSISTANT_LLM_ENABLED=true` and `OPENAI_API_KEY` set
+- [x] Integration tests (`apps/api/src/assistant/assistant.spec.ts`)
+- [x] `player_compare` handler (PSL leader stats for a season, shared stat categories only)
+- [x] `standings_qualification` handler (PSL standings + fixtures, top-4 playoff math)
+- [x] `player_recent_form` handler (`match_summary` player lines, timeline fallback)
+- [ ] Entity linking via unified search for ambiguous team/player names
+- [ ] Session history / rate-limit tuning for production chat UI
+
+### 16.3 Frontend
+- [ ] Chat panel on match / player / PSL pages with source chips linking to entities
+- [ ] Display `unavailable` when data is missing (never hide gaps)
+
+---
+
 ## Progress Summary (update as phases complete)
 
 | Phase | Layer | Status |
@@ -580,8 +606,9 @@
 | 13. AI Prediction Centre | Backend+ML | **~85% backend done; frontend 0%; quality/calibration continues as matches settle** |
 | 14. Odds Intelligence | Backend | **0% — not started** |
 | 15. Interactive Tools | Backend+Frontend | **~10%** (H2H UI on match + team pages; `/tools/{slug}` not started) |
+| 16. Cricket AI Assistant | Backend+Frontend | **~65% backend** (all core intents; chat UI pending) |
 
-**Overall (updated Sep 17, 2026): sports + CMS backend is production-shaped for sessions, editorial, admin dashboards, newsletter/gallery. Prediction APIs/worker are in place (frontend still open). Odds remain the next large backend domain after prediction UI.**
+**Overall (updated Sep 22, 2026): sports + CMS backend is production-shaped for sessions, editorial, admin dashboards, newsletter/gallery. Prediction APIs/worker are in place (frontend still open). Odds remain the next large backend domain after prediction UI.**
 
 ---
 
