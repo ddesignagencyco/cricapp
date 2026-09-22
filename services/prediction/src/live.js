@@ -1,6 +1,8 @@
 import { allottedBallsForFormat } from './format.js';
 import { resourcesRemainingFromTable } from './resources.js';
 import { sigmoid } from './prematch.js';
+import { allottedBallsForFormat, parScoreForFormat } from './features.js';
+import { battingIsHomeTeam } from './liveGuard.js';
 
 export function oversToBalls(overs) {
   if (!overs || overs <= 0) return 0;
@@ -25,17 +27,6 @@ function reasonsFromEvent(lastEvent) {
   if (type === 'runs' && (lastEvent.runs ?? 0) >= 4) return ['boundary'];
   if (type === 'status_change') return ['status_change'];
   return ['score'];
-}
-
-function battingIsHome(snapshot) {
-  const batting = snapshot.currentInnings?.battingTeam;
-  if (!batting) return true;
-  if (snapshot.homeTeamId && batting === snapshot.homeTeamId) return true;
-  if (snapshot.awayTeamId && batting === snapshot.awayTeamId) return false;
-  const b = String(batting).toLowerCase();
-  if (snapshot.awayName && b.includes(String(snapshot.awayName).toLowerCase())) return false;
-  if (snapshot.homeName && b.includes(String(snapshot.homeName).toLowerCase())) return true;
-  return true;
 }
 
 export function scoreLive(snapshot, previous = null) {
@@ -87,7 +78,7 @@ export function scoreLive(snapshot, previous = null) {
 
   battingWinProb = Number(Math.min(0.97, Math.max(0.03, battingWinProb)).toFixed(4));
   const bowlingWinProb = Number((1 - battingWinProb).toFixed(4));
-  const homeBatting = battingIsHome(snapshot);
+  const homeBatting = battingIsHomeTeam(snapshot) ?? false;
   const homeWinProb = homeBatting ? battingWinProb : bowlingWinProb;
   const awayWinProb = Number((1 - homeWinProb).toFixed(4));
 

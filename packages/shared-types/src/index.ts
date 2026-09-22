@@ -47,6 +47,8 @@ export interface CanonicalMatch {
   lastEvent: LastEvent;
   displayScore: string | null;
   matchStatus: string | null;
+  /** Official result line, e.g. "India won by 147 runs". */
+  result?: string | null;
 }
 
 export interface MatchEvent {

@@ -5,7 +5,8 @@ import {
   buildTeamFromProfile,
   buildTeamFromTournamentTeam,
 } from './teamMeta.js';
-import { normalizeLineups } from './normalize.js';
+import { normalizeLineups, normalizeMatch } from './normalize.js';
+import { PROVIDERS } from './schemas.js';
 import {
   buildPlayerFromProfile,
   buildPlayerFromSquadEntry,
@@ -13,20 +14,21 @@ import {
 
 export async function saveMatch(match) {
   await query(
-    `INSERT INTO matches (match_id, status, teams, team_names, team_scores, tournament, venue, scheduled, current_innings, last_event, display_score, match_status, created_at, updated_at)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,NOW(),NOW())
+    `INSERT INTO matches (match_id, status, teams, team_names, team_scores, tournament, venue, scheduled, current_innings, last_event, display_score, match_status, result_text, created_at, updated_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,NOW(),NOW())
      ON CONFLICT (match_id) DO UPDATE SET
        status = EXCLUDED.status,
        teams = EXCLUDED.teams,
        team_names = EXCLUDED.team_names,
-       team_scores = EXCLUDED.team_scores,
-       tournament = EXCLUDED.tournament,
-       venue = EXCLUDED.venue,
-       scheduled = EXCLUDED.scheduled,
-       current_innings = EXCLUDED.current_innings,
-       last_event = EXCLUDED.last_event,
-       display_score = EXCLUDED.display_score,
-       match_status = EXCLUDED.match_status,
+       team_scores = COALESCE(EXCLUDED.team_scores, matches.team_scores),
+       tournament = COALESCE(EXCLUDED.tournament, matches.tournament),
+       venue = COALESCE(EXCLUDED.venue, matches.venue),
+       scheduled = COALESCE(EXCLUDED.scheduled, matches.scheduled),
+       current_innings = COALESCE(EXCLUDED.current_innings, matches.current_innings),
+       last_event = COALESCE(EXCLUDED.last_event, matches.last_event),
+       display_score = COALESCE(EXCLUDED.display_score, matches.display_score),
+       match_status = COALESCE(EXCLUDED.match_status, matches.match_status),
+       result_text = COALESCE(EXCLUDED.result_text, matches.result_text),
        updated_at = NOW()`,
     [
       match.matchId,
@@ -41,6 +43,7 @@ export async function saveMatch(match) {
       JSON.stringify(match.lastEvent),
       match.displayScore,
       match.matchStatus,
+      match.matchResult ?? null,
     ],
   );
 }
@@ -410,6 +413,13 @@ function mapMatchStatus(status, matchStatus) {
  */
 function recordToMatch(record) {
   const raw = record.payload ?? {};
+  if (raw.sport_event || raw.sport_event_status) {
+    try {
+      return normalizeMatch(PROVIDERS.SPORTRADAR, raw);
+    } catch {
+      /* fall through to slim row */
+    }
+  }
   const event = raw.sport_event ?? raw;
   const statusBlock = raw.sport_event_status ?? event.sport_event_status ?? {};
   const comps = event.competitors ?? [];
@@ -424,7 +434,7 @@ function recordToMatch(record) {
       record.status ?? statusBlock.status ?? '',
       statusBlock.match_status ?? statusBlock.matchStatus,
     ),
-    teams: [first?.id, second?.id].filter(Boolean),
+    teams: [first?.abbreviation ?? first?.id, second?.abbreviation ?? second?.id].filter(Boolean),
     teamNames: [first?.name, second?.name].filter(Boolean),
     tournament: event.tournament?.name ?? null,
     venue: event.venue?.name ?? null,
@@ -433,7 +443,8 @@ function recordToMatch(record) {
     lastEvent: { type: 'none', runs: 0, over: 0 },
     displayScore: statusBlock.display_score ?? null,
     matchStatus:
-      statusBlock.result ?? statusBlock.match_status ?? record.status ?? null,
+      statusBlock.match_status ?? statusBlock.result ?? record.status ?? null,
+    matchResult: statusBlock.match_result_text ?? null,
   };
 }
 

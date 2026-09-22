@@ -60,6 +60,35 @@ describe('scoreLive', () => {
     assert.equal(out.explanation.battingIsHome, false);
   });
 
+  it('maps abbreviation batting tokens to the correct side (SRI vs India)', () => {
+    const out = scoreLive({
+      format: 't20',
+      allottedBalls: 120,
+      currentInning: 2,
+      target: 217,
+      homeTeamId: 'sr:competitor:ind',
+      awayTeamId: 'sr:competitor:sl',
+      homeName: 'India',
+      awayName: 'Sri Lanka',
+      homeAbbr: 'IND',
+      awayAbbr: 'SRI',
+      teamScores: {
+        home: { code: 'IND', name: 'India', score: '216/3', overs: '20' },
+        away: { code: 'SRI', name: 'Sri Lanka', score: '69/10', overs: '15.4' },
+      },
+      currentInnings: {
+        battingTeam: 'SRI',
+        runs: 69,
+        wickets: 10,
+        overs: 15.4,
+        runRate: 4.5,
+      },
+      lastEvent: { type: 'wicket', runs: 0, over: 15.4 },
+    });
+    assert.equal(out.explanation.battingIsHome, false);
+    assert.ok(out.homeWinProb > 0.9);
+  });
+
   it('records a wicket reason and a delta from the previous live run', () => {
     const previous = { homeWinProb: 0.6, awayWinProb: 0.4 };
     const out = scoreLive(

@@ -1,6 +1,7 @@
 import { PROVIDERS } from './schemas.js';
 import { buildTeamFromCompetitor, managerDisplayName } from './teamMeta.js';
 import { buildPlayerFromLineupEntry, parseFullName } from './playerMeta.js';
+import { battingSideFromToken } from './matchSide.js';
 
 export function computeRunRate(runs, overs) {
   if (!overs) return 0;
@@ -29,11 +30,15 @@ function sideTotal(periodScores, side) {
 
   for (const inning of periodScores) {
     const value = Number(inning[`${side}_score`]);
-    if (!Number.isNaN(value) && value > 0) {
-      runs += value;
+    const w = Number(inning[`${side}_wickets`]);
+    const hasRuns = !Number.isNaN(value);
+    const hasWickets = !Number.isNaN(w);
+    const inningCounts =
+      (hasRuns && value > 0) || (hasWickets && w >= 0 && !Number.isNaN(w));
+    if (inningCounts) {
+      if (hasRuns && value > 0) runs += value;
       recorded = true;
-      const w = Number(inning[`${side}_wickets`]);
-      if (!Number.isNaN(w) && w > 0) wickets = w;
+      if (hasWickets) wickets = w;
       if (inning.display_overs != null) overs = String(inning.display_overs);
     }
   }
@@ -146,15 +151,27 @@ function normalizeSportradar(raw) {
   } else if (statusBlock.period_scores?.length) {
     const period = statusBlock.period_scores[statusBlock.period_scores.length - 1];
     const homeComp = competitors.find((c) => c.qualifier === 'home');
-    const isSecondInnings = statusBlock.current_inning > 1;
-    const runs = isSecondInnings ? period.away_score : period.home_score;
-    const wickets = isSecondInnings ? period.away_wickets : period.home_wickets;
+    const awayComp = competitors.find((c) => c.qualifier === 'away');
+    const ms = String(statusBlock.match_status ?? '').toLowerCase();
+    const awayBattingFirst =
+      ms.includes('away') && ms.includes('inning') && !ms.includes('second');
+    const inningNum = Number(statusBlock.current_inning) || 1;
+    let battingComp = homeComp;
+    let runs = period.home_score;
+    let wickets = period.home_wickets;
+    if (inningNum > 1) {
+      battingComp = awayComp;
+      runs = period.away_score;
+      wickets = period.away_wickets;
+    } else if (awayBattingFirst || (period.away_score > 0 && !period.home_score)) {
+      battingComp = awayComp;
+      runs = period.away_score;
+      wickets = period.away_wickets;
+    }
     const overs = period.display_overs ?? statusBlock.display_overs ?? 0;
 
     currentInnings = {
-      battingTeam: isSecondInnings
-        ? (competitors.find((c) => c.qualifier === 'away')?.abbreviation ?? teams[1])
-        : (homeComp?.abbreviation ?? teams[0]),
+      battingTeam: battingComp?.abbreviation ?? battingComp?.id ?? teams[0],
       runs: runs ?? 0,
       wickets: wickets ?? 0,
       overs: typeof overs === 'number' ? overs : parseFloat(overs) || 0,
@@ -166,24 +183,49 @@ function normalizeSportradar(raw) {
   const canonicalStatus = mapSportradarStatus(rawStatus, statusBlock.match_status);
   const teamScores = buildTeamScores(statusBlock, competitors);
 
+  const homeComp = competitors.find((c) => c.qualifier === 'home') ?? competitors[0];
+  const awayComp = competitors.find((c) => c.qualifier === 'away') ?? competitors[1];
+
   if (currentInnings) {
     const battingSide =
-      currentInnings.battingTeam === teamScores.home.code ||
+      battingSideFromToken(currentInnings.battingTeam, homeComp, awayComp) ??
+      (currentInnings.battingTeam === teamScores.home.code ||
       currentInnings.battingTeam === teamScores.home.name
         ? 'home'
-        : 'away';
-    const liveScore = `${currentInnings.runs}/${currentInnings.wickets}`;
-    const liveOvers =
-      currentInnings.overs !== null && currentInnings.overs !== undefined
-        ? String(currentInnings.overs)
-        : '';
-    teamScores[battingSide].score = liveScore;
-    teamScores[battingSide].overs = liveOvers;
+        : 'away');
+    const parsed = parseScoreLine(teamScores[battingSide].score);
+    const liveWickets = currentInnings.wickets ?? 0;
+    const liveRuns = currentInnings.runs ?? 0;
+    const useLiveLine =
+      liveRuns > 0 ||
+      liveWickets > 0 ||
+      !parsed ||
+      (canonicalStatus === 'live' && (currentInnings.overs ?? 0) > 0);
+    if (useLiveLine) {
+      teamScores[battingSide].score = `${liveRuns}/${liveWickets}`;
+      if (currentInnings.overs != null) {
+        teamScores[battingSide].overs = String(currentInnings.overs);
+      }
+    }
   }
+
+  if (innings.length >= 2) {
+    fillTeamScoresFromStatisticsInnings(innings, competitors, teamScores);
+  }
+
+  let status = canonicalStatus;
+  if (status === 'live' && isMatchDecided(statusBlock, currentInnings, teamScores)) {
+    status = 'completed';
+  }
+
+  const matchResult =
+    statusBlock.match_result_text ??
+    (typeof statusBlock.result === 'string' ? statusBlock.result : null) ??
+    null;
 
   return {
     matchId: event.id ?? raw.id,
-    status: canonicalStatus,
+    status,
     teams,
     teamNames,
     teamScores,
@@ -194,7 +236,51 @@ function normalizeSportradar(raw) {
     lastEvent: { type: 'none', runs: 0, over: currentInnings?.overs ?? 0 },
     displayScore: statusBlock.display_score ?? null,
     matchStatus: statusBlock.match_status ?? rawStatus,
+    matchResult,
   };
+}
+
+function parseScoreLine(score) {
+  if (!score || typeof score !== 'string') return null;
+  const m = score.match(/^(\d+)\/(\d+)/);
+  if (!m) return null;
+  return { runs: Number(m[1]), wickets: Number(m[2]) };
+}
+
+function fillTeamScoresFromStatisticsInnings(inningsList, competitors, teamScores) {
+  for (const inn of inningsList) {
+    const battingId = inn.batting_team;
+    const side = battingSideFromToken(
+      battingId,
+      competitors.find((c) => c.qualifier === 'home'),
+      competitors.find((c) => c.qualifier === 'away'),
+    );
+    if (!side) continue;
+    const batting = inn.teams?.find((t) => t.id === battingId)?.statistics?.batting;
+    const runs = batting?.runs ?? 0;
+    const wickets = batting?.wickets_lost ?? 0;
+    const overs = inn.overs_completed ?? '';
+    if (runs > 0 || wickets > 0) {
+      teamScores[side].score = `${runs}/${wickets}`;
+      if (overs !== '') teamScores[side].overs = String(overs);
+    }
+  }
+}
+
+function isMatchDecided(statusBlock, currentInnings, teamScores) {
+  const ms = `${statusBlock.match_status ?? ''} ${statusBlock.status ?? ''}`.toLowerCase();
+  if (/won|tied|draw|abandon|all.?out|closed|ended|complete|result/.test(ms)) {
+    return true;
+  }
+  const w = currentInnings?.wickets ?? 0;
+  const inning = Number(statusBlock.current_inning) || 1;
+  if (inning >= 2 && w >= 10) return true;
+  const home = parseScoreLine(teamScores?.home?.score);
+  const away = parseScoreLine(teamScores?.away?.score);
+  if (inning >= 2 && home?.runs && away?.runs != null && away.wickets >= 10 && away.runs < home.runs) {
+    return true;
+  }
+  return false;
 }
 
 function mapSportradarStatus(status, matchStatus) {

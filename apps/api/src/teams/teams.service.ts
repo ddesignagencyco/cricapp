@@ -4,6 +4,7 @@ import {
   getPaginationOffset,
   createPaginatedResponse,
 } from '../common/pagination/pagination.util.js';
+import { teamKindFromProfile } from './team-kind.util.js';
 
 export interface TeamSummary {
   id: string;
@@ -12,6 +13,11 @@ export interface TeamSummary {
   country: string | null;
   logoUrl: string | null;
   manager: string | null;
+  /** Present on GET /teams list and team profile when derivable from stored profile. */
+  gender?: 'male' | 'female' | null;
+  ageGroup?: 'senior' | 'u19' | 'u23' | 'masters' | null;
+  category?: string | null;
+  kindLabel?: string | null;
 }
 
 export interface PlayerSummaryDto {
@@ -35,14 +41,18 @@ export interface SportEventRecordSummary {
 export class TeamsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private toSummary(row: {
-    id: string;
-    name: string;
-    abbr: string;
-    country: string | null;
-    logoUrl: string | null;
-    manager: string | null;
-  }): TeamSummary {
+  private toSummary(
+    row: {
+      id: string;
+      name: string;
+      abbr: string;
+      country: string | null;
+      logoUrl: string | null;
+      manager: string | null;
+    },
+    profile?: { teamInfo: unknown } | null,
+  ): TeamSummary {
+    const kind = teamKindFromProfile(profile?.teamInfo, null);
     return {
       id: row.id,
       name: row.name,
@@ -50,6 +60,7 @@ export class TeamsService {
       country: row.country,
       logoUrl: row.logoUrl,
       manager: row.manager,
+      ...kind,
     };
   }
 
@@ -75,7 +86,19 @@ export class TeamsService {
       this.prisma.team.count({ where }),
     ]);
 
-    return createPaginatedResponse(rows.map((t) => this.toSummary(t)), total, page, limit);
+    const ids = rows.map((t) => t.id);
+    const profiles =
+      ids.length > 0
+        ? await this.prisma.teamProfile.findMany({ where: { teamId: { in: ids } } })
+        : [];
+    const profileById = new Map(profiles.map((p) => [p.teamId, p]));
+
+    return createPaginatedResponse(
+      rows.map((t) => this.toSummary(t, profileById.get(t.id))),
+      total,
+      page,
+      limit,
+    );
   }
 
   async search(params?: { q?: string; page?: number; limit?: number; offset?: number }) {
@@ -100,7 +123,8 @@ export class TeamsService {
     if (!team) {
       throw new NotFoundException(`Team ${idOrAbbr} not found`);
     }
-    return this.toSummary(team);
+    const profile = await this.prisma.teamProfile.findUnique({ where: { teamId: team.id } });
+    return this.toSummary(team, profile);
   }
 
   async getRoster(idOrAbbr: string, params?: { page?: number; limit?: number; offset?: number }) {

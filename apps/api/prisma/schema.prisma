@@ -24,6 +24,7 @@ model Match {
   lastEvent      Json     @map("last_event")
   displayScore   String?  @map("display_score")
   matchStatus    String?  @map("match_status")
+  resultText     String?  @map("result_text")
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
