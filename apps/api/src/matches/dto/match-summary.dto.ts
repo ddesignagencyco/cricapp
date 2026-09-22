@@ -83,4 +83,25 @@ export class MatchSummaryDto {
 
   @ApiPropertyOptional()
   matchStatus: string | null;
+
+  @ApiPropertyOptional({ description: 'Official result line when the match is completed.' })
+  result?: string | null;
+
+  @ApiPropertyOptional({ description: 'Sportradar competitor id of the winning team.' })
+  winnerId?: string | null;
+
+  @ApiPropertyOptional({ description: 'Sportradar competitor id that won the toss.' })
+  tossWonBy?: string | null;
+
+  @ApiPropertyOptional({ enum: ['bat', 'bowl', 'field'] })
+  tossDecision?: string | null;
+
+  @ApiPropertyOptional()
+  currentInning?: number | null;
+
+  @ApiPropertyOptional({ description: 'Innings breakdown from Sportradar period_scores.' })
+  periodScores?: unknown[] | null;
+
+  @ApiPropertyOptional()
+  displayOvers?: number | null;
 }

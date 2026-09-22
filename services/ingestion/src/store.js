@@ -14,8 +14,8 @@ import {
 
 export async function saveMatch(match) {
   await query(
-    `INSERT INTO matches (match_id, status, teams, team_names, team_scores, tournament, venue, scheduled, current_innings, last_event, display_score, match_status, result_text, created_at, updated_at)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,NOW(),NOW())
+    `INSERT INTO matches (match_id, status, teams, team_names, team_scores, tournament, venue, scheduled, current_innings, last_event, display_score, match_status, result_text, winner_id, toss_won_by, toss_decision, current_inning, period_scores, display_overs, created_at, updated_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,NOW(),NOW())
      ON CONFLICT (match_id) DO UPDATE SET
        status = EXCLUDED.status,
        teams = EXCLUDED.teams,
@@ -29,6 +29,12 @@ export async function saveMatch(match) {
        display_score = COALESCE(EXCLUDED.display_score, matches.display_score),
        match_status = COALESCE(EXCLUDED.match_status, matches.match_status),
        result_text = COALESCE(EXCLUDED.result_text, matches.result_text),
+       winner_id = COALESCE(EXCLUDED.winner_id, matches.winner_id),
+       toss_won_by = COALESCE(EXCLUDED.toss_won_by, matches.toss_won_by),
+       toss_decision = COALESCE(EXCLUDED.toss_decision, matches.toss_decision),
+       current_inning = COALESCE(EXCLUDED.current_inning, matches.current_inning),
+       period_scores = COALESCE(EXCLUDED.period_scores, matches.period_scores),
+       display_overs = COALESCE(EXCLUDED.display_overs, matches.display_overs),
        updated_at = NOW()`,
     [
       match.matchId,
@@ -44,6 +50,12 @@ export async function saveMatch(match) {
       match.displayScore,
       match.matchStatus,
       match.matchResult ?? null,
+      match.winnerId ?? null,
+      match.tossWonBy ?? null,
+      match.tossDecision ?? null,
+      match.currentInning ?? null,
+      JSON.stringify(match.periodScores ?? null),
+      match.displayOvers ?? null,
     ],
   );
 }
@@ -445,6 +457,18 @@ function recordToMatch(record) {
     matchStatus:
       statusBlock.match_status ?? statusBlock.result ?? record.status ?? null,
     matchResult: statusBlock.match_result_text ?? null,
+    winnerId: statusBlock.winner_id ?? null,
+    tossWonBy: statusBlock.toss_won_by ?? null,
+    tossDecision: statusBlock.toss_decision ?? null,
+    currentInning:
+      statusBlock.current_inning != null && !Number.isNaN(Number(statusBlock.current_inning))
+        ? Number(statusBlock.current_inning)
+        : null,
+    periodScores: statusBlock.period_scores ?? null,
+    displayOvers:
+      statusBlock.display_overs != null && !Number.isNaN(Number(statusBlock.display_overs))
+        ? Number(statusBlock.display_overs)
+        : null,
   };
 }
 
@@ -781,7 +805,11 @@ export async function materializeTeamEvents() {
      WHERE ser.kind IN ('daily_schedule','daily_results','tournament_results','team_schedule','team_results')
        AND ser.event_id IS NOT NULL
        AND (comp->>'id') IS NOT NULL
-     ON CONFLICT (kind, scope_key, event_id) DO NOTHING`,
+     ON CONFLICT (kind, scope_key, event_id) DO UPDATE SET
+       status = EXCLUDED.status,
+       scheduled = EXCLUDED.scheduled,
+       payload = EXCLUDED.payload,
+       updated_at = NOW()`,
   );
   return r.rowCount ?? 0;
 }

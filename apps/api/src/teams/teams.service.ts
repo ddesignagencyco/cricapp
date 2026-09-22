@@ -5,6 +5,10 @@ import {
   createPaginatedResponse,
 } from '../common/pagination/pagination.util.js';
 import { teamKindFromProfile } from './team-kind.util.js';
+import {
+  mapEnrichedSportEventRecord,
+  type EnrichedSportEventRecord,
+} from '../common/sport-event-record.mapper.js';
 
 export interface TeamSummary {
   id: string;
@@ -28,14 +32,7 @@ export interface PlayerSummaryDto {
   nationality: string | null;
 }
 
-export interface SportEventRecordSummary {
-  kind: string;
-  scopeKey: string;
-  eventId: string;
-  status: string | null;
-  scheduled: string | null;
-  payload: Record<string, unknown>;
-}
+export type SportEventRecordSummary = EnrichedSportEventRecord;
 
 @Injectable()
 export class TeamsService {
@@ -166,14 +163,7 @@ export class TeamsService {
       this.prisma.sportEventRecord.count({ where }),
     ]);
 
-    const mapped = rows.map((r) => ({
-      kind: r.kind,
-      scopeKey: r.scopeKey,
-      eventId: r.eventId,
-      status: r.status,
-      scheduled: r.scheduled,
-      payload: r.payload as Record<string, unknown>,
-    }));
+    const mapped = rows.map((r) => mapEnrichedSportEventRecord(r));
 
     return createPaginatedResponse(mapped, total, page, limit);
   }

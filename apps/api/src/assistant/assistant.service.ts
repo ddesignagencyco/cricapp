@@ -3,6 +3,7 @@ import type { AssistantAnswer } from '@cricapp/shared-types';
 import { AssistantNarrativeService } from './assistant-narrative.service.js';
 import { AssistantQueryService } from './assistant-query.service.js';
 import { detectAssistantIntent } from './assistant-intent.util.js';
+import { buildFollowUpPrompts } from './assistant-followups.util.js';
 import type { AssistantAskDto } from './dto/assistant-ask.dto.js';
 
 @Injectable()
@@ -27,13 +28,23 @@ export class AssistantService {
     });
 
     let answer = await this.query.buildAnswer(resolved);
-    if (dto.sessionId) {
-      answer = { ...answer, sessionId: dto.sessionId };
-    }
+    answer = {
+      ...answer,
+      question: dto.question.trim(),
+      sessionId: dto.sessionId,
+      followUpPrompts: buildFollowUpPrompts({
+        intent: answer.intent,
+        verified: answer.verified,
+        unavailable: answer.unavailable,
+      }),
+    };
 
-    const llmNarrative = this.narrative.enabled;
-    answer = await this.narrative.maybeEnhance(answer);
+    const { answer: enhanced, applied } = await this.narrative.maybeEnhance(answer, dto.question);
 
-    return { ...answer, llmNarrative };
+    return {
+      ...enhanced,
+      /** True when OpenCode/OpenAI rewrote answerText for this response. */
+      llmNarrative: applied,
+    };
   }
 }

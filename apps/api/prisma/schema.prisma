@@ -25,6 +25,12 @@ model Match {
   displayScore   String?  @map("display_score")
   matchStatus    String?  @map("match_status")
   resultText     String?  @map("result_text")
+  winnerId       String?  @map("winner_id")
+  tossWonBy      String?  @map("toss_won_by")
+  tossDecision   String?  @map("toss_decision")
+  currentInning  Int?     @map("current_inning")
+  periodScores   Json?    @map("period_scores")
+  displayOvers   Float?   @map("display_overs")
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 

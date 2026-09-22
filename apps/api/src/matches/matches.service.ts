@@ -20,6 +20,7 @@ import {
   resultTextFromPayload,
   teamScoresFromSportEventPayload,
 } from './match-summary-enrich.util.js';
+import { sportEventStatusFromPayload } from '../common/sport-event-status.util.js';
 
 export type MatchSummary = Pick<
   CanonicalMatch,
@@ -36,6 +37,12 @@ export type MatchSummary = Pick<
   | 'displayScore'
   | 'matchStatus'
   | 'result'
+  | 'winnerId'
+  | 'tossWonBy'
+  | 'tossDecision'
+  | 'currentInning'
+  | 'periodScores'
+  | 'displayOvers'
 >;
 
 @Injectable()
@@ -88,13 +95,20 @@ export class MatchesService {
       displayScore: row.displayScore,
       matchStatus: row.matchStatus,
       result: overrides?.result ?? row.resultText ?? null,
+      winnerId: overrides?.winnerId ?? row.winnerId ?? null,
+      tossWonBy: overrides?.tossWonBy ?? row.tossWonBy ?? null,
+      tossDecision: overrides?.tossDecision ?? row.tossDecision ?? null,
+      currentInning: overrides?.currentInning ?? row.currentInning ?? null,
+      periodScores: (overrides?.periodScores ?? row.periodScores) as unknown[] | null,
+      displayOvers: overrides?.displayOvers ?? row.displayOvers ?? null,
     };
   }
 
   private async enrichFromStoredSummary(row: Match): Promise<Partial<MatchSummary>> {
     const needsScores = !row.teamScores;
     const needsResult = !row.resultText;
-    if (!needsScores && !needsResult) return {};
+    const needsStatus = !row.winnerId && !row.tossWonBy;
+    if (!needsScores && !needsResult && !needsStatus) return {};
 
     const record = await this.prisma.sportEventRecord.findFirst({
       where: {
@@ -106,11 +120,22 @@ export class MatchesService {
     const payload = record?.payload as Record<string, unknown> | undefined;
     if (!payload) return {};
 
+    const statusView = sportEventStatusFromPayload(payload);
     return {
       ...(needsScores
         ? { teamScores: teamScoresFromSportEventPayload(payload) ?? undefined }
         : {}),
       ...(needsResult ? { result: resultTextFromPayload(payload) ?? undefined } : {}),
+      ...(statusView
+        ? {
+            winnerId: statusView.winnerId ?? undefined,
+            tossWonBy: statusView.tossWonBy ?? undefined,
+            tossDecision: statusView.tossDecision ?? undefined,
+            currentInning: statusView.currentInning ?? undefined,
+            periodScores: statusView.periodScores ?? undefined,
+            displayOvers: statusView.displayOvers ?? undefined,
+          }
+        : {}),
     };
   }
 

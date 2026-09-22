@@ -35,9 +35,13 @@ export interface AssistantUnavailable {
 export interface AssistantAnswer {
   intent: AssistantIntent;
   sessionId?: string;
+  /** Echo of the user question (for chat UI threads). */
+  question?: string;
   /** Natural language; templated when LLM is disabled. */
   answerText: string;
   verified: Record<string, unknown>;
   sources: AssistantSource[];
   unavailable: AssistantUnavailable[];
+  /** Short suggested next questions for a conversational UI. */
+  followUpPrompts?: string[];
 }

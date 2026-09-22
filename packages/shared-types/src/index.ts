@@ -49,6 +49,12 @@ export interface CanonicalMatch {
   matchStatus: string | null;
   /** Official result line, e.g. "India won by 147 runs". */
   result?: string | null;
+  winnerId?: string | null;
+  tossWonBy?: string | null;
+  tossDecision?: string | null;
+  currentInning?: number | null;
+  periodScores?: unknown[] | null;
+  displayOvers?: number | null;
 }
 
 export interface MatchEvent {
