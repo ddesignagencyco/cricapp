@@ -8,19 +8,21 @@ import {
   Calendar,
   Clock,
   Newspaper,
-  User,
   Tag as TagIcon,
   Flame,
 } from 'lucide-react';
 import Badge from '../Badge';
 import Tabs from '../Tabs';
 import EmptyState from '../EmptyState';
+import ErrorState from '../ErrorState';
 import Pagination from '../Pagination';
 import DummyAd from '../advertisements/DummyAd';
 import RemoteImage from '../RemoteImage';
 import NewsCopy from '../NewsCopy';
+import { AuthorByline } from '../PersonAvatar';
 import type { NewsArticle } from '../../types';
-import { newsHref } from '../../utils/newsConstraints';
+import { newsHref, newsListPath } from '../../utils/newsConstraints';
+import { authorAvatarFromArticle } from '../../services/authors';
 
 const categoryTone: Record<string, string> = {
   'Match Report': 'live',
@@ -65,6 +67,7 @@ interface Props {
   limit: number;
   selectedCategory?: string;
   language?: 'en' | 'ur';
+  loadError?: boolean;
 }
 
 export default function NewsBoard({
@@ -76,6 +79,7 @@ export default function NewsBoard({
   limit,
   selectedCategory = 'all',
   language = 'en',
+  loadError = false,
 }: Props) {
   const pathname = usePathname();
   const router = useRouter();
@@ -137,14 +141,11 @@ export default function NewsBoard({
   const spotlightCategory = featured ? getCategoryName(featured.category) : '';
   const spotlightTags = featured ? getArticleTags(featured) : [];
 
-  const newsListHref = (lang: 'en' | 'ur') => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.delete('page');
-    if (lang === 'ur') params.set('lang', 'ur');
-    else params.delete('lang');
-    const query = params.toString();
-    return query ? `/news?${query}` : '/news';
-  };
+  const newsListHref = (lang: 'en' | 'ur') =>
+    newsListPath(lang, {
+      category: selectedCategory,
+      tag: searchParams.get('tag') || undefined,
+    });
 
   return (
     <>
@@ -188,7 +189,14 @@ export default function NewsBoard({
         </div>
       </div>
 
-      {featured && (
+      {loadError ? (
+        <ErrorState
+          title="Server unavailable"
+          message="Can't reach the API, so stories aren't listed. Start the backend or try again."
+        />
+      ) : null}
+
+      {!loadError && featured && (
         <Link
           href={newsHref(featured)}
           className="group mb-10 block overflow-hidden rounded-md border border-lborder bg-card transition-colors hover:border-border-strong"
@@ -258,10 +266,11 @@ export default function NewsBoard({
               <div className="mt-7 flex flex-wrap items-center justify-between gap-4 border-t border-lborder pt-4 text-xs text-stext">
                 <div className="flex flex-wrap items-center gap-3">
                   {featured.author && (
-                    <span className="flex items-center gap-1.5 font-medium text-mtext">
-                      <User size={14} className="text-accent" />
-                      {featured.author}
-                    </span>
+                    <AuthorByline
+                      name={featured.author}
+                      src={authorAvatarFromArticle(featured)}
+                      size={20}
+                    />
                   )}
                   {featured.date && (
                     <span className="flex items-center gap-1.5">
@@ -287,7 +296,7 @@ export default function NewsBoard({
         </Link>
       )}
 
-      {filtered.length > 0 ? (
+      {!loadError && filtered.length > 0 ? (
         <>
           <div className="mb-4 flex items-end justify-between gap-4">
             <div>
@@ -316,7 +325,7 @@ export default function NewsBoard({
             </div>
           ) : null}
         </>
-      ) : !featured ? (
+      ) : !loadError && !featured ? (
         <EmptyState
           title="No news articles found"
           message={
@@ -326,13 +335,15 @@ export default function NewsBoard({
           }
         />
       ) : null}
-      <Pagination
-        page={page}
-        totalPages={totalPages}
-        total={total}
-        limit={limit}
-        onPageChange={(nextPage) => updateQuery(selectedCategory, nextPage)}
-      />
+      {!loadError && (
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          total={total}
+          limit={limit}
+          onPageChange={(nextPage) => updateQuery(selectedCategory, nextPage)}
+        />
+      )}
     </>
   );
 }
@@ -411,12 +422,10 @@ function ArticleCard({ item, language }: { item: NewsArticle; language: 'en' | '
           </div>
         )}
 
-        <div className="mt-auto flex items-center justify-between border-t border-lborder pt-3 text-xs text-stext">
-          <span className="flex items-center gap-1.5 font-medium">
+        <div className="mt-auto flex items-center justify-between gap-2 border-t border-lborder pt-3 text-xs text-stext">
+          <AuthorByline name={item.author} src={authorAvatarFromArticle(item)} size={18} />
+          <span className="flex shrink-0 items-center gap-1.5">
             <Calendar size={12} className="text-accent" /> {item.date || 'Recent'}
-          </span>
-          <span className="flex items-center gap-1.5">
-            <Clock size={12} /> {item.readTime || '3 min read'}
           </span>
         </div>
       </div>

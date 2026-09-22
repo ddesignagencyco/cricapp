@@ -1,20 +1,17 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { Calendar, ChevronRight, MapPin, Search, Trophy, X } from 'lucide-react';
+import { Search, Trophy, X } from 'lucide-react';
 import { str } from '../../utils/extract';
 import type { TournamentApi } from '../../types/index';
 import { fetchTournamentsPage } from '../../services/tournaments';
 import EmptyState from '../EmptyState';
 import ErrorState from '../ErrorState';
 import Pagination from '../Pagination';
-import DummyAd from '../advertisements/DummyAd';
 import { DirectoryGridSkeleton } from '../skeletons/Skeletons';
 import { filterChipClass, filterChipCountClass } from '../ui/filterChip';
-import FavoriteButton from '../FavoriteButton';
-import ShareButton from '../ShareButton';
+import TournamentCard from '../TournamentCard';
 
 const LIMIT = 20;
 
@@ -148,10 +145,6 @@ export default function TournamentsBoard({ initialCountry }: Props) {
         </div>
       </header>
 
-      {!loading && !error && filtered.length > 0 ? (
-        <DummyAd size="leaderboard" placement="tournaments-after-intro" />
-      ) : null}
-
       <div className="space-y-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="relative max-w-md flex-1">
@@ -252,7 +245,7 @@ export default function TournamentsBoard({ initialCountry }: Props) {
         />
       ) : filtered.length > 0 ? (
         <>
-          <div className="fade-in grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="fade-in grid auto-rows-fr grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {filtered.map((tournament) => (
               <TournamentCard key={tournament.id} tournament={tournament} />
             ))}
@@ -280,68 +273,6 @@ export default function TournamentsBoard({ initialCountry }: Props) {
           }
         />
       )}
-    </div>
-  );
-}
-
-function TournamentCard({ tournament }: { tournament: TournamentApi }) {
-  const category = str(tournament.category) || 'International';
-  const season = str(tournament.currentSeason);
-  const rawFormat = str(tournament.type).toUpperCase();
-  const format = rawFormat ? rawFormat.replace(/_/g, ' ') : 'CRICKET';
-  const gender = tournament.gender || '';
-  const cs = tournament.currentSeason as Record<string, unknown> | undefined;
-  const rawYear = cs?.year || cs?.name;
-  const seasonYear =
-    typeof rawYear === 'number'
-      ? rawYear
-      : typeof rawYear === 'string'
-        ? (rawYear.match(/(19|20)\d{2}/) || [])[0] || null
-        : null;
-
-  return (
-    <div className="group flex items-center gap-2 rounded-md border border-lborder bg-card p-3.5 transition-colors hover:border-accent/50 hover:bg-[var(--color-row-hover)]">
-      <Link href={`/tournaments/${tournament.id}`} className="flex min-w-0 flex-1 items-center gap-3">
-        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-md border border-lborder bg-secondary text-accent">
-          <Trophy size={18} aria-hidden="true" />
-        </span>
-        <div className="min-w-0 flex-1">
-          <div className="flex min-w-0 items-center gap-2">
-            <h3 className="min-w-0 truncate text-sm font-semibold text-mtext transition-colors group-hover:text-accent" title={tournament.name}>
-              {tournament.name}
-            </h3>
-            <span className="shrink-0 rounded border border-lborder bg-secondary px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-stext">
-              {format}
-            </span>
-          </div>
-          <p className="mt-0.5 flex min-w-0 items-center gap-2 text-xs text-stext">
-            <span className="inline-flex min-w-0 items-center gap-1 truncate">
-              <MapPin size={11} className="shrink-0" />
-              <span className="truncate">
-                {category}
-                {gender ? ` · ${gender}` : ''}
-              </span>
-            </span>
-            {(seasonYear || season) && (
-              <span className="inline-flex shrink-0 items-center gap-1">
-                <Calendar size={11} />
-                {seasonYear || season}
-              </span>
-            )}
-          </p>
-        </div>
-        <ChevronRight size={16} className="shrink-0 text-stext transition-colors group-hover:text-accent" aria-hidden="true" />
-      </Link>
-      <div className="flex shrink-0 items-center gap-1">
-        <FavoriteButton targetType="tournament" targetId={tournament.id} compact />
-        <ShareButton
-          type="tournament"
-          id={tournament.id}
-          fallbackTitle={tournament.name}
-          href={`/tournaments/${encodeURIComponent(tournament.id)}`}
-          compact
-        />
-      </div>
     </div>
   );
 }

@@ -18,13 +18,15 @@ import {
 import TeamLogo from '../TeamLogo';
 import EmptyState from '../EmptyState';
 import ErrorState from '../ErrorState';
+import { decodeEntityId, withColonEntityQuery } from '../../utils/entityId';
+import { formatTeamSelectLabel } from '../../utils/helpers';
 
 const selectStyles = {
   control: (base: Record<string, unknown>, state: { isFocused: boolean }) => ({
     ...base,
     backgroundColor: 'var(--color-elevated)',
     borderColor: state.isFocused ? 'var(--color-accent)' : 'var(--color-lborder)',
-    borderRadius: '0.75rem',
+    borderRadius: '0.25rem',
     minHeight: '48px',
     padding: '0.15rem 0.35rem',
     boxShadow: 'none',
@@ -34,7 +36,7 @@ const selectStyles = {
     ...base,
     backgroundColor: state.isFocused ? 'var(--color-accent)' : 'var(--color-elevated)',
     color: state.isFocused ? 'white' : 'var(--color-mtext)',
-    borderRadius: '0.5rem',
+    borderRadius: '0.25rem',
     margin: '2px 4px',
     padding: '8px 12px',
   }),
@@ -42,7 +44,7 @@ const selectStyles = {
     ...base,
     backgroundColor: 'var(--color-elevated)',
     border: '1px solid var(--color-lborder)',
-    borderRadius: '0.75rem',
+    borderRadius: '0.25rem',
     overflow: 'hidden',
     zIndex: 20,
   }),
@@ -63,8 +65,7 @@ const selectStyles = {
 };
 
 function teamLabel(team: Team): string {
-  const abbr = team.abbr || team.code || team.shortName;
-  return abbr ? `${team.name} (${abbr})` : team.name;
+  return formatTeamSelectLabel(team);
 }
 
 async function loadAllTeams(): Promise<Team[]> {
@@ -73,7 +74,7 @@ async function loadAllTeams(): Promise<Team[]> {
   const rest =
     extraPages > 0
       ? await Promise.all(
-          Array.from({ length: extraPages }, (_, i) => fetchTeamsPage({ limit: 100, page: i + 2 }))
+          Array.from({ length: extraPages }, (_, i) => fetchTeamsPage({ limit: 100, page: i + 2 })),
         )
       : [];
   const seen = new Set<string>();
@@ -90,8 +91,8 @@ export default function CompareBoard() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const teamAId = searchParams.get('a') || '';
-  const teamBId = searchParams.get('b') || '';
+  const teamAId = decodeEntityId(searchParams.get('a'));
+  const teamBId = decodeEntityId(searchParams.get('b'));
 
   const [teams, setTeams] = useState<Team[]>([]);
   const [teamsError, setTeamsError] = useState(false);
@@ -101,15 +102,20 @@ export default function CompareBoard() {
   const [reportError, setReportError] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
   const [reportRetry, setReportRetry] = useState(0);
+  const [selectReady, setSelectReady] = useState(false);
+
+  useEffect(() => {
+    setSelectReady(true);
+  }, []);
 
   const setPair = useCallback(
     (nextA: string, nextB: string) => {
       const params = new URLSearchParams(searchParams.toString());
-      if (nextA) params.set('a', nextA);
+      if (nextA) params.set('a', decodeEntityId(nextA));
       else params.delete('a');
-      if (nextB) params.set('b', nextB);
+      if (nextB) params.set('b', decodeEntityId(nextB));
       else params.delete('b');
-      const qs = params.toString();
+      const qs = withColonEntityQuery(params);
       router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
     },
     [pathname, router, searchParams]
@@ -213,20 +219,26 @@ export default function CompareBoard() {
           <div className="grid grid-cols-1 items-end gap-3 sm:grid-cols-[1fr_auto_1fr]">
             <label className="block min-w-0">
               <span className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-stext">Team A</span>
-              <Select
-                value={teamA}
-                onChange={(option) => setPair(option?.id || '', teamBId)}
-                options={teams}
-                getOptionLabel={teamLabel}
-                getOptionValue={(option) => option.id}
-                placeholder={teamsLoading ? 'Loading teams…' : 'Select a team'}
-                isDisabled={teamsLoading}
-                isSearchable
-                isClearable
-                className="react-select-container"
-                classNamePrefix="react-select"
-                styles={selectStyles as never}
-              />
+              {selectReady ? (
+                <Select
+                  instanceId="h2h-team-a"
+                  inputId="h2h-team-a-input"
+                  value={teamA}
+                  onChange={(option) => setPair(option?.id || '', teamBId)}
+                  options={teams}
+                  getOptionLabel={teamLabel}
+                  getOptionValue={(option) => option.id}
+                  placeholder={teamsLoading ? 'Loading teams…' : 'Select a team'}
+                  isDisabled={teamsLoading}
+                  isSearchable
+                  isClearable
+                  className="react-select-container"
+                  classNamePrefix="react-select"
+                  styles={selectStyles as never}
+                />
+              ) : (
+                <div className="h-12 rounded-xl bg-elevated ring-1 ring-lborder" />
+              )}
             </label>
             <button
               type="button"
@@ -239,20 +251,26 @@ export default function CompareBoard() {
             </button>
             <label className="block min-w-0">
               <span className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-stext">Team B</span>
-              <Select
-                value={teamB}
-                onChange={(option) => setPair(teamAId, option?.id || '')}
-                options={teams}
-                getOptionLabel={teamLabel}
-                getOptionValue={(option) => option.id}
-                placeholder={teamsLoading ? 'Loading teams…' : 'Select a team'}
-                isDisabled={teamsLoading}
-                isSearchable
-                isClearable
-                className="react-select-container"
-                classNamePrefix="react-select"
-                styles={selectStyles as never}
-              />
+              {selectReady ? (
+                <Select
+                  instanceId="h2h-team-b"
+                  inputId="h2h-team-b-input"
+                  value={teamB}
+                  onChange={(option) => setPair(teamAId, option?.id || '')}
+                  options={teams}
+                  getOptionLabel={teamLabel}
+                  getOptionValue={(option) => option.id}
+                  placeholder={teamsLoading ? 'Loading teams…' : 'Select a team'}
+                  isDisabled={teamsLoading}
+                  isSearchable
+                  isClearable
+                  className="react-select-container"
+                  classNamePrefix="react-select"
+                  styles={selectStyles as never}
+                />
+              ) : (
+                <div className="h-12 rounded-xl bg-elevated ring-1 ring-lborder" />
+              )}
             </label>
           </div>
         )}

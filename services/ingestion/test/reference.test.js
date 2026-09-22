@@ -149,7 +149,7 @@ describe("normalizeTeamProfile", () => {
     });
     assert.equal(out.teamId, "sr:competitor:1");
     assert.equal(out.manager.name, "Gary Kirsten");
-    assert.equal(out.teamInfo.abbreviation, "PAK");
+    assert.equal(out.teamInfo.team.abbreviation, "PAK");
   });
 });
 

@@ -31,6 +31,10 @@ export interface Team {
   logo?: string;
   abbr?: string;
   country?: string;
+  gender?: string | null;
+  ageGroup?: string | null;
+  category?: string | null;
+  kindLabel?: string | null;
   [key: string]: unknown;
 }
 

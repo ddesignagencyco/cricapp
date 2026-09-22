@@ -8,6 +8,7 @@ import {
   AdminInput,
   AdminPageHeader,
   AdminToggle,
+  ConfirmDialog,
   EmptyState,
   ErrorState,
   LoadingState,
@@ -44,6 +45,60 @@ function sortUsers(list: AdminUser[]) {
   });
 }
 
+type PendingAction =
+  | { kind: 'delete'; user: AdminUser }
+  | { kind: 'admin'; user: AdminUser; next: boolean }
+  | { kind: 'verified'; user: AdminUser; next: boolean };
+
+function userLabel(user: AdminUser) {
+  return user.displayName || user.username;
+}
+
+function confirmCopy(action: PendingAction): { title: string; message: string; confirmLabel: string; danger: boolean } {
+  const name = userLabel(action.user);
+  switch (action.kind) {
+    case 'delete':
+      return {
+        title: `Delete ${name}?`,
+        message: `This removes @${action.user.username} permanently. This cannot be undone.`,
+        confirmLabel: 'Delete',
+        danger: true,
+      };
+    case 'admin':
+      return action.next
+        ? {
+            title: `Make ${name} an admin?`,
+            message: `@${action.user.username} will get admin access to this dashboard.`,
+            confirmLabel: 'Make admin',
+            danger: false,
+          }
+        : {
+            title: `Remove admin from ${name}?`,
+            message: `@${action.user.username} will become a regular member.`,
+            confirmLabel: 'Remove admin',
+            danger: true,
+          };
+    case 'verified':
+      return action.next
+        ? {
+            title: `Verify ${name}?`,
+            message: `Mark ${action.user.email} as verified.`,
+            confirmLabel: 'Verify',
+            danger: false,
+          }
+        : {
+            title: `Unverify ${name}?`,
+            message: `${action.user.email} will be marked unverified.`,
+            confirmLabel: 'Unverify',
+            danger: true,
+          };
+    default: {
+      const _never: never = action;
+      throw new Error(`Unhandled user action: ${JSON.stringify(_never)}`);
+    }
+  }
+}
+
 function matchesRole(user: AdminUser, role: RoleFilter) {
   if (role === 'all') return true;
   if (role === 'superadmin') return Boolean(user.isSuperAdmin);
@@ -61,6 +116,7 @@ export default function UsersPage() {
   const [error, setError] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('all');
+  const [pending, setPending] = useState<PendingAction | null>(null);
   const { user: me } = useAuth();
 
   const load = (nextPage = page, query = q) => {
@@ -98,7 +154,6 @@ export default function UsersPage() {
 
   const remove = async (user: AdminUser) => {
     if (user.isSuperAdmin) return;
-    if (!window.confirm(`Delete ${user.username}? This cannot be undone.`)) return;
     setBusyId(user.id);
     try {
       await deleteAdminUser(user.id);
@@ -112,7 +167,29 @@ export default function UsersPage() {
     }
   };
 
+  const runPending = async () => {
+    if (!pending || busyId) return;
+    const action = pending;
+    switch (action.kind) {
+      case 'delete':
+        await remove(action.user);
+        break;
+      case 'admin':
+        await patch(action.user, { isAdmin: action.next });
+        break;
+      case 'verified':
+        await patch(action.user, { emailVerified: action.next });
+        break;
+      default: {
+        const _never: never = action;
+        throw new Error(`Unhandled user action: ${JSON.stringify(_never)}`);
+      }
+    }
+    setPending(null);
+  };
+
   const visible = users.filter((user) => matchesRole(user, roleFilter));
+  const confirm = pending ? confirmCopy(pending) : null;
 
   return (
     <div className="space-y-5">
@@ -171,7 +248,7 @@ export default function UsersPage() {
               </thead>
               <tbody>
                 {visible.map((user) => {
-                  const name = user.displayName || user.username;
+                  const name = userLabel(user);
                   const busy = busyId === user.id;
                   const locked = Boolean(user.isSuperAdmin);
                   return (
@@ -200,7 +277,7 @@ export default function UsersPage() {
                               checked={user.isAdmin}
                               disabled={busy}
                               label={user.isAdmin ? 'Remove admin' : 'Make admin'}
-                              onChange={() => patch(user, { isAdmin: !user.isAdmin })}
+                              onChange={() => setPending({ kind: 'admin', user, next: !user.isAdmin })}
                             />
                             <Badge tone={user.isAdmin ? 'primary' : 'neutral'}>
                               {user.isAdmin ? 'Admin' : 'Member'}
@@ -224,7 +301,7 @@ export default function UsersPage() {
                             checked={user.emailVerified}
                             disabled={busy}
                             label={user.emailVerified ? 'Unverify email' : 'Verify email'}
-                            onChange={() => patch(user, { emailVerified: !user.emailVerified })}
+                            onChange={() => setPending({ kind: 'verified', user, next: !user.emailVerified })}
                           />
                         )}
                       </td>
@@ -236,7 +313,7 @@ export default function UsersPage() {
                             <button
                               type="button"
                               disabled={busy || user.id === me?.id}
-                              onClick={() => remove(user)}
+                              onClick={() => setPending({ kind: 'delete', user })}
                               className="grid h-8 w-8 place-items-center rounded-md disabled:opacity-40"
                               style={{ background: 'var(--admin-danger-bg)', color: 'var(--admin-danger)' }}
                               title="Delete user"
@@ -257,6 +334,22 @@ export default function UsersPage() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={Boolean(pending && confirm)}
+        title={confirm?.title || ''}
+        message={confirm?.message || ''}
+        confirmLabel={confirm?.confirmLabel || 'Confirm'}
+        danger={confirm?.danger || false}
+        loading={Boolean(pending && busyId === pending.user.id)}
+        onCancel={() => {
+          if (busyId) return;
+          setPending(null);
+        }}
+        onConfirm={() => {
+          void runPending();
+        }}
+      />
     </div>
   );
 }

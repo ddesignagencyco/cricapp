@@ -58,6 +58,10 @@ export interface NewsInput {
   pushNotificationTitle?: string;
   pushNotificationBody?: string;
   socialCopy?: string;
+  playerIds?: string[];
+  teamIds?: string[];
+  matchIds?: string[];
+  seriesIds?: string[];
 }
 
 export interface NewsAdminListParams {

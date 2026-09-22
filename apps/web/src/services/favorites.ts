@@ -24,6 +24,85 @@ export async function listFavorites(
   return extractPage<FavoriteItem>(res).items;
 }
 
+const heartCache = new Map<FavoriteTarget, FavoriteItem[]>();
+const heartInflight = new Map<FavoriteTarget, Promise<FavoriteItem[]>>();
+const heartListeners = new Set<() => void>();
+
+function notifyHeartCache() {
+  heartListeners.forEach((listener) => listener());
+}
+
+export function subscribeFavoriteCache(listener: () => void): () => void {
+  heartListeners.add(listener);
+  return () => {
+    heartListeners.delete(listener);
+  };
+}
+
+export function peekFavoriteCache(targetType: FavoriteTarget): FavoriteItem[] | undefined {
+  return heartCache.get(targetType);
+}
+
+/** One shared list per type for heart buttons — no expand, deduped in flight. */
+export function loadFavoritesForHearts(targetType: FavoriteTarget): Promise<FavoriteItem[]> {
+  const cached = heartCache.get(targetType);
+  if (cached) return Promise.resolve(cached);
+
+  const pending = heartInflight.get(targetType);
+  if (pending) return pending;
+
+  const request = listFavorites(targetType, { expand: false, limit: 100 })
+    .then((items) => {
+      const existing = heartCache.get(targetType);
+      if (!existing?.length) {
+        heartCache.set(targetType, items);
+        return items;
+      }
+      const byTarget = new Map(items.map((item) => [item.targetId, item]));
+      for (const row of existing) {
+        if (!byTarget.has(row.targetId)) byTarget.set(row.targetId, row);
+      }
+      const merged = [...byTarget.values()];
+      heartCache.set(targetType, merged);
+      return merged;
+    })
+    .finally(() => {
+      heartInflight.delete(targetType);
+    });
+
+  heartInflight.set(targetType, request);
+  return request;
+}
+
+export function rememberFavoriteAdded(item: FavoriteItem) {
+  const current = heartCache.get(item.targetType) ?? [];
+  if (current.some((row) => row.id === item.id || row.targetId === item.targetId)) {
+    heartCache.set(
+      item.targetType,
+      current.map((row) => (row.targetId === item.targetId ? item : row)),
+    );
+  } else {
+    heartCache.set(item.targetType, [...current, item]);
+  }
+  notifyHeartCache();
+}
+
+export function rememberFavoriteRemoved(targetType: FavoriteTarget, favoriteId: string) {
+  const current = heartCache.get(targetType);
+  if (!current) return;
+  heartCache.set(
+    targetType,
+    current.filter((row) => row.id !== favoriteId),
+  );
+  notifyHeartCache();
+}
+
+export function clearFavoriteCache() {
+  heartCache.clear();
+  heartInflight.clear();
+  notifyHeartCache();
+}
+
 export async function listFavoritesPage(
   params: { targetType?: FavoriteTarget; page?: number; limit?: number; expand?: boolean } = {}
 ): Promise<{ items: FavoriteItem[]; total: number; totalPages: number }> {

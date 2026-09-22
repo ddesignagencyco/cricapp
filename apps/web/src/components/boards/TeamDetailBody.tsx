@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { CalendarDays, MapPin, Shield, Swords, User } from 'lucide-react';
+import { CalendarDays, MapPin, Newspaper, Shield, Swords, User } from 'lucide-react';
 import PlayerCard from '../PlayerCard';
 import Tabs from '../Tabs';
 import EmptyState from '../EmptyState';
@@ -17,7 +17,7 @@ import { fetchTeamRosterPage } from '../../services/teams';
 import type { NewsArticle, Player, SportEventRecord } from '../../types/index';
 import { formatScheduled } from '../../utils/helpers';
 import { isSportRadarId, str } from '../../utils/extract';
-import { newsHref } from '../../utils/newsConstraints';
+import { RelatedNewsPanel, useLinkedNews } from './RelatedNewsPanel';
 
 const teamTabs = [
   { key: 'overview', label: 'Overview', icon: Shield },
@@ -25,6 +25,7 @@ const teamTabs = [
   { key: 'results', label: 'Results', icon: CalendarDays },
   { key: 'squad', label: 'Squad', icon: User },
   { key: 'h2h', label: 'Head to Head', icon: Swords },
+  { key: 'news', label: 'News', icon: Newspaper },
 ];
 
 interface Props {
@@ -47,6 +48,10 @@ export default function TeamDetailBody({
   relatedNews = [],
 }: Props) {
   const [tab, setTab] = useState('overview');
+  const { articles: news, loading: newsLoading } = useLinkedNews(
+    { teamId: String(team?.id || '') },
+    relatedNews
+  );
   const [players, setPlayers] = useState<Player[]>(initialPlayers || []);
   const [squadPage, setSquadPage] = useState(1);
   const [squadLoading, setSquadLoading] = useState(false);
@@ -231,24 +236,14 @@ export default function TeamDetailBody({
         </div>
       )}
 
-      {relatedNews.length > 0 && (
-        <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
-          <section className="min-w-0 rounded-md border border-lborder bg-card p-4">
-            <h3 className="mb-3 text-sm font-bold uppercase tracking-widest text-stext">Related news</h3>
-            <ul className="space-y-2">
-              {relatedNews.map((article) => (
-                <li key={article.id}>
-                  <Link href={newsHref(article)} className="text-sm font-semibold text-mtext hover:text-accent">
-                    {article.title}
-                  </Link>
-                  <p className="text-xs text-stext">{article.date}</p>
-                </li>
-              ))}
-            </ul>
-          </section>
-          <div className="flex justify-center lg:justify-start">
-            <DummyAd size="medium-rectangle" placement="team-detail-sidebar" />
-          </div>
+      {tab === 'news' && (
+        <div className="fade-in">
+          <RelatedNewsPanel
+            articles={news}
+            loading={newsLoading}
+            emptyTitle="No team news"
+            emptyHint="Publish a story from Admin → News and link this team. Drafts do not appear here."
+          />
         </div>
       )}
     </div>

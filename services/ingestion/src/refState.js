@@ -26,7 +26,11 @@ export const REF_CADENCE = Object.freeze({
   daily: 6 * 3600e3,
   // One-shot syncs (retry if the key expired, otherwise skip forever).
   timeline: 365 * 24 * 3600e3,
+  /** Live matches: refresh stored ball-by-ball while status=live (poll is primary). */
+  liveTimeline: 5 * 60e3,
   lineups: 30 * 24 * 3600e3,
+  // Full match summary (statistics, conditions, etc.) — schedule rows alone are thinner.
+  matchSummary: 6 * 3600e3,
   // News feeds: refresh hourly.
   news: 1 * 3600e3,
 });
@@ -42,4 +46,9 @@ export async function shouldSync(category, id) {
 
 export async function markSynced(category, id, cadenceMs) {
   await redis.set(key(category, id), Date.now(), 'PX', cadenceMs);
+}
+
+/** One-shot fills: drop staleness so Postgres is repopulated even if Redis says fresh. */
+export async function clearSyncStamp(category, id) {
+  await redis.del(key(category, id));
 }

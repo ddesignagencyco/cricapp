@@ -1,6 +1,7 @@
 'use client';
 
 import { Flame, Target, Zap } from 'lucide-react';
+import EntityAvatar from './EntityAvatar';
 import { getInitials } from '../utils/helpers';
 
 const statMeta: Record<string, { label: string; tone: string }> = {
@@ -75,13 +76,5 @@ export function LeaderPanel({ group }: { group: any }) {
 }
 
 function PlayerAvatar({ name }: { name: string }) {
-  let h = 0;
-  for (let i = 0; i < (name || '').length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
-  const hue = Math.abs(h % 360);
-  return (
-    <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[10px] font-bold text-white"
-      style={{ backgroundImage: `linear-gradient(135deg, hsl(${hue}, 75%, 50%), hsl(${(hue + 40) % 360}, 85%, 35%))` }}>
-      {getInitials(name)}
-    </span>
-  );
+  return <EntityAvatar className="h-7 w-7 text-[10px] font-bold">{getInitials(name)}</EntityAvatar>;
 }

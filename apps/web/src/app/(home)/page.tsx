@@ -13,6 +13,7 @@ import RemoteImage from '../../components/RemoteImage';
 import NewsCopy from '../../components/NewsCopy';
 import Badge, { StatusBadge } from '../../components/Badge';
 
+import { fetchGalleryPage } from '../../services/gallery';
 import { fetchLiveMatches, fetchMatches } from '../../services/matches';
 import { fetchNews } from '../../services/news';
 import { newsHref } from '../../utils/newsConstraints';
@@ -39,22 +40,21 @@ export default async function HomePage() {
   const results = await Promise.allSettled([
       fetchLiveMatches(),
       fetchMatches({ status: 'upcoming', limit: 20 }),
-      fetchMatches({ status: 'completed', limit: 60 }),
-      fetchMatches({ limit: 20 }),
+      fetchMatches({ status: 'completed', limit: 20 }),
       fetchNews(),
       fetchPslStandings(),
       fetchPslLeaders(),
       fetchStreams({ limit: 8 }),
+      fetchGalleryPage({ page: 1, limit: 6, type: 'image' }),
     ] as const);
   const liveMatches = results[0].status === 'fulfilled' ? results[0].value : [];
   const upcomingMatches = results[1].status === 'fulfilled' ? results[1].value : [];
   const completedMatches = results[2].status === 'fulfilled' ? results[2].value : [];
-  const allMatches = results[3].status === 'fulfilled' ? results[3].value : [];
-  const newsList = results[4].status === 'fulfilled' ? results[4].value : [];
-  const standings = results[5].status === 'fulfilled' ? results[5].value : [];
-  const pslLeaders = results[6].status === 'fulfilled' ? results[6].value : [];
-  const streams = results[7].status === 'fulfilled' ? results[7].value : [];
-  const galleryPhotos = (newsList || []).filter((item) => item.image).slice(0, 6);
+  const newsList = results[3].status === 'fulfilled' ? results[3].value : [];
+  const standings = results[4].status === 'fulfilled' ? results[4].value : [];
+  const pslLeaders = results[5].status === 'fulfilled' ? results[5].value : [];
+  const streams = results[6].status === 'fulfilled' ? results[6].value : [];
+  const galleryPhotos = results[7].status === 'fulfilled' ? results[7].value.items : [];
 
   const live = liveMatches || [];
   const upcoming = (upcomingMatches || []).slice(0, 5);
@@ -65,7 +65,6 @@ export default async function HomePage() {
         new Date(b.scheduled || b.date).getTime() - new Date(a.scheduled || a.date).getTime()
     );
   const completed = completedAll.slice(0, 3);
-  const all = allMatches || [];
 
   const upcomingFuture = (upcomingMatches || []).filter((m: any) => {
     const s = new Date(m.scheduled || m.date).getTime();
@@ -96,12 +95,13 @@ export default async function HomePage() {
   return (
     <div className="min-h-screen">
       <MatchTickerBar matches={tickerMatches} />
-      <CricketHero match={nextUpcoming || all[0]} />
+      <CricketHero match={nextUpcoming || live[0] || completed[0]} />
 
+      <div className="flex flex-col gap-12 pt-12 pb-12">
       <LiveNowSection matches={live} />
 
       {streams.length > 0 && (
-        <section className="mx-auto max-w-7xl pt-8 px-4 pb-14 sm:px-6">
+        <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
           <SectionHeader title="Watch Now" subtitle="Live streams and featured videos" icon="video" to="/gallery?tab=videos" actionLabel="All videos" />
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {streams.slice(0, 3).map((stream) => (
@@ -133,7 +133,7 @@ export default async function HomePage() {
       )}
 
       {/* Upcoming Matches */}
-      <section className={`mx-auto max-w-7xl px-4 pb-14 sm:px-6 ${live.length > 0 || streams.length > 0 ? '' : 'mt-8'}`}>
+      <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
         <SectionHeader title="Upcoming Matches" subtitle="Don't miss the upcoming action" icon="calendar" to="/matches" actionLabel="View all" />
         <div className="grid grid-cols-1 gap-2.5 lg:grid-cols-2">
           {upcoming.length > 0 ? (
@@ -148,7 +148,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6">
+      <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
         <AdSlot slot="home-mid" format="leaderboard" />
       </section>
 
@@ -157,7 +157,7 @@ export default async function HomePage() {
 
       {/* PSL Top Performers */}
       {pslLeaders.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6">
+        <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
           <SectionHeader
             title="Top Performers"
             subtitle="Leading run scorers and wicket takers in the PSL"
@@ -171,7 +171,7 @@ export default async function HomePage() {
 
       {/* Recent Results */}
       {completed.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6">
+        <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
           <SectionHeader title="Recent Results" subtitle="Latest match outcomes" icon="trophy" to="/matches?tab=completed" actionLabel="View all" />
           <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
             {completed.map((m: any) => (
@@ -183,7 +183,7 @@ export default async function HomePage() {
 
       {/* News */}
       {newsList.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6">
+        <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
           <SectionHeader title="Latest News" subtitle="Stay updated with the cricket world" icon="newspaper" to="/news" actionLabel="All news" />
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.15fr_0.85fr]">
             {newsList[0] && (
@@ -261,13 +261,20 @@ export default async function HomePage() {
       )}
 
       {galleryPhotos.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6">
+        <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
           <SectionHeader title="Gallery" subtitle="Images, shorts and videos" icon="images" to="/gallery" actionLabel="Open gallery" />
           <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-6">
             {galleryPhotos.map((item) => (
               <Link key={item.id} href="/gallery?tab=images" className="group overflow-hidden rounded-2xl bg-card ring-1 ring-lborder">
                 <div className="relative aspect-square bg-secondary">
-                  <RemoteImage src={item.image as string} alt={item.title} fill sizes="180px" fit="contain" className="news-image" />
+                  <RemoteImage
+                    src={item.thumbnailUrl || item.url}
+                    alt={item.title || 'Gallery image'}
+                    fill
+                    sizes="180px"
+                    fit="contain"
+                    className="news-image"
+                  />
                 </div>
               </Link>
             ))}
@@ -275,11 +282,12 @@ export default async function HomePage() {
         </section>
       )}
 
-      <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6">
+      <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
         <AdSlot slot="home-footer" format="leaderboard" />
       </section>
 
       <Newsletter />
+      </div>
     </div>
   );
 }

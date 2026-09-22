@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import toast from 'react-hot-toast';
 import { ImageIcon, Trash2, Upload } from 'lucide-react';
 import {
@@ -40,6 +40,8 @@ export default function AdminGalleryPage() {
   const [filter, setFilter] = useState<'' | GalleryMediaType>('');
   const [title, setTitle] = useState('');
   const [caption, setCaption] = useState('');
+  const [file, setFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -68,8 +70,33 @@ export default function AdminGalleryPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter]);
 
-  const onFile = async (file: File | undefined) => {
-    if (!file) return;
+  const fileFitsType = (next: File, mediaType: GalleryMediaType) => {
+    const isImage = next.type.startsWith('image/');
+    return mediaType === 'image' ? isImage : !isImage;
+  };
+
+  const pickFile = (next: File | undefined) => {
+    if (!next) return;
+    if (!fileFitsType(next, type)) {
+      toast.error(type === 'image' ? 'Choose an image file.' : 'Choose a video file.');
+      return;
+    }
+    setFile(next);
+  };
+
+  const resetForm = () => {
+    setTitle('');
+    setCaption('');
+    setFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const onSubmit = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!file) {
+      toast.error('Choose a file, then click Upload.');
+      return;
+    }
     setBusy(true);
     try {
       await uploadGalleryMedia({
@@ -78,8 +105,7 @@ export default function AdminGalleryPage() {
         title: title.trim() || undefined,
         caption: caption.trim() || undefined,
       });
-      setTitle('');
-      setCaption('');
+      resetForm();
       toast.success('Media uploaded.');
       if (filter === type) load(1, type);
       else setFilter(type);
@@ -119,44 +145,69 @@ export default function AdminGalleryPage() {
       />
 
       <form
-        className="grid grid-cols-1 gap-3 rounded-lg p-4 sm:grid-cols-2 lg:grid-cols-4"
+        className="flex flex-wrap items-end gap-2 rounded-lg p-3"
         style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}
-        onSubmit={(e) => e.preventDefault()}
+        onSubmit={(event) => void onSubmit(event)}
       >
-        <AdminField label="Type" required>
-          <AdminSelect value={type} onChange={(e) => setType(e.target.value as GalleryMediaType)}>
-            <option value="image">Image</option>
-            <option value="short">Short</option>
-            <option value="video">Video</option>
-          </AdminSelect>
-        </AdminField>
-        <AdminField label="Title">
-          <AdminInput value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title" />
-        </AdminField>
-        <AdminField label="Caption">
-          <AdminInput value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Caption" />
-        </AdminField>
-        <AdminField label="File" required>
-          <label
-            className="inline-flex h-[38px] w-full cursor-pointer items-center justify-center gap-2 rounded-md px-3 text-xs font-semibold"
-            style={{ border: '1px dashed var(--admin-border)', color: 'var(--admin-accent)', background: 'var(--admin-input-bg)' }}
-          >
-            <Upload size={14} />
-            {busy ? 'Uploading…' : 'Choose file'}
-            <input
-              type="file"
-              accept={type === 'image' ? 'image/*' : 'video/*'}
-              className="sr-only"
-              disabled={busy}
+        <div className="w-[7.5rem] shrink-0">
+          <AdminField label="Type" required>
+            <AdminSelect
+              value={type}
               onChange={(e) => {
-                const file = e.target.files?.[0];
-                e.target.value = '';
-                if (!file) return;
-                void onFile(file);
+                const next = e.target.value as GalleryMediaType;
+                setType(next);
+                if (file && !fileFitsType(file, next)) {
+                  setFile(null);
+                  if (fileInputRef.current) fileInputRef.current.value = '';
+                }
               }}
-            />
-          </label>
-        </AdminField>
+            >
+              <option value="image">Image</option>
+              <option value="short">Short</option>
+              <option value="video">Video</option>
+            </AdminSelect>
+          </AdminField>
+        </div>
+        <div className="min-w-[10rem] flex-1">
+          <AdminField label="Title">
+            <AdminInput value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title" />
+          </AdminField>
+        </div>
+        <div className="min-w-[10rem] flex-1">
+          <AdminField label="Caption">
+            <AdminInput value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Caption" />
+          </AdminField>
+        </div>
+        <div className="w-[8.5rem] shrink-0">
+          <AdminField label="File" required>
+            <label
+              className="inline-flex h-[38px] w-full cursor-pointer items-center justify-center gap-1.5 rounded-md px-2 text-xs font-semibold"
+              style={{ border: '1px dashed var(--admin-border)', color: 'var(--admin-accent)', background: 'var(--admin-input-bg)' }}
+              title={file?.name || 'Choose file'}
+            >
+              <Upload size={13} />
+              <span className="truncate">{file ? file.name : 'Choose'}</span>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept={type === 'image' ? 'image/*' : 'video/*'}
+                className="sr-only"
+                disabled={busy}
+                onChange={(e) => {
+                  pickFile(e.target.files?.[0]);
+                }}
+              />
+            </label>
+          </AdminField>
+        </div>
+        <button
+          type="submit"
+          disabled={busy || !file}
+          className="btn-brand inline-flex h-[38px] shrink-0 items-center gap-1.5 rounded-md px-3 text-xs font-bold disabled:opacity-50"
+        >
+          <Upload size={13} />
+          {busy ? 'Uploading…' : 'Upload'}
+        </button>
       </form>
 
       {loading ? (

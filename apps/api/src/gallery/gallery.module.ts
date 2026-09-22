@@ -7,5 +7,6 @@ import { GalleryService } from './gallery.service.js';
   imports: [MediaModule],
   controllers: [GalleryController],
   providers: [GalleryService],
+  exports: [GalleryService],
 })
 export class GalleryModule {}

@@ -39,7 +39,7 @@ interface RichTextEditorProps {
 
 export default function RichTextEditor({ value, onChange, placeholder, language }: RichTextEditorProps) {
   const [galleryOpen, setGalleryOpen] = useState(false);
-  const locale = useMemo(() => newsLocale(language), [language]);
+  const locale = useMemo(() => newsLocale(language, value), [language, value]);
   const editor = useEditor({
     extensions: [
       StarterKit.configure({

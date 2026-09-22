@@ -15,11 +15,31 @@ export interface LastEvent {
   over: number;
 }
 
+export interface TeamSideScore {
+  code: string;
+  name: string;
+  score: string;
+  overs: string;
+}
+
+export interface TeamScores {
+  home: TeamSideScore;
+  away: TeamSideScore;
+}
+
+export type MatchTeams =
+  | string[]
+  | {
+      home: TeamSideScore;
+      away: TeamSideScore;
+    };
+
 export interface CanonicalMatch {
   matchId: string;
   status: MatchStatus;
-  teams: string[];
+  teams: MatchTeams;
   teamNames: string[];
+  teamScores?: TeamScores | null;
   tournament: string | null;
   venue: string | null;
   scheduled: string | null;
@@ -27,6 +47,14 @@ export interface CanonicalMatch {
   lastEvent: LastEvent;
   displayScore: string | null;
   matchStatus: string | null;
+  /** Official result line, e.g. "India won by 147 runs". */
+  result?: string | null;
+  winnerId?: string | null;
+  tossWonBy?: string | null;
+  tossDecision?: string | null;
+  currentInning?: number | null;
+  periodScores?: unknown[] | null;
+  displayOvers?: number | null;
 }
 
 export interface MatchEvent {
@@ -82,3 +110,11 @@ export {
 } from "./schema.js";
 
 export { redisKeys, REDIS_TTL } from "./redis.js";
+
+export type {
+  AssistantIntent,
+  AssistantSource,
+  AssistantSourceType,
+  AssistantUnavailable,
+  AssistantAnswer,
+} from "./assistant.js";

@@ -18,11 +18,26 @@
  */
 
 /**
+ * @typedef {Object} TeamSideScore
+ * @property {string} code
+ * @property {string} name
+ * @property {string} score
+ * @property {string} overs
+ */
+
+/**
+ * @typedef {Object} TeamScores
+ * @property {TeamSideScore} home
+ * @property {TeamSideScore} away
+ */
+
+/**
  * @typedef {Object} CanonicalMatch
  * @property {string} matchId
  * @property {MatchStatus} status
- * @property {string[]} teams
+ * @property {string[] | { home: TeamSideScore, away: TeamSideScore }} teams
  * @property {string[]} teamNames
+ * @property {TeamScores | null} [teamScores]
  * @property {string | null} tournament
  * @property {string | null} venue
  * @property {string | null} scheduled
@@ -81,6 +96,8 @@ export const PREDICTION_STAGE = Object.freeze({
 });
 
 export const PREDICTION_MODELS = Object.freeze({
-  PREMATCH: 'prematch-logit-v2',
-  LIVE: 'live-resource-v2',
+  PREMATCH: 'prematch-logit-v3',
+  LIVE: 'live-resource-v3',
+  PREMATCH_WEIGHTS: 'prematch-weights-v1',
+  LIVE_SCALES: 'live-scales-v1',
 });

@@ -9,12 +9,20 @@ const REACTIONS = [
   { emoji: '😂', label: 'Funny', src: '/reactions/laugh.svg' },
 ] as const;
 
+type ReactionSize = 'md' | 'sm' | 'xs';
+
 interface ReactionBarProps {
   counts?: Record<string, number>;
   onReact: (_value: string) => void;
-  size?: 'md' | 'sm';
+  size?: ReactionSize;
   disabled?: boolean;
 }
+
+const SIZE: Record<ReactionSize, { face: number; btn: string; count: string }> = {
+  xs: { face: 16, btn: 'h-7 gap-0.5 py-0 pl-0.5 pr-1.5', count: 'text-[10px]' },
+  sm: { face: 20, btn: 'h-8 gap-1 py-0 pl-1 pr-1.5', count: 'text-[11px]' },
+  md: { face: 24, btn: 'h-9 gap-1 py-0 pl-1 pr-2', count: 'text-xs' },
+};
 
 export default function ReactionBar({
   counts = {},
@@ -22,12 +30,12 @@ export default function ReactionBar({
   size = 'md',
   disabled = false,
 }: ReactionBarProps) {
-  const compact = size === 'sm';
-  const face = compact ? 24 : 32;
+  const tone = SIZE[size];
+  const face = tone.face;
 
   return (
     <div
-      className="flex flex-wrap items-end gap-1 overflow-visible"
+      className="flex flex-wrap items-center gap-1 overflow-visible"
       role="group"
       aria-label="Reactions"
     >
@@ -42,17 +50,15 @@ export default function ReactionBar({
             onClick={() => onReact(emoji)}
             aria-label={`${label}${count ? `, ${count}` : ''}`}
             aria-pressed={active}
-            className={`group/react relative inline-flex items-center rounded-full border bg-elevated/80 shadow-sm transition-[transform,background-color,border-color,box-shadow] duration-150 ease-out disabled:opacity-60 ${
-              compact ? 'h-9 gap-1 py-0 pl-1 pr-2' : 'h-11 gap-1.5 py-0 pl-1.5 pr-2.5'
-            } ${
+            className={`group/react relative inline-flex items-center rounded-full border bg-elevated/80 transition-colors duration-150 ease-out disabled:opacity-60 ${tone.btn} ${
               active
-                ? 'border-accent/40 bg-accent/12 text-mtext shadow-[0_0_0_1px_rgba(56,189,248,0.12)]'
-                : 'border-lborder text-stext hover:border-accent/35 hover:bg-[var(--color-row-hover)] hover:text-mtext hover:shadow-md'
+                ? 'border-accent/40 bg-accent/12 text-mtext'
+                : 'border-lborder text-stext hover:border-accent/35 hover:bg-[var(--color-row-hover)] hover:text-mtext'
             }`}
           >
             <span
-              className="grid place-items-center rounded-full transition-transform duration-150 ease-[cubic-bezier(.17,.89,.32,1.49)] group-hover/react:-translate-y-1 group-hover/react:scale-125 group-active/react:scale-95"
-              style={{ width: face + 8, height: face + 8 }}
+              className="grid place-items-center rounded-full transition-transform duration-150 ease-[cubic-bezier(.17,.89,.32,1.49)] group-hover/react:-translate-y-0.5 group-hover/react:scale-110 group-active/react:scale-95"
+              style={{ width: face + 6, height: face + 6 }}
             >
               <Image
                 src={src}
@@ -68,9 +74,9 @@ export default function ReactionBar({
             </span>
             {count > 0 && (
               <span
-                className={`min-w-[1ch] font-bold tabular-nums leading-none ${
-                  compact ? 'text-xs' : 'text-sm'
-                } ${active ? 'text-mtext' : 'text-stext'}`}
+                className={`min-w-[1ch] font-bold tabular-nums leading-none ${tone.count} ${
+                  active ? 'text-mtext' : 'text-stext'
+                }`}
               >
                 {count}
               </span>

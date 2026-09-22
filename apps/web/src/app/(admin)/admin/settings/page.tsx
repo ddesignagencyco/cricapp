@@ -12,6 +12,22 @@ import {
 import SocialBrandIcon from '../../../../components/admin/SocialBrandIcon';
 import { fetchSiteSettings, saveSiteSettings, type SiteSocialLink } from '../../../../services/siteSettings';
 import { SOCIAL_PLATFORMS } from '../../../../lib/socialPlatforms';
+import {
+  COUNTRIES,
+  WEEK_DAYS,
+  countryByName,
+  emptyWorkingHours,
+  formatPhoneNumber,
+  isValidEmail,
+  isValidMapsUrl,
+  isValidPhone,
+  isValidWorkingHours,
+  parseWorkingHours,
+  serializeWorkingHours,
+  validateSocialValue,
+  type WeekDayId,
+  type WorkingHoursValue,
+} from '../../../../lib/siteContact';
 
 type FormState = {
   email: string;
@@ -22,8 +38,12 @@ type FormState = {
   city: string;
   country: string;
   mapsUrl: string;
-  workingHours: string;
+  hours: WorkingHoursValue;
   socials: SiteSocialLink[];
+};
+
+type FieldErrors = Partial<Record<keyof FormState | 'socials', string>> & {
+  socialsByIndex?: string[];
 };
 
 const EMPTY: FormState = {
@@ -33,9 +53,9 @@ const EMPTY: FormState = {
   whatsapp: '',
   address: '',
   city: '',
-  country: '',
+  country: 'Pakistan',
   mapsUrl: '',
-  workingHours: '',
+  hours: emptyWorkingHours(),
   socials: [{ platform: 'facebook', value: '' }],
 };
 
@@ -45,13 +65,19 @@ type PlatformOption = {
   placeholder: string;
 };
 
+type CountryOption = {
+  value: string;
+  label: string;
+  dial: string;
+};
+
 const selectStyles = {
   control: (base: Record<string, unknown>, state: { isFocused: boolean }) => ({
     ...base,
     minHeight: '38px',
     backgroundColor: 'var(--admin-input-bg)',
     borderColor: state.isFocused ? 'var(--color-focus-ring)' : 'var(--admin-border)',
-    borderRadius: '0.375rem',
+    borderRadius: '0.25rem',
     boxShadow: state.isFocused
       ? '0 0 0 3px color-mix(in srgb, var(--color-focus-ring) 28%, transparent)'
       : 'none',
@@ -70,7 +96,7 @@ const selectStyles = {
     ...base,
     backgroundColor: 'var(--admin-card)',
     border: '1px solid var(--admin-border)',
-    borderRadius: '0.375rem',
+    borderRadius: '0.25rem',
     boxShadow: 'var(--elevation-overlay)',
     overflow: 'hidden',
     zIndex: 30,
@@ -92,8 +118,36 @@ function PlatformLabel({ id, label }: { id: string; label: string }) {
   );
 }
 
+function FieldError({ message }: { message?: string }) {
+  if (!message) return null;
+  return (
+    <p className="mt-1.5 text-[11px] font-medium" style={{ color: 'var(--admin-danger)' }}>
+      {message}
+    </p>
+  );
+}
+
+function validateForm(form: FormState): FieldErrors {
+  const errors: FieldErrors = {};
+  if (!isValidEmail(form.email)) errors.email = 'Enter a valid email.';
+  if (!isValidEmail(form.supportEmail)) errors.supportEmail = 'Enter a valid support email.';
+  if (!isValidPhone(form.phone)) errors.phone = 'Enter a phone number with country code (10–15 digits).';
+  if (!isValidPhone(form.whatsapp)) errors.whatsapp = 'Enter a WhatsApp number with country code (10–15 digits).';
+  if (!isValidMapsUrl(form.mapsUrl)) errors.mapsUrl = 'Use a Google Maps https link.';
+  if (!isValidWorkingHours(form.hours)) errors.hours = 'Closing time must be after opening time.';
+  const socialsByIndex = form.socials.map((item) =>
+    item.value.trim() ? validateSocialValue(item.platform, item.value) : '',
+  );
+  if (socialsByIndex.some(Boolean)) {
+    errors.socials = 'Fix the highlighted social links.';
+    errors.socialsByIndex = socialsByIndex;
+  }
+  return errors;
+}
+
 export default function SettingsPage() {
   const [form, setForm] = useState<FormState>(EMPTY);
+  const [errors, setErrors] = useState<FieldErrors>({});
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -106,22 +160,50 @@ export default function SettingsPage() {
           whatsapp: settings.whatsapp || '',
           address: settings.address || '',
           city: settings.city || '',
-          country: settings.country || '',
+          country: settings.country || 'Pakistan',
           mapsUrl: settings.mapsUrl || '',
-          workingHours: settings.workingHours || '',
+          hours: parseWorkingHours(settings.workingHours) || emptyWorkingHours(),
           socials: settings.socials?.length ? settings.socials : [{ platform: 'facebook', value: '' }],
         });
       })
       .catch(() => {
-        /* Settings API is not live yet — keep the full form usable. */
+        /* Keep the form usable if settings have not loaded. */
       });
   }, []);
 
   const usedPlatforms = useMemo(() => new Set(form.socials.map((item) => item.platform)), [form.socials]);
   const unusedPlatforms = SOCIAL_PLATFORMS.filter((item) => !usedPlatforms.has(item.id));
+  const countryOptions: CountryOption[] = COUNTRIES.map((item) => ({
+    value: item.name,
+    label: `${item.name} (${item.dial})`,
+    dial: item.dial,
+  }));
+  const selectedCountry =
+    countryOptions.find((item) => item.value === form.country) ||
+    (form.country ? { value: form.country, label: form.country, dial: countryByName(form.country)?.dial || '' } : null);
 
-  const setField = (key: keyof Omit<FormState, 'socials'>, value: string) => {
+  const setField = (key: keyof Omit<FormState, 'socials' | 'hours'>, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
+    setErrors((prev) => ({ ...prev, [key]: undefined }));
+  };
+
+  const setCountry = (name: string) => {
+    setForm((prev) => ({
+      ...prev,
+      country: name,
+      phone: prev.phone.trim() ? formatPhoneNumber(prev.phone, name) : prev.phone,
+      whatsapp: prev.whatsapp.trim() ? formatPhoneNumber(prev.whatsapp, name) : prev.whatsapp,
+    }));
+  };
+
+  const toggleDay = (day: WeekDayId) => {
+    setForm((prev) => {
+      const days = prev.hours.days.includes(day)
+        ? prev.hours.days.filter((item) => item !== day)
+        : [...prev.hours.days, day];
+      return { ...prev, hours: { ...prev.hours, days } };
+    });
+    setErrors((prev) => ({ ...prev, hours: undefined }));
   };
 
   const addSocial = () => {
@@ -138,6 +220,11 @@ export default function SettingsPage() {
       ...prev,
       socials: prev.socials.map((item, i) => (i === index ? { ...item, ...patch } : item)),
     }));
+    setErrors((prev) => ({
+      ...prev,
+      socials: undefined,
+      socialsByIndex: prev.socialsByIndex?.map((item, i) => (i === index ? '' : item)),
+    }));
   };
 
   const removeSocial = (index: number) => {
@@ -149,19 +236,34 @@ export default function SettingsPage() {
 
   const onSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    const nextErrors = validateForm(form);
+    setErrors(nextErrors);
+    if (Object.values(nextErrors).some((value) => typeof value === 'string' && value)) {
+      toast.error('Please fix the highlighted fields.');
+      return;
+    }
     setSaving(true);
     try {
       const saved = await saveSiteSettings({
-        ...form,
+        email: form.email.trim(),
+        supportEmail: form.supportEmail.trim(),
+        phone: form.phone.trim(),
+        whatsapp: form.whatsapp.trim(),
+        address: form.address.trim(),
+        city: form.city.trim(),
+        country: form.country.trim(),
+        mapsUrl: form.mapsUrl.trim(),
+        workingHours: serializeWorkingHours(form.hours),
         socials: form.socials.filter((item) => item.platform && item.value.trim()),
       });
       setForm((prev) => ({
         ...prev,
         socials: saved.socials.length ? saved.socials : [{ platform: 'facebook', value: '' }],
+        hours: parseWorkingHours(saved.workingHours) || prev.hours,
       }));
       toast.success('Site settings saved.');
     } catch {
-      toast.error('Settings API is not connected yet. The form is ready for when it is.');
+      toast.error('Could not save settings.');
     } finally {
       setSaving(false);
     }
@@ -182,18 +284,76 @@ export default function SettingsPage() {
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <AdminField label="Email">
               <AdminInput type="email" value={form.email} onChange={(e) => setField('email', e.target.value)} placeholder="hello@pakcriczone.com" />
+              <FieldError message={errors.email} />
             </AdminField>
             <AdminField label="Support email">
               <AdminInput type="email" value={form.supportEmail} onChange={(e) => setField('supportEmail', e.target.value)} placeholder="feedback@pakcriczone.com" />
+              <FieldError message={errors.supportEmail} />
             </AdminField>
-            <AdminField label="Phone">
-              <AdminInput value={form.phone} onChange={(e) => setField('phone', e.target.value)} placeholder="+92 300 1234567" />
+            <AdminField label="Phone" hint="Formatted with the selected country code">
+              <AdminInput
+                inputMode="tel"
+                value={form.phone}
+                onChange={(e) => setField('phone', formatPhoneNumber(e.target.value, form.country))}
+                placeholder={formatPhoneNumber('3001234567', form.country)}
+              />
+              <FieldError message={errors.phone} />
             </AdminField>
-            <AdminField label="WhatsApp" hint="Number with country code, e.g. +923001234567">
-              <AdminInput value={form.whatsapp} onChange={(e) => setField('whatsapp', e.target.value)} placeholder="+923001234567" />
+            <AdminField label="WhatsApp" hint="Same format as phone, with country code">
+              <AdminInput
+                inputMode="tel"
+                value={form.whatsapp}
+                onChange={(e) => setField('whatsapp', formatPhoneNumber(e.target.value, form.country))}
+                placeholder={formatPhoneNumber('3001234567', form.country)}
+              />
+              <FieldError message={errors.whatsapp} />
             </AdminField>
-            <AdminField label="Working hours">
-              <AdminInput value={form.workingHours} onChange={(e) => setField('workingHours', e.target.value)} placeholder="Mon–Fri, 10:00–18:00 PKT" />
+          </div>
+          <div className="mt-3">
+            <AdminField label="Working hours" hint="Pick open days, then start and end time">
+              <div className="flex flex-wrap gap-1.5">
+                {WEEK_DAYS.map((day) => {
+                  const active = form.hours.days.includes(day.id);
+                  return (
+                    <button
+                      key={day.id}
+                      type="button"
+                      onClick={() => toggleDay(day.id)}
+                      className={`rounded-md px-2.5 py-1.5 text-xs font-bold ${active ? 'btn-brand' : ''}`}
+                      style={
+                        active
+                          ? undefined
+                          : { border: '1px solid var(--admin-border)', color: 'var(--admin-text-secondary)' }
+                      }
+                    >
+                      {day.label}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="mt-2 grid grid-cols-2 gap-2 sm:max-w-sm">
+                <label className="block text-[11px] font-semibold" style={{ color: 'var(--admin-text-muted)' }}>
+                  Opens
+                  <AdminInput
+                    type="time"
+                    value={form.hours.open}
+                    onChange={(e) =>
+                      setForm((prev) => ({ ...prev, hours: { ...prev.hours, open: e.target.value } }))
+                    }
+                  />
+                </label>
+                <label className="block text-[11px] font-semibold" style={{ color: 'var(--admin-text-muted)' }}>
+                  Closes
+                  <AdminInput
+                    type="time"
+                    value={form.hours.close}
+                    onChange={(e) =>
+                      setForm((prev) => ({ ...prev, hours: { ...prev.hours, close: e.target.value } }))
+                    }
+                  />
+                </label>
+              </div>
+              <FieldError message={errors.hours} />
             </AdminField>
           </div>
         </section>
@@ -209,11 +369,21 @@ export default function SettingsPage() {
             <AdminField label="City">
               <AdminInput value={form.city} onChange={(e) => setField('city', e.target.value)} placeholder="Lahore" />
             </AdminField>
-            <AdminField label="Country">
-              <AdminInput value={form.country} onChange={(e) => setField('country', e.target.value)} placeholder="Pakistan" />
+            <AdminField label="Country" htmlFor="settings-country">
+              <Select
+                inputId="settings-country"
+                value={selectedCountry}
+                onChange={(option) => setCountry(option?.value || '')}
+                options={countryOptions}
+                isSearchable
+                placeholder="Select country"
+                classNamePrefix="react-select"
+                styles={selectStyles as never}
+              />
             </AdminField>
             <AdminField label="Google Maps link">
               <AdminInput value={form.mapsUrl} onChange={(e) => setField('mapsUrl', e.target.value)} placeholder="https://maps.google.com/..." />
+              <FieldError message={errors.mapsUrl} />
             </AdminField>
           </div>
         </section>
@@ -235,7 +405,7 @@ export default function SettingsPage() {
             </button>
           </div>
           <p className="mb-3 text-sm" style={{ color: 'var(--admin-text-muted)' }}>
-            Select a network, then paste its URL or handle.
+            Pick a network, then paste its official URL. WhatsApp accepts a number with country code.
           </p>
           <div className="space-y-3">
             {form.socials.map((item, index) => {
@@ -249,37 +419,50 @@ export default function SettingsPage() {
               }));
               const selected = options.find((option) => option.value === item.platform) || null;
               return (
-                <div key={`${item.platform}-${index}`} className="grid grid-cols-1 items-end gap-2 sm:grid-cols-[14rem_1fr_auto]">
-                  <AdminField label="Platform" htmlFor={`social-platform-${index}`}>
-                    <Select
-                      inputId={`social-platform-${index}`}
-                      value={selected}
-                      onChange={(option) => updateSocial(index, { platform: option?.value || '' })}
-                      options={options}
-                      formatOptionLabel={(option) => <PlatformLabel id={option.value} label={option.label} />}
-                      isSearchable={false}
-                      menuPlacement="top"
-                      classNamePrefix="react-select"
-                      styles={selectStyles as never}
-                    />
-                  </AdminField>
-                  <AdminField label="URL or handle">
-                    <AdminInput
-                      value={item.value}
-                      onChange={(e) => updateSocial(index, { value: e.target.value })}
-                      placeholder={meta?.placeholder || 'https://...'}
-                    />
-                  </AdminField>
-                  <button
-                    type="button"
-                    onClick={() => removeSocial(index)}
-                    disabled={form.socials.length === 1}
-                    className="inline-flex h-[38px] w-[38px] items-center justify-center rounded-md disabled:opacity-40"
-                    style={{ border: '1px solid var(--admin-border)', color: 'var(--admin-danger)' }}
-                    aria-label="Remove social link"
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                <div key={`${item.platform}-${index}`}>
+                  <div className="grid grid-cols-1 items-end gap-2 sm:grid-cols-[14rem_1fr_auto]">
+                    <AdminField label="Platform" htmlFor={`social-platform-${index}`}>
+                      <Select
+                        inputId={`social-platform-${index}`}
+                        value={selected}
+                        onChange={(option) => updateSocial(index, { platform: option?.value || '' })}
+                        options={options}
+                        formatOptionLabel={(option) => <PlatformLabel id={option.value} label={option.label} />}
+                        isSearchable={false}
+                        menuPlacement="top"
+                        classNamePrefix="react-select"
+                        styles={selectStyles as never}
+                      />
+                    </AdminField>
+                    <AdminField label={item.platform === 'whatsapp' ? 'WhatsApp number' : 'URL'}>
+                      <AdminInput
+                        value={item.value}
+                        onChange={(e) =>
+                          updateSocial(
+                            index,
+                            {
+                              value:
+                                item.platform === 'whatsapp'
+                                  ? formatPhoneNumber(e.target.value, form.country)
+                                  : e.target.value,
+                            },
+                          )
+                        }
+                        placeholder={meta?.placeholder || 'https://...'}
+                      />
+                    </AdminField>
+                    <button
+                      type="button"
+                      onClick={() => removeSocial(index)}
+                      disabled={form.socials.length === 1}
+                      className="inline-flex h-[38px] w-[38px] items-center justify-center rounded-md disabled:opacity-40"
+                      style={{ border: '1px solid var(--admin-border)', color: 'var(--admin-danger)' }}
+                      aria-label="Remove social link"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                  <FieldError message={errors.socialsByIndex?.[index]} />
                 </div>
               );
             })}

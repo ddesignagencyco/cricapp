@@ -22,11 +22,14 @@ import {
 
 type ReportStatus = 'resolved' | 'dismissed';
 
-function targetHref(type?: string, id?: string): string | null {
+function targetHref(type?: string, id?: string, commentId?: string): string | null {
   if (!type || !id) return null;
-  if (type === 'news') return `/news/${id}`;
-  if (type === 'match') return `/matches/${id}`;
-  return null;
+  let path: string | null = null;
+  if (type === 'news') path = `/news/${id}`;
+  else if (type === 'match') path = `/matches/${id}`;
+  if (!path) return null;
+  if (!commentId) return path;
+  return `${path}#comment-${commentId}`;
 }
 
 function formatWhen(value?: string | null): string {
@@ -106,8 +109,8 @@ export default function CommentsPage() {
               </thead>
               <tbody>
                 {reports.map((report) => {
-                  const href = targetHref(report.comment?.targetType, report.comment?.targetId);
-                  const author = report.comment?.user?.username || 'Unknown';
+                  const href = targetHref(report.comment?.targetType, report.comment?.targetId, report.comment?.id);
+                  const author = report.comment?.user?.displayName || report.comment?.user?.username || 'Unknown';
                   const busy = busyId === report.id;
                   return (
                     <tr
@@ -127,7 +130,7 @@ export default function CommentsPage() {
                       </td>
                       <td className="px-4 py-3 align-top">
                         <div className="flex items-center gap-2.5">
-                          <AdminAvatar name={author} size={28} />
+                          <AdminAvatar name={author} src={report.comment?.user?.avatarUrl} size={28} />
                           <div>
                             <p className="font-semibold" style={{ color: 'var(--admin-text)' }}>{author}</p>
                             <p className="text-xs" style={{ color: 'var(--admin-text-muted)' }}>{report.comment?.user?.email || '—'}</p>

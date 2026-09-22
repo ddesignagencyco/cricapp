@@ -50,6 +50,10 @@ export async function setupTestApp(): Promise<TestContext> {
           API_KEY: '',
           RATE_LIMIT_TTL: 60,
           RATE_LIMIT_MAX: 1000,
+          PREDICTION_NARRATIVE_PROVIDER: 'template',
+          OPENAI_API_KEY: '',
+          OPENCODE_API_KEY: '',
+          OPENCODE_GO_API_KEY: '',
         };
         return key in overrides ? overrides[key] : fallback;
       },
@@ -77,6 +81,7 @@ export async function teardownTestApp(ctx: TestContext): Promise<void> {
  */
 export async function cleanDatabase(prisma: PrismaService): Promise<void> {
   const tables = [
+    'prediction_narratives',
     'prediction_results',
     'prediction_features',
     'prediction_runs',
@@ -115,6 +120,7 @@ export async function cleanDatabase(prisma: PrismaService): Promise<void> {
     'psl_standings',
     'players',
     'teams',
+    'site_settings',
     'matches',
     'users',
   ];

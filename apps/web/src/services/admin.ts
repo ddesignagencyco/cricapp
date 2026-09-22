@@ -70,7 +70,7 @@ export interface ReportedComment {
     targetType: string;
     targetId: string;
     createdAt: string;
-    user: { id: string; username: string; email: string } | null;
+    user: { id: string; username: string; displayName?: string | null; avatarUrl?: string | null; email: string } | null;
   } | null;
 }
 

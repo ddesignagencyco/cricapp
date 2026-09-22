@@ -1,31 +1,84 @@
 'use client';
 
-import { useState } from 'react';
-import { Mail, MapPin, MessageSquare } from 'lucide-react';
+import { useState, type ComponentType } from 'react';
+import { Clock, Mail, MapPin, MessageSquare, Phone } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { submitContact } from '../../services/contact';
 import { ApiError } from '../../services/api/client';
+import SiteSocialLinks from '../SiteSocialLinks';
+import SocialBrandIcon from '../admin/SocialBrandIcon';
+import {
+  formatSiteLocation,
+  mapsHref,
+  publicSocials,
+  type SiteSettings,
+} from '../../services/siteSettings';
+import { formatWorkingHoursLabel } from '../../lib/siteContact';
+import { phoneHref, whatsappHref } from '../../lib/socialPlatforms';
 
-const contactMethods = [
-  {
-    icon: Mail,
-    label: 'Email',
-    value: 'hello@pakcriczone.com',
-    href: 'mailto:hello@pakcriczone.com',
-  },
-  {
-    icon: MessageSquare,
-    label: 'Feedback',
-    value: 'feedback@pakcriczone.com',
-    href: 'mailto:feedback@pakcriczone.com',
-  },
-  {
-    icon: MapPin,
-    label: 'Location',
-    value: 'Lahore, Pakistan',
-    href: null,
-  },
-];
+type ContactMethod = {
+  icon: ComponentType<{ size?: number }>;
+  label: string;
+  value: string;
+  href: string | null;
+  brand?: 'whatsapp';
+};
+
+function contactMethodsFromSettings(settings: SiteSettings | null): ContactMethod[] {
+  if (!settings) return [];
+  const location = formatSiteLocation(settings);
+  const methods: ContactMethod[] = [];
+  if (settings.email) {
+    methods.push({
+      icon: Mail,
+      label: 'Email',
+      value: settings.email,
+      href: `mailto:${settings.email}`,
+    });
+  }
+  if (settings.supportEmail) {
+    methods.push({
+      icon: MessageSquare,
+      label: 'Feedback',
+      value: settings.supportEmail,
+      href: `mailto:${settings.supportEmail}`,
+    });
+  }
+  if (settings.phone) {
+    methods.push({
+      icon: Phone,
+      label: 'Phone',
+      value: settings.phone,
+      href: phoneHref(settings.phone) || null,
+    });
+  }
+  if (settings.whatsapp) {
+    methods.push({
+      icon: MessageSquare,
+      label: 'WhatsApp',
+      value: settings.whatsapp,
+      href: whatsappHref(settings.whatsapp) || null,
+      brand: 'whatsapp',
+    });
+  }
+  if (location) {
+    methods.push({
+      icon: MapPin,
+      label: 'Location',
+      value: location,
+      href: mapsHref(settings.mapsUrl),
+    });
+  }
+  if (settings.workingHours) {
+    methods.push({
+      icon: Clock,
+      label: 'Hours',
+      value: formatWorkingHoursLabel(settings.workingHours) || settings.workingHours,
+      href: null,
+    });
+  }
+  return methods;
+}
 
 function ContactForm() {
   const [name, setName] = useState('');
@@ -121,34 +174,47 @@ function ContactForm() {
   );
 }
 
-export default function ContactBody() {
+export default function ContactBody({ settings = null }: { settings?: SiteSettings | null }) {
+  const methods = contactMethodsFromSettings(settings);
+  const socials = settings ? publicSocials(settings) : [];
+
   return (
     <>
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {contactMethods.map((c) => (
-          <div
-            key={c.label}
-            className="rounded-2xl bg-card p-6 text-center ring-1 ring-lborder"
-          >
-            <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-accent">
-              <c.icon size={20} />
+      {methods.length > 0 ? (
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {methods.map((c) => (
+            <div
+              key={`${c.label}-${c.value}`}
+              className="rounded-2xl bg-card p-6 text-center ring-1 ring-lborder"
+            >
+              <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-accent/10 text-accent">
+                {c.brand === 'whatsapp' ? <SocialBrandIcon id="whatsapp" size={40} /> : <c.icon size={20} />}
+              </div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-stext">
+                {c.label}
+              </p>
+              {c.href ? (
+                <a
+                  href={c.href}
+                  target={c.href.startsWith('http') ? '_blank' : undefined}
+                  rel={c.href.startsWith('http') ? 'noopener noreferrer' : undefined}
+                  className="mt-1 block text-sm font-semibold text-mtext hover:text-accent"
+                >
+                  {c.value}
+                </a>
+              ) : (
+                <p className="mt-1 text-sm font-semibold text-mtext">{c.value}</p>
+              )}
             </div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-stext">
-              {c.label}
-            </p>
-            {c.href ? (
-              <a
-                href={c.href}
-                className="mt-1 block text-sm font-semibold text-mtext hover:text-accent"
-              >
-                {c.value}
-              </a>
-            ) : (
-              <p className="mt-1 text-sm font-semibold text-mtext">{c.value}</p>
-            )}
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      ) : null}
+      {socials.length > 0 ? (
+        <div className="rounded-2xl bg-card p-6 ring-1 ring-lborder">
+          <p className="text-xs font-semibold uppercase tracking-wider text-stext">Follow us</p>
+          <SiteSocialLinks socials={socials} className="mt-3" />
+        </div>
+      ) : null}
       <ContactForm />
     </>
   );

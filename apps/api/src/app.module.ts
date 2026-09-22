@@ -25,10 +25,13 @@ import { NotificationsModule } from './notifications/notifications.module.js';
 import { AdminModule } from './admin/admin.module.js';
 import { SearchModule } from './search/search.module.js';
 import { PredictionsModule } from './predictions/predictions.module.js';
+import { AssistantModule } from './assistant/assistant.module.js';
 import { MediaModule } from './media/media.module.js';
 import { NewsletterModule } from './newsletter/newsletter.module.js';
 import { ContactModule } from './contact/contact.module.js';
 import { GalleryModule } from './gallery/gallery.module.js';
+import { SiteSettingsModule } from './site-settings/site-settings.module.js';
+import { SportradarModule } from './sportradar/sportradar.module.js';
 import { RequestLogger } from './common/request-logger.middleware.js';
 
 @Module({
@@ -48,6 +51,7 @@ import { RequestLogger } from './common/request-logger.middleware.js';
     }),
     PrismaModule,
     RedisModule,
+    SportradarModule,
     HealthModule,
     MatchesModule,
     TeamsModule,
@@ -68,10 +72,12 @@ import { RequestLogger } from './common/request-logger.middleware.js';
     AdminModule,
     SearchModule,
     PredictionsModule,
+    AssistantModule,
     MediaModule,
     NewsletterModule,
     ContactModule,
     GalleryModule,
+    SiteSettingsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

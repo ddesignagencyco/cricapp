@@ -16,6 +16,7 @@ model Match {
   status         String
   teams          Json
   teamNames      Json     @map("team_names")
+  teamScores     Json?    @map("team_scores")
   tournament     String?
   venue          String?
   scheduled      String?
@@ -23,6 +24,13 @@ model Match {
   lastEvent      Json     @map("last_event")
   displayScore   String?  @map("display_score")
   matchStatus    String?  @map("match_status")
+  resultText     String?  @map("result_text")
+  winnerId       String?  @map("winner_id")
+  tossWonBy      String?  @map("toss_won_by")
+  tossDecision   String?  @map("toss_decision")
+  currentInning  Int?     @map("current_inning")
+  periodScores   Json?    @map("period_scores")
+  displayOvers   Float?   @map("display_overs")
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
@@ -564,6 +572,7 @@ model PredictionRun {
   createdAt    DateTime @default(now()) @map("created_at")
   features     PredictionFeature?
   result       PredictionResult?
+  narrative    PredictionNarrative?
 
   @@index([matchId, stage, createdAt])
   @@map("prediction_runs")
@@ -607,10 +616,22 @@ model PredictionCalibration {
   brierScore   Float?   @map("brier_score")
   accuracy     Float?
   source       String   @default("auto")
+  params       Json?
   createdAt    DateTime @default(now()) @map("created_at")
 
   @@index([modelVersion, createdAt])
   @@map("prediction_calibrations")
+}
+
+model PredictionNarrative {
+  runId     String        @id @map("run_id")
+  text      String        @db.Text
+  source    String
+  model     String?
+  createdAt DateTime      @default(now()) @map("created_at")
+  run       PredictionRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@map("prediction_narratives")
 }
 
 // --- Newsletter & Contact --------------------------------------------------
@@ -652,6 +673,7 @@ model GalleryMedia {
   title        String?
   caption      String?  @db.Text
   type         String
+  purpose      String   @default("gallery")
   url          String
   publicId     String   @unique @map("public_id")
   resourceType String   @map("resource_type")
@@ -665,6 +687,27 @@ model GalleryMedia {
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   @@index([type])
+  @@index([purpose])
   @@index([createdAt])
   @@map("gallery_media")
+}
+
+// --- Public site settings (admin CMS) --------------------------------------
+
+model SiteSettings {
+  id           String   @id @default("default")
+  email        String?
+  supportEmail String?  @map("support_email")
+  phone        String?
+  whatsapp     String?
+  address        String?
+  city         String?
+  country      String?
+  mapsUrl      String?  @map("maps_url")
+  workingHours String?  @map("working_hours")
+  socials      Json     @default("[]")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("site_settings")
 }

@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { GalleryModule } from '../gallery/gallery.module.js';
 import {
   NewsController,
   AuthorsController,
@@ -9,6 +10,7 @@ import {
 import { NewsService } from './news.service.js';
 
 @Module({
+  imports: [GalleryModule],
   controllers: [
     NewsController,
     AuthorsController,

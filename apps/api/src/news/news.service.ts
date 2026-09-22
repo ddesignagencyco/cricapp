@@ -6,6 +6,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { GalleryService } from '../gallery/gallery.service.js';
 import {
   getPaginationOffset,
   createPaginatedResponse,
@@ -44,7 +45,12 @@ export class NewsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
+    private readonly gallery: GalleryService,
   ) {}
+
+  private async syncEditorialCover(imageUrl: string | null | undefined) {
+    await this.gallery.markEditorialByUrl(imageUrl);
+  }
 
   private validateTitle(title: string): void {
     const wordCount = title.trim().split(/\s+/).filter(Boolean).length;
@@ -353,6 +359,7 @@ export class NewsService {
       } as any,
       include: articleInclude,
     });
+    await this.syncEditorialCover(row.imageUrl);
     return this.summarize(row, true);
   }
 
@@ -387,6 +394,7 @@ export class NewsService {
       data: data as any,
       include: articleInclude,
     });
+    await this.syncEditorialCover(row.imageUrl);
     return this.summarize(row, true);
   }
 

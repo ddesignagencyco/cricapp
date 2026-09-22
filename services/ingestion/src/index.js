@@ -1,6 +1,7 @@
 import { PROVIDERS } from './schemas.js';
 import db, { shutdown as shutdownDb } from './db.js';
 import redis, { shutdown as shutdownRedis } from './redis.js';
+import { redisKeys } from '@cricapp/shared-types';
 import { pollOnce } from './poll.js';
 import { syncPsAll } from './pslSync.js';
 import { startReferenceSync } from './refSync.js';
@@ -10,7 +11,7 @@ import { createLogger } from './logger.js';
 
 export { computeRunRate, normalizeMatch, normalizeLineups } from './normalize.js';
 export { diffMatch, hasMatchChanged } from './diff.js';
-export { saveMatch, saveTeamsPlayers, publishMatchState, publishEvents } from './store.js';
+export { saveMatch, saveMatchSummary, saveTeamsPlayers, publishMatchState, publishEvents } from './store.js';
 export { pollOnce } from './poll.js';
 export { syncPsAll } from './pslSync.js';
 
@@ -33,6 +34,15 @@ async function runPslSync(reason) {
     log.info('psl sync already running — skip', { reason });
     return;
   }
+  try {
+    const liveCount = await redis.scard(redisKeys.liveMatches());
+    if (liveCount > 0 && String(process.env.PAUSE_PSL_SYNC_WHEN_LIVE || 'true').toLowerCase() !== 'false') {
+      log.info('psl sync paused while live matches are active', { reason, liveCount });
+      return;
+    }
+  } catch {
+    // continue
+  }
   pslSyncInFlight = true;
   try {
     await syncPsAll(process.env.PSL_SEASONS);
@@ -41,15 +51,25 @@ async function runPslSync(reason) {
   }
 }
 
+/** PSL standings/fixtures/leaders/squads feed the web UI and assistant — keep Postgres fresh. */
+const DEFAULT_PSL_SYNC_INTERVAL_MS = 3600000;
+
 async function startPslSync() {
   await runPslSync('startup');
-  const syncInterval = Number(process.env.PSL_SYNC_INTERVAL_MS || 0);
+  const configured = process.env.PSL_SYNC_INTERVAL_MS;
+  const syncInterval =
+    configured === undefined || configured === ''
+      ? DEFAULT_PSL_SYNC_INTERVAL_MS
+      : Number(configured);
   if (syncInterval > 0) {
     setInterval(() => {
       runPslSync('interval').catch((err) =>
         log.error('psl periodic sync failed', { error: err.message }),
       );
     }, syncInterval);
+    log.info('psl periodic sync scheduled', { intervalMs: syncInterval });
+  } else {
+    log.warn('psl periodic sync disabled (PSL_SYNC_INTERVAL_MS=0); startup sync only');
   }
 }
 
@@ -107,13 +127,16 @@ const refSyncOptions = () => ({
     .map((p) => p.split('::')),
   delay: Number(process.env.REF_SYNC_DELAY_MS || 500),
   timelineLimit: Number(process.env.REF_SYNC_MATCH_LIMIT || 20),
+  summaryLimit: Number(process.env.REF_SYNC_SUMMARY_LIMIT || 20),
   seasonLimit: Number(process.env.REF_SYNC_SEASON_LIMIT || 10),
   teamLimit: Number(process.env.REF_SYNC_TEAMS_LIMIT || 10),
   lineupLimit: Number(process.env.REF_SYNC_LINEUP_LIMIT || 20),
+  playerProfileLimit: Number(process.env.REF_SYNC_PLAYER_PROFILE_LIMIT || 15),
 });
 
 const REF_SYNC_START_DELAY_MS = Number(process.env.REF_SYNC_START_DELAY_MS || 300000);
-const PSL_START_DELAY_MS = Number(process.env.PSL_START_DELAY_MS || 120000);
+/** Default 0 — PSL is product-critical; reference sync stays delayed to spare trial quota. */
+const PSL_START_DELAY_MS = Number(process.env.PSL_START_DELAY_MS ?? 0);
 
 ping()
   .then(async () => {
@@ -127,9 +150,15 @@ ping()
       log.error('initial poll cycle failed', { error: err.message });
     }
 
-    setTimeout(() => {
+    const kickPsl = () => {
       startPslSync().catch((err) => log.error('psl sync start failed', { error: err.message }));
-    }, PSL_START_DELAY_MS);
+    };
+    if (PSL_START_DELAY_MS > 0) {
+      log.info('psl sync deferred', { delayMs: PSL_START_DELAY_MS });
+      setTimeout(kickPsl, PSL_START_DELAY_MS);
+    } else {
+      kickPsl();
+    }
 
     setTimeout(() => {
       startReferenceSync(refSyncOptions()).catch((err) =>

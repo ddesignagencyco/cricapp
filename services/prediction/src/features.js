@@ -1,24 +1,12 @@
 import { redisKeys, PSL } from '@cricapp/shared-types';
+import { allottedBallsForFormat, detectFormat } from './format.js';
+import { resolveParScore } from './pars.js';
 
-export function detectFormat(tournament, matchStatus) {
-  const text = `${tournament ?? ''} ${matchStatus ?? ''}`.toLowerCase();
-  if (/\btest\b/.test(text)) return 'test';
-  if (/\bodi\b|one.?day/.test(text)) return 'odi';
-  if (/\bt20\b|twenty|psl|ipl|bbl|cpl|hundred|super league/.test(text)) return 't20';
-  return 'unknown';
-}
-
-export function allottedBallsForFormat(format) {
-  if (format === 'odi') return 300;
-  if (format === 'test') return 540;
-  return 120;
-}
-
-export function parScoreForFormat(format) {
-  if (format === 'odi') return 270;
-  if (format === 'test') return 320;
-  return 160;
-}
+export {
+  allottedBallsForFormat,
+  detectFormat,
+  parScoreForFormat,
+} from './format.js';
 
 export function extractWinnerId(payload, teamIds = []) {
   const event = payload?.sport_event ?? payload ?? {};
@@ -148,8 +136,8 @@ function venueEdge({ venue, home, away }) {
 
 async function loadMatch(query, matchId) {
   const r = await query(
-    `SELECT match_id, status, teams, team_names, tournament, venue, scheduled,
-            current_innings, last_event, display_score, match_status
+    `SELECT match_id, status, teams, team_names, team_scores, tournament, venue, scheduled,
+            current_innings, last_event, display_score, match_status, result_text
      FROM matches WHERE match_id = $1`,
     [matchId],
   );
@@ -161,7 +149,7 @@ async function loadEventPayload(query, matchId) {
     `SELECT payload FROM sport_event_records
      WHERE event_id = $1
        AND kind <> 'match_lineup'
-     ORDER BY updated_at DESC
+     ORDER BY CASE WHEN kind = 'match_summary' THEN 0 ELSE 1 END, updated_at DESC
      LIMIT 1`,
     [matchId],
   );
@@ -214,6 +202,8 @@ async function resolveTeams(query, match, eventPayload) {
     awayTeamId: away?.id ?? awayId,
     homeName: home?.name ?? names[0] ?? homeComp?.name ?? labels[0] ?? null,
     awayName: away?.name ?? names[1] ?? awayComp?.name ?? labels[1] ?? null,
+    homeAbbr: home?.abbr ?? homeComp?.abbreviation ?? labels[0] ?? null,
+    awayAbbr: away?.abbr ?? awayComp?.abbreviation ?? labels[1] ?? null,
     home,
     away,
   };
@@ -354,16 +344,73 @@ export function buildPlayerProjections(homePlayers, awayPlayers, leaderRows = []
   const batter = (player) => /bat|all.?round|wicket.?keep/i.test(player.role ?? '');
   const bowler = (player) =>
     /bowl|all.?round/i.test(`${player.role ?? ''} ${player.bowling_style ?? ''}`);
+  const topBatters = normalizedProbabilities(all, batter, 6, leaderRows, 'batting');
+  const topBowlers = normalizedProbabilities(all, bowler, 6, leaderRows, 'bowling');
   return {
-    topBatters: normalizedProbabilities(all, batter, 6, leaderRows, 'batting'),
-    topBowlers: normalizedProbabilities(all, bowler, 6, leaderRows, 'bowling'),
+    topBatters,
+    topBowlers,
     xi: {
       home: xiForTeam(homePlayers, confirmedHome),
       away: xiForTeam(awayPlayers, confirmedAway),
       method: hasConfirmedLineup ? 'confirmed match lineup' : 'registered-squad availability heuristic',
       reliability: hasConfirmedLineup ? 'high' : 'low',
     },
+    xiStrength: {
+      home: xiStrength(homePlayers, confirmedHome, leaderRows),
+      away: xiStrength(awayPlayers, confirmedAway, leaderRows),
+    },
   };
+}
+
+function xiStrength(players, confirmedIds, leaderRows) {
+  const confirmed = new Set(confirmedIds);
+  const pool =
+    confirmed.size > 0 ? players.filter((player) => confirmed.has(player.id)) : players.slice(0, 11);
+  if (!pool.length) return 0.5;
+  const rankByPlayer = new Map(
+    leaderRows.map((row) => [row.player_id, Number(row.rank) || 999]),
+  );
+  let score = 0;
+  for (const player of pool) {
+    const rank = rankByPlayer.get(player.id);
+    if (rank) score += 1 / Math.sqrt(rank);
+    else if (/bat|all.?round|wicket.?keep/i.test(player.role ?? '')) score += 0.35;
+    else if (/bowl/i.test(player.role ?? '')) score += 0.3;
+    else score += 0.25;
+  }
+  return Number((score / pool.length).toFixed(4));
+}
+
+export function tossDecisionEdge({
+  tossWonBy,
+  decision,
+  homeTeamId,
+  awayTeamId,
+  conditions,
+}) {
+  if (!tossWonBy || !homeTeamId || !awayTeamId) return 0;
+  const homeWon = tossWonBy === homeTeamId;
+  const awayWon = tossWonBy === awayTeamId;
+  if (!homeWon && !awayWon) return 0;
+
+  const decisionText = String(decision ?? '').toLowerCase();
+  const weather = String(conditions?.weather ?? conditions?.weather_info ?? '').toLowerCase();
+  const pitch = String(conditions?.pitch ?? conditions?.pitch_info ?? '').toLowerCase();
+  const dayNight = Boolean(conditions?.dayNight ?? conditions?.day_night);
+  const context = `${weather} ${pitch} ${dayNight ? 'night dew' : 'day'}`;
+
+  const prefersChase = /bowl|field|dew|night/.test(`${decisionText} ${context}`);
+  const prefersBat = /bat|dry|heat|sun/.test(`${decisionText} ${context}`) && !/dew|night/.test(context);
+  let signed = homeWon ? 1 : -1;
+
+  if (/bat/.test(decisionText)) {
+    signed *= prefersBat ? 1.35 : prefersChase ? 0.55 : 1;
+  } else if (/bowl|field/.test(decisionText)) {
+    signed *= prefersChase ? 1.35 : prefersBat ? 0.55 : 1;
+  } else {
+    signed *= 0.65;
+  }
+  return Number(Math.max(-1.5, Math.min(1.5, signed)).toFixed(4));
 }
 
 async function loadLeaderPriors(query, players) {
@@ -456,9 +503,14 @@ export async function extractPrematchFeatures(matchId, { query, redis }) {
   const status = sportEventStatus(eventPayload);
   const leaderPriors = await loadLeaderPriors(query, [...homePlayers, ...awayPlayers]);
   const tossWonBy = status.toss_won_by ?? null;
-  let tossEdge = 0;
-  if (tossWonBy && tossWonBy === teams.homeTeamId) tossEdge = 1;
-  else if (tossWonBy && tossWonBy === teams.awayTeamId) tossEdge = -1;
+  const conditions = conditionsFromPayload(eventPayload);
+  const tossEdge = tossDecisionEdge({
+    tossWonBy,
+    decision: status.toss_decision ?? null,
+    homeTeamId: teams.homeTeamId,
+    awayTeamId: teams.awayTeamId,
+    conditions,
+  });
 
   const homeForVenue = {
     name: teams.homeName,
@@ -472,6 +524,25 @@ export async function extractPrematchFeatures(matchId, { query, redis }) {
   };
 
   void redis;
+  const format = detectFormat(match.tournament, match.match_status);
+  const par = await resolveParScore(query, {
+    venue: match.venue,
+    format,
+    tournament: match.tournament,
+    matchStatus: match.match_status,
+  });
+  const playerProjections = buildPlayerProjections(
+    homePlayers,
+    awayPlayers,
+    leaderPriors,
+    lineupPayload,
+  );
+  const xiEdge = Number(
+    (
+      (playerProjections.xiStrength?.home ?? 0.5) -
+      (playerProjections.xiStrength?.away ?? 0.5)
+    ).toFixed(4),
+  );
 
   return {
     matchId,
@@ -482,8 +553,10 @@ export async function extractPrematchFeatures(matchId, { query, redis }) {
     venue: match.venue ?? null,
     tournament: match.tournament ?? null,
     scheduled: match.scheduled ?? null,
-    format: detectFormat(match.tournament, match.match_status),
-    parScore: parScoreForFormat(detectFormat(match.tournament, match.match_status)),
+    format,
+    parScore: par.par,
+    parSource: par.source,
+    parSampleSize: par.sampleSize,
     form: {
       home: homeForm.rate,
       away: awayForm.rate,
@@ -498,9 +571,10 @@ export async function extractPrematchFeatures(matchId, { query, redis }) {
       decision: status.toss_decision ?? null,
       edge: tossEdge,
     },
+    xiEdge,
     squad: { homeSize: homePlayers.length, awaySize: awayPlayers.length },
-    playerProjections: buildPlayerProjections(homePlayers, awayPlayers, leaderPriors, lineupPayload),
-    conditions: conditionsFromPayload(eventPayload),
+    playerProjections,
+    conditions,
   };
 }
 
@@ -518,6 +592,7 @@ export async function extractLiveFeatures(matchId, { query, redis }) {
     status: match.status,
     teams: asList(match.teams),
     teamNames: asList(match.team_names),
+    teamScores: match.team_scores,
     tournament: match.tournament,
     venue: match.venue,
     scheduled: match.scheduled,
@@ -531,11 +606,39 @@ export async function extractLiveFeatures(matchId, { query, redis }) {
     ...sportEventStatus(eventPayload),
     ...sportEventStatus(timeline),
   };
-  const innings = canonical.currentInnings ?? null;
+  let innings = canonical.currentInnings ?? null;
+  const teamScores =
+    canonical.teamScores ??
+    match.team_scores ??
+    null;
   const format = detectFormat(canonical.tournament ?? match.tournament, canonical.matchStatus ?? match.match_status);
   const allottedOvers = status.allotted_overs || (format === 'odi' ? 50 : format === 'test' ? 90 : 20);
-  const currentInning = Number(status.current_inning ?? (String(canonical.matchStatus ?? '').includes('2') ? 2 : 1));
-  const target = Number(status.target ?? 0) || null;
+  let currentInning = Number(status.current_inning ?? 0);
+  if (!Number.isFinite(currentInning) || currentInning <= 0) {
+    currentInning = String(canonical.matchStatus ?? '').includes('2') ? 2 : 1;
+  }
+  let target = Number(status.target ?? 0) || null;
+  if (!target && currentInning >= 2 && teamScores?.home?.score) {
+    const m = String(teamScores.home.score).match(/^(\d+)/);
+    if (m) target = Number(m[1]) + 1;
+  }
+
+  if (innings && teamScores) {
+    const side = battingSideFromScores(innings.battingTeam, teamScores, teams);
+    const line = side ? teamScores[side]?.score : null;
+    const parsed = parseScoreLine(line);
+    if (
+      parsed &&
+      (((innings.runs ?? 0) === 0 && (innings.wickets ?? 0) === 0) ||
+        (parsed.wickets >= 10 && (innings.wickets ?? 0) < 10))
+    ) {
+      innings = {
+        ...innings,
+        runs: parsed.runs,
+        wickets: parsed.wickets,
+      };
+    }
+  }
 
   return {
     matchId,
@@ -543,9 +646,15 @@ export async function extractLiveFeatures(matchId, { query, redis }) {
     awayTeamId: teams.awayTeamId,
     homeName: teams.homeName,
     awayName: teams.awayName,
+    homeAbbr: teams.homeAbbr,
+    awayAbbr: teams.awayAbbr,
+    teamScores,
     venue: canonical.venue ?? match.venue,
     tournament: canonical.tournament ?? match.tournament,
     format,
+    parScore: par.par,
+    parSource: par.source,
+    parSampleSize: par.sampleSize,
     status: canonical.status,
     currentInnings: innings,
     lastEvent: canonical.lastEvent ?? match.last_event ?? { type: 'none', runs: 0, over: 0 },
@@ -560,4 +669,24 @@ export async function extractLiveFeatures(matchId, { query, redis }) {
     runRate: innings?.runRate ?? status.run_rate ?? null,
     conditions: conditionsFromPayload(timeline) ?? conditionsFromPayload(eventPayload),
   };
+}
+
+function parseScoreLine(score) {
+  if (!score || typeof score !== 'string') return null;
+  const m = score.match(/^(\d+)\/(\d+)/);
+  if (!m) return null;
+  return { runs: Number(m[1]), wickets: Number(m[2]) };
+}
+
+function battingSideFromScores(battingToken, teamScores, teams) {
+  const b = String(battingToken ?? '').toLowerCase();
+  const homeTokens = [teams.homeAbbr, teams.homeName, teamScores.home?.code, teamScores.home?.name]
+    .filter(Boolean)
+    .map((t) => String(t).toLowerCase());
+  const awayTokens = [teams.awayAbbr, teams.awayName, teamScores.away?.code, teamScores.away?.name]
+    .filter(Boolean)
+    .map((t) => String(t).toLowerCase());
+  if (awayTokens.some((t) => b === t || b.includes(t) || t.includes(b))) return 'away';
+  if (homeTokens.some((t) => b === t || b.includes(t) || t.includes(b))) return 'home';
+  return null;
 }

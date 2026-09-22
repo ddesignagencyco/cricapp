@@ -1,27 +1,47 @@
 import { query } from './db.js';
 import redis, { redisKeys, REDIS_TTL } from './redis.js';
+import {
+  buildTeamFromCompetitor,
+  buildTeamFromProfile,
+  buildTeamFromTournamentTeam,
+} from './teamMeta.js';
+import { normalizeLineups, normalizeMatch } from './normalize.js';
+import { PROVIDERS } from './schemas.js';
+import {
+  buildPlayerFromProfile,
+  buildPlayerFromSquadEntry,
+} from './playerMeta.js';
 
 export async function saveMatch(match) {
   await query(
-    `INSERT INTO matches (match_id, status, teams, team_names, tournament, venue, scheduled, current_innings, last_event, display_score, match_status, created_at, updated_at)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,NOW(),NOW())
+    `INSERT INTO matches (match_id, status, teams, team_names, team_scores, tournament, venue, scheduled, current_innings, last_event, display_score, match_status, result_text, winner_id, toss_won_by, toss_decision, current_inning, period_scores, display_overs, created_at, updated_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,NOW(),NOW())
      ON CONFLICT (match_id) DO UPDATE SET
        status = EXCLUDED.status,
        teams = EXCLUDED.teams,
        team_names = EXCLUDED.team_names,
-       tournament = EXCLUDED.tournament,
-       venue = EXCLUDED.venue,
-       scheduled = EXCLUDED.scheduled,
-       current_innings = EXCLUDED.current_innings,
-       last_event = EXCLUDED.last_event,
-       display_score = EXCLUDED.display_score,
-       match_status = EXCLUDED.match_status,
+       team_scores = COALESCE(EXCLUDED.team_scores, matches.team_scores),
+       tournament = COALESCE(EXCLUDED.tournament, matches.tournament),
+       venue = COALESCE(EXCLUDED.venue, matches.venue),
+       scheduled = COALESCE(EXCLUDED.scheduled, matches.scheduled),
+       current_innings = COALESCE(EXCLUDED.current_innings, matches.current_innings),
+       last_event = COALESCE(EXCLUDED.last_event, matches.last_event),
+       display_score = COALESCE(EXCLUDED.display_score, matches.display_score),
+       match_status = COALESCE(EXCLUDED.match_status, matches.match_status),
+       result_text = COALESCE(EXCLUDED.result_text, matches.result_text),
+       winner_id = COALESCE(EXCLUDED.winner_id, matches.winner_id),
+       toss_won_by = COALESCE(EXCLUDED.toss_won_by, matches.toss_won_by),
+       toss_decision = COALESCE(EXCLUDED.toss_decision, matches.toss_decision),
+       current_inning = COALESCE(EXCLUDED.current_inning, matches.current_inning),
+       period_scores = COALESCE(EXCLUDED.period_scores, matches.period_scores),
+       display_overs = COALESCE(EXCLUDED.display_overs, matches.display_overs),
        updated_at = NOW()`,
     [
       match.matchId,
       match.status,
       JSON.stringify(match.teams),
       JSON.stringify(match.teamNames),
+      JSON.stringify(match.teamScores ?? null),
       match.tournament,
       match.venue,
       match.scheduled,
@@ -29,6 +49,13 @@ export async function saveMatch(match) {
       JSON.stringify(match.lastEvent),
       match.displayScore,
       match.matchStatus,
+      match.matchResult ?? null,
+      match.winnerId ?? null,
+      match.tossWonBy ?? null,
+      match.tossDecision ?? null,
+      match.currentInning ?? null,
+      JSON.stringify(match.periodScores ?? null),
+      match.displayOvers ?? null,
     ],
   );
 }
@@ -64,10 +91,10 @@ const upsertTeam = `
   VALUES ($1,$2,$3,$4,$5,$6,NOW(),NOW())
   ON CONFLICT (id) DO UPDATE SET
     name = EXCLUDED.name,
-    abbr = EXCLUDED.abbr,
-    country = EXCLUDED.country,
-    logo_url = EXCLUDED.logo_url,
-    manager = EXCLUDED.manager,
+    abbr = COALESCE(NULLIF(EXCLUDED.abbr, ''), teams.abbr),
+    country = COALESCE(NULLIF(EXCLUDED.country, ''), teams.country),
+    logo_url = COALESCE(EXCLUDED.logo_url, teams.logo_url),
+    manager = COALESCE(NULLIF(EXCLUDED.manager, ''), teams.manager),
     updated_at = NOW()
 `;
 
@@ -76,17 +103,17 @@ const upsertPlayer = `
   VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,NOW(),NOW())
   ON CONFLICT (id) DO UPDATE SET
     full_name = EXCLUDED.full_name,
-    short_name = EXCLUDED.short_name,
-    team_id = EXCLUDED.team_id,
-    birth = EXCLUDED.birth,
-    nationality = EXCLUDED.nationality,
-    batting_style = EXCLUDED.batting_style,
-    bowling_style = EXCLUDED.bowling_style,
-    role = EXCLUDED.role,
-    profile_url = EXCLUDED.profile_url,
-    country_code = EXCLUDED.country_code,
-    jersey_number = EXCLUDED.jersey_number,
-    height = EXCLUDED.height,
+    short_name = COALESCE(EXCLUDED.short_name, players.short_name),
+    team_id = COALESCE(EXCLUDED.team_id, players.team_id),
+    birth = COALESCE(EXCLUDED.birth, players.birth),
+    nationality = COALESCE(NULLIF(EXCLUDED.nationality, ''), players.nationality),
+    batting_style = COALESCE(EXCLUDED.batting_style, players.batting_style),
+    bowling_style = COALESCE(EXCLUDED.bowling_style, players.bowling_style),
+    role = COALESCE(NULLIF(EXCLUDED.role, ''), players.role),
+    profile_url = COALESCE(EXCLUDED.profile_url, players.profile_url),
+    country_code = COALESCE(NULLIF(EXCLUDED.country_code, ''), players.country_code),
+    jersey_number = COALESCE(EXCLUDED.jersey_number, players.jersey_number),
+    height = COALESCE(EXCLUDED.height, players.height),
     updated_at = NOW()
 `;
 
@@ -105,7 +132,7 @@ export async function saveTeamsPlayers({ teams = [], players = [] }) {
       p.battingStyle,
       p.bowlingStyle,
       p.role,
-      p.profileUrl,
+      p.profileUrl ?? null,
       p.countryCode ?? null,
       p.jerseyNumber ?? null,
       p.height ?? null,
@@ -254,23 +281,15 @@ export async function saveSquad(seasonId, squad) {
           id: squad.teamId,
           name: squad.teamName,
           abbr: squad.teamAbbr,
-          country: null,
-          logoUrl: null,
+          country: squad.country ?? null,
+          logoUrl: squad.logoUrl ?? null,
+          manager: squad.manager ?? null,
         },
       ]
     : [];
-  const players = (squad.players ?? []).map((p) => ({
-    id: p.playerId,
-    fullName: p.playerName,
-    shortName: p.playerShortName,
-    teamId: squad.teamId,
-    birth: p.dateOfBirth,
-    nationality: p.nationality,
-    battingStyle: p.battingStyle,
-    bowlingStyle: p.bowlingStyle,
-    role: p.role,
-    profileUrl: null,
-  }));
+  const players = (squad.players ?? [])
+    .map((p) => buildPlayerFromSquadEntry(p, squad.teamId))
+    .filter(Boolean);
   return saveTeamsPlayers({ teams, players });
 }
 
@@ -406,6 +425,13 @@ function mapMatchStatus(status, matchStatus) {
  */
 function recordToMatch(record) {
   const raw = record.payload ?? {};
+  if (raw.sport_event || raw.sport_event_status) {
+    try {
+      return normalizeMatch(PROVIDERS.SPORTRADAR, raw);
+    } catch {
+      /* fall through to slim row */
+    }
+  }
   const event = raw.sport_event ?? raw;
   const statusBlock = raw.sport_event_status ?? event.sport_event_status ?? {};
   const comps = event.competitors ?? [];
@@ -420,7 +446,7 @@ function recordToMatch(record) {
       record.status ?? statusBlock.status ?? '',
       statusBlock.match_status ?? statusBlock.matchStatus,
     ),
-    teams: [first?.id, second?.id].filter(Boolean),
+    teams: [first?.abbreviation ?? first?.id, second?.abbreviation ?? second?.id].filter(Boolean),
     teamNames: [first?.name, second?.name].filter(Boolean),
     tournament: event.tournament?.name ?? null,
     venue: event.venue?.name ?? null,
@@ -429,7 +455,20 @@ function recordToMatch(record) {
     lastEvent: { type: 'none', runs: 0, over: 0 },
     displayScore: statusBlock.display_score ?? null,
     matchStatus:
-      statusBlock.result ?? statusBlock.match_status ?? record.status ?? null,
+      statusBlock.match_status ?? statusBlock.result ?? record.status ?? null,
+    matchResult: statusBlock.match_result_text ?? null,
+    winnerId: statusBlock.winner_id ?? null,
+    tossWonBy: statusBlock.toss_won_by ?? null,
+    tossDecision: statusBlock.toss_decision ?? null,
+    currentInning:
+      statusBlock.current_inning != null && !Number.isNaN(Number(statusBlock.current_inning))
+        ? Number(statusBlock.current_inning)
+        : null,
+    periodScores: statusBlock.period_scores ?? null,
+    displayOvers:
+      statusBlock.display_overs != null && !Number.isNaN(Number(statusBlock.display_overs))
+        ? Number(statusBlock.display_overs)
+        : null,
   };
 }
 
@@ -450,14 +489,7 @@ export async function saveSportEventRecords(rows) {
     const event = rawe.sport_event ?? rawe;
     for (const comp of event.competitors ?? []) {
       if (!comp?.id) continue;
-      teamsToUpsert.set(comp.id, {
-        id: comp.id,
-        name: comp.name ?? 'Unknown',
-        abbr: comp.abbreviation ?? null,
-        country: comp.country ?? null,
-        logoUrl: null,
-        manager: null,
-      });
+      teamsToUpsert.set(comp.id, buildTeamFromCompetitor(comp, event));
     }
 
     const match = recordToMatch(r);
@@ -494,6 +526,38 @@ export async function saveMatchLineup(matchId, payload) {
   return 1;
 }
 
+/**
+ * Persist the exact cricket-t2 Match Summary JSON. Canonical `matches` rows
+ * stay slim for live UI; prediction and later phases read this payload.
+ * Does not call saveMatch — that would wipe live innings from a raw upsert.
+ */
+export async function saveMatchSummary(matchId, payload) {
+  const event = payload?.sport_event ?? payload ?? {};
+  const statusBlock = payload?.sport_event_status ?? event.sport_event_status ?? {};
+  await query(upsertSportEventRecord, [
+    'match_summary',
+    matchId,
+    matchId,
+    event.status ?? statusBlock.status ?? statusBlock.match_status ?? null,
+    event.scheduled ?? null,
+    JSON.stringify(payload ?? {}),
+  ]);
+  return 1;
+}
+
+/** Raw tournament/season envelopes (standings, leaders, squads) for prediction. */
+export async function saveScopedProviderPayload({ kind, scopeKey, eventId, payload }) {
+  await query(upsertSportEventRecord, [
+    kind,
+    scopeKey,
+    eventId ?? scopeKey,
+    null,
+    null,
+    JSON.stringify(payload ?? {}),
+  ]);
+  return 1;
+}
+
 export async function saveMatchTimeline(matchId, payload) {
   await query(upsertMatchTimeline, [matchId, JSON.stringify(payload)]);
   return 1;
@@ -523,10 +587,10 @@ const upsertTeamProfile = `
 
 export async function saveTeamProfile({ teamId, manager, teamInfo }) {
   await query(upsertTeamProfile, [teamId, manager, teamInfo]);
-  await query(
-    `UPDATE teams SET manager = $2, updated_at = NOW() WHERE id = $1`,
-    [teamId, manager?.name ?? null],
-  );
+  const row = buildTeamFromProfile({ teamId, manager, teamInfo });
+  if (row.id) {
+    await saveTeamsPlayers({ teams: [row], players: [] });
+  }
   return 1;
 }
 
@@ -538,35 +602,25 @@ const upsertPlayerProfile = `
     updated_at = NOW()
 `;
 
+async function persistEnrichedPlayer(row, payload) {
+  if (!row?.id) return;
+  const teams = (payload?.teams ?? [])
+    .filter((t) => t?.id)
+    .map((t) => buildTeamFromTournamentTeam(t));
+  if (row.teamId) {
+    const known = await query(`SELECT 1 FROM teams WHERE id = $1 LIMIT 1`, [row.teamId]);
+    if (!known.rows.length) {
+      const cur = await query(`SELECT team_id FROM players WHERE id = $1`, [row.id]);
+      row.teamId = cur.rows[0]?.team_id ?? null;
+    }
+  }
+  await saveTeamsPlayers({ teams, players: [row] });
+}
+
 export async function savePlayerProfile({ playerId, payload }) {
   await query(upsertPlayerProfile, [playerId, JSON.stringify(payload)]);
-  const p = payload?.player;
-  if (p) {
-    await query(
-      `UPDATE players SET
-         full_name = COALESCE($2, full_name),
-         short_name = COALESCE($3, short_name),
-         country_code = COALESCE($4, country_code),
-         batting_style = COALESCE($5, batting_style),
-         bowling_style = COALESCE($6, bowling_style),
-         jersey_number = COALESCE($7, jersey_number),
-         height = COALESCE($8, height),
-         nationality = COALESCE($9, nationality),
-         updated_at = NOW()
-       WHERE id = $1`,
-      [
-        playerId,
-        p.full_name ?? null,
-        p.name ?? null,
-        p.country_code ?? null,
-        p.batting_style ?? null,
-        p.bowling_style ?? null,
-        p.jersey_number ?? null,
-        p.height ?? null,
-        p.nationality ?? null,
-      ],
-    );
-  }
+  const row = buildPlayerFromProfile(payload);
+  await persistEnrichedPlayer(row, payload);
   return 1;
 }
 
@@ -638,6 +692,21 @@ export async function listActiveTournamentIds({ minYear, limit = 10 } = {}) {
  * Match ids from sport_event_records that do not yet have a timeline,
  * most recently scheduled first — the auto-derived timeline sync queue.
  */
+export async function listTeamIds({ limit = 200 } = {}) {
+  const r = await query(`SELECT id FROM teams ORDER BY name LIMIT $1`, [limit]);
+  return r.rows.map((x) => x.id).filter(Boolean);
+}
+
+export async function countEventIdsWithoutTimeline() {
+  const r = await query(
+    `SELECT COUNT(DISTINCT ser.event_id)::int AS count
+     FROM sport_event_records ser
+     LEFT JOIN match_timelines mt ON mt.match_id = ser.event_id
+     WHERE mt.match_id IS NULL AND ser.event_id IS NOT NULL`,
+  );
+  return r.rows[0]?.count ?? 0;
+}
+
 export async function listEventIdsWithoutTimeline({ limit = 20 } = {}) {
   const r = await query(
     `SELECT ser.event_id AS event_id
@@ -652,11 +721,63 @@ export async function listEventIdsWithoutTimeline({ limit = 20 } = {}) {
   return r.rows.map((x) => x.event_id).filter(Boolean);
 }
 
+/** Live matches — timeline row may exist but be stale vs summary poll. */
+export async function listLiveMatchIds({ limit = 10 } = {}) {
+  const r = await query(
+    `SELECT match_id
+     FROM matches
+     WHERE status = 'live'
+     ORDER BY scheduled DESC NULLS LAST
+     LIMIT $1`,
+    [limit],
+  );
+  return r.rows.map((x) => x.match_id).filter(Boolean);
+}
+
+/**
+ * Match ids we know about (schedule/results/tournament) but lack full summary JSON.
+ */
+export async function listEventIdsWithoutMatchSummary({ limit = 20 } = {}) {
+  const r = await query(
+    `SELECT ser.event_id AS event_id
+     FROM sport_event_records ser
+     LEFT JOIN sport_event_records ms
+       ON ms.event_id = ser.event_id AND ms.kind = 'match_summary'
+     WHERE ms.event_id IS NULL
+       AND ser.event_id IS NOT NULL
+       AND ser.kind IN ('daily_schedule', 'daily_results', 'team_schedule', 'team_results', 'tournament_results')
+     GROUP BY ser.event_id
+     ORDER BY MAX(ser.scheduled) DESC NULLS LAST
+     LIMIT $1`,
+    [limit],
+  );
+  return r.rows.map((x) => x.event_id).filter(Boolean);
+}
+
 /**
  * Team ids that do not yet have a synced profile — the auto-derived team
  * sync queue (profile + schedule + results). Teams get covered progressively
  * over sync cycles until all are profiled.
  */
+/**
+ * Player ids that still lack profile-derived fields — progressive profile sync queue.
+ */
+export async function listPlayerIdsNeedingProfile({ limit = 15 } = {}) {
+  const r = await query(
+    `SELECT id FROM players
+     WHERE id LIKE 'sr:player:%'
+       AND (
+         country_code IS NULL
+         OR batting_style IS NULL
+         OR height IS NULL
+       )
+     ORDER BY updated_at DESC
+     LIMIT $1`,
+    [limit],
+  );
+  return r.rows.map((x) => x.id).filter(Boolean);
+}
+
 export async function listTeamsWithoutSync({ limit = 10 } = {}) {
   const r = await query(
     `SELECT t.id AS id
@@ -697,7 +818,11 @@ export async function materializeTeamEvents() {
      WHERE ser.kind IN ('daily_schedule','daily_results','tournament_results','team_schedule','team_results')
        AND ser.event_id IS NOT NULL
        AND (comp->>'id') IS NOT NULL
-     ON CONFLICT (kind, scope_key, event_id) DO NOTHING`,
+     ON CONFLICT (kind, scope_key, event_id) DO UPDATE SET
+       status = EXCLUDED.status,
+       scheduled = EXCLUDED.scheduled,
+       payload = EXCLUDED.payload,
+       updated_at = NOW()`,
   );
   return r.rowCount ?? 0;
 }
@@ -733,4 +858,127 @@ export async function listHeadToHeadPairs() {
     `SELECT team_a_id AS a, team_b_id AS b FROM head_to_head`,
   );
   return r.rows.map((x) => [x.a, x.b]).filter(([a, b]) => a && b);
+}
+
+/** Push country/manager/logo from synced team_profiles into teams. */
+export async function backfillTeamFieldsFromProfiles() {
+  const r = await query(
+    `SELECT team_id, manager, team_info FROM team_profiles`,
+  );
+  let n = 0;
+  for (const row of r.rows) {
+    const team = buildTeamFromProfile({
+      teamId: row.team_id,
+      manager: row.manager,
+      teamInfo: row.team_info,
+    });
+    if (!team.id) continue;
+    await saveTeamsPlayers({ teams: [team], players: [] });
+    n += 1;
+  }
+  return n;
+}
+
+/** Copy manager name from players.role=manager onto teams.manager. */
+export async function backfillTeamManagersFromPlayers() {
+  const r = await query(
+    `UPDATE teams t SET
+       manager = COALESCE(t.manager, p.short_name, p.full_name),
+       updated_at = NOW()
+     FROM (
+       SELECT DISTINCT ON (team_id) team_id, short_name, full_name
+       FROM players
+       WHERE role = 'manager' AND team_id IS NOT NULL
+       ORDER BY team_id, updated_at DESC
+     ) p
+     WHERE t.id = p.team_id AND (t.manager IS NULL OR t.manager = '')`,
+  );
+  return r.rowCount ?? 0;
+}
+
+/** Re-apply lineup managers and competitor countries from stored match_lineup rows. */
+export async function backfillTeamFieldsFromLineups({ limit = 100 } = {}) {
+  const r = await query(
+    `SELECT payload FROM sport_event_records
+     WHERE kind = 'match_lineup'
+     ORDER BY updated_at DESC
+     LIMIT $1`,
+    [limit],
+  );
+  let n = 0;
+  for (const row of r.rows) {
+    const { teams } = normalizeLineups(row.payload);
+    if (!teams.length) continue;
+    await saveTeamsPlayers({ teams, players: [] });
+    n += teams.length;
+  }
+  return n;
+}
+
+/** Re-merge country from stored schedule/result payloads (uses tournament category). */
+export async function backfillTeamFieldsFromSportEvents({ limit = 800 } = {}) {
+  const r = await query(
+    `SELECT payload FROM sport_event_records
+     WHERE kind IN ('daily_schedule', 'daily_results', 'tournament_results')
+     ORDER BY updated_at DESC
+     LIMIT $1`,
+    [limit],
+  );
+  const teamsToUpsert = new Map();
+  for (const row of r.rows) {
+    const raw = row.payload ?? {};
+    const event = raw.sport_event ?? raw;
+    for (const comp of event.competitors ?? []) {
+      if (!comp?.id) continue;
+      teamsToUpsert.set(comp.id, buildTeamFromCompetitor(comp, event));
+    }
+  }
+  if (!teamsToUpsert.size) return 0;
+  await saveTeamsPlayers({ teams: [...teamsToUpsert.values()], players: [] });
+  return teamsToUpsert.size;
+}
+
+/** Upsert teams discovered on a tournament info payload (e.g. PSL groups). */
+export async function backfillPlayerFieldsFromLineups({ limit = 100 } = {}) {
+  const r = await query(
+    `SELECT payload FROM sport_event_records
+     WHERE kind = 'match_lineup'
+     ORDER BY updated_at DESC
+     LIMIT $1`,
+    [limit],
+  );
+  let n = 0;
+  for (const row of r.rows) {
+    const { players } = normalizeLineups(row.payload);
+    if (!players.length) continue;
+    await saveTeamsPlayers({ teams: [], players });
+    n += players.length;
+  }
+  return n;
+}
+
+export async function backfillPlayerFieldsFromProfiles() {
+  const r = await query(`SELECT player_id, payload FROM player_profiles`);
+  let n = 0;
+  for (const row of r.rows) {
+    const player = buildPlayerFromProfile(row.payload);
+    if (!player?.id) continue;
+    await persistEnrichedPlayer(player, row.payload);
+    n += 1;
+  }
+  return n;
+}
+
+export async function saveTournamentTeams(tournamentInfo) {
+  const groups = tournamentInfo?.groups ?? [];
+  const teams = [];
+  for (const group of groups) {
+    for (const t of group.teams ?? []) {
+      if (!t?.id) continue;
+      teams.push(buildTeamFromTournamentTeam(t));
+    }
+  }
+  if (!teams.length) return 0;
+  await saveTeamsPlayers({ teams, players: [] });
+  return teams.length;
 }

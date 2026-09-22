@@ -54,10 +54,12 @@ async function bootstrap() {
     .addTag('notifications', 'FCM device registration and notification preferences')
     .addTag('search', 'Unified search across players, teams, matches and tournaments')
     .addTag('predictions', 'Pre-match and live statistical winner probabilities')
+    .addTag('assistant', 'Retrieve-then-explain cricket Q&A from stored sports data')
     .addTag('admin', 'Admin CMS, moderation and platform analytics')
     .addTag('newsletter', 'Newsletter subscription management')
     .addTag('contact', 'Contact-us submissions')
     .addTag('gallery', 'Images, shorts and videos')
+    .addTag('site-settings', 'Public contact and social settings')
     .addCookieAuth('cricapp_access_token', {
       type: 'apiKey',
       in: 'cookie',

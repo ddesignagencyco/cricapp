@@ -1,19 +1,27 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { RedisService } from '../redis/redis.service.js';
+import { SportradarService } from '../sportradar/sportradar.service.js';
 import {
   MATCH_STATUS,
   redisKeys,
   type CanonicalMatch,
   type CurrentInnings,
   type LastEvent,
+  type TeamScores,
 } from '@cricapp/shared-types';
 import type { Match } from '@prisma/client';
 import {
   createPaginatedResponse,
   getPaginationOffset,
 } from '../common/pagination/pagination.util.js';
+import {
+  resultTextFromPayload,
+  teamScoresFromSportEventPayload,
+} from './match-summary-enrich.util.js';
+import { sportEventStatusFromPayload } from '../common/sport-event-status.util.js';
+import { isLiveTimelineBehindMatch } from './timeline-stale.util.js';
 
 export type MatchSummary = Pick<
   CanonicalMatch,
@@ -21,6 +29,7 @@ export type MatchSummary = Pick<
   | 'status'
   | 'teams'
   | 'teamNames'
+  | 'teamScores'
   | 'tournament'
   | 'venue'
   | 'scheduled'
@@ -28,6 +37,13 @@ export type MatchSummary = Pick<
   | 'lastEvent'
   | 'displayScore'
   | 'matchStatus'
+  | 'result'
+  | 'winnerId'
+  | 'tossWonBy'
+  | 'tossDecision'
+  | 'currentInning'
+  | 'periodScores'
+  | 'displayOvers'
 >;
 
 @Injectable()
@@ -35,14 +51,43 @@ export class MatchesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
+    private readonly sportradar: SportradarService,
   ) {}
 
-  private toSummary(row: Match): MatchSummary {
+  private asStringArray(value: unknown): string[] {
+    return Array.isArray(value) ? value.map(String) : [];
+  }
+
+  private buildTeamsField(row: Match, scoresOverride?: TeamScores | null): CanonicalMatch['teams'] {
+    const abbrs = this.asStringArray(row.teams);
+    const names = this.asStringArray(row.teamNames);
+    const scores = scoresOverride ?? (row.teamScores as TeamScores | null);
+    if (!scores?.home && !scores?.away) {
+      return abbrs;
+    }
+    return {
+      home: {
+        code: scores?.home?.code || abbrs[0] || '',
+        name: scores?.home?.name || names[0] || '',
+        score: scores?.home?.score || '',
+        overs: scores?.home?.overs || '',
+      },
+      away: {
+        code: scores?.away?.code || abbrs[1] || '',
+        name: scores?.away?.name || names[1] || '',
+        score: scores?.away?.score || '',
+        overs: scores?.away?.overs || '',
+      },
+    };
+  }
+
+  private toSummary(row: Match, overrides?: Partial<MatchSummary>): MatchSummary {
     return {
       matchId: row.matchId,
       status: row.status as CanonicalMatch['status'],
-      teams: row.teams as unknown as string[],
-      teamNames: row.teamNames as unknown as string[],
+      teams: overrides?.teams ?? this.buildTeamsField(row),
+      teamNames: this.asStringArray(row.teamNames),
+      teamScores: overrides?.teamScores ?? (row.teamScores as TeamScores | null) ?? null,
       tournament: row.tournament,
       venue: row.venue,
       scheduled: row.scheduled,
@@ -50,6 +95,48 @@ export class MatchesService {
       lastEvent: row.lastEvent as unknown as LastEvent,
       displayScore: row.displayScore,
       matchStatus: row.matchStatus,
+      result: overrides?.result ?? row.resultText ?? null,
+      winnerId: overrides?.winnerId ?? row.winnerId ?? null,
+      tossWonBy: overrides?.tossWonBy ?? row.tossWonBy ?? null,
+      tossDecision: overrides?.tossDecision ?? row.tossDecision ?? null,
+      currentInning: overrides?.currentInning ?? row.currentInning ?? null,
+      periodScores: (overrides?.periodScores ?? row.periodScores) as unknown[] | null,
+      displayOvers: overrides?.displayOvers ?? row.displayOvers ?? null,
+    };
+  }
+
+  private async enrichFromStoredSummary(row: Match): Promise<Partial<MatchSummary>> {
+    const needsScores = !row.teamScores;
+    const needsResult = !row.resultText;
+    const needsStatus = !row.winnerId && !row.tossWonBy;
+    if (!needsScores && !needsResult && !needsStatus) return {};
+
+    const record = await this.prisma.sportEventRecord.findFirst({
+      where: {
+        eventId: row.matchId,
+        kind: { in: ['match_summary', 'daily_results', 'team_results', 'daily_schedule'] },
+      },
+      orderBy: [{ updatedAt: 'desc' }],
+    });
+    const payload = record?.payload as Record<string, unknown> | undefined;
+    if (!payload) return {};
+
+    const statusView = sportEventStatusFromPayload(payload);
+    return {
+      ...(needsScores
+        ? { teamScores: teamScoresFromSportEventPayload(payload) ?? undefined }
+        : {}),
+      ...(needsResult ? { result: resultTextFromPayload(payload) ?? undefined } : {}),
+      ...(statusView
+        ? {
+            winnerId: statusView.winnerId ?? undefined,
+            tossWonBy: statusView.tossWonBy ?? undefined,
+            tossDecision: statusView.tossDecision ?? undefined,
+            currentInning: statusView.currentInning ?? undefined,
+            periodScores: statusView.periodScores ?? undefined,
+            displayOvers: statusView.displayOvers ?? undefined,
+          }
+        : {}),
     };
   }
 
@@ -136,8 +223,6 @@ export class MatchesService {
   }
 
   async listLive() {
-    // Postgres status is authoritative. The Redis live set is an ingestion
-    // index and can briefly contain IDs for matches that just completed.
     const [rows, liveIds] = await Promise.all([
       this.prisma.match.findMany({
         where: { status: MATCH_STATUS.LIVE },
@@ -145,7 +230,16 @@ export class MatchesService {
       }),
       this.redis.smembers(redisKeys.liveMatches()),
     ]);
-    const summaries = rows.map((r) => this.toSummary(r));
+    const summaries = await Promise.all(
+      rows.map(async (r) => {
+        const patch = await this.enrichFromStoredSummary(r);
+        const summary = this.toSummary(r, patch);
+        if (patch.teamScores) {
+          return { ...summary, teams: this.buildTeamsField(r, patch.teamScores) };
+        }
+        return summary;
+      }),
+    );
 
     const authoritativeIds = new Set(rows.map((row) => row.matchId));
     const staleIds = liveIds.filter((id) => !authoritativeIds.has(id));
@@ -164,30 +258,100 @@ export class MatchesService {
   }
 
   async getById(matchId: string): Promise<MatchSummary> {
-    const cached = await this.redis.get<MatchSummary>(
-      redisKeys.matchState(matchId),
-    );
-    if (cached) return cached;
+    const [cached, row] = await Promise.all([
+      this.redis.get<CanonicalMatch>(redisKeys.matchState(matchId)),
+      this.prisma.match.findUnique({ where: { matchId } }),
+    ]);
 
-    const row = await this.prisma.match.findUnique({
-      where: { matchId },
-    });
-    if (!row) {
-      throw new NotFoundException(`Match ${matchId} not found`);
+    if (row) {
+      const patch = await this.enrichFromStoredSummary(row);
+      const summary = this.toSummary(row, patch);
+      const mergedScores = patch.teamScores ?? summary.teamScores;
+      const mergedTeams = mergedScores
+        ? this.buildTeamsField(row, mergedScores)
+        : summary.teams;
+      if (cached) {
+        return {
+          ...cached,
+          teams: mergedTeams,
+          teamScores: mergedScores,
+          result: summary.result,
+        };
+      }
+      return { ...summary, teams: mergedTeams, teamScores: mergedScores };
     }
-    return this.toSummary(row);
+
+    if (cached) return cached as MatchSummary;
+
+    throw new NotFoundException(`Match ${matchId} not found`);
+  }
+
+  private static readonly LIVE_TIMELINE_REFRESH_MIN_AGE_MS = 30_000;
+
+  private async upsertTimelinePayload(
+    matchId: string,
+    fresh: Record<string, unknown>,
+  ): Promise<{ matchId: string; payload: Record<string, unknown> }> {
+    await this.prisma.matchTimeline.upsert({
+      where: { matchId },
+      create: {
+        matchId,
+        payload: fresh as Prisma.InputJsonValue,
+      },
+      update: {
+        payload: fresh as Prisma.InputJsonValue,
+      },
+    });
+    return { matchId, payload: fresh };
   }
 
   async getTimeline(matchId: string): Promise<{ matchId: string; payload: Record<string, unknown> }> {
-    const row = await this.prisma.matchTimeline.findUnique({
-      where: { matchId },
-    });
-    if (!row) {
-      throw new NotFoundException(`Timeline for match ${matchId} not found`);
+    const [row, matchRow] = await Promise.all([
+      this.prisma.matchTimeline.findUnique({ where: { matchId } }),
+      this.prisma.match.findUnique({ where: { matchId } }),
+    ]);
+
+    const storedPayload = row?.payload as Record<string, unknown> | undefined;
+
+    if (storedPayload && matchRow) {
+      const stale = isLiveTimelineBehindMatch(
+        {
+          status: matchRow.status,
+          displayScore: matchRow.displayScore,
+          displayOvers: matchRow.displayOvers,
+        },
+        storedPayload,
+      );
+      const ageMs = row ? Date.now() - row.updatedAt.getTime() : Number.POSITIVE_INFINITY;
+      if (
+        stale &&
+        ageMs >= MatchesService.LIVE_TIMELINE_REFRESH_MIN_AGE_MS &&
+        this.sportradar.isConfigured
+      ) {
+        try {
+          const fresh = await this.sportradar.fetchMatchTimeline(matchId);
+          return this.upsertTimelinePayload(matchId, fresh);
+        } catch (err) {
+          if (err instanceof ServiceUnavailableException) throw err;
+        }
+      }
+      return { matchId: row!.matchId, payload: storedPayload };
     }
-    return {
-      matchId: row.matchId,
-      payload: row.payload as Record<string, unknown>,
-    };
+
+    if (storedPayload) {
+      return { matchId: row!.matchId, payload: storedPayload };
+    }
+
+    if (this.sportradar.isConfigured) {
+      try {
+        const fresh = await this.sportradar.fetchMatchTimeline(matchId);
+        return this.upsertTimelinePayload(matchId, fresh);
+      } catch (err) {
+        if (err instanceof ServiceUnavailableException) throw err;
+        throw new NotFoundException(`Timeline for match ${matchId} not found`);
+      }
+    }
+
+    throw new NotFoundException(`Timeline for match ${matchId} not found`);
   }
 }

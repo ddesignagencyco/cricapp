@@ -7,6 +7,7 @@ import EmptyState from '../EmptyState';
 import HeadToHeadWidget from '../HeadToHeadWidget';
 import { fetchHeadToHead } from '../../services/headToHead';
 import { HeadToHead } from '../../types/index';
+import { formatTeamSelectLabel } from '../../utils/helpers';
 
 function dedupeOpponents(team: any, teamMatches: any[], allTeams: any[]): any[] {
   const seen = new Map<string, any>();
@@ -101,7 +102,7 @@ export default function TeamHeadToHead({ team, allTeams, teamMatches }: Props) {
             value={opponents.find((o) => o.id === selectedId) || null}
             onChange={(option) => setSelectedId(option?.id || '')}
             options={opponents}
-            getOptionLabel={(option) => `${option.name} (${option.abbr})`}
+            getOptionLabel={(option) => formatTeamSelectLabel(option)}
             getOptionValue={(option) => option.id}
             placeholder="Select opponent..."
             className="react-select-container"
@@ -112,7 +113,7 @@ export default function TeamHeadToHead({ team, allTeams, teamMatches }: Props) {
                 ...base,
                 backgroundColor: 'var(--color-elevated)',
                 borderColor: state.isFocused ? 'var(--color-accent)' : 'var(--color-lborder)',
-                borderRadius: '0.75rem',
+                borderRadius: '0.25rem',
                 padding: '0.25rem 0.5rem',
                 boxShadow: 'none',
                 '&:hover': {
@@ -123,7 +124,7 @@ export default function TeamHeadToHead({ team, allTeams, teamMatches }: Props) {
                 ...base,
                 backgroundColor: state.isFocused ? 'var(--color-accent)' : 'var(--color-elevated)',
                 color: state.isFocused ? 'white' : 'var(--color-mtext)',
-                borderRadius: '0.5rem',
+                borderRadius: '0.25rem',
                 margin: '2px 4px',
                 padding: '8px 12px',
               }),
@@ -131,7 +132,7 @@ export default function TeamHeadToHead({ team, allTeams, teamMatches }: Props) {
                 ...base,
                 backgroundColor: 'var(--color-elevated)',
                 border: '1px solid var(--color-lborder)',
-                borderRadius: '0.75rem',
+                borderRadius: '0.25rem',
                 overflow: 'hidden',
               }),
               singleValue: (base) => ({
