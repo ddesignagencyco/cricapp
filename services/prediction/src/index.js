@@ -160,6 +160,10 @@ export async function runLive(matchId) {
     log.info('live locked at result', { matchId, runId: id, homeWinProb: result.homeWinProb });
     return id;
   }
+  const fingerprint = liveFingerprint(snapshot);
+  const unchanged = liveFingerprints.get(matchId) === fingerprint;
+  if (unchanged) return null;
+
   const over = snapshot.currentInnings?.overs ?? 0;
   if (!shouldScoreLive(matchId, over)) return null;
   const previous = await latestLiveResult(query, matchId);

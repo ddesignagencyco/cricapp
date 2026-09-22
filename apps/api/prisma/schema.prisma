@@ -634,6 +634,56 @@ model PredictionNarrative {
   @@map("prediction_narratives")
 }
 
+// --- Phase 14: Odds Intelligence (append-only snapshots; separate from predictions) ---
+
+model OddsSource {
+  id             String   @id @default(uuid())
+  slug           String   @unique
+  name           String
+  providerType   String   @default("aggregator") @map("provider_type")
+  licenseStatus  String   @default("disabled") @map("license_status")
+  externalId     String?  @map("external_id")
+  isActive       Boolean  @default(false) @map("is_active")
+  config         Json     @default("{}")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  markets        OddsMarket[]
+
+  @@map("odds_sources")
+}
+
+model OddsMarket {
+  id               String        @id @default(uuid())
+  matchId          String        @map("match_id")
+  sourceId         String        @map("source_id")
+  marketType       String        @map("market_type")
+  marketKey        String        @map("market_key")
+  name             String
+  externalMarketId String?       @map("external_market_id")
+  createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @updatedAt @map("updated_at")
+  source           OddsSource    @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  snapshots        OddsSnapshot[]
+
+  @@unique([matchId, sourceId, marketType])
+  @@index([matchId, marketKey])
+  @@map("odds_markets")
+}
+
+model OddsSnapshot {
+  id            String     @id @default(uuid())
+  marketId      String     @map("market_id")
+  selectionKey  String     @map("selection_key")
+  decimalPrice  Float      @map("decimal_price")
+  capturedAt    DateTime   @map("captured_at")
+  receivedAt    DateTime   @default(now()) @map("received_at")
+  raw           Json?
+  market        OddsMarket @relation(fields: [marketId], references: [id], onDelete: Cascade)
+
+  @@index([marketId, selectionKey, capturedAt])
+  @@map("odds_snapshots")
+}
+
 // --- Newsletter & Contact --------------------------------------------------
 
 model NewsletterSubscriber {
