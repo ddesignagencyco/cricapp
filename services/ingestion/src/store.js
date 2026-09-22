@@ -721,6 +721,19 @@ export async function listEventIdsWithoutTimeline({ limit = 20 } = {}) {
   return r.rows.map((x) => x.event_id).filter(Boolean);
 }
 
+/** Live matches — timeline row may exist but be stale vs summary poll. */
+export async function listLiveMatchIds({ limit = 10 } = {}) {
+  const r = await query(
+    `SELECT match_id
+     FROM matches
+     WHERE status = 'live'
+     ORDER BY scheduled DESC NULLS LAST
+     LIMIT $1`,
+    [limit],
+  );
+  return r.rows.map((x) => x.match_id).filter(Boolean);
+}
+
 /**
  * Match ids we know about (schedule/results/tournament) but lack full summary JSON.
  */
