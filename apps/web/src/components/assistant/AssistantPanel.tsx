@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Loader2, Send, X } from 'lucide-react';
-import CricketBallIcon from './CricketBallIcon';
+import { Bot, Loader2, Send, X } from 'lucide-react';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { ApiError } from '../../services/api/client';
 import { askAssistant, type AssistantAskBody, type AssistantAskResponse } from '../../services/assistant';
@@ -25,10 +24,10 @@ function formatMessageTime(at: number): string {
   return new Date(at).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 }
 
-function BallAvatar() {
+function AssistantAvatar() {
   return (
     <span className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-brand text-brand-fg">
-      <CricketBallIcon size={14} strokeWidth={2.4} />
+      <Bot size={15} strokeWidth={2.25} aria-hidden />
     </span>
   );
 }
@@ -137,7 +136,7 @@ export default function AssistantPanel({
         <header className="flex shrink-0 items-center justify-between gap-3 bg-brand px-5 py-3 text-brand-fg">
           <div className="flex items-center gap-3">
             <span className="grid h-9 w-9 place-items-center rounded-full bg-white text-brand">
-              <CricketBallIcon size={18} strokeWidth={2.25} />
+              <Bot size={20} strokeWidth={2.15} aria-hidden />
             </span>
             <div>
               <h2 id="assistant-title" className="text-[15px] font-semibold tracking-tight text-brand-fg">
@@ -162,7 +161,7 @@ export default function AssistantPanel({
         <div ref={listRef} className="native-scrollbar min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain bg-card px-4 py-4">
           {items.length === 0 ? (
             <div className="flex items-start gap-2">
-              <BallAvatar />
+              <AssistantAvatar />
               <p className="w-fit max-w-[88%] rounded-[1.15rem] bg-secondary px-3.5 py-2 text-sm leading-relaxed text-mtext">
                 Ask about matches, players, or news.
               </p>
@@ -181,7 +180,7 @@ export default function AssistantPanel({
               </div>
             ) : (
               <div key={item.id} className="flex items-start gap-2">
-                <BallAvatar />
+                <AssistantAvatar />
                 <div className="min-w-0 flex-1 space-y-2">
                   <p
                     className={`w-fit max-w-full whitespace-pre-wrap rounded-[1.15rem] px-3.5 py-2 text-sm leading-relaxed ${
@@ -216,7 +215,7 @@ export default function AssistantPanel({
 
           {busy ? (
             <div className="flex items-center gap-2">
-              <BallAvatar />
+              <AssistantAvatar />
               <p className="inline-flex items-center gap-2 text-xs font-semibold text-stext">
                 <Loader2 size={14} className="animate-spin" />
                 Reading stored stats…

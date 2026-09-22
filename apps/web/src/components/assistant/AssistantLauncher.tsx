@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { assistantContextFromLocation } from '../../lib/assistant';
 import AssistantPanel from './AssistantPanel';
-import CricketBallIcon from './CricketBallIcon';
+import { Bot } from 'lucide-react';
 
 export default function AssistantLauncher() {
   const pathname = usePathname();
@@ -25,7 +25,7 @@ export default function AssistantLauncher() {
         aria-expanded={open}
         aria-label="Open PCZ Assistant"
       >
-        <CricketBallIcon size={20} />
+        <Bot size={26} strokeWidth={2.15} aria-hidden />
       </button>
       <AssistantPanel open={open} onClose={() => setOpen(false)} context={context} />
     </>
