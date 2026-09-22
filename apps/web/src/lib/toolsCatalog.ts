@@ -19,7 +19,7 @@ export type ToolKind =
   | 'implied'
   | 'fantasy';
 
-export type ToolGroup = 'rates' | 'batting' | 'bowling' | 'match' | 'analysis' | 'market';
+export type ToolGroup = 'rates' | 'batting' | 'bowling' | 'match' | 'analysis';
 
 export interface ToolDef {
   slug: string;
@@ -34,8 +34,7 @@ export const TOOL_GROUPS: Array<{ key: ToolGroup; title: string; hint: string }>
   { key: 'batting', title: 'Batting', hint: 'Strike rate and average' },
   { key: 'bowling', title: 'Bowling', hint: 'Average and economy' },
   { key: 'match', title: 'Match', hint: 'Follow-on, what-if and innings projection' },
-  { key: 'analysis', title: 'Comparison', hint: 'Players, teams, head-to-head and fantasy points' },
-  { key: 'market', title: 'Predictions & odds', hint: 'Stored model runs plus price conversions' },
+  { key: 'analysis', title: 'Comparison', hint: 'Players, head-to-head and fantasy points' },
 ];
 
 export const TOOLS: ToolDef[] = [
@@ -49,17 +48,43 @@ export const TOOLS: ToolDef[] = [
   { slug: 'bowling-economy', title: 'Bowling economy', blurb: 'Runs conceded per cricket over bowled.', kind: 'econ', group: 'bowling' },
   { slug: 'follow-on', title: 'Follow-on calculator', blurb: 'Law 14 lead needed for a 1- to 5-day match.', kind: 'follow-on', group: 'match' },
   { slug: 'player-compare', title: 'Player comparison', blurb: 'Side-by-side profiles from the stored player directory.', kind: 'player-compare', group: 'analysis' },
-  { slug: 'team-compare', title: 'Team comparison', blurb: 'Head-to-head from stored meetings.', kind: 'compare', group: 'analysis' },
   { slug: 'head-to-head', title: 'Head-to-head analyzer', blurb: 'Pick two teams and open the stored H2H report.', kind: 'h2h', group: 'analysis' },
   { slug: 'match-simulator', title: 'Match simulator', blurb: 'Expected totals from entered RPO — not a live model.', kind: 'match-sim', group: 'match' },
   { slug: 'what-if', title: 'What-if match simulator', blurb: 'Project a chase from current score, overs left and assumed RPO.', kind: 'what-if', group: 'match' },
-  { slug: 'ai-score-predictor', title: 'AI score predictor', blurb: 'Shows stored score ranges from prediction runs. Does not invent a total.', kind: 'score-predictor', group: 'market' },
-  { slug: 'win-predictor', title: 'AI win predictor', blurb: 'Opens stored match win probabilities. No new odds.', kind: 'predictions', group: 'market' },
-  { slug: 'odds-converter', title: 'Odds converter', blurb: 'Decimal, fractional and American prices.', kind: 'odds', group: 'market' },
-  { slug: 'implied-probability', title: 'Implied probability', blurb: 'Price → probability, plus two-way bookmaker margin.', kind: 'implied', group: 'market' },
   { slug: 'fantasy-xi', title: 'Fantasy points / XI', blurb: 'Informational Dream11-style points for a player or XI.', kind: 'fantasy', group: 'analysis' },
 ];
 
 export function toolBySlug(slug: string): ToolDef | undefined {
   return TOOLS.find((tool) => tool.slug === slug);
+}
+
+/** Hub badge: client formula vs existing APIs (no new backend). */
+export function toolSource(kind: ToolKind): 'formula' | 'stored' {
+  switch (kind) {
+    case 'player-compare':
+    case 'compare':
+    case 'h2h':
+    case 'predictions':
+    case 'score-predictor':
+      return 'stored';
+    case 'nrr':
+    case 'rrr':
+    case 'crr':
+    case 'dls':
+    case 'sr':
+    case 'bat-avg':
+    case 'bowl-avg':
+    case 'econ':
+    case 'follow-on':
+    case 'match-sim':
+    case 'what-if':
+    case 'odds':
+    case 'implied':
+    case 'fantasy':
+      return 'formula';
+    default: {
+      const _unused: never = kind;
+      return _unused;
+    }
+  }
 }

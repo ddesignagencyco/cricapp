@@ -155,7 +155,10 @@ export function parseTimelineEvents(rawPayload: Record<string, unknown> | null |
     .filter((event): event is TimelineEvent => event !== null);
 }
 
-export function extractBalls(payload: Record<string, unknown> | null | undefined): (string | number | null)[] {
+export function extractBalls(
+  payload: Record<string, unknown> | null | undefined,
+  opts?: { inning?: number }
+): (string | number | null)[] {
   if (!payload) return [];
   const keys = ['balls', 'recentBalls', 'thisOver'];
   for (const key of keys) {
@@ -171,8 +174,13 @@ export function extractBalls(payload: Record<string, unknown> | null | undefined
 
   const events = parseTimelineEvents(payload).filter(isDelivery);
   if (!events.length) return [];
-  const last = events[events.length - 1];
-  const overEvents = events.filter(
+  const wantedInning = opts?.inning;
+  const scoped = wantedInning
+    ? events.filter((event) => event.inning === wantedInning)
+    : events;
+  if (!scoped.length) return [];
+  const last = scoped[scoped.length - 1];
+  const overEvents = scoped.filter(
     (event) => event.inning === last.inning && event.over === last.over,
   );
   const bowled = overEvents.map(deliveryLabel);

@@ -8,6 +8,7 @@ import Pagination from '../../../../components/admin/AdminPagination';
 import { AdminPageHeader, LoadingState, EmptyState, StatusBadge, AdminInput, AdminEntityLink } from '../../../../components/admin/AdminShared';
 import EntityAvatar from '../../../../components/EntityAvatar';
 import { getInitials } from '../../../../utils/helpers';
+import { compactMatchScore } from '../../../../lib/matchScoreboard';
 
 export default function MatchesPage() {
   const [matches, setMatches] = useState<Match[]>([]);
@@ -116,7 +117,6 @@ export default function MatchesPage() {
               <tbody>
                 {filtered.map((m) => {
                   const t = getTeamInfo(m);
-                  const inn = m.currentInnings;
                   const homeLabel = t.homeName;
                   const awayLabel = t.awayName;
                   return (
@@ -133,7 +133,7 @@ export default function MatchesPage() {
                         )}
                       </td>
                       <td className="px-4 py-2.5 font-mono font-bold" style={{ color: 'var(--admin-text)' }}>
-                        {inn ? `${inn.runs}/${inn.wickets} (${inn.overs})` : '—'}
+                        {compactMatchScore(m)}
                       </td>
                       <td className="px-4 py-2.5" style={{ color: 'var(--admin-text-secondary)' }}>
                         {m.tournamentId ? (

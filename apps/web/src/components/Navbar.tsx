@@ -379,11 +379,11 @@ export default function Navbar() {
           />
           <div
             id="mobile-navigation"
-            className="site-chrome fixed inset-x-0 top-14 bottom-14 z-[30] overflow-y-auto border-t lg:hidden"
+            className="fixed inset-x-0 top-14 bottom-14 z-[30] overflow-y-auto border-t border-lborder bg-primary text-mtext lg:hidden"
           >
             <div className="mx-auto max-w-7xl px-4 pb-8 pt-4 sm:px-6">
               <div className="mb-3 flex items-center justify-between">
-                <p className="text-sm font-semibold text-mtext">More</p>
+                <p className="text-sm font-bold text-mtext">Browse</p>
                 <button
                   type="button"
                   onClick={closeMobile}
@@ -540,7 +540,7 @@ function ProfileMenuLink({
 function MobileSection({ label, children }: { label: string; children: ReactNode }) {
   return (
     <section className="mb-5 last:mb-0">
-      <p className="px-1 text-[11px] font-semibold uppercase tracking-wider text-stext">{label}</p>
+      <p className="px-1 text-[11px] font-bold uppercase tracking-wider text-stext">{label}</p>
       <div className="mt-2 space-y-0.5">{children}</div>
     </section>
   );
@@ -552,13 +552,13 @@ function MobileNavLink({ item, active }: { item: NavItem; active: boolean }) {
     <Link
       href={item.to}
       aria-current={active ? 'page' : undefined}
-      className={`flex items-center gap-3 rounded px-3 py-2.5 text-sm font-semibold transition-colors ${
+      className={`flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-semibold transition-colors ${
         active ? 'bg-accent/10 text-accent' : 'text-mtext hover:bg-[var(--color-row-hover)]'
       }`}
     >
       <span
-        className={`grid h-9 w-9 shrink-0 place-items-center rounded ${
-          active ? 'bg-accent/15 text-accent' : 'bg-card text-stext'
+        className={`grid h-9 w-9 shrink-0 place-items-center rounded-md ${
+          active ? 'bg-accent/15 text-accent' : 'bg-secondary text-stext'
         }`}
       >
         <Icon size={16} />

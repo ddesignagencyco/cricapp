@@ -39,6 +39,7 @@ import { asPercent, stageLabel } from '../../../lib/predictions';
 import { fetchAdminPredictionModels, fetchAdminPredictionRuns } from '../../../services/predictions';
 import type { AdminPredictionModelVersion, PredictionRun } from '../../../types/predictions';
 import { getInitials } from '../../../utils/helpers';
+import { compactMatchScore } from '../../../lib/matchScoreboard';
 import EntityAvatar from '../../../components/EntityAvatar';
 import NewsCopy from '../../../components/NewsCopy';
 
@@ -557,7 +558,6 @@ function MatchPreviewTable({
                 </tr>
               ) : matches.map((m) => {
                 const t = getTeamInfo(m);
-                const inn = m.currentInnings;
                 return (
                   <tr
                     key={m.matchId || m.id}
@@ -596,7 +596,7 @@ function MatchPreviewTable({
                     </td>
                     {!hideScore && (
                       <td className="hidden px-4 py-2.5 font-mono font-bold sm:table-cell" style={{ color: 'var(--admin-text)' }}>
-                        {inn ? `${inn.runs}/${inn.wickets} (${inn.overs})` : '—'}
+                        {compactMatchScore(m)}
                       </td>
                     )}
                     <td className="hidden px-4 py-2.5 md:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>

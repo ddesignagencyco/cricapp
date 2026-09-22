@@ -102,16 +102,17 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
-  /* Small, uniform corner radius across the whole app.
-     Cards, buttons, headers and panels all use 4px corners.
-     true circles (rounded-full) are left round. */
+  /* Same 4px corners as the hero Schedule / PSL / News / Rankings tiles.
+     rounded-full stays pill-shaped for badges only. */
+  --radius: 0.25rem;
   --radius-xs: 0.25rem;
   --radius-sm: 0.25rem;
   --radius-md: 0.25rem;
-  --radius-lg: 0.375rem;
-  --radius-xl: 0.375rem;
-  --radius-2xl: 0.375rem;
-  --radius-3xl: 0.375rem;
+  --radius-lg: 0.25rem;
+  --radius-xl: 0.25rem;
+  --radius-2xl: 0.25rem;
+  --radius-3xl: 0.25rem;
+  --radius-4xl: 0.25rem;
 }
 
 /* Light theme overrides. Page body stays pure white; only grouped
@@ -301,13 +302,146 @@ header.site-chrome .site-nav-icon[aria-expanded='true'] {
 
 .mobile-bottom-nav {
   --color-mtext: #ffffff;
-  --color-stext: #ffffff;
+  --color-stext: rgb(255 255 255 / 0.72);
   --color-accent: #ffffff;
+}
+
+.mobile-bottom-nav a[aria-current='page'] {
+  color: #ffffff;
+}
+
+.site-side-atmosphere {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  display: none;
+}
+
+@media (min-width: 1536px) {
+  .site-side-atmosphere {
+    display: block;
+  }
+}
+
+.site-side-rail {
+  position: absolute;
+  top: 6.5rem;
+  bottom: 5rem;
+  width: 4.75rem;
+  color: var(--color-accent);
+}
+
+.site-side-rail--left {
+  left: max(0.5rem, calc((100vw - 80rem) / 2 - 5.75rem));
+}
+
+.site-side-rail--right {
+  right: max(0.5rem, calc((100vw - 80rem) / 2 - 5.75rem));
+  transform: scaleX(-1);
+}
+
+.site-side-glow {
+  position: absolute;
+  inset: 8% -30%;
+  border-radius: 999px;
+  background: radial-gradient(ellipse at center, rgb(139 164 255 / 0.16), transparent 68%);
+  animation: site-side-breathe 9s ease-in-out infinite;
+}
+
+.light .site-side-glow {
+  background: radial-gradient(ellipse at center, rgb(59 104 252 / 0.12), transparent 70%);
+}
+
+.site-side-seam {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  transform: translateX(-50%);
+  background: linear-gradient(
+    180deg,
+    transparent,
+    rgb(251 191 36 / 0.35) 18%,
+    rgb(139 164 255 / 0.28) 50%,
+    rgb(251 191 36 / 0.35) 82%,
+    transparent
+  );
+}
+
+.site-side-vector {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.site-side-stitch {
+  animation: site-side-dash 14s linear infinite;
+}
+
+.site-side-gem {
+  fill: var(--color-gold);
+  opacity: 0.55;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.site-side-gem--a {
+  animation: site-side-twinkle 5.5s ease-in-out infinite;
+}
+
+.site-side-gem--b {
+  animation: site-side-twinkle 7s ease-in-out 1.2s infinite;
+}
+
+.site-side-gem--c {
+  animation: site-side-twinkle 6.2s ease-in-out 2.4s infinite;
+}
+
+@keyframes site-side-breathe {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(0.96);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes site-side-dash {
+  to {
+    stroke-dashoffset: -120;
+  }
+}
+
+@keyframes site-side-twinkle {
+  0%,
+  100% {
+    opacity: 0.28;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-side-glow,
+  .site-side-stitch,
+  .site-side-gem {
+    animation: none;
+  }
 }
 
 body {
   background-color: var(--color-background);
-  background-image: none;
+  background-image:
+    radial-gradient(ellipse 28% 60% at 0% 40%, rgb(139 164 255 / 0.07), transparent 70%),
+    radial-gradient(ellipse 28% 60% at 100% 55%, rgb(251 191 36 / 0.05), transparent 70%);
   color: var(--color-foreground, var(--color-mtext));
   font-family: var(--font-sans);
   font-size: 0.9375rem;
@@ -457,7 +591,7 @@ textarea#comment-body:focus-visible {
 .tool-card {
   background-color: var(--color-card);
   border: 1px solid var(--color-lborder);
-  border-radius: 1.25rem;
+  border-radius: var(--radius-md);
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 0.55),
     0 10px 28px rgb(16 24 40 / 0.08),
@@ -503,7 +637,7 @@ textarea#comment-body:focus-visible {
 .tool-input {
   min-height: 3rem;
   width: 100%;
-  border-radius: 0.85rem;
+  border-radius: var(--radius-md);
   border: 1px solid var(--color-input-border);
   background: var(--color-surface-muted);
   padding: 0.7rem 1rem;
@@ -579,7 +713,7 @@ button:disabled,
 
 ::-webkit-scrollbar-thumb {
   background: var(--color-lborder);
-  border-radius: 5px;
+  border-radius: var(--radius-md);
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -1201,7 +1335,7 @@ h3.news-copy[dir="rtl"] {
 .tiptap-editor .ProseMirror pre {
   background: var(--admin-input-bg);
   border: 1px solid var(--admin-border);
-  border-radius: 0.375rem;
+  border-radius: var(--radius-md);
   padding: 0.75rem 1rem;
   font-family: "JetBrains Mono", monospace;
   font-size: 0.8rem;
@@ -1219,7 +1353,7 @@ h3.news-copy[dir="rtl"] {
 .tiptap-editor .ProseMirror img {
   max-width: 100%;
   height: auto;
-  border-radius: 0.5rem;
+  border-radius: var(--radius-md);
   margin: 0.75rem 0;
 }
 .tiptap-editor .ProseMirror a {
@@ -1234,7 +1368,7 @@ h3.news-copy[dir="rtl"] {
 }
 .tiptap-editor .ProseMirror mark {
   background: rgba(255,212,0,0.3);
-  border-radius: 0.15rem;
+  border-radius: var(--radius-md);
   padding: 0.1rem 0.2rem;
 }
 
@@ -1318,7 +1452,7 @@ h3.news-copy[dir="rtl"] {
 .tiptap-content pre {
   background: var(--color-elevated);
   border: 1px solid var(--color-lborder);
-  border-radius: 0.375rem;
+  border-radius: var(--radius-md);
   padding: 0.75rem 1rem;
   font-family: var(--font-mono);
   font-size: 0.85rem;
@@ -1430,7 +1564,7 @@ h3.news-copy[dir="rtl"] {
   color: var(--color-text-primary) !important;
   border: 1px solid var(--color-border) !important;
   border-left: 3px solid var(--color-info) !important;
-  border-radius: 6px !important;
+  border-radius: var(--radius-md) !important;
   box-shadow: var(--elevation-overlay) !important;
   font-family: var(--font-sans) !important;
   font-size: 13px !important;
@@ -1470,13 +1604,13 @@ h3.news-copy[dir="rtl"] {
 .table-scroll::-webkit-scrollbar-track,
 :has(> table)::-webkit-scrollbar-track {
   background: var(--admin-input-bg, var(--color-elevated));
-  border-radius: 999px;
+  border-radius: var(--radius-md);
 }
 
 .table-scroll::-webkit-scrollbar-thumb,
 :has(> table)::-webkit-scrollbar-thumb {
   background: var(--admin-text-muted, var(--color-stext));
-  border-radius: 999px;
+  border-radius: var(--radius-md);
 }
 
 .table-scroll::-webkit-scrollbar-thumb:hover,

@@ -4,13 +4,28 @@ export function finite(value: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-/** Cricket overs `10.3` means 10 overs + 3 balls (not 10.3 decimal overs). */
+/** Cricket overs `10.3` means 10 overs + 3 balls (not 10.3 decimal overs). `0.6` is 1.0. */
 export function oversToBalls(overs: number): number | null {
   if (!Number.isFinite(overs) || overs < 0) return null;
   const whole = Math.trunc(overs + 1e-9);
-  const ballsPart = Math.round((overs - whole) * 10);
-  if (ballsPart < 0 || ballsPart > 5) return null;
-  return whole * 6 + ballsPart;
+  let ballsPart = Math.round((overs - whole) * 10);
+  if (ballsPart < 0) return null;
+  let completed = whole;
+  if (ballsPart >= 6) {
+    completed += Math.floor(ballsPart / 6);
+    ballsPart %= 6;
+  }
+  return completed * 6 + ballsPart;
+}
+
+export function formatCricketOvers(overs: unknown): string {
+  if (overs === '' || overs === null || overs === undefined) return '';
+  const n = Number(overs);
+  const balls = Number.isFinite(n) ? oversToBalls(n) : null;
+  if (balls === null || balls < 0) return '';
+  const completed = Math.floor(balls / 6);
+  const rem = balls % 6;
+  return rem === 0 ? String(completed) : `${completed}.${rem}`;
 }
 
 export function ballsToDecimalOvers(balls: number): number | null {

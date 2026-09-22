@@ -1,6 +1,8 @@
 import EmptyState from '../EmptyState';
+import { currentRunRate, formatRate } from '../../lib/cricketMath';
 import BallTracker from '../BallTracker';
 import { extractBalls } from '../MatchTimeline';
+import { extractInningsScorecards, extractSquads } from '../../lib/matchCentreData';
 import { RelatedNewsPanel } from './RelatedNewsPanel';
 import type {
   BattingRow,
@@ -9,7 +11,6 @@ import type {
   LiveBatsman,
   LiveBowler,
   NewsArticle,
-  OverSummary,
 } from '../../types';
 
 function asList(value: unknown): Array<Record<string, unknown>> {
@@ -40,7 +41,10 @@ export function LiveStrip({ match }: { match: Record<string, unknown> }) {
   const pair = match.partnership && typeof match.partnership === 'object'
     ? (match.partnership as { runs?: number; balls?: number })
     : null;
-  const crr = match.currentRunRate ?? (match.currentInnings as { runRate?: number } | undefined)?.runRate;
+  const innings = match.currentInnings as { runRate?: number; runs?: number; overs?: number } | undefined;
+  const crrRaw = Number(match.currentRunRate ?? innings?.runRate);
+  const crrComputed = currentRunRate(Number(innings?.runs) || 0, Number(innings?.overs) || 0);
+  const crr = Number.isFinite(crrRaw) && crrRaw > 0 ? crrRaw : crrComputed;
   const rrr = match.requiredRunRate;
   const recent = Array.isArray(match.recentBalls) ? match.recentBalls.map(String) : [];
   if (!batsmen.length && !bowler && !pair && !hasValue(crr) && !hasValue(rrr) && recent.length === 0) return null;
@@ -78,7 +82,7 @@ export function LiveStrip({ match }: { match: Record<string, unknown> }) {
         <div className="rounded-xl bg-card p-3 ring-1 ring-lborder">
           <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-stext">Rates</p>
           <p className="text-sm text-mtext">
-            {hasValue(crr) ? `CRR ${crr}` : ''}
+            {hasValue(crr) ? `CRR ${formatRate(Number(crr))}` : ''}
             {hasValue(crr) && hasValue(rrr) ? ' · ' : ''}
             {hasValue(rrr) ? `RRR ${rrr}` : ''}
           </p>
@@ -94,74 +98,125 @@ export function LiveStrip({ match }: { match: Record<string, unknown> }) {
   );
 }
 
-export function ScorecardPanel({ match }: { match: Record<string, unknown> }) {
+function cell(value: unknown): string {
+  if (value === null || value === undefined || value === '') return '—';
+  return String(value);
+}
+
+function ScoreTable({
+  title,
+  team,
+  headers,
+  rows,
+}: {
+  title: string;
+  team: string;
+  headers: string[];
+  rows: string[][];
+}) {
+  if (rows.length === 0) return null;
+  return (
+    <div className="overflow-x-auto rounded-2xl bg-card ring-1 ring-lborder">
+      <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-lborder px-4 py-3">
+        <p className="text-sm font-bold text-mtext">{title}</p>
+        <p className="text-xs font-semibold uppercase tracking-wider text-stext">{team}</p>
+      </div>
+      <table className="w-full min-w-[560px] table-fixed text-sm">
+        <colgroup>
+          <col className="w-[40%]" />
+          {headers.slice(1).map((header) => (
+            <col key={header} className="w-[12%]" />
+          ))}
+        </colgroup>
+        <thead>
+          <tr className="border-b border-lborder bg-secondary/50 text-xs font-semibold uppercase tracking-wider text-stext">
+            {headers.map((header, index) => (
+              <th
+                key={header}
+                scope="col"
+                className={`px-3 py-2.5 ${index === 0 ? 'pl-4 text-left' : 'text-right'} ${index === headers.length - 1 ? 'pr-4' : ''}`}
+              >
+                {header}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((cols, rowIndex) => (
+            <tr key={`${cols[0]}-${rowIndex}`} className="border-b border-lborder/60 last:border-0">
+              {cols.map((col, index) => (
+                <td
+                  key={`${rowIndex}-${index}`}
+                  className={`px-3 py-2.5 ${index === 0 ? 'pl-4 text-left text-mtext' : 'text-right font-mono tabular-nums text-mtext'} ${index === cols.length - 1 ? 'pr-4' : ''}`}
+                >
+                  {col}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+export function ScorecardPanel({
+  match,
+  timeline,
+}: {
+  match: Record<string, unknown>;
+  timeline?: Record<string, unknown> | null;
+}) {
+  const innings = extractInningsScorecards(match, timeline || null);
   const batting = Array.isArray(match.battingScorecard) ? (match.battingScorecard as BattingRow[]) : [];
   const bowling = Array.isArray(match.bowlingScorecard) ? (match.bowlingScorecard as BowlingRow[]) : [];
   const fow = Array.isArray(match.fallOfWickets) ? (match.fallOfWickets as FallOfWicket[]) : [];
-  if (batting.length === 0 && bowling.length === 0) {
-    return <EmptyState title="Scorecard not in yet" message="Batting and bowling cards appear when the feed sends them." />;
+  const cards = innings.length
+    ? innings
+    : batting.length || bowling.length
+      ? [{ number: 0, label: 'Scorecard', battingTeam: 'Batting', bowlingTeam: 'Bowling', batting, bowling }]
+      : [];
+  if (cards.length === 0) {
+    return (
+      <EmptyState
+        title="Scorecard not in yet"
+        message="Player rows appear from ball-by-ball when Commentary has loaded, or when the feed sends a batting card."
+      />
+    );
   }
   return (
-    <div className="space-y-6">
-      {batting.length > 0 && (
-        <div className="overflow-x-auto rounded-2xl bg-card ring-1 ring-lborder">
-          <table className="w-full min-w-[520px] text-left text-sm">
-            <thead>
-              <tr className="border-b border-lborder text-xs uppercase tracking-wider text-stext">
-                <th className="px-4 py-3">Batter</th>
-                <th className="px-3 py-3 text-right">R</th>
-                <th className="px-3 py-3 text-right">B</th>
-                <th className="px-3 py-3 text-right">4s</th>
-                <th className="px-3 py-3 text-right">6s</th>
-                <th className="px-4 py-3 text-right">SR</th>
-              </tr>
-            </thead>
-            <tbody>
-              {batting.map((row, index) => (
-                <tr key={row.id || `${row.name}-${index}`} className="border-b border-lborder/60">
-                  <td className="px-4 py-2.5 text-mtext">
-                    {row.name}
-                    {row.out === false ? <span className="ml-1 text-xs text-accent">not out</span> : null}
-                  </td>
-                  <td className="px-3 py-2.5 text-right font-mono">{row.runs}</td>
-                  <td className="px-3 py-2.5 text-right font-mono">{row.balls}</td>
-                  <td className="px-3 py-2.5 text-right font-mono">{row.fours}</td>
-                  <td className="px-3 py-2.5 text-right font-mono">{row.sixes}</td>
-                  <td className="px-4 py-2.5 text-right font-mono">{row.sr}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-      {bowling.length > 0 && (
-        <div className="overflow-x-auto rounded-2xl bg-card ring-1 ring-lborder">
-          <table className="w-full min-w-[520px] text-left text-sm">
-            <thead>
-              <tr className="border-b border-lborder text-xs uppercase tracking-wider text-stext">
-                <th className="px-4 py-3">Bowler</th>
-                <th className="px-3 py-3 text-right">O</th>
-                <th className="px-3 py-3 text-right">M</th>
-                <th className="px-3 py-3 text-right">R</th>
-                <th className="px-3 py-3 text-right">W</th>
-                <th className="px-4 py-3 text-right">Econ</th>
-              </tr>
-            </thead>
-            <tbody>
-              {bowling.map((row, index) => (
-                <tr key={row.id || `${row.name}-${index}`} className="border-b border-lborder/60">
-                  <td className="px-4 py-2.5 text-mtext">{row.name}</td>
-                  <td className="px-3 py-2.5 text-right font-mono">{row.overs}</td>
-                  <td className="px-3 py-2.5 text-right font-mono">{row.maidens}</td>
-                  <td className="px-3 py-2.5 text-right font-mono">{row.runs}</td>
-                  <td className="px-3 py-2.5 text-right font-mono">{row.wickets}</td>
-                  <td className="px-4 py-2.5 text-right font-mono">{row.econ}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+    <div className="space-y-8">
+      {cards.map((card) => (
+        <section key={`${card.label}-${card.number}`} className="space-y-3">
+          <h3 className="text-sm font-bold text-mtext">{card.label}</h3>
+          <ScoreTable
+            title="Batting"
+            team={card.battingTeam || 'Batting side'}
+            headers={['Batter', 'Runs', 'Balls', '4s', '6s', 'SR']}
+            rows={card.batting.map((row) => [
+              `${row.name}${row.out === false ? ' (not out)' : ''}`,
+              cell(row.runs),
+              cell(row.balls),
+              cell(row.fours),
+              cell(row.sixes),
+              cell(row.sr),
+            ])}
+          />
+          <ScoreTable
+            title="Bowling"
+            team={card.bowlingTeam || 'Bowling side'}
+            headers={['Bowler', 'Overs', 'Maidens', 'Runs', 'Wickets', 'Econ']}
+            rows={card.bowling.map((row) => [
+              cell(row.name),
+              cell(row.overs),
+              cell(row.maidens),
+              cell(row.runs),
+              cell(row.wickets),
+              cell(row.econ),
+            ])}
+          />
+        </section>
+      ))}
       {fow.length > 0 && (
         <p className="text-sm text-stext">
           Fall of wickets:{' '}
@@ -172,61 +227,42 @@ export function ScorecardPanel({ match }: { match: Record<string, unknown> }) {
   );
 }
 
-export function SquadsPanel({ match, homeName, awayName }: { match: Record<string, unknown>; homeName: string; awayName: string }) {
-  const teams = match.teams;
-  const isObj = teams && typeof teams === 'object' && !Array.isArray(teams);
-  const home = isObj ? sidePlayers((teams as { home?: unknown }).home) : [];
-  const away = isObj ? sidePlayers((teams as { away?: unknown }).away) : [];
-  const extras = sidePlayers(match.lineup || match.squads || match.xi);
-  if (home.length === 0 && away.length === 0 && extras.length === 0) {
-    return <EmptyState title="XI not listed" message="Playing XI appears when the feed confirms the sides." />;
-  }
+function SquadList({ name, players }: { name: string; players: string[] }) {
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-      {home.length > 0 && (
-        <div className="rounded-2xl bg-card p-5 ring-1 ring-lborder">
-          <p className="mb-2 text-xs font-bold uppercase tracking-wider text-stext">{homeName}</p>
-          <p className="text-sm leading-7 text-mtext">{home.join(', ')}</p>
-        </div>
-      )}
-      {away.length > 0 && (
-        <div className="rounded-2xl bg-card p-5 ring-1 ring-lborder">
-          <p className="mb-2 text-xs font-bold uppercase tracking-wider text-stext">{awayName}</p>
-          <p className="text-sm leading-7 text-mtext">{away.join(', ')}</p>
-        </div>
-      )}
-      {extras.length > 0 && home.length === 0 && (
-        <p className="sm:col-span-2 text-sm leading-7 text-mtext">{extras.join(', ')}</p>
+    <div className="rounded-2xl bg-card p-5 ring-1 ring-lborder">
+      <p className="mb-3 text-xs font-bold uppercase tracking-wider text-stext">{name}</p>
+      {players.length > 0 ? (
+        <ol className="space-y-1.5 text-sm text-mtext">
+          {players.map((player, index) => (
+            <li key={`${player}-${index}`} className="flex gap-2">
+              <span className="w-5 shrink-0 font-mono text-xs text-stext">{index + 1}</span>
+              <span>{player}</span>
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <p className="text-sm text-stext">Playing XI is not in the feed yet for this side.</p>
       )}
     </div>
   );
 }
 
-export function StatsPanel({ match }: { match: Record<string, unknown> }) {
-  const inn = match.currentInnings && typeof match.currentInnings === 'object'
-    ? (match.currentInnings as Record<string, unknown>)
-    : {};
-  const rows = [
-    hasValue(match.target) ? ['Target', String(match.target)] : null,
-    hasValue(inn.runRate) ? ['Current run rate', String(inn.runRate)] : null,
-    hasValue(match.currentRunRate) ? ['CRR', String(match.currentRunRate)] : null,
-    hasValue(match.requiredRunRate) ? ['Required run rate', String(match.requiredRunRate)] : null,
-    Array.isArray(match.overSummary) && match.overSummary.length
-      ? ['Overs logged', String((match.overSummary as OverSummary[]).length)]
-      : null,
-  ].filter((row): row is [string, string] => row !== null);
-
-  if (rows.length === 0) {
-    return <EmptyState title="No extra stats yet" message="Run rates and targets show once the innings is underway." />;
-  }
+export function SquadsPanel({
+  match,
+  homeName,
+  awayName,
+  timeline,
+}: {
+  match: Record<string, unknown>;
+  homeName: string;
+  awayName: string;
+  timeline?: Record<string, unknown> | null;
+}) {
+  const extracted = extractSquads(match, timeline || null);
   return (
-    <div className="rounded-2xl bg-card p-5 ring-1 ring-lborder">
-      {rows.map(([label, value]) => (
-        <div key={label} className="flex justify-between gap-4 border-b border-lborder/60 py-2.5 last:border-0">
-          <span className="text-xs uppercase tracking-wider text-stext">{label}</span>
-          <span className="font-mono text-sm font-semibold text-mtext">{value}</span>
-        </div>
-      ))}
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <SquadList name={homeName} players={extracted.home} />
+      <SquadList name={awayName} players={extracted.away} />
     </div>
   );
 }
@@ -248,8 +284,14 @@ export function MatchNewsPanel({
   );
 }
 
-export function OversFromTimeline({ timeline }: { timeline: Record<string, unknown> | null }) {
-  const balls = extractBalls(timeline);
+export function OversFromTimeline({
+  timeline,
+  inning,
+}: {
+  timeline: Record<string, unknown> | null;
+  inning?: number;
+}) {
+  const balls = extractBalls(timeline, inning ? { inning } : undefined);
   if (balls.length === 0) return null;
   return (
     <div className="mt-4">

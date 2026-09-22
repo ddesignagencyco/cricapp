@@ -109,7 +109,6 @@ export default function HomePredictions({ picks }: { picks: HomePredictionPick[]
 
         {others.length > 0 && (
           <div className="flex flex-col gap-2.5">
-            <p className="text-[11px] font-bold uppercase tracking-widest text-stext">Also on the board</p>
             {others.map((pick) => {
               const id = matchIdOf(pick.match);
               const nextSides = matchSides(pick.match);

@@ -288,7 +288,7 @@ export function GalleryPageSkeleton() {
       </div>
       <div className="columns-2 gap-3 sm:columns-3 lg:columns-4 [&>*]:mb-3">
         {Array.from({ length: 10 }).map((_, i) => (
-          <Skeleton key={i} height={i % 3 === 0 ? 210 : 150} borderRadius={16} className="!block" />
+          <Skeleton key={i} height={i % 3 === 0 ? 210 : 150} borderRadius={4} className="!block" />
         ))}
       </div>
     </Page>
@@ -519,28 +519,28 @@ export function FavoritesPageSkeleton() {
         <Skeleton width={100} height={10} />
         <Skeleton width={160} height={32} className="mt-2" />
         <div className="mt-5 flex flex-wrap gap-2">
-          <Skeleton width={90} height={28} borderRadius={8} />
-          <Skeleton width={75} height={28} borderRadius={8} />
-          <Skeleton width={80} height={28} borderRadius={8} />
+          <Skeleton width={90} height={28} borderRadius={4} />
+          <Skeleton width={75} height={28} borderRadius={4} />
+          <Skeleton width={80} height={28} borderRadius={4} />
         </div>
         <div className="mt-4 flex gap-1.5 border-t border-lborder/50 pt-3">
-          <Skeleton width={50} height={28} borderRadius={8} />
-          <Skeleton width={60} height={28} borderRadius={8} />
-          <Skeleton width={55} height={28} borderRadius={8} />
+          <Skeleton width={50} height={28} borderRadius={4} />
+          <Skeleton width={60} height={28} borderRadius={4} />
+          <Skeleton width={55} height={28} borderRadius={4} />
         </div>
       </Card>
       {Array.from({ length: 2 }).map((_, s) => (
         <div key={s} className="mb-8">
           <div className="mb-4 flex items-center gap-2.5">
-            <Skeleton width={32} height={32} borderRadius={8} />
+            <Skeleton width={32} height={32} borderRadius={4} />
             <Skeleton width={80} height={18} />
-            <Skeleton width={24} height={20} borderRadius={6} />
+            <Skeleton width={24} height={20} borderRadius={4} />
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
             {Array.from({ length: 3 }).map((_, i) => (
               <Card key={i} className="p-4">
                 <div className="flex items-center gap-4">
-                  <Skeleton width={56} height={56} borderRadius={12} />
+                  <Skeleton width={56} height={56} borderRadius={4} />
                   <div className="flex-1">
                     <Skeleton width="70%" height={14} />
                     <Skeleton width="50%" height={10} className="mt-2" />
@@ -795,6 +795,157 @@ export type AdminLoadingVariant =
 
 export function AdminRouteSkeleton(_props: { variant?: AdminLoadingVariant }) {
   return <AdminLoader />;
+}
+
+export function PredictionMatchCardSkeleton() {
+  return (
+    <div className="prediction-card flex h-full flex-col rounded-xl border border-lborder/80 bg-card p-5">
+      <div className="mb-4 flex items-center justify-between gap-2">
+        <Skeleton width="42%" height={10} />
+        <Skeleton width={64} height={18} borderRadius={999} />
+      </div>
+      <div className="mb-4 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <Skeleton circle width={36} height={36} />
+          <Skeleton width="70%" height={12} />
+        </div>
+        <Skeleton width={16} height={8} />
+        <div className="flex min-w-0 items-center justify-end gap-2.5">
+          <Skeleton width="70%" height={12} />
+          <Skeleton circle width={36} height={36} />
+        </div>
+      </div>
+      <Skeleton width="55%" height={22} />
+      <Skeleton width="40%" height={10} className="mt-1.5" />
+      <Skeleton height={10} className="mt-5" />
+      <div className="mt-5 grid grid-cols-3 justify-items-center gap-4">
+        <div className="text-center">
+          <Skeleton circle width={56} height={56} />
+          <Skeleton width={56} height={8} className="mt-1.5" />
+        </div>
+        <div className="text-center">
+          <Skeleton circle width={56} height={56} />
+          <Skeleton width={52} height={8} className="mt-1.5" />
+        </div>
+        <div className="text-center">
+          <Skeleton circle width={56} height={56} />
+          <Skeleton width={60} height={8} className="mt-1.5" />
+        </div>
+      </div>
+      <div className="mt-4 rounded-lg bg-surface-muted px-3 py-2.5">
+        <Skeleton height={10} />
+        <Skeleton width="80%" height={10} className="mt-1.5" />
+      </div>
+      <div className="mt-auto grid grid-cols-2 gap-x-5 gap-y-3 border-t border-lborder/80 pt-5">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="min-w-0">
+            <Skeleton width={48} height={8} />
+            <Skeleton width="85%" height={11} className="mt-1" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function PredictionsHubSkeleton() {
+  return (
+    <Page className="space-y-6">
+      <header>
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <Skeleton width={220} height={36} />
+            <Skeleton width={280} height={14} className="mt-3" />
+          </div>
+          <Skeleton width={72} height={12} />
+        </div>
+      </header>
+      <div className="flex flex-wrap items-center gap-2 border-b border-lborder pb-3">
+        <Skeleton width={88} height={32} />
+        <Skeleton width={112} height={32} />
+      </div>
+      <div className="grid items-stretch gap-4 [grid-template-columns:repeat(auto-fill,minmax(min(100%,20rem),1fr))]">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <PredictionMatchCardSkeleton key={i} />
+        ))}
+      </div>
+    </Page>
+  );
+}
+
+export function PredictionsDetailSkeleton() {
+  return (
+    <Page className="space-y-5">
+      <Skeleton width={220} height={12} />
+      <div className="overflow-hidden rounded-md border border-lborder bg-card">
+        <div className="flex items-center justify-between gap-2 border-b border-lborder bg-secondary px-4 py-2.5 sm:px-6">
+          <Skeleton width="55%" height={10} />
+          <Skeleton width={72} height={18} borderRadius={999} />
+        </div>
+        <div className="p-5 sm:p-6">
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 sm:gap-6">
+            <div className="flex items-center gap-3">
+              <Skeleton circle width={56} height={56} />
+              <div className="min-w-0 flex-1">
+                <Skeleton width="70%" height={14} />
+                <Skeleton width={64} height={22} className="mt-2" />
+              </div>
+            </div>
+            <Skeleton width={20} height={10} />
+            <div className="flex items-center justify-end gap-3">
+              <div className="min-w-0 flex-1 text-right">
+                <Skeleton width="70%" height={14} containerClassName="flex justify-end" />
+                <Skeleton width={64} height={22} className="mt-2" containerClassName="flex justify-end" />
+              </div>
+              <Skeleton circle width={56} height={56} />
+            </div>
+          </div>
+          <Skeleton height={10} className="mt-5" />
+          <div className="mt-5 rounded-md border border-lborder bg-secondary px-4 py-3">
+            <Skeleton width="40%" height={24} containerClassName="flex justify-center" />
+            <Skeleton width="55%" height={12} className="mt-2" containerClassName="flex justify-center" />
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <div className="rounded-md border border-lborder p-3">
+              <Skeleton width={72} height={10} />
+              <Skeleton height={16} className="mt-2" />
+            </div>
+            <div className="rounded-md border border-lborder p-3">
+              <Skeleton width={48} height={10} />
+              <Skeleton height={16} className="mt-2" />
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="space-y-5">
+          <Card className="p-5">
+            <Skeleton width={140} height={14} />
+            <Skeleton height={220} className="mt-4" />
+          </Card>
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+            <Card className="p-5">
+              <Skeleton width={100} height={14} />
+              <Skeleton height={14} className="mt-4" />
+              <Skeleton height={14} className="mt-2" />
+              <Skeleton height={14} className="mt-2" />
+            </Card>
+            <Card className="p-5">
+              <Skeleton width={88} height={14} />
+              <Skeleton height={14} className="mt-4" />
+              <Skeleton height={14} className="mt-2" />
+              <Skeleton height={14} className="mt-2" />
+            </Card>
+          </div>
+        </div>
+        <Card className="p-5">
+          <Skeleton width={96} height={14} />
+          <Skeleton height={72} className="mt-4" />
+          <Skeleton height={72} className="mt-3" />
+        </Card>
+      </div>
+    </Page>
+  );
 }
 
 export function AdminLoadingBody(_props: { variant?: AdminLoadingVariant }) {

@@ -13,15 +13,12 @@ import RemoteImage from '../../components/RemoteImage';
 import NewsCopy from '../../components/NewsCopy';
 import Badge, { StatusBadge } from '../../components/Badge';
 
-import HomePredictions, { type HomePredictionPick } from '../../components/predictions/HomePredictions';
-import { featuredRun } from '../../lib/predictions';
+import { fetchGalleryPage } from '../../services/gallery';
 import { fetchLiveMatches, fetchMatches } from '../../services/matches';
 import { fetchNews } from '../../services/news';
-import { fetchPredictionsByMatchIds } from '../../services/predictions';
 import { newsHref } from '../../utils/newsConstraints';
 import { fetchPslLeaders, fetchPslStandings } from '../../services/psl';
 import { fetchStreams } from '../../services/streams';
-import type { Match } from '../../types';
 
 export const revalidate = 60;
 
@@ -43,22 +40,21 @@ export default async function HomePage() {
   const results = await Promise.allSettled([
       fetchLiveMatches(),
       fetchMatches({ status: 'upcoming', limit: 20 }),
-      fetchMatches({ status: 'completed', limit: 60 }),
-      fetchMatches({ limit: 20 }),
+      fetchMatches({ status: 'completed', limit: 20 }),
       fetchNews(),
       fetchPslStandings(),
       fetchPslLeaders(),
       fetchStreams({ limit: 8 }),
+      fetchGalleryPage({ page: 1, limit: 6, type: 'image' }),
     ] as const);
   const liveMatches = results[0].status === 'fulfilled' ? results[0].value : [];
   const upcomingMatches = results[1].status === 'fulfilled' ? results[1].value : [];
   const completedMatches = results[2].status === 'fulfilled' ? results[2].value : [];
-  const allMatches = results[3].status === 'fulfilled' ? results[3].value : [];
-  const newsList = results[4].status === 'fulfilled' ? results[4].value : [];
-  const standings = results[5].status === 'fulfilled' ? results[5].value : [];
-  const pslLeaders = results[6].status === 'fulfilled' ? results[6].value : [];
-  const streams = results[7].status === 'fulfilled' ? results[7].value : [];
-  const galleryPhotos = (newsList || []).filter((item) => item.image).slice(0, 6);
+  const newsList = results[3].status === 'fulfilled' ? results[3].value : [];
+  const standings = results[4].status === 'fulfilled' ? results[4].value : [];
+  const pslLeaders = results[5].status === 'fulfilled' ? results[5].value : [];
+  const streams = results[6].status === 'fulfilled' ? results[6].value : [];
+  const galleryPhotos = results[7].status === 'fulfilled' ? results[7].value.items : [];
 
   const live = liveMatches || [];
   const upcoming = (upcomingMatches || []).slice(0, 5);
@@ -69,7 +65,6 @@ export default async function HomePage() {
         new Date(b.scheduled || b.date).getTime() - new Date(a.scheduled || a.date).getTime()
     );
   const completed = completedAll.slice(0, 3);
-  const all = allMatches || [];
 
   const upcomingFuture = (upcomingMatches || []).filter((m: any) => {
     const s = new Date(m.scheduled || m.date).getTime();
@@ -97,30 +92,13 @@ export default async function HomePage() {
   const nextUpcoming = (upcomingMatches || [])[0] || null;
   const pslStandings = [...(standings || [])].sort((a: any, b: any) => (a.rank ?? 999) - (b.rank ?? 999));
 
-  const predictionCandidates = new Map<string, Match>();
-  for (const match of [...live, ...(upcomingMatches || []).slice(0, 8)]) {
-    const id = String(match.matchId || match.id || '');
-    if (id) predictionCandidates.set(id, match);
-  }
-  const predictionMatches = [...predictionCandidates.values()].slice(0, 8);
-  const predictionById = await fetchPredictionsByMatchIds(
-    predictionMatches.map((match) => String(match.matchId || match.id))
-  );
-  const predictionRows = predictionMatches.map((match) => {
-    const run = featuredRun(predictionById.get(String(match.matchId || match.id)) ?? null);
-    return run ? ({ match, run } satisfies HomePredictionPick) : null;
-  });
-  const predictionPicks = predictionRows.filter((row): row is HomePredictionPick => row !== null);
-
   return (
     <div className="min-h-screen">
       <MatchTickerBar matches={tickerMatches} />
-      <CricketHero match={nextUpcoming || all[0]} />
+      <CricketHero match={nextUpcoming || live[0] || completed[0]} />
 
       <div className="flex flex-col gap-12 pt-12 pb-12">
       <LiveNowSection matches={live} />
-
-      <HomePredictions picks={predictionPicks} />
 
       {streams.length > 0 && (
         <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
@@ -289,7 +267,14 @@ export default async function HomePage() {
             {galleryPhotos.map((item) => (
               <Link key={item.id} href="/gallery?tab=images" className="group overflow-hidden rounded-2xl bg-card ring-1 ring-lborder">
                 <div className="relative aspect-square bg-secondary">
-                  <RemoteImage src={item.image as string} alt={item.title} fill sizes="180px" fit="contain" className="news-image" />
+                  <RemoteImage
+                    src={item.thumbnailUrl || item.url}
+                    alt={item.title || 'Gallery image'}
+                    fill
+                    sizes="180px"
+                    fit="contain"
+                    className="news-image"
+                  />
                 </div>
               </Link>
             ))}

@@ -53,7 +53,7 @@ function chunkPlain(text: string): string[] {
   return chunks.filter((chunk) => chunk.length > 0);
 }
 
-async function mapPool<T, R>(items: T[], limit: number, worker: (item: T) => Promise<R>): Promise<R[]> {
+async function mapPool<T, R>(items: T[], limit: number, worker: (_item: T) => Promise<R>): Promise<R[]> {
   const results: R[] = new Array(items.length);
   let next = 0;
   async function run(): Promise<void> {

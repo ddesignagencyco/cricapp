@@ -58,14 +58,14 @@ export default function MobileBottomNav() {
             type="button"
             onClick={toggleMore}
             className={`flex min-h-14 w-full flex-col items-center justify-center gap-0.5 px-1 text-[11px] font-semibold ${
-              moreOpen ? 'text-accent' : 'text-stext'
+              moreOpen ? 'text-white' : 'text-white/70'
             }`}
-            aria-label={moreOpen ? 'Close more navigation' : 'Open more navigation'}
+            aria-label={moreOpen ? 'Close browse menu' : 'Open browse menu'}
             aria-expanded={moreOpen}
             aria-controls="mobile-navigation"
           >
-            <Menu size={18} />
-            More
+            <Menu size={18} strokeWidth={moreOpen ? 2.4 : 2} />
+            Browse
           </button>
         </li>
       </ul>

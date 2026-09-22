@@ -77,7 +77,7 @@ const selectStyles = {
     minHeight: '38px',
     backgroundColor: 'var(--admin-input-bg)',
     borderColor: state.isFocused ? 'var(--color-focus-ring)' : 'var(--admin-border)',
-    borderRadius: '0.375rem',
+    borderRadius: '0.25rem',
     boxShadow: state.isFocused
       ? '0 0 0 3px color-mix(in srgb, var(--color-focus-ring) 28%, transparent)'
       : 'none',
@@ -96,7 +96,7 @@ const selectStyles = {
     ...base,
     backgroundColor: 'var(--admin-card)',
     border: '1px solid var(--admin-border)',
-    borderRadius: '0.375rem',
+    borderRadius: '0.25rem',
     boxShadow: 'var(--elevation-overlay)',
     overflow: 'hidden',
     zIndex: 30,

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { BarChart3, Calendar, ClipboardList, Clock, FileText, MapPin, Newspaper, Radio, Sparkles, Swords, Trophy, Users } from 'lucide-react';
+import { Calendar, ClipboardList, Clock, FileText, MapPin, Newspaper, Radio, Sparkles, Swords, Trophy, Users } from 'lucide-react';
 import LiveIndicator from '../LiveIndicator';
 import { StatusBadge } from '../Badge';
 import Tabs from '../Tabs';
@@ -20,9 +20,10 @@ import {
   OversFromTimeline,
   ScorecardPanel,
   SquadsPanel,
-  StatsPanel,
 } from './MatchCentrePanels';
 import { formatScheduled, getInitials } from '../../utils/helpers';
+import { formatCricketOvers } from '../../lib/cricketMath';
+import { buildMatchScoreboard, describeMatchResult } from '../../lib/matchScoreboard';
 import { matchStatusLabel } from '../../lib/predictions';
 import { fetchMatchTimeline, matchSideIds } from '../../services/matches';
 import { fetchHeadToHead } from '../../services/headToHead';
@@ -39,7 +40,6 @@ const detailTabs = [
   { key: 'scorecard', label: 'Scorecard', icon: ClipboardList },
   { key: 'commentary', label: 'Commentary', icon: Radio },
   { key: 'squads', label: 'Squads', icon: FileText },
-  { key: 'stats', label: 'Stats', icon: BarChart3 },
   { key: 'predictions', label: 'Predictions', icon: Sparkles },
   { key: 'h2h', label: 'Head to Head', icon: Swords },
   { key: 'news', label: 'News', icon: Newspaper },
@@ -51,7 +51,6 @@ const completedTabs = [
   { key: 'scorecard', label: 'Scorecard', icon: ClipboardList },
   { key: 'commentary', label: 'Commentary', icon: Radio },
   { key: 'squads', label: 'Squads', icon: FileText },
-  { key: 'stats', label: 'Stats', icon: BarChart3 },
   { key: 'h2h', label: 'Head to Head', icon: Swords },
   { key: 'news', label: 'News', icon: Newspaper },
   { key: 'info', label: 'Match Info', icon: MapPin },
@@ -129,7 +128,7 @@ export default function MatchDetailBody({ match: initialMatch }: Props) {
   const matchId = decodeEntityId(initialMatch?.matchId || initialMatch?.id);
   const { articles: relatedNews, loading: newsLoading } = useLinkedNews({ matchId });
   const liveUpdate = useMatchStream(matchId, initialMatch?.status === 'live');
-  const wantsTimeline = tab === 'commentary' || tab === 'timeline';
+  const wantsTimeline = tab === 'commentary' || tab === 'timeline' || tab === 'scorecard' || tab === 'squads';
   const wantsH2H = tab === 'h2h';
 
   useEffect(() => {
@@ -221,6 +220,7 @@ export default function MatchDetailBody({ match: initialMatch }: Props) {
 
   useEffect(() => {
     if (!showPredictions && tab === 'predictions') setTab(isCompleted || isCancelled ? 'result' : 'live');
+    if (tab === 'stats') setTab('scorecard');
   }, [showPredictions, tab, isCompleted, isCancelled]);
 
   if (!match) {
@@ -239,64 +239,51 @@ export default function MatchDetailBody({ match: initialMatch }: Props) {
   const awayName = away.name;
 
   const inn = match.currentInnings;
-  const battingCode = String(inn?.battingTeam || '');
-  const sideMatches = (side: { code: string; name: string; raw: string }, value: string) => {
-    const needle = String(value || '').replace(/^sr:competitor:/, '').toLowerCase();
-    if (!needle) return false;
-    return [side.code, side.name, side.raw].some((part) => {
-      const hay = String(part || '').replace(/^sr:competitor:/, '').toLowerCase();
-      return hay === needle || hay.startsWith(needle) || needle.startsWith(hay);
-    });
-  };
   const phaseRaw = String(match.matchStatus || '');
   const phase = matchStatusLabel(phaseRaw);
-  const battingFromStatus = /second_innings_home|first_innings_home|home_batting/i.test(phaseRaw)
-    ? 'home'
-    : /second_innings_away|first_innings_away|away_batting/i.test(phaseRaw)
-      ? 'away'
-      : null;
-  const battingIsHome = battingFromStatus === 'home'
-    || battingFromStatus === 'away'
-      ? battingFromStatus === 'home'
-      : Boolean(battingCode) && sideMatches(home, battingCode)
-        ? true
-        : Boolean(battingCode) && sideMatches(away, battingCode)
-          ? false
-          : true;
   const timelineSummary = matchSummary(timeline);
   const displayScore = usefulScore(match.displayScore) || usefulScore(timelineSummary.displayScore);
-  const parsedScore = String(displayScore).replace(/\s+/g, '').match(/^(\d+)\/(\d+)/);
-  const innRuns = Number(inn?.runs);
-  const innWkts = Number(inn?.wickets);
-  const innOvers = Number(inn?.overs);
-  const innRr = Number(inn?.runRate);
-  const usefulInnScore = Number.isFinite(innRuns) && innRuns > 0;
-  const scoreLine = usefulInnScore
-    ? `${innRuns}/${Number.isFinite(innWkts) ? innWkts : 0}`
-    : parsedScore
-      ? `${parsedScore[1]}/${parsedScore[2]}`
-      : '';
-  const usefulOvers = Number.isFinite(innOvers) && innOvers > 0;
-  const usefulRr = Number.isFinite(innRr) && innRr > 0;
+  const board = buildMatchScoreboard({
+    home: {
+      code: home.code,
+      name: home.name,
+      raw: home.raw,
+      score: home.score || timelineSummary.homeScore,
+      overs: home.overs,
+    },
+    away: {
+      code: away.code,
+      name: away.name,
+      raw: away.raw,
+      score: away.score || timelineSummary.awayScore,
+      overs: away.overs,
+    },
+    battingTeam: String(inn?.battingTeam || ''),
+    matchStatus: phaseRaw,
+    innRuns: Number(inn?.runs),
+    innWkts: Number(inn?.wickets),
+    innOvers: Number(inn?.overs),
+    innRr: Number(inn?.runRate),
+    displayScore,
+    live: !isUpcoming,
+  });
+  const {
+    homeScore,
+    awayScore,
+    homeOvers,
+    awayOvers,
+    scoreLine,
+    oversLabel,
+    rrLabel,
+    battingLabel,
+  } = board;
+  const usefulOvers = Boolean(oversLabel);
+  const usefulRr = Boolean(rrLabel && rrLabel !== '—');
   const hasInnings = Boolean(scoreLine) || usefulOvers;
-  const battingLabel = battingIsHome ? homeCode : awayCode;
-  const resultText = usefulResultText(match.result) || usefulResultText(timelineSummary.result);
-
-  let homeScore = home.score || timelineSummary.homeScore;
-  let awayScore = away.score || timelineSummary.awayScore;
-  let homeOvers: string | number = home.overs;
-  let awayOvers: string | number = away.overs;
-
-  if (!isUpcoming && scoreLine && !homeScore && !awayScore) {
-    if (battingIsHome) {
-      homeScore = scoreLine;
-      homeOvers = usefulOvers ? innOvers : homeOvers;
-    } else {
-      awayScore = scoreLine;
-      awayOvers = usefulOvers ? innOvers : awayOvers;
-    }
-  }
-
+  const resultText =
+    usefulResultText(match.result) ||
+    usefulResultText(timelineSummary.result) ||
+    describeMatchResult(match);
   const finalScoreLine = [homeScore && `${homeCode} ${homeScore}`, awayScore && `${awayCode} ${awayScore}`]
     .filter(Boolean)
     .join('  ·  ') || displayScore;
@@ -376,25 +363,17 @@ export default function MatchDetailBody({ match: initialMatch }: Props) {
         </div>
 
         {hasInnings && scoreLine && (
-          <div className="relative mt-5 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-2xl border border-lborder/60 bg-secondary/80 p-3 text-xs font-semibold text-stext">
-            <span className="flex items-center gap-1.5 text-mtext">
-              <BarChart3 size={14} className="text-accent" />
-              <span className="font-bold text-accent">{battingLabel}</span> {scoreLine}
-            </span>
-            {usefulOvers && (
-              <span className="flex items-center gap-1.5">
-                <Users size={13} className="text-accent" />
-                {innOvers} ov{usefulRr ? ` · RR ${innRr}` : ''}
-              </span>
-            )}
-            {phase && (
-              <span className="capitalize">{phase}</span>
-            )}
-            {match.lastEvent?.type && match.lastEvent.type !== 'none' && (
-              <span className="rounded-lg border border-lborder/60 bg-card px-2 py-1 text-xs font-bold text-mtext">
-                Last: {match.lastEvent.type} +{match.lastEvent.runs ?? 0}
-              </span>
-            )}
+          <div className="relative mt-5 grid grid-cols-2 gap-2 rounded-md border border-lborder/60 bg-secondary/80 p-3 text-xs sm:grid-cols-5">
+            <InningsStat label="Batting" value={battingLabel || '—'} />
+            <InningsStat label="Score" value={scoreLine} />
+            <InningsStat label="Overs" value={usefulOvers ? `${oversLabel} ov` : '—'} />
+            <InningsStat label="RR" value={usefulRr ? rrLabel : '—'} />
+            <InningsStat label="Innings" value={phase || '—'} className="col-span-2 sm:col-span-1" />
+            {match.lastEvent?.type && match.lastEvent.type !== 'none' ? (
+              <p className="col-span-2 text-[11px] font-semibold text-stext sm:col-span-5">
+                Last ball: {match.lastEvent.type} +{match.lastEvent.runs ?? 0}
+              </p>
+            ) : null}
           </div>
         )}
 
@@ -436,17 +415,17 @@ export default function MatchDetailBody({ match: initialMatch }: Props) {
                 <h3 className="mb-4 text-lg font-bold text-mtext">Live Score</h3>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                   <InfoStat label="Score" value={`${battingLabel} ${scoreLine || match.displayScore || '—'}`} big />
-                  <InfoStat label="Overs" value={usefulOvers ? String(innOvers) : '—'} />
-                  <InfoStat label="Run Rate" value={usefulRr ? String(innRr) : '—'} />
+                  <InfoStat label="Overs" value={usefulOvers ? oversLabel : '—'} />
+                  <InfoStat label="Run Rate" value={usefulRr ? rrLabel : '—'} />
                 </div>
-                {match.lastEvent && (
+                {match.lastEvent?.type && match.lastEvent.type !== 'none' && (
                   <p className="mt-4 text-xs text-stext">
-                    Last ball: over {match.lastEvent.over}, {match.lastEvent.runs} run
+                    Last ball: over {formatCricketOvers(match.lastEvent.over) || match.lastEvent.over}, {match.lastEvent.runs} run
                     {match.lastEvent.runs === 1 ? '' : 's'} · {match.lastEvent.type}
                   </p>
                 )}
                 <LiveStrip match={match} />
-                <OversFromTimeline timeline={timeline} />
+                <OversFromTimeline timeline={timeline} inning={/second_innings|2nd/i.test(phaseRaw) ? 2 : 1} />
               </div>
             ) : isUpcoming ? (
               <EmptyState
@@ -483,13 +462,17 @@ export default function MatchDetailBody({ match: initialMatch }: Props) {
             )
           )}
 
-          {tab === 'scorecard' && <ScorecardPanel match={match} />}
-
-          {tab === 'squads' && (
-            <SquadsPanel match={match} homeName={homeName} awayName={awayName} />
+          {tab === 'scorecard' && (
+            timelineLoading || !timelineReady ? <TabPanelLoader /> : <ScorecardPanel match={match} timeline={timeline} />
           )}
 
-          {tab === 'stats' && <StatsPanel match={match} />}
+          {tab === 'squads' && (
+            timelineLoading || !timelineReady ? (
+              <TabPanelLoader />
+            ) : (
+              <SquadsPanel match={match} homeName={homeName} awayName={awayName} timeline={timeline} />
+            )
+          )}
 
           {tab === 'news' && <MatchNewsPanel articles={relatedNews} loading={newsLoading} />}
 
@@ -563,7 +546,7 @@ export default function MatchDetailBody({ match: initialMatch }: Props) {
       </div>
 
       <div className="mt-8">
-        <CommentsSection targetType="match" targetId={String(match.matchId || match.id || '')} />
+        <CommentsSection targetType="match" targetId={matchId || String(match.matchId || match.id || '')} />
       </div>
     </div>
   );
@@ -582,6 +565,23 @@ function TabPanelLoader() {
   );
 }
 
+function InningsStat({
+  label,
+  value,
+  className = '',
+}: {
+  label: string;
+  value: string;
+  className?: string;
+}) {
+  return (
+    <div className={`min-w-0 ${className}`.trim()}>
+      <p className="text-[10px] font-bold uppercase tracking-wider text-stext">{label}</p>
+      <p className="mt-0.5 truncate font-mono text-sm font-bold tabular-nums text-mtext">{value}</p>
+    </div>
+  );
+}
+
 function TeamSide({ code, name, score, overs, align }: { code: string; name: string; score: string; overs: string | number; align: string }) {
   const right = align === 'right';
   return (
@@ -590,10 +590,14 @@ function TeamSide({ code, name, score, overs, align }: { code: string; name: str
       <div className="min-w-0">
         <p className="truncate text-xs font-black tracking-tight text-mtext sm:text-lg">{name}</p>
         {score ? (
-          <p className="mt-0.5 font-mono text-xl font-black tabular-nums leading-none tracking-tighter text-accent sm:text-4xl">
-            {score}
-            {overs ? <span className="ml-1 font-mono text-[10px] font-bold text-stext sm:text-sm">{overs} ov</span> : null}
-          </p>
+          <div className="mt-0.5">
+            <p className="font-mono text-xl font-black tabular-nums leading-none tracking-tighter text-accent sm:text-4xl">
+              {score}
+            </p>
+            {overs ? (
+              <p className="mt-1 font-mono text-[10px] font-bold tabular-nums text-stext sm:text-sm">{overs} ov</p>
+            ) : null}
+          </div>
         ) : (
           <p className="mt-0.5 text-sm text-stext">—</p>
         )}

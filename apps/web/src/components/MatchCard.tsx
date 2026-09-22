@@ -6,6 +6,7 @@ import { StatusBadge, BlinkingDot } from './Badge';
 import RemoteImage from './RemoteImage';
 import EntityAvatar from './EntityAvatar';
 import { formatCricketOvers, formatScheduled, getInitials, getPslLogo } from '../utils/helpers';
+import { describeMatchResult, scoreboardFromMatch } from '../lib/matchScoreboard';
 
 interface MatchCardProps {
   match: any;
@@ -13,94 +14,23 @@ interface MatchCardProps {
   showVenue?: boolean;
 }
 
-function pickSide(match: any, index: 0 | 1) {
-  const teams = match.teams;
-  const isObj = teams && typeof teams === 'object' && !Array.isArray(teams);
-  const side = isObj ? (index === 0 ? teams.home : teams.away) : null;
-  const rawCode =
-    side?.code ||
-    side?.abbr ||
-    side?.shortName ||
-    (Array.isArray(teams) ? teams[index] : '') ||
-    '';
-  const rawName =
-    side?.name ||
-    match.teamNames?.[index] ||
-    '';
-  const name = String(rawName || '').replace(/^sr:competitor:/, '') || 'TBD';
-  const codeStr = String(rawCode || '').replace(/^sr:competitor:/, '');
-  const badCode = !codeStr || /^sr:/.test(codeStr) || codeStr.length > 5;
-  const code = badCode ? getInitials(name) : codeStr.toUpperCase();
-  const score = side?.score || '';
-  const overs = side?.overs || '';
-  return { name, code, score, overs };
-}
-
-function normTeamToken(value: string): string {
-  return String(value || '')
-    .replace(/^sr:competitor:/, '')
-    .trim()
-    .toLowerCase();
-}
-
-function isBattingSide(battingTeam: string | undefined, side: { code: string; name: string }): boolean {
-  const needle = normTeamToken(battingTeam || '');
-  if (!needle) return false;
-  const code = normTeamToken(side.code);
-  const name = normTeamToken(side.name);
-  if (needle === code || needle === name) return true;
-  if (code && (needle.startsWith(code) || code.startsWith(needle))) return true;
-  if (name && (name.includes(needle) || needle.includes(name))) return true;
-  return false;
-}
-
-function liveSideScore(match: any, side: { code: string; name: string }) {
-  const inn = match.currentInnings;
-  if (!inn || !isBattingSide(inn.battingTeam, side)) return { score: '', overs: '' };
-
-  const display = String(match.displayScore || '').trim();
-  const runs = Number(inn.runs);
-  const wickets = Number(inn.wickets);
-  const overs = inn.overs !== null && inn.overs !== undefined ? formatCricketOvers(inn.overs) || String(inn.overs) : '';
-  const missingBattingStats =
-    (!Number.isFinite(runs) || runs === 0) &&
-    (!Number.isFinite(wickets) || wickets === 0) &&
-    Number(inn.overs) >= 1;
-
-  if (display && display !== '0/0' && display !== '0-0') {
-    return { score: display, overs };
-  }
-  if (!missingBattingStats && Number.isFinite(runs) && Number.isFinite(wickets)) {
-    return { score: `${runs}/${wickets}`, overs };
-  }
-  if (display) return { score: display, overs };
-  return { score: '', overs };
-}
-
 export default function MatchCard({ match, compact: _compact = false, showVenue = true }: MatchCardProps) {
-  const home = pickSide(match, 0);
-  const away = pickSide(match, 1);
+  const board = scoreboardFromMatch(match);
+  const home = board.home;
+  const away = board.away;
   const isLive = match.status === 'live';
   const isUpcoming = match.status === 'upcoming';
   const inn = match.currentInnings;
   const { date, time } = formatScheduled(match.scheduled);
   const tournament = match.tournamentName || match.tournament || 'Cricket';
   const venue = match.venue || '';
-  const result = match.result || '';
-
-  const homeLive = isLive ? liveSideScore(match, home) : null;
-  const awayLive = isLive ? liveSideScore(match, away) : null;
-  let homeScore = home.score || homeLive?.score || '';
-  let awayScore = away.score || awayLive?.score || '';
-  const homeOvers = home.overs || homeLive?.overs || '';
-  const awayOvers = away.overs || awayLive?.overs || '';
-  const homeBatting = isLive && isBattingSide(inn?.battingTeam, home);
-  const awayBatting = isLive && isBattingSide(inn?.battingTeam, away);
-  const display = String(match.displayScore || '').trim();
-  if (isLive && !homeScore && !awayScore && display && display !== '0/0' && display !== '0-0') {
-    if (awayBatting) awayScore = display;
-    else homeScore = display;
-  }
+  const result = describeMatchResult(match);
+  const homeScore = board.homeScore;
+  const awayScore = board.awayScore;
+  const homeOvers = board.homeOvers;
+  const awayOvers = board.awayOvers;
+  const homeBatting = isLive && board.battingIsHome;
+  const awayBatting = isLive && !board.battingIsHome;
   const sharedScore = !homeScore && !awayScore && !isUpcoming ? match.displayScore || '' : '';
   const footerRight = isUpcoming && showVenue && venue
     ? venue.split(',')[0]
@@ -144,8 +74,9 @@ export default function MatchCard({ match, compact: _compact = false, showVenue 
           {isLive && inn ? (
             <span className="truncate font-semibold tabular-nums text-danger">
               <BlinkingDot className="mr-1.5 align-middle" />
+              {board.battingLabel ? `${board.battingLabel} batting · ` : ''}
               {inn.overs !== null && inn.overs !== undefined ? `${formatCricketOvers(inn.overs) || inn.overs} ov` : 'In play'}
-              {Number(inn.runRate) > 0 ? ` · RR ${inn.runRate}` : ''}
+              {board.rrLabel && board.rrLabel !== '—' ? ` · RR ${board.rrLabel}` : ''}
             </span>
           ) : (
             <>
@@ -213,6 +144,7 @@ function TeamRow({
       )}
       <p className={`min-w-0 flex-1 truncate text-sm font-semibold ${live ? 'text-accent' : 'text-mtext'}`}>
         {name}
+        {live ? <span className="ml-1.5 align-middle text-[10px] font-bold uppercase tracking-wide">Bat</span> : null}
       </p>
       {score !== null && (
         <div className="min-w-14 shrink-0 text-right">

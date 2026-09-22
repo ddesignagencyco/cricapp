@@ -1,11 +1,12 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import type { ReactNode } from 'react';
+import { Suspense, type ReactNode } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import ScrollTopButton from '../components/ScrollTopButton';
 import MobileBottomNav from './MobileBottomNav';
+import AssistantLauncher from './assistant/AssistantLauncher';
 import DummyAd from './advertisements/DummyAd';
 import { shouldHideDummyAds } from '../lib/advertisements/placements';
 import type { SiteSettings } from '../services/siteSettings';
@@ -65,6 +66,9 @@ export default function ClientLayout({
       <Footer settings={settings} />
       <MobileBottomNav />
       <ScrollTopButton />
+      <Suspense fallback={null}>
+        <AssistantLauncher />
+      </Suspense>
     </>
   );
 }
