@@ -171,9 +171,9 @@ export default function PlayerDetailBody({ player, relatedNews = [] }: Props) {
             <Target size={18} className="text-accent" /> Recent Matches
           </h3>
           {player.recentMatches && player.recentMatches.length > 0 ? (
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
               {player.recentMatches.map((m) => (
-                <MatchCard key={m.matchId} match={m} showVenue={false} />
+                <MatchCard key={m.matchId} match={m} dense showVenue={false} />
               ))}
             </div>
           ) : (

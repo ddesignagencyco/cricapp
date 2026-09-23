@@ -293,7 +293,7 @@ export default function TournamentDetailPageClient({
                     type="button"
                     onClick={() => setSeasonId(item.id)}
                     aria-current={active ? 'true' : undefined}
-                    className={`rounded-full px-4 py-1.5 text-xs font-bold transition-all ${
+                    className={`rounded-full px-4 py-1.5 text-xs font-bold transition-colors duration-[180ms] motion-reduce:transition-none ${
                       active
                         ? 'btn-brand pointer-events-none'
                         : 'bg-card text-stext ring-1 ring-lborder hover:bg-elevated hover:text-mtext'

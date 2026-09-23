@@ -10,7 +10,9 @@ import EmptyState from '../EmptyState';
 import ErrorState from '../ErrorState';
 import Pagination from '../Pagination';
 import DummyAd from '../advertisements/DummyAd';
-import CompareBoard from './CompareBoard';
+import dynamic from 'next/dynamic';
+
+const CompareBoard = dynamic(() => import('./CompareBoard'), { ssr: false });
 import { DirectoryGridSkeleton } from '../skeletons/Skeletons';
 import { withColonEntityQuery } from '../../utils/entityId';
 
@@ -30,6 +32,11 @@ export default function TeamsDirectory() {
   const [error, setError] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
   const [localSearch, setLocalSearch] = useState(search);
+  const [compareOpen, setCompareOpen] = useState(() => {
+    const a = searchParams.get('a');
+    const b = searchParams.get('b');
+    return Boolean(a || b);
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -117,7 +124,28 @@ export default function TeamsDirectory() {
         </div>
       </div>
 
-      <CompareBoard />
+      <div className="rounded-md border border-lborder bg-card p-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-bold text-mtext">Compare teams</p>
+            <p className="text-xs text-stext">Head-to-head records and fixture history between any two sides.</p>
+          </div>
+          {!compareOpen ? (
+            <button
+              type="button"
+              onClick={() => setCompareOpen(true)}
+              className="btn-secondary shrink-0 rounded-md px-4 py-2 text-xs font-semibold"
+            >
+              Open compare
+            </button>
+          ) : null}
+        </div>
+        {compareOpen ? (
+          <div className="mt-4 border-t border-lborder pt-4">
+            <CompareBoard />
+          </div>
+        ) : null}
+      </div>
 
       {!loading && !error && filtered.length > 0 ? (
         <DummyAd size="leaderboard" placement="teams-after-intro" />

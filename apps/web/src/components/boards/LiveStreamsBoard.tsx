@@ -136,7 +136,7 @@ export default function LiveStreamsBoard() {
             <CommentsSection targetType="stream" targetId={featured.id} />
           </div>
           <div className="space-y-4">
-            <div className="rounded-2xl bg-card p-4 ring-1 ring-lborder">
+            <div className="surface-card rounded-md p-4">
               <h3 className="mb-3 text-sm font-bold uppercase tracking-widest text-stext">{total} stream{total === 1 ? '' : 's'}</h3>
               <div className="space-y-2">
                 {streams.map((s) => (
@@ -144,8 +144,10 @@ export default function LiveStreamsBoard() {
                     key={s.id}
                     type="button"
                     onClick={() => setActiveId(s.id)}
-                    className={`flex w-full items-start gap-3 rounded-xl p-2.5 text-left ring-1 transition-all ${
-                      s.id === featured.id ? 'bg-accent/10 ring-accent/40' : 'bg-elevated ring-transparent hover:ring-lborder'
+                    className={`flex w-full items-start gap-3 rounded-md p-2.5 text-left ring-1 transition-[background-color,box-shadow] duration-[180ms] motion-reduce:transition-none ${
+                      s.id === featured.id
+                        ? 'bg-accent/10 ring-accent/40 shadow-sm'
+                        : 'bg-elevated ring-transparent hover:bg-[var(--color-row-hover)] hover:ring-lborder'
                     }`}
                   >
                     <span className="relative h-12 w-[4.5rem] shrink-0 overflow-hidden rounded-md bg-secondary">

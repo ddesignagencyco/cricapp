@@ -39,25 +39,80 @@ export function Skeleton({
 }: SkeletonProps) {
   const tone = useContext(SkeletonToneContext);
   const radius = circle ? '50%' : toCssSize(borderRadius);
+  const lineCount = Math.max(1, count);
+  const multiline = !circle && lineCount > 1;
+  const boneWidth = multiline ? '100%' : toCssSize(width) ?? '100%';
   const boneStyle = {
-    width: toCssSize(width) ?? '100%',
+    width: boneWidth,
     height: toCssSize(height),
     borderRadius: radius,
     lineHeight: 1,
+    display: 'block',
     '--base-color': tone.baseColor || 'var(--color-skeleton)',
     '--highlight-color': tone.highlightColor || 'var(--color-skeleton-highlight)',
     backgroundColor: tone.baseColor || 'var(--color-skeleton)',
     ...style,
   } as CSSProperties;
 
+  const wrapperClass = [
+    circle ? 'inline-block shrink-0 leading-none' : multiline ? 'flex w-full flex-col gap-2' : 'block max-w-full leading-none',
+    containerClassName,
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   return (
-    <span className={containerClassName} aria-live="polite" aria-busy="true">
-      {Array.from({ length: Math.max(1, count) }, (_, index) => (
+    <span className={wrapperClass} aria-live="polite" aria-busy="true">
+      {Array.from({ length: lineCount }, (_, index) => (
         <span key={index} className={`react-loading-skeleton ${className}`.trim()} style={boneStyle}>
           {'\u200c'}
         </span>
       ))}
     </span>
+  );
+}
+
+/** Vertical title + optional subtitle (avoids inline skeleton bars beside the heading). */
+export function SkeletonTextBlock({
+  titleWidth = 220,
+  titleHeight = 26,
+  subtitleWidth = 140,
+  showSubtitle = true,
+  className = '',
+}: {
+  titleWidth?: number | string;
+  titleHeight?: number;
+  subtitleWidth?: number | string;
+  showSubtitle?: boolean;
+  className?: string;
+}) {
+  return (
+    <div className={`flex min-w-0 flex-col gap-2 ${className}`.trim()}>
+      <Skeleton width={titleWidth} height={titleHeight} />
+      {showSubtitle ? <Skeleton width={subtitleWidth} height={12} /> : null}
+    </div>
+  );
+}
+
+/** Matches team / player profile header chrome while loading. */
+export function EntityProfileHeaderSkeleton() {
+  return (
+    <Card className="p-5 sm:p-6">
+      <div className="flex items-center justify-between border-b border-lborder pb-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <Skeleton width={88} height={26} borderRadius={4} containerClassName="inline-block" />
+          <Skeleton width={52} height={26} borderRadius={4} containerClassName="inline-block" />
+        </div>
+        <div className="flex items-center gap-2">
+          <Skeleton circle width={36} height={36} />
+          <Skeleton circle width={36} height={36} />
+        </div>
+      </div>
+      <div className="mt-5 flex flex-col gap-5 sm:flex-row sm:items-center">
+        <Skeleton circle width={80} height={80} containerClassName="shrink-0" />
+        <SkeletonTextBlock titleWidth={220} titleHeight={26} subtitleWidth={150} className="flex-1" />
+      </div>
+    </Card>
   );
 }
 
@@ -77,38 +132,66 @@ function Card({ children, className = '' }: { children: ReactNode; className?: s
   return <div className={`rounded-md border border-lborder bg-card ${className}`}>{children}</div>;
 }
 
-export function MatchCardSkeleton() {
+export function MatchCardSkeleton({ dense = false }: { dense?: boolean }) {
+  const pad = dense ? 'p-2.5' : 'p-3.5';
+  const avatar = dense ? 24 : 28;
   return (
-    <Card className="p-3.5">
-      <div className="mb-2.5 flex items-center justify-between">
-        <Skeleton width="55%" height={10} />
-        <Skeleton width={72} height={18} borderRadius={999} />
+    <Card className={pad}>
+      <div className={`flex items-center justify-between ${dense ? 'mb-1.5' : 'mb-2.5'}`}>
+        <Skeleton width="55%" height={dense ? 8 : 10} />
+        <Skeleton width={dense ? 56 : 72} height={dense ? 14 : 18} borderRadius={999} />
       </div>
-      <div className="space-y-2">
-        <div className="flex items-center gap-2.5">
-          <Skeleton circle width={28} height={28} />
-          <Skeleton width="50%" height={12} />
-          <Skeleton width={40} height={12} containerClassName="ml-auto" />
+      <div className={dense ? 'space-y-1' : 'space-y-2'}>
+        <div className={`flex items-center ${dense ? 'gap-2' : 'gap-2.5'}`}>
+          <Skeleton circle width={avatar} height={avatar} />
+          <div className="min-w-0 flex-1">
+            <Skeleton width="88%" height={dense ? 10 : 12} />
+          </div>
+          <Skeleton
+            width={dense ? 28 : 40}
+            height={dense ? 10 : 12}
+            containerClassName="inline-block shrink-0"
+          />
         </div>
-        <div className="flex items-center gap-2.5">
-          <Skeleton circle width={28} height={28} />
-          <Skeleton width="45%" height={12} />
-          <Skeleton width={40} height={12} containerClassName="ml-auto" />
+        <div className={`flex items-center ${dense ? 'gap-2' : 'gap-2.5'}`}>
+          <Skeleton circle width={avatar} height={avatar} />
+          <div className="min-w-0 flex-1">
+            <Skeleton width="82%" height={dense ? 10 : 12} />
+          </div>
+          <Skeleton
+            width={dense ? 28 : 40}
+            height={dense ? 10 : 12}
+            containerClassName="inline-block shrink-0"
+          />
         </div>
       </div>
-      <div className="mt-2.5 flex items-center justify-between border-t border-lborder pt-2">
-        <Skeleton width={88} height={10} />
-        <Skeleton width={56} height={12} />
+      <div
+        className={`flex items-center justify-between border-t border-lborder ${dense ? 'mt-2 pt-1.5' : 'mt-2.5 pt-2'}`}
+      >
+        <Skeleton width={dense ? 64 : 88} height={dense ? 8 : 10} />
+        <Skeleton width={dense ? 40 : 56} height={dense ? 8 : 12} />
       </div>
     </Card>
   );
 }
 
-export function MatchCardGridSkeleton({ count = 6 }: { count?: number }) {
+export function MatchCardGridSkeleton({
+  count = 6,
+  dense = false,
+  columns = 'default',
+}: {
+  count?: number;
+  dense?: boolean;
+  columns?: 'default' | 'four';
+}) {
+  const gridClass =
+    columns === 'four'
+      ? 'grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4'
+      : 'grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3';
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+    <div className={gridClass}>
       {Array.from({ length: count }).map((_, i) => (
-        <MatchCardSkeleton key={i} />
+        <MatchCardSkeleton key={i} dense={dense} />
       ))}
     </div>
   );
@@ -178,12 +261,12 @@ export function CommentListSkeleton({ count = 2 }: { count?: number }) {
   );
 }
 
-export function PageHeaderSkeleton() {
+export function PageHeaderSkeleton({ subtitle = true }: { subtitle?: boolean }) {
   return (
-    <header className="mb-6">
+    <header className="mb-6 space-y-2">
       <Skeleton width={96} height={10} />
-      <Skeleton width={260} height={28} className="mt-2" />
-      <Skeleton width="55%" height={12} className="mt-2" />
+      <Skeleton width={260} height={28} />
+      {subtitle ? <Skeleton width="55%" height={12} /> : null}
     </header>
   );
 }
@@ -211,10 +294,10 @@ export function HomeSkeleton() {
           </div>
         </div>
         <div>
-          <Skeleton width={200} height={22} />
-          <div className="mt-4 grid grid-cols-1 gap-2.5 lg:grid-cols-2">
-            <Card className="p-3.5"><Skeleton height={56} /></Card>
-            <Card className="p-3.5"><Skeleton height={56} /></Card>
+          <Skeleton width={200} height={22} className="mt-2" />
+          <Skeleton width={280} height={12} className="mt-2" />
+          <div className="mt-4">
+            <MatchCardGridSkeleton count={3} />
           </div>
         </div>
         <Card className="p-5">
@@ -593,21 +676,14 @@ export function MatchDetailSkeleton() {
 export function TeamDetailSkeleton() {
   return (
     <Page className="space-y-5">
-      <Card className="p-5 sm:p-6">
-        <div className="flex items-center gap-4">
-          <Skeleton circle width={72} height={72} />
-          <div className="flex-1">
-            <Skeleton width={200} height={24} />
-            <Skeleton width={120} height={12} className="mt-2" />
-          </div>
-        </div>
-      </Card>
-      <div className="flex flex-wrap gap-2">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <Skeleton key={i} width={80} height={28} />
+      <Skeleton width={120} height={10} />
+      <EntityProfileHeaderSkeleton />
+      <div className="inline-flex flex-wrap gap-1 rounded-md bg-secondary p-1 ring-1 ring-lborder">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Skeleton key={i} width={88} height={32} borderRadius={4} />
         ))}
       </div>
-      <DirectoryGridSkeleton count={6} />
+      <MatchCardGridSkeleton count={6} />
     </Page>
   );
 }
@@ -616,22 +692,23 @@ export function PlayerDetailSkeleton() {
   return (
     <Page className="space-y-5">
       <Skeleton width={160} height={10} />
-      <Card className="p-5 sm:p-6">
-        <div className="flex flex-col gap-5 md:flex-row md:items-center">
-          <Skeleton circle width={96} height={96} />
-          <div className="flex-1">
-            <Skeleton width={220} height={28} />
-            <Skeleton width={140} height={12} className="mt-2" />
-          </div>
-        </div>
-      </Card>
+      <EntityProfileHeaderSkeleton />
+      <div className="inline-flex flex-wrap gap-1 rounded-md bg-secondary p-1 ring-1 ring-lborder">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} width={72} height={32} borderRadius={4} />
+        ))}
+      </div>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <Card key={i} className="p-4">
+          <Card key={i} className="space-y-2 p-4">
             <Skeleton width="50%" height={10} />
-            <Skeleton width="70%" height={22} className="mt-2" />
+            <Skeleton width="70%" height={22} />
           </Card>
         ))}
+      </div>
+      <div>
+        <Skeleton width={180} height={18} className="mb-3" />
+        <MatchCardGridSkeleton count={4} dense columns="four" />
       </div>
     </Page>
   );

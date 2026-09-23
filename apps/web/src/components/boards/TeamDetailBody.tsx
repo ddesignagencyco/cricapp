@@ -34,7 +34,6 @@ interface Props {
   playerTotal?: number;
   schedule: SportEventRecord[];
   results: SportEventRecord[];
-  allTeams?: any[];
   relatedNews?: NewsArticle[];
 }
 
@@ -44,7 +43,6 @@ export default function TeamDetailBody({
   playerTotal = 0,
   schedule = [],
   results = [],
-  allTeams = [],
   relatedNews = [],
 }: Props) {
   const [tab, setTab] = useState('overview');
@@ -232,7 +230,10 @@ export default function TeamDetailBody({
 
       {tab === 'h2h' && (
         <div className="fade-in">
-          <TeamHeadToHead team={team} allTeams={allTeams} teamMatches={[]} />
+          <TeamHeadToHead
+            team={team}
+            teamMatches={[...schedule, ...results]}
+          />
         </div>
       )}
 

@@ -46,7 +46,7 @@ export default function PlayerCard({ player }: PlayerCardProps) {
   return (
     <Link
       href={`/players/${player.id}`}
-      className="elev-card group flex items-center gap-3 rounded-md border border-lborder bg-card p-3.5 transition-colors hover:border-accent/50 hover:bg-[var(--color-row-hover)]"
+      className="card-interactive group flex items-center gap-3 rounded-md p-3.5"
     >
       {player.profileUrl || player.avatarUrl ? (
         <RemoteImage

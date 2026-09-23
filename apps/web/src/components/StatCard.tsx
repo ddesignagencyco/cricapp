@@ -25,8 +25,8 @@ export default function StatCard({
 }: StatCardProps) {
   return (
     <div
-      className={`elev-card border border-lborder bg-card ${
-        compact ? 'rounded-md p-3.5' : 'rounded-2xl p-5'
+      className={`surface-card ${
+        compact ? 'rounded-md p-3.5' : 'rounded-md p-5'
       } ${className}`}
     >
       <div className="flex items-center justify-between">

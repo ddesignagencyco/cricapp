@@ -20,7 +20,7 @@ export default function AssistantLauncher() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className={`fixed bottom-20 right-3 z-[70] h-11 w-11 place-items-center rounded-full btn-brand shadow-sm ring-1 ring-white/20 sm:right-4 lg:bottom-6 ${open ? 'hidden sm:grid' : 'grid'}`}
+        className={`float-cta btn-brand fixed bottom-20 right-3 z-[70] h-11 w-11 place-items-center rounded-full ring-1 ring-white/20 motion-reduce:transition-none sm:right-4 lg:bottom-6 ${open ? 'hidden sm:grid' : 'grid'}`}
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-label="Open PCZ Assistant"

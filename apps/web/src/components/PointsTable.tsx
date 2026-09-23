@@ -20,7 +20,7 @@ export default function PointsTable({ rows = [], favoriteTeamId }: PointsTablePr
   }
 
   return (
-    <div className="elev-card overflow-hidden rounded-2xl bg-card ring-1 ring-lborder">
+    <div className="surface-card overflow-hidden rounded-md">
       <div className="overflow-x-auto">
         <table className="w-full min-w-[520px] text-left text-sm">
           <thead>

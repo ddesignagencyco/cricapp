@@ -22,7 +22,7 @@ export function LeaderPanel({ group }: { group: any }) {
   const isBowling = group.stat.includes('wicket');
 
   return (
-    <div className="rounded-xl bg-card ring-1 ring-lborder overflow-hidden">
+    <div className="surface-card overflow-hidden rounded-md">
       <div className="flex items-center justify-between border-b border-lborder px-5 py-3">
         <div className="flex items-center gap-2">
           <StatIcon size={15} className="text-accent" />

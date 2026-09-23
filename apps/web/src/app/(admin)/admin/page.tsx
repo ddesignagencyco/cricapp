@@ -252,13 +252,7 @@ export default function AdminDashboard() {
 
       <FavoritesCard analytics={analytics} />
 
-      <div
-        className="grid grid-cols-1 gap-3 divide-y rounded-lg p-4 sm:grid-cols-3 sm:divide-x sm:divide-y-0"
-        style={{
-          border: '1px solid var(--admin-border)',
-          background: 'var(--admin-card)',
-        }}
-      >
+      <div className="admin-panel grid grid-cols-1 gap-3 divide-y p-4 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
         <div className="flex items-center gap-3 sm:pr-4">
           <div
             className="grid h-10 w-10 shrink-0 place-items-center rounded-lg"

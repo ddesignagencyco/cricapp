@@ -239,7 +239,7 @@ export default function NewsManager() {
                         type="button"
                         disabled={busyId === a.id}
                         onClick={() => togglePublish(a)}
-                        className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold transition-all disabled:opacity-50"
+                        className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold transition-colors duration-[180ms] motion-reduce:transition-none disabled:opacity-50"
                         style={{
                           background: a.isPublished ? 'var(--admin-success-bg)' : 'var(--admin-warning-bg)',
                           color: a.isPublished ? 'var(--admin-success)' : 'var(--admin-warning)',

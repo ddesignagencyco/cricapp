@@ -8,7 +8,7 @@ import { ToolGlyph } from './toolIcons';
 export default function ToolsHub() {
   return (
     <div className="mx-auto max-w-7xl space-y-10 px-4 py-8 sm:px-6">
-      <header className="elev-card overflow-hidden rounded-2xl border border-lborder bg-card">
+      <header className="surface-card overflow-hidden rounded-md">
         <div className="flex flex-col gap-5 p-5 sm:flex-row sm:items-end sm:justify-between sm:p-7">
           <div className="min-w-0">
             <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-stext">
@@ -42,7 +42,7 @@ export default function ToolsHub() {
                   <li key={tool.slug}>
                     <Link
                       href={`/tools/${tool.slug}`}
-                      className="elev-card group flex h-full flex-col rounded-2xl border border-lborder bg-card p-4 transition-colors hover:border-accent/50 hover:bg-[var(--color-row-hover)]"
+                      className="card-interactive group flex h-full flex-col rounded-md p-4"
                     >
                       <div className="flex items-start gap-3">
                         <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-accent/15 bg-accent/10 text-accent">

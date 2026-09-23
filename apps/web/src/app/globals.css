@@ -95,11 +95,20 @@
   --color-chrome-fg: #F8FAFC;
   --color-chrome-border: #2A3B52;
 
-  /* Restrained two-layer elevation: tight contact shadow + soft ambient. */
-  --elevation-surface: 0 1px 2px rgb(0 0 0 / 0.28);
-  --elevation-card: 0 1px 2px rgb(0 0 0 / 0.28), 0 10px 24px rgb(0 0 0 / 0.18);
-  --elevation-raised: 0 1px 2px rgb(0 0 0 / 0.32), 0 16px 34px rgb(0 0 0 / 0.26);
-  --elevation-overlay: 0 8px 20px rgb(0 0 0 / 0.36), 0 24px 56px rgb(0 0 0 / 0.32);
+  /* Shadow scale — resting cards use sm; hover md; overlays lg only. */
+  --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.28);
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.24), 0 2px 6px rgb(0 0 0 / 0.14);
+  --shadow-md: 0 2px 4px rgb(0 0 0 / 0.28), 0 10px 20px rgb(0 0 0 / 0.2);
+  --shadow-lg: 0 8px 20px rgb(0 0 0 / 0.36), 0 24px 56px rgb(0 0 0 / 0.32);
+
+  --motion-duration: 180ms;
+  --motion-ease: ease;
+
+  /* Legacy elevation aliases (kept for admin + existing utilities). */
+  --elevation-surface: var(--shadow-xs);
+  --elevation-card: var(--shadow-sm);
+  --elevation-raised: var(--shadow-md);
+  --elevation-overlay: var(--shadow-lg);
 
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
@@ -194,10 +203,15 @@
   --color-chrome-hover: rgb(255 255 255 / 0.14);
   --color-chrome-border: rgb(255 255 255 / 0.18);
 
-  --elevation-surface: 0 1px 2px rgb(16 24 40 / 0.05);
-  --elevation-card: 0 1px 2px rgb(16 24 40 / 0.05), 0 6px 18px rgb(16 24 40 / 0.06);
-  --elevation-raised: 0 1px 2px rgb(16 24 40 / 0.06), 0 12px 28px rgb(16 24 40 / 0.09);
-  --elevation-overlay: 0 6px 16px rgb(16 24 40 / 0.1), 0 20px 48px rgb(16 24 40 / 0.14);
+  --shadow-xs: 0 1px 2px rgb(16 24 40 / 0.06);
+  --shadow-sm: 0 1px 2px rgb(16 24 40 / 0.05), 0 2px 8px rgb(16 24 40 / 0.06);
+  --shadow-md: 0 2px 6px rgb(16 24 40 / 0.08), 0 12px 24px rgb(16 24 40 / 0.1);
+  --shadow-lg: 0 6px 16px rgb(16 24 40 / 0.1), 0 20px 48px rgb(16 24 40 / 0.14);
+
+  --elevation-surface: var(--shadow-xs);
+  --elevation-card: var(--shadow-sm);
+  --elevation-raised: var(--shadow-md);
+  --elevation-overlay: var(--shadow-lg);
 }
 
 * {
@@ -231,6 +245,14 @@ table thead th {
 table tbody td {
   font-size: 0.875rem;
   color: var(--color-text-secondary);
+}
+
+table tbody tr {
+  transition: background-color var(--motion-duration) var(--motion-ease);
+}
+
+table tbody tr:hover {
+  background-color: var(--color-row-hover);
 }
 
 /* Names in the first column are often links; keep them on the same
@@ -301,6 +323,30 @@ header.site-chrome .site-nav-link[aria-current='page']::after {
 header.site-chrome .site-nav-icon:hover,
 header.site-chrome .site-nav-icon[aria-expanded='true'] {
   background-color: rgb(255 255 255 / 0.14);
+}
+
+.site-nav-link {
+  transition:
+    color var(--motion-duration) var(--motion-ease),
+    background-color var(--motion-duration) var(--motion-ease);
+}
+
+.site-nav-link[aria-current='page']::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0.5rem;
+  bottom: -0.25rem;
+  height: 2px;
+  border-radius: 999px;
+  background-color: var(--color-accent);
+}
+
+.site-nav-icon {
+  transition:
+    background-color var(--motion-duration) var(--motion-ease),
+    color var(--motion-duration) var(--motion-ease),
+    box-shadow var(--motion-duration) var(--motion-ease),
+    transform var(--motion-duration) var(--motion-ease);
 }
 
 .mobile-bottom-nav {
@@ -566,68 +612,147 @@ textarea#comment-body:focus-visible {
    Elevation utilities — the only sanctioned shadows.
    ============================================================ */
 .elev-surface {
-  box-shadow: var(--elevation-surface);
+  box-shadow: var(--shadow-xs);
 }
 
 .elev-card {
-  box-shadow: var(--elevation-card);
+  box-shadow: var(--shadow-sm);
+}
+
+.surface-card {
+  background-color: var(--color-card);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.card-interactive {
+  background-color: var(--color-card);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(0);
+  transition:
+    transform var(--motion-duration) var(--motion-ease),
+    box-shadow var(--motion-duration) var(--motion-ease),
+    border-color var(--motion-duration) var(--motion-ease),
+    background-color var(--motion-duration) var(--motion-ease);
+}
+
+@media (hover: hover) {
+  .card-interactive:hover {
+    border-color: color-mix(in srgb, var(--color-brand) 32%, var(--color-border));
+    background-color: var(--color-row-hover);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+}
+
+.card-interactive:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-xs);
+}
+
+.card-interactive:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.card-featured {
+  box-shadow: var(--shadow-md);
+}
+
+@media (hover: hover) {
+  .card-featured:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+  }
+}
+
+.news-card .news-card-media {
+  overflow: hidden;
+}
+
+.news-card .news-card-media .news-image,
+.news-card .news-card-media img {
+  transition: transform 220ms var(--motion-ease);
+}
+
+@media (hover: hover) {
+  .news-card:hover .news-card-media .news-image,
+  .news-card:hover .news-card-media img {
+    transform: scale(1.02);
+  }
+}
+
+.section-action-link {
+  transition: color var(--motion-duration) var(--motion-ease);
+}
+
+.section-action-link .section-action-arrow {
+  display: inline-block;
+  transition: transform var(--motion-duration) var(--motion-ease);
+}
+
+@media (hover: hover) {
+  .section-action-link:hover {
+    color: var(--color-accent2);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .section-action-link:hover .section-action-arrow {
+    transform: translateX(3px);
+  }
 }
 
 .prediction-card {
-  box-shadow: var(--elevation-card);
+  box-shadow: var(--shadow-sm);
   transition:
-    box-shadow 180ms ease,
-    transform 180ms ease,
-    border-color 180ms ease;
+    box-shadow var(--motion-duration) var(--motion-ease),
+    transform var(--motion-duration) var(--motion-ease),
+    border-color var(--motion-duration) var(--motion-ease);
 }
 
-.prediction-card:hover {
-  box-shadow: var(--elevation-raised);
-  transform: translateY(-3px);
+@media (hover: hover) {
+  :is(a, button).prediction-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--color-brand) 28%, var(--color-border));
+  }
 }
 
-.prediction-card:focus-visible {
+:is(a, button).prediction-card:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-xs);
+}
+
+:is(a, button).prediction-card:focus-visible {
   outline: 2px solid var(--color-focus-ring);
   outline-offset: 3px;
 }
 
 .tool-card {
   background-color: var(--color-card);
-  border: 1px solid var(--color-lborder);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.55),
-    0 10px 28px rgb(16 24 40 / 0.08),
-    0 2px 6px rgb(16 24 40 / 0.05);
+  box-shadow: var(--shadow-sm);
   transform: translateY(0);
   transition:
-    transform 180ms ease,
-    box-shadow 180ms ease,
-    border-color 180ms ease;
+    transform var(--motion-duration) var(--motion-ease),
+    box-shadow var(--motion-duration) var(--motion-ease),
+    border-color var(--motion-duration) var(--motion-ease);
 }
 
-.tool-card:hover {
-  transform: translateY(-5px);
-  border-color: color-mix(in srgb, var(--color-brand) 35%, var(--color-lborder));
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.7),
-    0 18px 36px rgb(59 104 252 / 0.14),
-    0 6px 14px rgb(16 24 40 / 0.08);
+@media (hover: hover) {
+  .tool-card:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--color-brand) 35%, var(--color-border));
+    box-shadow: var(--shadow-md);
+  }
 }
 
-.dark .tool-card,
-:root:not(.light) .tool-card {
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.06),
-    0 14px 30px rgb(0 0 0 / 0.35),
-    0 2px 8px rgb(0 0 0 / 0.28);
-}
-
-:root:not(.light) .tool-card:hover {
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.1),
-    0 20px 40px rgb(59 104 252 / 0.18),
-    0 8px 16px rgb(0 0 0 / 0.32);
+.tool-card:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-xs);
 }
 
 .tool-orb {
@@ -657,11 +782,222 @@ textarea#comment-body:focus-visible {
 }
 
 .elev-raised {
-  box-shadow: var(--elevation-raised);
+  box-shadow: var(--shadow-md);
 }
 
 .elev-overlay {
-  box-shadow: var(--elevation-overlay);
+  box-shadow: var(--shadow-lg);
+}
+
+.icon-btn {
+  display: grid;
+  place-items: center;
+  min-height: 2.25rem;
+  min-width: 2.25rem;
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  transition:
+    background-color var(--motion-duration) var(--motion-ease),
+    color var(--motion-duration) var(--motion-ease),
+    border-color var(--motion-duration) var(--motion-ease),
+    box-shadow var(--motion-duration) var(--motion-ease),
+    transform var(--motion-duration) var(--motion-ease);
+}
+
+@media (hover: hover) {
+  .icon-btn:hover:not(:disabled) {
+    background-color: var(--color-row-hover);
+    color: var(--color-text-primary);
+  }
+}
+
+.icon-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.icon-btn-bordered {
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface-muted);
+  box-shadow: var(--shadow-xs);
+}
+
+@media (hover: hover) {
+  .icon-btn-bordered:hover:not(:disabled) {
+    border-color: color-mix(in srgb, var(--color-brand) 30%, var(--color-border));
+    box-shadow: var(--shadow-sm);
+  }
+}
+
+.carousel-control {
+  display: grid;
+  place-items: center;
+  height: 2.25rem;
+  width: 2.25rem;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background-color: var(--color-surface-elevated);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-xs);
+  transition:
+    background-color var(--motion-duration) var(--motion-ease),
+    color var(--motion-duration) var(--motion-ease),
+    box-shadow var(--motion-duration) var(--motion-ease),
+    transform var(--motion-duration) var(--motion-ease),
+    border-color var(--motion-duration) var(--motion-ease);
+}
+
+@media (hover: hover) {
+  .carousel-control:hover:not(:disabled) {
+    color: var(--color-text-primary);
+    border-color: var(--color-border-strong);
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-1px);
+  }
+}
+
+.carousel-control:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: var(--shadow-xs);
+}
+
+.carousel-control:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+.carousel-control:disabled:hover {
+  transform: none;
+  box-shadow: var(--shadow-xs);
+}
+
+.tabs-segment {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  border-radius: var(--radius-md);
+  background-color: var(--color-secondary);
+  padding: 0.25rem;
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-xs);
+}
+
+.tab-pill {
+  font-weight: 600;
+  transition:
+    background-color var(--motion-duration) var(--motion-ease),
+    color var(--motion-duration) var(--motion-ease),
+    box-shadow var(--motion-duration) var(--motion-ease),
+    border-color var(--motion-duration) var(--motion-ease);
+}
+
+.tab-pill[aria-selected='true'] {
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-secondary {
+  background-color: var(--color-surface-elevated);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-xs);
+  transition:
+    background-color var(--motion-duration) var(--motion-ease),
+    border-color var(--motion-duration) var(--motion-ease),
+    box-shadow var(--motion-duration) var(--motion-ease),
+    transform var(--motion-duration) var(--motion-ease);
+}
+
+@media (hover: hover) {
+  .btn-secondary:hover:not(:disabled) {
+    background-color: var(--color-row-hover);
+    border-color: var(--color-border-strong);
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-1px);
+  }
+}
+
+.btn-secondary:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: var(--shadow-xs);
+}
+
+.btn-ghost {
+  background-color: transparent;
+  color: var(--color-text-secondary);
+  transition:
+    background-color var(--motion-duration) var(--motion-ease),
+    color var(--motion-duration) var(--motion-ease);
+}
+
+@media (hover: hover) {
+  .btn-ghost:hover:not(:disabled) {
+    background-color: var(--color-row-hover);
+    color: var(--color-text-primary);
+  }
+}
+
+.btn-destructive {
+  background-color: var(--color-danger);
+  color: var(--color-brand-fg);
+  box-shadow: var(--shadow-xs);
+  transition:
+    background-color var(--motion-duration) var(--motion-ease),
+    box-shadow var(--motion-duration) var(--motion-ease),
+    transform var(--motion-duration) var(--motion-ease);
+}
+
+@media (hover: hover) {
+  .btn-destructive:hover:not(:disabled) {
+    filter: brightness(0.92);
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-1px);
+  }
+}
+
+.btn-destructive:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: var(--shadow-xs);
+}
+
+.float-cta {
+  box-shadow: var(--shadow-md);
+  transition:
+    box-shadow var(--motion-duration) var(--motion-ease),
+    transform var(--motion-duration) var(--motion-ease);
+}
+
+@media (hover: hover) {
+  .float-cta:hover:not(:disabled) {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+  }
+}
+
+.float-cta:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: var(--shadow-md);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-interactive:hover,
+  .card-featured:hover,
+  :is(a, button).prediction-card:hover,
+  .tool-card:hover,
+  .btn-brand:hover:not(:disabled),
+  .btn-secondary:hover:not(:disabled),
+  .btn-destructive:hover:not(:disabled),
+  .carousel-control:hover:not(:disabled),
+  .float-cta:hover:not(:disabled),
+  .news-card:hover .news-card-media .news-image,
+  .news-card:hover .news-card-media img {
+    transform: none;
+  }
+}
+
+.motion-reduce\:transition-none {
+  @media (prefers-reduced-motion: reduce) {
+    transition: none !important;
+  }
 }
 
 /* Autofill must not repaint inputs white in dark mode. */
@@ -849,17 +1185,24 @@ button:disabled,
 .btn-brand {
   background-color: var(--color-brand);
   color: var(--color-brand-fg);
-  box-shadow: var(--elevation-surface);
-  transition: background-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+  box-shadow: var(--shadow-xs);
+  transition:
+    background-color var(--motion-duration) var(--motion-ease),
+    box-shadow var(--motion-duration) var(--motion-ease),
+    transform var(--motion-duration) var(--motion-ease);
 }
 
-.btn-brand:hover:not(:disabled) {
-  background-color: var(--color-brand-hover);
+@media (hover: hover) {
+  .btn-brand:hover:not(:disabled) {
+    background-color: var(--color-brand-hover);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+  }
 }
 
 .btn-brand:active:not(:disabled) {
-  transform: translateY(1px);
-  box-shadow: none;
+  transform: translateY(0);
+  box-shadow: var(--shadow-xs);
 }
 
 .btn-brand:focus-visible {
@@ -1152,9 +1495,10 @@ h3.news-copy[dir="rtl"] {
   --info-soft: var(--color-info-soft);
 
   --live: var(--color-live);
-  --elevation-1: var(--elevation-surface);
-  --elevation-2: var(--elevation-card);
-  --elevation-3: var(--elevation-raised);
+  --elevation-1: var(--shadow-xs);
+  --elevation-2: var(--shadow-sm);
+  --elevation-3: var(--shadow-md);
+  --shadow-overlay: var(--shadow-lg);
 
   /* Admin Aliases: 100% synchronized with master semantic variables.
      The sidebar keeps a fixed deep-navy identity in both themes, so its
@@ -1241,6 +1585,17 @@ h3.news-copy[dir="rtl"] {
 .admin-icon-btn:hover {
   background: var(--admin-input-bg);
   color: var(--admin-text);
+}
+
+.admin-icon-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.admin-panel {
+  border: 1px solid var(--admin-border);
+  background: var(--admin-card);
+  box-shadow: var(--shadow-xs);
+  border-radius: var(--radius-md);
 }
 
 /* Shared modal scrim */

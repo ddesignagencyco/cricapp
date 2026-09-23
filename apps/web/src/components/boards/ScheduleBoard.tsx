@@ -137,7 +137,7 @@ export default function ScheduleBoard({
             <button
               type="button"
               onClick={prevDate}
-              className="grid h-8 w-8 place-items-center rounded bg-secondary text-stext transition-colors hover:bg-[var(--color-row-hover)] hover:text-accent"
+              className="icon-btn h-8 w-8 rounded bg-secondary text-stext hover:text-accent"
               aria-label="Previous day"
             >
               <ChevronLeft size={16} />
@@ -158,7 +158,7 @@ export default function ScheduleBoard({
             <button
               type="button"
               onClick={nextDate}
-              className="grid h-8 w-8 place-items-center rounded bg-secondary text-stext transition-colors hover:bg-[var(--color-row-hover)] hover:text-accent"
+              className="icon-btn h-8 w-8 rounded bg-secondary text-stext hover:text-accent"
               aria-label="Next day"
             >
               <ChevronRight size={16} />

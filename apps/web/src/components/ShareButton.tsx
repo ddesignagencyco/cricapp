@@ -74,7 +74,7 @@ export default function ShareButton({ type, id, fallbackTitle, compact = false, 
         }}
         disabled={busy}
         title={`Share ${fallbackTitle}`}
-        className={`grid h-9 w-9 place-items-center rounded-xl border border-lborder bg-secondary text-stext transition-all hover:border-accent/40 hover:bg-[var(--color-row-hover)] hover:text-mtext disabled:opacity-60 ${className}`}
+        className={`icon-btn icon-btn-bordered h-9 w-9 disabled:opacity-60 ${className}`}
         aria-label={`Share ${fallbackTitle}`}
       >
         {busy ? <Loader2 size={16} className="animate-spin" /> : <Share2 size={16} />}

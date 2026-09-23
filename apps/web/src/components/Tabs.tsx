@@ -20,7 +20,7 @@ export default function Tabs({ tabs, active, onChange, className = '', size = 'm
       className={
         isTags
           ? `flex flex-wrap gap-1.5 ${className}`
-          : `inline-flex w-full max-w-full flex-wrap gap-1 rounded-md bg-secondary p-1 ring-1 ring-lborder sm:w-auto ${className}`
+          : `tabs-segment w-full max-w-full sm:w-auto ${className}`
       }
       role="tablist"
     >
@@ -34,7 +34,7 @@ export default function Tabs({ tabs, active, onChange, className = '', size = 'm
             role="tab"
             aria-selected={isActive}
             onClick={() => onChange(tab.key)}
-            className={`flex items-center gap-1.5 font-semibold transition-colors duration-150 ${pad} ${
+            className={`tab-pill flex items-center gap-1.5 ${pad} ${
               isTags
                 ? `rounded-full border ${
                     isActive
@@ -43,7 +43,7 @@ export default function Tabs({ tabs, active, onChange, className = '', size = 'm
                   }`
                 : `rounded-md ${
                     isActive
-                      ? 'btn-brand'
+                      ? 'btn-brand shadow-sm'
                       : 'text-stext hover:bg-[var(--color-row-hover)] hover:text-mtext'
                   }`
             }`}

@@ -25,7 +25,7 @@ export default function TeamCard({ team }: TeamCardProps) {
   return (
     <Link
       href={`/teams/${team.id}`}
-      className="elev-card group flex items-center gap-3 rounded-md border border-lborder bg-card p-3.5 transition-colors hover:border-accent/50 hover:bg-[var(--color-row-hover)]"
+      className="card-interactive group flex items-center gap-3 rounded-md p-3.5"
     >
       {logo ? (
         <RemoteImage
