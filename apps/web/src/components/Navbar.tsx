@@ -219,9 +219,7 @@ export default function Navbar() {
               <button
                 type="button"
                 onClick={toggleMenu}
-                className={`site-nav-icon icon-btn h-9 w-9 ${
-                  menuOpen ? 'bg-card text-accent' : 'text-stext'
-                }`}
+                className="site-nav-icon icon-btn h-9 w-9 text-stext"
                 aria-label="Account menu"
                 aria-expanded={menuOpen}
                 aria-haspopup="menu"
@@ -302,11 +300,7 @@ export default function Navbar() {
                   toggleMenu();
                   setMobileOpen(false);
                 }}
-                className={`site-nav-icon icon-btn h-9 w-9 ${
-                  menuOpen || pathname.startsWith('/login') || pathname.startsWith('/register')
-                    ? 'bg-card text-accent'
-                    : 'text-stext'
-                }`}
+                className="site-nav-icon icon-btn h-9 w-9 text-stext"
                 aria-label="Sign in menu"
                 aria-expanded={menuOpen}
                 aria-haspopup="menu"

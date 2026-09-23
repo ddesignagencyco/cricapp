@@ -330,7 +330,7 @@ export function ConfirmDialog({
 
 const inputBase: React.CSSProperties = {
   width: '100%',
-  borderRadius: '0.25rem',
+  borderRadius: 'var(--radius-md)',
   border: '1px solid var(--admin-border)',
   background: 'var(--admin-input-bg)',
   color: 'var(--admin-text)',

@@ -39,7 +39,7 @@ export default function Tabs({ tabs, active, onChange, className = '', size = 'm
                 ? `rounded-lg border ${
                     isActive
                       ? 'tab-tag--active border-transparent'
-                      : 'tab-pill--idle border-lborder text-stext hover:border-border-strong hover:text-mtext'
+                      : 'tab-pill--idle border-border-strong text-mtext'
                   }`
                 : isActive
                   ? 'tab-pill--active'

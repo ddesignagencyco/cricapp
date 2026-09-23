@@ -113,17 +113,17 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
-  /* Same 4px corners as the hero Schedule / PSL / News / Rankings tiles.
+  /* Same 10px corners as the site search pill (`globals.css` `.search-pill`).
      rounded-full stays pill-shaped for badges only. */
-  --radius: 0.25rem;
-  --radius-xs: 0.25rem;
-  --radius-sm: 0.25rem;
-  --radius-md: 0.25rem;
-  --radius-lg: 0.25rem;
-  --radius-xl: 0.25rem;
-  --radius-2xl: 0.25rem;
-  --radius-3xl: 0.25rem;
-  --radius-4xl: 0.25rem;
+  --radius: 0.625rem;
+  --radius-xs: 0.625rem;
+  --radius-sm: 0.625rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 0.625rem;
+  --radius-xl: 0.625rem;
+  --radius-2xl: 0.625rem;
+  --radius-3xl: 0.625rem;
+  --radius-4xl: 0.625rem;
 }
 
 /* Light theme overrides. Page body stays pure white; only grouped
@@ -619,36 +619,58 @@ textarea#comment-body:focus-visible {
   box-shadow: var(--shadow-sm);
 }
 
+/* Card fill mimics the `.search-pill` 3D look: lighter top gradient over
+   the card surface plus a hairline inner shadow for a raised bevel. */
 .surface-card {
-  background-color: var(--color-card);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-card) 97%, #fff) 0%,
+    var(--color-card) 100%
+  );
   border: 1px solid var(--color-border);
-  box-shadow: var(--shadow-sm);
+  box-shadow:
+    inset 0 1px 2px rgb(0 0 0 / 0.06),
+    var(--shadow-sm);
 }
 
 .card-interactive {
-  background-color: var(--color-card);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-card) 97%, #fff) 0%,
+    var(--color-card) 100%
+  );
   border: 1px solid var(--color-border);
-  box-shadow: var(--shadow-sm);
+  box-shadow:
+    inset 0 1px 2px rgb(0 0 0 / 0.06),
+    var(--shadow-sm);
   transform: translateY(0);
   transition:
     transform var(--motion-duration) var(--motion-ease),
     box-shadow var(--motion-duration) var(--motion-ease),
     border-color var(--motion-duration) var(--motion-ease),
-    background-color var(--motion-duration) var(--motion-ease);
+    background var(--motion-duration) var(--motion-ease);
 }
 
 @media (hover: hover) {
   .card-interactive:hover {
     border-color: color-mix(in srgb, var(--color-brand) 32%, var(--color-border));
-    background-color: var(--color-row-hover);
-    box-shadow: var(--shadow-md);
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-row-hover) 97%, #fff) 0%,
+      var(--color-row-hover) 100%
+    );
+    box-shadow:
+      inset 0 1px 2px rgb(0 0 0 / 0.06),
+      var(--shadow-md);
     transform: translateY(-2px);
   }
 }
 
 .card-interactive:active {
   transform: translateY(0);
-  box-shadow: var(--shadow-xs);
+  box-shadow:
+    inset 0 1px 2px rgb(0 0 0 / 0.08),
+    var(--shadow-xs);
 }
 
 .card-interactive:focus-visible {
@@ -705,24 +727,41 @@ textarea#comment-body:focus-visible {
 }
 
 .prediction-card {
-  box-shadow: var(--shadow-sm);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-card) 97%, #fff) 0%,
+    var(--color-card) 100%
+  );
+  box-shadow:
+    inset 0 1px 2px rgb(0 0 0 / 0.06),
+    var(--shadow-sm);
   transition:
     box-shadow var(--motion-duration) var(--motion-ease),
     transform var(--motion-duration) var(--motion-ease),
-    border-color var(--motion-duration) var(--motion-ease);
+    border-color var(--motion-duration) var(--motion-ease),
+    background var(--motion-duration) var(--motion-ease);
 }
 
 @media (hover: hover) {
   :is(a, button).prediction-card:hover {
-    box-shadow: var(--shadow-md);
+    box-shadow:
+      inset 0 1px 2px rgb(0 0 0 / 0.06),
+      var(--shadow-md);
     transform: translateY(-2px);
     border-color: color-mix(in srgb, var(--color-brand) 28%, var(--color-border));
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-row-hover) 97%, #fff) 0%,
+      var(--color-row-hover) 100%
+    );
   }
 }
 
 :is(a, button).prediction-card:active {
   transform: translateY(0);
-  box-shadow: var(--shadow-xs);
+  box-shadow:
+    inset 0 1px 2px rgb(0 0 0 / 0.08),
+    var(--shadow-xs);
 }
 
 :is(a, button).prediction-card:focus-visible {
@@ -731,10 +770,16 @@ textarea#comment-body:focus-visible {
 }
 
 .tool-card {
-  background-color: var(--color-card);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-card) 97%, #fff) 0%,
+    var(--color-card) 100%
+  );
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
+  box-shadow:
+    inset 0 1px 2px rgb(0 0 0 / 0.06),
+    var(--shadow-sm);
   transform: translateY(0);
   transition:
     transform var(--motion-duration) var(--motion-ease),
@@ -746,13 +791,59 @@ textarea#comment-body:focus-visible {
   .tool-card:hover {
     transform: translateY(-2px);
     border-color: color-mix(in srgb, var(--color-brand) 35%, var(--color-border));
-    box-shadow: var(--shadow-md);
+    box-shadow:
+      inset 0 1px 2px rgb(0 0 0 / 0.06),
+      var(--shadow-md);
   }
 }
 
 .tool-card:active {
   transform: translateY(0);
-  box-shadow: var(--shadow-xs);
+  box-shadow:
+    inset 0 1px 2px rgb(0 0 0 / 0.08),
+    var(--shadow-xs);
+}
+
+/* Any container filled with the card surface gets the same raised 3D top
+   gradient as the search pill. Opacity variants (`bg-card/40`) stay ghosted. */
+[class*="bg-card"]:not([class*="bg-card/"]) {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-card) 97%, #fff) 0%,
+    var(--color-card) 100%
+  );
+}
+
+/* Light theme — mirror `.light .search-pill`. */
+.light .surface-card,
+.light .card-interactive,
+.light .prediction-card,
+.light .tool-card,
+.light [class*="bg-card"]:not([class*="bg-card/"]) {
+  background: linear-gradient(180deg, #ffffff 0%, #f6f8fc 100%);
+}
+
+.light .surface-card,
+.light .card-interactive,
+.light .prediction-card {
+  box-shadow:
+    inset 0 1px 2px rgb(16 24 40 / 0.04),
+    var(--shadow-sm);
+}
+
+.light .card-interactive:hover,
+.light :is(a, button).prediction-card:hover {
+  background: linear-gradient(180deg, #ffffff 0%, var(--color-row-hover) 100%);
+  box-shadow:
+    inset 0 1px 2px rgb(16 24 40 / 0.04),
+    var(--shadow-md);
+}
+
+.light .card-interactive:active,
+.light :is(a, button).prediction-card:active {
+  box-shadow:
+    inset 0 1px 2px rgb(16 24 40 / 0.06),
+    var(--shadow-xs);
 }
 
 .tool-orb {
@@ -906,8 +997,8 @@ textarea#comment-body:focus-visible {
 }
 
 .tab-pill--idle {
-  color: var(--color-text-secondary);
-  border: 1px solid color-mix(in srgb, var(--color-border) 45%, transparent);
+  color: var(--color-text-primary);
+  border: 1px solid color-mix(in srgb, var(--color-border) 70%, var(--color-brand));
   background: linear-gradient(
     180deg,
     color-mix(in srgb, var(--color-card) 98%, #fff) 0%,
@@ -918,15 +1009,8 @@ textarea#comment-body:focus-visible {
 
 .light .tab-pill--idle {
   background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-  border-color: rgb(255 255 255 / 0.85);
+  border-color: color-mix(in srgb, var(--color-border) 70%, var(--color-brand));
   box-shadow: 0 1px 2px rgb(16 24 40 / 0.05);
-}
-
-@media (hover: hover) {
-  .tab-pill--idle:hover {
-    color: var(--color-text-primary);
-    border-color: color-mix(in srgb, var(--color-border) 70%, var(--color-brand));
-  }
 }
 
 .tab-pill--active,
@@ -1137,12 +1221,14 @@ textarea#comment-body:focus-visible {
   border-radius: 0.5rem;
 }
 
-/* ─── Match detail (premium hero + panels) ─── */
-.match-detail-page {
+/* ─── Detail pages (premium hero + panels) ─── */
+.match-detail-page,
+.detail-page {
   --match-hero-radius: 1rem;
 }
 
-.match-detail-hero {
+.match-detail-hero,
+.detail-hero {
   position: relative;
   overflow: hidden;
   border-radius: var(--match-hero-radius);
@@ -1155,7 +1241,8 @@ textarea#comment-body:focus-visible {
     inset 0 1px 0 rgb(255 255 255 / 0.07);
 }
 
-.light .match-detail-hero {
+.light .match-detail-hero,
+.light .detail-hero {
   background:
     radial-gradient(ellipse 90% 55% at 50% 0%, rgb(59 104 252 / 0.09), transparent 48%),
     linear-gradient(180deg, #ffffff 0%, #f4f7fb 100%);
@@ -1193,7 +1280,8 @@ textarea#comment-body:focus-visible {
   }
 }
 
-.match-detail-breadcrumb {
+.match-detail-breadcrumb,
+.detail-breadcrumb {
   display: inline-flex;
   align-items: center;
   gap: 0.375rem;
@@ -1261,7 +1349,8 @@ textarea#comment-body:focus-visible {
   color: var(--color-text-secondary);
 }
 
-.match-detail-tabs-sticky {
+.match-detail-tabs-sticky,
+.detail-tabs-sticky {
   position: sticky;
   top: 3.5rem;
   z-index: 20;
@@ -1274,7 +1363,8 @@ textarea#comment-body:focus-visible {
 }
 
 @media (min-width: 1024px) {
-  .match-detail-tabs-sticky {
+  .match-detail-tabs-sticky,
+  .detail-tabs-sticky {
     position: static;
     margin-inline: 0;
     border-bottom: none;
@@ -1284,29 +1374,89 @@ textarea#comment-body:focus-visible {
   }
 }
 
-.match-detail-panel {
+.match-detail-panel,
+.detail-panel {
   border-radius: var(--match-hero-radius);
   border: 1px solid var(--color-border);
   background: var(--color-card);
   box-shadow: 0 2px 14px rgb(0 0 0 / 0.05);
 }
 
-.match-detail-panel-pad {
+.match-detail-panel-pad,
+.detail-panel-pad {
   padding: 1.25rem 1.25rem;
 }
 
 @media (min-width: 640px) {
-  .match-detail-panel-pad {
+  .match-detail-panel-pad,
+  .detail-panel-pad {
     padding: 1.5rem 1.75rem;
   }
 }
 
-.match-detail-aside-card {
+.match-detail-aside-card,
+.detail-aside-card {
   border-radius: var(--match-hero-radius);
   border: 1px solid var(--color-border);
   background: var(--color-card);
   padding: 1rem 1.25rem;
   box-shadow: 0 2px 12px rgb(0 0 0 / 0.04);
+}
+
+/* Small pill chips inside detail heroes (role/country/format/season). */
+.detail-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 9999px;
+  border: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--color-card) 80%, var(--color-secondary));
+  padding: 0.3rem 0.7rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+/* Interactive panel rows (links/buttons): hover lift handled in CSS so it
+   beats the utility layer and stays consistent with `.card-interactive`. */
+.detail-panel--hover {
+  cursor: pointer;
+  transition:
+    border-color var(--motion-duration) var(--motion-ease),
+    box-shadow var(--motion-duration) var(--motion-ease),
+    background var(--motion-duration) var(--motion-ease),
+    transform var(--motion-duration) var(--motion-ease);
+}
+
+@media (hover: hover) {
+  .detail-panel--hover:hover {
+    border-color: color-mix(in srgb, var(--color-brand) 45%, var(--color-border));
+    background: var(--color-row-hover);
+    box-shadow: 0 6px 20px rgb(0 0 0 / 0.08);
+    transform: translateY(-1px);
+  }
+}
+
+.detail-panel--active {
+  border-color: color-mix(in srgb, var(--color-brand) 55%, var(--color-border));
+  background: color-mix(in srgb, var(--color-brand-soft) 55%, var(--color-card));
+}
+
+/* Numeric stat squares inside detail heroes (players/events/seasons). */
+.detail-stat-box {
+  min-width: 6rem;
+  border-radius: 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--color-border) 70%, var(--color-brand));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-card) 96%, #fff) 0%,
+    var(--color-secondary) 100%
+  );
+  box-shadow:
+    0 2px 0 color-mix(in srgb, var(--color-border) 60%, rgb(0 0 0 / 0.12)),
+    inset 0 1px 0 rgb(255 255 255 / 0.35);
+  padding: 0.75rem 0.875rem;
+  text-align: center;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1672,7 +1822,7 @@ button:disabled,
 .news-copy[dir="rtl"] {
   direction: rtl;
   text-align: right;
-  font-family: "Noto Nastaliq Urdu", "Noto Naskh Arabic", var(--font-sans);
+  font-family: var(--font-urdu), "Noto Naskh Arabic", var(--font-sans);
   line-height: 2.45;
 }
 
@@ -1682,7 +1832,7 @@ input.admin-control.news-copy[dir="rtl"] {
   height: 3.75rem !important;
   padding: 0.9rem 0.9rem !important;
   line-height: 1.9 !important;
-  font-family: "Noto Naskh Arabic", "Noto Nastaliq Urdu", var(--font-sans);
+  font-family: "Noto Naskh Arabic", var(--font-urdu), var(--font-sans);
 }
 
 /* Nastaliq reads much larger than Latin at the same px size */
@@ -2114,7 +2264,7 @@ h3.news-copy[dir="rtl"] {
 .news-copy[lang="ur"] .ProseMirror {
   direction: rtl;
   text-align: right;
-  font-family: "Noto Nastaliq Urdu", "Noto Naskh Arabic", var(--font-sans);
+  font-family: var(--font-urdu), "Noto Naskh Arabic", var(--font-sans);
   font-size: 0.9375rem;
   line-height: 2.4;
 }

@@ -92,10 +92,23 @@ export default async function HomePage() {
   const nextUpcoming = (upcomingMatches || [])[0] || null;
   const pslStandings = [...(standings || [])].sort((a: any, b: any) => (a.rank ?? 999) - (b.rank ?? 999));
 
+  const heroMatch = nextUpcoming || live[0] || completed[0] || null;
+
   return (
     <div className="min-h-screen">
       <MatchTickerBar matches={tickerMatches} />
-      <CricketHero match={nextUpcoming || live[0] || completed[0]} />
+      {heroMatch ? (
+        <CricketHero match={heroMatch} />
+      ) : (
+        <section className="hero-grad-home relative flex min-h-[300px] items-center justify-center overflow-hidden sm:min-h-[360px]">
+          <div className="hero-scrim pointer-events-none absolute inset-0" />
+          <div className="relative w-full max-w-7xl px-4 sm:px-6">
+            <div className="flex justify-center">
+              <AdSlot slot="home-hero" format="leaderboard" />
+            </div>
+          </div>
+        </section>
+      )}
 
       <div className="flex flex-col gap-12 pt-12 pb-12">
       <LiveNowSection matches={live} />
@@ -282,11 +295,11 @@ export default async function HomePage() {
         </section>
       )}
 
+      <Newsletter />
+
       <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
         <AdSlot slot="home-footer" format="leaderboard" />
       </section>
-
-      <Newsletter />
       </div>
     </div>
   );

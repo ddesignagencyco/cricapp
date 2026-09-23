@@ -52,21 +52,23 @@ export default function PlayerDetailBody({ player, relatedNews = [] }: Props) {
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 
   return (
-    <div className="mx-auto max-w-7xl space-y-5 px-4 py-8 sm:px-6">
-      <nav className="flex items-center gap-1.5 text-xs text-stext">
-        <Link href="/players" className="hover:text-accent">Players</Link>
-        <span>/</span>
-        <span className="text-mtext">{name}</span>
+    <div className="detail-page mx-auto max-w-7xl space-y-4 px-4 py-6 sm:space-y-5 sm:px-6 sm:py-8">
+      <nav className="detail-breadcrumb" aria-label="Breadcrumb">
+        <Link href="/players" className="font-semibold text-accent transition-colors hover:text-mtext">
+          Players
+        </Link>
+        <span className="text-stext" aria-hidden="true">/</span>
+        <span className="truncate font-medium text-mtext max-w-[12rem] sm:max-w-none">{name}</span>
       </nav>
 
-      <header className="rounded-md border border-lborder bg-card p-5 sm:p-6">
-        <div className="flex items-center justify-between border-b border-lborder pb-3">
-          <div className="flex items-center gap-2">
-            <span className="rounded border border-accent/25 bg-accent/10 px-2.5 py-1 text-xs font-medium tracking-wider text-accent">
+      <header className="detail-hero p-4 sm:p-8">
+        <div className="flex items-center justify-between border-b border-lborder pb-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="detail-chip font-semibold text-accent">
               {role}
             </span>
             {player.nationality && (
-              <span className="rounded border border-lborder bg-secondary px-2.5 py-1 text-xs font-medium tracking-wider text-stext">
+              <span className="detail-chip tracking-wider">
                 {player.nationality}
               </span>
             )}
@@ -108,12 +110,12 @@ export default function PlayerDetailBody({ player, relatedNews = [] }: Props) {
             {(player.battingStyle || player.bowlingStyle) && (
               <div className="mt-3 flex flex-wrap gap-2">
                 {player.battingStyle && (
-                  <span className="rounded border border-lborder bg-secondary px-2.5 py-1 text-xs font-medium text-mtext">
+                  <span className="detail-chip">
                     Batting: <span className="text-accent">{player.battingStyle}</span>
                   </span>
                 )}
                 {player.bowlingStyle && (
-                  <span className="rounded border border-lborder bg-secondary px-2.5 py-1 text-xs font-medium text-mtext">
+                  <span className="detail-chip">
                     Bowling: <span className="text-accent">{player.bowlingStyle}</span>
                   </span>
                 )}
@@ -124,7 +126,7 @@ export default function PlayerDetailBody({ player, relatedNews = [] }: Props) {
           {team && (
             <Link
               href={`/teams/${team.id}`}
-              className="group flex min-w-[220px] shrink-0 items-center gap-3 rounded-lg border border-lborder bg-secondary px-4 py-3 transition-colors hover:border-accent/50 hover:bg-[var(--color-row-hover)]"
+              className="group flex min-w-[220px] shrink-0 items-center gap-3 detail-panel detail-panel--hover p-3"
             >
               {team.logoUrl ? (
                 <RemoteImage src={team.logoUrl} alt={team.name} width={48} height={48} className="h-12 w-12 rounded-full border border-lborder bg-white object-contain p-0.5" />
@@ -154,7 +156,9 @@ export default function PlayerDetailBody({ player, relatedNews = [] }: Props) {
         {player.birth && <StatCard compact label="Born" value={player.birth} sub="Date of birth" icon={Calendar} />}
       </div>
 
-      <Tabs tabs={playerTabs} active={tab} onChange={setTab} />
+      <div className="detail-tabs-sticky">
+        <Tabs tabs={playerTabs} active={tab} onChange={setTab} />
+      </div>
 
       {tab === 'profile' && (
         <div className="fade-in grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">

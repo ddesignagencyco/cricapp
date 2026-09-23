@@ -155,14 +155,14 @@ export default function MatchPredictionsView({
   const awayTone = probTone(featured.awayWinProb, featured.homeWinProb);
 
   return (
-    <div className="space-y-5">
-      <nav className="flex flex-wrap items-center gap-1.5 text-xs text-stext">
-        <Link href="/predictions" className="font-semibold hover:text-accent">Predictions</Link>
-        <span>/</span>
-        <span className="truncate text-mtext">{sides.homeCode} vs {sides.awayCode}</span>
+    <div className="space-y-4 sm:space-y-5">
+      <nav className="detail-breadcrumb" aria-label="Breadcrumb">
+        <Link href="/predictions" className="font-semibold text-accent transition-colors hover:text-mtext">Predictions</Link>
+        <span className="text-stext" aria-hidden="true">/</span>
+        <span className="truncate font-medium text-mtext max-w-[12rem] sm:max-w-none">{sides.homeCode} vs {sides.awayCode}</span>
         {matchId ? (
           <>
-            <span className="text-lborder">·</span>
+            <span className="text-stext" aria-hidden="true">·</span>
             <Link href={`/matches/${matchId}`} className="font-semibold text-accent hover:underline">
               Match centre
             </Link>
@@ -170,79 +170,77 @@ export default function MatchPredictionsView({
         ) : null}
       </nav>
 
-      <section className="overflow-hidden rounded-md border border-lborder bg-card">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-lborder bg-secondary px-4 py-2.5 sm:px-6">
+      <section className={`detail-hero p-4 sm:p-8 ${live ? 'match-detail-hero--live' : ''}`}>
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-lborder pb-4">
           <p className="truncate text-[11px] font-bold uppercase tracking-widest text-stext">
             {[match.tournament || 'Match', format, match.venue, when].filter(Boolean).join('  ·  ')}
           </p>
           <div className="flex flex-wrap items-center gap-1.5">
             <StatusBadge status={match.status} />
             {stageLabel(featured.stage).toLowerCase() !== String(match.status || '').toLowerCase() ? (
-              <Badge tone={featured.stage === 'live' ? 'live' : 'primary'}>{stageLabel(featured.stage)}</Badge>
+              <span className={`detail-chip ${featured.stage === 'live' ? 'text-danger' : 'text-accent'}`}>{stageLabel(featured.stage)}</span>
             ) : null}
-            <Badge tone={bandTone(featured.calibrationBand)}>{confidenceLabel(featured.calibrationBand)}</Badge>
+            <span className="detail-chip">{confidenceLabel(featured.calibrationBand)}</span>
           </div>
         </div>
 
-        <div className="p-5 sm:p-6">
-          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 sm:gap-6">
-            <TeamHero
-              code={sides.homeCode}
-              name={sides.homeName}
-              pct={asPercent(featured.homeWinProb)}
-              align="left"
-              tone={homeTone}
-            />
-            <span className="text-[10px] font-black tracking-[0.2em] text-stext">VS</span>
-            <TeamHero
-              code={sides.awayCode}
-              name={sides.awayName}
-              pct={asPercent(featured.awayWinProb)}
-              align="right"
-              tone={awayTone}
-            />
-          </div>
-
-          <div className="mt-5">
-            <WinSplitBar homeWinProb={featured.homeWinProb} awayWinProb={featured.awayWinProb} />
-          </div>
-
-          {(situation.scoreLine || situation.needLine || situation.snapshotNote) && (
-            <div className="mt-5 rounded-md border border-lborder bg-secondary px-4 py-3 text-center">
-              {situation.scoreLine ? (
-                <p className="font-mono text-xl font-black tabular-nums tracking-tight text-mtext sm:text-2xl">
-                  {situation.scoreLine}
-                </p>
-              ) : null}
-              {situation.needLine ? (
-                <p className="mt-1 text-sm font-semibold text-accent">{situation.needLine}</p>
-              ) : null}
-              {situation.snapshotNote ? (
-                <p className="mt-1 text-xs text-stext">{situation.snapshotNote}</p>
-              ) : null}
-            </div>
-          )}
-
-          {preMatch ? (
-            <div className="mt-4 grid grid-cols-2 gap-2">
-              <ShiftTile
-                label="Before play"
-                home={asPercent(preMatch.homeWinProb)}
-                away={asPercent(preMatch.awayWinProb)}
-                homeCode={sides.homeCode}
-                awayCode={sides.awayCode}
-              />
-              <ShiftTile
-                label={liveRun ? 'Now' : 'Latest'}
-                home={asPercent((liveRun || featured).homeWinProb)}
-                away={asPercent((liveRun || featured).awayWinProb)}
-                homeCode={sides.homeCode}
-                awayCode={sides.awayCode}
-                highlight
-              />
-            </div>
-          ) : null}
+        <div className="mt-6 grid grid-cols-[1fr_auto_1fr] items-center gap-3 sm:gap-6">
+          <TeamHero
+            code={sides.homeCode}
+            name={sides.homeName}
+            pct={asPercent(featured.homeWinProb)}
+            align="left"
+            tone={homeTone}
+          />
+          <span className="match-detail-vs">VS</span>
+          <TeamHero
+            code={sides.awayCode}
+            name={sides.awayName}
+            pct={asPercent(featured.awayWinProb)}
+            align="right"
+            tone={awayTone}
+          />
         </div>
+
+        <div className="mt-5">
+          <WinSplitBar homeWinProb={featured.homeWinProb} awayWinProb={featured.awayWinProb} />
+        </div>
+
+        {(situation.scoreLine || situation.needLine || situation.snapshotNote) && (
+          <div className="detail-panel mt-6 px-4 py-4 text-center">
+            {situation.scoreLine ? (
+              <p className="font-mono text-xl font-black tabular-nums tracking-tight text-mtext sm:text-2xl">
+                {situation.scoreLine}
+              </p>
+            ) : null}
+            {situation.needLine ? (
+              <p className="mt-1 text-sm font-semibold text-accent">{situation.needLine}</p>
+            ) : null}
+            {situation.snapshotNote ? (
+              <p className="mt-1 text-xs text-stext">{situation.snapshotNote}</p>
+            ) : null}
+          </div>
+        )}
+
+        {preMatch ? (
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <ShiftTile
+              label="Before play"
+              home={asPercent(preMatch.homeWinProb)}
+              away={asPercent(preMatch.awayWinProb)}
+              homeCode={sides.homeCode}
+              awayCode={sides.awayCode}
+            />
+            <ShiftTile
+              label={liveRun ? 'Now' : 'Latest'}
+              home={asPercent((liveRun || featured).homeWinProb)}
+              away={asPercent((liveRun || featured).awayWinProb)}
+              homeCode={sides.homeCode}
+              awayCode={sides.awayCode}
+              highlight
+            />
+          </div>
+        ) : null}
       </section>
 
       <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_300px]">
@@ -282,7 +280,7 @@ export default function MatchPredictionsView({
 
           {whyChanged ? (
             <Panel>
-              <CardTitle icon={MessageCircle} title="Why the chance moved" />
+              <CardTitle icon={MessageCircle} title="Chances" />
               <p className="mt-4 text-sm leading-relaxed text-mtext">{whyChanged}</p>
             </Panel>
           ) : null}
@@ -327,7 +325,7 @@ export default function MatchPredictionsView({
             </div>
           )}
 
-          <section className="overflow-hidden rounded-md border border-lborder bg-card">
+          <section className="detail-panel">
             <div className="border-b border-lborder bg-secondary px-4 py-3 sm:px-5">
               <CardTitle icon={Calendar} title="Recent prediction changes" />
             </div>
@@ -381,8 +379,8 @@ export default function MatchPredictionsView({
 
 function PredictionTabLoader() {
   return (
-    <div className="space-y-5" aria-busy="true" aria-live="polite">
-      <div className="rounded-md border border-lborder bg-card p-5 sm:p-6">
+    <div className="space-y-4 sm:space-y-5" aria-busy="true" aria-live="polite">
+      <div className="detail-panel detail-panel-pad">
         <Skeleton height={28} width={240} />
         <div className="mt-6">
           <Skeleton height={88} />
@@ -391,17 +389,17 @@ function PredictionTabLoader() {
           <Skeleton height={36} />
         </div>
       </div>
-      <div className="rounded-md border border-lborder bg-card p-5 sm:p-6">
+      <div className="detail-panel detail-panel-pad">
         <Skeleton height={28} width={200} />
         <div className="mt-4">
           <Skeleton height={220} />
         </div>
       </div>
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-        <div className="rounded-md border border-lborder bg-card p-5">
+      <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
+        <div className="detail-panel p-5">
           <Skeleton height={160} />
         </div>
-        <div className="rounded-md border border-lborder bg-card p-5">
+        <div className="detail-panel p-5">
           <Skeleton height={160} />
         </div>
       </div>
@@ -410,7 +408,7 @@ function PredictionTabLoader() {
 }
 
 function Panel({ children }: { children: ReactNode }) {
-  return <section className="rounded-md border border-lborder bg-card p-5 sm:p-6">{children}</section>;
+  return <section className="detail-panel detail-panel-pad">{children}</section>;
 }
 
 function CardTitle({
@@ -455,7 +453,7 @@ function ShiftTile({
   highlight?: boolean;
 }) {
   return (
-    <div className={`rounded-md border px-3 py-2.5 ${highlight ? 'border-accent bg-info-soft' : 'border-lborder bg-secondary'}`}>
+    <div className={`detail-panel px-3 py-2.5 ${highlight ? 'detail-panel--active' : ''}`}>
       <p className="text-[10px] font-bold uppercase tracking-widest text-stext">{label}</p>
       <p className="mt-1 font-mono text-sm font-black tabular-nums text-mtext">
         {homeCode} {home}

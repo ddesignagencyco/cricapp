@@ -83,21 +83,23 @@ export default function TeamDetailBody({
   };
 
   return (
-    <div className="mx-auto max-w-7xl space-y-5 px-4 py-8 sm:px-6">
-      <nav className="flex items-center gap-1.5 text-xs text-stext">
-        <Link href="/teams" className="hover:text-accent">Teams</Link>
-        <span>/</span>
-        <span className="text-mtext">{team.name}</span>
+    <div className="detail-page mx-auto max-w-7xl space-y-4 px-4 py-6 sm:space-y-5 sm:px-6 sm:py-8">
+      <nav className="detail-breadcrumb" aria-label="Breadcrumb">
+        <Link href="/teams" className="font-semibold text-accent transition-colors hover:text-mtext">
+          Teams
+        </Link>
+        <span className="text-stext" aria-hidden="true">/</span>
+        <span className="truncate font-medium text-mtext max-w-[12rem] sm:max-w-none">{team.name}</span>
       </nav>
 
-      <header className="rounded-md border border-lborder bg-card p-5 sm:p-6">
-        <div className="flex items-center justify-between border-b border-lborder pb-3">
-          <div className="flex items-center gap-2">
-            <span className="rounded border border-accent/25 bg-accent/10 px-2.5 py-1 text-xs font-medium tracking-wider text-accent">
+      <header className="detail-hero p-4 sm:p-8">
+        <div className="flex items-center justify-between border-b border-lborder pb-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="detail-chip font-semibold text-accent">
               {team.country || 'Cricket Team'}
             </span>
             {code && (
-              <span className="rounded border border-lborder bg-secondary px-2.5 py-1 font-mono text-xs font-medium tracking-wider text-stext">
+              <span className="detail-chip font-mono tracking-wider">
                 {code}
               </span>
             )}
@@ -143,11 +145,11 @@ export default function TeamDetailBody({
           </div>
 
           <div className="flex shrink-0 items-center gap-2">
-            <div className="min-w-24 rounded-md border border-lborder bg-secondary px-3.5 py-3 text-center">
+            <div className="detail-stat-box">
               <p className="font-mono text-lg font-semibold text-accent">{squadTotal}</p>
               <p className="text-xs font-medium uppercase tracking-wider text-stext">Players</p>
             </div>
-            <div className="min-w-24 rounded-md border border-lborder bg-secondary px-3.5 py-3 text-center">
+            <div className="detail-stat-box">
               <p className="font-mono text-lg font-semibold text-mtext">{schedule.length + results.length}</p>
               <p className="text-xs font-medium uppercase tracking-wider text-stext">Events</p>
             </div>
@@ -157,7 +159,9 @@ export default function TeamDetailBody({
 
       <DummyAd size="leaderboard" placement="team-detail-after-intro" />
 
-      <Tabs tabs={teamTabs} active={tab} onChange={setTab} />
+      <div className="detail-tabs-sticky">
+        <Tabs tabs={teamTabs} active={tab} onChange={setTab} />
+      </div>
 
       {tab === 'overview' && (
         <div className="fade-in space-y-3">
@@ -166,7 +170,7 @@ export default function TeamDetailBody({
             <InfoStat label="Abbreviation" value={code || '—'} />
             <InfoStat label="Country" value={team.country || '—'} />
           </div>
-          <p className="rounded-md border border-lborder bg-card p-4 text-sm leading-relaxed text-stext">
+          <p className="detail-panel detail-panel-pad text-sm leading-relaxed text-stext">
             Upcoming fixtures and recent results come from the team schedule and results feeds. Open those tabs for the full list.
           </p>
         </div>
@@ -305,7 +309,7 @@ function SportEventRow({ event }: { event: SportEventRecord }) {
   const href = event.eventId ? `/matches/${event.eventId}` : undefined;
 
   const inner = (
-    <div className="flex items-center justify-between gap-3 rounded-md border border-lborder bg-card p-3.5 transition-colors hover:border-accent/40 hover:bg-[var(--color-row-hover)]">
+    <div className="detail-panel detail-panel--hover p-3.5">
       <div className="min-w-0">
         <p className="truncate text-sm font-semibold text-mtext">{eventTitle(event)}</p>
         <p className="mt-0.5 text-xs text-stext">
@@ -329,7 +333,7 @@ function SportEventRow({ event }: { event: SportEventRecord }) {
 
 function InfoStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md border border-lborder bg-card p-3.5">
+    <div className="detail-panel detail-panel-pad">
       <p className="text-xs font-medium uppercase tracking-wider text-stext">{label}</p>
       <p className="mt-0.5 truncate text-sm font-semibold text-mtext" title={value}>{value}</p>
     </div>

@@ -68,7 +68,7 @@ export default function PslSpotlight({ standings = [] }: PslSpotlightProps) {
         </div>
 
         {/* PSL Points Table */}
-        <div className="grid min-w-0 grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-8">
+        <div className="grid min-w-0 grid-cols-1 items-stretch gap-6 lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-8">
         <div className="min-w-0 overflow-hidden rounded-2xl bg-card ring-1 ring-lborder">
           <div className="flex items-center justify-between border-b border-lborder px-4 py-3 sm:px-5">
             <div className="flex items-center gap-2">
@@ -128,8 +128,8 @@ export default function PslSpotlight({ standings = [] }: PslSpotlightProps) {
             </table>
           </div>
         </div>
-          <div className="flex justify-center lg:justify-start">
-            <DummyAd size="medium-rectangle" placement="home-sidebar" />
+          <div className="h-full">
+            <DummyAd size="medium-rectangle" placement="home-sidebar" inFeed className="h-full" />
           </div>
         </div>
       </div>

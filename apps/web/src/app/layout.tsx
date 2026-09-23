@@ -1,4 +1,5 @@
 import './globals.css';
+import { Inter, JetBrains_Mono, Noto_Nastaliq_Urdu } from 'next/font/google';
 import ScrollToTop from '../components/ScrollToTop';
 import JsonLd from './json-ld';
 import ThemeProvider from '../components/ThemeProvider';
@@ -6,6 +7,24 @@ import AuthProvider from '../components/AuthProvider';
 import ClientLayout from '../components/ClientLayout';
 import { Toaster } from 'react-hot-toast';
 import { loadSiteSettings } from '../services/siteSettings';
+
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-sans',
+  display: 'swap',
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  variable: '--font-mono',
+  display: 'swap',
+});
+
+const nastaliq = Noto_Nastaliq_Urdu({
+  subsets: ['arabic', 'latin'],
+  variable: '--font-urdu',
+  display: 'swap',
+});
 
 export const metadata = {
   metadataBase: new URL('https://pakcriczone.com'),
@@ -40,18 +59,12 @@ export const viewport = {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const settings = await loadSiteSettings();
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className={`${inter.variable} ${jetbrainsMono.variable} ${nastaliq.variable}`}>
       <head>
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var t=localStorage.getItem('pak-criczone-theme')||(window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');document.documentElement.classList.toggle('light',t==='light');document.documentElement.style.colorScheme=t;}catch(e){}})();`,
           }}
-        />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&family=Noto+Nastaliq+Urdu:wght@400;500;600;700&display=swap"
-          rel="stylesheet"
         />
       </head>
       <body className="bg-primary text-mtext font-sans antialiased" suppressHydrationWarning>
