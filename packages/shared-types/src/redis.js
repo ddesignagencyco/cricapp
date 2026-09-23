@@ -10,6 +10,8 @@ export const redisKeys = {
   newsList: () => 'news:list',
   newsArticle: (id) => `news:article:${id}`,
   ingestionHeartbeat: () => 'ingestion:heartbeat',
+  oddsMovementChannel: () => 'odds:movement',
+  oddsMatch: (matchId) => `odds:match:v1:${matchId}`,
 };
 
 export const REDIS_TTL = {
