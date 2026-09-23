@@ -17,10 +17,10 @@ export interface UseDebouncedUrlQueryOptions {
 
 function readQueryParam(params: URLSearchParams, primary: string, fallbacks: string[]): string {
   const main = params.get(primary);
-  if (main != null && main !== '') return main;
+  if (main !== null && main !== '') return main;
   for (const key of fallbacks) {
     const value = params.get(key);
-    if (value != null && value !== '') return value;
+    if (value !== null && value !== '') return value;
   }
   return '';
 }
