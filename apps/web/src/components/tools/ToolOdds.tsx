@@ -12,7 +12,7 @@ import {
 import type { ToolDef } from '../../lib/toolsCatalog';
 import type { OddsConvertResponse } from '../../types/odds';
 import { convertOdds } from '../../services/odds';
-import { Field, MoreTools, ResultBox, ToolIntro, num } from './ToolShared';
+import { Field, SelectField, ToolPage, ToolPanel, ResultBox, num } from './ToolShared';
 
 export default function ToolOdds({ tool }: { tool: ToolDef }) {
   const [mode, setMode] = useState<'decimal' | 'fractional' | 'american'>('decimal');
@@ -83,40 +83,10 @@ export default function ToolOdds({ tool }: { tool: ToolDef }) {
     apiResult?.formats?.fractional ?? (local.frac ? `${local.frac.num}/${local.frac.den}` : null);
 
   return (
-    <div className="space-y-6">
-      <ToolIntro tool={tool} />
-      <div className="overflow-hidden rounded-md border border-lborder bg-card">
-        <div className="grid grid-cols-1 gap-5 p-4 sm:p-5 lg:grid-cols-[minmax(0,1fr)_240px]">
-          <div className="space-y-4">
-            <label className="block">
-              <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-stext">From</span>
-              <select
-                value={mode}
-                onChange={(event) => {
-                  const next = event.target.value;
-                  if (next === 'decimal' || next === 'fractional' || next === 'american') {
-                    setMode(next);
-                  }
-                }}
-                className="w-full rounded-md border border-lborder bg-secondary px-3 py-2.5 text-sm font-semibold text-mtext outline-none focus:border-accent"
-              >
-                <option value="decimal">Decimal (2.50)</option>
-                <option value="fractional">Fractional (5/2)</option>
-                <option value="american">American (+150)</option>
-              </select>
-            </label>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <Field
-                label={
-                  mode === 'american' ? 'American odds' : mode === 'fractional' ? 'Numerator' : 'Decimal odds'
-                }
-                value={a}
-                onChange={setA}
-              />
-              {mode === 'fractional' ? <Field label="Denominator" value={b} onChange={setB} /> : null}
-            </div>
-          </div>
-          <div className="space-y-3">
+    <ToolPage tool={tool}>
+      <ToolPanel
+        aside={
+          <>
             <ResultBox label="Implied probability" value={formatPct(implied)} />
             <ResultBox label="Decimal" value={decimal ? decimal.toFixed(3) : '—'} />
             {apiPending || apiError ? (
@@ -128,10 +98,29 @@ export default function ToolOdds({ tool }: { tool: ToolDef }) {
               American {american ?? '—'}
               {fractional ? ` · ${fractional}` : ''}
             </p>
-          </div>
+          </>
+        }
+      >
+        <SelectField
+          label="From"
+          value={mode}
+          onChange={(next) => {
+            if (next === 'decimal' || next === 'fractional' || next === 'american') setMode(next);
+          }}
+        >
+          <option value="decimal">Decimal (2.50)</option>
+          <option value="fractional">Fractional (5/2)</option>
+          <option value="american">American (+150)</option>
+        </SelectField>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <Field
+            label={mode === 'american' ? 'American odds' : mode === 'fractional' ? 'Numerator' : 'Decimal odds'}
+            value={a}
+            onChange={setA}
+          />
+          {mode === 'fractional' ? <Field label="Denominator" value={b} onChange={setB} /> : null}
         </div>
-      </div>
-      <MoreTools currentSlug={tool.slug} />
-    </div>
+      </ToolPanel>
+    </ToolPage>
   );
 }

@@ -1,9 +1,10 @@
 import type { ReactNode } from 'react';
 import {
-  DUMMY_AD_CREATIVES,
-  RESPONSIVE_LEADERBOARD,
+  LEADERBOARD_SLOT_META,
   dummyAdAlt,
+  resolveDummyAdCreative,
   type DummyAdSize,
+  type LeaderboardVariant,
 } from '../../lib/advertisements/placements';
 
 export type DummyAdProps = {
@@ -36,11 +37,11 @@ function CreativeMedia({
   alt: string;
   className?: string;
 }) {
-  const frame = `pointer-events-none block select-none ${className}`.trim();
+  const frame = `pointer-events-none block h-full w-full select-none ${className}`.trim();
   const fit = {
     width: '100%',
     height: '100%',
-    objectFit: 'contain' as const,
+    objectFit: 'cover' as const,
     objectPosition: 'center',
   };
 
@@ -64,7 +65,7 @@ function CreativeMedia({
   }
 
   return (
-    // eslint-disable-next-line @next/next/no-img-element -- local dummy creative (png/gif/webp)
+    // eslint-disable-next-line @next/next/no-img-element -- external placeholder creatives
     <img
       src={src}
       alt={alt}
@@ -73,6 +74,7 @@ function CreativeMedia({
       loading="lazy"
       decoding="async"
       draggable={false}
+      referrerPolicy="no-referrer"
       className={frame}
       style={fit}
     />
@@ -92,7 +94,7 @@ function SlotFrame({
 }) {
   return (
     <div
-      className="relative overflow-hidden rounded-md border border-lborder bg-card"
+      className="relative overflow-hidden rounded-md border border-lborder bg-secondary"
       style={{
         width: '100%',
         maxWidth: fill ? '100%' : width,
@@ -104,9 +106,14 @@ function SlotFrame({
   );
 }
 
-function ResponsiveLeaderboard({ placement }: { placement: string }) {
-  const { wide, desktop, tablet, mobile } = RESPONSIVE_LEADERBOARD;
+const LEADERBOARD_BREAKPOINTS: { variant: LeaderboardVariant; className: string }[] = [
+  { variant: 'wide', className: 'hidden w-full min-[1200px]:block' },
+  { variant: 'desktop', className: 'hidden w-full min-[800px]:max-[1199px]:block' },
+  { variant: 'tablet', className: 'hidden w-full min-[500px]:max-[799px]:block' },
+  { variant: 'mobile', className: 'block w-full min-[500px]:hidden' },
+];
 
+function ResponsiveLeaderboard({ placement }: { placement: string }) {
   return (
     <aside
       data-ad-placement={placement}
@@ -114,26 +121,22 @@ function ResponsiveLeaderboard({ placement }: { placement: string }) {
       className="w-full min-w-0 max-w-full"
     >
       <div className="w-full">
-        <div className="hidden w-full min-[1200px]:block">
-          <SlotFrame width={wide.width} height={wide.height} fill>
-            <CreativeMedia src={wide.src} width={wide.width} height={wide.height} alt={dummyAdAlt(wide.advertiser, wide.line)} />
-          </SlotFrame>
-        </div>
-        <div className="hidden w-full min-[800px]:max-[1199px]:block">
-          <SlotFrame width={desktop.width} height={desktop.height} fill>
-            <CreativeMedia src={desktop.src} width={desktop.width} height={desktop.height} alt={dummyAdAlt(desktop.advertiser, desktop.line)} />
-          </SlotFrame>
-        </div>
-        <div className="hidden w-full min-[500px]:max-[799px]:block">
-          <SlotFrame width={tablet.width} height={tablet.height} fill>
-            <CreativeMedia src={tablet.src} width={tablet.width} height={tablet.height} alt={dummyAdAlt(tablet.advertiser, tablet.line)} />
-          </SlotFrame>
-        </div>
-        <div className="block w-full min-[500px]:hidden">
-          <SlotFrame width={mobile.width} height={mobile.height} fill>
-            <CreativeMedia src={mobile.src} width={mobile.width} height={mobile.height} alt={dummyAdAlt(mobile.advertiser, mobile.line)} />
-          </SlotFrame>
-        </div>
+        {LEADERBOARD_BREAKPOINTS.map(({ variant, className }) => {
+          const creative = resolveDummyAdCreative('leaderboard', placement, variant);
+          const meta = LEADERBOARD_SLOT_META[variant];
+          return (
+            <div key={variant} className={className}>
+              <SlotFrame width={meta.width} height={meta.height} fill>
+                <CreativeMedia
+                  src={creative.src}
+                  width={meta.width}
+                  height={meta.height}
+                  alt={dummyAdAlt(creative.advertiser, creative.line)}
+                />
+              </SlotFrame>
+            </div>
+          );
+        })}
       </div>
     </aside>
   );
@@ -148,7 +151,7 @@ export default function DummyAd({ size, placement, className = '', inFeed = fals
     );
   }
 
-  const creative = size === 'leaderboard' ? RESPONSIVE_LEADERBOARD.desktop : DUMMY_AD_CREATIVES[size];
+  const creative = resolveDummyAdCreative(size, placement, size === 'leaderboard' ? 'desktop' : undefined);
   const alt = dummyAdAlt(creative.advertiser, creative.line);
   const hideOnMobile = size === 'half-page';
 
@@ -157,7 +160,7 @@ export default function DummyAd({ size, placement, className = '', inFeed = fals
       <aside
         data-ad-placement={placement}
         aria-label="Advertisement"
-        className={`flex h-full min-h-[148px] flex-col overflow-hidden rounded-md border border-lborder bg-card ${className}`.trim()}
+        className={`flex h-full min-h-[148px] flex-col overflow-hidden rounded-md border border-lborder bg-secondary ${className}`.trim()}
       >
         <div className="relative min-h-0 flex-1">
           <div className="absolute inset-0">

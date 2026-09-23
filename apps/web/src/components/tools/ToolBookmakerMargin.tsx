@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { formatPct, overround } from '../../lib/oddsMath';
 import type { ToolDef } from '../../lib/toolsCatalog';
 import { fetchOddsMargin } from '../../services/odds';
-import { Field, MoreTools, ResultBox, ToolIntro, num } from './ToolShared';
+import { Field, ToolPage, ToolPanel, ResultBox, num } from './ToolShared';
 
 export default function ToolBookmakerMargin({ tool }: { tool: ToolDef }) {
   const [price1, setPrice1] = useState('1.91');
@@ -51,24 +51,23 @@ export default function ToolBookmakerMargin({ tool }: { tool: ToolDef }) {
   const margin = apiError ? localMargin : apiMargin !== undefined ? apiMargin : localMargin;
 
   return (
-    <div className="space-y-6">
-      <ToolIntro tool={tool} />
-      <div className="overflow-hidden rounded-md border border-lborder bg-card">
-        <div className="grid grid-cols-1 gap-5 p-4 sm:p-5 lg:grid-cols-[minmax(0,1fr)_240px]">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <Field label="Outcome 1 (decimal)" value={price1} onChange={setPrice1} />
-            <Field label="Outcome 2 (decimal)" value={price2} onChange={setPrice2} />
-            <Field label="Outcome 3 (optional)" value={price3} onChange={setPrice3} />
-          </div>
-          <div className="space-y-3">
+    <ToolPage tool={tool}>
+      <ToolPanel
+        aside={
+          <>
             <ResultBox label="Bookmaker margin" value={margin !== null && margin !== undefined ? formatPct(margin) : '—'} />
             {apiError ? (
               <p className="text-xs text-stext">Could not reach the server — showing a local estimate.</p>
             ) : null}
-          </div>
+          </>
+        }
+      >
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <Field label="Outcome 1 (decimal)" value={price1} onChange={setPrice1} />
+          <Field label="Outcome 2 (decimal)" value={price2} onChange={setPrice2} />
+          <Field label="Outcome 3 (optional)" value={price3} onChange={setPrice3} />
         </div>
-      </div>
-      <MoreTools currentSlug={tool.slug} />
-    </div>
+      </ToolPanel>
+    </ToolPage>
   );
 }

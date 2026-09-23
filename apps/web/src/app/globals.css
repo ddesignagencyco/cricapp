@@ -2002,3 +2002,143 @@ h3.news-copy[dir="rtl"] {
 html[data-hide-dummy-ads] [data-ad-placement] {
   display: none !important;
 }
+
+/* Tools hub — diamond-accent cards */
+.tool-diamond-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--radius-md, 0.375rem);
+  border: 1px solid var(--color-lborder);
+  background: var(--color-card);
+  box-shadow: 0 1px 0 rgb(255 255 255 / 0.04) inset, 0 1px 2px rgb(8 17 31 / 0.06);
+  transition:
+    transform 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.light .tool-diamond-card {
+  box-shadow: 0 1px 0 rgb(255 255 255 / 0.9) inset, 0 4px 14px rgb(16 24 40 / 0.06);
+}
+
+.tool-diamond-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--color-border-strong);
+  box-shadow: 0 1px 0 rgb(255 255 255 / 0.06) inset, 0 10px 28px rgb(59 104 252 / 0.12);
+}
+
+.tool-diamond-card__gem {
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  left: 50%;
+  z-index: 1;
+  width: 11px;
+  height: 11px;
+  transform: translate(-50%, -50%) rotate(45deg);
+  background: var(--color-brand);
+  opacity: 0.45;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand) 18%, transparent);
+}
+
+.tool-diamond-card::after {
+  pointer-events: none;
+  content: '';
+  position: absolute;
+  right: -18px;
+  bottom: -18px;
+  width: 56px;
+  height: 56px;
+  transform: rotate(45deg);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 22%, transparent);
+  opacity: 0.35;
+}
+
+.tool-diamond-icon {
+  position: relative;
+  width: 3rem;
+  height: 3rem;
+}
+
+.tool-diamond-icon__shape {
+  position: absolute;
+  inset: 0;
+  transform: rotate(45deg);
+  border-radius: 0.35rem;
+  border: 1px solid color-mix(in srgb, var(--color-accent) 35%, var(--color-lborder));
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-brand-soft) 90%, transparent),
+    color-mix(in srgb, var(--color-secondary) 85%, transparent)
+  );
+  box-shadow: 0 2px 8px rgb(59 104 252 / 0.12);
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.tool-diamond-card:hover .tool-diamond-icon__shape {
+  transform: rotate(45deg) scale(1.05);
+}
+
+.tool-diamond-icon__glyph {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  height: 100%;
+  width: 100%;
+  place-items: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tool-diamond-card:hover {
+    transform: none;
+  }
+
+  .tool-diamond-card:hover .tool-diamond-icon__shape {
+    transform: rotate(45deg);
+  }
+}
+
+/* Tool detail — workbench panel + result hero */
+.tool-page-panel {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-md, 0.375rem);
+  border: 1px solid var(--color-lborder);
+  background: var(--color-card);
+  box-shadow: 0 1px 0 rgb(255 255 255 / 0.04) inset, 0 1px 2px rgb(8 17 31 / 0.06);
+}
+
+.light .tool-page-panel {
+  box-shadow: 0 1px 0 rgb(255 255 255 / 0.9) inset, 0 4px 14px rgb(16 24 40 / 0.05);
+}
+
+.tool-page-panel__gem {
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  left: 50%;
+  z-index: 1;
+  width: 11px;
+  height: 11px;
+  transform: translate(-50%, -50%) rotate(45deg);
+  background: var(--color-brand);
+  opacity: 0.4;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand) 16%, transparent);
+}
+
+.tool-result-hero {
+  border-radius: var(--radius-md, 0.375rem);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 28%, var(--color-lborder));
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--color-brand-soft) 55%, var(--color-secondary)),
+    var(--color-secondary)
+  );
+  padding: 1rem 1.125rem;
+}
+
+.tool-result-hero__value {
+  text-shadow: 0 1px 0 rgb(255 255 255 / 0.08);
+}

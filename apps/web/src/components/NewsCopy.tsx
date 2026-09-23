@@ -1,4 +1,4 @@
-import type { CSSProperties, ElementType, ReactNode } from 'react';
+import { createElement, type CSSProperties, type ElementType, type ReactNode } from 'react';
 import { newsLocale } from '../utils/locale';
 
 interface NewsCopyProps {
@@ -20,9 +20,14 @@ export default function NewsCopy({
 }: NewsCopyProps) {
   const sample = text ?? (typeof children === 'string' ? children : '');
   const locale = newsLocale(language, sample);
-  return (
-    <Tag dir={locale.dir} lang={locale.lang} className={`news-copy ${className}`.trim()} style={style}>
-      {children}
-    </Tag>
+  return createElement(
+    Tag,
+    {
+      dir: locale.dir,
+      lang: locale.lang,
+      className: `news-copy ${className}`.trim(),
+      style,
+    },
+    children
   );
 }

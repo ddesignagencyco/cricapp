@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { ChevronLeft } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import ToolCalculator from '../../../components/tools/ToolCalculator';
 import { toolBySlug } from '../../../lib/toolsCatalog';
@@ -18,11 +19,15 @@ export default async function ToolPage({ params }: { params: Promise<{ slug: str
   if (!tool) notFound();
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-      <nav className="mb-5 flex items-center gap-1.5 text-xs text-stext">
-        <Link href="/tools" className="font-semibold hover:text-accent">Tools</Link>
-        <span>/</span>
-        <span className="truncate text-mtext">{tool.title}</span>
+    <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
+      <nav aria-label="Breadcrumb" className="mb-5">
+        <Link
+          href="/tools"
+          className="inline-flex items-center gap-1 text-xs font-semibold text-accent hover:underline"
+        >
+          <ChevronLeft size={14} aria-hidden />
+          All tools
+        </Link>
       </nav>
       <ToolCalculator tool={tool} />
     </div>
