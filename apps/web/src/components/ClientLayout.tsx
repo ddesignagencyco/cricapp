@@ -30,8 +30,6 @@ function showGlobalTopAd(pathname: string) {
   if (pathname.startsWith('/matches/') && pathname !== '/matches') return false;
   if (isNewsArticlePath(pathname)) return false;
   if (pathname.startsWith('/authors/')) return false;
-  if (pathname === '/tours' || pathname.startsWith('/tours/')) return false;
-  if (pathname === '/tournaments' || pathname.startsWith('/tournaments/')) return false;
   if (pathname.startsWith('/teams/') && pathname !== '/teams') return false;
   if (pathname.startsWith('/players/') && pathname !== '/players') return false;
   if (isEditorialPath(pathname)) return false;

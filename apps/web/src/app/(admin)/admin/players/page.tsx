@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { UserCircle, Search } from 'lucide-react';
+import { UserCircle } from 'lucide-react';
 import { fetchPlayersPage } from '../../../../services/players';
 import type { Player } from '../../../../types';
 import Pagination from '../../../../components/admin/AdminPagination';
-import { AdminAvatar, AdminPageHeader, LoadingState, EmptyState, AdminInput, AdminEntityLink } from '../../../../components/admin/AdminShared';
+import { AdminAvatar, AdminPageHeader, LoadingState, EmptyState, AdminSearchField, AdminEntityLink } from '../../../../components/admin/AdminShared';
 import { cap } from '../../../../utils/helpers';
 
 export default function PlayersPage() {
@@ -39,10 +39,12 @@ export default function PlayersPage() {
       <AdminPageHeader title="Players" subtitle="View all players from the sports data provider." />
 
       <div className="flex items-center gap-3 rounded-lg p-3" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
-        <div className="relative w-full max-w-md">
-          <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--admin-text-muted)' }} />
-          <AdminInput type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search players..." style={{ paddingLeft: '2.25rem' }} />
-        </div>
+        <AdminSearchField
+          wrapperClassName="max-w-md"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search players..."
+        />
       </div>
 
       {loading ? <LoadingState variant="people" /> : filtered.length === 0 ? (

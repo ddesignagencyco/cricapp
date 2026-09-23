@@ -105,7 +105,7 @@ export default async function HomePage() {
           <SectionHeader title="Watch Now" subtitle="Live streams and featured videos" icon="video" to="/gallery?tab=videos" actionLabel="All videos" />
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {streams.slice(0, 3).map((stream) => (
-              <Link key={stream.id} href="/streams" className="group overflow-hidden rounded-2xl bg-card ring-1 ring-lborder hover:ring-border-strong">
+              <Link key={stream.id} href="/streams" className="card-diamond card-interactive group overflow-hidden rounded-md border border-lborder bg-card">
                 <div className="flex items-center border-b border-lborder px-3 py-2">
                   {stream.status === 'ended' ? (
                     <Badge>Ended</Badge>
@@ -265,7 +265,7 @@ export default async function HomePage() {
           <SectionHeader title="Gallery" subtitle="Images, shorts and videos" icon="images" to="/gallery" actionLabel="Open gallery" />
           <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-6">
             {galleryPhotos.map((item) => (
-              <Link key={item.id} href="/gallery?tab=images" className="group overflow-hidden rounded-2xl bg-card ring-1 ring-lborder">
+              <Link key={item.id} href="/gallery?tab=images" className="card-diamond card-interactive group overflow-hidden rounded-md border border-lborder bg-card">
                 <div className="relative aspect-square bg-secondary">
                   <RemoteImage
                     src={item.thumbnailUrl || item.url}

@@ -90,7 +90,7 @@ export default function PlayerDetailBody({ player, relatedNews = [] }: Props) {
                 alt={name}
                 width={80}
                 height={80}
-                className="h-20 w-20 rounded-full border border-lborder bg-entity-avatar object-cover"
+                className="avatar-3d h-20 w-20 rounded-full bg-entity-avatar object-cover"
               />
             ) : (
               <EntityAvatar className="h-20 w-20 text-xl">{initials}</EntityAvatar>

@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
-import { Calendar, Search, Shield, Trophy, UserRound, X } from 'lucide-react';
+import { Calendar, Shield, Trophy, UserRound, X } from 'lucide-react';
+import SearchField from './SearchField';
 import toast from 'react-hot-toast';
 import { searchAll } from '../services/search';
 import type { Match, SearchResults, TournamentApi } from '../types/index';
@@ -117,15 +118,14 @@ export default function SearchBar({ autoFocus = false, onDone }: SearchBarProps)
         className="elev-overlay w-full max-w-xl overflow-hidden rounded-md border border-lborder bg-card"
       >
         <div className="flex items-center gap-3 border-b border-lborder px-4 py-3">
-          <Search size={18} aria-hidden="true" className="shrink-0 text-accent" />
           <div className="min-w-0 flex-1">
             <label id="global-search-title" htmlFor="global-search-input" className="sr-only">
               Search PakCricZone
             </label>
-            <input
+            <SearchField
               ref={inputRef}
               id="global-search-input"
-              type="search"
+              iconClassName="text-accent"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               onKeyDown={(event) => {
@@ -133,8 +133,7 @@ export default function SearchBar({ autoFocus = false, onDone }: SearchBarProps)
               }}
               placeholder="Search players, teams, matches or tournaments"
               autoFocus={autoFocus}
-              autoComplete="off"
-              className="w-full bg-transparent text-sm text-mtext outline-none sm:text-base"
+              inputClassName="sm:text-base"
             />
           </div>
           <kbd className="hidden rounded border border-lborder px-1.5 py-0.5 text-[10px] font-semibold text-stext sm:block">

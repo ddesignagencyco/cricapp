@@ -145,8 +145,8 @@ export default function MatchOddsView({
   if (notFound) {
     return (
       <EmptyState
-        title="Match not found"
-        message="This fixture is not in our database. Check the match link or try again later."
+        title="No odds stored yet"
+        message="Licensed prices are not saved for this fixture. Run the dev odds seed against this match id, or try an upcoming/live fixture."
         icon={Scale}
       />
     );

@@ -36,16 +36,14 @@ export default function Tabs({ tabs, active, onChange, className = '', size = 'm
             onClick={() => onChange(tab.key)}
             className={`tab-pill flex items-center gap-1.5 ${pad} ${
               isTags
-                ? `rounded-full border ${
+                ? `rounded-lg border ${
                     isActive
-                      ? 'btn-brand border-transparent'
-                      : 'border-lborder bg-transparent text-stext hover:border-border-strong hover:text-mtext'
+                      ? 'tab-tag--active border-transparent'
+                      : 'tab-pill--idle border-lborder text-stext hover:border-border-strong hover:text-mtext'
                   }`
-                : `rounded-md ${
-                    isActive
-                      ? 'btn-brand shadow-sm'
-                      : 'text-stext hover:bg-[var(--color-row-hover)] hover:text-mtext'
-                  }`
+                : isActive
+                  ? 'tab-pill--active'
+                  : 'tab-pill--idle'
             }`}
           >
             {Icon && <Icon size={size === 'sm' || isTags ? 14 : 16} strokeWidth={2.2} aria-hidden="true" />}
@@ -53,7 +51,9 @@ export default function Tabs({ tabs, active, onChange, className = '', size = 'm
             {typeof tab.count === 'number' && (
               <span
                 className={`rounded-full px-1.5 text-xs font-semibold tabular-nums ${
-                  isActive ? 'bg-white/20 text-white' : 'bg-[var(--color-neutral-soft)] text-stext'
+                  isActive
+                    ? 'tab-pill__count--active'
+                    : 'bg-[var(--color-neutral-soft)] text-stext'
                 }`}
               >
                 {tab.count}

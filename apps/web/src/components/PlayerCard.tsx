@@ -54,7 +54,7 @@ export default function PlayerCard({ player }: PlayerCardProps) {
           alt={name}
           width={48}
           height={48}
-          className="h-12 w-12 shrink-0 rounded-full border border-lborder bg-entity-avatar object-cover"
+          className="avatar-3d h-12 w-12 shrink-0 rounded-full bg-entity-avatar object-cover"
         />
       ) : (
         <EntityAvatar className="h-12 w-12 text-sm">{initials}</EntityAvatar>

@@ -50,7 +50,7 @@ export default function TeamLogo({ teamId, name, code, color, size = 'md', class
           title={displayName}
           fill
           sizes={`${pixels[size] || 96}px`}
-          className="rounded-full border border-white/10 bg-white object-contain p-0.5"
+          className="avatar-3d rounded-full bg-white object-contain p-0.5"
           style={color ? { borderColor: color } : undefined}
         />
       ) : (

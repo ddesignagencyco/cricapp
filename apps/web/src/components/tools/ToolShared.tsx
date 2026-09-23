@@ -156,7 +156,6 @@ export function ToolPanel({
 }) {
   return (
     <div className={`tool-page-panel ${className}`.trim()}>
-      <span className="tool-page-panel__gem" aria-hidden />
       <div
         className={
           aside

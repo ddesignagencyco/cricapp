@@ -6,12 +6,15 @@ import MatchOddsView from './MatchOddsView';
 import { oddsPageHref } from '../../lib/oddsPaths';
 import { matchSides } from '../../lib/predictions';
 import type { Match } from '../../types';
+import type { MatchOddsResponse } from '../../types/odds';
 
 interface Props {
   match: Match;
+  initialOdds?: MatchOddsResponse | null;
+  initialOddsForbidden?: boolean;
 }
 
-export default function MatchOddsTab({ match }: Props) {
+export default function MatchOddsTab({ match, initialOdds = null, initialOddsForbidden = false }: Props) {
   const matchId = String(match.matchId || match.id || '');
   const sides = matchSides(match);
   const pollLive = match.status === 'live';
@@ -22,6 +25,8 @@ export default function MatchOddsTab({ match }: Props) {
         matchId={matchId}
         homeLabel={sides.homeName}
         awayLabel={sides.awayName}
+        initial={initialOdds}
+        initialForbidden={initialOddsForbidden}
         pollLive={pollLive}
         compact
       />

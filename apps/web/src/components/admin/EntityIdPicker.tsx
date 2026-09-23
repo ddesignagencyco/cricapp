@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
-import { AdminInput } from './AdminShared';
+import { AdminSearchField } from './AdminShared';
 
 export interface EntityChoice {
   id: string;
@@ -90,8 +90,8 @@ export default function EntityIdPicker({ label, hint, values, onChange, search }
         </ul>
       )}
       <div className="flex gap-1.5">
-        <AdminInput
-          type="search"
+        <AdminSearchField
+          wrapperClassName="min-w-0 flex-1"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => {

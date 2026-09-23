@@ -8,7 +8,6 @@ import {
   FileText,
   Languages,
   Loader2,
-  Search,
   Trash2,
   Eye,
   CheckCircle2,
@@ -23,7 +22,7 @@ import {
   type NewsArticleAdmin,
   type NewsCategory,
 } from '../../services/newsAdmin';
-import { AdminAvatar, AdminInput, AdminSelect, ConfirmDialog, ErrorState, LoadingState } from './AdminShared';
+import { AdminAvatar, AdminSearchField, AdminSelect, ConfirmDialog, ErrorState, LoadingState } from './AdminShared';
 import Pagination from './AdminPagination';
 import RemoteImage from '../RemoteImage';
 import { newsHref, otherNewsLanguage } from '../../utils/newsConstraints';
@@ -134,16 +133,12 @@ export default function NewsManager() {
 
       {/* Filters */}
       <div className="flex flex-col gap-3 rounded-lg p-3 md:flex-row md:items-center" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
-        <div className="relative w-full max-w-md">
-          <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--admin-text-muted)' }} />
-          <AdminInput
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by title, author, or excerpt..."
-            style={{ paddingLeft: '2.25rem' }}
-          />
-        </div>
+        <AdminSearchField
+          wrapperClassName="max-w-md"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search by title, author, or excerpt..."
+        />
         <div className="flex shrink-0 items-center gap-2">
           <AdminSelect
             value={filterCategory}

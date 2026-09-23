@@ -7,7 +7,6 @@ import WinProbabilityBar from './WinProbabilityBar';
 import {
   asPercent,
   featuredRun,
-  inningsLooksOver,
   isNil,
   matchSides,
   matchStatusLabel,
@@ -86,11 +85,8 @@ export default function PredictionMatchCard({ match, predictions }: Props) {
   const format = extraText(match, 'format');
   const score = extraText(match, 'displayScore');
   const phase = matchStatusLabel(situation.matchStatus || extraText(match, 'matchStatus'));
-  const finished = inningsLooksOver(situation);
   const range = run?.scoreRange;
   const confidence = run && !isNil(run.confidence) ? Number(run.confidence) : null;
-  const pressure = run && !isNil(run.pressureIndex) ? Number(run.pressureIndex) : null;
-  const wicketRisk = run && !isNil(run.wicketRisk) ? Number(run.wicketRisk) : null;
   const lean = momentumLine(run?.momentum, sides);
   const live = run?.stage === 'live' || status === 'live';
   const insight = [situation.needLine, lean, why].filter(Boolean).join(' ');
@@ -101,40 +97,25 @@ export default function PredictionMatchCard({ match, predictions }: Props) {
   const scoreMeta = [inningsLabel || (showPhase ? phase : ''), overLabel].filter(Boolean).join(' · ');
   const meters = [
     confidence !== null && confidence > 0 ? { label: 'Confidence', value: confidence } : null,
-    pressure !== null && pressure > 0 ? { label: 'Pressure', value: pressure } : null,
-    !finished && wicketRisk !== null && wicketRisk > 0
-      ? { label: 'Wicket soon', value: wicketRisk }
-      : null,
   ].filter((row): row is { label: string; value: number } => row !== null);
-  const facts = [
-    !situation.scoreLine && score ? { label: 'Score', value: score } : null,
-    showPhase ? { label: 'Status', value: phase } : null,
-    situation.inning !== null
-      ? { label: 'Innings', value: situation.inning === 1 ? '1st' : situation.inning === 2 ? '2nd' : String(situation.inning) }
-      : null,
-    situation.modelOver !== null ? { label: 'Over', value: String(situation.modelOver) } : null,
-    situation.wicketsLost !== null && !(situation.wicketsLost === 0 && !score)
-      ? { label: 'Wickets', value: `${situation.wicketsLost} down` }
-      : null,
+  const factsAll = [
     situation.requiredRuns !== null && situation.requiredRuns > 0
       ? { label: situation.inning === 2 ? 'Target' : 'Need', value: String(situation.requiredRuns) }
       : null,
-    situation.parScore !== null && situation.parScore > 0
-      ? { label: 'Par', value: String(situation.parScore) }
-      : null,
     usefulScoreRange(range, score ? Number(score.split('/')[0]) : null)
-      ? { label: 'Score band', value: `${range?.low}–${range?.high}${range?.expected ? ` · likely ${range.expected}` : ''}` }
+      ? { label: 'Score band', value: `${range?.low}–${range?.high}` }
       : null,
     toss ? { label: 'Toss', value: toss } : null,
-    format ? { label: 'Format', value: format } : null,
     when ? { label: 'When', value: when } : null,
-    ground ? { label: 'Ground', value: ground } : null,
+    format ? { label: 'Format', value: format } : null,
+    ground ? { label: 'Venue', value: ground } : null,
   ].filter((row): row is { label: string; value: string } => row !== null);
+  const facts = factsAll.slice(0, 4);
 
   return (
     <Link
       href={href}
-      className="prediction-card flex h-full flex-col rounded-xl border border-lborder/80 bg-card p-5"
+      className="prediction-card flex h-full flex-col rounded-md border border-lborder bg-card p-4 sm:p-5"
     >
       <div className="mb-4 flex items-center justify-between gap-2">
         <p className="truncate text-[11px] font-bold uppercase tracking-[0.14em] text-stext">
@@ -193,7 +174,7 @@ export default function PredictionMatchCard({ match, predictions }: Props) {
           {insight ? (
             <div className="mt-4 flex items-start gap-2.5 rounded-lg bg-surface-muted px-3 py-2.5">
               <BarChart3 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent" strokeWidth={2.25} />
-              <p className="line-clamp-2 text-xs font-medium leading-relaxed text-stext">{insight}</p>
+              <p className="line-clamp-1 text-xs text-stext">{insight}</p>
             </div>
           ) : null}
         </div>

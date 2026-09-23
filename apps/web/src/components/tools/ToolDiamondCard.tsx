@@ -11,7 +11,6 @@ export default function ToolDiamondCard({ tool }: { tool: ToolDef }) {
 
   return (
     <Link href={`/tools/${tool.slug}`} className="tool-diamond-card group flex h-full flex-col">
-      <span className="tool-diamond-card__gem" aria-hidden />
       <div className="flex items-start gap-3.5 p-4 sm:p-5">
         <ToolDiamondIcon kind={tool.kind} size={20} />
         <div className="min-w-0 flex-1">

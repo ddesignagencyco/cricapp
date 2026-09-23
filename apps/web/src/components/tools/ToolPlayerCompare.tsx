@@ -200,11 +200,9 @@ export default function ToolPlayerCompare({ tool }: { tool: ToolDef }) {
       </ToolPanel>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="tool-page-panel p-4 sm:p-5">
-          <span className="tool-page-panel__gem" aria-hidden />
           <PlayerCard player={leftFull} />
         </div>
         <div className="tool-page-panel p-4 sm:p-5">
-          <span className="tool-page-panel__gem" aria-hidden />
           <PlayerCard player={rightFull} />
         </div>
       </div>

@@ -7,6 +7,7 @@ import {
   AdminChip,
   AdminEntityLink,
   AdminInput,
+  AdminSearchField,
   AdminPageHeader,
   AdminSelect,
   EmptyState,
@@ -256,7 +257,9 @@ export default function AdminPredictionsPage() {
 
       <section className="overflow-hidden rounded-lg" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
         <div className="flex flex-col gap-2 p-3 md:flex-row md:items-center" style={{ borderBottom: '1px solid var(--admin-border)' }}>
-          <AdminInput
+          <AdminSearchField
+            wrapperClassName="max-w-md flex-1"
+            type="text"
             value={matchId}
             onChange={(e) => setMatchId(e.target.value)}
             placeholder="Filter match id"

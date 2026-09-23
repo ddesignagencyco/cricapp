@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Search, Trash2, Users } from 'lucide-react';
+import { Trash2, Users } from 'lucide-react';
 import {
   AdminAvatar,
-  AdminInput,
+  AdminSearchField,
   AdminPageHeader,
   AdminToggle,
   ConfirmDialog,
@@ -196,18 +196,12 @@ export default function UsersPage() {
       <AdminPageHeader title="Users" subtitle="Toggle admin access and email verification. Superadmin accounts are read-only." />
 
       <div className="flex flex-col gap-3 rounded-lg p-3 md:flex-row md:items-center" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
-        <div className="relative w-full max-w-md">
-          <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--admin-text-muted)' }} />
-          <AdminInput
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') load(1, q);
-            }}
-            placeholder="Search email, username or name"
-            style={{ paddingLeft: '2.25rem' }}
-          />
-        </div>
+        <AdminSearchField
+          wrapperClassName="max-w-md"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Search email, username or name"
+        />
         <div className="flex flex-wrap gap-1.5">
           {ROLE_FILTERS.map((item) => (
             <button

@@ -10,7 +10,6 @@ import {
   Loader2,
   Pencil,
   Plus,
-  Search,
   Tag,
   FolderArchive,
   Trash2,
@@ -26,7 +25,7 @@ import {
   type NewsArticleAdmin,
   type NewsCategory,
 } from '../../services/newsAdmin';
-import { AdminField, AdminIconButton, AdminInput, ConfirmDialog, LoadingState } from './AdminShared';
+import { AdminField, AdminIconButton, AdminInput, AdminSearchField, ConfirmDialog, LoadingState } from './AdminShared';
 import { BlinkingDot } from '../Badge';
 import NewsCopy from '../NewsCopy';
 
@@ -183,16 +182,12 @@ export default function CategoryManager() {
         <div className="space-y-3">
           {/* Search Bar */}
           <div className="flex items-center gap-3 rounded-lg p-3" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
-            <div className="relative w-full max-w-md">
-              <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--admin-text-muted)' }} />
-              <AdminInput
-                type="search"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search categories..."
-                style={{ paddingLeft: '2.25rem' }}
-              />
-            </div>
+            <AdminSearchField
+              wrapperClassName="max-w-md"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search categories..."
+            />
             <span className="text-xs shrink-0" style={{ color: 'var(--admin-text-muted)' }}>
               {filteredCategories.length} categories
             </span>

@@ -37,7 +37,7 @@ function LeaderList({
   if (entries.length === 0) return null;
 
   return (
-    <div className="overflow-hidden rounded-md border border-lborder bg-card">
+    <div className="card-diamond overflow-hidden rounded-md border border-lborder bg-card">
       <table className="w-full text-left text-sm">
         <thead>
           <tr>

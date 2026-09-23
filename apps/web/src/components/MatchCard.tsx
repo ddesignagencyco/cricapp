@@ -48,6 +48,7 @@ export default function MatchCard({ match, dense = false, showVenue = true }: Ma
       : '';
   const footerRightIsVenue = isUpcoming && !!locationLine;
   const footerRightIsMeta = isUpcoming && !locationLine && !!footerRight;
+  const showStackedResult = !isLive && !isUpcoming && Boolean(footerRight);
 
   return (
     <Link
@@ -87,59 +88,92 @@ export default function MatchCard({ match, dense = false, showVenue = true }: Ma
         />
       </div>
 
-      <div
-        className={`flex items-center justify-between gap-2 border-t border-lborder ${
-          dense ? 'mt-2 pt-1.5 text-[10px]' : 'mt-2.5 pt-2 text-xs'
-        }`}
-      >
-        <p className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
-          {isLive && inn ? (
-            <span className="truncate font-semibold tabular-nums text-danger">
-              <BlinkingDot className="mr-1.5 align-middle" />
-              {board.battingLabel ? `${board.battingLabel} batting · ` : ''}
-              {inn.overs !== null && inn.overs !== undefined ? `${formatCricketOvers(inn.overs) || inn.overs} ov` : 'In play'}
-              {board.rrLabel && board.rrLabel !== '—' ? ` · RR ${board.rrLabel}` : ''}
-            </span>
-          ) : (
-            <>
-              {date && (
+      {showStackedResult ? (
+        <div
+          className={`border-t border-lborder ${dense ? 'mt-2 space-y-1.5 pt-1.5' : 'mt-2.5 space-y-2 pt-2.5'}`}
+        >
+          <p
+            className={`font-semibold leading-snug text-gold ${dense ? 'text-[11px]' : 'text-xs sm:text-sm'}`}
+            title={footerRight}
+          >
+            {footerRight}
+          </p>
+          {(date || (isUpcoming && time)) && (
+            <p
+              className={`flex flex-wrap items-center gap-x-3 gap-y-1 text-stext ${dense ? 'text-[10px]' : 'text-xs'}`}
+            >
+              {date ? (
                 <span className="inline-flex items-center gap-1 font-semibold tabular-nums text-accent">
-                  <Calendar size={12} />
+                  <Calendar size={12} aria-hidden />
                   {date}
                 </span>
-              )}
-              {isUpcoming && time && (
+              ) : null}
+              {isUpcoming && time ? (
                 <span className="inline-flex items-center gap-1 font-semibold tabular-nums text-mtext">
-                  <Clock size={12} />
+                  <Clock size={12} aria-hidden />
                   {time}
                 </span>
-              )}
-              {isUpcoming && !dense && formatLabel && (
-                <span className="inline-flex rounded bg-[var(--color-badge-neutral-bg)] px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-stext">
-                  {formatLabel}
-                </span>
-              )}
-              {isUpcoming && !dense && matchLabel && (
-                <span className="font-medium text-stext">{matchLabel}</span>
-              )}
-            </>
+              ) : null}
+            </p>
           )}
-        </p>
-        {footerRight ? (
-          <span
-            className={`max-w-[48%] shrink-0 truncate text-right ${
-              footerRightIsVenue
-                ? 'inline-flex items-center justify-end gap-1 font-medium text-stext'
-                : footerRightIsMeta
-                  ? 'text-xs font-semibold text-stext'
-                  : 'font-mono text-sm font-bold tabular-nums text-mtext'
-            }`}
-          >
-            {footerRightIsVenue && <MapPin size={12} />}
-            {footerRight}
-          </span>
-        ) : null}
-      </div>
+        </div>
+      ) : (
+        <div
+          className={`flex items-center justify-between gap-2 border-t border-lborder ${
+            dense ? 'mt-2 pt-1.5 text-[10px]' : 'mt-2.5 pt-2 text-xs'
+          }`}
+        >
+          <p className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+            {isLive && inn ? (
+              <span className="truncate font-semibold tabular-nums text-danger">
+                <BlinkingDot className="mr-1.5 align-middle" />
+                {board.battingLabel ? `${board.battingLabel} batting · ` : ''}
+                {inn.overs !== null && inn.overs !== undefined
+                  ? `${formatCricketOvers(inn.overs) || inn.overs} ov`
+                  : 'In play'}
+                {board.rrLabel && board.rrLabel !== '—' ? ` · RR ${board.rrLabel}` : ''}
+              </span>
+            ) : (
+              <>
+                {date && (
+                  <span className="inline-flex items-center gap-1 font-semibold tabular-nums text-accent">
+                    <Calendar size={12} aria-hidden />
+                    {date}
+                  </span>
+                )}
+                {isUpcoming && time && (
+                  <span className="inline-flex items-center gap-1 font-semibold tabular-nums text-mtext">
+                    <Clock size={12} aria-hidden />
+                    {time}
+                  </span>
+                )}
+                {isUpcoming && !dense && formatLabel && (
+                  <span className="inline-flex rounded bg-[var(--color-badge-neutral-bg)] px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-stext">
+                    {formatLabel}
+                  </span>
+                )}
+                {isUpcoming && !dense && matchLabel && (
+                  <span className="font-medium text-stext">{matchLabel}</span>
+                )}
+              </>
+            )}
+          </p>
+          {footerRight ? (
+            <span
+              className={`min-w-0 text-right ${
+                footerRightIsVenue
+                  ? 'inline-flex max-w-[55%] shrink-0 items-center justify-end gap-1 truncate font-medium text-stext'
+                  : footerRightIsMeta
+                    ? 'max-w-[55%] shrink-0 truncate text-xs font-semibold text-stext'
+                    : 'max-w-[55%] shrink-0 truncate font-mono text-sm font-bold tabular-nums text-mtext'
+              }`}
+            >
+              {footerRightIsVenue && <MapPin size={12} aria-hidden />}
+              {footerRight}
+            </span>
+          ) : null}
+        </div>
+      )}
     </Link>
   );
 }

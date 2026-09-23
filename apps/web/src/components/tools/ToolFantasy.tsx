@@ -70,7 +70,6 @@ export default function ToolFantasy({ tool }: { tool: ToolDef }) {
       </ToolPanel>
 
       <div className="tool-page-panel">
-        <span className="tool-page-panel__gem" aria-hidden />
         <div className="p-4 sm:p-6">
           <h2 className="text-sm font-bold text-mtext">Informational XI</h2>
           <p className="mt-1 text-xs text-stext">

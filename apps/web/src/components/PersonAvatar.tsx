@@ -31,7 +31,7 @@ export default function PersonAvatar({
         alt={seed}
         width={size}
         height={size}
-        className={`shrink-0 rounded-full bg-secondary object-cover ring-1 ring-lborder ${className}`}
+        className={`avatar-3d shrink-0 rounded-full bg-secondary object-cover ${className}`}
         style={{ width: size, height: size }}
       />
     );
@@ -39,7 +39,7 @@ export default function PersonAvatar({
 
   return (
     <span
-      className={`grid shrink-0 place-items-center rounded-full font-semibold text-white ${className}`}
+      className={`avatar-3d grid shrink-0 place-items-center rounded-full font-semibold text-white ${className}`}
       style={{
         width: size,
         height: size,

@@ -1,25 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { Calendar, CalendarDays, Images, Newspaper, Sparkles, Trophy, Users, Video, Zap, TrendingUp, MapPin } from 'lucide-react';
-
-const iconMap: Record<string, React.ComponentType<{ size?: number; strokeWidth?: number }>> = {
-  calendar: Calendar,
-  calendardays: CalendarDays,
-  images: Images,
-  newspaper: Newspaper,
-  sparkles: Sparkles,
-  trophy: Trophy,
-  users: Users,
-  video: Video,
-  zap: Zap,
-  trendingup: TrendingUp,
-  mappin: MapPin,
-};
 
 interface SectionHeaderProps {
   title: string;
   subtitle?: string;
+  /** Small accent label above the title (homepage sections). */
+  eyebrow?: string;
+  /** @deprecated Use eyebrow; kept for existing call sites. */
   icon?: string;
   to?: string;
   actionLabel?: string;
@@ -27,23 +15,23 @@ interface SectionHeaderProps {
 }
 
 export default function SectionHeader({
-  title, subtitle, icon, to, actionLabel, onAction,
+  title,
+  subtitle,
+  eyebrow,
+  to,
+  actionLabel,
+  onAction,
 }: SectionHeaderProps) {
-  const Icon = icon ? iconMap[icon.toLowerCase()] : null;
   return (
-    <div className="mb-6 flex items-end justify-between gap-4">
-      <div className="flex items-center gap-3">
-        {Icon && (
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
-            <Icon size={18} strokeWidth={2.5} />
-          </div>
-        )}
-        <div>
-          <h2 className="text-lg font-bold tracking-tight text-mtext sm:text-xl">{title}</h2>
-          {subtitle && <p className="mt-0.5 text-xs text-stext sm:text-sm">{subtitle}</p>}
-        </div>
+    <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+      <div className="max-w-2xl">
+        {eyebrow ? (
+          <p className="text-xs font-medium uppercase tracking-wider text-accent">{eyebrow}</p>
+        ) : null}
+        <h2 className={`${eyebrow ? 'mt-1' : ''} text-2xl font-semibold text-mtext`}>{title}</h2>
+        {subtitle ? <p className="mt-1 text-sm text-stext">{subtitle}</p> : null}
       </div>
-      {to && (
+      {to ? (
         <Link
           href={to}
           className="section-action-link group flex shrink-0 items-center gap-1.5 whitespace-nowrap text-xs font-semibold text-accent motion-reduce:transition-none sm:text-sm"
@@ -53,8 +41,8 @@ export default function SectionHeader({
             &rarr;
           </span>
         </Link>
-      )}
-      {onAction && (
+      ) : null}
+      {onAction ? (
         <button
           type="button"
           onClick={onAction}
@@ -65,7 +53,7 @@ export default function SectionHeader({
             &rarr;
           </span>
         </button>
-      )}
+      ) : null}
     </div>
   );
 }

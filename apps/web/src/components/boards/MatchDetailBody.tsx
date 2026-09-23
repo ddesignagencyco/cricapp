@@ -33,6 +33,7 @@ import MatchPredictionTab from '../predictions/MatchPredictionTab';
 import MatchOddsTab from '../odds/MatchOddsTab';
 import { Skeleton } from '../skeletons/Skeletons';
 import type { HeadToHead, Team } from '../../types';
+import type { MatchOddsResponse } from '../../types/odds';
 import { decodeEntityId, useLinkedNews } from './RelatedNewsPanel';
 import { newsHref } from '../../utils/newsConstraints';
 
@@ -61,6 +62,8 @@ const completedTabs = [
 
 interface Props {
   match: any;
+  initialOdds?: MatchOddsResponse | null;
+  initialOddsForbidden?: boolean;
 }
 
 function looksLikeTeamId(value: string): boolean {
@@ -117,7 +120,11 @@ function displaySide(match: any, index: 0 | 1) {
   };
 }
 
-export default function MatchDetailBody({ match: initialMatch }: Props) {
+export default function MatchDetailBody({
+  match: initialMatch,
+  initialOdds = null,
+  initialOddsForbidden = false,
+}: Props) {
   const [match, setMatch] = useState(initialMatch);
   const [tab, setTab] = useState(
     initialMatch?.status === 'completed' || initialMatch?.status === 'cancelled' ? 'result' : 'live'
@@ -295,17 +302,20 @@ export default function MatchDetailBody({ match: initialMatch }: Props) {
   const breadcrumbName = `${homeName} vs ${awayName}`;
 
   return (
-    <div className="mx-auto max-w-7xl space-y-3 px-4 py-8 sm:px-6">
-      <nav className="flex items-center gap-1.5 text-xs text-stext">
-        <Link href="/matches" className="hover:text-accent transition-colors">Matches</Link>
-        <span>/</span>
-        <span className="text-mtext truncate max-w-[200px] sm:max-w-none font-medium">{breadcrumbName}</span>
+    <div className="match-detail-page mx-auto max-w-7xl space-y-4 px-4 py-6 sm:space-y-5 sm:px-6 sm:py-8">
+      <nav className="match-detail-breadcrumb text-stext" aria-label="Breadcrumb">
+        <Link href="/matches" className="font-semibold text-accent transition-colors hover:text-mtext">
+          Matches
+        </Link>
+        <span className="text-stext" aria-hidden="true">
+          /
+        </span>
+        <span className="truncate font-medium text-mtext max-w-[12rem] sm:max-w-none">{breadcrumbName}</span>
       </nav>
 
-      <header className="relative overflow-hidden rounded-3xl border border-lborder bg-card p-4 shadow-sm sm:p-8">
-        {isLive && (
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-danger" />
-        )}
+      <header
+        className={`match-detail-hero p-4 sm:p-8 ${isLive ? 'match-detail-hero--live' : ''}`}
+      >
 
         {/* Top Badges & Actions */}
         <div className="relative flex flex-wrap items-center justify-between gap-3 border-b border-lborder/60 pb-4">
@@ -346,7 +356,7 @@ export default function MatchDetailBody({ match: initialMatch }: Props) {
           />
 
           <div className="flex shrink-0 flex-col items-center justify-center">
-            <div className="grid h-9 w-9 place-items-center rounded-xl border border-lborder bg-secondary sm:h-12 sm:w-12 sm:rounded-2xl">
+            <div className="match-detail-vs sm:h-12 sm:w-12">
               <span className="font-mono text-[10px] font-black italic tracking-wider text-stext sm:text-xs">VS</span>
             </div>
             {match.round && (
@@ -365,8 +375,14 @@ export default function MatchDetailBody({ match: initialMatch }: Props) {
           />
         </div>
 
+        {(isCompleted || isCancelled) && resultText ? (
+          <p className="match-detail-result-banner" role="status">
+            {resultText}
+          </p>
+        ) : null}
+
         {hasInnings && scoreLine && (
-          <div className="relative mt-5 grid grid-cols-2 gap-2 rounded-md border border-lborder/60 bg-secondary/80 p-3 text-xs sm:grid-cols-5">
+          <div className="match-detail-stat-band relative mt-5 grid grid-cols-2 text-xs sm:grid-cols-5">
             <InningsStat label="Batting" value={battingLabel || '—'} />
             <InningsStat label="Score" value={scoreLine} />
             <InningsStat label="Overs" value={usefulOvers ? `${oversLabel} ov` : '—'} />
@@ -382,39 +398,42 @@ export default function MatchDetailBody({ match: initialMatch }: Props) {
 
         {/* Matchday Meta Footer */}
         {(date || time || match.venue) && (
-          <div className="relative mt-5 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-lborder/60 pt-4 text-xs font-medium text-stext">
+          <div className="relative mt-5 flex flex-wrap items-center gap-2 border-t border-lborder/60 pt-4">
             {date && (
-              <span className="flex items-center gap-1.5">
-                <Calendar size={13} className="text-accent" /> {date}
+              <span className="match-detail-meta-pill">
+                <Calendar size={13} className="shrink-0 text-accent" aria-hidden="true" />
+                {date}
               </span>
             )}
             {time && (
-              <span className="flex items-center gap-1.5">
-                <Clock size={13} className="text-accent" /> {time}
+              <span className="match-detail-meta-pill">
+                <Clock size={13} className="shrink-0 text-accent" aria-hidden="true" />
+                {time}
               </span>
             )}
             {match.venue && (
-              <span className="flex items-center gap-1.5">
-                <MapPin size={13} className="text-accent" /> {match.venue}
+              <span className="match-detail-meta-pill max-w-full">
+                <MapPin size={13} className="shrink-0 text-accent" aria-hidden="true" />
+                <span className="truncate">{match.venue}</span>
               </span>
             )}
           </div>
         )}
       </header>
 
-      <div className="py-5">
+      <div className="py-3 sm:py-4">
         <DummyAd size="leaderboard" placement="match-detail-after-overview" />
       </div>
 
-      <div className="mt-4">
+      <div className="match-detail-tabs-sticky">
         <Tabs tabs={activeTabs} active={tab} onChange={setTab} />
       </div>
 
-      <div className="mt-4 grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
-        <div className="min-w-0 fade-in space-y-6 pt-3">
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-8">
+        <div className="min-w-0 fade-in space-y-6 pt-1 lg:pt-3">
           {tab === 'live' &&
             (isLive && hasInnings ? (
-              <div className="rounded-3xl bg-secondary p-6 ring-1 ring-lborder">
+              <div className="match-detail-panel match-detail-panel-pad bg-secondary">
                 <h3 className="mb-4 text-lg font-bold text-mtext">Live Score</h3>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                   <InfoStat label="Score" value={`${battingLabel} ${scoreLine || match.displayScore || '—'}`} big />
@@ -446,13 +465,19 @@ export default function MatchDetailBody({ match: initialMatch }: Props) {
             <MatchPredictionTab match={match} />
           )}
 
-          {tab === 'odds' && !isCancelled && <MatchOddsTab match={match} />}
+          {tab === 'odds' && !isCancelled && (
+            <MatchOddsTab
+              match={match}
+              initialOdds={initialOdds}
+              initialOddsForbidden={initialOddsForbidden}
+            />
+          )}
 
           {(tab === 'commentary' || tab === 'timeline') && (
             timelineLoading || !timelineReady ? (
               <TabPanelLoader />
             ) : (
-              <div className="rounded-2xl bg-card p-6 ring-1 ring-lborder">
+              <div className="match-detail-panel match-detail-panel-pad">
                 <h3 className="mb-4 text-sm font-bold uppercase tracking-widest text-stext">Ball-by-ball</h3>
                 <MatchTimeline payload={timeline} upcoming={isUpcoming} />
               </div>
@@ -482,7 +507,7 @@ export default function MatchDetailBody({ match: initialMatch }: Props) {
           {tab === 'news' && <MatchNewsPanel articles={relatedNews} loading={newsLoading} />}
 
           {tab === 'info' && (
-            <div className="rounded-2xl bg-card p-6 ring-1 ring-lborder">
+            <div className="match-detail-panel match-detail-panel-pad">
               <h3 className="mb-4 text-sm font-bold uppercase tracking-widest text-stext">Match Details</h3>
               <InfoRow label="Tournament" value={match.tournament || '—'} />
               <InfoRow label="Status" value={`${match.status || '—'}`} cap />
@@ -496,7 +521,7 @@ export default function MatchDetailBody({ match: initialMatch }: Props) {
           )}
 
           {tab === 'result' && (isCompleted || isCancelled) && (
-            <div className="rounded-2xl bg-card p-6 ring-1 ring-lborder">
+            <div className="match-detail-panel match-detail-panel-pad">
               <h3 className="mb-4 text-sm font-bold uppercase tracking-widest text-stext">Match Result</h3>
               {resultText ? (
                 <p className="mb-4 text-base font-semibold text-mtext">{resultText}</p>
@@ -528,13 +553,13 @@ export default function MatchDetailBody({ match: initialMatch }: Props) {
           )}
         </div>
 
-        <aside className="mt-3 min-w-0 space-y-6">
+        <aside className="min-w-0 space-y-5 lg:mt-3 lg:space-y-6">
           <div className="flex justify-center lg:justify-start">
             <DummyAd size="medium-rectangle" placement="match-detail-sidebar" />
           </div>
           {relatedNews.length > 0 && (
-            <div className="rounded-2xl bg-card p-4 ring-1 ring-lborder">
-              <h3 className="mb-3 text-sm font-bold uppercase tracking-widest text-stext">Related news</h3>
+            <div className="match-detail-aside-card">
+              <h3 className="mb-3 text-xs font-bold uppercase tracking-widest text-stext">Related news</h3>
               <ul className="space-y-2">
                 {relatedNews.map((article) => (
                   <li key={article.id}>
@@ -559,7 +584,7 @@ export default function MatchDetailBody({ match: initialMatch }: Props) {
 
 function TabPanelLoader() {
   return (
-    <div className="rounded-2xl bg-card p-6 ring-1 ring-lborder" aria-busy="true">
+    <div className="match-detail-panel match-detail-panel-pad" aria-busy="true">
       <Skeleton height={18} width={160} />
       <div className="mt-5 space-y-3">
         <Skeleton height={40} />
@@ -591,7 +616,7 @@ function TeamSide({ code, name, score, overs, align }: { code: string; name: str
   const right = align === 'right';
   return (
     <div className={`flex min-w-0 items-center gap-2 sm:gap-4 ${right ? 'flex-row-reverse text-right' : 'text-left'}`}>
-      <TeamLogo code={code} name={name} size="sm" className="h-9 w-9 shrink-0 sm:h-14 sm:w-14" link={false} />
+      <TeamLogo code={code} name={name} size="md" className="h-10 w-10 shrink-0 sm:h-16 sm:w-16" link={false} />
       <div className="min-w-0">
         <p className="truncate text-xs font-black tracking-tight text-mtext sm:text-lg">{name}</p>
         {score ? (
@@ -613,7 +638,7 @@ function TeamSide({ code, name, score, overs, align }: { code: string; name: str
 
 function InfoStat({ label, value, big = false }: { label: string; value: string; big?: boolean }) {
   return (
-    <div className="rounded-2xl bg-card p-5 ring-1 ring-lborder shadow-sm">
+    <div className="match-detail-panel match-detail-panel-pad !p-4 sm:!p-5">
       <p className="text-xs font-bold uppercase tracking-widest text-stext">{label}</p>
       <p className={`mt-1 font-mono font-black tabular-nums tracking-tighter text-accent ${big ? 'text-4xl' : 'text-3xl'}`}>{value}</p>
     </div>

@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { TOOL_GROUPS, TOOLS, type ToolGroup } from '../../lib/toolsCatalog';
+import PageToolbar from '../PageToolbar';
 import Tabs from '../Tabs';
 import type { TabItem } from '../../types/index';
 import ToolDiamondCard from './ToolDiamondCard';
@@ -64,11 +65,11 @@ export default function ToolsHub() {
         </div>
       </header>
 
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-lborder pb-3">
+      <PageToolbar>
         <div className="no-scrollbar max-w-full overflow-x-auto">
           <Tabs tabs={TABS} active={tab} onChange={handleTabChange} />
         </div>
-      </div>
+      </PageToolbar>
 
       {activeGroup ? (
         <p className="text-sm text-stext">{activeGroup.hint}</p>
