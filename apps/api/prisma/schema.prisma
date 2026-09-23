@@ -621,6 +621,62 @@ model PredictionCalibration {
   @@map("prediction_calibrations")
 }
 
+model PredictionPerformanceSnapshot {
+  id                       String   @id @default(uuid())
+  modelVersion             String   @map("model_version")
+  stage                    String
+  sampleSize               Int      @map("sample_size")
+  accuracy                 Float?
+  brierScore               Float?   @map("brier_score")
+  expectedCalibrationError Float?   @map("expected_calibration_error")
+  byFormat                 Json     @map("by_format")
+  byConfidenceBand         Json     @map("by_confidence")
+  source                   String   @default("auto")
+  createdAt                DateTime @default(now()) @map("created_at")
+
+  @@index([modelVersion, stage, createdAt])
+  @@map("prediction_performance_snapshots")
+}
+
+model PredictionModelWeight {
+  id           String   @id @default(uuid())
+  modelVersion String   @map("model_version")
+  stage        String
+  format       String
+  weights      Json
+  intercept    Float
+  sampleSize   Int      @map("sample_size")
+  brierScore   Float?   @map("brier_score")
+  accuracy     Float?
+  source       String   @default("auto")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([modelVersion, stage, format, createdAt])
+  @@map("prediction_model_weights")
+}
+
+model PredictionTeamRating {
+  teamId    String   @map("team_id")
+  format    String
+  elo       Float
+  played    Int      @default(0)
+  updatedAt DateTime @default(now()) @map("updated_at")
+
+  @@id([teamId, format])
+  @@index([format, elo])
+  @@map("prediction_team_ratings")
+}
+
+model PredictionSituationStat {
+  format            String   @id
+  matches           Int
+  tossWinnerWinRate Float    @map("toss_winner_win_rate")
+  firstBatWinRate   Float    @map("first_bat_win_rate")
+  updatedAt         DateTime @default(now()) @map("updated_at")
+
+  @@map("prediction_situation_stats")
+}
+
 // --- Newsletter & Contact --------------------------------------------------
 
 model NewsletterSubscriber {

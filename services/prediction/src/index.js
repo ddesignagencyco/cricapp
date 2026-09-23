@@ -8,8 +8,10 @@ import { extractLiveFeatures, extractPrematchFeatures, listUpcomingMatchIds } fr
 import { scorePrematch } from './prematch.js';
 import { scoreLive } from './live.js';
 import { battingIsHomeTeam, decidedWinProb, shouldSkipLivePrediction } from './liveGuard.js';
-import { latestFeatureSnapshot, latestLiveResult, persistPrediction } from './persist.js';
-import { recalibratePrematch, resolvePrematchCalibration } from './calibrate.js';
+import { latestFeatureSnapshot, latestLiveResult, latestPrematchResult, persistPrediction } from './persist.js';
+import { recalibratePrematch, rescaleWeights, resolvePrematchCalibration, resolvePrematchWeights } from './calibrate.js';
+import { snapshotPerformance } from './performance.js';
+import { refreshRatings } from './ratings.js';
 
 const log = createLogger('prediction');
 const PREMATCH_INTERVAL_MS = Number(process.env.PREMATCH_INTERVAL_MS || 900000);
@@ -17,6 +19,8 @@ const LIVE_THROTTLE_MS = Number(process.env.LIVE_THROTTLE_MS || 15000);
 const LIVE_REFRESH_MS = Number(process.env.LIVE_REFRESH_MS || 5000);
 const PREMATCH_HORIZON_HOURS = Number(process.env.PREMATCH_HORIZON_HOURS || 720);
 const CALIBRATION_INTERVAL_MS = Number(process.env.CALIBRATION_INTERVAL_MS || 3600000);
+const LIVE_PRIOR_WEIGHT = Number(process.env.LIVE_PRIOR_WEIGHT || 0.6);
+const LIVE_PRIOR_DECAY_PROGRESS = Number(process.env.LIVE_PRIOR_DECAY_PROGRESS || 0.6);
 
 const liveThrottle = new Map();
 
@@ -39,10 +43,14 @@ export async function runPrematch(matchId) {
     return null;
   }
   const calibration = await resolvePrematchCalibration(query);
+  const learnedWeights = await resolvePrematchWeights(query);
   snapshot.calibration = {
     slope: calibration.slope,
     intercept: calibration.intercept,
     source: calibration.source,
+    weights: learnedWeights
+      ? { source: learnedWeights.source, fittedAt: learnedWeights.fittedAt }
+      : { source: 'default' },
   };
   const previousSnapshot = await latestFeatureSnapshot(
     query,
@@ -54,7 +62,7 @@ export async function runPrematch(matchId) {
     log.info('prematch unchanged — skipped', { matchId });
     return null;
   }
-  const result = scorePrematch(snapshot);
+  const result = scorePrematch(snapshot, { weights: learnedWeights });
   const id = await persistPrediction(query, {
     matchId,
     stage: PREDICTION_STAGE.PRE_MATCH,
@@ -120,7 +128,12 @@ export async function runLive(matchId) {
   const over = snapshot.currentInnings?.overs ?? 0;
   if (!shouldScoreLive(matchId, over)) return null;
   const previous = await latestLiveResult(query, matchId);
-  const result = scoreLive(snapshot, previous);
+  const prior = await latestPrematchResult(query, matchId);
+  const result = scoreLive(snapshot, previous, {
+    prior,
+    priorWeightStart: LIVE_PRIOR_WEIGHT,
+    priorDecayProgress: LIVE_PRIOR_DECAY_PROGRESS,
+  });
   const id = await persistPrediction(query, {
     matchId,
     stage: PREDICTION_STAGE.LIVE,
@@ -143,6 +156,58 @@ export async function recalibrateModels() {
     });
   } else {
     log.info('prematch calibration skipped', { reason: result.reason, sampleSize: result.sampleSize });
+  }
+
+  for (const stage of [PREDICTION_STAGE.PRE_MATCH, PREDICTION_STAGE.LIVE]) {
+    const modelVersion =
+      stage === PREDICTION_STAGE.PRE_MATCH ? PREDICTION_MODELS.PREMATCH : PREDICTION_MODELS.LIVE;
+    try {
+      const snap = await snapshotPerformance(query, { stage, modelVersion });
+      if (snap.applied) {
+        log.info('performance snapshot recorded', {
+          stage,
+          runId: snap.id,
+          sampleSize: snap.stats.sampleSize,
+          accuracy: snap.stats.accuracy,
+          brierScore: snap.stats.brierScore,
+          expectedCalibrationError: snap.stats.expectedCalibrationError,
+        });
+      } else {
+        log.info('performance snapshot skipped', { stage, reason: snap.reason });
+      }
+    } catch (err) {
+      log.error('performance snapshot failed', { stage, error: err.message });
+    }
+  }
+
+  try {
+    const weightsResult = await rescaleWeights(query);
+    if (weightsResult.applied) {
+      log.info('prematch weights refit', {
+        formats: weightsResult.refits
+          .filter((r) => r.applied)
+          .map((r) => ({ format: r.format, sampleSize: r.sampleSize, brierScore: r.brierScore })),
+      });
+    } else if (weightsResult.refits?.length) {
+      log.info('prematch weights unchanged', {
+        formats: weightsResult.refits.map((r) => r.format),
+      });
+    } else {
+      log.info('prematch weights skipped', { reason: weightsResult.reason });
+    }
+  } catch (err) {
+    log.error('prematch weights refit failed', { error: err.message });
+  }
+
+  try {
+    const ratingResult = await refreshRatings(query);
+    log.info('team ratings refreshed', {
+      settledMatches: ratingResult.settledMatches,
+      ratedTeams: ratingResult.ratedTeams,
+      trendBuckets: ratingResult.trendBuckets,
+    });
+  } catch (err) {
+    log.error('team ratings refresh failed', { error: err.message });
   }
   return result;
 }
@@ -240,6 +305,7 @@ process.on('SIGTERM', shutdown);
 
 async function main() {
   await ping();
+  await refreshRatings(query).catch((err) => log.error('initial ratings refresh failed', { error: err.message }));
   await scoreUpcomingMatches();
   setInterval(() => {
     scoreUpcomingMatches().catch((err) => log.error('prematch cycle failed', { error: err.message }));

@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { oversToBalls, resourcesRemaining, scoreLive } from '../src/live.js';
+import { blendLivePrior, oversToBalls, resourcesRemaining, scoreLive } from '../src/live.js';
 
 describe('oversToBalls', () => {
   it('converts cricket decimal overs to balls', () => {
@@ -15,6 +15,28 @@ describe('resourcesRemaining', () => {
     const before = resourcesRemaining({ remainingBalls: 60, allottedBalls: 120, wicketsLost: 2 });
     const after = resourcesRemaining({ remainingBalls: 60, allottedBalls: 120, wicketsLost: 3 });
     assert.ok(after < before);
+  });
+});
+
+describe('blendLivePrior', () => {
+  it('pulls an even live signal toward a strong pre-match prior at match start', () => {
+    const { blended, priorWeight } = blendLivePrior(0.5, 0.8, 0);
+    assert.ok(priorWeight > 0.55);
+    assert.ok(blended > 0.62 && blended < 0.8);
+  });
+
+  it('fades the prior to zero once enough match progress has passed', () => {
+    const early = blendLivePrior(0.5, 0.8, 0.2, { decayProgress: 0.4 });
+    const late = blendLivePrior(0.5, 0.8, 0.5, { decayProgress: 0.4 });
+    assert.ok(early.priorWeight > late.priorWeight);
+    assert.equal(late.priorWeight, 0);
+    assert.equal(late.blended, 0.5);
+  });
+
+  it('treats a missing prior as no blend', () => {
+    const { blended, priorWeight } = blendLivePrior(0.5, null, 0);
+    assert.equal(priorWeight, 0);
+    assert.equal(blended, 0.5);
   });
 });
 
@@ -105,5 +127,50 @@ describe('scoreLive', () => {
     );
     assert.deepEqual(out.explanation.reasons, ['wicket']);
     assert.ok(typeof out.explanation.deltaFromPrevious === 'number');
+  });
+
+  it('blends an even match start toward the pre-match prior', () => {
+    const prior = { runId: 'run-1', homeWinProb: 0.82 };
+    const snapshot = {
+      format: 't20',
+      allottedBalls: 120,
+      currentInning: 1,
+      homeTeamId: 'sr:competitor:1',
+      awayTeamId: 'sr:competitor:2',
+      homeName: 'LQ',
+      awayName: 'KK',
+      currentInnings: { battingTeam: 'sr:competitor:1', runs: 0, wickets: 0, overs: 0, runRate: 0 },
+      lastEvent: { type: 'none', runs: 0, over: 0 },
+    };
+    const withoutPrior = scoreLive(snapshot);
+    assert.ok(withoutPrior.homeWinProb > 0.45 && withoutPrior.homeWinProb < 0.55);
+    assert.equal(withoutPrior.explanation.priorBlend, false);
+
+    const withPrior = scoreLive(snapshot, null, { prior });
+    assert.equal(withPrior.explanation.priorBlend, true);
+    assert.ok(withPrior.explanation.priorWeight > 0.55);
+    assert.equal(withPrior.explanation.priorHomeWinProb, 0.82);
+    assert.ok(withPrior.homeWinProb > withoutPrior.homeWinProb);
+    assert.ok(withPrior.homeWinProb > 0.62 && withPrior.homeWinProb < 0.82);
+  });
+
+  it('stops blending once match progress has consumed the prior window', () => {
+    const prior = { homeWinProb: 0.9 };
+    const snapshot = {
+      format: 't20',
+      allottedBalls: 120,
+      currentInning: 2,
+      target: 140,
+      homeTeamId: 'sr:competitor:1',
+      awayTeamId: 'sr:competitor:2',
+      homeName: 'LQ',
+      awayName: 'KK',
+      currentInnings: { battingTeam: 'sr:competitor:1', runs: 135, wickets: 3, overs: 19.5, runRate: 6.9 },
+      lastEvent: { type: 'runs', runs: 2, over: 19.5 },
+    };
+    const out = scoreLive(snapshot, null, { prior, priorDecayProgress: 0.6 });
+    assert.equal(out.explanation.priorWeight, 0);
+    assert.equal(out.explanation.priorBlend, false);
+    assert.ok(out.homeWinProb > 0.4 && out.homeWinProb < 0.6);
   });
 });

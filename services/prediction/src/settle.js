@@ -73,6 +73,70 @@ export function fitPlattCalibration(rows, { minSamples = 8, iterations = 40 } = 
   };
 }
 
+export function fitWeights(rows, { minSamples = 20, l2 = 0.1, iterations = 300, learningRate = 0.5 } = {}) {
+  const points = rows.filter(
+    (row) =>
+      Array.isArray(row.features) &&
+      row.features.length > 0 &&
+      row.features.every(Number.isFinite) &&
+      (row.homeWon === true || row.homeWon === false),
+  );
+  if (points.length < minSamples) {
+    return { applied: false, reason: 'insufficient_sample', sampleSize: points.length };
+  }
+
+  const n = points[0].features.length;
+  const ws = new Array(n).fill(0);
+  let intercept = 0;
+
+  for (let step = 0; step < iterations; step += 1) {
+    const grads = new Array(n).fill(0);
+    let gb = 0;
+    for (const point of points) {
+      let s = intercept;
+      for (let j = 0; j < n; j += 1) s += ws[j] * point.features[j];
+      const pred = sigmoid(s);
+      const err = pred - (point.homeWon ? 1 : 0);
+      for (let j = 0; j < n; j += 1) grads[j] += err * point.features[j];
+      gb += err;
+    }
+    const lr = learningRate / (1 + step * 0.02);
+    for (let j = 0; j < n; j += 1) ws[j] -= lr * (grads[j] / points.length + l2 * ws[j]);
+    intercept -= lr * (gb / points.length);
+  }
+
+  const clipped = ws.map((value) => Number(clamp(value, -3, 3).toFixed(4)));
+  const fittedIntercept = Number(clamp(intercept, -3, 3).toFixed(4));
+  const names = points[0].names && points[0].names.length === n ? points[0].names : null;
+
+  const weights = {};
+  for (let j = 0; j < n; j += 1) {
+    weights[names ? names[j] : `feature${j}`] = clipped[j];
+  }
+
+  let brier = 0;
+  let correct = 0;
+  for (const point of points) {
+    let s = fittedIntercept;
+    for (let j = 0; j < n; j += 1) s += clipped[j] * point.features[j];
+    const homeWinProb = sigmoid(s);
+    brier += brierScore(homeWinProb, point.homeWon);
+    const favoriteHome = homeWinProb > 0.5;
+    if ((favoriteHome && point.homeWon) || (!favoriteHome && !point.homeWon && homeWinProb !== 0.5)) {
+      correct += 1;
+    }
+  }
+
+  return {
+    applied: true,
+    weights,
+    intercept: fittedIntercept,
+    sampleSize: points.length,
+    brierScore: Number((brier / points.length).toFixed(4)),
+    accuracy: Number((correct / points.length).toFixed(4)),
+  };
+}
+
 export function summarizePerformance(rows) {
   const usable = rows.filter((r) => r.actualWinnerId && r.homeTeamId && r.awayTeamId);
   let correct = 0;

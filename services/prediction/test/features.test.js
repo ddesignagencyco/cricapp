@@ -6,6 +6,8 @@ import {
   extractPrematchFeatures,
   extractWinnerId,
   meetingsFromHeadToHead,
+  squadEdge,
+  teamLeaderStrength,
 } from '../src/features.js';
 
 describe('detectFormat', () => {
@@ -57,6 +59,51 @@ describe('buildPlayerProjections', () => {
     });
     assert.equal(confirmed.xi.reliability, 'high');
     assert.equal(confirmed.xi.home.find((player) => player.playerId === 'h1').probability, 1);
+  });
+});
+
+describe('squadEdge', () => {
+  const homePlayers = [{ id: 'h1' }, { id: 'h2' }];
+  const awayPlayers = [{ id: 'a1' }, { id: 'a2' }];
+  const leaderRows = [
+    { player_id: 'h1', category: 'batting', stat: 'runs', rank: 1 },
+    { player_id: 'h2', category: 'bowling', stat: 'wickets', rank: 5 },
+    { player_id: 'a1', category: 'batting', stat: 'runs', rank: 3 },
+    { player_id: 'a2', category: 'bowling', stat: 'wickets', rank: 20 },
+  ];
+
+  it('gives a positive home edge when home has stronger leaders', () => {
+    const edge = squadEdge(homePlayers, awayPlayers, leaderRows);
+    assert.equal(edge.used, true);
+    assert.ok(edge.edge > 0);
+  });
+
+  it('reports used=false when no leader data is present', () => {
+    const edge = squadEdge(homePlayers, awayPlayers, []);
+    assert.equal(edge.used, false);
+    assert.equal(edge.edge, 0);
+  });
+
+  it('keeps the edge within [-1, 1]', () => {
+    const edge = squadEdge(homePlayers, awayPlayers, leaderRows);
+    assert.ok(edge.edge >= -1 && edge.edge <= 1);
+  });
+});
+
+describe('teamLeaderStrength', () => {
+  it('sums inverse-sqrt ranks for the matching players and kind', () => {
+    const players = [{ id: 'p1' }, { id: 'p2' }];
+    const rows = [
+      { player_id: 'p1', category: 'batting', rank: 1 },
+      { player_id: 'p2', category: 'batting', rank: 9 },
+      { player_id: 'p2', category: 'bowling', rank: 4 },
+      { player_id: 'outsider', category: 'batting', rank: 2 },
+    ];
+    const batting = teamLeaderStrength(players, rows, 'batting');
+    assert.equal(batting.strength, 1 + 1 / 3);
+    assert.equal(batting.count, 2);
+    const bowling = teamLeaderStrength(players, rows, 'bowling');
+    assert.equal(bowling.strength, 1 / 2);
   });
 });
 
