@@ -118,11 +118,67 @@ export function normalizeTournamentResults(tournamentOrSeasonId, raw) {
 }
 
 /**
+ * Stable per-event identifier for a Sportradar timeline entry. Prefers the
+ * provider's own event id, falling back to the ball-by-ball sequence number.
+ * Returns null when no stable identifier is present (entry is kept but never
+ * deduplicated).
+ */
+function timelineEventId(entry) {
+  const e = entry && typeof entry === 'object' ? entry : {};
+  return e.id ?? e.event_id ?? e.uuid ?? e.sequence ?? null;
+}
+
+/** Locate the timeline event array across all accepted payload shapes. */
+function timelineEntries(payload) {
+  const nested = payload?.sport_event_timeline;
+  const arr = payload?.timeline ?? nested?.timeline ?? payload?.sport_event?.timeline;
+  return Array.isArray(arr) ? arr : null;
+}
+
+/**
+ * Dedupe ball-by-ball timeline entries by a stable event identifier
+ * (id / sequence), keeping the earliest occurrence so ordering stays intact.
+ * Any non-timeline fields of the payload pass through untouched.
+ */
+export function dedupeTimelineEvents(raw) {
+  if (!raw || typeof raw !== 'object') return raw;
+  const entries = timelineEntries(raw);
+  if (!entries || entries.length === 0) return raw;
+
+  const seen = new Set();
+  const out = [];
+  for (const entry of entries) {
+    const id = timelineEventId(entry);
+    if (id != null) {
+      if (seen.has(String(id))) continue;
+      seen.add(String(id));
+    }
+    out.push(entry);
+  }
+  if (out.length === entries.length) return raw;
+
+  const copy = { ...raw };
+  const nested = raw.sport_event_timeline;
+  if (Array.isArray(raw.timeline)) {
+    copy.timeline = out;
+  } else if (nested && typeof nested === 'object' && Array.isArray(nested.timeline)) {
+    copy.sport_event_timeline = { ...nested, timeline: out };
+  } else if (
+    raw.sport_event &&
+    typeof raw.sport_event === 'object' &&
+    Array.isArray(raw.sport_event.timeline)
+  ) {
+    copy.sport_event = { ...raw.sport_event, timeline: out };
+  }
+  return copy;
+}
+
+/**
  * Normalize Match Timeline payload. Timeline and delta share the same shape;
- * both are stored as-is under the match id.
+ * both are stored as-is under the match id (deduplicated by event id).
  */
 export function normalizeMatchTimeline(matchId, raw) {
-  return { matchId, payload: raw };
+  return { matchId, payload: dedupeTimelineEvents(raw) };
 }
 
 /**
