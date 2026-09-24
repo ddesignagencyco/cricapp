@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PREDICTION_MODELS } from '@cricapp/shared-types';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { PredictionNarrativeService } from './prediction-narrative.service.js';
 
 export interface PredictionRunView {
   runId: string;
@@ -22,6 +23,8 @@ export interface PredictionRunView {
   pressureIndex: number | null;
   partnershipProjection: unknown;
   wicketRisk: number | null;
+  narrative: string | null;
+  narrativeSource: string | null;
 }
 
 function mapRun(row: {
@@ -66,6 +69,8 @@ function mapRun(row: {
     pressureIndex: row.result.pressureIndex,
     partnershipProjection: row.result.partnershipProjection,
     wicketRisk: row.result.wicketRisk,
+    narrative: null,
+    narrativeSource: null,
   };
 }
 
@@ -210,15 +215,39 @@ function computePerformanceStats(rows: EvaluationRow[], binCount = 10): Performa
 
 @Injectable()
 export class PredictionsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly narratives: PredictionNarrativeService,
+  ) {}
+
+  private async presentRun(
+    row: Parameters<typeof mapRun>[0] & { features?: { snapshot: unknown } | null },
+    previousHomeWinProb?: number | null,
+  ): Promise<PredictionRunView | null> {
+    const view = mapRun(row);
+    if (!view) return null;
+    const snapshot = (row.features?.snapshot ?? null) as Record<string, unknown> | null;
+    const copy = await this.narratives.forStoredRun(view.runId, {
+      stage: view.stage,
+      homeWinProb: view.homeWinProb,
+      awayWinProb: view.awayWinProb,
+      confidence: view.confidence,
+      calibrationBand: view.calibrationBand,
+      explanation: view.explanation,
+      scoreRange: view.scoreRange,
+      snapshot,
+      previousHomeWinProb,
+    });
+    return { ...view, narrative: copy.text, narrativeSource: copy.source };
+  }
 
   private async latestByStage(matchId: string, stage: string): Promise<PredictionRunView | null> {
     const row = await this.prisma.predictionRun.findFirst({
       where: { matchId, stage },
       orderBy: { createdAt: 'desc' },
-      include: { result: true },
+      include: { result: true, features: true },
     });
-    return row ? mapRun(row) : null;
+    return row ? this.presentRun(row) : null;
   }
 
   async getLatest(matchId: string) {
@@ -236,12 +265,17 @@ export class PredictionsService {
     const rows = await this.prisma.predictionRun.findMany({
       where: { matchId },
       orderBy: { createdAt: 'asc' },
-      include: { result: true },
+      include: { result: true, features: true },
     });
-    return {
-      matchId,
-      runs: rows.map((row) => mapRun(row)).filter((x): x is PredictionRunView => x !== null),
-    };
+    const runs: PredictionRunView[] = [];
+    let previousLiveHome: number | null = null;
+    for (const row of rows) {
+      const view = await this.presentRun(row, row.stage === 'live' ? previousLiveHome : null);
+      if (!view) continue;
+      runs.push(view);
+      if (row.stage === 'live' && row.result) previousLiveHome = row.result.homeWinProb;
+    }
+    return { matchId, runs };
   }
 
   async getChart(matchId: string) {
@@ -330,10 +364,18 @@ export class PredictionsService {
       query.modelVersion ??
       (stage === 'live' ? PREDICTION_MODELS.LIVE : PREDICTION_MODELS.PREMATCH);
     const usable = await this.evaluationRows(selectedModel, stage);
+    const stats = computePerformanceStats(usable, Number(query.bins) || 10);
+    const publishMinSamples = Number(process.env.PREDICTION_PUBLISH_MIN_SAMPLES || 200);
+    const claimReady = stats.sampleSize >= publishMinSamples;
     return {
       modelVersion: selectedModel,
       stage,
-      ...computePerformanceStats(usable, Number(query.bins) || 10),
+      ...stats,
+      claimReady,
+      publishMinSamples,
+      guidance: claimReady
+        ? 'Sample is large enough to quote accuracy carefully by format.'
+        : `Do not market a headline accuracy % until sampleSize >= ${publishMinSamples} settled matches.`,
     };
   }
 
@@ -446,8 +488,10 @@ export class PredictionsService {
       include: { result: true, features: true },
     });
     if (!row?.result) throw new NotFoundException(`Prediction run ${runId} not found`);
+    const view = await this.presentRun(row);
+    if (!view) throw new NotFoundException(`Prediction run ${runId} not found`);
     return {
-      ...mapRun(row),
+      ...view,
       features: row.features?.snapshot ?? null,
     };
   }
@@ -546,15 +590,18 @@ export class PredictionsService {
     const [rows, total] = await Promise.all([
       this.prisma.predictionRun.findMany({
         where,
-        include: { result: true },
+        include: { result: true, features: true },
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * limit,
         take: limit,
       }),
       this.prisma.predictionRun.count({ where }),
     ]);
+    const data = (
+      await Promise.all(rows.map((row) => this.presentRun(row)))
+    ).filter((row): row is PredictionRunView => row !== null);
     return {
-      data: rows.map(mapRun).filter((row): row is PredictionRunView => row !== null),
+      data,
       meta: { page, limit, totalRecords: total, totalPages: Math.ceil(total / limit) },
     };
   }

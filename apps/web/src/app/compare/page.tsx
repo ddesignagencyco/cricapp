@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+import { decodeEntityId, encodeEntityId } from '../../utils/entityId';
 
 export default async function CompareRedirect({
   searchParams,
@@ -6,9 +7,10 @@ export default async function CompareRedirect({
   searchParams: Promise<{ a?: string; b?: string }>;
 }) {
   const params = await searchParams;
-  const next = new URLSearchParams();
-  if (params.a) next.set('a', params.a);
-  if (params.b) next.set('b', params.b);
-  const qs = next.toString();
-  redirect(qs ? `/teams?${qs}` : '/teams');
+  const a = decodeEntityId(params.a);
+  const b = decodeEntityId(params.b);
+  const parts: string[] = [];
+  if (a) parts.push(`a=${encodeEntityId(a)}`);
+  if (b) parts.push(`b=${encodeEntityId(b)}`);
+  redirect(parts.length ? `/teams?${parts.join('&')}` : '/teams');
 }

@@ -3,7 +3,9 @@
 import Link from 'next/link';
 import { StatusBadge } from './Badge';
 import RemoteImage from './RemoteImage';
+import EntityAvatar from './EntityAvatar';
 import { getInitials, getPslLogo } from '../utils/helpers';
+import { describeMatchResult, scoreboardFromMatch } from '../lib/matchScoreboard';
 
 interface RecentResultCardProps {
   match: any;
@@ -15,17 +17,17 @@ export default function RecentResultCard({ match }: RecentResultCardProps) {
   const home = isObj ? teams.home : null;
   const away = isObj ? teams.away : null;
 
-  const homeCode = String(home?.code || (Array.isArray(teams) ? teams[0] : '') || '').replace(/^sr:competitor:/, '');
-  const awayCode = String(away?.code || (Array.isArray(teams) ? teams[1] : '') || '').replace(/^sr:competitor:/, '');
-  const homeName = String(home?.name || match.teamNames?.[0] || homeCode || 'TBD').replace(/^sr:competitor:/, '');
-  const awayName = String(away?.name || match.teamNames?.[1] || awayCode || 'TBD').replace(/^sr:competitor:/, '');
-  const homeScore = home?.score || '';
-  const awayScore = away?.score || '';
-  const homeOvers = home?.overs || '';
-  const awayOvers = away?.overs || '';
-  const sharedScore = !homeScore && !awayScore ? match.displayScore || '' : '';
-
-  const result = match.result || '';
+  const board = scoreboardFromMatch(match);
+  const homeCode = board.home.code;
+  const awayCode = board.away.code;
+  const homeName = board.home.name;
+  const awayName = board.away.name;
+  const homeScore = board.homeScore || home?.score || '';
+  const awayScore = board.awayScore || away?.score || '';
+  const homeOvers = board.homeOvers || home?.overs || '';
+  const awayOvers = board.awayOvers || away?.overs || '';
+  const result = describeMatchResult(match);
+  const resultLine = result;
   const tournament = match.tournamentName || match.tournament || '';
   const venue = match.venue || '';
 
@@ -66,9 +68,9 @@ export default function RecentResultCard({ match }: RecentResultCardProps) {
           {dateLabel ? <span className="font-semibold tabular-nums text-accent">{dateLabel}</span> : null}
           {venue ? <span className="font-medium text-stext">{dateLabel ? ' · ' : ''}{venue.split(',')[0]}</span> : null}
         </p>
-        {(result || sharedScore) ? (
-          <p className="max-w-[48%] shrink-0 truncate text-right font-mono text-sm font-bold tabular-nums text-mtext">
-            {result || sharedScore}
+        {resultLine ? (
+          <p className="max-w-[48%] shrink-0 truncate text-right text-xs font-semibold text-gold" title={resultLine}>
+            {resultLine}
           </p>
         ) : null}
       </div>
@@ -78,9 +80,6 @@ export default function RecentResultCard({ match }: RecentResultCardProps) {
 
 function ScoreRow({ code, name, score, overs }: { code: string; name: string; score: string; overs: string }) {
   const pslLogo = getPslLogo(code);
-  let hash = 0;
-  for (let i = 0; i < (code || name).length; i++) hash = (code || name).charCodeAt(i) + ((hash << 5) - hash);
-  const hue = Math.abs(hash % 360);
 
   return (
     <div className="flex items-center gap-2.5">
@@ -93,13 +92,9 @@ function ScoreRow({ code, name, score, overs }: { code: string; name: string; sc
           className="h-7 w-7 shrink-0 rounded-full border border-lborder bg-white object-contain p-0.5"
         />
       ) : (
-        <span
-          className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[10px] font-semibold text-white"
-          style={{ backgroundImage: `linear-gradient(135deg, hsl(${hue}, 65%, 48%), hsl(${(hue + 28) % 360}, 75%, 32%))` }}
-          title={name}
-        >
+        <EntityAvatar className="h-7 w-7 text-[10px]" title={name}>
           {getInitials(name || code)}
-        </span>
+        </EntityAvatar>
       )}
       <p className="min-w-0 flex-1 truncate text-sm font-semibold text-mtext">{name}</p>
       <div className="min-w-14 shrink-0 text-right">

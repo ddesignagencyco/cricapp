@@ -67,6 +67,7 @@ import { createLogger } from './logger.js';
 import { shouldSync, markSynced, clearSyncStamp, REF_CADENCE } from './refState.js';
 import { PSL } from './schemas.js';
 import { getCallStats } from './sportradar.js';
+import redis, { redisKeys } from './redis.js';
 
 const log = createLogger('ref');
 const warn = log.warn;
@@ -74,6 +75,16 @@ const warn = log.warn;
 const REFERENCE_SYNC_INTERVAL_MS = Number(
   process.env.REFERENCE_SYNC_INTERVAL_MS || 3600000,
 );
+const PAUSE_REF_WHEN_LIVE =
+  String(process.env.PAUSE_REF_SYNC_WHEN_LIVE || 'true').toLowerCase() !== 'false';
+
+async function liveMatchCount() {
+  try {
+    return await redis.scard(redisKeys.liveMatches());
+  } catch {
+    return 0;
+  }
+}
 
 function isoDate(d = new Date()) {
   return d.toISOString().slice(0, 10);
@@ -438,6 +449,13 @@ export async function syncTournamentResults(tournamentOrSeasonId, { persist = tr
  * are refreshed weekly, slow data every few hours, and timelines/lineups once.
  */
 export async function refSyncAll(options = {}) {
+  if (PAUSE_REF_WHEN_LIVE) {
+    const liveCount = await liveMatchCount();
+    if (liveCount > 0) {
+      log.info('reference sync paused while live matches are active', { liveCount });
+      return;
+    }
+  }
   const {
     matchIds = [],
     teamIds = [],

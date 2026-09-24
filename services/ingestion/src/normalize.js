@@ -139,7 +139,7 @@ function normalizeSportradar(raw) {
 
     const runs = batting?.runs ?? 0;
     const wickets = batting?.wickets_lost ?? 0;
-    const overs = currentInning.overs_completed ?? statusBlock.display_overs ?? 0;
+    const overs =  statusBlock.display_overs ?? currentInning.overs_completed ?? 0;
 
     currentInnings = {
       battingTeam: battingComp?.abbreviation ?? battingTeamId ?? teams[0],

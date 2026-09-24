@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ChevronRight, MapPin, Shield } from 'lucide-react';
 import Badge from './Badge';
 import RemoteImage from './RemoteImage';
+import EntityAvatar from './EntityAvatar';
 import { getInitials } from '../utils/helpers';
 
 interface PlayerCardProps {
@@ -42,12 +43,6 @@ export default function PlayerCard({ player }: PlayerCardProps) {
   const initials = getInitials(name);
   const tone = roleTone[role] || roleTone[rawRole] || 'neutral';
 
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const hue = Math.abs(hash % 360);
-
   return (
     <Link
       href={`/players/${player.id}`}
@@ -59,18 +54,10 @@ export default function PlayerCard({ player }: PlayerCardProps) {
           alt={name}
           width={48}
           height={48}
-          className="h-12 w-12 shrink-0 rounded-full border border-lborder bg-secondary object-cover"
+          className="h-12 w-12 shrink-0 rounded-full border border-lborder bg-entity-avatar object-cover"
         />
       ) : (
-        <span
-          className="grid h-12 w-12 shrink-0 place-items-center rounded-full text-sm font-semibold text-white"
-          style={{
-            backgroundImage: `linear-gradient(135deg, hsl(${hue}, 68%, 46%), hsl(${(hue + 38) % 360}, 72%, 32%))`,
-          }}
-          aria-hidden="true"
-        >
-          {initials}
-        </span>
+        <EntityAvatar className="h-12 w-12 text-sm">{initials}</EntityAvatar>
       )}
 
       <div className="min-w-0 flex-1">

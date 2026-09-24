@@ -228,7 +228,8 @@ describe('extractPrematchFeatures', () => {
     assert.ok(snapshot.form.home > snapshot.form.away);
     assert.ok(snapshot.h2h.edge > 0);
     assert.equal(snapshot.table.used, true);
-    assert.equal(snapshot.toss.edge, 1);
+    assert.ok(snapshot.toss.edge >= 1);
+    assert.equal(snapshot.toss.decision, 'bat');
     assert.equal(snapshot.venueEdge, 1);
   });
 });

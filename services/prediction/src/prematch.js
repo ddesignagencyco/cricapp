@@ -11,9 +11,7 @@ export const PREMATCH_WEIGHTS = Object.freeze({
   venue: 0.25,
   toss: 0.15,
   conditions: 0.2,
-  squad: 0.35,
-  elo: 1.1,
-  pitch: 0.3,
+  xi: 0.35,
 });
 
 export const FEATURE_NAMES = Object.freeze([
@@ -23,9 +21,7 @@ export const FEATURE_NAMES = Object.freeze([
   'venue',
   'toss',
   'conditions',
-  'squad',
-  'elo',
-  'pitch',
+  'xi',
 ]);
 
 export function confidenceBand(confidence) {
@@ -34,7 +30,7 @@ export function confidenceBand(confidence) {
   return 'low';
 }
 
-export function conditionImpact(conditions) {
+function conditionImpact(conditions) {
   const text = JSON.stringify(conditions ?? {}).toLowerCase();
   let runs = 0;
   let winEdge = 0;
@@ -81,7 +77,8 @@ export function prematchConfidence(snapshot) {
   const n = Math.min(snapshot.form?.homeN ?? 0, snapshot.form?.awayN ?? 0);
   if (n < 3) return 0.35;
   const h2hBoost = (snapshot.h2h?.meetings ?? 0) >= 3 ? 0.1 : 0;
-  const sample = 0.5 + 0.4 * (1 - Math.exp(-n / 8)) + h2hBoost;
+  const xiBoost = snapshot.playerProjections?.xi?.reliability === 'high' ? 0.05 : 0;
+  const sample = 0.5 + 0.4 * (1 - Math.exp(-n / 8)) + h2hBoost + xiBoost;
   return Math.min(0.9, Number(sample.toFixed(4)));
 }
 
@@ -92,39 +89,32 @@ export function featureVectorFromSnapshot(snapshot) {
   const venueEdge = Number((snapshot.venueEdge ?? 0).toFixed(4));
   const tossEdge = Number((snapshot.toss?.edge ?? 0).toFixed(4));
   const conditionsEdge = Number(conditionImpact(snapshot.conditions ?? {}).winEdge.toFixed(4));
-  const squadEdge = snapshot.squad?.used ? Number((snapshot.squad.edge ?? 0).toFixed(4)) : 0;
-  const eloEdge = snapshot.elo?.used ? Number((snapshot.elo.edge ?? 0).toFixed(4)) : 0;
-  const pitchEdge = snapshot.pitch?.used ? Number((snapshot.pitch.edge ?? 0).toFixed(4)) : 0;
-  return { names: FEATURE_NAMES, values: [formEdge, h2hEdge, tableEdge, venueEdge, tossEdge, conditionsEdge, squadEdge, eloEdge, pitchEdge] };
+  const xiEdge = Number((snapshot.xiEdge ?? 0).toFixed(4));
+  return { names: FEATURE_NAMES, values: [formEdge, h2hEdge, tableEdge, venueEdge, tossEdge, conditionsEdge, xiEdge] };
 }
 
-export function scorePrematch(snapshot, { weights: learnedWeights } = {}) {
-  const format = snapshot.format ?? 'unknown';
-  const effective = learnedWeights?.byFormat?.[format] ?? null;
-  const weights = effective?.weights ?? PREMATCH_WEIGHTS;
-  const learnedIntercept = Number(effective?.intercept ?? 0);
-  const projection = projectedScore(snapshot);
-  const conditionsEdge = projection.conditions.winEdge;
-  const squadEdge = snapshot.squad?.used ? (snapshot.squad.edge ?? 0) : 0;
+export function scorePrematch(snapshot) {
   const formEdge = (snapshot.form?.home ?? 0.5) - (snapshot.form?.away ?? 0.5);
   const h2hEdge = snapshot.h2h?.edge ?? 0;
   const tableEdge = snapshot.table?.used ? (snapshot.table.edge ?? 0) : 0;
   const venue = snapshot.venueEdge ?? 0;
   const toss = snapshot.toss?.edge ?? 0;
-  const eloEdge = snapshot.elo?.used ? (snapshot.elo.edge ?? 0) : 0;
-  const pitchEdge = snapshot.pitch?.used ? (snapshot.pitch.edge ?? 0) : 0;
+  const xiEdge = snapshot.xiEdge ?? 0;
+  const projection = projectedScore(snapshot);
+  const conditionsEdge = projection.conditions.winEdge;
+  const weights = {
+    ...PREMATCH_WEIGHTS,
+    ...(snapshot.weights ?? {}),
+  };
 
   const z =
-    learnedIntercept +
-    (weights.form ?? PREMATCH_WEIGHTS.form) * formEdge +
-    (weights.h2h ?? PREMATCH_WEIGHTS.h2h) * h2hEdge +
-    (weights.table ?? PREMATCH_WEIGHTS.table) * tableEdge +
-    (weights.venue ?? PREMATCH_WEIGHTS.venue) * venue +
-    (weights.toss ?? PREMATCH_WEIGHTS.toss) * toss +
-    (weights.conditions ?? PREMATCH_WEIGHTS.conditions) * conditionsEdge +
-    (weights.squad ?? PREMATCH_WEIGHTS.squad) * squadEdge +
-    (weights.elo ?? PREMATCH_WEIGHTS.elo) * eloEdge +
-    (weights.pitch ?? PREMATCH_WEIGHTS.pitch) * pitchEdge;
+    weights.form * formEdge +
+    weights.h2h * h2hEdge +
+    weights.table * tableEdge +
+    weights.venue * venue +
+    weights.toss * toss +
+    weights.conditions * conditionsEdge +
+    (weights.xi ?? 0.35) * xiEdge;
 
   const calibrationSlope = Number(snapshot.calibration?.slope ?? 1);
   const calibrationIntercept = Number(snapshot.calibration?.intercept ?? 0);
@@ -133,15 +123,13 @@ export function scorePrematch(snapshot, { weights: learnedWeights } = {}) {
   const awayWinProb = Number((1 - homeWinProb).toFixed(4));
   const confidence = prematchConfidence(snapshot);
   const factorAttributions = [
-    { factor: 'form', contribution: Number(((weights.form ?? PREMATCH_WEIGHTS.form) * formEdge).toFixed(4)) },
-    { factor: 'head_to_head', contribution: Number(((weights.h2h ?? PREMATCH_WEIGHTS.h2h) * h2hEdge).toFixed(4)) },
-    { factor: 'table', contribution: Number(((weights.table ?? PREMATCH_WEIGHTS.table) * tableEdge).toFixed(4)) },
-    { factor: 'venue', contribution: Number(((weights.venue ?? PREMATCH_WEIGHTS.venue) * venue).toFixed(4)) },
-    { factor: 'toss', contribution: Number(((weights.toss ?? PREMATCH_WEIGHTS.toss) * toss).toFixed(4)) },
-    { factor: 'conditions', contribution: Number(((weights.conditions ?? PREMATCH_WEIGHTS.conditions) * conditionsEdge).toFixed(4)) },
-    { factor: 'squad', contribution: Number(((weights.squad ?? PREMATCH_WEIGHTS.squad) * squadEdge).toFixed(4)) },
-    { factor: 'elo', contribution: Number(((weights.elo ?? PREMATCH_WEIGHTS.elo) * eloEdge).toFixed(4)) },
-    { factor: 'pitch', contribution: Number(((weights.pitch ?? PREMATCH_WEIGHTS.pitch) * pitchEdge).toFixed(4)) },
+    { factor: 'form', contribution: Number((weights.form * formEdge).toFixed(4)) },
+    { factor: 'head_to_head', contribution: Number((weights.h2h * h2hEdge).toFixed(4)) },
+    { factor: 'table', contribution: Number((weights.table * tableEdge).toFixed(4)) },
+    { factor: 'venue', contribution: Number((weights.venue * venue).toFixed(4)) },
+    { factor: 'toss', contribution: Number((weights.toss * toss).toFixed(4)) },
+    { factor: 'conditions', contribution: Number((weights.conditions * conditionsEdge).toFixed(4)) },
+    { factor: 'xi', contribution: Number(((weights.xi ?? 0.35) * xiEdge).toFixed(4)) },
   ];
 
   return {
@@ -156,20 +144,23 @@ export function scorePrematch(snapshot, { weights: learnedWeights } = {}) {
     explanation: {
       z: Number(z.toFixed(4)),
       calibratedZ: Number(calibratedZ.toFixed(4)),
-      calibration: { slope: calibrationSlope, intercept: calibrationIntercept },
-      weightsSource: effective ? 'learned' : 'default',
-      learnedIntercept,
+      calibration: {
+        slope: calibrationSlope,
+        intercept: calibrationIntercept,
+        format: snapshot.format ?? null,
+        source: snapshot.calibration?.source ?? null,
+      },
       formEdge: Number(formEdge.toFixed(4)),
       h2hEdge: Number(h2hEdge.toFixed(4)),
       tableEdge: Number(tableEdge.toFixed(4)),
       venueEdge: venue,
       tossEdge: toss,
-      squadEdge: Number(squadEdge.toFixed(4)),
+      xiEdge: Number(xiEdge.toFixed(4)),
       conditionsImpact: projection.conditions,
-      eloEdge: Number(eloEdge.toFixed(4)),
-      pitchEdge: Number(pitchEdge.toFixed(4)),
       weights,
       tossAdjusted: toss !== 0,
+      tossDecision: snapshot.toss?.decision ?? null,
+      parSource: snapshot.parSource ?? null,
       factorAttributions,
     },
   };

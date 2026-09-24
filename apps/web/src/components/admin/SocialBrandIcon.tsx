@@ -1,4 +1,4 @@
-type Props = { id: string; size?: number };
+type Props = { id: string; size?: number; tone?: 'brand' | 'mono' };
 
 const ICONS: Record<string, string> = {
   facebook:
@@ -41,21 +41,22 @@ const COLORS: Record<string, { bg: string; fg: string }> = {
   reddit: { bg: '#FF4500', fg: '#fff' },
 };
 
-export default function SocialBrandIcon({ id, size = 20 }: Props) {
+export default function SocialBrandIcon({ id, size = 20, tone = 'brand' }: Props) {
   const path = ICONS[id];
   const colors = COLORS[id] || { bg: '#64748B', fg: '#fff' };
   const isGradient = colors.bg.includes('gradient');
   const iconSize = Math.round(size * 0.62);
+  const themed = tone === 'mono' || id === 'whatsapp';
 
   return (
     <span
-      className="grid shrink-0 place-items-center rounded"
+      className={`grid shrink-0 place-items-center rounded ${themed ? 'bg-transparent text-current' : ''}`}
       style={{
         width: size,
         height: size,
-        background: isGradient ? undefined : colors.bg,
-        backgroundImage: isGradient ? colors.bg : undefined,
-        color: colors.fg,
+        background: themed || isGradient ? undefined : colors.bg,
+        backgroundImage: themed || !isGradient ? undefined : colors.bg,
+        color: themed ? undefined : colors.fg,
       }}
       aria-hidden="true"
     >

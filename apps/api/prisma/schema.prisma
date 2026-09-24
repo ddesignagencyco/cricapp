@@ -572,6 +572,7 @@ model PredictionRun {
   createdAt    DateTime @default(now()) @map("created_at")
   features     PredictionFeature?
   result       PredictionResult?
+  narrative    PredictionNarrative?
 
   @@index([matchId, stage, createdAt])
   @@map("prediction_runs")
@@ -615,6 +616,7 @@ model PredictionCalibration {
   brierScore   Float?   @map("brier_score")
   accuracy     Float?
   source       String   @default("auto")
+  params       Json?
   createdAt    DateTime @default(now()) @map("created_at")
 
   @@index([modelVersion, createdAt])
@@ -675,6 +677,17 @@ model PredictionSituationStat {
   updatedAt         DateTime @default(now()) @map("updated_at")
 
   @@map("prediction_situation_stats")
+}
+
+model PredictionNarrative {
+  runId     String        @id @map("run_id")
+  text      String        @db.Text
+  source    String
+  model     String?
+  createdAt DateTime      @default(now()) @map("created_at")
+  run       PredictionRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@map("prediction_narratives")
 }
 
 // --- Newsletter & Contact --------------------------------------------------

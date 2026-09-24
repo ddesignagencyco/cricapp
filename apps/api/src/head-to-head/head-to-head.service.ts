@@ -10,6 +10,14 @@ export interface HeadToHeadResult {
   payload: Record<string, unknown>;
 }
 
+function decodeTeamId(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
 @Injectable()
 export class HeadToHeadService {
   constructor(

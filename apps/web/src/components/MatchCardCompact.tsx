@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import RemoteImage from './RemoteImage';
+import EntityAvatar from './EntityAvatar';
 import { getInitials, getPslLogo } from '../utils/helpers';
 
 interface MatchCardCompactProps {
@@ -65,9 +66,6 @@ export default function MatchCardCompact({ match }: MatchCardCompactProps) {
 
 function TeamCell({ name, abbr, align }: { name: string; abbr: string; align: 'left' | 'right' }) {
   const pslLogo = getPslLogo(abbr);
-  let hash = 0;
-  for (let i = 0; i < abbr.length; i++) hash = abbr.charCodeAt(i) + ((hash << 5) - hash);
-  const hue = Math.abs(hash % 360);
 
   const badge = pslLogo ? (
     <RemoteImage
@@ -78,12 +76,7 @@ function TeamCell({ name, abbr, align }: { name: string; abbr: string; align: 'l
       className="h-7 w-7 shrink-0 rounded-full border border-lborder bg-white object-contain p-0.5"
     />
   ) : (
-    <span
-      className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[10px] font-semibold text-white"
-      style={{ backgroundImage: `linear-gradient(135deg, hsl(${hue}, 65%, 48%), hsl(${(hue + 28) % 360}, 75%, 32%))` }}
-    >
-      {abbr.slice(0, 2)}
-    </span>
+    <EntityAvatar className="h-7 w-7 text-[10px]">{abbr.slice(0, 2)}</EntityAvatar>
   );
 
   return (

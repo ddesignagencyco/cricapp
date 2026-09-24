@@ -11,7 +11,9 @@ describe("PREDICTION_STAGE", () => {
 
 describe("PREDICTION_MODELS", () => {
   it("versions the current statistical models", () => {
-    assert.equal(PREDICTION_MODELS.PREMATCH, "prematch-logit-v2");
-    assert.equal(PREDICTION_MODELS.LIVE, "live-resource-v2");
+    assert.equal(PREDICTION_MODELS.PREMATCH, "prematch-logit-v3");
+    assert.equal(PREDICTION_MODELS.LIVE, "live-resource-v3");
+    assert.equal(PREDICTION_MODELS.PREMATCH_WEIGHTS, "prematch-weights-v1");
+    assert.equal(PREDICTION_MODELS.LIVE_SCALES, "live-scales-v1");
   });
 });

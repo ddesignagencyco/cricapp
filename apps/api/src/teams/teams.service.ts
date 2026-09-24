@@ -103,6 +103,11 @@ export class TeamsService {
   }
 
   private async findTeam(idOrAbbr: string) {
+    try {
+      idOrAbbr = decodeURIComponent(idOrAbbr);
+    } catch {
+      /* keep raw id */
+    }
     return this.prisma.team.findFirst({
       where: {
         OR: [{ id: idOrAbbr }, { abbr: idOrAbbr }],

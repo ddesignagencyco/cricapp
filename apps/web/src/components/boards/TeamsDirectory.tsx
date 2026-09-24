@@ -12,6 +12,7 @@ import Pagination from '../Pagination';
 import DummyAd from '../advertisements/DummyAd';
 import CompareBoard from './CompareBoard';
 import { DirectoryGridSkeleton } from '../skeletons/Skeletons';
+import { withColonEntityQuery } from '../../utils/entityId';
 
 const LIMIT = 20;
 
@@ -68,7 +69,8 @@ export default function TeamsDirectory() {
       params.delete('search');
     }
     params.delete('page');
-    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+    const qs = withColonEntityQuery(params);
+    router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   };
 
   const handlePageChange = (p: number) => {
@@ -78,7 +80,8 @@ export default function TeamsDirectory() {
     } else {
       params.set('page', String(p));
     }
-    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+    const qs = withColonEntityQuery(params);
+    router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   };
 
   return (

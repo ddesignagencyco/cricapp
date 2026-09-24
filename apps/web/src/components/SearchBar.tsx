@@ -171,11 +171,11 @@ export default function SearchBar({ autoFocus = false, onDone }: SearchBarProps)
                 icon={<UserRound size={14} />}
                 count={results.players.length}
                 items={results.players}
+                itemKey={(item, index) => String(item.id || `player-${index}`)}
                 render={(item) => {
                   const playerName = item.name || item.fullName || item.shortName || 'Player';
                   return (
                     <ResultButton
-                      key={item.id}
                       title={playerName}
                       subtitle={[item.teamName, item.role].filter(Boolean).join(' · ')}
                       avatar={<PlayerSearchAvatar name={playerName} />}
@@ -189,9 +189,9 @@ export default function SearchBar({ autoFocus = false, onDone }: SearchBarProps)
                 icon={<Shield size={14} />}
                 count={results.teams.length}
                 items={results.teams}
+                itemKey={(item, index) => String(item.id || `team-${index}`)}
                 render={(item) => (
                   <ResultButton
-                    key={item.id}
                     title={item.name}
                     subtitle={[item.code || item.shortName, item.country || item.city].filter(Boolean).join(' · ')}
                     avatar={<TeamSearchAvatar id={item.id} name={item.name} code={item.code || item.shortName} />}
@@ -204,9 +204,9 @@ export default function SearchBar({ autoFocus = false, onDone }: SearchBarProps)
                 icon={<Calendar size={14} />}
                 count={results.matches.length}
                 items={results.matches}
+                itemKey={(item, index) => String(item.matchId || item.id || `match-${index}`)}
                 render={(item) => (
                   <ResultButton
-                    key={item.matchId || item.id}
                     title={matchTitle(item)}
                     subtitle={matchSubtitle(item)}
                     avatar={<TypeSearchAvatar type="match" />}
@@ -219,9 +219,9 @@ export default function SearchBar({ autoFocus = false, onDone }: SearchBarProps)
                 icon={<Trophy size={14} />}
                 count={results.tournaments.length}
                 items={results.tournaments}
+                itemKey={(item, index) => String(item.id || `tournament-${index}`)}
                 render={(item) => (
                   <ResultButton
-                    key={item.id}
                     title={item.name}
                     subtitle={tournamentSubtitle(item)}
                     avatar={<TypeSearchAvatar type="tournament" />}
@@ -250,12 +250,14 @@ function ResultGroup<T>({
   icon,
   count,
   items,
+  itemKey,
   render,
 }: {
   title: string;
   icon: ReactNode;
   count: number;
   items: T[];
+  itemKey: (_item: T, _index: number) => string;
   render: (_item: T) => ReactNode;
 }) {
   if (!items.length) return null;
@@ -266,7 +268,11 @@ function ResultGroup<T>({
         {title}
         <span className="rounded bg-elevated px-1.5 py-0.5 text-[10px] font-semibold">{count}</span>
       </h2>
-      <div className="space-y-0.5">{items.map(render)}</div>
+      <div className="space-y-0.5">
+        {items.map((item, index) => (
+          <div key={itemKey(item, index)}>{render(item)}</div>
+        ))}
+      </div>
     </section>
   );
 }

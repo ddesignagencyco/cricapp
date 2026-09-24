@@ -1,15 +1,18 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import type { ReactNode } from 'react';
+import { Suspense, type ReactNode } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import ScrollTopButton from '../components/ScrollTopButton';
+import MobileBottomNav from './MobileBottomNav';
+import AssistantLauncher from './assistant/AssistantLauncher';
 import DummyAd from './advertisements/DummyAd';
 import { shouldHideDummyAds } from '../lib/advertisements/placements';
+import type { SiteSettings } from '../services/siteSettings';
 
 function isNewsArticlePath(pathname: string) {
-  return /^\/(ur\/)?news\/.+/.test(pathname);
+  return /^\/(ur\/)?news\/.+/.test(pathname) || pathname.startsWith('/cricket-news/');
 }
 
 function isEditorialPath(pathname: string) {
@@ -27,14 +30,21 @@ function showGlobalTopAd(pathname: string) {
   if (pathname.startsWith('/matches/') && pathname !== '/matches') return false;
   if (isNewsArticlePath(pathname)) return false;
   if (pathname.startsWith('/authors/')) return false;
+  if (pathname === '/tours' || pathname.startsWith('/tours/')) return false;
+  if (pathname === '/tournaments' || pathname.startsWith('/tournaments/')) return false;
   if (pathname.startsWith('/teams/') && pathname !== '/teams') return false;
   if (pathname.startsWith('/players/') && pathname !== '/players') return false;
-  if (pathname.startsWith('/tournaments/') && pathname !== '/tournaments') return false;
   if (isEditorialPath(pathname)) return false;
   return true;
 }
 
-export default function ClientLayout({ children }: { children: ReactNode }) {
+export default function ClientLayout({
+  children,
+  settings,
+}: {
+  children: ReactNode;
+  settings?: SiteSettings | null;
+}) {
   const pathname = usePathname();
   const isAdmin = pathname.startsWith('/admin');
 
@@ -50,9 +60,15 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
           <DummyAd size="leaderboard" placement={`global-top:${pathname}`} />
         </div>
       ) : null}
-      <main id="main-content" className="min-h-screen min-w-0 flex-1">{children}</main>
-      <Footer />
+      <main id="main-content" className="min-h-screen min-w-0 flex-1 pb-16 lg:pb-0">
+        {children}
+      </main>
+      <Footer settings={settings} />
+      <MobileBottomNav />
       <ScrollTopButton />
+      <Suspense fallback={null}>
+        <AssistantLauncher />
+      </Suspense>
     </>
   );
 }

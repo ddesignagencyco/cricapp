@@ -57,6 +57,8 @@ describe('PredictionsModule (integration)', () => {
     const res = await ctx.agent.get('/predictions/sr:match:pred-1').expect(200);
     expect(res.body.matchId).toBe('sr:match:pred-1');
     expect(res.body.preMatch.homeWinProb).toBe(0.62);
+    expect(res.body.preMatch.narrativeSource).toBe('template');
+    expect(res.body.preMatch.narrative).toContain('62%');
     expect(res.body.preMatch.scoreRange.expected).toBe(160);
     expect(res.body.preMatch.calibrationBand).toBe('medium');
     expect(res.body.live).toBeNull();
@@ -111,6 +113,8 @@ describe('PredictionsModule (integration)', () => {
     const res = await ctx.agent.get('/predictions/performance').expect(200);
     expect(res.body.sampleSize).toBe(1);
     expect(res.body.accuracy).toBe(1);
+    expect(res.body.claimReady).toBe(false);
+    expect(res.body.guidance).toContain('Do not market');
     expect(res.body.modelVersion).toBe(PREDICTION_MODELS.PREMATCH);
     expect(res.body.stage).toBe('pre_match');
     expect(res.body.expectedCalibrationError).toBeDefined();
@@ -285,7 +289,7 @@ describe('PredictionsModule (integration)', () => {
       expect.objectContaining({ sampleSize: 1, meanPredicted: 0.62, actualRate: 1 }),
     );
 
-    const service = new PredictionsService(ctx.prisma);
+    const service = ctx.app.get(PredictionsService);
     const models = await service.listModelVersions();
     expect(models).toEqual([
       expect.objectContaining({ modelVersion: PREDICTION_MODELS.PREMATCH, runCount: 1 }),

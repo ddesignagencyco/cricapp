@@ -2,13 +2,16 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Calendar, CalendarDays, MapPin, Trophy } from 'lucide-react';
+import { Calendar, CalendarDays, MapPin, Newspaper } from 'lucide-react';
 import EmptyState from '../../../components/EmptyState';
 import DummyAd from '../../../components/advertisements/DummyAd';
 import { StatusBadge } from '../../../components/Badge';
 import FavoriteButton from '../../../components/FavoriteButton';
 import ShareButton from '../../../components/ShareButton';
-import { APP_TIME_ZONE } from '../../../utils/helpers';
+import Tabs from '../../../components/Tabs';
+import { RelatedNewsPanel, useLinkedNews } from '../../../components/boards/RelatedNewsPanel';
+import EntityAvatar from '../../../components/EntityAvatar';
+import { APP_TIME_ZONE, getInitials } from '../../../utils/helpers';
 import type { SportEventRecord, TournamentSeason } from '../../../types/index';
 
 function getCategoryName(cat: unknown): string {
@@ -115,6 +118,7 @@ export default function TournamentDetailPageClient({
   initialSeasonId,
 }: TournamentDetailPageClientProps) {
   const [seasonId, setSeasonId] = useState(initialSeasonId || seasons[0]?.id || '');
+  const [tab, setTab] = useState('results');
   const category = getCategoryName(tournament.category) || 'International';
   const season = getSeasonName(tournament.currentSeason);
   const typeRaw = tournament.type;
@@ -124,6 +128,11 @@ export default function TournamentDetailPageClient({
       : typeRaw?.name || '';
   const selectedSeason = seasons.find((item) => item.id === seasonId) || seasons[0];
   const tournamentId = String(tournament.id || '');
+  const { articles: news, loading: newsLoading } = useLinkedNews({ seriesId: tournamentId });
+  const seriesTabs = [
+    { key: 'results', label: 'Results', icon: CalendarDays },
+    { key: 'news', label: 'News', icon: Newspaper },
+  ];
   const results = useMemo(
     () => (seasonId && resultsBySeason[seasonId]) || [],
     [resultsBySeason, seasonId],
@@ -144,42 +153,42 @@ export default function TournamentDetailPageClient({
       </nav>
 
       <header className="rounded-md border border-lborder bg-card p-5 sm:p-6">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="rounded border border-accent/25 bg-accent/10 px-2.5 py-1 text-xs font-medium tracking-wider text-accent">
-            Tournament
-          </span>
-          {format && (
-            <span className="rounded border border-lborder bg-secondary px-2.5 py-1 text-xs font-medium tracking-wider text-stext">
-              {format}
+        <div className="flex items-center justify-between gap-3 border-b border-lborder pb-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded border border-accent/25 bg-accent/10 px-2.5 py-1 text-xs font-medium tracking-wider text-accent">
+              Tournament
             </span>
-          )}
-          {tournament.gender && (
-            <span className="rounded border border-lborder bg-secondary px-2.5 py-1 text-xs font-medium capitalize text-stext">
-              {tournament.gender}
-            </span>
-          )}
+            {format && (
+              <span className="rounded border border-lborder bg-secondary px-2.5 py-1 text-xs font-medium tracking-wider text-stext">
+                {format}
+              </span>
+            )}
+            {tournament.gender && (
+              <span className="rounded border border-lborder bg-secondary px-2.5 py-1 text-xs font-medium capitalize text-stext">
+                {tournament.gender}
+              </span>
+            )}
+          </div>
+          {tournamentId ? (
+            <div className="flex shrink-0 items-center gap-2">
+              <FavoriteButton targetType="tournament" targetId={tournamentId} compact />
+              <ShareButton
+                type="tournament"
+                id={tournamentId}
+                fallbackTitle={String(tournament.name || 'Tournament')}
+                href={`/tournaments/${encodeURIComponent(tournamentId)}`}
+                compact
+              />
+            </div>
+          ) : null}
         </div>
 
         <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center">
-          <span className="grid h-14 w-14 shrink-0 place-items-center rounded-md border border-lborder bg-secondary text-accent">
-            <Trophy size={22} />
-          </span>
+          <EntityAvatar className="h-14 w-14 text-lg">
+            {getInitials(String(tournament.name || 'Tournament'))}
+          </EntityAvatar>
           <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <h1 className="text-2xl font-semibold text-mtext">{tournament.name}</h1>
-              {tournamentId ? (
-                <div className="flex shrink-0 items-center gap-2">
-                  <FavoriteButton targetType="tournament" targetId={tournamentId} compact />
-                  <ShareButton
-                    type="tournament"
-                    id={tournamentId}
-                    fallbackTitle={String(tournament.name || 'Tournament')}
-                    href={`/tournaments/${encodeURIComponent(tournamentId)}`}
-                    compact
-                  />
-                </div>
-              ) : null}
-            </div>
+            <h1 className="text-2xl font-semibold text-mtext">{tournament.name}</h1>
             <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-stext">
               {category && (
                 <span className="inline-flex items-center gap-1">
@@ -209,6 +218,19 @@ export default function TournamentDetailPageClient({
 
       <DummyAd size="leaderboard" placement="tournament-detail-after-intro" />
 
+      <Tabs tabs={seriesTabs} active={tab} onChange={setTab} />
+
+      {tab === 'news' && (
+        <RelatedNewsPanel
+          articles={news}
+          loading={newsLoading}
+          emptyTitle="No series news"
+          emptyHint="Publish a story from Admin → News and link this series. Drafts do not appear here."
+        />
+      )}
+
+      {tab === 'results' && (
+      <div className="space-y-5">
       <section>
         <h2 className="mb-3 text-lg font-semibold text-mtext">Seasons</h2>
         {seasons && seasons.length > 0 ? (
@@ -314,6 +336,8 @@ export default function TournamentDetailPageClient({
           />
         )}
       </section>
+      </div>
+      )}
     </div>
   );
 }

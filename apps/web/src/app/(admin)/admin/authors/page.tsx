@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { FileEdit, PenLine, Trash2, X } from 'lucide-react';
+import { FileEdit, PenLine, Trash2, Upload, X } from 'lucide-react';
 import {
   AdminAvatar,
   AdminField,
@@ -14,7 +14,6 @@ import {
   ErrorState,
   LoadingState,
 } from '../../../../components/admin/AdminShared';
-import MediaPicker from '../../../../components/admin/MediaPicker';
 import {
   createAdminAuthor,
   deleteAdminAuthor,
@@ -22,6 +21,7 @@ import {
   updateAdminAuthor,
   type AdminAuthor,
 } from '../../../../services/admin';
+import { uploadGalleryMedia } from '../../../../services/gallery';
 
 const emptyForm = { name: '', bio: '', avatarUrl: '' };
 
@@ -32,7 +32,8 @@ export default function AuthorsPage() {
   const [form, setForm] = useState(emptyForm);
   const [editing, setEditing] = useState<AdminAuthor | null>(null);
   const [saving, setSaving] = useState(false);
-  const [galleryOpen, setGalleryOpen] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [deleteTarget, setDeleteTarget] = useState<AdminAuthor | null>(null);
 
   const load = () => {
@@ -59,11 +60,19 @@ export default function AuthorsPage() {
       bio: author.bio || '',
       avatarUrl: author.avatarUrl || '',
     });
+    setFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const resetFile = () => {
+    setFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const cancelEdit = () => {
     setEditing(null);
     setForm(emptyForm);
+    resetFile();
   };
 
   const submit = async (e: React.FormEvent) => {
@@ -73,12 +82,26 @@ export default function AuthorsPage() {
       return;
     }
     setSaving(true);
-    const payload = {
-      name: form.name.trim(),
-      bio: form.bio.trim() || undefined,
-      avatarUrl: form.avatarUrl.trim() || undefined,
-    };
     try {
+      let avatarUrl = form.avatarUrl.trim() || undefined;
+      if (file) {
+        if (!file.type.startsWith('image/')) {
+          toast.error('Choose an image file.');
+          setSaving(false);
+          return;
+        }
+        const uploaded = await uploadGalleryMedia({
+          file,
+          type: 'image',
+          title: form.name.trim(),
+        });
+        avatarUrl = uploaded.url;
+      }
+      const payload = {
+        name: form.name.trim(),
+        bio: form.bio.trim() || undefined,
+        avatarUrl,
+      };
       if (editing) {
         const updated = await updateAdminAuthor(editing.id, payload);
         setAuthors((list) => list.map((item) => (item.id === editing.id ? updated : item)).sort((a, b) => a.name.localeCompare(b.name)));
@@ -88,6 +111,7 @@ export default function AuthorsPage() {
         const created = await createAdminAuthor(payload);
         setAuthors((list) => [...list, created].sort((a, b) => a.name.localeCompare(b.name)));
         setForm(emptyForm);
+        resetFile();
         toast.success('Author created.');
       }
     } catch {
@@ -117,24 +141,37 @@ export default function AuthorsPage() {
             <AdminInput value={form.name} onChange={(e) => setField('name', e.target.value)} placeholder="Name" />
           </AdminField>
         </div>
-        <div className="w-64">
-          <AdminField label="Avatar URL">
-            <div className="flex gap-2">
-              <AdminInput value={form.avatarUrl} onChange={(e) => setField('avatarUrl', e.target.value)} placeholder="Avatar URL" />
-              <button
-                type="button"
-                onClick={() => setGalleryOpen(true)}
-                className="shrink-0 rounded-md px-3 text-xs font-bold"
-                style={{ border: '1px solid var(--admin-border)', color: 'var(--admin-accent)' }}
-              >
-                Gallery
-              </button>
-            </div>
-          </AdminField>
-        </div>
-        <div className="w-64">
+        <div className="min-w-[12rem] flex-1">
           <AdminField label="Bio">
             <AdminInput value={form.bio} onChange={(e) => setField('bio', e.target.value)} placeholder="Short bio" />
+          </AdminField>
+        </div>
+        <div className="w-[8.5rem] shrink-0">
+          <AdminField label="Avatar">
+            <label
+              className="inline-flex h-[38px] w-full cursor-pointer items-center justify-center gap-1.5 rounded-md px-2 text-xs font-semibold"
+              style={{ border: '1px dashed var(--admin-border)', color: 'var(--admin-accent)', background: 'var(--admin-input-bg)' }}
+              title={file?.name || form.avatarUrl || 'Choose image'}
+            >
+              <Upload size={13} />
+              <span className="truncate">{file ? file.name : form.avatarUrl ? 'Replace' : 'Choose'}</span>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="sr-only"
+                disabled={saving}
+                onChange={(e) => {
+                  const next = e.target.files?.[0];
+                  if (!next) return;
+                  if (!next.type.startsWith('image/')) {
+                    toast.error('Choose an image file.');
+                    return;
+                  }
+                  setFile(next);
+                }}
+              />
+            </label>
           </AdminField>
         </div>
         <button
@@ -230,6 +267,7 @@ export default function AuthorsPage() {
               if (editing?.id === deleteTarget.id) {
                 setEditing(null);
                 setForm(emptyForm);
+                resetFile();
               }
               toast.success('Author deleted.');
             })
@@ -238,15 +276,6 @@ export default function AuthorsPage() {
         }}
       />
 
-      <MediaPicker
-        open={galleryOpen}
-        title="Choose author avatar"
-        onClose={() => setGalleryOpen(false)}
-        onSelect={(url) => {
-          setField('avatarUrl', url);
-          setGalleryOpen(false);
-        }}
-      />
     </div>
   );
 }

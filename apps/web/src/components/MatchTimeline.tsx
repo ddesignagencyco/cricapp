@@ -155,7 +155,10 @@ export function parseTimelineEvents(rawPayload: Record<string, unknown> | null |
     .filter((event): event is TimelineEvent => event !== null);
 }
 
-export function extractBalls(payload: Record<string, unknown> | null | undefined): (string | number | null)[] {
+export function extractBalls(
+  payload: Record<string, unknown> | null | undefined,
+  opts?: { inning?: number }
+): (string | number | null)[] {
   if (!payload) return [];
   const keys = ['balls', 'recentBalls', 'thisOver'];
   for (const key of keys) {
@@ -171,8 +174,13 @@ export function extractBalls(payload: Record<string, unknown> | null | undefined
 
   const events = parseTimelineEvents(payload).filter(isDelivery);
   if (!events.length) return [];
-  const last = events[events.length - 1];
-  const overEvents = events.filter(
+  const wantedInning = opts?.inning;
+  const scoped = wantedInning
+    ? events.filter((event) => event.inning === wantedInning)
+    : events;
+  if (!scoped.length) return [];
+  const last = scoped[scoped.length - 1];
+  const overEvents = scoped.filter(
     (event) => event.inning === last.inning && event.over === last.over,
   );
   const bowled = overEvents.map(deliveryLabel);
@@ -283,8 +291,32 @@ function eventMeta(event: TimelineEvent): string[] {
   return chips;
 }
 
-function matchSummary(payload: Record<string, unknown> | null | undefined): {
+function periodSideTotal(
+  periods: unknown[],
+  side: 'home' | 'away',
+): string {
+  let runs = 0;
+  let wickets: number | null = null;
+  let recorded = false;
+  for (const item of periods) {
+    const rec = asRecord(item);
+    if (!rec) continue;
+    const value = Number(rec[`${side}_score`]);
+    if (!Number.isFinite(value) || value <= 0) continue;
+    runs += value;
+    recorded = true;
+    const w = Number(rec[`${side}_wickets`]);
+    if (Number.isFinite(w) && w > 0) wickets = w;
+  }
+  if (!recorded) return '';
+  return wickets !== null ? `${runs}/${wickets}` : String(runs);
+}
+
+export function matchSummary(payload: Record<string, unknown> | null | undefined): {
   result?: string;
+  displayScore?: string;
+  homeScore: string;
+  awayScore: string;
   scores: string[];
 } {
   const data = unwrapPayload(payload);
@@ -302,7 +334,10 @@ function matchSummary(payload: Record<string, unknown> | null | undefined): {
     })
     .filter(Boolean);
   return {
-    result: str(status?.match_result_text),
+    result: str(status?.match_result_text) || str(status?.result),
+    displayScore: str(status?.display_score),
+    homeScore: periodSideTotal(periods, 'home'),
+    awayScore: periodSideTotal(periods, 'away'),
     scores,
   };
 }

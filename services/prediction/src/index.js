@@ -9,7 +9,13 @@ import { scorePrematch } from './prematch.js';
 import { scoreLive } from './live.js';
 import { battingIsHomeTeam, decidedWinProb, shouldSkipLivePrediction } from './liveGuard.js';
 import { latestFeatureSnapshot, latestLiveResult, latestPrematchResult, persistPrediction } from './persist.js';
-import { recalibratePrematch, rescaleWeights, resolvePrematchCalibration, resolvePrematchWeights } from './calibrate.js';
+import {
+  recalibrateAllFormats,
+  rescaleWeights,
+  resolveLiveScales,
+  resolvePrematchCalibration,
+  resolvePrematchWeights,
+} from './calibrate.js';
 import { snapshotPerformance } from './performance.js';
 import { refreshRatings } from './ratings.js';
 
@@ -23,6 +29,7 @@ const LIVE_PRIOR_WEIGHT = Number(process.env.LIVE_PRIOR_WEIGHT || 0.6);
 const LIVE_PRIOR_DECAY_PROGRESS = Number(process.env.LIVE_PRIOR_DECAY_PROGRESS || 0.6);
 
 const liveThrottle = new Map();
+const liveFingerprints = new Map();
 
 function shouldScoreLive(matchId, over) {
   const now = Date.now();
@@ -36,22 +43,55 @@ function shouldScoreLive(matchId, over) {
   return true;
 }
 
+function liveFingerprint(snapshot) {
+  const innings = snapshot.currentInnings ?? {};
+  return [
+    snapshot.currentInning ?? '',
+    innings.runs ?? '',
+    innings.wickets ?? '',
+    innings.overs ?? '',
+    snapshot.target ?? '',
+    snapshot.displayScore ?? '',
+    snapshot.remainingOvers ?? '',
+    snapshot.requiredRunRate ?? '',
+  ].join('|');
+}
+
+function isLiveTrigger(event) {
+  if (!event?.matchId) return false;
+  const type = event.type;
+  if (
+    type === EVENT_TYPES.RUNS ||
+    type === EVENT_TYPES.WICKET ||
+    type === EVENT_TYPES.STATUS_CHANGE ||
+    type === EVENT_TYPES.MATCH_STARTED
+  ) {
+    return true;
+  }
+  // Full match snapshot from ingestion publishMatchState({ broadcast: true }).
+  if (!type && (event.status === 'live' || event.currentInnings)) {
+    return true;
+  }
+  return false;
+}
+
 export async function runPrematch(matchId) {
   const snapshot = await extractPrematchFeatures(matchId, { query, redis });
   if (!snapshot) {
     log.warn('prematch skipped — match not found', { matchId });
     return null;
   }
-  const calibration = await resolvePrematchCalibration(query);
-  const learnedWeights = await resolvePrematchWeights(query);
+  const [calibration, weightPack] = await Promise.all([
+    resolvePrematchCalibration(query, snapshot.format),
+    resolvePrematchWeights(query),
+  ]);
   snapshot.calibration = {
     slope: calibration.slope,
     intercept: calibration.intercept,
     source: calibration.source,
-    weights: learnedWeights
-      ? { source: learnedWeights.source, fittedAt: learnedWeights.fittedAt }
-      : { source: 'default' },
+    format: snapshot.format,
   };
+  snapshot.weights = weightPack.weights;
   const previousSnapshot = await latestFeatureSnapshot(
     query,
     matchId,
@@ -62,7 +102,7 @@ export async function runPrematch(matchId) {
     log.info('prematch unchanged — skipped', { matchId });
     return null;
   }
-  const result = scorePrematch(snapshot, { weights: learnedWeights });
+  const result = scorePrematch(snapshot);
   const id = await persistPrediction(query, {
     matchId,
     stage: PREDICTION_STAGE.PRE_MATCH,
@@ -141,21 +181,53 @@ export async function runLive(matchId) {
     snapshot,
     result,
   });
+  liveFingerprints.set(matchId, fingerprint);
   log.info('live scored', { matchId, runId: id, homeWinProb: result.homeWinProb });
   return id;
 }
 
 export async function recalibrateModels() {
-  const result = await recalibratePrematch(query);
-  if (result.applied) {
+  const result = await recalibrateAllFormats(query);
+  if (result.global?.applied) {
     log.info('prematch recalibrated', {
-      slope: result.slope,
-      intercept: result.intercept,
-      sampleSize: result.sampleSize,
-      brierScore: result.brierScore,
+      slope: result.global.slope,
+      intercept: result.global.intercept,
+      sampleSize: result.global.sampleSize,
+      brierScore: result.global.brierScore,
     });
   } else {
-    log.info('prematch calibration skipped', { reason: result.reason, sampleSize: result.sampleSize });
+    log.info('prematch calibration skipped', {
+      reason: result.global?.reason,
+      sampleSize: result.global?.sampleSize,
+    });
+  }
+  for (const formatFit of result.byFormat ?? []) {
+    if (formatFit.applied) {
+      log.info('prematch format recalibrated', {
+        format: formatFit.format,
+        slope: formatFit.slope,
+        sampleSize: formatFit.sampleSize,
+      });
+    }
+  }
+  if (result.weights?.applied) {
+    log.info('prematch weights fitted', {
+      sampleSize: result.weights.sampleSize,
+      accuracy: result.weights.accuracy,
+      weights: result.weights.weights,
+    });
+  } else {
+    log.info('prematch weights skipped', {
+      reason: result.weights?.reason,
+      sampleSize: result.weights?.sampleSize,
+    });
+  }
+  if (result.liveScales?.applied) {
+    log.info('live scales fitted', {
+      sampleSize: result.liveScales.sampleSize,
+      firstInningsScale: result.liveScales.firstInningsScale,
+      chaseScale: result.liveScales.chaseScale,
+    });
   }
 
   for (const stage of [PREDICTION_STAGE.PRE_MATCH, PREDICTION_STAGE.LIVE]) {
@@ -239,24 +311,15 @@ export async function startLiveSubscriber() {
     log.error('redis subscriber error', { error: err.message });
   });
 
-  sub.on('message', (channel, message) => {
+  sub.on('message', (_channel, message) => {
     let event;
     try {
       event = JSON.parse(message);
     } catch {
       return;
     }
+    if (!isLiveTrigger(event)) return;
     const matchId = event.matchId;
-    if (!matchId) return;
-    const type = event.type;
-    if (
-      type !== EVENT_TYPES.RUNS &&
-      type !== EVENT_TYPES.WICKET &&
-      type !== EVENT_TYPES.STATUS_CHANGE &&
-      type !== EVENT_TYPES.MATCH_STARTED
-    ) {
-      return;
-    }
     runLive(matchId).catch((err) => log.error('live score failed', { matchId, error: err.message }));
   });
 
@@ -267,10 +330,12 @@ export async function startLiveSubscriber() {
       if (!subscribed.has(channel)) {
         await sub.subscribe(channel);
         subscribed.add(channel);
-        runLive(matchId).catch((err) =>
-          log.error('live initial score failed', { matchId, error: err.message }),
-        );
       }
+      // Re-read Redis/Postgres on every refresh so live % keeps moving even when
+      // ingestion only publishes untyped snapshots (or Redis events are sparse).
+      runLive(matchId).catch((err) =>
+        log.error('live refresh score failed', { matchId, error: err.message }),
+      );
     }
     for (const channel of [...subscribed]) {
       const matchId = channel.slice('match:'.length);
@@ -278,6 +343,7 @@ export async function startLiveSubscriber() {
         await sub.unsubscribe(channel);
         subscribed.delete(channel);
         liveThrottle.delete(matchId);
+        liveFingerprints.delete(matchId);
       }
     }
   }
@@ -318,6 +384,7 @@ async function main() {
   log.info('prediction service started', {
     prematchIntervalMs: PREMATCH_INTERVAL_MS,
     liveThrottleMs: LIVE_THROTTLE_MS,
+    liveRefreshMs: LIVE_REFRESH_MS,
     calibrationIntervalMs: CALIBRATION_INTERVAL_MS,
   });
 }

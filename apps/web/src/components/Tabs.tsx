@@ -38,12 +38,12 @@ export default function Tabs({ tabs, active, onChange, className = '', size = 'm
               isTags
                 ? `rounded-full border ${
                     isActive
-                      ? 'border-accent bg-[var(--color-brand-soft)] text-accent'
+                      ? 'btn-brand border-transparent'
                       : 'border-lborder bg-transparent text-stext hover:border-border-strong hover:text-mtext'
                   }`
                 : `rounded-md ${
                     isActive
-                      ? 'bg-[var(--color-brand-soft)] text-accent ring-1 ring-inset ring-accent/40'
+                      ? 'btn-brand'
                       : 'text-stext hover:bg-[var(--color-row-hover)] hover:text-mtext'
                   }`
             }`}
@@ -53,7 +53,7 @@ export default function Tabs({ tabs, active, onChange, className = '', size = 'm
             {typeof tab.count === 'number' && (
               <span
                 className={`rounded-full px-1.5 text-xs font-semibold tabular-nums ${
-                  isActive ? 'btn-brand' : 'bg-[var(--color-neutral-soft)] text-stext'
+                  isActive ? 'bg-white/20 text-white' : 'bg-[var(--color-neutral-soft)] text-stext'
                 }`}
               >
                 {tab.count}

@@ -171,6 +171,6 @@ describe('scoreLive', () => {
     const out = scoreLive(snapshot, null, { prior, priorDecayProgress: 0.6 });
     assert.equal(out.explanation.priorWeight, 0);
     assert.equal(out.explanation.priorBlend, false);
-    assert.ok(out.homeWinProb > 0.4 && out.homeWinProb < 0.6);
+    assert.ok(out.homeWinProb < 0.5);
   });
 });

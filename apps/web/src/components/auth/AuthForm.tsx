@@ -279,6 +279,7 @@ export default function AuthForm({ mode, token = '', tokenId = '', initialEmail 
   }
 
   return (
+    <>
     <form onSubmit={submit} className="space-y-4" noValidate>
       {mode === 'register' && <TextField id="name" label="Full name" name="name" type="text" value={name} onChange={setName} autoComplete="name" placeholder="Your full name" error={errors.name} />}
       {(mode === 'login' || mode === 'register' || mode === 'forgot') && <TextField id="email" label="Email" name="email" type="email" value={email} onChange={setEmail} autoComplete="email" placeholder="you@example.com" error={errors.email} />}
@@ -319,12 +320,6 @@ export default function AuthForm({ mode, token = '', tokenId = '', initialEmail 
       )}
       <FormMessage message={message} />
       <FormMessage message={success} tone="success" />
-      {unverifiedLogin && (
-        <div className="rounded-xl border border-lborder bg-elevated/60 p-3">
-          <p className="mb-2 text-xs text-stext">This account is not verified yet. Request a new verification email below.</p>
-          <ResendForm initialEmail={email} />
-        </div>
-      )}
       <button
         type="submit"
         disabled={loading}
@@ -341,6 +336,13 @@ export default function AuthForm({ mode, token = '', tokenId = '', initialEmail 
           : 'Reset Password'}
       </button>
     </form>
+    {unverifiedLogin && (
+      <div className="mt-4 rounded-xl border border-lborder bg-elevated/60 p-3">
+        <p className="mb-2 text-xs text-stext">This account is not verified yet. Request a new verification email below.</p>
+        <ResendForm initialEmail={email} />
+      </div>
+    )}
+    </>
   );
 }
 

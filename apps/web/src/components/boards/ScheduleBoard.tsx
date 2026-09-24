@@ -11,6 +11,7 @@ import ErrorState from '../ErrorState';
 import Pagination from '../Pagination';
 import Tabs from '../Tabs';
 import RemoteImage from '../RemoteImage';
+import EntityAvatar from '../EntityAvatar';
 import { APP_TIME_ZONE, getPslLogo, toKarachiISODate } from '../../utils/helpers';
 import { isSportRadarId, str } from '../../utils/extract';
 import type { SportEventRecord } from '../../types/index';
@@ -136,7 +137,7 @@ export default function ScheduleBoard({
             <button
               type="button"
               onClick={prevDate}
-              className="grid h-8 w-8 place-items-center rounded text-stext transition-colors hover:bg-[var(--color-row-hover)] hover:text-accent"
+              className="grid h-8 w-8 place-items-center rounded bg-secondary text-stext transition-colors hover:bg-[var(--color-row-hover)] hover:text-accent"
               aria-label="Previous day"
             >
               <ChevronLeft size={16} />
@@ -157,7 +158,7 @@ export default function ScheduleBoard({
             <button
               type="button"
               onClick={nextDate}
-              className="grid h-8 w-8 place-items-center rounded text-stext transition-colors hover:bg-[var(--color-row-hover)] hover:text-accent"
+              className="grid h-8 w-8 place-items-center rounded bg-secondary text-stext transition-colors hover:bg-[var(--color-row-hover)] hover:text-accent"
               aria-label="Next day"
             >
               <ChevronRight size={16} />
@@ -345,12 +346,6 @@ function TeamRow({
     (name || code || '??').replace(/^(\w)\w*\s?(\w)?.*$/, '$1$2').toUpperCase() ||
     (code || '??').slice(0, 2).toUpperCase();
 
-  let hash = 0;
-  for (let i = 0; i < (code || name).length; i++) {
-    hash = (code || name).charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const hue = Math.abs(hash % 360);
-
   return (
     <div className="flex items-center gap-2.5">
       {pslLogo ? (
@@ -362,13 +357,9 @@ function TeamRow({
           className="h-7 w-7 shrink-0 rounded-full border border-lborder bg-white object-contain p-0.5"
         />
       ) : (
-        <span
-          className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[10px] font-semibold text-white"
-          style={{ backgroundImage: `linear-gradient(135deg, hsl(${hue}, 65%, 48%), hsl(${(hue + 28) % 360}, 75%, 32%))` }}
-          title={name}
-        >
+        <EntityAvatar className="h-7 w-7 text-[10px]" title={name}>
           {label}
-        </span>
+        </EntityAvatar>
       )}
       <p className="min-w-0 flex-1 truncate text-sm font-semibold text-mtext" title={name}>
         {name}

@@ -13,6 +13,11 @@ export function newsLocale(
   language?: string | null,
   sampleText?: string | null,
 ): { dir: 'rtl' | 'ltr'; lang: 'ur' | 'en' } {
-  const rtl = isRtlLanguage(language) || looksLikeUrdu(sampleText);
-  return rtl ? { dir: 'rtl', lang: 'ur' } : { dir: 'ltr', lang: 'en' };
+  const sample = String(sampleText || '').replace(/<[^>]+>/g, ' ').trim();
+  if (sample) {
+    return looksLikeUrdu(sample)
+      ? { dir: 'rtl', lang: 'ur' }
+      : { dir: 'ltr', lang: 'en' };
+  }
+  return isRtlLanguage(language) ? { dir: 'rtl', lang: 'ur' } : { dir: 'ltr', lang: 'en' };
 }

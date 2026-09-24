@@ -1,5 +1,6 @@
 import { apiGet, apiGetOptional, extractPage } from './api/client';
 import type { Team, Player, SportEventRecord } from '../types/index';
+import { entityIdPath } from '../utils/entityId';
 
 export async function fetchTeams(
   params: Record<string, string | number | boolean | undefined | null> = {}
@@ -17,14 +18,14 @@ export async function fetchTeamsPage(
 }
 
 export async function fetchTeamById(idOrAbbr: string): Promise<Team | null> {
-  return apiGetOptional(`/teams/${idOrAbbr}`);
+  return apiGetOptional(`/teams/${entityIdPath(idOrAbbr)}`);
 }
 
 export async function fetchTeamRosterPage(
   idOrAbbr: string,
   params: { page?: number; limit?: number } = {}
 ): Promise<{ items: Player[]; total: number; totalPages: number }> {
-  const res = await apiGet(`/teams/${idOrAbbr}/players`, { page: 1, limit: 40, ...params });
+  const res = await apiGet(`/teams/${entityIdPath(idOrAbbr)}/players`, { page: 1, limit: 40, ...params });
   const { items, meta } = extractPage<Player>(res);
   return { items, total: meta.total, totalPages: meta.totalPages };
 }
@@ -38,7 +39,7 @@ export async function fetchTeamSchedule(
   idOrAbbr: string,
   params: { page?: number; limit?: number } = {}
 ): Promise<SportEventRecord[]> {
-  const res = await apiGet(`/teams/${idOrAbbr}/schedule`, { page: 1, limit: 50, ...params });
+  const res = await apiGet(`/teams/${entityIdPath(idOrAbbr)}/schedule`, { page: 1, limit: 50, ...params });
   return extractPage<SportEventRecord>(res).items;
 }
 
@@ -46,6 +47,6 @@ export async function fetchTeamResults(
   idOrAbbr: string,
   params: { page?: number; limit?: number } = {}
 ): Promise<SportEventRecord[]> {
-  const res = await apiGet(`/teams/${idOrAbbr}/results`, { page: 1, limit: 50, ...params });
+  const res = await apiGet(`/teams/${entityIdPath(idOrAbbr)}/results`, { page: 1, limit: 50, ...params });
   return extractPage<SportEventRecord>(res).items;
 }

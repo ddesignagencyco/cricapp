@@ -57,3 +57,8 @@ export function authorSlugFromArticle(item: NewsArticle): string {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '') || '';
 }
+
+export function authorAvatarFromArticle(item: NewsArticle): string | null {
+  const ref = item.authorRef as { avatarUrl?: string | null } | undefined;
+  return ref?.avatarUrl || null;
+}

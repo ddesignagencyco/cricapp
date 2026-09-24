@@ -129,7 +129,13 @@ export async function fetchNewsPage(
 }
 
 export async function fetchNewsById(idOrSlug: string): Promise<NewsArticle | null> {
-  const item = await apiGetOptional<Record<string, unknown>>(`/news/${idOrSlug}`);
+  let key = idOrSlug;
+  try {
+    key = decodeURIComponent(idOrSlug);
+  } catch {
+    key = idOrSlug;
+  }
+  const item = await apiGetOptional<Record<string, unknown>>(`/news/${encodeURIComponent(key)}`);
   if (!item) return null;
   return mapNewsItem(item);
 }

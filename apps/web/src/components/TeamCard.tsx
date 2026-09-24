@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { ChevronRight, Globe } from 'lucide-react';
 import RemoteImage from './RemoteImage';
+import EntityAvatar from './EntityAvatar';
 import { getInitials, getPslLogo } from '../utils/helpers';
 
 interface TeamCardProps {
@@ -18,15 +19,6 @@ export default function TeamCard({ team }: TeamCardProps) {
 
   const pslLogo = getPslLogo(code) || getPslLogo(team.id);
   const logo = team.logoUrl || team.logo || pslLogo;
-
-  let hash = 0;
-  const seed = code || name;
-  for (let i = 0; i < seed.length; i++) {
-    hash = seed.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const hue = Math.abs(hash % 360);
-  const primaryColor = team.colors?.primary || `hsl(${hue}, 65%, 45%)`;
-  const secondaryColor = team.colors?.secondary || `hsl(${(hue + 30) % 360}, 70%, 30%)`;
 
   const location = [city, country].filter(Boolean).filter((value, index, list) => list.indexOf(value) === index);
 
@@ -44,13 +36,7 @@ export default function TeamCard({ team }: TeamCardProps) {
           className="h-11 w-11 shrink-0 rounded-full border border-lborder bg-white object-contain p-1"
         />
       ) : (
-        <span
-          className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-sm font-semibold text-white"
-          style={{ backgroundImage: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})` }}
-          aria-hidden="true"
-        >
-          {initials}
-        </span>
+        <EntityAvatar className="h-11 w-11 text-sm">{initials}</EntityAvatar>
       )}
 
       <div className="min-w-0 flex-1">

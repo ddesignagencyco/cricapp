@@ -109,7 +109,7 @@ export default function TournamentsPage() {
                     <tr key={t.id} style={{ borderBottom: '1px solid var(--admin-border)' }}
                       onMouseEnter={(e) => e.currentTarget.style.background = 'var(--admin-table-row-hover)'}
                       onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
-                      <td className="px-4 py-2.5">
+                      <td className="px-4 py-2.5" style={{ color: 'var(--admin-text)' }}>
                         <div className="flex items-center gap-2.5">
                           <AdminAvatar
                             name={t.name}

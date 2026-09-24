@@ -5,6 +5,7 @@ import ThemeProvider from '../components/ThemeProvider';
 import AuthProvider from '../components/AuthProvider';
 import ClientLayout from '../components/ClientLayout';
 import { Toaster } from 'react-hot-toast';
+import { loadSiteSettings } from '../services/siteSettings';
 
 export const metadata = {
   metadataBase: new URL('https://pakcriczone.com'),
@@ -36,7 +37,8 @@ export const viewport = {
   initialScale: 1,
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const settings = await loadSiteSettings();
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -52,7 +54,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
         />
       </head>
-      <body className="bg-primary text-mtext font-sans antialiased">
+      <body className="bg-primary text-mtext font-sans antialiased" suppressHydrationWarning>
         <ScrollToTop />
         <JsonLd
           data={{
@@ -65,7 +67,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
         <ThemeProvider>
           <AuthProvider>
-            <ClientLayout>{children}</ClientLayout>
+            <ClientLayout settings={settings}>{children}</ClientLayout>
             <Toaster
               position="top-right"
               gutter={10}

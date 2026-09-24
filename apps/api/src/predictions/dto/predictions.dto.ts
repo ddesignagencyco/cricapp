@@ -67,6 +67,14 @@ export class PredictionRunDto {
 
   @ApiPropertyOptional()
   wicketRisk: number | null;
+
+  @ApiPropertyOptional({
+    description: 'Natural-language explanation of this stored run. Does not change probabilities.',
+  })
+  narrative: string | null;
+
+  @ApiPropertyOptional({ enum: ['template', 'llm'] })
+  narrativeSource: string | null;
 }
 
 export class MatchPredictionsDto {
@@ -140,6 +148,17 @@ export class PredictionPerformanceDto {
 
   @ApiProperty({ type: [ConfidenceBandAccuracyDto] })
   byConfidenceBand: ConfidenceBandAccuracyDto[];
+
+  @ApiProperty({
+    description: 'True only when sampleSize meets the publish threshold (default 200).',
+  })
+  claimReady: boolean;
+
+  @ApiProperty()
+  publishMinSamples: number;
+
+  @ApiProperty()
+  guidance: string;
 }
 
 export class PredictionPerformanceQuery {
