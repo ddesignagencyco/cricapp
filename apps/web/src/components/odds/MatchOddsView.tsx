@@ -15,6 +15,7 @@ import {
   groupSelectionsByKey,
   impliedPercent,
   isOddsCaptureStale,
+  isOddsSeedSource,
   modelPercent,
   readOddsAgeConsent,
   storeOddsAgeConsent,
@@ -52,7 +53,8 @@ export default function MatchOddsView({
   const [notFound, setNotFound] = useState(false);
   const [loading, setLoading] = useState(!initial && !initialForbidden);
   const [priceFormat, setPriceFormat] = useState<OddsPriceFormat>('decimal');
-  const [historySelection, setHistorySelection] = useState<'home' | 'away'>('home');
+  const [activeMarketKey, setActiveMarketKey] = useState('');
+  const [historySelection, setHistorySelection] = useState('home');
   const [historyPoints, setHistoryPoints] = useState<OddsHistoryPoint[] | null>(null);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [ageOk, setAgeOk] = useState(false);
@@ -102,29 +104,51 @@ export default function MatchOddsView({
     return () => window.clearInterval(id);
   }, [pollLive, forbidden, data?.markets.length, refresh]);
 
-  const primaryMarket = data?.markets.find((m) => m.marketKey === 'match_winner') ?? data?.markets[0] ?? null;
+  const availableMarkets = useMemo(() => {
+    if (!data) return [];
+    return [...data.markets].sort((a, b) => {
+      const aRank = a.marketKey === 'match_winner' ? 0 : 1;
+      const bRank = b.marketKey === 'match_winner' ? 0 : 1;
+      return aRank - bRank || a.name.localeCompare(b.name);
+    });
+  }, [data]);
+  const activeMarket = availableMarkets.find((market) => market.marketKey === activeMarketKey)
+    ?? availableMarkets.find((market) => market.marketKey === 'match_winner')
+    ?? availableMarkets[0]
+    ?? null;
   const selectionGroups = useMemo(
-    () => (primaryMarket ? groupSelectionsByKey(primaryMarket.selections) : new Map()),
-    [primaryMarket],
+    () => (activeMarket ? groupSelectionsByKey(activeMarket.selections) : new Map()),
+    [activeMarket],
   );
   const columnKeys = useMemo(() => {
     const order = ['home', 'draw', 'away'];
-    const keys = [...selectionGroups.keys()];
-    keys.sort((a, b) => order.indexOf(a) - order.indexOf(b));
-    return keys;
+    const rank = (key: string) => {
+      const index = order.indexOf(key);
+      return index === -1 ? order.length : index;
+    };
+    return [...selectionGroups.keys()].sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
   }, [selectionGroups]);
+  const selectedHistoryKey = selectionGroups.has(historySelection)
+    ? historySelection
+    : columnKeys[0] ?? '';
 
   useEffect(() => {
-    if (!primaryMarket || forbidden) return;
+    if (!activeMarket || !selectedHistoryKey || forbidden) {
+      setHistoryPoints(null);
+      return;
+    }
     let cancelled = false;
     setHistoryLoading(true);
     void fetchOddsHistory(matchId, {
-      marketKey: primaryMarket.marketKey,
-      selectionKey: historySelection,
+      marketKey: activeMarket.marketKey,
+      selectionKey: selectedHistoryKey,
       limit: 500,
     })
       .then((res) => {
         if (!cancelled) setHistoryPoints(res?.points ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setHistoryPoints([]);
       })
       .finally(() => {
         if (!cancelled) setHistoryLoading(false);
@@ -132,7 +156,7 @@ export default function MatchOddsView({
     return () => {
       cancelled = true;
     };
-  }, [matchId, primaryMarket, historySelection, forbidden]);
+  }, [matchId, activeMarket, selectedHistoryKey, forbidden]);
 
   if (forbidden) {
     return (
@@ -176,11 +200,19 @@ export default function MatchOddsView({
 
   const needsAgeGate = data.compliance.ageGatingRequired && !ageOk;
   const hasMarkets = data.markets.length > 0;
-  const historyLabel = historySelection === 'home' ? homeLabel : awayLabel;
-  const marketTitle = primaryMarket ? marketDisplayName(primaryMarket.name) : 'Odds comparison';
+  const historyLabel = selectedHistoryKey
+    ? labelForSelection(
+        selectedHistoryKey,
+        homeLabel,
+        awayLabel,
+        selectionGroups.get(selectedHistoryKey)?.[0]?.label,
+      )
+    : '';
+  const marketTitle = activeMarket ? marketDisplayName(activeMarket.name) : 'Odds comparison';
+  const hasSeedPrices = activeMarket?.selections.some((row) => isOddsSeedSource(row)) === true;
   const showStaleWarning =
     pollLive &&
-    primaryMarket?.selections.some((row) => isOddsCaptureStale(row.capturedAt)) === true;
+    activeMarket?.selections.some((row) => isOddsCaptureStale(row.capturedAt)) === true;
 
   return (
     <div className="space-y-5">
@@ -199,9 +231,11 @@ export default function MatchOddsView({
         <>
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-xs font-bold uppercase tracking-widest text-stext">Licensed price comparison</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-stext">
+                {hasSeedPrices ? 'Development seed comparison' : 'Licensed price comparison'}
+              </p>
               <h2 className={`mt-0.5 font-bold tracking-tight text-mtext ${compact ? 'text-lg' : 'text-xl'}`}>
-                {hasMarkets && primaryMarket ? marketTitle : 'Odds comparison'}
+                {hasMarkets && activeMarket ? marketTitle : 'Odds comparison'}
               </h2>
             </div>
             <FormatToggle value={priceFormat} onChange={setPriceFormat} />
@@ -213,12 +247,17 @@ export default function MatchOddsView({
             </p>
           ) : null}
 
+          {hasSeedPrices ? (
+            <p className="rounded-lg bg-brand-soft px-3 py-2 text-xs text-mtext ring-1 ring-lborder">
+              Development seed prices are shown for UI testing. Live Sportradar prices use this same view when available.
+            </p>
+          ) : null}
+
           {!hasMarkets && data.unavailable ? (
             <EmptyState
               title="No licensed prices yet"
               message={data.unavailable}
               icon={Scale}
-
             >
               <Link href="/matches" className="text-sm font-semibold text-accent hover:underline">
                 Browse fixtures →
@@ -226,72 +265,104 @@ export default function MatchOddsView({
             </EmptyState>
           ) : null}
 
-          {hasMarkets && primaryMarket ? (
+          {hasMarkets && activeMarket ? (
             <>
-              <OddsMarketRulesDisclosure marketKey={primaryMarket.marketKey} />
-
-              <div className="overflow-x-auto rounded-2xl bg-card ring-1 ring-lborder">
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-lborder px-4 py-3">
-                  <p className="text-sm font-bold text-mtext">{marketDisplayName(primaryMarket.name)}</p>
-                  {primaryMarket.bookmakerMargin !== null && primaryMarket.bookmakerMargin !== undefined ? (
-                    <span className="rounded-full bg-secondary px-2.5 py-0.5 text-[11px] font-medium text-stext">
-                      Market margin {formatMarginPercent(primaryMarket.bookmakerMargin)}
-                    </span>
-                  ) : null}
+              {availableMarkets.length > 1 ? (
+                <div
+                  className="flex flex-wrap gap-2"
+                  role="tablist"
+                  aria-label="Odds markets"
+                >
+                  {availableMarkets.map((market) => {
+                    const active = market.marketKey === activeMarket.marketKey;
+                    return (
+                      <button
+                        key={market.marketKey}
+                        type="button"
+                        role="tab"
+                        aria-selected={active}
+                        onClick={() => setActiveMarketKey(market.marketKey)}
+                        className={`rounded-full px-3 py-1.5 text-xs font-semibold ring-1 ${
+                          active
+                            ? 'bg-brand text-brand-fg ring-brand'
+                            : 'bg-card text-mtext ring-lborder hover:bg-secondary'
+                        }`}
+                      >
+                        {marketDisplayName(market.name)}
+                      </button>
+                    );
+                  })}
                 </div>
-                <table className="min-w-full text-left text-sm">
-                  <thead>
-                    <tr className="border-b border-lborder bg-secondary/60 text-xs uppercase tracking-wider text-stext">
-                      {columnKeys.map((key) => (
-                        <th key={key} className="px-4 py-2.5 font-semibold">
-                          {labelForSelection(key, homeLabel, awayLabel, selectionGroups.get(key)?.[0]?.label)}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {maxSourceRows(selectionGroups, columnKeys).map((rowIndex) => (
-                      <tr key={rowIndex} className="border-b border-lborder/70 last:border-0">
-                        {columnKeys.map((key) => {
-                          const cell = selectionGroups.get(key)?.[rowIndex];
-                          return (
-                            <td key={key} className="align-top px-4 py-3">
-                              {cell ? <PriceCell row={cell} format={priceFormat} /> : null}
-                            </td>
-                          );
-                        })}
+              ) : null}
+
+              <div id="odds-market-panel" role="tabpanel" className="space-y-5">
+                <OddsMarketRulesDisclosure marketKey={activeMarket.marketKey} />
+
+                <div className="overflow-x-auto rounded-2xl bg-card ring-1 ring-lborder">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-lborder px-4 py-3">
+                    <p className="text-sm font-bold text-mtext">{marketDisplayName(activeMarket.name)}</p>
+                    {activeMarket.bookmakerMargin !== null && activeMarket.bookmakerMargin !== undefined ? (
+                      <span className="rounded-full bg-secondary px-2.5 py-0.5 text-[11px] font-medium text-stext">
+                        Market margin {formatMarginPercent(activeMarket.bookmakerMargin)}
+                      </span>
+                    ) : null}
+                  </div>
+                  <table className="min-w-full text-left text-sm">
+                    <thead>
+                      <tr className="border-b border-lborder bg-secondary/60 text-xs uppercase tracking-wider text-stext">
+                        {columnKeys.map((key) => (
+                          <th key={key} className="px-4 py-2.5 font-semibold">
+                            {labelForSelection(key, homeLabel, awayLabel, selectionGroups.get(key)?.[0]?.label)}
+                          </th>
+                        ))}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                {(['home', 'away'] as const).map((key) =>
-                  selectionGroups.has(key) ? (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => setHistorySelection(key)}
-                      className={`rounded-full px-3 py-1.5 text-xs font-semibold ring-1 ${
-                        historySelection === key
-                          ? 'bg-brand text-brand-fg ring-brand'
-                          : 'bg-card text-mtext ring-lborder hover:bg-secondary'
-                      }`}
-                    >
-                      {key === 'home' ? homeLabel : awayLabel}
-                    </button>
-                  ) : null,
-                )}
-              </div>
-
-              {historyLoading ? (
-                <div className="rounded-2xl bg-card p-5 ring-1 ring-lborder" aria-busy="true">
-                  <Skeleton height={180} />
+                    </thead>
+                    <tbody>
+                      {maxSourceRows(selectionGroups, columnKeys).map((rowIndex) => (
+                        <tr key={rowIndex} className="border-b border-lborder/70 last:border-0">
+                          {columnKeys.map((key) => {
+                            const cell = selectionGroups.get(key)?.[rowIndex];
+                            return (
+                              <td key={key} className="align-top px-4 py-3">
+                                {cell ? <PriceCell row={cell} format={priceFormat} /> : null}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-              ) : (
-                <OddsHistoryChart points={historyPoints ?? []} selectionLabel={historyLabel} />
-              )}
+
+                {columnKeys.length > 0 ? (
+                  <>
+                    <div className="flex flex-wrap gap-2" aria-label="History selection">
+                      {columnKeys.map((key) => (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => setHistorySelection(key)}
+                          className={`rounded-full px-3 py-1.5 text-xs font-semibold ring-1 ${
+                            selectedHistoryKey === key
+                              ? 'bg-brand text-brand-fg ring-brand'
+                              : 'bg-card text-mtext ring-lborder hover:bg-secondary'
+                          }`}
+                        >
+                          {labelForSelection(key, homeLabel, awayLabel, selectionGroups.get(key)?.[0]?.label)}
+                        </button>
+                      ))}
+                    </div>
+
+                    {historyLoading ? (
+                      <div className="rounded-2xl bg-card p-5 ring-1 ring-lborder" aria-busy="true">
+                        <Skeleton height={180} />
+                      </div>
+                    ) : (
+                      <OddsHistoryChart points={historyPoints ?? []} selectionLabel={historyLabel} />
+                    )}
+                  </>
+                ) : null}
+              </div>
 
               {data.modelVsMarket ? <ModelVsMarketPanel data={data.modelVsMarket} homeLabel={homeLabel} awayLabel={awayLabel} /> : null}
             </>

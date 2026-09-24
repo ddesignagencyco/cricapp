@@ -97,18 +97,7 @@ export default async function HomePage() {
   return (
     <div className="min-h-screen">
       <MatchTickerBar matches={tickerMatches} />
-      {heroMatch ? (
-        <CricketHero match={heroMatch} />
-      ) : (
-        <section className="hero-grad-home relative flex min-h-[300px] items-center justify-center overflow-hidden sm:min-h-[360px]">
-          <div className="hero-scrim pointer-events-none absolute inset-0" />
-          <div className="relative w-full max-w-7xl px-4 sm:px-6">
-            <div className="flex justify-center">
-              <AdSlot slot="home-hero" format="leaderboard" />
-            </div>
-          </div>
-        </section>
-      )}
+      <CricketHero match={heroMatch ?? undefined} />
 
       <div className="flex flex-col gap-12 pt-12 pb-12">
       <LiveNowSection matches={live} />

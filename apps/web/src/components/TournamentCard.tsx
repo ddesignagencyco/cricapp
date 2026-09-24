@@ -6,6 +6,7 @@ import type { TournamentApi } from '../types/index';
 import FavoriteButton from './FavoriteButton';
 import ShareButton from './ShareButton';
 import EntityAvatar from './EntityAvatar';
+import { directoryRowCard } from './ui/interaction';
 
 export default function TournamentCard({ tournament }: { tournament: TournamentApi }) {
   const category = str(tournament.category) || 'International';
@@ -25,7 +26,7 @@ export default function TournamentCard({ tournament }: { tournament: TournamentA
         : null;
 
   return (
-    <article className="card-interactive group flex items-center gap-3 rounded-md p-3.5">
+    <article className={directoryRowCard}>
       <Link href={href} className="flex min-w-0 flex-1 items-center gap-3">
         <EntityAvatar className="h-12 w-12 text-sm" title={name}>
           {getInitials(name)}
@@ -39,8 +40,8 @@ export default function TournamentCard({ tournament }: { tournament: TournamentA
               {format}
             </span>
           </div>
-          <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-stext">
-            <span className="flex min-w-0 items-center gap-1 truncate">
+          <div className="mt-1 flex min-w-0 flex-nowrap items-center gap-x-3 text-xs text-stext">
+            <span className="flex min-w-0 flex-1 items-center gap-1 truncate">
               <MapPin size={11} className="shrink-0" />
               <span className="truncate">
                 {category}
@@ -48,7 +49,7 @@ export default function TournamentCard({ tournament }: { tournament: TournamentA
               </span>
             </span>
             {(seasonYear || season) ? (
-              <span className="inline-flex items-center gap-1">
+              <span className="inline-flex shrink-0 items-center gap-1">
                 <Calendar size={11} />
                 {seasonYear || season}
               </span>

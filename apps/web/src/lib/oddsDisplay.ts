@@ -77,6 +77,11 @@ export function storeOddsAgeConsent(): void {
   window.localStorage.setItem(ODDS_AGE_CONSENT_KEY, '1');
 }
 
+export function isOddsSeedSource(source: { sourceSlug: string; sourceName: string }): boolean {
+  return source.sourceSlug.toLowerCase().startsWith('demo-book-')
+    || source.sourceName.toLowerCase().includes('(dev)');
+}
+
 const STALE_PRICE_MS = 15 * 60 * 1000;
 
 export function isOddsCaptureStale(capturedAt: string, nowMs = Date.now()): boolean {

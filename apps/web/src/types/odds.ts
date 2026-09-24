@@ -80,3 +80,18 @@ export interface OddsConvertResponse {
 export interface OddsMarginResponse {
   margin: number | null;
 }
+
+export interface OddsSourceHealth {
+  id: string;
+  slug: string;
+  name: string;
+  licenseStatus: string;
+  isActive: boolean;
+  lastCapturedAt: string | null;
+  stale: boolean;
+}
+
+export interface OddsSourceHealthResponse {
+  staleAfterMinutes: number;
+  sources: OddsSourceHealth[];
+}

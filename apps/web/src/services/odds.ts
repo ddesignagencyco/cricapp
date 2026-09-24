@@ -1,10 +1,12 @@
 import { ApiError, apiGet, apiPost } from './api/client';
+import { authHeaders } from './auth';
 import type {
   MatchOddsFetchResult,
   MatchOddsResponse,
   OddsConvertResponse,
   OddsHistoryResponse,
   OddsMarginResponse,
+  OddsSourceHealthResponse,
 } from '../types/odds';
 
 function normalizeMatchId(id: string): string {
@@ -69,4 +71,10 @@ export async function fetchOddsHistory(
     if (error instanceof ApiError && (error.status === 404 || error.status === 403)) return null;
     throw error;
   }
+}
+
+export function fetchAdminOddsSourceHealth(): Promise<OddsSourceHealthResponse> {
+  return apiGet<OddsSourceHealthResponse>('/admin/odds/sources/health', undefined, {
+    headers: authHeaders(),
+  });
 }
