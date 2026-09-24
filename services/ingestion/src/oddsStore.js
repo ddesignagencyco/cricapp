@@ -42,7 +42,7 @@ export async function upsertOddsMarket({
   sourceId,
   marketType = ODDS_MARKET_TYPE.MATCH_WINNER,
   marketKey = ODDS_MARKET_TYPE.MATCH_WINNER,
-  name = 'Match winner',
+  name = 'Match winner (incl. super over)',
   externalMarketId = null,
 }) {
   const id = randomUUID();
@@ -75,6 +75,78 @@ export async function insertOddsSnapshot({
     [id, marketId, selectionKey, decimalPrice, capturedAt, raw ? JSON.stringify(raw) : null],
   );
   return id;
+}
+
+/** Batch append-only snapshot insert (single round trip). */
+export async function insertOddsSnapshotsBatch(rows) {
+  if (!rows.length) return 0;
+  const values = [];
+  const params = [];
+  rows.forEach((row, i) => {
+    const base = i * 7;
+    values.push(
+      `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, NOW(), $${base + 6}::jsonb)`,
+    );
+    params.push(
+      row.id ?? randomUUID(),
+      row.marketId,
+      row.selectionKey,
+      row.decimalPrice,
+      row.capturedAt,
+      row.raw ? JSON.stringify(row.raw) : null,
+    );
+  });
+  await db.query(
+    `INSERT INTO odds_snapshots (id, market_id, selection_key, decimal_price, captured_at, received_at, raw)
+     VALUES ${values.join(', ')}`,
+    params,
+  );
+  return rows.length;
+}
+
+/** Latest snapshot price per `marketId:selectionKey` (single query). */
+export async function getLatestPricesByMarket(marketIds) {
+  if (!marketIds.length) return new Map();
+  const result = await db.query(
+    `SELECT DISTINCT ON (market_id, selection_key) market_id, selection_key, decimal_price
+     FROM odds_snapshots
+     WHERE market_id = ANY($1::text[])
+     ORDER BY market_id, selection_key, captured_at DESC`,
+    [marketIds],
+  );
+  return new Map(
+    result.rows.map((r) => [`${r.market_id}:${r.selection_key}`, Number(r.decimal_price)]),
+  );
+}
+
+/** Which of the given ids exist in `matches` (single query). */
+export async function filterKnownMatchIds(matchIds) {
+  if (!matchIds.length) return new Set();
+  const result = await db.query(
+    `SELECT match_id FROM matches WHERE match_id = ANY($1::text[])`,
+    [matchIds],
+  );
+  return new Set(result.rows.map((r) => r.match_id));
+}
+
+/**
+ * Retention prune: delete snapshots older than `retentionDays` for matches that
+ * are already finished (completed/cancelled). Append-only history for active
+ * matches is never touched.
+ * @returns {Promise<number>} rows deleted
+ */
+export async function pruneSettledOddsSnapshots(retentionDays = 90) {
+  const cutoff = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000);
+  const result = await db.query(
+    `DELETE FROM odds_snapshots s
+     USING odds_markets m
+     JOIN matches mt ON mt.match_id = m.match_id
+     WHERE s.market_id = m.id
+       AND mt.status IN ('completed', 'cancelled')
+       AND s.captured_at < $1`,
+    [cutoff],
+  );
+  return result.rowCount ?? 0;
 }
 
 export async function seedMatchWinnerSnapshots({

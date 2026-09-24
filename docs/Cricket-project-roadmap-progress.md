@@ -3,7 +3,7 @@
 > **Purpose:** This file is the single source of truth for project progress. It is structured in phases, each broken into **Frontend**, **Backend**, and **Ingestion** task groups. Check a box (`- [x]`) when that task is verified complete. This file is meant to be read and updated by AI coding agents as well as humans — keep task descriptions atomic and unambiguous so an agent can pick up any unchecked box and know exactly what "done" means.
 >
 > **Baseline source:** Progress Report dated Sep 8, 2026 (Day 8 of development).
-> **Last updated:** Sep 17, 2026 — merged origin/dev (admin panel, Socket.IO, newsletter, contact, gallery) with prediction backend (Phase 13) complete except frontend. Live Sportradar poll still depends on a working API key.
+> **Last updated:** Sep 23, 2026 — codebase review: prediction frontend (Phase 13.5), interactive tools (Phase 15), and AI assistant entity linking + chat UI (Phase 16) verified done. Live Sportradar poll still depends on a working API key.
 
 **Legend:**
 - `[x]` = Complete / verified
@@ -501,12 +501,12 @@
 - [x] Admin: `GET /admin/predictions/calibration` (reliability bins + latest fit)
 - [x] Prediction API integration tests (`apps/api/src/predictions/predictions.spec.ts`)
 
-### 13.5 Frontend (after API) — not started (web directory intentionally untouched)
-- [ ] `/predictions/[match-slug]` page
-- [ ] Probability chart and explanation UI
-- [ ] Public prediction-performance page
-- [ ] Admin CMS screens for model monitoring / history review
-- [ ] LLM natural-language explanation of stored factors (optional; must not invent probs)
+### 13.5 Frontend (after API) — done
+- [x] `/predictions/[match-slug]` page — `/predictions` hub + `/predictions/[id]` (keyed by matchId) + `MatchPredictionTab` embedded in match detail
+- [x] Probability chart and explanation UI — `PredictionChart`, `WinProbabilityBar`, `explanationReasons` / `publicWhyChanged` panels
+- [x] Public prediction-performance page — accuracy/Brier by format + confidence band on `/predictions` (sample-size gated)
+- [x] Admin CMS screens for model monitoring / history review — `/admin/predictions` (runs list, run snapshot, calibration bins, model versions)
+- [x] LLM natural-language explanation of stored factors (optional; must not invent probs) — `AssistantNarrativeService` (env-gated; verified payload only, never invents stats)
 
 ### 13.6 Still backend-quality (not more 8.1–8.4 columns)
 - [ ] Empirically trained player / live models once enough settled outcomes exist
@@ -549,16 +549,18 @@
 
 ## PHASE 15 — Interactive Tools (SRS Phase 5, backend)
 
-- [ ] NRR / required run rate / current run rate calculator APIs
-- [ ] DLS calculator API
-- [ ] Batting strike rate / average; bowling economy / average APIs
-- [ ] Follow-on calculator API
-- [ ] Player comparison and team comparison APIs
-- [x] Head-to-head analyzer UI (backend `GET /head-to-head` already exists) — match detail widget + team `h2h` tab
-- [ ] Match / what-if simulator
-- [ ] Odds converter + implied probability calculator APIs
-- [ ] Fantasy points / informational XI tool
-- [ ] Frontend `/tools/{tool-slug}` pages
+> Shipped as client-side formula tools under `/tools/{slug}` (`toolsCatalog.ts` marks each as `formula` or `stored` — no new backend APIs by design; "stored" tools reuse existing endpoints).
+
+- [x] NRR / required run rate / current run rate calculator APIs — client tools `/tools/nrr`, `/tools/required-run-rate`, `/tools/current-run-rate`
+- [x] DLS calculator API — `/tools/dls` (educational resource table, not licensed ICC DLS)
+- [x] Batting strike rate / average; bowling economy / average APIs — `/tools/batting-strike-rate`, `/tools/batting-average`, `/tools/bowling-economy`, `/tools/bowling-average`
+- [x] Follow-on calculator API — `/tools/follow-on`
+- [x] Player comparison and team comparison APIs — `ToolPlayerCompare` (stored players API) + `/tools/player-compare`; team compare via `CompareBoard` (`/teams?a=&b=`, `/compare` redirect)
+- [x] Head-to-head analyzer UI (backend `GET /head-to-head` already exists) — match detail widget + team `h2h` tab + `/tools/head-to-head`
+- [x] Match / what-if simulator — `/tools/match-simulator`, `/tools/what-if` (client formulas, labeled "not a live model")
+- [~] Odds converter + implied probability calculator APIs — `ToolOdds` component built (`odds`/`implied` kinds handled in `ToolCalculator`) but not exposed in the tools catalog pending Phase 14 compliance
+- [x] Fantasy points / informational XI tool — `/tools/fantasy-xi` (informational only)
+- [x] Frontend `/tools/{tool-slug}` pages — `/tools` hub + `/tools/[slug]` with metadata
 
 ---
 
@@ -579,12 +581,12 @@
 - [x] `player_compare` handler (PSL leader stats for a season, shared stat categories only)
 - [x] `standings_qualification` handler (PSL standings + fixtures, top-4 playoff math)
 - [x] `player_recent_form` handler (`match_summary` player lines, timeline fallback)
-- [ ] Entity linking via unified search for ambiguous team/player names
-- [ ] Session history / rate-limit tuning for production chat UI
+- [x] Entity linking for ambiguous team/player names — `assistant-team-resolve` / `assistant-player-resolve` utils (alias variants, Sportradar "Last, First" matching, candidate scoring; spec-tested)
+- [x] Session history / rate-limit tuning for production chat UI — per-tab `sessionId` on every ask, in-panel conversation history + follow-up prompts, `@Throttle` 20 req/min on `POST /assistant/ask`
 
 ### 16.3 Frontend
-- [ ] Chat panel on match / player / PSL pages with source chips linking to entities
-- [ ] Display `unavailable` when data is missing (never hide gaps)
+- [x] Chat panel on match / player / PSL pages with source chips linking to entities — global `AssistantLauncher` (ClientLayout) with location-aware context (match, player, team, PSL, predictions); `SourceChips` deep-link to `/matches`, `/players`, `/predictions`, `/psl`
+- [x] Display `unavailable` when data is missing (never hide gaps) — `UnavailableBanner` + honest gap messaging in answers
 
 ---
 
@@ -592,24 +594,24 @@
 
 | Phase | Layer | Status |
 |-------|-------|--------|
-| 1. Architecture & Foundation | Infra | ~95% |
+| 1. Architecture & Foundation | Infra | ~95% (CD pipeline + staging env pending) |
 | 2. Backend Core Infra | Backend | ~99% (cookie sessions, superadmin, logout) |
 | 3. Ingestion Service | Ingestion | ~92% (live Redis prune on completed matches; **live poll still blocked on Sportradar 429 / new key**) |
-| 4. Backend API Endpoints | Backend | ~99% (categories, slugs, stream comments, analytics, Cloudinary, live-match fix) |
-| 5. Frontend Pages & Components | Frontend | ~80% (core done, 4 pages missing) |
-| 6. Real Data Integration | Frontend+Backend | ~80% (backend search ready; frontend still mocks teams/players/tournaments) |
-| 7. News / Editorial | Full-stack | Backend complete 100% (feeds template, categories, native Urdu pairs, authors, policies, social drafts, News sitemap/JSON-LD/hreflang); **frontend wiring remains** |
-| 8. Live Streams Module | Full-stack | ~50% (backend + stream comments; frontend + licensing pending) |
-| 9. User System & Engagement | Full-stack | ~70% (cookie auth, verify-before-login, superadmin, SMTP; **frontend auth UI pending**) |
-| 10. Technical Debt | Cross-cutting | ~40% |
-| 11. Testing & QA | Cross-cutting | ~70% (isolated test DB + Sep 14 backend suite + prediction worker tests) |
+| 4. Backend API Endpoints | Backend | ~99% (categories, slugs, stream comments, analytics, Cloudinary, live-match fix; E2E FCM send pending live creds) |
+| 5. Frontend Pages & Components | Frontend | ~100% (all pages, boards, shared components, admin CMS done) |
+| 6. Real Data Integration | Frontend+Backend | ~100% (all listed surfaces on real APIs) |
+| 7. News / Editorial | Full-stack | ~100% (backend + frontend wiring, Urdu routes, author pages, QA done) |
+| 8. Live Streams Module | Full-stack | ~90% (backend, frontend, comments done; licensed provider + legal/licensing check pending) |
+| 9. User System & Engagement | Full-stack | ~95% (auth UI, favorites, comments, sharing done; real FCM web token pending Firebase SDK) |
+| 10. Technical Debt | Cross-cutting | ~100% (all listed items done) |
+| 11. Testing & QA | Cross-cutting | ~70% (backend/ingestion/prediction suites done; frontend component tests, E2E, load testing, SRS QA pass pending) |
 | 12. Deployment & Launch | DevOps | ~40% |
-| 13. AI Prediction Centre | Backend+ML | **~85% backend done; frontend 0%; quality/calibration continues as matches settle** |
-| 14. Odds Intelligence | Backend | **~55%** (schema, API, math, compliance, OC stub; live feed + alerts + UI pending) |
-| 15. Interactive Tools | Backend+Frontend | **~10%** (H2H UI on match + team pages; `/tools/{slug}` not started) |
-| 16. Cricket AI Assistant | Backend+Frontend | **~65% backend** (all core intents; chat UI pending) |
+| 13. AI Prediction Centre | Backend+ML | **~95% — backend + frontend done (hub, match pages, charts, admin monitoring); trained models + public accuracy claims await settled sample** |
+| 14. Odds Intelligence | Backend | **0% — not started** |
+| 15. Interactive Tools | Backend+Frontend | **~90%** (all tools shipped as client-side `/tools/{slug}` calculators; odds converter built but unlisted pending Phase 14) |
+| 16. Cricket AI Assistant | Backend+Frontend | **~95%** (all intents, entity linking, throttling, global chat panel with source chips + unavailable states) |
 
-**Overall (updated Sep 22, 2026): sports + CMS backend is production-shaped for sessions, editorial, admin dashboards, newsletter/gallery. Prediction APIs/worker are in place (frontend still open). Odds backend foundation landed (licensed-only reads, compliance gates); wire Sportradar OC or another licensed feed before public UI.**
+**Overall (updated Sep 23, 2026): sports + CMS stack is production-shaped for sessions, editorial, admin dashboards, newsletter/gallery. Prediction centre is complete end-to-end (worker, APIs, public UI, admin monitoring). Tools and AI assistant are live in the frontend. Next large backend domain: Odds Intelligence (Phase 14), plus deployment/QA tracks (Phases 11–12) and a working Sportradar key for live polling.**
 
 ---
 

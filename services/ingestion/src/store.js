@@ -79,6 +79,26 @@ export async function publishMatchState(match, { broadcast = false } = {}) {
   }
 }
 
+/**
+ * Remove Redis `matches:live` members that are not `status = live` in Postgres
+ * (orphan ids, finished matches, or rows deleted from DB).
+ * @returns {Promise<string[]>} ids removed
+ */
+export async function pruneStaleLiveMatchRedisSet() {
+  const liveIds = await redis.smembers(redisKeys.liveMatches());
+  if (liveIds.length === 0) return [];
+  const result = await query(
+    `SELECT match_id FROM matches WHERE match_id = ANY($1::text[]) AND status = 'live'`,
+    [liveIds],
+  );
+  const authoritative = new Set(result.rows.map((r) => r.match_id));
+  const stale = liveIds.filter((id) => !authoritative.has(id));
+  if (stale.length > 0) {
+    await redis.srem(redisKeys.liveMatches(), ...stale);
+  }
+  return stale;
+}
+
 export async function publishEvents(events) {
   for (const event of events) {
     const channel = redisKeys.matchChannel(event.matchId);

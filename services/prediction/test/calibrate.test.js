@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { recalibratePrematch, refitPrematchWeights } from '../src/calibrate.js';
+import { recalibratePrematch, refitPrematchWeights, rescaleWeights } from '../src/calibrate.js';
 
 function stubQuery(outcomes) {
   return async (sql, params = []) => {
@@ -68,6 +68,81 @@ describe('recalibratePrematch', () => {
     );
     assert.equal(result.applied, false);
     assert.equal(result.reason, 'insufficient_sample');
+  });
+});
+
+describe('rescaleWeights', () => {
+  function featureRows(count) {
+    const rows = [];
+    for (let i = 0; i < count; i += 1) {
+      const formValue = (i % 2 === 0 ? 1 : -1) * 0.8;
+      rows.push({
+        snapshot: {
+          homeTeamId: 'home',
+          awayTeamId: 'away',
+          format: 't20',
+          form: { home: formValue > 0 ? 0.9 : 0.1, away: formValue > 0 ? 0.1 : 0.9 },
+          h2h: { edge: 0 },
+          table: { used: false, edge: 0 },
+          venueEdge: 0,
+          toss: { edge: 0 },
+          conditions: null,
+          squad: { used: false, edge: 0 },
+        },
+        payload: { sport_event_status: { winner_id: formValue > 0 ? 'home' : 'away' } },
+      });
+    }
+    return rows;
+  }
+
+  function weightStub(rows, existing = []) {
+    const calls = [];
+    const query = async (sql, params) => {
+      calls.push({ sql, params });
+      if (sql.includes('FROM matches') && sql.includes('prediction_features')) return { rows };
+      if (sql.includes('FROM prediction_model_weights') && sql.includes('SELECT weights')) return { rows: existing };
+      if (sql.includes('SELECT DISTINCT ON (format)')) return { rows: [] };
+      if (sql.includes('INSERT INTO prediction_model_weights')) return { rows: [] };
+      return { rows: [] };
+    };
+    return { query, calls };
+  }
+
+  it('fits and persists per-format weights when enough settled vectors exist', async () => {
+    const { query, calls } = weightStub(featureRows(40));
+    const result = await rescaleWeights(query);
+    assert.equal(result.applied, true);
+    assert.equal(result.refits.length, 1);
+    assert.equal(result.refits[0].format, 't20');
+    assert.equal(result.refits[0].applied, true);
+    assert.ok(result.refits[0].weights.form > 0.5);
+    assert.ok(calls.some((c) => c.sql.includes('INSERT INTO prediction_model_weights')));
+  });
+
+  it('skips when sample is too small', async () => {
+    const { query } = weightStub(featureRows(5));
+    const result = await rescaleWeights(query);
+    assert.equal(result.applied, false);
+    assert.equal(result.refits.length, 0);
+  });
+
+  it('does not persist when the fit is unchanged from the latest row', async () => {
+    const rows = featureRows(40);
+    const first = await rescaleWeights(weightStub(rows).query);
+    assert.equal(first.applied, true);
+    const fit = first.refits[0];
+    const existing = [
+      {
+        weights: fit.weights,
+        intercept: fit.intercept,
+        sample_size: fit.sampleSize,
+      },
+    ];
+    const { query, calls } = weightStub(rows, existing);
+    const result = await rescaleWeights(query);
+    assert.equal(result.refits[0].applied, false);
+    assert.equal(result.refits[0].reason, 'unchanged');
+    assert.ok(!calls.some((c) => c.sql.includes('INSERT INTO prediction_model_weights')));
   });
 });
 

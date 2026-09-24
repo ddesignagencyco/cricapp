@@ -51,7 +51,7 @@ describe('OddsModule (integration)', () => {
         sourceId: sourceA.id,
         marketType: 'match_winner',
         marketKey: 'match_winner',
-        name: 'Match winner',
+        name: 'Match winner (incl. super over)',
       },
     });
     const marketB = await ctx.prisma.oddsMarket.create({
@@ -60,7 +60,7 @@ describe('OddsModule (integration)', () => {
         sourceId: sourceB.id,
         marketType: 'match_winner',
         marketKey: 'match_winner',
-        name: 'Match winner',
+        name: 'Match winner (incl. super over)',
       },
     });
 

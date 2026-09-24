@@ -11,6 +11,24 @@ export function oversToBalls(overs) {
   return whole * 6 + Math.min(balls, 5);
 }
 
+export function logit(p) {
+  const c = Math.min(Math.max(Number(p), 1e-6), 1 - 1e-6);
+  return Math.log(c / (1 - c));
+}
+
+export function blendLivePrior(liveProb, priorProb, progress, { weightStart = 0.6, decayProgress = 0.6 } = {}) {
+  if (priorProb == null || !Number.isFinite(Number(priorProb))) {
+    return { blended: liveProb, priorWeight: 0 };
+  }
+  const priorWeight = Math.max(
+    0,
+    weightStart * (1 - Math.min(1, Math.max(0, progress) / Math.max(0.001, decayProgress))),
+  );
+  if (priorWeight <= 0) return { blended: liveProb, priorWeight: 0 };
+  const z = priorWeight * logit(priorProb) + (1 - priorWeight) * logit(liveProb);
+  return { blended: sigmoid(z), priorWeight };
+}
+
 /** @deprecated Prefer resourcesRemainingFromTable — kept for unit tests. */
 export function resourcesRemaining({ remainingBalls, allottedBalls, wicketsLost }) {
   return resourcesRemainingFromTable({
@@ -29,7 +47,8 @@ function reasonsFromEvent(lastEvent) {
   return ['score'];
 }
 
-export function scoreLive(snapshot, previous = null) {
+export function scoreLive(snapshot, previous = null, options = {}) {
+  const { prior = null, priorWeightStart = 0.6, priorDecayProgress = 0.6 } = options;
   const format = snapshot.format === 'unknown' ? 't20' : snapshot.format;
   const allottedBalls = snapshot.allottedBalls || allottedBallsForFormat(format);
   const par = snapshot.parScore || (format === 'odi' ? 270 : format === 'test' ? 320 : 160);
@@ -79,7 +98,23 @@ export function scoreLive(snapshot, previous = null) {
   battingWinProb = Number(Math.min(0.97, Math.max(0.03, battingWinProb)).toFixed(4));
   const bowlingWinProb = Number((1 - battingWinProb).toFixed(4));
   const homeBatting = battingIsHomeTeam(snapshot) ?? false;
-  const homeWinProb = homeBatting ? battingWinProb : bowlingWinProb;
+  const rawHomeWinProb = homeBatting ? battingWinProb : bowlingWinProb;
+  const progress = 1 - resourcesLeft;
+  const priorWeight =
+    prior?.homeWinProb != null
+      ? Math.max(
+          0,
+          priorWeightStart * (1 - Math.min(1, progress / Math.max(0.001, priorDecayProgress))),
+        )
+      : 0;
+  let homeWinProb = rawHomeWinProb;
+  if (priorWeight > 0) {
+    homeWinProb = blendLivePrior(rawHomeWinProb, prior.homeWinProb, progress, {
+      weightStart: priorWeightStart,
+      decayProgress: priorDecayProgress,
+    }).blended;
+  }
+  homeWinProb = Number(Math.min(0.97, Math.max(0.03, homeWinProb)).toFixed(4));
   const awayWinProb = Number((1 - homeWinProb).toFixed(4));
 
   const requiredRunRate =
@@ -158,6 +193,10 @@ export function scoreLive(snapshot, previous = null) {
       projectedTotal: projectedTotal != null ? Number(projectedTotal.toFixed(1)) : null,
       deltaFromPrevious,
       reasons: reasonsFromEvent(snapshot.lastEvent),
+      priorBlend: priorWeight > 0,
+      priorWeight: Number(priorWeight.toFixed(4)),
+      priorHomeWinProb:
+        prior?.homeWinProb != null ? Number(Number(prior.homeWinProb).toFixed(4)) : null,
       factorAttributions,
       momentum,
       pressureIndex,

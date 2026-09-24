@@ -1,5 +1,6 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Prisma } from '@prisma/client';
 import {
   bookmakerMarginFromDecimals,
   formatOddsFromDecimal,
@@ -9,8 +10,10 @@ import {
 
 const ODDS_LICENSED = 'licensed';
 const MATCH_WINNER_MARKET = 'match_winner';
+import { redisKeys } from '@cricapp/shared-types';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { PredictionsService } from '../predictions/predictions.service.js';
+import { RedisService } from '../redis/redis.service.js';
 import {
   buildOddsCompliance,
   oddsAccessBlocked,
@@ -32,24 +35,47 @@ interface LatestRow {
   receivedAt: Date;
 }
 
+type LatestPred = Awaited<ReturnType<PredictionsService['getLatest']>> | null;
+
+interface MatchOddsPayload {
+  matchId: string;
+  compliance: OddsComplianceEnvelope;
+  markets: unknown[];
+  modelVsMarket: {
+    homeWinProb: number | null;
+    awayWinProb: number | null;
+    marketHomeImplied: number | null;
+    marketAwayImplied: number | null;
+    note: string;
+  };
+  unavailable: string | null;
+}
+
+const MODEL_VS_MARKET_NOTE =
+  'Model probabilities are analytical only and may differ from market-implied prices.';
+
 @Injectable()
 export class OddsService {
+  private readonly logger = new Logger(OddsService.name);
   private readonly staleMinutes: number;
+  private readonly cacheTtlSeconds: number;
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly cfg: ConfigService,
     private readonly predictionsService: PredictionsService,
+    private readonly redis: RedisService,
   ) {
     this.staleMinutes = Number(this.cfg.get('ODDS_STALE_MINUTES', 30));
+    this.cacheTtlSeconds = Number(this.cfg.get('ODDS_CACHE_TTL_SECONDS', 60));
   }
 
-  compliance(): OddsComplianceEnvelope {
-    return buildOddsCompliance(this.cfg);
+  compliance(region?: string | null): OddsComplianceEnvelope {
+    return buildOddsCompliance(this.cfg, region);
   }
 
-  assertPublicOddsAccess(): OddsComplianceEnvelope {
-    const compliance = this.compliance();
+  assertPublicOddsAccess(region?: string | null): OddsComplianceEnvelope {
+    const compliance = this.compliance(region);
     if (oddsAccessBlocked(compliance)) {
       throw new ForbiddenException({
         message: 'Odds comparison is not available in this region or environment.',
@@ -59,21 +85,32 @@ export class OddsService {
     return compliance;
   }
 
-  async getMatchOdds(matchId: string) {
-    const compliance = this.assertPublicOddsAccess();
+  async getMatchOdds(matchId: string, region?: string | null) {
+    const compliance = this.assertPublicOddsAccess(region);
+
+    const cacheKey = redisKeys.oddsMatch(matchId);
+    const cached = await this.cacheGet<MatchOddsPayload>(cacheKey);
+    if (cached) return { ...cached, compliance };
 
     const match = await this.prisma.match.findUnique({ where: { matchId } });
     if (!match) throw new NotFoundException(`Match ${matchId} not found`);
 
+    // Start the prediction lookup in parallel with the odds aggregation.
+    const predPromise: Promise<LatestPred> = this.predictionsService
+      .getLatest(matchId)
+      .catch(() => null);
+
     const latest = await this.loadLatestLicensedPrices(matchId);
     if (latest.length === 0) {
-      return {
+      const payload = {
         matchId,
         compliance,
         markets: [],
-        modelVsMarket: await this.buildModelVsMarket(matchId, null, null),
+        modelVsMarket: this.buildModelVsMarket(await predPromise, null, null),
         unavailable: 'No licensed odds snapshots are stored for this match yet.',
       };
+      await this.cacheSet(cacheKey, payload);
+      return payload;
     }
 
     const openingByKey = await this.loadOpeningPrices(latest);
@@ -84,17 +121,23 @@ export class OddsService {
     const awayImplied = winner?.selections.find((s) => s.selectionKey === 'away')?.current
       .impliedProbability;
 
-    return {
+    const payload = {
       matchId,
       compliance,
       markets,
-      modelVsMarket: await this.buildModelVsMarket(matchId, homeImplied ?? null, awayImplied ?? null),
+      modelVsMarket: this.buildModelVsMarket(
+        await predPromise,
+        homeImplied ?? null,
+        awayImplied ?? null,
+      ),
       unavailable: null,
     };
+    await this.cacheSet(cacheKey, payload);
+    return payload;
   }
 
-  async getHistory(matchId: string, query: OddsHistoryQuery) {
-    this.assertPublicOddsAccess();
+  async getHistory(matchId: string, query: OddsHistoryQuery, region?: string | null) {
+    this.assertPublicOddsAccess(region);
     const marketKey = query.marketKey ?? MATCH_WINNER_MARKET;
     const limit = query.limit ?? 500;
 
@@ -106,16 +149,23 @@ export class OddsService {
       throw new NotFoundException(`No odds markets for match ${matchId} and key ${marketKey}`);
     }
 
-    const marketIds = markets.map((m) => m.id);
+    const sourceSlugByMarketId = new Map(markets.map((m) => [m.id, m.source.slug]));
+    // Take the newest `limit` snapshots, then present them oldest-first for charts.
     const snapshots = await this.prisma.oddsSnapshot.findMany({
       where: {
-        marketId: { in: marketIds },
+        marketId: { in: markets.map((m) => m.id) },
         ...(query.selectionKey ? { selectionKey: query.selectionKey } : {}),
       },
-      orderBy: { capturedAt: 'asc' },
+      orderBy: { capturedAt: 'desc' },
       take: limit,
-      include: { market: { include: { source: true } } },
+      select: {
+        marketId: true,
+        selectionKey: true,
+        decimalPrice: true,
+        capturedAt: true,
+      },
     });
+    snapshots.reverse();
 
     return {
       matchId,
@@ -123,7 +173,7 @@ export class OddsService {
       points: snapshots.map((s) => ({
         capturedAt: s.capturedAt,
         decimalPrice: s.decimalPrice,
-        sourceSlug: s.market.source.slug,
+        sourceSlug: sourceSlugByMarketId.get(s.marketId) ?? '',
         selectionKey: s.selectionKey,
       })),
     };
@@ -135,7 +185,7 @@ export class OddsService {
         ? parseOddsToDecimal(Number(value), from)
         : parseOddsToDecimal(value, from);
     if (parsed === null) {
-      throw new NotFoundException('Invalid odds value for the requested format');
+      throw new BadRequestException('Invalid odds value for the requested format');
     }
     return {
       decimal: parsed,
@@ -149,90 +199,91 @@ export class OddsService {
   }
 
   async adminSourceHealth() {
-    const sources = await this.prisma.oddsSource.findMany({ orderBy: { name: 'asc' } });
     const staleCutoff = new Date(Date.now() - this.staleMinutes * 60 * 1000);
 
-    const rows = await Promise.all(
-      sources.map(async (source) => {
-        const latest = await this.prisma.oddsSnapshot.findFirst({
-          where: { market: { sourceId: source.id } },
-          orderBy: { capturedAt: 'desc' },
-        });
-        return {
-          id: source.id,
-          slug: source.slug,
-          name: source.name,
-          licenseStatus: source.licenseStatus,
-          isActive: source.isActive,
-          lastCapturedAt: latest?.capturedAt ?? null,
-          stale: !latest || latest.capturedAt < staleCutoff,
-        };
-      }),
-    );
+    const rows = await this.prisma.$queryRaw<
+      Array<{
+        id: string;
+        slug: string;
+        name: string;
+        licenseStatus: string;
+        isActive: boolean;
+        lastCapturedAt: Date | null;
+      }>
+    >`
+      SELECT
+        src.id,
+        src.slug,
+        src.name,
+        src.license_status AS "licenseStatus",
+        src.is_active AS "isActive",
+        MAX(s.captured_at) AS "lastCapturedAt"
+      FROM odds_sources src
+      LEFT JOIN odds_markets m ON m.source_id = src.id
+      LEFT JOIN odds_snapshots s ON s.market_id = m.id
+      GROUP BY src.id
+      ORDER BY src.name ASC
+    `;
 
     return {
       staleAfterMinutes: this.staleMinutes,
-      sources: rows,
+      sources: rows.map((row) => ({
+        id: row.id,
+        slug: row.slug,
+        name: row.name,
+        licenseStatus: row.licenseStatus,
+        isActive: row.isActive,
+        lastCapturedAt: row.lastCapturedAt ?? null,
+        stale: !row.lastCapturedAt || row.lastCapturedAt < staleCutoff,
+      })),
     };
   }
 
+  /** Latest licensed snapshot per market + selection in a single query. */
   private async loadLatestLicensedPrices(matchId: string): Promise<LatestRow[]> {
-    const markets = await this.prisma.oddsMarket.findMany({
-      where: {
-        matchId,
-        source: {
-          licenseStatus: ODDS_LICENSED,
-          isActive: true,
-        },
-      },
-      include: { source: true },
-    });
-
-    const rows: LatestRow[] = [];
-    for (const market of markets) {
-      const selectionKeys = await this.prisma.oddsSnapshot.findMany({
-        where: { marketId: market.id },
-        distinct: ['selectionKey'],
-        select: { selectionKey: true },
-      });
-
-      for (const { selectionKey } of selectionKeys) {
-        const snap = await this.prisma.oddsSnapshot.findFirst({
-          where: { marketId: market.id, selectionKey },
-          orderBy: { capturedAt: 'desc' },
-        });
-        if (!snap) continue;
-        rows.push({
-          marketId: market.id,
-          matchId: market.matchId,
-          marketKey: market.marketKey,
-          marketType: market.marketType,
-          name: market.name,
-          sourceSlug: market.source.slug,
-          sourceName: market.source.name,
-          selectionKey: snap.selectionKey,
-          decimalPrice: snap.decimalPrice,
-          capturedAt: snap.capturedAt,
-          receivedAt: snap.receivedAt,
-        });
-      }
-    }
-    return rows;
+    return this.prisma.$queryRaw<LatestRow[]>`
+      SELECT DISTINCT ON (s.market_id, s.selection_key)
+        s.market_id AS "marketId",
+        m.match_id AS "matchId",
+        m.market_key AS "marketKey",
+        m.market_type AS "marketType",
+        m.name,
+        src.slug AS "sourceSlug",
+        src.name AS "sourceName",
+        s.selection_key AS "selectionKey",
+        s.decimal_price AS "decimalPrice",
+        s.captured_at AS "capturedAt",
+        s.received_at AS "receivedAt"
+      FROM odds_snapshots s
+      JOIN odds_markets m ON m.id = s.market_id
+      JOIN odds_sources src ON src.id = m.source_id
+      WHERE m.match_id = ${matchId}
+        AND src.license_status = ${ODDS_LICENSED}
+        AND src.is_active = true
+      ORDER BY s.market_id, s.selection_key, s.captured_at DESC
+    `;
   }
 
+  /** Earliest snapshot (opening price) per market + selection in a single query. */
   private async loadOpeningPrices(latest: LatestRow[]): Promise<Map<string, number>> {
     const map = new Map<string, number>();
-    const pairs = [...new Set(latest.map((r) => `${r.marketId}:${r.selectionKey}`))];
-    await Promise.all(
-      pairs.map(async (pair) => {
-        const [marketId, selectionKey] = pair.split(':');
-        const first = await this.prisma.oddsSnapshot.findFirst({
-          where: { marketId, selectionKey },
-          orderBy: { capturedAt: 'asc' },
-        });
-        if (first) map.set(pair, first.decimalPrice);
-      }),
-    );
+    const marketIds = [...new Set(latest.map((r) => r.marketId))];
+    if (marketIds.length === 0) return map;
+
+    const rows = await this.prisma.$queryRaw<
+      Array<{ marketId: string; selectionKey: string; decimalPrice: number }>
+    >`
+      SELECT DISTINCT ON (market_id, selection_key)
+        market_id AS "marketId",
+        selection_key AS "selectionKey",
+        decimal_price AS "decimalPrice"
+      FROM odds_snapshots
+      WHERE market_id IN (${Prisma.join(marketIds)})
+      ORDER BY market_id, selection_key, captured_at ASC
+    `;
+    for (const row of rows) {
+      map.set(`${row.marketId}:${row.selectionKey}`, row.decimalPrice);
+    }
     return map;
   }
 
@@ -294,30 +345,36 @@ export class OddsService {
     });
   }
 
-  private async buildModelVsMarket(
-    matchId: string,
+  private buildModelVsMarket(
+    pred: LatestPred,
     marketHomeImplied: number | null,
     marketAwayImplied: number | null,
   ) {
+    return {
+      homeWinProb: pred?.preMatch?.homeWinProb ?? pred?.live?.homeWinProb ?? null,
+      awayWinProb: pred?.preMatch?.awayWinProb ?? pred?.live?.awayWinProb ?? null,
+      marketHomeImplied,
+      marketAwayImplied,
+      note: MODEL_VS_MARKET_NOTE,
+    };
+  }
+
+  private async cacheGet<T>(key: string): Promise<T | null> {
+    if (this.cacheTtlSeconds <= 0) return null;
     try {
-      const pred = await this.predictionsService.getLatest(matchId);
-      const home = pred.preMatch?.homeWinProb ?? pred.live?.homeWinProb ?? null;
-      const away = pred.preMatch?.awayWinProb ?? pred.live?.awayWinProb ?? null;
-      return {
-        homeWinProb: home,
-        awayWinProb: away,
-        marketHomeImplied,
-        marketAwayImplied,
-        note: 'Model probabilities are analytical only and may differ from market-implied prices.',
-      };
-    } catch {
-      return {
-        homeWinProb: null,
-        awayWinProb: null,
-        marketHomeImplied,
-        marketAwayImplied,
-        note: 'Model probabilities are analytical only and may differ from market-implied prices.',
-      };
+      return await this.redis.get<T>(key);
+    } catch (err) {
+      this.logger.warn(`odds cache read failed: ${(err as Error).message}`);
+      return null;
+    }
+  }
+
+  private async cacheSet(key: string, payload: unknown): Promise<void> {
+    if (this.cacheTtlSeconds <= 0) return;
+    try {
+      await this.redis.cached.set(key, JSON.stringify(payload), 'EX', this.cacheTtlSeconds);
+    } catch (err) {
+      this.logger.warn(`odds cache write failed: ${(err as Error).message}`);
     }
   }
 }

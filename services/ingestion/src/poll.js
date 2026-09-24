@@ -7,6 +7,7 @@ import {
   saveMatchTimeline,
   publishMatchState,
   publishEvents,
+  pruneStaleLiveMatchRedisSet,
 } from './store.js';
 import { getCallStats } from './sportradar.js';
 import redis, { redisKeys } from './redis.js';
@@ -123,6 +124,11 @@ export async function pollOnce() {
     } catch (err) {
       console.error(`[ingest] failed for ${id}`, err.message);
     }
+  }
+
+  const pruned = await pruneStaleLiveMatchRedisSet();
+  if (pruned.length > 0) {
+    console.log(`[ingest] pruned stale matches:live ids: ${pruned.join(', ')}`);
   }
 
   await redis.set(

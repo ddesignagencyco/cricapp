@@ -1,6 +1,8 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Headers, Param, Post, Query } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { OddsService } from './odds.service.js';
+import { regionFromHeaders } from './odds-compliance.util.js';
 import {
   MatchOddsDto,
   OddsConvertDto,
@@ -16,7 +18,10 @@ const SWAGGER_ODDS_MATCH_EXAMPLE = 'sr:match:67132180';
 @ApiTags('odds')
 @Controller('odds')
 export class OddsController {
-  constructor(private readonly oddsService: OddsService) {}
+  constructor(
+    private readonly oddsService: OddsService,
+    private readonly cfg: ConfigService,
+  ) {}
 
   @Get('tools/convert')
   @ApiOperation({ summary: 'Convert decimal, fractional or American odds' })
@@ -41,8 +46,12 @@ export class OddsController {
   })
   @ApiResponse({ status: 200, type: OddsHistoryDto })
   @ApiResponse({ status: 404, description: 'Match not in database or no odds markets for this match.' })
-  history(@Param('matchId') matchId: string, @Query() query: OddsHistoryQuery) {
-    return this.oddsService.getHistory(matchId, query);
+  history(
+    @Param('matchId') matchId: string,
+    @Query() query: OddsHistoryQuery,
+    @Headers() headers: Record<string, string | string[] | undefined>,
+  ) {
+    return this.oddsService.getHistory(matchId, query, regionFromHeaders(this.cfg, headers));
   }
 
   @Get(':matchId')
@@ -60,7 +69,10 @@ export class OddsController {
   @ApiResponse({ status: 200, type: MatchOddsDto })
   @ApiResponse({ status: 403, description: 'Odds disabled for region or environment.' })
   @ApiResponse({ status: 404, description: 'Match id not in `matches` table (not a missing-odds case).' })
-  getMatch(@Param('matchId') matchId: string) {
-    return this.oddsService.getMatchOdds(matchId);
+  getMatch(
+    @Param('matchId') matchId: string,
+    @Headers() headers: Record<string, string | string[] | undefined>,
+  ) {
+    return this.oddsService.getMatchOdds(matchId, regionFromHeaders(this.cfg, headers));
   }
 }

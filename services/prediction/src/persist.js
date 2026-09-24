@@ -54,6 +54,21 @@ export async function persistPrediction(query, { matchId, stage, modelVersion, s
   return id;
 }
 
+export async function latestPrematchResult(query, matchId) {
+  const r = await query(
+    `SELECT run.id AS run_id, run.created_at AS created_at, res.home_win_prob
+     FROM prediction_runs run
+     JOIN prediction_results res ON res.run_id = run.id
+     WHERE run.match_id = $1 AND run.stage = 'pre_match'
+     ORDER BY run.created_at DESC
+     LIMIT 1`,
+    [matchId],
+  );
+  const row = r.rows[0];
+  if (!row) return null;
+  return { runId: row.run_id, createdAt: row.created_at, homeWinProb: row.home_win_prob };
+}
+
 export async function latestLiveResult(query, matchId) {
   const r = await query(
     `SELECT res.home_win_prob, res.away_win_prob
