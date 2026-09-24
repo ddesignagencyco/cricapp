@@ -128,6 +128,9 @@ export class PredictionPerformanceDto {
   @ApiProperty()
   modelVersion: string;
 
+  @ApiProperty({ enum: ['pre_match', 'live'] })
+  stage: string;
+
   @ApiProperty()
   sampleSize: number;
 
@@ -136,6 +139,9 @@ export class PredictionPerformanceDto {
 
   @ApiPropertyOptional()
   brierScore: number | null;
+
+  @ApiPropertyOptional()
+  expectedCalibrationError: number | null;
 
   @ApiProperty({ type: [FormatAccuracyDto] })
   byFormat: FormatAccuracyDto[];
@@ -153,6 +159,141 @@ export class PredictionPerformanceDto {
 
   @ApiProperty()
   guidance: string;
+}
+
+export class PredictionPerformanceQuery {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  modelVersion?: string;
+
+  @ApiPropertyOptional({ enum: ['pre_match', 'live'], default: 'pre_match' })
+  @IsOptional()
+  @IsIn(['pre_match', 'live'])
+  stage?: string;
+
+  @ApiPropertyOptional({ minimum: 5, maximum: 20, default: 10 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(5)
+  @Max(20)
+  bins?: number = 10;
+}
+
+export class PredictionPerformanceSnapshotDto {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty()
+  modelVersion: string;
+
+  @ApiProperty({ enum: ['pre_match', 'live'] })
+  stage: string;
+
+  @ApiProperty()
+  sampleSize: number;
+
+  @ApiPropertyOptional()
+  accuracy: number | null;
+
+  @ApiPropertyOptional()
+  brierScore: number | null;
+
+  @ApiPropertyOptional()
+  expectedCalibrationError: number | null;
+
+  @ApiProperty({ type: [FormatAccuracyDto] })
+  byFormat: FormatAccuracyDto[] | unknown;
+
+  @ApiProperty({ type: [ConfidenceBandAccuracyDto] })
+  byConfidenceBand: ConfidenceBandAccuracyDto[] | unknown;
+
+  @ApiProperty()
+  source: string;
+
+  @ApiProperty()
+  createdAt: Date;
+}
+
+export class PredictionPerformanceHistoryDto {
+  @ApiProperty({ type: [PredictionPerformanceSnapshotDto] })
+  data: PredictionPerformanceSnapshotDto[];
+
+  @ApiProperty()
+  meta: { limit: number };
+}
+
+export class PredictionPerformanceHistoryQuery {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  modelVersion?: string;
+
+  @ApiPropertyOptional({ enum: ['pre_match', 'live'] })
+  @IsOptional()
+  @IsIn(['pre_match', 'live'])
+  stage?: string;
+
+  @ApiPropertyOptional({ default: 30 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(200)
+  limit?: number = 30;
+}
+
+export class AdminPerformanceSnapshotQuery {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  modelVersion?: string;
+
+  @ApiPropertyOptional({ enum: ['pre_match', 'live'], default: 'pre_match' })
+  @IsOptional()
+  @IsIn(['pre_match', 'live'])
+  stage?: string;
+
+  @ApiPropertyOptional({ default: 'manual' })
+  @IsOptional()
+  @IsString()
+  source?: string;
+}
+
+export class PredictionModelWeightDto {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty()
+  modelVersion: string;
+
+  @ApiProperty({ enum: ['pre_match', 'live'] })
+  stage: string;
+
+  @ApiProperty()
+  format: string;
+
+  @ApiProperty({ type: Object })
+  weights: Record<string, number>;
+
+  @ApiProperty()
+  intercept: number;
+
+  @ApiProperty()
+  sampleSize: number;
+
+  @ApiPropertyOptional()
+  brierScore: number | null;
+
+  @ApiPropertyOptional()
+  accuracy: number | null;
+
+  @ApiProperty()
+  source: string;
+
+  @ApiProperty()
+  createdAt: Date;
 }
 
 export class PredictionChartDto {
@@ -200,6 +341,11 @@ export class AdminPredictionCalibrationQuery {
   @IsOptional()
   @IsString()
   modelVersion?: string;
+
+  @ApiPropertyOptional({ enum: ['pre_match', 'live'], default: 'pre_match' })
+  @IsOptional()
+  @IsIn(['pre_match', 'live'])
+  stage?: string;
 
   @ApiPropertyOptional({ minimum: 5, maximum: 20, default: 10 })
   @IsOptional()

@@ -116,9 +116,126 @@ describe('PredictionsModule (integration)', () => {
     expect(res.body.claimReady).toBe(false);
     expect(res.body.guidance).toContain('Do not market');
     expect(res.body.modelVersion).toBe(PREDICTION_MODELS.PREMATCH);
+    expect(res.body.stage).toBe('pre_match');
+    expect(res.body.expectedCalibrationError).toBeDefined();
     expect(res.body.byConfidenceBand).toEqual([
       expect.objectContaining({ band: 'medium', sampleSize: 1, accuracy: 1 }),
     ]);
+  });
+
+  it('GET /predictions/performance?stage=live — evaluates the latest non-decided live run', async () => {
+    await ctx.prisma.predictionRun.create({
+      data: {
+        matchId: 'sr:match:pred-1',
+        stage: PREDICTION_STAGE.LIVE,
+        modelVersion: PREDICTION_MODELS.LIVE,
+        features: {
+          create: {
+            snapshot: { homeTeamId: 'sr:competitor:1', awayTeamId: 'sr:competitor:2', format: 't20' },
+          },
+        },
+        result: {
+          create: {
+            homeWinProb: 0.8,
+            awayWinProb: 0.2,
+            confidence: 0.8,
+            explanation: { reasons: ['score'], over: 14 },
+          },
+        },
+      },
+    });
+    await ctx.prisma.predictionRun.create({
+      data: {
+        matchId: 'sr:match:pred-1',
+        stage: PREDICTION_STAGE.LIVE,
+        modelVersion: PREDICTION_MODELS.LIVE,
+        features: {
+          create: {
+            snapshot: { homeTeamId: 'sr:competitor:1', awayTeamId: 'sr:competitor:2', format: 't20' },
+          },
+        },
+        result: {
+          create: {
+            homeWinProb: 0.15,
+            awayWinProb: 0.85,
+            confidence: 0.95,
+            explanation: { reasons: ['match_decided'], over: 20 },
+          },
+        },
+      },
+    });
+    await ctx.prisma.match.update({
+      where: { matchId: 'sr:match:pred-1' },
+      data: { status: 'completed' },
+    });
+    await ctx.prisma.sportEventRecord.create({
+      data: {
+        kind: 'daily_results',
+        scopeKey: '2026-09-12',
+        eventId: 'sr:match:pred-1',
+        status: 'closed',
+        payload: { sport_event_status: { winner_id: 'sr:competitor:2' } },
+      },
+    });
+    const res = await ctx.agent.get('/predictions/performance?stage=live').expect(200);
+    expect(res.body.stage).toBe('live');
+    expect(res.body.modelVersion).toBe(PREDICTION_MODELS.LIVE);
+    expect(res.body.sampleSize).toBe(1);
+    expect(res.body.accuracy).toBe(0);
+  });
+
+  it('POST /admin/predictions/performance/snapshot records history readable via GET /predictions/performance/history', async () => {
+    await ctx.prisma.match.update({
+      where: { matchId: 'sr:match:pred-1' },
+      data: { status: 'completed' },
+    });
+    await ctx.prisma.sportEventRecord.create({
+      data: {
+        kind: 'daily_results',
+        scopeKey: '2026-09-12',
+        eventId: 'sr:match:pred-1',
+        status: 'closed',
+        payload: { sport_event_status: { winner_id: 'sr:competitor:1' } },
+      },
+    });
+
+    let token = ctx.app.get(JwtService).sign({
+      sub: 'admin-2',
+      email: 'admin@example.com',
+      username: 'admin',
+      isAdmin: true,
+    });
+    const created = await ctx.agent
+      .post('/admin/predictions/performance/snapshot?stage=pre_match')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(201);
+    expect(created.body.modelVersion).toBe(PREDICTION_MODELS.PREMATCH);
+    expect(created.body.sampleSize).toBe(1);
+    expect(created.body.accuracy).toBe(1);
+
+    const history = await ctx.agent.get('/predictions/performance/history?stage=pre_match').expect(200);
+    expect(history.body.data).toHaveLength(1);
+    expect(history.body.data[0]).toEqual(
+      expect.objectContaining({
+        modelVersion: PREDICTION_MODELS.PREMATCH,
+        stage: 'pre_match',
+        accuracy: 1,
+        source: 'manual',
+      }),
+    );
+
+    await ctx.agent.post('/admin/predictions/performance/snapshot').expect(401);
+
+    token = ctx.app.get(JwtService).sign({
+      sub: 'user-1',
+      email: 'user@example.com',
+      username: 'user',
+      isAdmin: false,
+    });
+    await ctx.agent
+      .post('/admin/predictions/performance/snapshot')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(403);
   });
 
   it('admin model/run monitoring is guarded and available through the service', async () => {
@@ -182,5 +299,51 @@ describe('PredictionsModule (integration)', () => {
     expect(runs.data[0]).toEqual(
       expect.objectContaining({ matchId: 'sr:match:pred-1', calibrationBand: 'medium' }),
     );
+  });
+
+  it('GET /admin/predictions/model-weights — returns learned weights per model/stage/format', async () => {
+    await ctx.prisma.predictionModelWeight.create({
+      data: {
+        modelVersion: PREDICTION_MODELS.PREMATCH,
+        stage: 'pre_match',
+        format: 't20',
+        weights: {
+          form: 1.7,
+          h2h: 0.5,
+          table: 0.6,
+          venue: 0.2,
+          toss: 0.1,
+          conditions: 0.2,
+          squad: 0.4,
+        },
+        intercept: -0.1,
+        sampleSize: 30,
+        accuracy: 0.7,
+        source: 'auto',
+      },
+    });
+
+    const token = ctx.app.get(JwtService).sign({
+      sub: 'admin-3',
+      email: 'admin@example.com',
+      username: 'admin',
+      isAdmin: true,
+    });
+    const res = await ctx.agent
+      .get('/admin/predictions/model-weights')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+    expect(res.body).toHaveLength(1);
+    expect(res.body[0]).toEqual(
+      expect.objectContaining({
+        format: 't20',
+        stage: 'pre_match',
+        sampleSize: 30,
+        accuracy: 0.7,
+        weights: expect.objectContaining({ form: 1.7 }),
+      }),
+    );
+
+    await ctx.agent.get('/admin/predictions/model-weights').expect(401);
   });
 });

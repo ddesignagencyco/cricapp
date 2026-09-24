@@ -1,8 +1,9 @@
-import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AdminGuard } from '../auth/admin.guard.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import {
+  AdminPerformanceSnapshotQuery,
   AdminPredictionCalibrationQuery,
   AdminPredictionRunsQuery,
 } from './dto/predictions.dto.js';
@@ -21,10 +22,22 @@ export class AdminPredictionsController {
     return this.predictionsService.listModelVersions();
   }
 
+  @Get('model-weights')
+  @ApiOperation({ summary: 'Latest learned weight sets per model/stage/format' })
+  listModelWeights() {
+    return this.predictionsService.listModelWeights();
+  }
+
+  @Post('performance/snapshot')
+  @ApiOperation({ summary: 'Compute and store a performance snapshot for a stage/model' })
+  createPerformanceSnapshot(@Query() query: AdminPerformanceSnapshotQuery) {
+    return this.predictionsService.recordPerformanceSnapshot(query);
+  }
+
   @Get('calibration')
   @ApiOperation({ summary: 'Get reliability bins for model recalibration' })
   calibration(@Query() query: AdminPredictionCalibrationQuery) {
-    return this.predictionsService.getCalibration(query.modelVersion, query.bins);
+    return this.predictionsService.getCalibration(query.modelVersion, query.bins, query.stage);
   }
 
   @Get('runs')

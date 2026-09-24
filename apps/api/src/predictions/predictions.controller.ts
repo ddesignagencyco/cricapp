@@ -1,10 +1,13 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Param, Query } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { PredictionsService } from './predictions.service.js';
 import {
   MatchPredictionsDto,
   PredictionHistoryDto,
   PredictionPerformanceDto,
+  PredictionPerformanceHistoryDto,
+  PredictionPerformanceHistoryQuery,
+  PredictionPerformanceQuery,
   PredictionChartDto,
 } from './dto/predictions.dto.js';
 
@@ -16,11 +19,26 @@ export class PredictionsController {
   @Get('performance')
   @ApiOperation({
     summary: 'Public prediction performance',
-    description: 'Accuracy of the latest pre-match run on settled matches, grouped by format.',
+    description:
+      'Prediction accuracy on settled matches for a stage and model version, grouped by format and confidence band.',
   })
   @ApiResponse({ status: 200, description: 'Accuracy summary.', type: PredictionPerformanceDto })
-  getPerformance() {
-    return this.predictionsService.getPerformance();
+  getPerformance(@Query() query: PredictionPerformanceQuery) {
+    return this.predictionsService.getPerformance(query);
+  }
+
+  @Get('performance/history')
+  @ApiOperation({
+    summary: 'Prediction performance history',
+    description: 'Recorded accuracy/Brier/ECE snapshots over time for a stage and model version.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Chronological performance snapshots.',
+    type: PredictionPerformanceHistoryDto,
+  })
+  getPerformanceHistory(@Query() query: PredictionPerformanceHistoryQuery) {
+    return this.predictionsService.listPerformanceHistory(query);
   }
 
   @Get(':matchId/history')

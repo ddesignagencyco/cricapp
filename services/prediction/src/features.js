@@ -336,6 +336,45 @@ function confirmedLineupIds(payload, side) {
     : [];
 }
 
+function leaderRowMatches(row, category) {
+  const stat = String(row.stat ?? '').toLowerCase();
+  return row.category === category || stat.includes(category === 'batting' ? 'run' : 'wicket');
+}
+
+export function teamLeaderStrength(players, leaderRows, kind = 'batting') {
+  const ids = new Set(players.map((player) => player.id));
+  const category = kind === 'bowling' ? 'bowling' : 'batting';
+  let strength = 0;
+  let count = 0;
+  for (const row of leaderRows) {
+    if (!ids.has(row.player_id)) continue;
+    if (!leaderRowMatches(row, category)) continue;
+    const rank = Number(row.rank);
+    if (!Number.isFinite(rank) || rank <= 0) continue;
+    strength += 1 / Math.sqrt(rank);
+    count += 1;
+  }
+  return { strength, count };
+}
+
+export function squadEdge(homePlayers, awayPlayers, leaderRows) {
+  const homeBat = teamLeaderStrength(homePlayers, leaderRows, 'batting');
+  const homeBowl = teamLeaderStrength(homePlayers, leaderRows, 'bowling');
+  const awayBat = teamLeaderStrength(awayPlayers, leaderRows, 'batting');
+  const awayBowl = teamLeaderStrength(awayPlayers, leaderRows, 'bowling');
+  const home = homeBat.strength + homeBowl.strength;
+  const away = awayBat.strength + awayBowl.strength;
+  if (home + away <= 0) {
+    return { used: false, homeStrength: 0, awayStrength: 0, edge: 0 };
+  }
+  return {
+    used: true,
+    homeStrength: Number(home.toFixed(4)),
+    awayStrength: Number(away.toFixed(4)),
+    edge: Number(((home - away) / (home + away)).toFixed(4)),
+  };
+}
+
 export function buildPlayerProjections(homePlayers, awayPlayers, leaderRows = [], lineupPayload = null) {
   const all = [...homePlayers, ...awayPlayers];
   const confirmedHome = confirmedLineupIds(lineupPayload, 'home');
@@ -470,12 +509,131 @@ export async function listUpcomingMatchIds(query, { horizonHours = 48 } = {}) {
     .map((row) => row.match_id);
 }
 
+export function eloEdge(homeElo, awayElo, homeAdvantage = 60) {
+  const h = Number(homeElo);
+  const a = Number(awayElo);
+  if (!Number.isFinite(h) || !Number.isFinite(a)) return 0;
+  const expected = 1 / (1 + 10 ** (-((h + homeAdvantage) - a) / 400));
+  return Number((2 * expected - 1).toFixed(4));
+}
+
+export function tossMagnitude(tossWinnerWinRate, matches) {
+  const rate = Number(tossWinnerWinRate);
+  if (!Number.isFinite(rate) || Number(matches) < 15) return 1;
+  return Number(Math.max(0.25, Math.min(1, 0.5 + (rate - 0.5) * 2.5)).toFixed(4));
+}
+
+export function venueHistoryEdge({ homeWins, homeN, awayWins, awayN, minPerTeam = 2, fullSample = 12 }) {
+  const hn = Number(homeN) || 0;
+  const an = Number(awayN) || 0;
+  if (hn < minPerTeam || an < minPerTeam) {
+    return { used: false, homeWins, homeN: hn, awayWins, awayN: an, edge: 0 };
+  }
+  const homeRate = (Number(homeWins) || 0) / hn;
+  const awayRate = (Number(awayWins) || 0) / an;
+  const shrink = Math.min(1, (hn + an) / fullSample);
+  return {
+    used: true,
+    homeWins,
+    homeN: hn,
+    awayWins,
+    awayN: an,
+    edge: Number(((homeRate - awayRate) * shrink).toFixed(4)),
+  };
+}
+
+async function loadTeamRating(query, teamId, format) {
+  if (!teamId) return null;
+  try {
+    const r = await query(
+      `SELECT format, elo, played
+       FROM prediction_team_ratings
+       WHERE team_id = $1 AND format = ANY($2::text[])
+       ORDER BY CASE WHEN format = $3 THEN 0 ELSE 1 END
+       LIMIT 1`,
+      [teamId, [format, '*'], format],
+    );
+    return r.rows[0] ?? null;
+  } catch (err) {
+    if (String(err.message ?? '').includes('prediction_team_ratings')) return null;
+    throw err;
+  }
+}
+
+async function loadSituationStats(query, format) {
+  try {
+    const r = await query(
+      `SELECT format, matches, toss_winner_win_rate, first_bat_win_rate
+       FROM prediction_situation_stats
+       WHERE format = ANY($1::text[])
+       ORDER BY CASE WHEN format = $2 THEN 0 ELSE 1 END
+       LIMIT 1`,
+      [[format, '*'], format],
+    );
+    return r.rows[0] ?? null;
+  } catch (err) {
+    if (String(err.message ?? '').includes('prediction_situation_stats')) return null;
+    throw err;
+  }
+}
+
+async function loadVenueHistory(query, venue) {
+  if (!venue) return [];
+  const r = await query(
+    `SELECT m.match_id, rec.payload
+     FROM matches m
+     LEFT JOIN LATERAL (
+       SELECT payload
+       FROM sport_event_records
+       WHERE event_id = m.match_id
+       ORDER BY updated_at DESC
+       LIMIT 1
+     ) rec ON true
+     WHERE m.status = 'completed'
+       AND m.venue IS NOT NULL
+       AND lower(m.venue) = lower($1)
+     ORDER BY m.scheduled DESC NULLS LAST
+     LIMIT 60`,
+    [venue],
+  );
+  return r.rows;
+}
+
+export function summarizeVenueHistoryRows(rows, homeId, awayId) {
+  let homeWins = 0;
+  let homeN = 0;
+  let awayWins = 0;
+  let awayN = 0;
+  for (const row of rows) {
+    const payload = row.payload ?? {};
+    const event = payload.sport_event ?? payload;
+    const ids = new Set(
+      (Array.isArray(event.competitors) ? event.competitors : [])
+        .map((c) => c?.id)
+        .filter(Boolean),
+    );
+    const winner = extractWinnerId(payload, [homeId, awayId]);
+    if (!winner) continue;
+    if (ids.has(homeId)) {
+      homeN += 1;
+      if (winner === homeId) homeWins += 1;
+    }
+    if (ids.has(awayId)) {
+      awayN += 1;
+      if (winner === awayId) awayWins += 1;
+    }
+  }
+  return { homeWins, homeN, awayWins, awayN };
+}
+
 export async function extractPrematchFeatures(matchId, { query, redis }) {
   const match = await loadMatch(query, matchId);
   if (!match) return null;
   const eventPayload = await loadEventPayload(query, matchId);
   const lineupPayload = await loadMatchLineup(query, matchId);
   const teams = await resolveTeams(query, match, eventPayload);
+  const format = detectFormat(match.tournament, match.match_status);
+
   const [
     homeResults,
     awayResults,
@@ -485,17 +643,20 @@ export async function extractPrematchFeatures(matchId, { query, redis }) {
     awayPlayers,
     homeProfile,
     awayProfile,
-  ] =
-    await Promise.all([
-      loadTeamResults(query, teams.homeTeamId),
-      loadTeamResults(query, teams.awayTeamId),
-      loadHeadToHead(query, teams.homeTeamId, teams.awayTeamId),
-      loadStandings(query, teams.homeTeamId, teams.awayTeamId),
-      loadSquadPlayers(query, teams.homeTeamId),
-      loadSquadPlayers(query, teams.awayTeamId),
-      loadTeamProfile(query, teams.homeTeamId),
-      loadTeamProfile(query, teams.awayTeamId),
-    ]);
+    situation,
+    venueRows,
+  ] = await Promise.all([
+    loadTeamResults(query, teams.homeTeamId),
+    loadTeamResults(query, teams.awayTeamId),
+    loadHeadToHead(query, teams.homeTeamId, teams.awayTeamId),
+    loadStandings(query, teams.homeTeamId, teams.awayTeamId),
+    loadSquadPlayers(query, teams.homeTeamId),
+    loadSquadPlayers(query, teams.awayTeamId),
+    loadTeamProfile(query, teams.homeTeamId),
+    loadTeamProfile(query, teams.awayTeamId),
+    loadSituationStats(query, format),
+    loadVenueHistory(query, match.venue),
+  ]);
 
   const homeForm = weightedForm(homeResults, teams.homeTeamId);
   const awayForm = weightedForm(awayResults, teams.awayTeamId);
@@ -512,6 +673,9 @@ export async function extractPrematchFeatures(matchId, { query, redis }) {
     conditions,
   });
 
+  const venueSummary = summarizeVenueHistoryRows(venueRows, teams.homeTeamId, teams.awayTeamId);
+  const pitchEdgeValue = venueHistoryEdge(venueSummary).edge;
+
   const homeForVenue = {
     name: teams.homeName,
     abbr: teams.home?.abbr,
@@ -524,7 +688,6 @@ export async function extractPrematchFeatures(matchId, { query, redis }) {
   };
 
   void redis;
-  const format = detectFormat(match.tournament, match.match_status);
   const par = await resolveParScore(query, {
     venue: match.venue,
     format,
@@ -570,9 +733,22 @@ export async function extractPrematchFeatures(matchId, { query, redis }) {
       wonBy: tossWonBy,
       decision: status.toss_decision ?? null,
       edge: tossEdge,
+      trend: situation
+        ? {
+            format: situation.format,
+            matches: situation.matches,
+            tossWinnerWinRate: situation.toss_winner_win_rate,
+            firstBatWinRate: situation.first_bat_win_rate,
+            source: situation.format === format ? 'format' : 'global',
+          }
+        : null,
+    },
+    squad: {
+      homeSize: homePlayers.length,
+      awaySize: awayPlayers.length,
+      ...squadEdge(homePlayers, awayPlayers, leaderPriors),
     },
     xiEdge,
-    squad: { homeSize: homePlayers.length, awaySize: awayPlayers.length },
     playerProjections,
     conditions,
   };

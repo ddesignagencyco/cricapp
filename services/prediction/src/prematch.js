@@ -14,6 +14,16 @@ export const PREMATCH_WEIGHTS = Object.freeze({
   xi: 0.35,
 });
 
+export const FEATURE_NAMES = Object.freeze([
+  'form',
+  'h2h',
+  'table',
+  'venue',
+  'toss',
+  'conditions',
+  'xi',
+]);
+
 export function confidenceBand(confidence) {
   if (confidence >= 0.75) return 'high';
   if (confidence >= 0.5) return 'medium';
@@ -70,6 +80,17 @@ export function prematchConfidence(snapshot) {
   const xiBoost = snapshot.playerProjections?.xi?.reliability === 'high' ? 0.05 : 0;
   const sample = 0.5 + 0.4 * (1 - Math.exp(-n / 8)) + h2hBoost + xiBoost;
   return Math.min(0.9, Number(sample.toFixed(4)));
+}
+
+export function featureVectorFromSnapshot(snapshot) {
+  const formEdge = Number(((snapshot.form?.home ?? 0.5) - (snapshot.form?.away ?? 0.5)).toFixed(4));
+  const h2hEdge = Number((snapshot.h2h?.edge ?? 0).toFixed(4));
+  const tableEdge = snapshot.table?.used ? Number((snapshot.table.edge ?? 0).toFixed(4)) : 0;
+  const venueEdge = Number((snapshot.venueEdge ?? 0).toFixed(4));
+  const tossEdge = Number((snapshot.toss?.edge ?? 0).toFixed(4));
+  const conditionsEdge = Number(conditionImpact(snapshot.conditions ?? {}).winEdge.toFixed(4));
+  const xiEdge = Number((snapshot.xiEdge ?? 0).toFixed(4));
+  return { names: FEATURE_NAMES, values: [formEdge, h2hEdge, tableEdge, venueEdge, tossEdge, conditionsEdge, xiEdge] };
 }
 
 export function scorePrematch(snapshot) {

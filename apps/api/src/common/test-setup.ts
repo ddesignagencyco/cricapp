@@ -89,6 +89,8 @@ export async function cleanDatabase(prisma: PrismaService): Promise<void> {
     'prediction_features',
     'prediction_runs',
     'prediction_calibrations',
+    'prediction_performance_snapshots',
+    'prediction_model_weights',
     'odds_snapshots',
     'odds_markets',
     'odds_sources',
