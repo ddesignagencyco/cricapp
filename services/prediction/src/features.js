@@ -816,6 +816,13 @@ export async function extractLiveFeatures(matchId, { query, redis }) {
     }
   }
 
+  const par = await resolveParScore(query, {
+    venue: canonical.venue ?? match.venue,
+    format,
+    tournament: canonical.tournament ?? match.tournament,
+    matchStatus: canonical.matchStatus ?? match.match_status,
+  });
+
   return {
     matchId,
     homeTeamId: teams.homeTeamId,

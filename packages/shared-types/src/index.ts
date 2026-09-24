@@ -109,6 +109,22 @@ export {
   PREDICTION_MODELS,
 } from "./schema.js";
 
+export { ODDS_LICENSE_STATUS, ODDS_MARKET_TYPE, ODDS_SELECTION } from "./schema.constants.js";
+
+export type OddsFormat = "decimal" | "fractional" | "american";
+
+export {
+  impliedProbabilityFromDecimal,
+  bookmakerMarginFromDecimals,
+  percentOddsMovement,
+  decimalToFractional,
+  fractionalToDecimal,
+  americanToDecimal,
+  decimalToAmerican,
+  formatOddsFromDecimal,
+  parseOddsToDecimal,
+} from "./odds.math.js";
+
 export { redisKeys, REDIS_TTL } from "./redis.js";
 
 export type {

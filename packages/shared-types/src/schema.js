@@ -101,3 +101,5 @@ export const PREDICTION_MODELS = Object.freeze({
   PREMATCH_WEIGHTS: 'prematch-weights-v1',
   LIVE_SCALES: 'live-scales-v1',
 });
+
+export { ODDS_LICENSE_STATUS, ODDS_MARKET_TYPE, ODDS_SELECTION } from './schema.constants.js';

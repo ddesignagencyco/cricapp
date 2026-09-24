@@ -519,26 +519,27 @@
 > Separate data domain from editorial and predictions. Licensed/authorized feeds only. Every price needs source + timestamp. Compliance before public release.
 
 ### 14.1 Schema & ingestion
-- [ ] `odds_sources` table (bookmaker / feed, license status)
-- [ ] `odds_markets` table (match, market type, selections)
-- [ ] `odds_snapshots` table (price, format, implied probability, timestamp)
-- [ ] Licensed odds-feed worker (poll or webhook)
-- [ ] Stale-price detection and alerts
+- [x] `odds_sources` table (bookmaker / feed, license status)
+- [x] `odds_markets` table (match, market type, selections)
+- [x] `odds_snapshots` table (price, format, implied probability, timestamp)
+- [~] Licensed odds-feed worker (Sportradar OC stub in `oddsSync.js`; mapping pending OC contract)
+- [x] Stale-price detection and alerts (admin `GET /admin/odds/sources/health`)
+- [x] Dev demo seeder `npm run seed:odds-demo -- <matchId>` (ingestion workspace)
 
 ### 14.2 API
-- [ ] `GET /odds/:matchId` — comparison across sources for same market
-- [ ] Best displayed price (no guaranteed-profit language)
-- [ ] Opening vs current price and % movement
-- [ ] Odds history series for charts
-- [ ] Decimal / fractional / American conversion helpers
-- [ ] Implied probability and bookmaker margin
-- [ ] Model-vs-market comparison (joins prediction domain)
+- [x] `GET /odds/:matchId` — comparison across sources for same market
+- [x] Best displayed price (no guaranteed-profit language)
+- [x] Opening vs current price and % movement
+- [x] Odds history series for charts (`GET /odds/:matchId/history`)
+- [x] Decimal / fractional / American conversion helpers (`GET /odds/tools/convert`)
+- [x] Implied probability and bookmaker margin (`@cricapp/shared-types/odds.math`, `POST /odds/tools/margin`)
+- [x] Model-vs-market comparison (joins prediction domain)
 - [ ] Optional significant-movement alert hook
 
 ### 14.3 Compliance
-- [ ] Age-gating / regional restriction hooks
-- [ ] Responsible-use messaging payload
-- [ ] Advertising restriction flags before public odds UI
+- [x] Age-gating / regional restriction hooks (`ODDS_*` env + compliance envelope on responses)
+- [x] Responsible-use messaging payload
+- [x] Advertising restriction flags before public odds UI (`ODDS_PUBLIC_ENABLED` default false)
 
 ### 14.4 Frontend (after API + compliance)
 - [ ] `/odds/[match-slug]` page
