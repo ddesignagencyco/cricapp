@@ -26,6 +26,7 @@ class MockRedisService {
       srem: async () => null,
       keys: async () => [],
       ping: async () => 'PONG',
+      oddsMatch: (matchId: string) => null,
     };
   }
   get subscriber() {
