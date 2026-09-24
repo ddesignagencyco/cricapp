@@ -22,6 +22,7 @@ import {
 } from './match-summary-enrich.util.js';
 import { sportEventStatusFromPayload } from '../common/sport-event-status.util.js';
 import { isLiveTimelineBehindMatch } from './timeline-stale.util.js';
+import { dedupeTimelineEvents } from './timeline-events.util.js';
 
 export type MatchSummary = Pick<
   CanonicalMatch,
@@ -292,17 +293,18 @@ export class MatchesService {
     matchId: string,
     fresh: Record<string, unknown>,
   ): Promise<{ matchId: string; payload: Record<string, unknown> }> {
+    const payload = dedupeTimelineEvents(fresh);
     await this.prisma.matchTimeline.upsert({
       where: { matchId },
       create: {
         matchId,
-        payload: fresh as Prisma.InputJsonValue,
+        payload: payload as Prisma.InputJsonValue,
       },
       update: {
-        payload: fresh as Prisma.InputJsonValue,
+        payload: payload as Prisma.InputJsonValue,
       },
     });
-    return { matchId, payload: fresh };
+    return { matchId, payload };
   }
 
   async getTimeline(matchId: string): Promise<{ matchId: string; payload: Record<string, unknown> }> {
@@ -342,7 +344,12 @@ export class MatchesService {
       return { matchId: row!.matchId, payload: storedPayload };
     }
 
-    if (this.sportradar.isConfigured) {
+    if (!this.sportradar.isConfigured) {
+      throw new NotFoundException(`Timeline for match ${matchId} not found`);
+    }
+
+    if (matchRow?.status === MATCH_STATUS.LIVE) {
+      // Live match without a stored row: fetch and persist while it is live.
       try {
         const fresh = await this.sportradar.fetchMatchTimeline(matchId);
         return this.upsertTimelinePayload(matchId, fresh);
@@ -352,6 +359,16 @@ export class MatchesService {
       }
     }
 
-    throw new NotFoundException(`Timeline for match ${matchId} not found`);
+    // Non-live match with no stored row: serve a fresh fetch WITHOUT writing,
+    // so completed/upcoming pages populate without growing or rewriting the
+    // table. The ingestion backfill (finished matches only) persists the
+    // one-shot history row and freezes it thereafter.
+    try {
+      const fresh = await this.sportradar.fetchMatchTimeline(matchId);
+      return { matchId, payload: dedupeTimelineEvents(fresh) };
+    } catch (err) {
+      if (err instanceof ServiceUnavailableException) throw err;
+      throw new NotFoundException(`Timeline for match ${matchId} not found`);
+    }
   }
 }

@@ -13,6 +13,7 @@ import {
   normalizeTeamProfile,
   normalizePlayerProfile,
   normalizeTournamentSeasons,
+  dedupeTimelineEvents,
 } from "../src/reference.js";
 
 describe("normalizeTours", () => {
@@ -128,6 +129,65 @@ describe("normalizeMatchTimeline", () => {
     const out = normalizeMatchTimeline("sr:match:1", { timeline: [] });
     assert.equal(out.matchId, "sr:match:1");
     assert.deepEqual(out.payload, { timeline: [] });
+  });
+});
+
+describe("dedupeTimelineEvents", () => {
+  it("keeps the payload untouched without duplicate event ids", () => {
+    const payload = {
+      sport_event_timeline: {
+        timeline: [
+          { id: "e1", sequence: 1 },
+          { id: "e2", sequence: 2 },
+        ],
+      },
+    };
+    assert.equal(dedupeTimelineEvents(payload), payload);
+  });
+
+  it("drops duplicate entries scoped by a stable event identifier", () => {
+    const payload = {
+      sport_event_timeline: {
+        sport_event_status: { status: "live" },
+        timeline: [
+          { id: "e1", sequence: 1 },
+          { id: "e2", sequence: 2 },
+          { id: "e1", sequence: 1 },
+          { id: "e3", sequence: 3 },
+        ],
+      },
+    };
+    const out = dedupeTimelineEvents(payload);
+    assert.deepEqual(
+      out.sport_event_timeline.timeline.map((e) => e.id),
+      ["e1", "e2", "e3"],
+    );
+    assert.equal(out.sport_event_timeline.sport_event_status.status, "live");
+  });
+
+  it("falls back to sequence when no id is present", () => {
+    const out = dedupeTimelineEvents({
+      timeline: [
+        { sequence: 10, type: "wicket" },
+        { sequence: 11, type: "ball" },
+        { sequence: 10, type: "wicket" },
+      ],
+    });
+    assert.equal(out.timeline.length, 2);
+  });
+
+  it("keeps unkeyable entries and dedupes only identified ones", () => {
+    const out = dedupeTimelineEvents({
+      sport_event: {
+        timeline: [
+          { type: "noop" },
+          { id: "a" },
+          { id: "a" },
+          { type: "noop" },
+        ],
+      },
+    });
+    assert.equal(out.sport_event.timeline.length, 3);
   });
 });
 
