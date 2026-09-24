@@ -6,10 +6,12 @@ import Select from 'react-select';
 import EmptyState from '../EmptyState';
 import HeadToHeadWidget from '../HeadToHeadWidget';
 import { fetchHeadToHead } from '../../services/headToHead';
+import { fetchTeamsCatalog } from '../../services/teams';
+import type { Team } from '../../types/index';
 import { HeadToHead } from '../../types/index';
 import { formatTeamSelectLabel } from '../../utils/helpers';
 
-function dedupeOpponents(team: any, teamMatches: any[], allTeams: any[]): any[] {
+function dedupeOpponents(team: any, teamMatches: any[], catalog: Team[]): Team[] {
   const seen = new Map<string, any>();
   const teamAbbr = (team.abbr || '').toLowerCase();
   const teamId = (team.id || '').toLowerCase();
@@ -18,8 +20,8 @@ function dedupeOpponents(team: any, teamMatches: any[], allTeams: any[]): any[] 
     if (!oppId) return;
     const oppLower = oppId.toLowerCase();
     if (oppLower === teamId || oppLower === teamAbbr) return;
-    const opp = allTeams.find(
-      (t: any) =>
+    const opp = catalog.find(
+      (t) =>
         (t.id || '').toLowerCase() === oppLower ||
         (t.abbr || '').toLowerCase() === oppLower
     );
@@ -31,25 +33,34 @@ function dedupeOpponents(team: any, teamMatches: any[], allTeams: any[]): any[] 
     codes.forEach(addOpponent);
   }
 
-  for (const t of allTeams) {
-    if (t.id !== team.id && !seen.has(t.id)) {
-      seen.set(t.id, t);
-    }
-  }
-
   return [...seen.values()].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 }
 
 interface Props {
   team: any;
-  allTeams: any[];
   teamMatches: any[];
 }
 
-export default function TeamHeadToHead({ team, allTeams, teamMatches }: Props) {
+export default function TeamHeadToHead({ team, teamMatches }: Props) {
+  const [catalog, setCatalog] = useState<Team[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchTeamsCatalog()
+      .then((items) => {
+        if (!cancelled) setCatalog(items);
+      })
+      .catch(() => {
+        if (!cancelled) setCatalog([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const opponents = useMemo(
-    () => dedupeOpponents(team, teamMatches, allTeams),
-    [team, teamMatches, allTeams]
+    () => dedupeOpponents(team, teamMatches, catalog),
+    [team, teamMatches, catalog]
   );
   const [selectedId, setSelectedId] = useState<string>(opponents[0]?.id || '');
   const [data, setData] = useState<HeadToHead | null>(null);
@@ -89,7 +100,7 @@ export default function TeamHeadToHead({ team, allTeams, teamMatches }: Props) {
               {selectedId ? (
                 <>
                   vs{' '}
-                  <Link opponentId={selectedId} allTeams={allTeams} />
+                  <OpponentName opponentId={selectedId} opponents={opponents} />
                 </>
               ) : (
                 '— select an opponent'
@@ -187,9 +198,7 @@ export default function TeamHeadToHead({ team, allTeams, teamMatches }: Props) {
   );
 }
 
-function Link({ opponentId, allTeams }: { opponentId: string; allTeams: any[] }) {
-  const opp = allTeams.find((t) => t.id === opponentId);
-  return (
-    <span className="font-semibold text-mtext">{opp?.name || opponentId}</span>
-  );
+function OpponentName({ opponentId, opponents }: { opponentId: string; opponents: Team[] }) {
+  const opp = opponents.find((t) => t.id === opponentId);
+  return <span className="font-semibold text-mtext">{opp?.name || opponentId}</span>;
 }

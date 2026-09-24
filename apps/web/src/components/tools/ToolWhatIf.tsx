@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { chaseChance, expectedInningsTotal, projectedInnings, winFromExpected } from '../../lib/whatIfMath';
 import { formatRate } from '../../lib/cricketMath';
 import type { ToolDef } from '../../lib/toolsCatalog';
-import { Field, MoreTools, ResultBox, ToolIntro, num } from './ToolShared';
+import { Field, ToolPage, ToolPanel, ResultBox, num } from './ToolShared';
 
 export default function ToolWhatIf({ tool }: { tool: ToolDef }) {
   const isSim = tool.kind === 'match-sim';
@@ -50,45 +50,44 @@ export default function ToolWhatIf({ tool }: { tool: ToolDef }) {
   }, [isSim, a, b, c, d, e, f]);
 
   return (
-    <div className="space-y-6">
-      <ToolIntro tool={tool} />
-      <p className="text-xs text-stext">
-        Closed-form projection from the numbers you type. It does not read a live match or invent a result from our database.
-      </p>
-      <div className="overflow-hidden rounded-md border border-lborder bg-card">
-        <div className="grid grid-cols-1 gap-5 p-4 sm:p-5 lg:grid-cols-[minmax(0,1fr)_240px]">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {isSim ? (
-              <>
-                <Field label="Team A overs" value={a} onChange={setA} />
-                <Field label="Team A RPO" value={b} onChange={setB} />
-                <Field label="Team A wickets (expected)" value={c} onChange={setC} />
-                <Field label="Team B overs" value={d} onChange={setD} />
-                <Field label="Team B RPO" value={e} onChange={setE} />
-                <Field label="Team B wickets (expected)" value={f} onChange={setF} />
-              </>
-            ) : (
-              <>
-                <Field label="Current runs" value={a} onChange={setA} />
-                <Field label="Overs faced" value={b} onChange={setB} />
-                <Field label="Overs left" value={c} onChange={setC} />
-                <Field label="Wickets down" value={d} onChange={setD} />
-                <Field label="Assumed RPO" value={e} onChange={setE} />
-                <Field label="Target (optional)" value={f} onChange={setF} />
-              </>
-            )}
-          </div>
-          <div className="space-y-3">
+    <ToolPage
+      tool={tool}
+      note="Closed-form projection from the numbers you type. It does not read a live match or invent a result from our database."
+    >
+      <ToolPanel
+        aside={
+          <>
             <ResultBox value={view.headline} />
             {view.lines.map((line) => (
               <p key={line} className="text-xs text-stext">
                 {line}
               </p>
             ))}
-          </div>
+          </>
+        }
+      >
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {isSim ? (
+            <>
+              <Field label="Team A overs" value={a} onChange={setA} />
+              <Field label="Team A RPO" value={b} onChange={setB} />
+              <Field label="Team A wickets (expected)" value={c} onChange={setC} />
+              <Field label="Team B overs" value={d} onChange={setD} />
+              <Field label="Team B RPO" value={e} onChange={setE} />
+              <Field label="Team B wickets (expected)" value={f} onChange={setF} />
+            </>
+          ) : (
+            <>
+              <Field label="Current runs" value={a} onChange={setA} />
+              <Field label="Overs faced" value={b} onChange={setB} />
+              <Field label="Overs left" value={c} onChange={setC} />
+              <Field label="Wickets down" value={d} onChange={setD} />
+              <Field label="Assumed RPO" value={e} onChange={setE} />
+              <Field label="Target (optional)" value={f} onChange={setF} />
+            </>
+          )}
         </div>
-      </div>
-      <MoreTools currentSlug={tool.slug} />
-    </div>
+      </ToolPanel>
+    </ToolPage>
   );
 }

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import MatchCardCompact from '../../components/MatchCardCompact';
+import MatchCard from '../../components/MatchCard';
 import LiveNowSection from '../../components/LiveNowSection';
 import SectionHeader from '../../components/SectionHeader';
 import MatchTickerBar from '../../components/MatchTickerBar';
@@ -57,7 +57,7 @@ export default async function HomePage() {
   const galleryPhotos = results[7].status === 'fulfilled' ? results[7].value.items : [];
 
   const live = liveMatches || [];
-  const upcoming = (upcomingMatches || []).slice(0, 5);
+  const upcoming = (upcomingMatches || []).slice(0, 3);
   const completedAll = (completedMatches || [])
     .filter((m: any) => m && (m.scheduled || m.date))
     .sort(
@@ -92,10 +92,12 @@ export default async function HomePage() {
   const nextUpcoming = (upcomingMatches || [])[0] || null;
   const pslStandings = [...(standings || [])].sort((a: any, b: any) => (a.rank ?? 999) - (b.rank ?? 999));
 
+  const heroMatch = nextUpcoming || live[0] || completed[0] || null;
+
   return (
     <div className="min-h-screen">
       <MatchTickerBar matches={tickerMatches} />
-      <CricketHero match={nextUpcoming || live[0] || completed[0]} />
+      <CricketHero match={heroMatch ?? undefined} />
 
       <div className="flex flex-col gap-12 pt-12 pb-12">
       <LiveNowSection matches={live} />
@@ -105,7 +107,7 @@ export default async function HomePage() {
           <SectionHeader title="Watch Now" subtitle="Live streams and featured videos" icon="video" to="/gallery?tab=videos" actionLabel="All videos" />
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {streams.slice(0, 3).map((stream) => (
-              <Link key={stream.id} href="/streams" className="group overflow-hidden rounded-2xl bg-card ring-1 ring-lborder hover:ring-border-strong">
+              <Link key={stream.id} href="/streams" className="card-diamond card-interactive group overflow-hidden rounded-md border border-lborder bg-card">
                 <div className="flex items-center border-b border-lborder px-3 py-2">
                   {stream.status === 'ended' ? (
                     <Badge>Ended</Badge>
@@ -135,10 +137,10 @@ export default async function HomePage() {
       {/* Upcoming Matches */}
       <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
         <SectionHeader title="Upcoming Matches" subtitle="Don't miss the upcoming action" icon="calendar" to="/matches" actionLabel="View all" />
-        <div className="grid grid-cols-1 gap-2.5 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
           {upcoming.length > 0 ? (
             upcoming.map((m: any) => (
-              <MatchCardCompact key={m.matchId || m.id} match={m} />
+              <MatchCard key={m.matchId || m.id} match={m} showVenue />
             ))
           ) : (
             <p className="rounded-xl bg-card px-4 py-8 text-center text-sm text-stext ring-1 ring-lborder">
@@ -189,9 +191,9 @@ export default async function HomePage() {
             {newsList[0] && (
               <Link
                 href={newsHref(newsList[0])}
-                className="group overflow-hidden rounded-2xl bg-card ring-1 ring-lborder transition-colors hover:bg-[var(--color-row-hover)] hover:ring-border-strong"
+                className="news-card card-interactive card-featured group overflow-hidden rounded-md"
               >
-                <div className="relative bg-secondary">
+                <div className="news-card-media relative bg-secondary">
                   {newsList[0].image ? (
                     <RemoteImage
                       src={newsList[0].image}
@@ -231,9 +233,9 @@ export default async function HomePage() {
                 <Link
                   key={item.id}
                   href={newsHref(item)}
-                  className="group flex gap-3 overflow-hidden rounded-xl bg-card p-2.5 ring-1 ring-lborder transition-colors hover:bg-[var(--color-row-hover)] hover:ring-border-strong sm:gap-4 sm:p-3"
+                  className="news-card card-interactive group flex gap-3 overflow-hidden rounded-md p-2.5 sm:gap-4 sm:p-3"
                 >
-                  <div className="relative h-16 w-20 shrink-0 overflow-hidden rounded-lg bg-secondary sm:h-20 sm:w-24">
+                  <div className="news-card-media relative h-16 w-20 shrink-0 overflow-hidden rounded-md bg-secondary sm:h-20 sm:w-24">
                     {item.image ? (
                       <RemoteImage src={item.image} alt={item.title} fill sizes="96px" fit="contain" className="news-image" />
                     ) : (
@@ -265,7 +267,7 @@ export default async function HomePage() {
           <SectionHeader title="Gallery" subtitle="Images, shorts and videos" icon="images" to="/gallery" actionLabel="Open gallery" />
           <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-6">
             {galleryPhotos.map((item) => (
-              <Link key={item.id} href="/gallery?tab=images" className="group overflow-hidden rounded-2xl bg-card ring-1 ring-lborder">
+              <Link key={item.id} href="/gallery?tab=images" className="card-diamond card-interactive group overflow-hidden rounded-md border border-lborder bg-card">
                 <div className="relative aspect-square bg-secondary">
                   <RemoteImage
                     src={item.thumbnailUrl || item.url}
@@ -282,11 +284,11 @@ export default async function HomePage() {
         </section>
       )}
 
+      <Newsletter />
+
       <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
         <AdSlot slot="home-footer" format="leaderboard" />
       </section>
-
-      <Newsletter />
       </div>
     </div>
   );

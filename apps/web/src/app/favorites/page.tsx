@@ -186,7 +186,7 @@ export default function FavoritesPage() {
         </p>
         <Link
           href="/login?returnTo=/favorites"
-          className="btn-brand mt-8 inline-flex items-center gap-2 rounded-md px-7 py-3 text-sm font-bold shadow-md transition-all hover:shadow-lg"
+          className="btn-brand mt-8 inline-flex items-center gap-2 rounded-md px-7 py-3 text-sm font-bold"
         >
           Sign In
           <ArrowRight size={16} />
@@ -460,7 +460,7 @@ function PlayerFavCard({
             alt={name}
             width={48}
             height={48}
-            className="h-12 w-12 shrink-0 rounded-full border border-lborder bg-entity-avatar object-cover"
+            className="avatar-3d h-12 w-12 shrink-0 rounded-full bg-entity-avatar object-cover"
           />
         ) : (
           <EntityAvatar className="h-12 w-12 text-sm">{getInitials(name)}</EntityAvatar>
@@ -512,7 +512,7 @@ function MatchFavCard({
   const href = `/matches/${fav.targetId}`;
 
   return (
-    <div className="elev-card group flex h-full flex-col rounded-md border border-lborder bg-card p-3.5 transition-colors hover:border-accent/50 hover:bg-[var(--color-row-hover)]">
+    <div className="card-interactive group flex h-full flex-col rounded-md p-3.5">
       <div className="mb-2.5 flex items-center justify-between gap-2">
         <p className="min-w-0 truncate text-xs font-semibold uppercase tracking-wide text-stext">{tournament}</p>
         <div className="flex shrink-0 items-center gap-1">
@@ -685,7 +685,7 @@ function FavShell({
   onRemove: () => void;
 }) {
   return (
-    <div className="elev-card group flex items-center gap-2 rounded-md border border-lborder bg-card p-3.5 transition-colors hover:border-accent/50 hover:bg-[var(--color-row-hover)]">
+    <div className="card-interactive group flex items-center gap-2 rounded-md p-3.5">
       {children}
       <RemoveBtn isBusy={isBusy} onRemove={onRemove} always />
     </div>

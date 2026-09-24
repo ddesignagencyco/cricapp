@@ -107,10 +107,10 @@ export default function FavoriteButton({ targetType, targetId, compact = false, 
         }}
         disabled={loading || busy}
         title={favorite ? 'Remove from favorites' : 'Add to favorites'}
-        className={`grid h-9 w-9 place-items-center rounded-xl border transition-all disabled:opacity-60 ${
+        className={`icon-btn h-9 w-9 disabled:opacity-60 ${
           favorite
-            ? 'border-danger/40 bg-danger/10 text-danger shadow-sm'
-            : 'border-lborder bg-secondary text-stext hover:border-accent/40 hover:bg-[var(--color-row-hover)] hover:text-mtext'
+            ? 'icon-btn-bordered border-danger/40 bg-danger/10 text-danger'
+            : 'icon-btn-bordered'
         } ${className}`}
         aria-label={favorite ? 'Remove from favorites' : 'Add to favorites'}
         aria-pressed={Boolean(favorite)}

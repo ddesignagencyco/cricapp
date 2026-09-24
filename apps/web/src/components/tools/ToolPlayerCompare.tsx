@@ -6,7 +6,7 @@ import { X } from 'lucide-react';
 import { fetchPlayerById, fetchPlayers } from '../../services/players';
 import type { Player } from '../../types';
 import type { ToolDef } from '../../lib/toolsCatalog';
-import { MoreTools, ToolIntro } from './ToolShared';
+import { ToolPage, ToolPanel, toolTextInputClass } from './ToolShared';
 
 const SEARCH_DEBOUNCE_MS = 400;
 
@@ -94,7 +94,7 @@ function PlayerPick({
         value={q}
         onChange={(event) => setQ(event.target.value.slice(0, 80))}
         placeholder={selected ? 'Search to replace' : 'Search stored players'}
-        className="w-full rounded-md border border-lborder bg-secondary px-3 py-2.5 text-sm font-semibold text-mtext outline-none focus:border-accent"
+        className={toolTextInputClass}
       />
       {q.trim().length >= 2 && searching ? (
         <p className="mt-1.5 text-[11px] font-semibold text-stext">Searching…</p>
@@ -140,7 +140,7 @@ function PlayerCard({ player }: { player: Player | null }) {
   }
   return (
     <>
-      <h2 className="text-lg font-black text-mtext">{displayName(player)}</h2>
+      <h2 className="text-lg font-semibold text-mtext">{displayName(player)}</h2>
       <div className="mt-3 grid grid-cols-2 gap-2">
         <Fact label="Role" value={String(player.role || '')} />
         <Fact label="Nation" value={String(player.nationality || player.country || '')} />
@@ -188,24 +188,24 @@ export default function ToolPlayerCompare({ tool }: { tool: ToolDef }) {
   const rightFull = usePlayerDetails(right);
 
   return (
-    <div className="space-y-6">
-      <ToolIntro tool={tool} />
-      <p className="text-xs text-stext">
-        Compares stored directory fields and recent matches. Career aggregates (runs, wickets, averages) need a player-stats API — we do not invent those numbers.
-      </p>
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        <PlayerPick label="Player A" selected={left} onPick={setLeft} />
-        <PlayerPick label="Player B" selected={right} onPick={setRight} />
-      </div>
+    <ToolPage
+      tool={tool}
+      note="Compares stored directory fields and recent matches. Career aggregates (runs, wickets, averages) need a player-stats API — we do not invent those numbers."
+    >
+      <ToolPanel>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <PlayerPick label="Player A" selected={left} onPick={setLeft} />
+          <PlayerPick label="Player B" selected={right} onPick={setRight} />
+        </div>
+      </ToolPanel>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div className="rounded-md border border-lborder bg-card p-4">
+        <div className="tool-page-panel p-4 sm:p-5">
           <PlayerCard player={leftFull} />
         </div>
-        <div className="rounded-md border border-lborder bg-card p-4">
+        <div className="tool-page-panel p-4 sm:p-5">
           <PlayerCard player={rightFull} />
         </div>
       </div>
-      <MoreTools currentSlug={tool.slug} />
-    </div>
+    </ToolPage>
   );
 }

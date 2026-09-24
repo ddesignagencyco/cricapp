@@ -8,7 +8,7 @@ import { fetchMatchPredictions } from '../../services/predictions';
 import type { Match } from '../../types';
 import type { MatchPredictions } from '../../types/predictions';
 import type { ToolDef } from '../../lib/toolsCatalog';
-import { MoreTools, ResultBox, ToolIntro } from './ToolShared';
+import { SelectField, ToolPage, ToolPanel, ResultBox } from './ToolShared';
 
 function matchId(match: Match): string {
   return String(match.matchId || match.id || '');
@@ -37,12 +37,14 @@ export default function ToolStoredPrediction({ tool }: { tool: ToolDef }) {
         if (cancelled) return;
         const rows = [...live, ...upcoming].filter((item) => matchId(item));
         const seen = new Set<string>();
-        setMatches(rows.filter((item) => {
-          const id = matchId(item);
-          if (seen.has(id)) return false;
-          seen.add(id);
-          return true;
-        }));
+        setMatches(
+          rows.filter((item) => {
+            const id = matchId(item);
+            if (seen.has(id)) return false;
+            seen.add(id);
+            return true;
+          })
+        );
       })
       .catch(() => {
         if (!cancelled) setMatches([]);
@@ -77,44 +79,33 @@ export default function ToolStoredPrediction({ tool }: { tool: ToolDef }) {
   }, [run, scoreMode]);
 
   return (
-    <div className="space-y-6">
-      <ToolIntro tool={tool} />
-      <p className="text-xs text-stext">
-        Reads an existing prediction run. This page does not compute a new model score or win chance.
-      </p>
-      <div className="overflow-hidden rounded-md border border-lborder bg-card p-4 sm:p-5">
-        <label className="block">
-          <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-stext">Stored match</span>
-          <select
-            value={picked}
-            onChange={(event) => setPicked(event.target.value)}
-            className="w-full rounded-md border border-lborder bg-secondary px-3 py-2.5 text-sm font-semibold text-mtext outline-none focus:border-accent"
-          >
-            <option value="">Select a live or upcoming match</option>
-            {matches.map((match) => (
-              <option key={matchId(match)} value={matchId(match)}>
-                {matchLabel(match)}
-              </option>
-            ))}
-          </select>
-        </label>
-        <div className="mt-4">
+    <ToolPage tool={tool} note="Reads an existing prediction run. This page does not compute a new model score or win chance.">
+      <ToolPanel
+        aside={
           <ResultBox
             label={scoreMode ? 'Stored score range (low · expected · high)' : 'Stored win split (home / away)'}
             value={loading ? '…' : headline}
           />
-        </div>
-        {picked && (
+        }
+      >
+        <SelectField label="Stored match" value={picked} onChange={setPicked}>
+          <option value="">Select a live or upcoming match</option>
+          {matches.map((match) => (
+            <option key={matchId(match)} value={matchId(match)}>
+              {matchLabel(match)}
+            </option>
+          ))}
+        </SelectField>
+        {picked ? (
           <Link
-            href={`/predictions`}
-            className="btn-brand mt-4 inline-flex items-center gap-1.5 rounded-md px-4 py-2 text-sm font-bold"
+            href="/predictions"
+            className="btn-brand inline-flex items-center gap-1.5 rounded-md px-4 py-2 text-sm font-bold"
           >
             Open Predictions
             <ArrowRight size={14} />
           </Link>
-        )}
-      </div>
-      <MoreTools currentSlug={tool.slug} />
-    </div>
+        ) : null}
+      </ToolPanel>
+    </ToolPage>
   );
 }

@@ -8,6 +8,7 @@ import LiveIndicator from '../LiveIndicator';
 import DummyAd from '../advertisements/DummyAd';
 import EmptyState from '../EmptyState';
 import ErrorState from '../ErrorState';
+import PageToolbar from '../PageToolbar';
 import Pagination from '../Pagination';
 import Tabs from '../Tabs';
 import RemoteImage from '../RemoteImage';
@@ -137,7 +138,7 @@ export default function ScheduleBoard({
             <button
               type="button"
               onClick={prevDate}
-              className="grid h-8 w-8 place-items-center rounded bg-secondary text-stext transition-colors hover:bg-[var(--color-row-hover)] hover:text-accent"
+              className="icon-btn h-8 w-8 rounded bg-secondary text-stext hover:text-accent"
               aria-label="Previous day"
             >
               <ChevronLeft size={16} />
@@ -158,7 +159,7 @@ export default function ScheduleBoard({
             <button
               type="button"
               onClick={nextDate}
-              className="grid h-8 w-8 place-items-center rounded bg-secondary text-stext transition-colors hover:bg-[var(--color-row-hover)] hover:text-accent"
+              className="icon-btn h-8 w-8 rounded bg-secondary text-stext hover:text-accent"
               aria-label="Next day"
             >
               <ChevronRight size={16} />
@@ -195,13 +196,16 @@ export default function ScheduleBoard({
         </div>
       </header>
 
-      <div className="space-y-3 border-b border-lborder pb-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="space-y-3">
+        <PageToolbar
+          end={
+            <p className="text-xs text-stext">
+              <span className="font-semibold text-mtext">{visibleEvents.length}</span> matches
+            </p>
+          }
+        >
           <Tabs tabs={tabs} active={tab} onChange={onTabChange} />
-          <p className="text-xs text-stext">
-            <span className="font-semibold text-mtext">{visibleEvents.length}</span> matches
-          </p>
-        </div>
+        </PageToolbar>
         {tournamentTabs.length > 2 ? (
           <Tabs
             tabs={tournamentTabs}

@@ -49,7 +49,7 @@ export default function RecentResultCard({ match }: RecentResultCardProps) {
     <Link
       href={`/matches/${match.matchId || match.id}`}
       prefetch={false}
-      className="elev-card group flex h-full flex-col rounded-md border border-lborder bg-card p-3.5 transition-colors hover:border-accent/50 hover:bg-[var(--color-row-hover)]"
+      className="card-interactive group flex h-full flex-col rounded-md p-3.5"
     >
       <div className="mb-3 flex items-center justify-between gap-2">
         <p className="min-w-0 truncate text-xs font-semibold uppercase tracking-wide text-stext">

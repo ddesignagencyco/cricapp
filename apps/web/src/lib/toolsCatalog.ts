@@ -17,9 +17,10 @@ export type ToolKind =
   | 'predictions'
   | 'odds'
   | 'implied'
+  | 'odds-match'
   | 'fantasy';
 
-export type ToolGroup = 'rates' | 'batting' | 'bowling' | 'match' | 'analysis';
+export type ToolGroup = 'rates' | 'batting' | 'bowling' | 'match' | 'analysis' | 'odds';
 
 export interface ToolDef {
   slug: string;
@@ -35,6 +36,7 @@ export const TOOL_GROUPS: Array<{ key: ToolGroup; title: string; hint: string }>
   { key: 'bowling', title: 'Bowling', hint: 'Average and economy' },
   { key: 'match', title: 'Match', hint: 'Follow-on, what-if and innings projection' },
   { key: 'analysis', title: 'Comparison', hint: 'Players, head-to-head and fantasy points' },
+  { key: 'odds', title: 'Odds intelligence', hint: 'Licensed comparison, conversion and margin (API-backed)' },
 ];
 
 export const TOOLS: ToolDef[] = [
@@ -52,14 +54,35 @@ export const TOOLS: ToolDef[] = [
   { slug: 'match-simulator', title: 'Match simulator', blurb: 'Expected totals from entered RPO — not a live model.', kind: 'match-sim', group: 'match' },
   { slug: 'what-if', title: 'What-if match simulator', blurb: 'Project a chase from current score, overs left and assumed RPO.', kind: 'what-if', group: 'match' },
   { slug: 'fantasy-xi', title: 'Fantasy points / XI', blurb: 'Informational Dream11-style points for a player or XI.', kind: 'fantasy', group: 'analysis' },
+  {
+    slug: 'odds-converter',
+    title: 'Odds converter',
+    blurb: 'Convert decimal, fractional or American prices using the same rules as match odds.',
+    kind: 'odds',
+    group: 'odds',
+  },
+  {
+    slug: 'bookmaker-margin',
+    title: 'Bookmaker margin',
+    blurb: 'Overround from decimal prices for every outcome in one market.',
+    kind: 'implied',
+    group: 'odds',
+  },
+  {
+    slug: 'match-odds',
+    title: 'Match odds checker',
+    blurb: 'Licensed match-winner comparison, movement chart and analysis for a fixture id.',
+    kind: 'odds-match',
+    group: 'odds',
+  },
 ];
 
 export function toolBySlug(slug: string): ToolDef | undefined {
   return TOOLS.find((tool) => tool.slug === slug);
 }
 
-/** Hub badge: client formula vs existing APIs (no new backend). */
-export function toolSource(kind: ToolKind): 'formula' | 'stored' {
+/** Hub badge: client formula vs stored/API-backed tools. */
+export function toolSource(kind: ToolKind): 'formula' | 'stored' | 'api' {
   switch (kind) {
     case 'player-compare':
     case 'compare':
@@ -67,6 +90,10 @@ export function toolSource(kind: ToolKind): 'formula' | 'stored' {
     case 'predictions':
     case 'score-predictor':
       return 'stored';
+    case 'odds':
+    case 'implied':
+    case 'odds-match':
+      return 'api';
     case 'nrr':
     case 'rrr':
     case 'crr':
@@ -78,8 +105,6 @@ export function toolSource(kind: ToolKind): 'formula' | 'stored' {
     case 'follow-on':
     case 'match-sim':
     case 'what-if':
-    case 'odds':
-    case 'implied':
     case 'fantasy':
       return 'formula';
     default: {

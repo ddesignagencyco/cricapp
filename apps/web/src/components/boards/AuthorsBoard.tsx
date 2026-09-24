@@ -1,8 +1,10 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import Link from 'next/link';
-import { ChevronRight, Newspaper, Search } from 'lucide-react';
+import { ChevronRight, Newspaper } from 'lucide-react';
+import SearchField from '../SearchField';
 import EmptyState from '../EmptyState';
 import PersonAvatar from '../PersonAvatar';
 import ShareButton from '../ShareButton';
@@ -10,15 +12,16 @@ import type { PublicAuthor } from '../../services/authors';
 
 export default function AuthorsBoard({ authors }: { authors: PublicAuthor[] }) {
   const [query, setQuery] = useState('');
+  const debouncedQuery = useDebouncedValue(query);
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const q = debouncedQuery.trim().toLowerCase();
     if (!q) return authors;
     return authors.filter((author) => {
       const haystack = [author.name, author.bio].filter(Boolean).join(' ').toLowerCase();
       return haystack.includes(q);
     });
-  }, [authors, query]);
+  }, [authors, debouncedQuery]);
 
   return (
     <div className="space-y-5">
@@ -30,21 +33,14 @@ export default function AuthorsBoard({ authors }: { authors: PublicAuthor[] }) {
             Writers covering PSL, internationals, and match reports.
           </p>
         </header>
-        <div className="relative w-full sm:w-64">
-          <Search
-            size={15}
-            aria-hidden="true"
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-stext"
-          />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            type="search"
-            placeholder="Search authors…"
-            className="w-full rounded-md border border-lborder bg-card py-2 pl-9 pr-3 text-sm text-mtext outline-none transition-colors focus:border-[var(--color-focus-ring)] focus:bg-elevated focus:ring-2 focus:ring-[var(--color-focus-ring)]/30"
-            aria-label="Search authors"
-          />
-        </div>
+        <SearchField
+          wrapperClassName="w-full sm:w-64"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search authors…"
+          aria-label="Search authors"
+          iconSize={15}
+        />
       </div>
 
       {authors.length === 0 ? (

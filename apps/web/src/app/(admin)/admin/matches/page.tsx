@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { Trophy, Search } from 'lucide-react';
+import { Trophy } from 'lucide-react';
 import { fetchMatchesPage } from '../../../../services/matches';
 import type { Match } from '../../../../types';
 import Pagination from '../../../../components/admin/AdminPagination';
-import { AdminPageHeader, LoadingState, EmptyState, StatusBadge, AdminInput, AdminEntityLink } from '../../../../components/admin/AdminShared';
+import { AdminPageHeader, LoadingState, EmptyState, StatusBadge, AdminSearchField, AdminEntityLink } from '../../../../components/admin/AdminShared';
 import EntityAvatar from '../../../../components/EntityAvatar';
 import { getInitials } from '../../../../utils/helpers';
 import { compactMatchScore } from '../../../../lib/matchScoreboard';
@@ -80,10 +80,12 @@ export default function MatchesPage() {
       <AdminPageHeader title="Matches" subtitle="View and manage match schedules, scores and results." />
 
       <div className="flex flex-col gap-3 rounded-lg p-3 md:flex-row md:items-center" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
-        <div className="relative w-full max-w-md">
-          <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--admin-text-muted)' }} />
-          <AdminInput type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search by team, tournament or venue..." style={{ paddingLeft: '2.25rem' }} />
-        </div>
+        <AdminSearchField
+          wrapperClassName="max-w-md"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search by team, tournament or venue..."
+        />
         <div className="flex gap-1.5">
           {['all', 'live', 'upcoming', 'completed'].map((s) => (
             <button key={s} type="button" onClick={() => setFilterStatus(s)} className="rounded-md px-3 py-1.5 text-xs font-semibold transition-colors"

@@ -9,7 +9,6 @@ import {
   Loader2,
   Mail,
   Monitor,
-  Search,
   Smartphone,
   Tablet,
   Trash2,
@@ -18,6 +17,7 @@ import toast from 'react-hot-toast';
 import { useAuth } from '../../../components/AuthProvider';
 import { ProfilePageSkeleton } from '../../../components/skeletons/Skeletons';
 import Pagination from '../../../components/Pagination';
+import SearchField from '../../../components/SearchField';
 import {
   fetchDevices,
   fetchNotificationHistory,
@@ -240,17 +240,14 @@ export default function NotificationSettingsPage() {
               All
               <span className="rounded bg-[var(--color-brand-soft)] px-1.5 py-0.5 tabular-nums">{total}</span>
             </div>
-            <div className="relative block min-w-0 sm:w-64">
-              <Search size={14} aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-stext" />
-              <input
-                type="search"
-                aria-label="Search notifications"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search notifications…"
-                className="w-full rounded-md border border-lborder bg-card py-2 pl-9 pr-3 text-sm text-mtext outline-none transition-colors hover:border-border-strong focus:border-[var(--color-focus-ring)] focus:ring-2 focus:ring-[var(--color-focus-ring)]/30"
-              />
-            </div>
+            <SearchField
+              wrapperClassName="min-w-0 sm:w-64"
+              aria-label="Search notifications"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search notifications…"
+              iconSize={14}
+            />
           </div>
 
           {filtered.length === 0 ? (

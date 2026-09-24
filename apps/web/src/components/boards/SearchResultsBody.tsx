@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { ArrowRight, Calendar, Search, Shield, Trophy, UserRound, X } from 'lucide-react';
+import SearchField from '../SearchField';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
@@ -111,29 +112,28 @@ export default function SearchResultsBody() {
             : 'Find players, teams, matches and tournaments.'}
         </p>
 
-        <div className="relative mt-5 max-w-2xl">
-          <Search size={16} aria-hidden="true" className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-accent" />
-          <input
-            type="search"
-            aria-label="Search players, teams, matches or tournaments"
-            value={inputVal}
-            onChange={(e) => setInputVal(e.target.value)}
-            placeholder="Search players, teams, matches or tournaments…"
-            autoComplete="off"
-            className="w-full rounded-md border border-lborder bg-card py-3 pl-10 pr-20 text-sm text-mtext outline-none focus:border-[var(--color-focus-ring)] focus:ring-2 focus:ring-[var(--color-focus-ring)]/30"
-          />
-          {inputVal ? (
-            <button
-              type="button"
-              onClick={() => setInputVal('')}
-              className="absolute right-2 top-1/2 inline-flex -translate-y-1/2 items-center gap-1 rounded px-2 py-1 text-xs font-semibold text-stext hover:bg-[var(--color-row-hover)] hover:text-mtext"
-              aria-label="Clear search"
-            >
-              <X size={12} />
-              Clear
-            </button>
-          ) : null}
-        </div>
+        <SearchField
+          wrapperClassName="mt-5 max-w-2xl"
+          iconClassName="text-accent"
+          aria-label="Search players, teams, matches or tournaments"
+          value={inputVal}
+          onChange={(e) => setInputVal(e.target.value)}
+          placeholder="Search players, teams, matches or tournaments…"
+          inputClassName="py-3"
+          trailing={
+            inputVal ? (
+              <button
+                type="button"
+                onClick={() => setInputVal('')}
+                className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-semibold text-stext hover:bg-[var(--color-row-hover)] hover:text-mtext"
+                aria-label="Clear search"
+              >
+                <X size={12} />
+                Clear
+              </button>
+            ) : null
+          }
+        />
       </header>
 
       {loading && <SearchResultsSkeleton />}

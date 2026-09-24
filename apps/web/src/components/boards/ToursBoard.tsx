@@ -2,15 +2,18 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Search, Trophy, X } from 'lucide-react';
+import { X } from 'lucide-react';
+import SearchField from '../SearchField';
 import { str } from '../../utils/extract';
 import type { Tour } from '../../types/index';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { fetchToursPage } from '../../services/tours';
 import EmptyState from '../EmptyState';
 import ErrorState from '../ErrorState';
 import Pagination from '../Pagination';
 import { DirectoryGridSkeleton } from '../skeletons/Skeletons';
 import { filterChipClass, filterChipCountClass } from '../ui/filterChip';
+import DirectoryPageHeader from '../DirectoryPageHeader';
 import TourCard from '../TourCard';
 
 const LIMIT = 20;
@@ -27,6 +30,7 @@ export default function ToursBoard() {
   const [error, setError] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebouncedValue(search);
   const [countryFilter, setCountryFilter] = useState('all');
 
   useEffect(() => {
@@ -65,7 +69,7 @@ export default function ToursBoard() {
 
   const filtered = useMemo(() => {
     let list = tours;
-    const q = search.toLowerCase().trim();
+    const q = debouncedSearch.toLowerCase().trim();
     if (q) {
       list = list.filter(
         (t) =>
@@ -78,7 +82,7 @@ export default function ToursBoard() {
       list = list.filter((t) => str(t.category) === countryFilter);
     }
     return list;
-  }, [tours, search, countryFilter]);
+  }, [tours, debouncedSearch, countryFilter]);
 
   const activeFilters = countryFilter !== 'all';
 
@@ -92,47 +96,23 @@ export default function ToursBoard() {
 
   return (
     <div className="space-y-5">
-      <header className="rounded-md border border-lborder bg-card p-5 sm:p-6">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-          <div className="max-w-2xl">
-            <p className="inline-flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-accent">
-              <Trophy size={13} />
-              International & bilateral series
-            </p>
-            <h1 className="mt-2 text-2xl font-semibold text-mtext">Cricket Tours & Series</h1>
-            <p className="mt-1 text-sm leading-relaxed text-stext">
-              Ongoing and scheduled bilateral tours, Test matches, ODI series and domestic championship visits.
-            </p>
-          </div>
-          <div className="flex items-center gap-3 rounded-md border border-lborder bg-secondary px-4 py-3">
-            <div className="btn-brand grid h-9 w-9 place-items-center rounded-md">
-              <Trophy size={18} />
-            </div>
-            <div>
-              <p className="text-lg font-semibold leading-none text-mtext">{total || tours.length}</p>
-              <p className="mt-1 text-xs font-medium uppercase tracking-wider text-stext">Tours</p>
-            </div>
-          </div>
-        </div>
-      </header>
+      <DirectoryPageHeader
+        eyebrow="International & bilateral series"
+        title="Cricket Tours & Series"
+        description="Ongoing and scheduled bilateral tours, Test matches, ODI series and domestic championship visits."
+        count={total || tours.length}
+        countLabel="tours"
+      />
 
       <div className="space-y-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="relative max-w-md flex-1">
-            <Search
-              size={16}
-              aria-hidden="true"
-              className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-stext"
-            />
-            <input
-              type="search"
-              aria-label="Search tours"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search tours by series name, country or category…"
-              className="w-full rounded-md border border-lborder bg-card py-2.5 pl-10 pr-4 text-sm text-mtext outline-none transition-colors focus:border-[var(--color-focus-ring)] focus:bg-elevated focus:ring-2 focus:ring-[var(--color-focus-ring)]/30"
-            />
-          </div>
+          <SearchField
+            wrapperClassName="max-w-md flex-1"
+            aria-label="Search tours"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search tours by series name, country or category…"
+          />
           {activeFilters && (
             <button
               type="button"

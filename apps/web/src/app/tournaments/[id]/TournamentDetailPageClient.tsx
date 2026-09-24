@@ -75,7 +75,7 @@ function TournamentResultCard({ record }: { record: Record<string, unknown> & { 
   return (
     <Link
       href={`/matches/${record.eventId}`}
-      className="flex flex-col rounded-md border border-lborder bg-card p-3.5 transition-colors hover:border-accent/50 hover:bg-elevated"
+      className="flex flex-col detail-panel detail-panel--hover p-3.5"
     >
       <div className="mb-2 flex items-center justify-between gap-2">
         <p className="truncate text-xs font-medium uppercase tracking-wide text-stext">
@@ -143,28 +143,28 @@ export default function TournamentDetailPageClient({
   );
 
   return (
-    <div className="mx-auto max-w-7xl space-y-5 px-4 py-8 sm:px-6">
-      <nav className="flex items-center gap-1.5 text-xs text-stext">
-        <Link href="/tournaments" className="hover:text-accent">
+    <div className="detail-page mx-auto max-w-7xl space-y-4 px-4 py-6 sm:space-y-5 sm:px-6 sm:py-8">
+      <nav className="detail-breadcrumb" aria-label="Breadcrumb">
+        <Link href="/tournaments" className="font-semibold text-accent transition-colors hover:text-mtext">
           Tournaments
         </Link>
-        <span>/</span>
-        <span className="text-mtext">{tournament.name}</span>
+        <span className="text-stext" aria-hidden="true">/</span>
+        <span className="truncate font-medium text-mtext max-w-[12rem] sm:max-w-none">{tournament.name}</span>
       </nav>
 
-      <header className="rounded-md border border-lborder bg-card p-5 sm:p-6">
-        <div className="flex items-center justify-between gap-3 border-b border-lborder pb-3">
+      <header className="detail-hero p-4 sm:p-8">
+        <div className="flex items-center justify-between gap-3 border-b border-lborder pb-4">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded border border-accent/25 bg-accent/10 px-2.5 py-1 text-xs font-medium tracking-wider text-accent">
+            <span className="detail-chip font-semibold text-accent">
               Tournament
             </span>
             {format && (
-              <span className="rounded border border-lborder bg-secondary px-2.5 py-1 text-xs font-medium tracking-wider text-stext">
+              <span className="detail-chip tracking-wider">
                 {format}
               </span>
             )}
             {tournament.gender && (
-              <span className="rounded border border-lborder bg-secondary px-2.5 py-1 text-xs font-medium capitalize text-stext">
+              <span className="detail-chip capitalize">
                 {tournament.gender}
               </span>
             )}
@@ -204,11 +204,11 @@ export default function TournamentDetailPageClient({
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            <div className="min-w-24 rounded-md border border-lborder bg-secondary px-3.5 py-3 text-center">
+            <div className="detail-stat-box">
               <p className="font-mono text-lg font-semibold text-accent">{seasons?.length || 0}</p>
               <p className="text-xs font-medium uppercase tracking-wider text-stext">Seasons</p>
             </div>
-            <div className="min-w-24 rounded-md border border-lborder bg-secondary px-3.5 py-3 text-center">
+            <div className="detail-stat-box">
               <p className="font-mono text-lg font-semibold text-mtext">{totalResults}</p>
               <p className="text-xs font-medium uppercase tracking-wider text-stext">Results</p>
             </div>
@@ -218,7 +218,9 @@ export default function TournamentDetailPageClient({
 
       <DummyAd size="leaderboard" placement="tournament-detail-after-intro" />
 
-      <Tabs tabs={seriesTabs} active={tab} onChange={setTab} />
+      <div className="detail-tabs-sticky">
+        <Tabs tabs={seriesTabs} active={tab} onChange={setTab} />
+      </div>
 
       {tab === 'news' && (
         <RelatedNewsPanel
@@ -244,11 +246,7 @@ export default function TournamentDetailPageClient({
                   type="button"
                   onClick={() => setSeasonId(item.id)}
                   aria-pressed={active}
-                  className={`rounded-md border p-3.5 text-left transition-colors ${
-                    active
-                      ? 'border-accent/50 bg-accent/10'
-                      : 'border-lborder bg-card hover:border-accent/40 hover:bg-elevated'
-                  }`}
+                  className={`detail-panel detail-panel--hover p-3.5 text-left ${active ? 'detail-panel--active' : ''}`}
                 >
                   <p className="truncate text-sm font-semibold text-mtext">{seasonLabel(item)}</p>
                   {(item.startDate || item.endDate) && (
@@ -293,7 +291,7 @@ export default function TournamentDetailPageClient({
                     type="button"
                     onClick={() => setSeasonId(item.id)}
                     aria-current={active ? 'true' : undefined}
-                    className={`rounded-full px-4 py-1.5 text-xs font-bold transition-all ${
+                    className={`rounded-full px-4 py-1.5 text-xs font-bold transition-colors duration-[180ms] motion-reduce:transition-none ${
                       active
                         ? 'btn-brand pointer-events-none'
                         : 'bg-card text-stext ring-1 ring-lborder hover:bg-elevated hover:text-mtext'

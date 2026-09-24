@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Mail, Search } from 'lucide-react';
+import { Mail } from 'lucide-react';
 import {
-  AdminInput,
+  AdminSearchField,
   AdminPageHeader,
   AdminSelect,
   EmptyState,
@@ -42,19 +42,12 @@ export default function AdminNewsletterPage() {
         className="flex flex-wrap items-center gap-2 rounded-lg p-3"
         style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}
       >
-        <div className="relative w-full max-w-md">
-          <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--admin-text-muted)' }} />
-          <AdminInput
-            type="search"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') load();
-            }}
-            placeholder="Search email"
-            style={{ paddingLeft: '2.25rem' }}
-          />
-        </div>
+        <AdminSearchField
+          wrapperClassName="max-w-md"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Search email"
+        />
         <div className="w-36">
           <AdminSelect value={status} onChange={(e) => setStatus(e.target.value)}>
             <option value="">All</option>

@@ -1,7 +1,8 @@
 'use client';
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import SectionHeader from '../SectionHeader';
+import DirectoryPageHeader from '../DirectoryPageHeader';
+import PageToolbar from '../PageToolbar';
 import Badge from '../Badge';
 import EmptyState from '../EmptyState';
 import Tabs from '../Tabs';
@@ -41,9 +42,8 @@ export default function PredictionsHub({
   const searchParams = useSearchParams();
   const fromUrl = searchParams.get('tab');
   const firstWithItems = live.length > 0 ? 'live' : upcomingTotal > 0 ? 'upcoming' : 'live';
-  const tab = fromUrl === 'live' || fromUrl === 'upcoming'
-    ? fromUrl
-    : initialTab ?? firstWithItems;
+  const tab =
+    fromUrl === 'live' || fromUrl === 'upcoming' ? fromUrl : initialTab ?? firstWithItems;
   const sample = performance?.sampleSize ?? 0;
   const hasPerformance = Boolean(performance && sample > 0);
   const hasUpcoming = upcoming.length > 0 || upcomingTotal > 0;
@@ -59,22 +59,16 @@ export default function PredictionsHub({
   };
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6">
-      <header>
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h1 className="text-3xl font-black tracking-tight text-mtext sm:text-4xl">Predictions</h1>
-            <p className="mt-2 max-w-xl text-sm text-stext">
-              Modelled win probabilities · Live and upcoming matches
-            </p>
-          </div>
-          <p className="text-xs text-stext">
-            <span className="font-semibold text-mtext">{tabTotal}</span> {tab}
-          </p>
-        </div>
-      </header>
+    <div className="mx-auto max-w-7xl space-y-5 px-4 py-6 sm:px-6">
+      <DirectoryPageHeader
+        eyebrow="Win probabilities"
+        title="Predictions"
+        description="Pre-match and live win chances from stored model runs."
+        count={tabTotal}
+        countLabel={tab}
+      />
 
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-lborder pb-3">
+      <PageToolbar>
         <Tabs
           tabs={[
             { key: 'live', label: 'Live', count: live.length },
@@ -83,23 +77,23 @@ export default function PredictionsHub({
           active={tab}
           onChange={handleTabChange}
         />
-      </div>
+      </PageToolbar>
 
-      {hasPerformance && performance && (
-        <section>
-          <SectionHeader
-            title="How these guesses have done"
-            subtitle="Settled matches only — we do not drop the ones that were wrong"
-            icon="trendingup"
-          />
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <PerformanceStat label="Accuracy" value={asPercent(performance.accuracy)} />
-            <PerformanceStat label="Settled matches" value={String(sample)} />
+      {hasPerformance && performance ? (
+        <section className="prediction-card rounded-md border border-lborder bg-card p-4 sm:p-5">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wider text-accent">Track record</p>
+              <p className="mt-1 text-sm text-stext">{sample} settled matches</p>
+            </div>
+            <p className="font-mono text-2xl font-semibold tabular-nums text-accent">
+              {asPercent(performance.accuracy)}
+            </p>
           </div>
           {(performance.byFormat.length > 0 || performance.byConfidenceBand.length > 0) && (
-            <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <div className="mt-4 grid grid-cols-1 gap-4 border-t border-lborder pt-4 lg:grid-cols-2">
               <Breakdown
-                title="By format"
+                title="Format"
                 rows={performance.byFormat.map((row) => ({
                   key: row.format,
                   label: row.format.toUpperCase(),
@@ -109,7 +103,7 @@ export default function PredictionsHub({
                 }))}
               />
               <Breakdown
-                title="By confidence"
+                title="Confidence"
                 rows={performance.byConfidenceBand.map((row) => ({
                   key: row.band,
                   label: row.band,
@@ -121,11 +115,11 @@ export default function PredictionsHub({
             </div>
           )}
         </section>
-      )}
+      ) : null}
 
       {visible.length > 0 ? (
         <section>
-          <div className="grid items-stretch gap-4 [grid-template-columns:repeat(auto-fill,minmax(min(100%,20rem),1fr))]">
+          <div className="grid items-stretch gap-3 [grid-template-columns:repeat(auto-fill,minmax(min(100%,20rem),1fr))]">
             {visible.map(({ match, predictions, chartPoints }) => (
               <PredictionMatchCard
                 key={String(match.matchId || match.id)}
@@ -135,31 +129,22 @@ export default function PredictionsHub({
               />
             ))}
           </div>
-          {tab === 'upcoming' && (
+          {tab === 'upcoming' ? (
             <PredictionsUpcomingPager page={upcomingPage} total={upcomingTotal} limit={upcomingLimit} />
-          )}
+          ) : null}
         </section>
       ) : (
         <EmptyState
-          title={tab === 'live' ? 'No live matches' : hasUpcoming ? 'No fixtures on this page' : 'No upcoming matches'}
+          title={tab === 'live' ? 'No live matches' : 'No upcoming matches'}
           message={
             tab === 'live'
-              ? 'When a game is on, the live chance of winning will show here.'
+              ? 'Live fixtures with predictions will appear here.'
               : hasUpcoming
-                ? 'Try another page of upcoming matches.'
-                : 'Upcoming fixtures will appear here, with a chance of winning once we have a prediction.'
+                ? 'Try another page.'
+                : 'Upcoming fixtures will appear when scheduled.'
           }
         />
       )}
-    </div>
-  );
-}
-
-function PerformanceStat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="prediction-card rounded-xl border border-lborder/80 bg-card p-5">
-      <p className="text-xs font-bold uppercase tracking-widest text-stext">{label}</p>
-      <p className="mt-2 font-mono text-3xl font-black tabular-nums text-accent">{value}</p>
     </div>
   );
 }
@@ -173,16 +158,18 @@ function Breakdown({
 }) {
   if (rows.length === 0) return null;
   return (
-    <div className="prediction-card rounded-xl border border-lborder/80 bg-card p-5">
-      <p className="mb-3 text-xs font-bold uppercase tracking-widest text-stext">{title}</p>
-      <ul className="space-y-3">
+    <div>
+      <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-stext">{title}</p>
+      <ul className="space-y-2">
         {rows.map((row) => (
-          <li key={row.key} className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
+          <li key={row.key} className="flex items-center justify-between gap-3 text-sm">
+            <div className="flex min-w-0 items-center gap-2">
               <Badge tone={row.tone}>{row.label}</Badge>
-              <span className="text-xs text-stext">{row.sample} matches</span>
+              <span className="text-xs text-stext">{row.sample}</span>
             </div>
-            <span className="font-mono text-sm font-black text-mtext">{asPercent(row.accuracy)}</span>
+            <span className="shrink-0 font-mono text-sm font-semibold tabular-nums text-mtext">
+              {asPercent(row.accuracy)}
+            </span>
           </li>
         ))}
       </ul>

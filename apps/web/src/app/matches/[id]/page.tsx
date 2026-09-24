@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import MatchDetailBody from '../../../components/boards/MatchDetailBody';
 import { fetchMatchById } from '../../../services/matches';
+import { fetchMatchOdds } from '../../../services/odds';
 import { sharePageMetadata } from '../../../services/sharing';
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
@@ -26,10 +27,22 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
   } catch {
     matchId = id;
   }
-  const match = await fetchMatchById(matchId);
+  const [match, oddsResult] = await Promise.all([
+    fetchMatchById(matchId),
+    fetchMatchOdds(matchId).catch(() => null),
+  ]);
   if (!match) {
     return notFound();
   }
 
-  return <MatchDetailBody match={match} />;
+  const initialOdds = oddsResult?.status === 'ok' ? oddsResult.data : null;
+  const initialOddsForbidden = oddsResult?.status === 'forbidden';
+
+  return (
+    <MatchDetailBody
+      match={match}
+      initialOdds={initialOdds}
+      initialOddsForbidden={initialOddsForbidden}
+    />
+  );
 }

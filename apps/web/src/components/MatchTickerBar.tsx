@@ -74,7 +74,7 @@ export default function MatchTickerBar({ matches: initialMatches }: MatchTickerB
             type="button"
             onClick={() => scroll('left')}
             disabled={!canScrollLeft}
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-elevated text-stext ring-1 ring-lborder transition-colors hover:text-mtext disabled:cursor-default disabled:opacity-40 disabled:hover:text-stext"
+            className="carousel-control"
             aria-label="Scroll left"
           >
             <ChevronLeft size={16} />
@@ -95,7 +95,7 @@ export default function MatchTickerBar({ matches: initialMatches }: MatchTickerB
             type="button"
             onClick={() => scroll('right')}
             disabled={!canScrollRight}
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-elevated text-stext ring-1 ring-lborder transition-colors hover:text-mtext disabled:cursor-default disabled:opacity-40 disabled:hover:text-stext"
+            className="carousel-control"
             aria-label="Scroll right"
           >
             <ChevronRight size={16} />

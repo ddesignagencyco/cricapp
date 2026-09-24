@@ -355,11 +355,9 @@ function ArticleCard({ item, language }: { item: NewsArticle; language: 'en' | '
   return (
     <Link
       href={newsHref(item)}
-      className="group flex h-full flex-col overflow-hidden rounded-md border border-lborder bg-card transition-colors hover:border-border-strong hover:bg-[var(--color-row-hover)]"
+      className="news-card group flex h-full flex-col overflow-hidden rounded-md"
     >
-      <div
-        className="relative aspect-[16/9] overflow-hidden bg-secondary media-fallback"
-      >
+      <div className="news-card-media relative aspect-[16/9] bg-secondary media-fallback">
         {item.image ? (
           <RemoteImage
             src={item.image}

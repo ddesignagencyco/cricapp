@@ -6,7 +6,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import Select from 'react-select';
 import { ArrowLeftRight, Calendar, MapPin, Swords } from 'lucide-react';
 import type { Team, HeadToHead } from '../../types/index';
-import { fetchTeamsPage } from '../../services/teams';
+import { fetchTeamsCatalog } from '../../services/teams';
 import { fetchHeadToHead } from '../../services/headToHead';
 import {
   formatH2HDate,
@@ -68,25 +68,6 @@ function teamLabel(team: Team): string {
   return formatTeamSelectLabel(team);
 }
 
-async function loadAllTeams(): Promise<Team[]> {
-  const first = await fetchTeamsPage({ limit: 100, page: 1 });
-  const extraPages = Math.min(Math.max(first.totalPages - 1, 0), 4);
-  const rest =
-    extraPages > 0
-      ? await Promise.all(
-          Array.from({ length: extraPages }, (_, i) => fetchTeamsPage({ limit: 100, page: i + 2 })),
-        )
-      : [];
-  const seen = new Set<string>();
-  const all: Team[] = [];
-  for (const team of [...first.items, ...rest.flatMap((page) => page.items)]) {
-    if (!team.id || seen.has(team.id)) continue;
-    seen.add(team.id);
-    all.push(team);
-  }
-  return all.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-}
-
 export default function CompareBoard() {
   const router = useRouter();
   const pathname = usePathname();
@@ -125,7 +106,7 @@ export default function CompareBoard() {
     let cancelled = false;
     setTeamsLoading(true);
     setTeamsError(false);
-    loadAllTeams()
+    fetchTeamsCatalog()
       .then((items) => {
         if (!cancelled) {
           setTeams(items);

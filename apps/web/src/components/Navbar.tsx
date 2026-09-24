@@ -191,7 +191,7 @@ export default function Navbar() {
             <button
               type="button"
               onClick={toggle}
-              className="site-nav-icon grid h-9 w-9 place-items-center rounded text-stext transition-colors hover:bg-[var(--color-row-hover)] hover:text-mtext"
+              className="site-nav-icon icon-btn h-9 w-9 text-stext"
               aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
             >
               {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
@@ -204,7 +204,7 @@ export default function Navbar() {
               setSearchOpen((s) => !s);
               setMobileOpen(false);
             }}
-            className="site-nav-icon grid h-9 w-9 place-items-center rounded text-stext transition-colors hover:bg-[var(--color-row-hover)] hover:text-mtext"
+            className="site-nav-icon icon-btn h-9 w-9 text-stext"
             aria-label="Search"
           >
             <Search size={18} />
@@ -219,11 +219,7 @@ export default function Navbar() {
               <button
                 type="button"
                 onClick={toggleMenu}
-                className={`site-nav-icon grid h-9 w-9 place-items-center rounded transition-colors ${
-                  menuOpen
-                    ? 'bg-card text-accent'
-                    : 'text-stext hover:bg-[var(--color-row-hover)] hover:text-mtext'
-                }`}
+                className="site-nav-icon icon-btn h-9 w-9 text-stext"
                 aria-label="Account menu"
                 aria-expanded={menuOpen}
                 aria-haspopup="menu"
@@ -234,7 +230,7 @@ export default function Navbar() {
                 <div className="absolute right-0 top-full z-50 pt-2">
                 <div
                   role="menu"
-                  className="w-72 overflow-hidden rounded-lg border border-lborder bg-elevated shadow-sm"
+                  className="elev-overlay z-[60] w-72 overflow-hidden rounded-md border border-lborder bg-elevated"
                 >
                   <div className="border-b border-lborder bg-elevated/70 px-3.5 py-3.5">
                     <div className="flex items-center gap-3">
@@ -304,11 +300,7 @@ export default function Navbar() {
                   toggleMenu();
                   setMobileOpen(false);
                 }}
-                className={`site-nav-icon grid h-9 w-9 place-items-center rounded transition-colors ${
-                  menuOpen || pathname.startsWith('/login') || pathname.startsWith('/register')
-                    ? 'bg-card text-accent'
-                    : 'text-stext hover:bg-[var(--color-row-hover)] hover:text-mtext'
-                }`}
+                className="site-nav-icon icon-btn h-9 w-9 text-stext"
                 aria-label="Sign in menu"
                 aria-expanded={menuOpen}
                 aria-haspopup="menu"
@@ -319,7 +311,7 @@ export default function Navbar() {
                 <div className="absolute right-0 top-full z-50 pt-2">
                 <div
                   role="menu"
-                  className="w-72 overflow-hidden rounded-lg border border-lborder bg-elevated shadow-sm"
+                  className="elev-overlay z-[60] w-72 overflow-hidden rounded-md border border-lborder bg-elevated"
                 >
                   <div className="border-b border-lborder bg-elevated/70 px-3.5 py-3.5">
                     <p className="text-sm font-semibold text-mtext">Welcome to PakCricZone</p>

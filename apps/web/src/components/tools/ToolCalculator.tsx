@@ -15,11 +15,20 @@ import {
   type FollowOnDays,
 } from '../../lib/cricketMath';
 import { type ToolDef } from '../../lib/toolsCatalog';
-import { ToolGlyph } from './toolIcons';
-import { Field, MoreTools, ResultBox, ToolIntro, num } from './ToolShared';
+import {
+  Field,
+  SelectField,
+  ToolCheckbox,
+  ToolPage,
+  ToolPanel,
+  ResultBox,
+  num,
+} from './ToolShared';
 import ToolDls from './ToolDls';
 import ToolFantasy from './ToolFantasy';
+import ToolBookmakerMargin from './ToolBookmakerMargin';
 import ToolOdds from './ToolOdds';
+import ToolOddsMatch from './ToolOddsMatch';
 import ToolPlayerCompare from './ToolPlayerCompare';
 import ToolStoredPrediction from './ToolStoredPrediction';
 import ToolWhatIf from './ToolWhatIf';
@@ -29,19 +38,20 @@ export default function ToolCalculator({ tool }: { tool: ToolDef }) {
     case 'compare':
     case 'h2h':
       return (
-        <div className="space-y-6">
-          <ToolIntro tool={tool} />
+        <ToolPage tool={tool}>
           <CompareBoard />
-          <MoreTools currentSlug={tool.slug} />
-        </div>
+        </ToolPage>
       );
     case 'player-compare':
       return <ToolPlayerCompare tool={tool} />;
     case 'dls':
       return <ToolDls tool={tool} />;
     case 'odds':
-    case 'implied':
       return <ToolOdds tool={tool} />;
+    case 'implied':
+      return <ToolBookmakerMargin tool={tool} />;
+    case 'odds-match':
+      return <ToolOddsMatch tool={tool} />;
     case 'fantasy':
       return <ToolFantasy tool={tool} />;
     case 'what-if':
@@ -110,67 +120,36 @@ function SimpleCalculator({ tool }: { tool: ToolDef }) {
   const fields = fieldsFor(tool.kind);
 
   return (
-    <div className="space-y-6">
-      <div className="overflow-hidden rounded-md border border-lborder bg-card">
-        <div className="flex items-start gap-3 border-b border-lborder bg-secondary px-4 py-3 sm:px-5">
-          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-md border border-lborder bg-card text-accent">
-            <ToolGlyph kind={tool.kind} size={18} />
-          </span>
-          <div className="min-w-0">
-            <h1 className="text-lg font-black tracking-tight text-mtext">{tool.title}</h1>
-            <p className="mt-0.5 text-xs text-stext">{tool.blurb}</p>
-          </div>
+    <ToolPage tool={tool}>
+      <ToolPanel aside={<ResultBox value={result} />}>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {fields.map((field) => (
+            <Field
+              key={field.key}
+              label={field.label}
+              value={field.key === 'a' ? a : field.key === 'b' ? b : field.key === 'c' ? c : d}
+              onChange={field.key === 'a' ? setA : field.key === 'b' ? setB : field.key === 'c' ? setC : setD}
+            />
+          ))}
         </div>
-
-        <div className="grid grid-cols-1 gap-5 p-4 sm:p-5 lg:grid-cols-[minmax(0,1fr)_240px]">
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {fields.map((field) => (
-                <Field
-                  key={field.key}
-                  label={field.label}
-                  value={field.key === 'a' ? a : field.key === 'b' ? b : field.key === 'c' ? c : d}
-                  onChange={field.key === 'a' ? setA : field.key === 'b' ? setB : field.key === 'c' ? setC : setD}
-                />
-              ))}
-            </div>
-            {tool.kind === 'nrr' && (
-              <div className="space-y-2">
-                <Field label="Scheduled overs (if all out)" value={scheduled} onChange={setScheduled} />
-                <label className="flex items-center gap-2 text-sm text-mtext">
-                  <input type="checkbox" checked={allOutFor} onChange={(event) => setAllOutFor(event.target.checked)} />
-                  Batting side all out
-                </label>
-                <label className="flex items-center gap-2 text-sm text-mtext">
-                  <input type="checkbox" checked={allOutAgainst} onChange={(event) => setAllOutAgainst(event.target.checked)} />
-                  Bowling side dismissed opponents
-                </label>
-              </div>
-            )}
-            {tool.kind === 'follow-on' && (
-              <label className="block">
-                <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-stext">
-                  Match length
-                </span>
-                <select
-                  value={String(days)}
-                  onChange={(event) => setDays(Number(event.target.value) as FollowOnDays)}
-                  className="w-full rounded-md border border-lborder bg-secondary px-3 py-2.5 text-sm font-semibold text-mtext outline-none focus:border-accent"
-                >
-                  <option value="5">5 days — 200</option>
-                  <option value="4">4 days — 150</option>
-                  <option value="3">3 days — 150</option>
-                  <option value="2">2 days — 100</option>
-                  <option value="1">1 day — 75</option>
-                </select>
-              </label>
-            )}
+        {tool.kind === 'nrr' && (
+          <div className="space-y-3">
+            <Field label="Scheduled overs (if all out)" value={scheduled} onChange={setScheduled} />
+            <ToolCheckbox label="Batting side all out" checked={allOutFor} onChange={setAllOutFor} />
+            <ToolCheckbox label="Bowling side dismissed opponents" checked={allOutAgainst} onChange={setAllOutAgainst} />
           </div>
-          <ResultBox value={result} />
-        </div>
-      </div>
-      <MoreTools currentSlug={tool.slug} />
-    </div>
+        )}
+        {tool.kind === 'follow-on' && (
+          <SelectField label="Match length" value={String(days)} onChange={(v) => setDays(Number(v) as FollowOnDays)}>
+            <option value="5">5 days — 200</option>
+            <option value="4">4 days — 150</option>
+            <option value="3">3 days — 150</option>
+            <option value="2">2 days — 100</option>
+            <option value="1">1 day — 75</option>
+          </SelectField>
+        )}
+      </ToolPanel>
+    </ToolPage>
   );
 }
 

@@ -3,14 +3,16 @@
 import { Fragment } from 'react';
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { Search } from 'lucide-react';
+import SearchField from '../SearchField';
 import type { Match } from '../../types/index';
 import { fetchMatchesPage, fetchLiveMatches } from '../../services/matches';
+import { useDebouncedUrlQuery } from '../../hooks/useDebouncedUrlQuery';
 import { mergeLiveUpdate, useMatchStream } from '../../hooks/useMatchStream';
 import MatchCard from '../MatchCard';
 import Tabs from '../Tabs';
 import EmptyState from '../EmptyState';
 import ErrorState from '../ErrorState';
+import PageToolbar from '../PageToolbar';
 import Pagination from '../Pagination';
 import DummyAd from '../advertisements/DummyAd';
 import { MatchCardGridSkeleton } from '../skeletons/Skeletons';
@@ -38,14 +40,10 @@ export default function MatchBoard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
-  const [localSearch, setLocalSearch] = useState(q);
+  const { input: localSearch, setInput: setLocalSearch } = useDebouncedUrlQuery({ param: 'q' });
   const liveUpdate = useMatchStream(undefined, tab === 'live');
   const visibleMatches =
     tab === 'live' ? matches.filter((match) => match.status === 'live') : matches;
-
-  useEffect(() => {
-    setLocalSearch(q);
-  }, [q]);
 
   useEffect(() => {
     if (!liveUpdate) return;
@@ -88,14 +86,6 @@ export default function MatchBoard() {
     router.push(`${pathname}?${params.toString()}`, { scroll: false });
   };
 
-  const handleSearchSubmit = (value: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (value) params.set('q', value);
-    else params.delete('q');
-    params.delete('page');
-    router.push(`${pathname}?${params.toString()}`, { scroll: false });
-  };
-
   const handlePageChange = (p: number) => {
     const params = new URLSearchParams(searchParams.toString());
     if (p <= 1) {
@@ -123,23 +113,18 @@ export default function MatchBoard() {
         </div>
       </header>
 
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-lborder pb-3">
-        <Tabs tabs={TABS} active={tab} onChange={handleTabChange} />
-        <div className="relative w-full max-w-xs">
-          <Search size={14} aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-stext" />
-          <input
-            type="search"
+      <PageToolbar
+        end={
+          <SearchField
             aria-label="Search matches"
             value={localSearch}
             onChange={(e) => setLocalSearch(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') handleSearchSubmit(localSearch);
-            }}
             placeholder="Search matches…"
-            className="w-full rounded-md border border-lborder bg-card py-2 pl-9 pr-3 text-xs text-mtext outline-none focus:border-[var(--color-focus-ring)] focus:ring-2 focus:ring-[var(--color-focus-ring)]/30"
           />
-        </div>
-      </div>
+        }
+      >
+        <Tabs tabs={TABS} active={tab} onChange={handleTabChange} />
+      </PageToolbar>
 
       {loading ? (
         <MatchCardGridSkeleton />

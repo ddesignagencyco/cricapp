@@ -1,81 +1,113 @@
 'use client';
 
-import Link from 'next/link';
-import { ArrowRight, Wrench } from 'lucide-react';
-import { TOOL_GROUPS, TOOLS, toolSource } from '../../lib/toolsCatalog';
-import { ToolGlyph } from './toolIcons';
+import { useMemo } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { TOOL_GROUPS, TOOLS, type ToolGroup } from '../../lib/toolsCatalog';
+import PageToolbar from '../PageToolbar';
+import Tabs from '../Tabs';
+import type { TabItem } from '../../types/index';
+import ToolDiamondCard from './ToolDiamondCard';
+
+type ToolsTabKey = ToolGroup | 'all';
+
+const TAB_KEYS: ToolsTabKey[] = ['all', ...TOOL_GROUPS.map((g) => g.key)];
+
+function isToolsTabKey(value: string): value is ToolsTabKey {
+  return TAB_KEYS.includes(value as ToolsTabKey);
+}
+
+const TABS: TabItem[] = [
+  { key: 'all', label: 'All' },
+  { key: 'rates', label: 'Run rates' },
+  { key: 'batting', label: 'Batting' },
+  { key: 'bowling', label: 'Bowling' },
+  { key: 'match', label: 'Match' },
+  { key: 'analysis', label: 'Compare' },
+  { key: 'odds', label: 'Odds' },
+];
 
 export default function ToolsHub() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const rawTab = searchParams.get('tab') || 'all';
+  const tab: ToolsTabKey = isToolsTabKey(rawTab) ? rawTab : 'all';
+
+  const activeGroup = TOOL_GROUPS.find((g) => g.key === tab);
+  const filtered = tab === 'all' ? TOOLS : TOOLS.filter((tool) => tool.group === tab);
+  const visibleCount = filtered.length;
+
+  const handleTabChange = (newTab: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (newTab === 'all') params.delete('tab');
+    else params.set('tab', newTab);
+    router.push(params.toString() ? `${pathname}?${params.toString()}` : pathname, { scroll: false });
+  };
+
+  const tabLabel = useMemo(() => TABS.find((t) => t.key === tab)?.label?.toLowerCase() ?? tab, [tab]);
+
   return (
-    <div className="mx-auto max-w-7xl space-y-10 px-4 py-8 sm:px-6">
-      <header className="elev-card overflow-hidden rounded-2xl border border-lborder bg-card">
-        <div className="flex flex-col gap-5 p-5 sm:flex-row sm:items-end sm:justify-between sm:p-7">
-          <div className="min-w-0">
-            <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-stext">
-              <Wrench size={14} className="text-accent" />
-              Calculators
-            </p>
-            <h1 className="mt-2 text-3xl font-black tracking-tight text-mtext sm:text-4xl">Tools</h1>
-            <p className="mt-2 max-w-xl text-sm leading-relaxed text-stext">
-              Most tools run in the browser from the numbers you type. Player and H2H tools only read stored directory data.
+    <div className="space-y-5">
+      <header>
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wider text-accent">Calculators</p>
+            <h1 className="mt-1 text-2xl font-semibold text-mtext">Cricket Tools</h1>
+            <p className="mt-1 max-w-2xl text-sm text-stext">
+              Run rates, averages, match logic, comparisons and odds — most run in your browser; API tools use live or
+              stored data.
             </p>
           </div>
-          <p className="shrink-0 text-xs text-stext">
-            <span className="font-semibold tabular-nums text-mtext">{TOOLS.length}</span> tools
+          <p className="text-xs text-stext">
+            <span className="font-semibold tabular-nums text-mtext">{visibleCount}</span> {tabLabel}
           </p>
         </div>
       </header>
 
-      {TOOL_GROUPS.map((group) => {
-        const tools = TOOLS.filter((tool) => tool.group === group.key);
-        if (tools.length === 0) return null;
-        return (
-          <section key={group.key}>
-            <div className="mb-3.5">
-              <h2 className="text-sm font-bold tracking-tight text-mtext">{group.title}</h2>
-              <p className="mt-0.5 text-xs text-stext">{group.hint}</p>
-            </div>
-            <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {tools.map((tool) => {
-                const source = toolSource(tool.kind);
-                return (
-                  <li key={tool.slug}>
-                    <Link
-                      href={`/tools/${tool.slug}`}
-                      className="elev-card group flex h-full flex-col rounded-2xl border border-lborder bg-card p-4 transition-colors hover:border-accent/50 hover:bg-[var(--color-row-hover)]"
-                    >
-                      <div className="flex items-start gap-3">
-                        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-accent/15 bg-accent/10 text-accent">
-                          <ToolGlyph kind={tool.kind} size={18} />
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-start justify-between gap-2">
-                            <p className="font-bold leading-snug text-mtext">{tool.title}</p>
-                            <span
-                              className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
-                                source === 'formula'
-                                  ? 'bg-secondary text-stext'
-                                  : 'bg-accent/10 text-accent'
-                              }`}
-                            >
-                              {source === 'formula' ? 'Formula' : 'Stored'}
-                            </span>
-                          </div>
-                          <p className="mt-1.5 text-xs leading-relaxed text-stext">{tool.blurb}</p>
-                        </div>
-                      </div>
-                      <p className="mt-auto flex items-center gap-1 pt-4 text-xs font-semibold text-accent">
-                        Open
-                        <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" />
-                      </p>
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
-        );
-      })}
+      <PageToolbar>
+        <div className="no-scrollbar max-w-full overflow-x-auto">
+          <Tabs tabs={TABS} active={tab} onChange={handleTabChange} />
+        </div>
+      </PageToolbar>
+
+      {activeGroup ? (
+        <p className="text-sm text-stext">{activeGroup.hint}</p>
+      ) : tab === 'all' ? (
+        <p className="text-sm text-stext">All calculators in one place, grouped by category below.</p>
+      ) : null}
+
+      {tab === 'all' ? (
+        <div className="space-y-8">
+          {TOOL_GROUPS.map((group) => {
+            const tools = TOOLS.filter((tool) => tool.group === group.key);
+            if (tools.length === 0) return null;
+            return (
+              <section key={group.key}>
+                <div className="mb-3.5">
+                  <h2 className="text-sm font-bold tracking-tight text-mtext">{group.title}</h2>
+                  <p className="mt-0.5 text-xs text-stext">{group.hint}</p>
+                </div>
+                <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                  {tools.map((tool) => (
+                    <li key={tool.slug}>
+                      <ToolDiamondCard tool={tool} />
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            );
+          })}
+        </div>
+      ) : (
+        <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {filtered.map((tool) => (
+            <li key={tool.slug}>
+              <ToolDiamondCard tool={tool} />
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

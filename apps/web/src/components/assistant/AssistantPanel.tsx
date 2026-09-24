@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Loader2, Send, X } from 'lucide-react';
-import CricketBallIcon from './CricketBallIcon';
+import { Bot, Loader2, Send, X } from 'lucide-react';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { ApiError } from '../../services/api/client';
 import { askAssistant, type AssistantAskBody, type AssistantAskResponse } from '../../services/assistant';
@@ -25,11 +24,14 @@ function formatMessageTime(at: number): string {
   return new Date(at).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 }
 
-function BallAvatar() {
+function AssistantBusyBubble() {
   return (
-    <span className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-brand text-brand-fg">
-      <CricketBallIcon size={14} strokeWidth={2.4} />
-    </span>
+    <div className="flex w-fit max-w-[88%] flex-col items-start">
+      <p className="inline-flex items-center gap-2 rounded-[1.15rem] bg-secondary px-3.5 py-2 text-xs font-semibold text-stext">
+        <Loader2 size={14} className="animate-spin" aria-hidden />
+        Reading stored stats…
+      </p>
+    </div>
   );
 }
 
@@ -137,7 +139,7 @@ export default function AssistantPanel({
         <header className="flex shrink-0 items-center justify-between gap-3 bg-brand px-5 py-3 text-brand-fg">
           <div className="flex items-center gap-3">
             <span className="grid h-9 w-9 place-items-center rounded-full bg-white text-brand">
-              <CricketBallIcon size={18} strokeWidth={2.25} />
+              <Bot size={20} strokeWidth={2.15} aria-hidden />
             </span>
             <div>
               <h2 id="assistant-title" className="text-[15px] font-semibold tracking-tight text-brand-fg">
@@ -161,9 +163,8 @@ export default function AssistantPanel({
 
         <div ref={listRef} className="native-scrollbar min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain bg-card px-4 py-4">
           {items.length === 0 ? (
-            <div className="flex items-start gap-2">
-              <BallAvatar />
-              <p className="w-fit max-w-[88%] rounded-[1.15rem] bg-secondary px-3.5 py-2 text-sm leading-relaxed text-mtext">
+            <div className="flex w-fit max-w-[88%] flex-col items-start">
+              <p className="rounded-[1.15rem] bg-secondary px-3.5 py-2 text-sm leading-relaxed text-mtext">
                 Ask about matches, players, or news.
               </p>
             </div>
@@ -172,7 +173,7 @@ export default function AssistantPanel({
           {items.map((item) =>
             item.role === 'user' ? (
               <div key={item.id} className="ml-auto flex w-fit max-w-[80%] flex-col items-end">
-                <p className="rounded-[1.15rem] bg-secondary px-3.5 py-2 text-sm font-medium leading-snug text-mtext">
+                <p className="rounded-[1.15rem] bg-brand px-3.5 py-2 text-sm font-medium leading-snug text-brand-fg">
                   {item.text}
                 </p>
                 <time className="mt-1 text-right text-[11px] text-stext" dateTime={new Date(item.at).toISOString()}>
@@ -180,49 +181,38 @@ export default function AssistantPanel({
                 </time>
               </div>
             ) : (
-              <div key={item.id} className="flex items-start gap-2">
-                <BallAvatar />
-                <div className="min-w-0 flex-1 space-y-2">
-                  <p
-                    className={`w-fit max-w-full whitespace-pre-wrap rounded-[1.15rem] px-3.5 py-2 text-sm leading-relaxed ${
-                      item.error ? 'bg-danger-soft text-danger' : 'bg-secondary text-mtext'
-                    }`}
-                  >
-                    {item.text}
-                  </p>
-                  {item.reply ? (
-                    <div className="overflow-hidden rounded-[1.15rem] bg-card ring-1 ring-lborder">
-                      {item.reply.llmNarrative ? (
-                        <p className="px-3 pt-2 text-[10px] font-bold uppercase tracking-wider text-stext">
-                          Narrative from stored facts
-                        </p>
-                      ) : null}
-                      <div className="p-1">
-                        <AnswerBoard reply={item.reply} />
-                      </div>
-                      <div className="px-3 pb-2">
-                        <UnavailableBanner items={item.reply.unavailable} answerText={item.text} />
-                        <SourceChips sources={item.reply.sources} />
-                      </div>
+              <div key={item.id} className="flex w-fit max-w-[88%] flex-col items-start space-y-2">
+                <p
+                  className={`w-fit max-w-full whitespace-pre-wrap rounded-[1.15rem] px-3.5 py-2 text-sm leading-relaxed ${
+                    item.error ? 'bg-danger-soft text-danger' : 'bg-secondary text-mtext'
+                  }`}
+                >
+                  {item.text}
+                </p>
+                {item.reply ? (
+                  <div className="w-full overflow-hidden rounded-[1.15rem] bg-card ring-1 ring-lborder">
+                    {item.reply.llmNarrative ? (
+                      <p className="px-3 pt-2 text-[10px] font-bold uppercase tracking-wider text-stext">
+                        Narrative from stored facts
+                      </p>
+                    ) : null}
+                    <div className="p-1">
+                      <AnswerBoard reply={item.reply} />
                     </div>
-                  ) : null}
-                  <time className="block text-left text-[11px] text-stext" dateTime={new Date(item.at).toISOString()}>
-                    {formatMessageTime(item.at)}
-                  </time>
-                </div>
+                    <div className="px-3 pb-2">
+                      <UnavailableBanner items={item.reply.unavailable} answerText={item.text} />
+                      <SourceChips sources={item.reply.sources} />
+                    </div>
+                  </div>
+                ) : null}
+                <time className="text-left text-[11px] text-stext" dateTime={new Date(item.at).toISOString()}>
+                  {formatMessageTime(item.at)}
+                </time>
               </div>
             ),
           )}
 
-          {busy ? (
-            <div className="flex items-center gap-2">
-              <BallAvatar />
-              <p className="inline-flex items-center gap-2 text-xs font-semibold text-stext">
-                <Loader2 size={14} className="animate-spin" />
-                Reading stored stats…
-              </p>
-            </div>
-          ) : null}
+          {busy ? <AssistantBusyBubble /> : null}
         </div>
 
         <div className="shrink-0 bg-card px-5 pb-[max(0.85rem,env(safe-area-inset-bottom))] pt-2">

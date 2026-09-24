@@ -50,3 +50,34 @@ export async function fetchTeamResults(
   const res = await apiGet(`/teams/${entityIdPath(idOrAbbr)}/results`, { page: 1, limit: 50, ...params });
   return extractPage<SportEventRecord>(res).items;
 }
+
+/** One in-flight catalog fetch for compare / team pickers (avoids duplicate pagination storms). */
+let teamsCatalogPromise: Promise<Team[]> | null = null;
+
+export async function fetchTeamsCatalog(maxPages = 4): Promise<Team[]> {
+  if (teamsCatalogPromise) return teamsCatalogPromise;
+
+  teamsCatalogPromise = (async () => {
+    const first = await fetchTeamsPage({ limit: 100, page: 1 });
+    const extraPages = Math.min(Math.max(first.totalPages - 1, 0), maxPages - 1);
+    const rest =
+      extraPages > 0
+        ? await Promise.all(
+            Array.from({ length: extraPages }, (_, i) => fetchTeamsPage({ limit: 100, page: i + 2 })),
+          )
+        : [];
+    const seen = new Set<string>();
+    const all: Team[] = [];
+    for (const team of [...first.items, ...rest.flatMap((page) => page.items)]) {
+      if (!team.id || seen.has(team.id)) continue;
+      seen.add(team.id);
+      all.push(team);
+    }
+    return all.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  })().catch((err) => {
+    teamsCatalogPromise = null;
+    throw err;
+  });
+
+  return teamsCatalogPromise;
+}

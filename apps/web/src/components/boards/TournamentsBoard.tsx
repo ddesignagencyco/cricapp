@@ -2,15 +2,18 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { Search, Trophy, X } from 'lucide-react';
+import { X } from 'lucide-react';
+import SearchField from '../SearchField';
 import { str } from '../../utils/extract';
 import type { TournamentApi } from '../../types/index';
+import { useDebouncedUrlQuery } from '../../hooks/useDebouncedUrlQuery';
 import { fetchTournamentsPage } from '../../services/tournaments';
 import EmptyState from '../EmptyState';
 import ErrorState from '../ErrorState';
 import Pagination from '../Pagination';
 import { DirectoryGridSkeleton } from '../skeletons/Skeletons';
 import { filterChipClass, filterChipCountClass } from '../ui/filterChip';
+import DirectoryPageHeader from '../DirectoryPageHeader';
 import TournamentCard from '../TournamentCard';
 
 const LIMIT = 20;
@@ -32,7 +35,7 @@ export default function TournamentsBoard({ initialCountry }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
-  const [localSearch, setLocalSearch] = useState(search);
+  const { input: localSearch, setInput: setLocalSearch } = useDebouncedUrlQuery({ param: 'q' });
   const [formatFilter, setFormatFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState(initialCountry || 'all');
 
@@ -60,10 +63,6 @@ export default function TournamentsBoard({ initialCountry }: Props) {
       cancelled = true;
     };
   }, [page, search, retryKey]);
-
-  useEffect(() => {
-    setLocalSearch(search);
-  }, [search]);
 
   const totalPages = Math.max(1, Math.ceil((total || 0) / LIMIT));
 
@@ -98,17 +97,6 @@ export default function TournamentsBoard({ initialCountry }: Props) {
 
   const activeFilters = formatFilter !== 'all' || categoryFilter !== 'all';
 
-  const handleSearchSubmit = (value: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (value) params.set('q', value);
-    else {
-      params.delete('q');
-      params.delete('search');
-    }
-    params.delete('page');
-    router.push(`${pathname}?${params.toString()}`, { scroll: false });
-  };
-
   const handlePageChange = (p: number) => {
     const params = new URLSearchParams(searchParams.toString());
     if (p <= 1) {
@@ -121,50 +109,23 @@ export default function TournamentsBoard({ initialCountry }: Props) {
 
   return (
     <div className="space-y-5">
-      <header className="rounded-md border border-lborder bg-card p-5 sm:p-6">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-          <div className="max-w-2xl">
-            <p className="inline-flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-accent">
-              <Trophy size={13} />
-              Global competitions & leagues
-            </p>
-            <h1 className="mt-2 text-2xl font-semibold text-mtext">Cricket Tournaments</h1>
-            <p className="mt-1 text-sm leading-relaxed text-stext">
-              International trophies, premier T20 leagues, Test championships and domestic cups.
-            </p>
-          </div>
-          <div className="flex items-center gap-3 rounded-md border border-lborder bg-secondary px-4 py-3">
-            <div className="btn-brand grid h-9 w-9 place-items-center rounded-md">
-              <Trophy size={18} />
-            </div>
-            <div>
-              <p className="text-lg font-semibold leading-none text-mtext">{total || tournaments.length}</p>
-              <p className="mt-1 text-xs font-medium uppercase tracking-wider text-stext">Competitions</p>
-            </div>
-          </div>
-        </div>
-      </header>
+      <DirectoryPageHeader
+        eyebrow="Global competitions & leagues"
+        title="Cricket Tournaments"
+        description="International trophies, premier T20 leagues, Test championships and domestic cups."
+        count={total || tournaments.length}
+        countLabel="competitions"
+      />
 
       <div className="space-y-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="relative max-w-md flex-1">
-            <Search
-              size={16}
-              aria-hidden="true"
-              className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-stext"
-            />
-            <input
-              type="search"
-              aria-label="Search tournaments"
-              value={localSearch}
-              onChange={(e) => setLocalSearch(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleSearchSubmit(localSearch);
-              }}
-              placeholder="Search tournaments by title, format or country…"
-              className="w-full rounded-md border border-lborder bg-card py-2.5 pl-10 pr-4 text-sm text-mtext outline-none transition-colors focus:border-[var(--color-focus-ring)] focus:bg-elevated focus:ring-2 focus:ring-[var(--color-focus-ring)]/30"
-            />
-          </div>
+          <SearchField
+            wrapperClassName="max-w-md flex-1"
+            aria-label="Search tournaments"
+            value={localSearch}
+            onChange={(e) => setLocalSearch(e.target.value)}
+            placeholder="Search tournaments by title, format or country…"
+          />
           {activeFilters && (
             <button
               type="button"

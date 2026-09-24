@@ -10,6 +10,7 @@ import RemoteImage from '../RemoteImage';
 import EntityAvatar from '../EntityAvatar';
 import { AdminLoader, AdminTableSkeleton, type AdminLoadingVariant } from '../skeletons/Skeletons';
 import useFocusTrap from '../../hooks/useFocusTrap';
+import SearchField from '../SearchField';
 
 export function AdminEntityLink({
   href,
@@ -329,7 +330,7 @@ export function ConfirmDialog({
 
 const inputBase: React.CSSProperties = {
   width: '100%',
-  borderRadius: '0.25rem',
+  borderRadius: 'var(--radius-md)',
   border: '1px solid var(--admin-border)',
   background: 'var(--admin-input-bg)',
   color: 'var(--admin-text)',
@@ -351,6 +352,21 @@ export const AdminInput = forwardRef<HTMLInputElement, React.InputHTMLAttributes
   )
 );
 AdminInput.displayName = 'AdminInput';
+
+/** Admin list filters — same 3D pill as the public site (`.admin-shell .search-pill`). */
+export function AdminSearchField({
+  wrapperClassName,
+  iconClassName,
+  ...props
+}: React.ComponentProps<typeof SearchField>) {
+  return (
+    <SearchField
+      wrapperClassName={wrapperClassName}
+      iconClassName={iconClassName ?? 'text-[var(--admin-text-muted)]'}
+      {...props}
+    />
+  );
+}
 
 export const AdminSelect = forwardRef<HTMLSelectElement, React.SelectHTMLAttributes<HTMLSelectElement>>(
   ({ style, children, className, ...props }, ref) => (
@@ -635,8 +651,8 @@ export function AdminAvatar({
         alt={name}
         width={size}
         height={size}
-        className="shrink-0 rounded-full bg-entity-avatar object-cover"
-        style={{ width: size, height: size, border: '1px solid var(--admin-border)' }}
+        className="avatar-3d shrink-0 rounded-full bg-entity-avatar object-cover"
+        style={{ width: size, height: size }}
       />
     );
   }

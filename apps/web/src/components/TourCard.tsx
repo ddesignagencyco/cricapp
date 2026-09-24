@@ -6,6 +6,7 @@ import type { Tour } from '../types/index';
 import FavoriteButton from './FavoriteButton';
 import ShareButton from './ShareButton';
 import EntityAvatar from './EntityAvatar';
+import { directoryRowCard } from './ui/interaction';
 
 export default function TourCard({ tour }: { tour: Tour }) {
   const country = str(tour.category) || 'International';
@@ -16,7 +17,7 @@ export default function TourCard({ tour }: { tour: Tour }) {
   const name = tour.name || 'Tour';
 
   return (
-    <article className="elev-card group flex items-center gap-3 rounded-md border border-lborder bg-card p-3.5 transition-colors hover:border-accent/50 hover:bg-[var(--color-row-hover)]">
+    <article className={directoryRowCard}>
       <Link href={href} className="flex min-w-0 flex-1 items-center gap-3">
         <EntityAvatar className="h-12 w-12 text-sm" title={name}>
           {getInitials(name)}

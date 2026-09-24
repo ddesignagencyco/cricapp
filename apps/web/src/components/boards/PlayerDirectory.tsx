@@ -2,13 +2,15 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { Search, Users } from 'lucide-react';
+import SearchField from '../SearchField';
+import DirectoryPageHeader from '../DirectoryPageHeader';
 import PlayerCard from '../PlayerCard';
 import EmptyState from '../EmptyState';
 import ErrorState from '../ErrorState';
 import Pagination from '../Pagination';
 import DummyAd from '../advertisements/DummyAd';
 import { DirectoryGridSkeleton } from '../skeletons/Skeletons';
+import { useDebouncedUrlQuery } from '../../hooks/useDebouncedUrlQuery';
 import { fetchPlayersPage } from '../../services/players';
 import type { Player } from '../../types/index';
 
@@ -44,7 +46,7 @@ export default function PlayerDirectory({ initialPlayers = [], initialTotal = 0 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
-  const [localSearch, setLocalSearch] = useState(search);
+  const { input: localSearch, setInput: setLocalSearch } = useDebouncedUrlQuery({ param: 'search' });
   const [roleFilter, setRoleFilter] = useState('all');
 
   // Load players when page or search changes
@@ -96,18 +98,6 @@ export default function PlayerDirectory({ initialPlayers = [], initialTotal = 0 
     return list;
   }, [players, roleFilter]);
 
-  const handleSearchSubmit = (value: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    const val = value.trim();
-    if (val) {
-      params.set('search', val);
-    } else {
-      params.delete('search');
-    }
-    params.delete('page');
-    router.push(`${pathname}?${params.toString()}`, { scroll: false });
-  };
-
   const handlePageChange = (p: number) => {
     const params = new URLSearchParams(searchParams.toString());
     if (p <= 1) {
@@ -120,34 +110,13 @@ export default function PlayerDirectory({ initialPlayers = [], initialTotal = 0 
 
   return (
     <div className="space-y-5">
-      <header className="rounded-md border border-lborder bg-card p-5 sm:p-6">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-          <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-accent">
-              <Users size={13} />
-              <span>International & League Athletes</span>
-            </div>
-            <h1 className="mt-2 text-2xl font-semibold text-mtext">
-              Cricket Players Directory
-            </h1>
-            <p className="mt-1 max-w-2xl text-sm leading-relaxed text-stext">
-              Explore profiles, batting & bowling styles, career statistics, and team affiliations for world-class cricketers and emerging stars.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3 rounded-md border border-lborder bg-secondary px-4 py-3">
-            <div className="btn-brand grid h-9 w-9 place-items-center rounded-md">
-              <Users size={18} />
-            </div>
-            <div>
-              <div className="text-lg font-semibold leading-none text-mtext">{total}</div>
-              <div className="mt-1 text-xs font-medium uppercase tracking-wider text-stext">
-                Total Athletes
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
+      <DirectoryPageHeader
+        eyebrow="International & league athletes"
+        title="Cricket Players Directory"
+        description="Explore profiles, batting and bowling styles, and team affiliations for international and league cricketers."
+        count={total}
+        countLabel="players"
+      />
 
       {!loading && !error && filtered.length > 0 ? (
         <DummyAd size="leaderboard" placement="players-after-intro" />
@@ -155,24 +124,13 @@ export default function PlayerDirectory({ initialPlayers = [], initialTotal = 0 
 
       {/* Search & Role Filters */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative flex-1 max-w-md">
-          <Search
-            size={16}
-            aria-hidden="true"
-            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-stext"
-          />
-          <input
-            type="search"
-            aria-label="Search players"
-            value={localSearch}
-            onChange={(e) => setLocalSearch(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') handleSearchSubmit(localSearch);
-            }}
-            placeholder="Search players by name, team, role, nationality…"
-            className="w-full rounded-md border border-lborder bg-card py-2.5 pl-10 pr-4 text-sm text-mtext outline-none transition-colors focus:border-[var(--color-focus-ring)] focus:bg-elevated focus:ring-2 focus:ring-[var(--color-focus-ring)]/30"
-          />
-        </div>
+        <SearchField
+          wrapperClassName="max-w-md flex-1"
+          aria-label="Search players"
+          value={localSearch}
+          onChange={(e) => setLocalSearch(e.target.value)}
+          placeholder="Search players by name, team, role, nationality…"
+        />
 
         {/* Role Filter Chips */}
         {roles.length > 1 && (

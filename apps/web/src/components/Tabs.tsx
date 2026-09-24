@@ -20,7 +20,7 @@ export default function Tabs({ tabs, active, onChange, className = '', size = 'm
       className={
         isTags
           ? `flex flex-wrap gap-1.5 ${className}`
-          : `inline-flex w-full max-w-full flex-wrap gap-1 rounded-md bg-secondary p-1 ring-1 ring-lborder sm:w-auto ${className}`
+          : `tabs-segment w-full max-w-full sm:w-auto ${className}`
       }
       role="tablist"
     >
@@ -34,18 +34,16 @@ export default function Tabs({ tabs, active, onChange, className = '', size = 'm
             role="tab"
             aria-selected={isActive}
             onClick={() => onChange(tab.key)}
-            className={`flex items-center gap-1.5 font-semibold transition-colors duration-150 ${pad} ${
+            className={`tab-pill flex items-center gap-1.5 ${pad} ${
               isTags
-                ? `rounded-full border ${
+                ? `rounded-lg border ${
                     isActive
-                      ? 'btn-brand border-transparent'
-                      : 'border-lborder bg-transparent text-stext hover:border-border-strong hover:text-mtext'
+                      ? 'tab-tag--active border-transparent'
+                      : 'tab-pill--idle border-border-strong text-mtext'
                   }`
-                : `rounded-md ${
-                    isActive
-                      ? 'btn-brand'
-                      : 'text-stext hover:bg-[var(--color-row-hover)] hover:text-mtext'
-                  }`
+                : isActive
+                  ? 'tab-pill--active'
+                  : 'tab-pill--idle'
             }`}
           >
             {Icon && <Icon size={size === 'sm' || isTags ? 14 : 16} strokeWidth={2.2} aria-hidden="true" />}
@@ -53,7 +51,9 @@ export default function Tabs({ tabs, active, onChange, className = '', size = 'm
             {typeof tab.count === 'number' && (
               <span
                 className={`rounded-full px-1.5 text-xs font-semibold tabular-nums ${
-                  isActive ? 'bg-white/20 text-white' : 'bg-[var(--color-neutral-soft)] text-stext'
+                  isActive
+                    ? 'tab-pill__count--active'
+                    : 'bg-[var(--color-neutral-soft)] text-stext'
                 }`}
               >
                 {tab.count}

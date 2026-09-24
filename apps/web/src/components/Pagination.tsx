@@ -62,7 +62,7 @@ export default function Pagination({ page, totalPages, total, limit, className =
             type="button"
             onClick={() => onPageChange(Math.max(1, safePage - 1))}
             disabled={safePage <= 1}
-            className="grid h-9 w-9 place-items-center rounded border border-lborder bg-card text-stext transition-colors hover:border-border-strong hover:text-mtext focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] disabled:pointer-events-none disabled:opacity-40"
+            className="pagination-btn"
             aria-label="Previous page"
           >
             <ChevronLeft size={16} />
@@ -78,11 +78,7 @@ export default function Pagination({ page, totalPages, total, limit, className =
                 onClick={() => onPageChange(p)}
                 aria-current={p === safePage ? 'page' : undefined}
                 aria-label={`Page ${p}`}
-                className={`grid h-9 w-9 place-items-center rounded border text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] ${
-                  p === safePage
-                    ? 'btn-brand border-transparent'
-                    : 'border-lborder bg-card text-stext hover:border-border-strong hover:text-mtext'
-                }`}
+                className={`pagination-btn ${p === safePage ? 'pagination-btn--current' : ''}`}
               >
                 {p}
               </button>
@@ -93,7 +89,7 @@ export default function Pagination({ page, totalPages, total, limit, className =
             type="button"
             onClick={() => onPageChange(Math.min(safeTotalPages, safePage + 1))}
             disabled={safePage >= safeTotalPages}
-            className="grid h-9 w-9 place-items-center rounded border border-lborder bg-card text-stext transition-colors hover:border-border-strong hover:text-mtext focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] disabled:pointer-events-none disabled:opacity-40"
+            className="pagination-btn"
             aria-label="Next page"
           >
             <ChevronRight size={16} />
