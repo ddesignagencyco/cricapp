@@ -542,8 +542,8 @@
 - [x] Advertising restriction flags before public odds UI (`ODDS_PUBLIC_ENABLED` default false)
 
 ### 14.4 Frontend (after API + compliance)
-- [ ] `/odds/[match-slug]` page
-- [ ] Movement charts and source timestamps
+- [x] `/odds/[match-slug]` page
+- [x] Movement charts and source timestamps
 
 ---
 
