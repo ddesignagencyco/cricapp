@@ -35,7 +35,9 @@ async function readPrevious(matchId) {
 /**
  * Optional live ball-by-ball capture: fetch timeline delta since the last
  * known sequence and buffer the new entries in a Redis list keyed to the
- * match. Gated by LIVE_TIMELINE_DELTAS=true.
+ * match. Gated by LIVE_TIMELINE_DELTAS=true. Buffers are supplementary to
+ * the full snapshots persisted by maybeSnapshotLiveTimeline and are cleared
+ * when the match leaves live — never persisted as a completed timeline.
  */
 async function captureLiveTimelineDelta(matchId) {
   const lastSeq = Number(await redis.get(SEQ_KEY(matchId)) || 0);
@@ -53,18 +55,12 @@ async function captureLiveTimelineDelta(matchId) {
 }
 
 /**
- * Flush buffered live-timeline entries into match_timelines on transition
- * to completed/cancelled, then clean up the Redis buffers.
+ * Clear live timeline Redis state (delta buffer, sequence, snapshot counter)
+ * after a match leaves live. Never refetches: the retained match_timelines
+ * row is the completed match's final stored timeline.
  */
-async function flushLiveTimelineIfFinished(matchId, status) {
-  if (status === 'live') return;
+async function clearLiveTimelineState(matchId) {
   await redis.del(BUF_KEY(matchId), SEQ_KEY(matchId), SNAPSHOT_KEY(matchId));
-  try {
-    const raw = await fetchMatchTimeline(matchId);
-    await saveMatchTimeline(matchId, raw);
-  } catch (err) {
-    console.warn(`[ingest] full timeline fetch failed for ${matchId}: ${err.message}`);
-  }
 }
 
 /** Periodic full timeline fetch during live play (when deltas are off or as backup). */
@@ -99,16 +95,11 @@ async function processLiveMatch(id) {
     if (DELTAS_ENABLED) {
       await captureLiveTimelineDelta(id);
     }
-  } else if (DELTAS_ENABLED) {
-    await flushLiveTimelineIfFinished(id, next.status);
   } else {
-    await redis.del(SNAPSHOT_KEY(id));
-    try {
-      const raw = await fetchMatchTimeline(id);
-      await saveMatchTimeline(id, raw);
-    } catch (err) {
-      console.warn(`[ingest] full timeline fetch failed for ${id}: ${err.message}`);
-    }
+    // Match is no longer live: retain the final stored timeline as-is. The
+    // completed match page reads these exact records — do not refetch or
+    // reinsert the full timeline after completion.
+    await clearLiveTimelineState(id);
   }
 }
 

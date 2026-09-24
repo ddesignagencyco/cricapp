@@ -6,6 +6,7 @@ import {
   buildTeamFromTournamentTeam,
 } from './teamMeta.js';
 import { normalizeLineups, normalizeMatch } from './normalize.js';
+import { dedupeTimelineEvents } from './reference.js';
 import { PROVIDERS } from './schemas.js';
 import {
   buildPlayerFromProfile,
@@ -579,7 +580,7 @@ export async function saveScopedProviderPayload({ kind, scopeKey, eventId, paylo
 }
 
 export async function saveMatchTimeline(matchId, payload) {
-  await query(upsertMatchTimeline, [matchId, JSON.stringify(payload)]);
+  await query(upsertMatchTimeline, [matchId, JSON.stringify(dedupeTimelineEvents(payload))]);
   return 1;
 }
 
@@ -722,17 +723,30 @@ export async function countEventIdsWithoutTimeline() {
     `SELECT COUNT(DISTINCT ser.event_id)::int AS count
      FROM sport_event_records ser
      LEFT JOIN match_timelines mt ON mt.match_id = ser.event_id
-     WHERE mt.match_id IS NULL AND ser.event_id IS NOT NULL`,
+     LEFT JOIN matches m ON m.match_id = ser.event_id
+     WHERE mt.match_id IS NULL
+       AND ser.event_id IS NOT NULL
+       AND (m.match_id IS NULL OR m.status NOT IN ('live', 'upcoming'))`,
   );
   return r.rows[0]?.count ?? 0;
 }
 
+/**
+ * Match ids from sport_event_records that do not yet have a timeline, most
+ * recently scheduled first — the auto-derived timeline sync queue. Live and
+ * upcoming matches are excluded: temporarily live matches are owned by the
+ * live poll loop, and upcoming matches have no play to capture yet. This
+ * queue is therefore a one-shot history fill for finished matches only.
+ */
 export async function listEventIdsWithoutTimeline({ limit = 20 } = {}) {
   const r = await query(
     `SELECT ser.event_id AS event_id
      FROM sport_event_records ser
      LEFT JOIN match_timelines mt ON mt.match_id = ser.event_id
-     WHERE mt.match_id IS NULL AND ser.event_id IS NOT NULL
+     LEFT JOIN matches m ON m.match_id = ser.event_id
+     WHERE mt.match_id IS NULL
+       AND ser.event_id IS NOT NULL
+       AND (m.match_id IS NULL OR m.status NOT IN ('live', 'upcoming'))
      GROUP BY ser.event_id
      ORDER BY MAX(ser.scheduled) DESC NULLS LAST
      LIMIT $1`,

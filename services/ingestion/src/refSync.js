@@ -522,6 +522,10 @@ export async function refSyncAll(options = {}) {
     await runStale('matchSummary', id, REF_CADENCE.matchSummary, () => syncMatchSummary(id), delay);
   }
 
+  // Timeline queue: finished match ids that still lack a timeline, most recent
+  // first. Fetched once ever — live and upcoming matches are excluded (the
+  // live poll loop owns live snapshots), and rows are never refetched after
+  // a match is stored.
   const derivedMatchIds = await listEventIdsWithoutTimeline({ limit: timelineLimit });
   for (const id of [...new Set([...derivedMatchIds, ...matchIds])]) {
     await runStale('timeline', id, REF_CADENCE.timeline, () => syncMatchTimeline(id), delay);
