@@ -13,7 +13,7 @@
     }
   },
   "scripts": {
-    "lint": "node --check src/schema.js src/redis.js src/index.js",
-    "test": "node --test test/redis.test.js test/schema.test.js"
+    "lint": "node --check src/schema.js src/schema.constants.js src/redis.js src/odds.math.js src/index.js",
+    "test": "node --test test/redis.test.js test/schema.test.js test/odds.math.test.js"
   }
 }

@@ -7,6 +7,7 @@ import { syncPsAll } from './pslSync.js';
 import { startReferenceSync } from './refSync.js';
 import { startNewsSync } from './newsSync.js';
 import { startStreamsSync } from './streamsSync.js';
+import { startOddsSync } from './oddsSync.js';
 import { createLogger } from './logger.js';
 
 export { computeRunRate, normalizeMatch, normalizeLineups } from './normalize.js';
@@ -143,6 +144,7 @@ ping()
     // RSS/streams do not use the Sportradar quota.
     startNewsSync().catch((err) => log.error('news sync start failed', { error: err.message }));
     startStreamsSync();
+    startOddsSync();
 
     try {
       await pollOnce();

@@ -53,6 +53,9 @@ export const redisKeys = {
   pslSquads: (seasonId: string) => `psl:${seasonId}:squads`,
   newsList: () => 'news:list',
   newsArticle: (id: string) => `news:article:${id}`,
+  ingestionHeartbeat: () => 'ingestion:heartbeat',
+  oddsMovementChannel: () => 'odds:movement',
+  oddsMatch: (matchId: string) => `odds:match:v1:${matchId}`,
 };
 
 export const REDIS_TTL = {

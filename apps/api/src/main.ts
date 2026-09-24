@@ -54,6 +54,7 @@ async function bootstrap() {
     .addTag('notifications', 'FCM device registration and notification preferences')
     .addTag('search', 'Unified search across players, teams, matches and tournaments')
     .addTag('predictions', 'Pre-match and live statistical winner probabilities')
+    .addTag('odds', 'Licensed odds comparison, movement and conversion tools')
     .addTag('assistant', 'Retrieve-then-explain cricket Q&A from stored sports data')
     .addTag('admin', 'Admin CMS, moderation and platform analytics')
     .addTag('newsletter', 'Newsletter subscription management')

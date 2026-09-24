@@ -26,6 +26,7 @@ class MockRedisService {
       srem: async () => null,
       keys: async () => [],
       ping: async () => 'PONG',
+      oddsMatch: (matchId: string) => null,
     };
   }
   get subscriber() {
@@ -54,6 +55,8 @@ export async function setupTestApp(): Promise<TestContext> {
           OPENAI_API_KEY: '',
           OPENCODE_API_KEY: '',
           OPENCODE_GO_API_KEY: '',
+          ODDS_PUBLIC_ENABLED: 'true',
+          ODDS_ALLOWED_REGIONS: '*',
         };
         return key in overrides ? overrides[key] : fallback;
       },
@@ -86,6 +89,9 @@ export async function cleanDatabase(prisma: PrismaService): Promise<void> {
     'prediction_features',
     'prediction_runs',
     'prediction_calibrations',
+    'odds_snapshots',
+    'odds_markets',
+    'odds_sources',
     'gallery_media',
     'contact_submissions',
     'newsletter_subscribers',
