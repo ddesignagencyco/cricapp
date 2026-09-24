@@ -1016,3 +1016,27 @@ export async function saveTournamentTeams(tournamentInfo) {
   await saveTeamsPlayers({ teams, players: [] });
   return teams.length;
 }
+
+/**
+ * Persist tournaments/{id}/info.json for a tournament: store the raw `groups`
+ * array (each group carries the tournament's teams) on the tournaments row so
+ * the API can re-serve the full tournament + teams shape, and flatten the
+ * teams into the teams table for lookups. Sets groups to NULL when the info
+ * payload carries none.
+ */
+export async function saveTournamentInfo(tournamentId, tournamentInfo) {
+  let teamCount = 0;
+  const groups = tournamentInfo?.groups ?? null;
+  if (groups) {
+    teamCount = await saveTournamentTeams(tournamentInfo);
+  }
+  // node-postgres serializes JS arrays as Postgres ARRAY literals, which a
+  // jsonb column rejects — stringify explicitly so the groups array stores
+  // as JSON.
+  const groupsJson = groups == null ? null : JSON.stringify(groups);
+  await query(
+    `UPDATE tournaments SET groups = $2, updated_at = NOW() WHERE id = $1`,
+    [tournamentId, groupsJson],
+  );
+  return teamCount;
+}

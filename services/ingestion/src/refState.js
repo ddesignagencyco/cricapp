@@ -16,6 +16,7 @@ export const REF_CADENCE = Object.freeze({
   tours: 7 * 24 * 3600e3,
   tournaments: 7 * 24 * 3600e3,
   tournamentSeasons: 7 * 24 * 3600e3,
+  tournamentInfo: 7 * 24 * 3600e3,
   teamProfile: 7 * 24 * 3600e3,
   playerProfile: 7 * 24 * 3600e3,
   headToHead: 7 * 24 * 3600e3,

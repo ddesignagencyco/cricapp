@@ -16,6 +16,7 @@ import {
   fetchTournaments,
   fetchTournamentResults,
   fetchTournamentSeasons,
+  fetchTournamentInfo,
   fetchMatchLineups,
   fetchMatchSummary,
 } from './sportradar.js';
@@ -47,6 +48,7 @@ import {
   savePlayerProfile,
   saveTeamsPlayers,
   saveTournamentSeasons,
+  saveTournamentInfo,
   listActiveSeasonIds,
   listActiveTournamentIds,
   listEventIdsWithoutTimeline,
@@ -125,8 +127,10 @@ export async function syncTourCatalog({ force = false } = {}) {
   log.info('tour catalog complete', { tournaments: tournamentCount, toursFromCategories: tourCount });
   if (force) {
     await clearSyncStamp('tournamentSeasons', PSL.TOURNAMENT_ID);
+    await clearSyncStamp('tournamentInfo', PSL.TOURNAMENT_ID);
   }
   await syncTournamentSeasonsFor(PSL.TOURNAMENT_ID);
+  await syncTournamentInfoFor(PSL.TOURNAMENT_ID);
   return { tournaments: tournamentCount, toursFromCategories: tourCount };
 }
 
@@ -136,6 +140,19 @@ export async function syncTournamentSeasonsFor(tournamentId) {
   const count = await saveTournamentSeasons(rows);
   log.info(`tournament ${tournamentId}: ${count} seasons`);
   return count;
+}
+
+/**
+ * tournaments/{id}/info.json → store tournament groups (team lists) on the
+ * tournament row and flatten the teams into the teams table. This is what
+ * supplies the app's full tournament + teams shape (e.g. all IPL franchises)
+ * instead of the thin tournament-list metadata.
+ */
+export async function syncTournamentInfoFor(tournamentId) {
+  const raw = await fetchTournamentInfo(tournamentId);
+  const teamCount = await saveTournamentInfo(tournamentId, raw);
+  log.info(`tournament ${tournamentId}: ${teamCount} teams + groups stored`);
+  return teamCount;
 }
 
 /**
@@ -486,6 +503,13 @@ export async function refSyncAll(options = {}) {
   const derivedTournamentIds = await listActiveTournamentIds({ limit: seasonLimit });
   for (const id of [...new Set([...derivedTournamentIds, ...tournamentIds])]) {
     await runStale('tournamentSeasons', id, REF_CADENCE.tournamentSeasons, () => syncTournamentSeasonsFor(id), delay);
+  }
+
+  // Tournament info (groups + team lists): same derived targets, own cadence.
+  // This keeps the /info team lists fresh for every active tournament even
+  // when only the tournament list row exists in the DB.
+  for (const id of [...new Set([...derivedTournamentIds, ...tournamentIds])]) {
+    await runStale('tournamentInfo', id, REF_CADENCE.tournamentInfo, () => syncTournamentInfoFor(id), delay);
   }
 
   // Materialize per-team schedule/results from the match records we already
