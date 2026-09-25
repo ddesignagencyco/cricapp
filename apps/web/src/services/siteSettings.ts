@@ -64,8 +64,8 @@ export function mapsHref(url?: string | null): string | null {
   return /^https?:\/\//i.test(raw) ? raw : null;
 }
 
-export function fetchSiteSettings(): Promise<SiteSettings> {
-  return apiGet<SiteSettings>('/site-settings');
+export function fetchSiteSettings(signal?: AbortSignal): Promise<SiteSettings> {
+  return apiGet<SiteSettings>('/site-settings', undefined, { signal });
 }
 
 export async function loadSiteSettings(): Promise<SiteSettings> {

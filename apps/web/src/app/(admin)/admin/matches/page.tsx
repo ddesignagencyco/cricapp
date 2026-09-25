@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { Trophy } from 'lucide-react';
-import { fetchMatchesPage } from '../../../../services/matches';
+import { useDebouncedValue } from '../../../../hooks/useDebouncedValue';
+import { useMatchesQuery } from '../../../../queries/useDirectoryQueries';
 import type { Match } from '../../../../types';
 import Pagination from '../../../../components/admin/AdminPagination';
 import { AdminPageHeader, LoadingState, EmptyState, StatusBadge, AdminSearchField, AdminEntityLink } from '../../../../components/admin/AdminShared';
@@ -11,41 +12,22 @@ import { getInitials } from '../../../../utils/helpers';
 import { compactMatchScore } from '../../../../lib/matchScoreboard';
 
 export default function MatchesPage() {
-  const [matches, setMatches] = useState<Match[]>([]);
-  const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [total, setTotal] = useState(0);
   const [filterStatus, setFilterStatus] = useState('all');
   const [query, setQuery] = useState('');
   const limit = 20;
-
-  const load = useCallback((p: number) => {
-    setLoading(true);
-    const params: Record<string, string | number | boolean | undefined | null> = { limit, page: p };
-    if (filterStatus !== 'all') params.status = filterStatus;
-    fetchMatchesPage(params)
-      .then((res) => {
-        setMatches(res.items);
-        setTotalPages(res.totalPages);
-        setTotal(res.total);
-      })
-      .catch(() => { setMatches([]); setTotalPages(1); setTotal(0); })
-      .finally(() => setLoading(false));
-  }, [filterStatus]);
-
-  useEffect(() => { setPage(1); }, [filterStatus]);
-  useEffect(() => { load(page); }, [page, load]);
-
-  const filtered = matches.filter((m) => {
-    if (!query) return true;
-    const q = query.toLowerCase();
-    const teams = m.teams;
-    const isObj = teams && typeof teams === 'object' && !Array.isArray(teams);
-    const home = isObj ? (teams.home?.name || teams.home?.code) : Array.isArray(teams) ? teams[0] : '';
-    const away = isObj ? (teams.away?.name || teams.away?.code) : Array.isArray(teams) ? teams[1] : '';
-    return (home || '').toLowerCase().includes(q) || (away || '').toLowerCase().includes(q) || (m.tournament || '').toLowerCase().includes(q) || (m.venue || '').toLowerCase().includes(q);
+  const debouncedQuery = useDebouncedValue(query, 350);
+  const matchesQuery = useMatchesQuery({
+    limit,
+    page,
+    q: debouncedQuery.trim() || undefined,
+    status: filterStatus === 'all' ? undefined : filterStatus,
   });
+  const matches = matchesQuery.data?.items || [];
+  const total = matchesQuery.data?.total || 0;
+  const totalPages = Math.max(1, matchesQuery.data?.totalPages || Math.ceil(total / limit));
+
+  useEffect(() => { setPage(1); }, [filterStatus, debouncedQuery]);
 
   const getTeamInfo = (m: Match) => {
     const teams = m.teams;
@@ -100,7 +82,9 @@ export default function MatchesPage() {
         </div>
       </div>
 
-      {loading ? <LoadingState variant="table" /> : filtered.length === 0 ? (
+      {matchesQuery.isPending ? <LoadingState variant="table" /> : matchesQuery.isError ? (
+        <EmptyState icon={<Trophy size={28} />} title="Matches unavailable" message="Try again." />
+      ) : matches.length === 0 ? (
         <EmptyState icon={<Trophy size={28} />} title="No matches found" message="No matches match your current filters." />
       ) : (
         <div className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
@@ -117,7 +101,7 @@ export default function MatchesPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((m) => {
+                {matches.map((m) => {
                   const t = getTeamInfo(m);
                   const homeLabel = t.homeName;
                   const awayLabel = t.awayName;

@@ -1,37 +1,24 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { Users } from 'lucide-react';
-import { fetchTeamsPage } from '../../../../services/teams';
-import type { Team } from '../../../../types';
+import { useDebouncedValue } from '../../../../hooks/useDebouncedValue';
+import { useTeamsQuery } from '../../../../queries/useDirectoryQueries';
 import Pagination from '../../../../components/admin/AdminPagination';
 import { AdminAvatar, AdminPageHeader, LoadingState, EmptyState, AdminSearchField, AdminEntityLink } from '../../../../components/admin/AdminShared';
 import { cap } from '../../../../utils/helpers';
 
 export default function TeamsPage() {
-  const [teams, setTeams] = useState<Team[]>([]);
-  const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [total, setTotal] = useState(0);
   const [query, setQuery] = useState('');
   const limit = 20;
+  const debouncedQuery = useDebouncedValue(query, 350);
+  const teamsQuery = useTeamsQuery({ limit, page, q: debouncedQuery.trim() || undefined });
+  const teams = teamsQuery.data?.items || [];
+  const total = teamsQuery.data?.total || 0;
+  const totalPages = Math.max(1, teamsQuery.data?.totalPages || Math.ceil(total / limit));
 
-  const load = useCallback((p: number) => {
-    setLoading(true);
-    fetchTeamsPage({ limit, page: p })
-      .then((res) => {
-        setTeams(res.items);
-        setTotalPages(res.totalPages);
-        setTotal(res.total);
-      })
-      .catch(() => { setTeams([]); setTotalPages(1); setTotal(0); })
-      .finally(() => setLoading(false));
-  }, []);
-
-  useEffect(() => { load(page); }, [page, load]);
-
-  const filtered = teams.filter((t) => !query || t.name.toLowerCase().includes(query.toLowerCase()) || (t.shortName || '').toLowerCase().includes(query.toLowerCase()));
+  useEffect(() => { setPage(1); }, [debouncedQuery]);
 
   return (
     <div className="space-y-5">
@@ -46,7 +33,9 @@ export default function TeamsPage() {
         />
       </div>
 
-      {loading ? <LoadingState variant="people" /> : filtered.length === 0 ? (
+      {teamsQuery.isPending ? <LoadingState variant="people" /> : teamsQuery.isError ? (
+        <EmptyState icon={<Users size={28} />} title="Teams unavailable" message="Try again." />
+      ) : teams.length === 0 ? (
         <EmptyState icon={<Users size={28} />} title="No teams found" />
       ) : (
         <div className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
@@ -61,7 +50,7 @@ export default function TeamsPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((t) => {
+                {teams.map((t) => {
                   const code = t.shortName || t.code || '';
                   const badgeLabel = t.name || code || '?';
                   return (

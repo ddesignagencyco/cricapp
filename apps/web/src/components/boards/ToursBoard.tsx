@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { X } from 'lucide-react';
 import SearchField from '../SearchField';
 import { str } from '../../utils/extract';
 import type { Tour } from '../../types/index';
-import { useDebouncedValue } from '../../hooks/useDebouncedValue';
+import { useDebouncedUrlQuery } from '../../hooks/useDebouncedUrlQuery';
 import { fetchToursPage } from '../../services/tours';
 import EmptyState from '../EmptyState';
 import ErrorState from '../ErrorState';
@@ -15,48 +15,31 @@ import { DirectoryGridSkeleton } from '../skeletons/Skeletons';
 import { filterChipClass, filterChipCountClass } from '../ui/filterChip';
 import DirectoryPageHeader from '../DirectoryPageHeader';
 import TourCard from '../TourCard';
+import { parsePositiveInt, tourKeys } from '../../queries/keys';
+import { usePrefetchNextPage, useToursQuery } from '../../queries/useDirectoryQueries';
 
 const LIMIT = 20;
+const EMPTY_TOURS: Tour[] = [];
 
 export default function ToursBoard() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const page = Math.max(1, Number(searchParams.get('page')) || 1);
+  const page = parsePositiveInt(searchParams.get('page'), 1);
+  const { input: localSearch, setInput: setLocalSearch, query: searchQuery } = useDebouncedUrlQuery({ param: 'search' });
+  const search = searchQuery.trim();
+  const categoryFilter = searchParams.get('category') || 'all';
 
-  const [tours, setTours] = useState<Tour[]>([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-  const [retryKey, setRetryKey] = useState(0);
-  const [search, setSearch] = useState('');
-  const debouncedSearch = useDebouncedValue(search);
-  const [countryFilter, setCountryFilter] = useState('all');
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    setError(false);
-    fetchToursPage({ limit: LIMIT, page })
-      .then(({ items, total: nextTotal }) => {
-        if (cancelled) return;
-        setTours(items);
-        setTotal(nextTotal);
-        setLoading(false);
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setTours([]);
-        setTotal(0);
-        setError(true);
-        setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [page, retryKey]);
-
-  const totalPages = Math.max(1, Math.ceil((total || 0) / LIMIT));
+  const listParams = {
+    limit: LIMIT,
+    page,
+    q: search || undefined,
+    category: categoryFilter === 'all' ? undefined : categoryFilter,
+  };
+  const query = useToursQuery(listParams);
+  const tours = query.data?.items ?? EMPTY_TOURS;
+  const total = query.data?.total || 0;
+  const totalPages = Math.max(1, query.data?.totalPages || Math.ceil(total / LIMIT));
 
   const categories = useMemo(() => {
     const map = new Map<string, number>();
@@ -69,7 +52,7 @@ export default function ToursBoard() {
 
   const filtered = useMemo(() => {
     let list = tours;
-    const q = debouncedSearch.toLowerCase().trim();
+    const q = search.toLowerCase();
     if (q) {
       list = list.filter(
         (t) =>
@@ -78,20 +61,50 @@ export default function ToursBoard() {
           str(t.sport).toLowerCase().includes(q)
       );
     }
-    if (countryFilter !== 'all') {
-      list = list.filter((t) => str(t.category) === countryFilter);
+    if (categoryFilter !== 'all') {
+      list = list.filter((t) => str(t.category) === categoryFilter);
     }
     return list;
-  }, [tours, debouncedSearch, countryFilter]);
+  }, [tours, search, categoryFilter]);
 
-  const activeFilters = countryFilter !== 'all';
+  const activeFilters = categoryFilter !== 'all';
+
+  const nextParams = { ...listParams, page: page + 1 };
+  usePrefetchNextPage({
+    page,
+    totalPages,
+    enabled: Boolean(query.data && !query.isPlaceholderData && query.isSuccess),
+    queryKey: tourKeys.list(nextParams),
+    queryFn: (signal) => fetchToursPage({ page: nextParams.page, limit: nextParams.limit }, signal),
+  });
+
+  const updateUrl = (params: URLSearchParams) => {
+    const qs = params.toString();
+    router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  };
 
   const handlePageChange = (next: number) => {
     const params = new URLSearchParams(searchParams.toString());
     if (next <= 1) params.delete('page');
     else params.set('page', String(next));
-    const qs = params.toString();
-    router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    updateUrl(params);
+  };
+
+  const handleCategoryFilter = (category: string) => {
+    const next = categoryFilter === category ? 'all' : category;
+    const params = new URLSearchParams(searchParams.toString());
+    if (next === 'all') params.delete('category');
+    else params.set('category', next);
+    params.delete('page');
+    updateUrl(params);
+  };
+
+  const clearAll = () => {
+    setLocalSearch('');
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('category');
+    params.delete('page');
+    updateUrl(params);
   };
 
   return (
@@ -109,18 +122,18 @@ export default function ToursBoard() {
           <SearchField
             wrapperClassName="max-w-md flex-1"
             aria-label="Search tours"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            value={localSearch}
+            onChange={(e) => setLocalSearch(e.target.value)}
             placeholder="Search tours by series name, country or category…"
           />
-          {activeFilters && (
+          {(activeFilters || search) && (
             <button
               type="button"
-              onClick={() => setCountryFilter('all')}
+              onClick={clearAll}
               className="inline-flex items-center gap-1.5 rounded border border-lborder bg-card px-3 py-2 text-xs font-medium text-accent transition-colors hover:bg-secondary"
             >
               <X size={13} />
-              Clear filters
+              Clear search and filters
             </button>
           )}
         </div>
@@ -129,9 +142,9 @@ export default function ToursBoard() {
           <div className="flex flex-wrap items-center gap-1.5">
             <button
               type="button"
-              onClick={() => setCountryFilter('all')}
-              aria-pressed={countryFilter === 'all'}
-              className={filterChipClass(countryFilter === 'all')}
+              onClick={() => handleCategoryFilter('all')}
+              aria-pressed={categoryFilter === 'all'}
+              className={filterChipClass(categoryFilter === 'all')}
             >
               All Regions
             </button>
@@ -139,34 +152,35 @@ export default function ToursBoard() {
               <button
                 key={cat}
                 type="button"
-                onClick={() => setCountryFilter(countryFilter === cat ? 'all' : cat)}
-                aria-pressed={countryFilter === cat}
-                className={filterChipClass(countryFilter === cat)}
+                onClick={() => handleCategoryFilter(cat)}
+                aria-pressed={categoryFilter === cat}
+                className={filterChipClass(categoryFilter === cat)}
               >
                 <span>{cat}</span>
-                <span className={filterChipCountClass(countryFilter === cat)}>{count}</span>
+                <span className={filterChipCountClass(categoryFilter === cat)}>{count}</span>
               </button>
             ))}
           </div>
         )}
       </div>
 
-      <p className="text-xs text-stext">
-        Showing <span className="font-semibold text-mtext">{filtered.length}</span> of {total} tour
-        {total === 1 ? '' : 's'}
-      </p>
+      <div className="flex items-center justify-between text-xs text-stext">
+        <p>
+          Showing <span className="font-semibold text-mtext">{filtered.length}</span> of {total} tour
+          {total === 1 ? '' : 's'}
+          {search ? ` matching "${search}"` : ''}
+        </p>
+        {query.isFetching && !query.isPending ? <span>Updating…</span> : null}
+      </div>
 
-      {loading ? (
+      {query.isPending ? (
         <DirectoryGridSkeleton />
-      ) : error ? (
-        <ErrorState
-          message="Tours are temporarily unavailable."
-          onRetry={() => setRetryKey((key) => key + 1)}
-        />
+      ) : query.isError ? (
+        <ErrorState message="Tours are temporarily unavailable." onRetry={() => void query.refetch()} />
       ) : filtered.length > 0 ? (
         <>
           <div className="fade-in grid auto-rows-fr grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {filtered.map((tour) => (
+            {filtered.map((tour: Tour) => (
               <TourCard key={tour.id} tour={tour} />
             ))}
           </div>
@@ -184,11 +198,23 @@ export default function ToursBoard() {
         <EmptyState
           title="No cricket tours found"
           message={
-            search || activeFilters
-              ? 'No tours match your current filters. Try clearing them.'
-              : 'Tours reference data will appear once synced.'
+            search
+              ? `No tours match "${search}".`
+              : activeFilters
+                ? 'No tours match the current category filter.'
+                : 'Tours reference data will appear once synced.'
           }
-        />
+        >
+          {search || activeFilters ? (
+            <button
+              type="button"
+              onClick={clearAll}
+              className="rounded-md border border-lborder bg-card px-4 py-2 text-sm font-semibold text-mtext transition-colors hover:bg-[var(--color-row-hover)]"
+            >
+              Clear search and filters
+            </button>
+          ) : null}
+        </EmptyState>
       )}
     </div>
   );

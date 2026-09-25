@@ -1,38 +1,24 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { UserCircle } from 'lucide-react';
-import { fetchPlayersPage } from '../../../../services/players';
-import type { Player } from '../../../../types';
+import { useDebouncedValue } from '../../../../hooks/useDebouncedValue';
+import { usePlayersQuery } from '../../../../queries/useDirectoryQueries';
 import Pagination from '../../../../components/admin/AdminPagination';
 import { AdminAvatar, AdminPageHeader, LoadingState, EmptyState, AdminSearchField, AdminEntityLink } from '../../../../components/admin/AdminShared';
 import { cap } from '../../../../utils/helpers';
 
 export default function PlayersPage() {
-  const [players, setPlayers] = useState<Player[]>([]);
-  const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [total, setTotal] = useState(0);
   const [query, setQuery] = useState('');
   const limit = 20;
+  const debouncedQuery = useDebouncedValue(query, 350);
+  const playersQuery = usePlayersQuery({ limit, page, q: debouncedQuery.trim() || undefined });
+  const players = playersQuery.data?.items || [];
+  const total = playersQuery.data?.total || 0;
+  const totalPages = Math.max(1, playersQuery.data?.totalPages || Math.ceil(total / limit));
 
-  const load = useCallback((p: number) => {
-    setLoading(true);
-    fetchPlayersPage({ limit, page: p, q: query || undefined })
-      .then((res) => {
-        setPlayers(res.items);
-        setTotalPages(res.totalPages);
-        setTotal(res.total);
-      })
-      .catch(() => { setPlayers([]); setTotalPages(1); setTotal(0); })
-      .finally(() => setLoading(false));
-  }, [query]);
-
-  useEffect(() => { setPage(1); }, [query]);
-  useEffect(() => { load(page); }, [page, load]);
-
-  const filtered = players.filter((p) => !query || p.name.toLowerCase().includes(query.toLowerCase()));
+  useEffect(() => { setPage(1); }, [debouncedQuery]);
 
   return (
     <div className="space-y-5">
@@ -47,7 +33,9 @@ export default function PlayersPage() {
         />
       </div>
 
-      {loading ? <LoadingState variant="people" /> : filtered.length === 0 ? (
+      {playersQuery.isPending ? <LoadingState variant="people" /> : playersQuery.isError ? (
+        <EmptyState icon={<UserCircle size={28} />} title="Players unavailable" message="Try again." />
+      ) : players.length === 0 ? (
         <EmptyState icon={<UserCircle size={28} />} title="No players found" />
       ) : (
         <div className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
@@ -64,7 +52,7 @@ export default function PlayersPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((p) => {
+                {players.map((p) => {
                   const displayName = p.fullName || p.name;
                   return (
                     <tr key={p.id} style={{ borderBottom: '1px solid var(--admin-border)' }}

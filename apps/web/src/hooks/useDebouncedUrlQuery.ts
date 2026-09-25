@@ -12,7 +12,7 @@ export interface UseDebouncedUrlQueryOptions {
   fallbackParams?: string[];
   debounceMs?: number;
   /** e.g. colon-safe entity ids on teams compare URLs */
-  serializeParams?: (params: URLSearchParams) => string;
+  serializeParams?: (_params: URLSearchParams) => string;
 }
 
 function readQueryParam(params: URLSearchParams, primary: string, fallbacks: string[]): string {
@@ -32,7 +32,7 @@ export function useDebouncedUrlQuery(options: UseDebouncedUrlQueryOptions = {}) 
   const param = options.param ?? 'q';
   const fallbackParams = options.fallbackParams ?? (param === 'q' ? ['search'] : param === 'search' ? ['q'] : []);
   const debounceMs = options.debounceMs ?? DEFAULT_DEBOUNCE_MS;
-  const serializeParams = options.serializeParams ?? ((params: URLSearchParams) => params.toString());
+  const serializeParams = options.serializeParams;
 
   const router = useRouter();
   const pathname = usePathname();
@@ -57,7 +57,8 @@ export function useDebouncedUrlQuery(options: UseDebouncedUrlQueryOptions = {}) 
       if (param === 'q') params.delete('search');
       if (param === 'search') params.delete('q');
       params.delete('page');
-      const qs = serializeParams(params);
+      const serialize = serializeParams ?? ((nextParams: URLSearchParams) => nextParams.toString());
+      const qs = serialize(params);
       router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
     }, debounceMs);
 

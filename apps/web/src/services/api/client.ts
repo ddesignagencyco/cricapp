@@ -112,7 +112,11 @@ async function request<T>(
     (init as Record<string, unknown>).next = { revalidate };
   }
 
-  const res = await fetch(url, init);
+  const fetchInit: RequestInit = { ...init };
+  if (process.env.NODE_ENV === 'development' && fetchInit.signal) {
+    delete fetchInit.signal;
+  }
+  const res = await fetch(url, fetchInit);
   return handleResponse<T>(res);
 }
 

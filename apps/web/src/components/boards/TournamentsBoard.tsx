@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { X } from 'lucide-react';
 import SearchField from '../SearchField';
@@ -15,8 +15,11 @@ import { DirectoryGridSkeleton } from '../skeletons/Skeletons';
 import { filterChipClass, filterChipCountClass } from '../ui/filterChip';
 import DirectoryPageHeader from '../DirectoryPageHeader';
 import TournamentCard from '../TournamentCard';
+import { parsePositiveInt, tournamentKeys } from '../../queries/keys';
+import { usePrefetchNextPage, useTournamentsQuery } from '../../queries/useDirectoryQueries';
 
 const LIMIT = 20;
+const EMPTY_TOURNAMENTS: TournamentApi[] = [];
 
 interface Props {
   initialCountry?: string;
@@ -27,44 +30,23 @@ export default function TournamentsBoard({ initialCountry }: Props) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const page = Math.max(1, Number(searchParams.get('page')) || 1);
-  const search = searchParams.get('q') || searchParams.get('search') || '';
-
-  const [tournaments, setTournaments] = useState<TournamentApi[]>([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-  const [retryKey, setRetryKey] = useState(0);
-  const { input: localSearch, setInput: setLocalSearch } = useDebouncedUrlQuery({ param: 'q' });
+  const page = parsePositiveInt(searchParams.get('page'), 1);
+  const { input: localSearch, setInput: setLocalSearch, query: searchQuery } = useDebouncedUrlQuery({ param: 'q' });
+  const search = searchQuery.trim();
+  const categoryFilter = searchParams.get('country') || initialCountry || 'all';
   const [formatFilter, setFormatFilter] = useState('all');
-  const [categoryFilter, setCategoryFilter] = useState(initialCountry || 'all');
 
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    setError(false);
-    fetchTournamentsPage({ limit: LIMIT, page, q: search || undefined })
-      .then(({ items, total: t }) => {
-        if (!cancelled) {
-          setTournaments(items);
-          setTotal(t);
-          setLoading(false);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setTournaments([]);
-          setTotal(0);
-          setError(true);
-          setLoading(false);
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [page, search, retryKey]);
-
-  const totalPages = Math.max(1, Math.ceil((total || 0) / LIMIT));
+  const listParams = {
+    limit: LIMIT,
+    page,
+    q: search || undefined,
+    country: categoryFilter === 'all' ? undefined : categoryFilter,
+    format: formatFilter === 'all' ? undefined : formatFilter,
+  };
+  const query = useTournamentsQuery(listParams);
+  const tournaments = query.data?.items ?? EMPTY_TOURNAMENTS;
+  const total = query.data?.total || 0;
+  const totalPages = Math.max(1, query.data?.totalPages || Math.ceil(total / LIMIT));
 
   const formats = useMemo(() => {
     const map = new Map<string, number>();
@@ -97,14 +79,50 @@ export default function TournamentsBoard({ initialCountry }: Props) {
 
   const activeFilters = formatFilter !== 'all' || categoryFilter !== 'all';
 
+  const nextParams = { ...listParams, page: page + 1 };
+  usePrefetchNextPage({
+    page,
+    totalPages,
+    enabled: Boolean(query.data && !query.isPlaceholderData && query.isSuccess),
+    queryKey: tournamentKeys.list(nextParams),
+    queryFn: (signal) =>
+      fetchTournamentsPage({ page: nextParams.page, limit: nextParams.limit, q: nextParams.q }, signal),
+  });
+
+  const updateUrl = (params: URLSearchParams) => {
+    const qs = params.toString();
+    router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  };
+
   const handlePageChange = (p: number) => {
     const params = new URLSearchParams(searchParams.toString());
-    if (p <= 1) {
-      params.delete('page');
-    } else {
-      params.set('page', String(p));
-    }
-    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+    if (p <= 1) params.delete('page');
+    else params.set('page', String(p));
+    updateUrl(params);
+  };
+
+  const handleCategoryFilter = (category: string) => {
+    const next = categoryFilter === category ? 'all' : category;
+    const params = new URLSearchParams(searchParams.toString());
+    if (next === 'all') params.delete('country');
+    else params.set('country', next);
+    params.delete('page');
+    updateUrl(params);
+  };
+
+  const handleFormatFilter = (format: string) => {
+    const next = formatFilter === format ? 'all' : format;
+    setFormatFilter(next);
+    if (page !== 1) handlePageChange(1);
+  };
+
+  const clearAll = () => {
+    setFormatFilter('all');
+    setLocalSearch('');
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('country');
+    params.delete('page');
+    updateUrl(params);
   };
 
   return (
@@ -129,10 +147,7 @@ export default function TournamentsBoard({ initialCountry }: Props) {
           {activeFilters && (
             <button
               type="button"
-              onClick={() => {
-                setFormatFilter('all');
-                setCategoryFilter('all');
-              }}
+              onClick={clearAll}
               className="inline-flex items-center gap-1.5 rounded border border-lborder bg-card px-3 py-2 text-xs font-medium text-accent transition-colors hover:bg-secondary"
             >
               <X size={13} />
@@ -155,7 +170,7 @@ export default function TournamentsBoard({ initialCountry }: Props) {
               <button
                 key={fmt}
                 type="button"
-                onClick={() => setFormatFilter(formatFilter === fmt ? 'all' : fmt)}
+                onClick={() => handleFormatFilter(fmt)}
                 aria-pressed={formatFilter === fmt}
                 className={filterChipClass(formatFilter === fmt)}
               >
@@ -170,7 +185,7 @@ export default function TournamentsBoard({ initialCountry }: Props) {
           <div className="flex flex-wrap items-center gap-1.5">
             <button
               type="button"
-              onClick={() => setCategoryFilter('all')}
+              onClick={() => handleCategoryFilter('all')}
               aria-pressed={categoryFilter === 'all'}
               className={filterChipClass(categoryFilter === 'all')}
             >
@@ -180,7 +195,7 @@ export default function TournamentsBoard({ initialCountry }: Props) {
               <button
                 key={cat}
                 type="button"
-                onClick={() => setCategoryFilter(categoryFilter === cat ? 'all' : cat)}
+                onClick={() => handleCategoryFilter(cat)}
                 aria-pressed={categoryFilter === cat}
                 className={filterChipClass(categoryFilter === cat)}
               >
@@ -192,47 +207,52 @@ export default function TournamentsBoard({ initialCountry }: Props) {
         )}
       </div>
 
-      <p className="text-xs text-stext">
-        Showing <span className="font-semibold text-mtext">{filtered.length}</span> of {total} competition
-        {total === 1 ? '' : 's'}
-      </p>
+      <div className="flex items-center justify-between text-xs text-stext">
+        <p>
+          Showing <span className="font-semibold text-mtext">{filtered.length}</span> of {total} competition
+          {total === 1 ? '' : 's'}
+          {search ? ` matching "${search}"` : ''}
+        </p>
+        {query.isFetching && !query.isPending ? <span>Updating…</span> : null}
+      </div>
 
-      {loading ? (
+      {query.isPending ? (
         <DirectoryGridSkeleton />
-      ) : error ? (
-        <ErrorState
-          message="Tournaments are temporarily unavailable."
-          onRetry={() => setRetryKey((key) => key + 1)}
-        />
+      ) : query.isError ? (
+        <ErrorState message="Tournaments are temporarily unavailable." onRetry={() => void query.refetch()} />
       ) : filtered.length > 0 ? (
         <>
           <div className="fade-in grid auto-rows-fr grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {filtered.map((tournament) => (
+            {filtered.map((tournament: TournamentApi) => (
               <TournamentCard key={tournament.id} tournament={tournament} />
             ))}
           </div>
 
           <div className="pt-4">
-            <Pagination
-              page={page}
-              totalPages={totalPages}
-              total={total}
-              limit={LIMIT}
-              onPageChange={handlePageChange}
-            />
+            <Pagination page={page} totalPages={totalPages} total={total} limit={LIMIT} onPageChange={handlePageChange} />
           </div>
         </>
       ) : (
         <EmptyState
           title="No tournaments found"
           message={
-            localSearch
-              ? 'No competitions match your search. Try another term.'
+            search
+              ? `No competitions match "${search}".`
               : activeFilters
-                ? 'No tournaments match these filters. Try clearing them.'
+                ? 'No tournaments match these filters.'
                 : 'Tournaments will appear once data syncs.'
           }
-        />
+        >
+          {search || activeFilters ? (
+            <button
+              type="button"
+              onClick={clearAll}
+              className="rounded-md border border-lborder bg-card px-4 py-2 text-sm font-semibold text-mtext transition-colors hover:bg-[var(--color-row-hover)]"
+            >
+              Clear search and filters
+            </button>
+          ) : null}
+        </EmptyState>
       )}
     </div>
   );

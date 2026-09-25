@@ -1,5 +1,6 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import Select from 'react-select';
@@ -10,7 +11,9 @@ import {
   AdminPageHeader,
 } from '../../../../components/admin/AdminShared';
 import SocialBrandIcon from '../../../../components/admin/SocialBrandIcon';
-import { fetchSiteSettings, saveSiteSettings, type SiteSocialLink } from '../../../../services/siteSettings';
+import { saveSiteSettings, type SiteSocialLink } from '../../../../services/siteSettings';
+import { siteSettingsKeys } from '../../../../queries/keys';
+import { useSiteSettingsQuery } from '../../../../queries/useDirectoryQueries';
 import { SOCIAL_PLATFORMS } from '../../../../lib/socialPlatforms';
 import {
   COUNTRIES,
@@ -149,27 +152,25 @@ export default function SettingsPage() {
   const [form, setForm] = useState<FormState>(EMPTY);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [saving, setSaving] = useState(false);
+  const settingsQuery = useSiteSettingsQuery();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
-    fetchSiteSettings()
-      .then((settings) => {
-        setForm({
-          email: settings.email || '',
-          supportEmail: settings.supportEmail || '',
-          phone: settings.phone || '',
-          whatsapp: settings.whatsapp || '',
-          address: settings.address || '',
-          city: settings.city || '',
-          country: settings.country || 'Pakistan',
-          mapsUrl: settings.mapsUrl || '',
-          hours: parseWorkingHours(settings.workingHours) || emptyWorkingHours(),
-          socials: settings.socials?.length ? settings.socials : [{ platform: 'facebook', value: '' }],
-        });
-      })
-      .catch(() => {
-        /* Keep the form usable if settings have not loaded. */
-      });
-  }, []);
+    const settings = settingsQuery.data;
+    if (!settings) return;
+    setForm({
+      email: settings.email || '',
+      supportEmail: settings.supportEmail || '',
+      phone: settings.phone || '',
+      whatsapp: settings.whatsapp || '',
+      address: settings.address || '',
+      city: settings.city || '',
+      country: settings.country || 'Pakistan',
+      mapsUrl: settings.mapsUrl || '',
+      hours: parseWorkingHours(settings.workingHours) || emptyWorkingHours(),
+      socials: settings.socials?.length ? settings.socials : [{ platform: 'facebook', value: '' }],
+    });
+  }, [settingsQuery.data]);
 
   const usedPlatforms = useMemo(() => new Set(form.socials.map((item) => item.platform)), [form.socials]);
   const unusedPlatforms = SOCIAL_PLATFORMS.filter((item) => !usedPlatforms.has(item.id));
@@ -256,6 +257,7 @@ export default function SettingsPage() {
         workingHours: serializeWorkingHours(form.hours),
         socials: form.socials.filter((item) => item.platform && item.value.trim()),
       });
+      queryClient.setQueryData(siteSettingsKeys.current(), saved);
       setForm((prev) => ({
         ...prev,
         socials: saved.socials.length ? saved.socials : [{ platform: 'facebook', value: '' }],

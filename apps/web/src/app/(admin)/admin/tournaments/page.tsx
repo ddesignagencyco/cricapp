@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { Trophy } from 'lucide-react';
-import { fetchTournamentsPage } from '../../../../services/tournaments';
+import { useDebouncedValue } from '../../../../hooks/useDebouncedValue';
+import { useTournamentsQuery } from '../../../../queries/useDirectoryQueries';
 import type { TournamentApi } from '../../../../types';
 import Pagination from '../../../../components/admin/AdminPagination';
 import {
@@ -42,34 +43,16 @@ function tournamentStatus(t: TournamentApi): string {
 }
 
 export default function TournamentsPage() {
-  const [tournaments, setTournaments] = useState<TournamentApi[]>([]);
-  const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [total, setTotal] = useState(0);
   const [query, setQuery] = useState('');
-  const [search, setSearch] = useState('');
   const limit = 20;
-
-  useEffect(() => {
-    const timer = setTimeout(() => setSearch(query.trim()), 300);
-    return () => clearTimeout(timer);
-  }, [query]);
-
-  const load = useCallback((p: number) => {
-    setLoading(true);
-    fetchTournamentsPage({ limit, page: p, q: search || undefined })
-      .then((res) => {
-        setTournaments(res.items);
-        setTotalPages(res.totalPages);
-        setTotal(res.total);
-      })
-      .catch(() => { setTournaments([]); setTotalPages(1); setTotal(0); })
-      .finally(() => setLoading(false));
-  }, [search]);
+  const search = useDebouncedValue(query, 350).trim();
+  const tournamentsQuery = useTournamentsQuery({ limit, page, q: search || undefined });
+  const tournaments = tournamentsQuery.data?.items || [];
+  const total = tournamentsQuery.data?.total || 0;
+  const totalPages = Math.max(1, tournamentsQuery.data?.totalPages || Math.ceil(total / limit));
 
   useEffect(() => { setPage(1); }, [search]);
-  useEffect(() => { load(page); }, [page, load]);
 
   return (
     <div className="space-y-5">
@@ -87,7 +70,9 @@ export default function TournamentsPage() {
         </div>
       </div>
 
-      {loading ? <LoadingState variant="table" /> : tournaments.length === 0 ? (
+      {tournamentsQuery.isPending ? <LoadingState variant="table" /> : tournamentsQuery.isError ? (
+        <EmptyState icon={<Trophy size={28} />} title="Tournaments unavailable" message="Try again." />
+      ) : tournaments.length === 0 ? (
         <EmptyState icon={<Trophy size={28} />} title="No tournaments found" message="Try a different name or clear the search." />
       ) : (
         <div className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
