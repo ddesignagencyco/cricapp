@@ -18,7 +18,11 @@ export async function saveMatch(match) {
     `INSERT INTO matches (match_id, status, teams, team_names, team_scores, tournament, venue, scheduled, current_innings, last_event, display_score, match_status, result_text, winner_id, toss_won_by, toss_decision, current_inning, period_scores, display_overs, created_at, updated_at)
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,NOW(),NOW())
      ON CONFLICT (match_id) DO UPDATE SET
-       status = EXCLUDED.status,
+       status = CASE
+         WHEN matches.status IN ('live', 'completed', 'cancelled')
+          AND EXCLUDED.status = 'upcoming' THEN matches.status
+         ELSE EXCLUDED.status
+       END,
        teams = EXCLUDED.teams,
        team_names = EXCLUDED.team_names,
        team_scores = COALESCE(EXCLUDED.team_scores, matches.team_scores),
@@ -563,6 +567,14 @@ export async function saveMatchSummary(matchId, payload) {
     event.scheduled ?? null,
     JSON.stringify(payload ?? {}),
   ]);
+  const match = recordToMatch({
+    eventId: matchId,
+    status: event.status ?? statusBlock.status ?? statusBlock.match_status ?? null,
+    scheduled: event.scheduled ?? null,
+    payload: payload ?? {},
+  });
+  await saveMatch(match);
+  await publishMatchState(match);
   return 1;
 }
 
@@ -890,6 +902,52 @@ export async function listMatchesForRosterlessTeams({ limit = 20 } = {}) {
 export async function listHeadToHeadPairs() {
   const r = await query(
     `SELECT team_a_id AS a, team_b_id AS b FROM head_to_head`,
+  );
+  return r.rows.map((x) => [x.a, x.b]).filter(([a, b]) => a && b);
+}
+
+export async function listUpcomingHeadToHeadPairs({ limit = 50 } = {}) {
+  const r = await query(
+    `WITH upcoming AS (
+       SELECT m.match_id, rec.payload
+       FROM matches m
+       JOIN LATERAL (
+         SELECT ser.payload
+         FROM sport_event_records ser
+         WHERE ser.event_id = m.match_id
+           AND ser.kind <> 'match_lineup'
+         ORDER BY
+           CASE ser.kind
+             WHEN 'match_summary' THEN 0
+             WHEN 'daily_results' THEN 1
+             WHEN 'tournament_results' THEN 2
+             WHEN 'team_results' THEN 3
+             ELSE 4
+           END,
+           ser.updated_at DESC
+         LIMIT 1
+       ) rec ON true
+       WHERE m.status = 'upcoming'
+     ), competitors AS (
+       SELECT u.match_id, comp->>'id' AS team_id
+       FROM upcoming u
+       CROSS JOIN LATERAL jsonb_array_elements(
+         CASE WHEN u.payload ? 'sport_event'
+           THEN u.payload->'sport_event'->'competitors'
+           ELSE u.payload->'competitors'
+         END
+       ) comp
+       WHERE comp->>'id' IS NOT NULL
+     )
+     SELECT DISTINCT LEAST(home.team_id, away.team_id) AS a,
+                     GREATEST(home.team_id, away.team_id) AS b
+     FROM competitors home
+     JOIN competitors away
+       ON away.match_id = home.match_id
+      AND away.team_id > home.team_id
+     ORDER BY a, b
+     LIMIT $1`,
+    [limit],
   );
   return r.rows.map((x) => [x.a, x.b]).filter(([a, b]) => a && b);
 }
