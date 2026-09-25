@@ -27,6 +27,13 @@ export class TournamentDto {
 
   @ApiPropertyOptional({ description: 'Parent tournament id (for sub-competitions).' })
   parentId: string | null;
+
+  @ApiPropertyOptional({
+    description:
+      'Tournament groups from tournaments/{id}/info.json. Each group carries the tournament teams (id, name, country, country_code, abbreviation, gender).',
+    type: 'array',
+  })
+  groups: Record<string, unknown>[] | null;
 }
 
 export class TournamentSeasonDto {

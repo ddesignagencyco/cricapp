@@ -15,6 +15,7 @@ export interface TournamentSummary {
   sport: Record<string, unknown> | null;
   tourId: string | null;
   parentId: string | null;
+  groups: Record<string, unknown>[] | null;
 }
 
 export interface TournamentSeasonSummary {
@@ -49,6 +50,7 @@ export class TournamentsService {
     sport: unknown;
     tourId: string | null;
     parentId: string | null;
+    groups: unknown;
   }): TournamentSummary {
     return {
       id: row.id,
@@ -60,6 +62,7 @@ export class TournamentsService {
       sport: row.sport as Record<string, unknown> | null,
       tourId: row.tourId,
       parentId: row.parentId,
+      groups: (row.groups as Record<string, unknown>[] | null) ?? null,
     };
   }
 

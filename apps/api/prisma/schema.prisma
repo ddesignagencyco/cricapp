@@ -179,6 +179,7 @@ model Tournament {
   sport          Json?
   tourId         String?  @map("tour_id")
   parentId       String?  @map("parent_id")
+  groups         Json?
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 

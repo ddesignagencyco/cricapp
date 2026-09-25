@@ -23,6 +23,33 @@ services:
       - redis_data:/data
 
   # Optional workers: docker compose --profile workers up -d
+  ingestion:
+    profiles: ["workers"]
+    build:
+      context: .
+      dockerfile: services/ingestion/Dockerfile
+    container_name: cricapp-ingestion
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - redis
+    env_file:
+      - ./services/ingestion/.env
+    environment:
+      DATABASE_URL: postgresql://cricapp:cricapp_dev_password@postgres:5432/cricapp
+      REDIS_URL: redis://redis:6379
+      REFERENCE_SYNC_INTERVAL_MS: ${REFERENCE_SYNC_INTERVAL_MS:-3600000}
+      REFERENCE_SYNC_PAST_DAYS: ${REFERENCE_SYNC_PAST_DAYS:-2}
+      REFERENCE_SYNC_FUTURE_DAYS: ${REFERENCE_SYNC_FUTURE_DAYS:-30}
+      REF_SYNC_START_DELAY_MS: ${REF_SYNC_START_DELAY_MS:-0}
+      REF_SYNC_DELAY_MS: ${REF_SYNC_DELAY_MS:-500}
+      REF_SYNC_MATCH_LIMIT: ${REF_SYNC_MATCH_LIMIT:-20}
+      REF_SYNC_SUMMARY_LIMIT: ${REF_SYNC_SUMMARY_LIMIT:-20}
+      REF_SYNC_SEASON_LIMIT: ${REF_SYNC_SEASON_LIMIT:-10}
+      REF_SYNC_TEAMS_LIMIT: ${REF_SYNC_TEAMS_LIMIT:-10}
+      REF_SYNC_LINEUP_LIMIT: ${REF_SYNC_LINEUP_LIMIT:-20}
+      REF_SYNC_HEAD_TO_HEAD_LIMIT: ${REF_SYNC_HEAD_TO_HEAD_LIMIT:-50}
+
   prediction:
     profiles: ["workers"]
     build:
