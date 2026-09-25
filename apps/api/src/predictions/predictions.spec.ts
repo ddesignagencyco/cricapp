@@ -68,6 +68,101 @@ describe('PredictionsModule (integration)', () => {
     await ctx.agent.get('/predictions/sr:match:missing').expect(404);
   });
 
+  it('POST /predictions/bulk — returns card-ready predictions keyed by match id', async () => {
+    await ctx.prisma.predictionRun.create({
+      data: {
+        matchId: 'sr:match:pred-1',
+        stage: PREDICTION_STAGE.LIVE,
+        modelVersion: PREDICTION_MODELS.LIVE,
+        features: {
+          create: {
+            snapshot: { homeTeamId: 'sr:competitor:1', awayTeamId: 'sr:competitor:2' },
+          },
+        },
+        result: {
+          create: {
+            homeWinProb: 0.66,
+            awayWinProb: 0.34,
+            confidence: 0.8,
+            calibrationBand: 'high',
+            explanation: {
+              over: 12.4,
+              inning: 2,
+              requiredRuns: 82,
+              requiredRunRate: 7.1,
+              remainingBalls: 66,
+              resourcesLeft: 7,
+              projectedTotal: 166,
+              deltaFromPrevious: 0.04,
+              reasons: ['Required run rate is manageable with wickets in hand'],
+            },
+            scoreRange: { low: 158, expected: 171, high: 184 },
+            momentum: 0.2,
+            pressureIndex: 0.35,
+          },
+        },
+      },
+    });
+
+    const res = await ctx.agent
+      .post('/predictions/bulk')
+      .send({ matchIds: ['sr:match:pred-1', 'sr:match:missing'] })
+      .expect(200);
+
+    expect(res.body.meta).toEqual({ requested: 2, returned: 1, missing: 1 });
+    expect(res.body.data['sr:match:pred-1']).toEqual(
+      expect.objectContaining({
+        matchId: 'sr:match:pred-1',
+        preMatch: expect.objectContaining({
+          homeWinProb: 0.62,
+          confidence: 0.7,
+          calibrationBand: 'medium',
+          scoreRange: { low: 145, expected: 160, high: 175 },
+          narrative: expect.any(String),
+        }),
+        live: expect.objectContaining({
+          homeWinProb: 0.66,
+          confidence: 0.8,
+          calibrationBand: 'high',
+          scoreRange: { low: 158, expected: 171, high: 184 },
+          momentum: 0.2,
+          pressureIndex: 0.35,
+          narrative: expect.any(String),
+        }),
+      }),
+    );
+    expect(res.body.data['sr:match:missing']).toEqual({
+      matchId: 'sr:match:missing',
+      preMatch: null,
+      live: null,
+    });
+  });
+
+  it('POST /predictions/bulk — removes duplicate ids', async () => {
+    const res = await ctx.agent
+      .post('/predictions/bulk')
+      .send({ matchIds: ['sr:match:pred-1', 'sr:match:pred-1'] })
+      .expect(200);
+
+    expect(res.body.meta).toEqual({ requested: 1, returned: 1, missing: 0 });
+    expect(Object.keys(res.body.data)).toEqual(['sr:match:pred-1']);
+  });
+
+  it('POST /predictions/bulk — rejects invalid and oversized payloads', async () => {
+    await ctx.agent
+      .post('/predictions/bulk')
+      .send({ matchIds: ['invalid-match-id'] })
+      .expect(400);
+    await ctx.agent
+      .post('/predictions/bulk')
+      .send({ matchIds: [] })
+      .expect(400);
+    await ctx.agent
+      .post('/predictions/bulk')
+      .send({ matchIds: Array.from({ length: 51 }, (_, index) => `sr:match:${index}`) })
+      .expect(400);
+  });
+
   it('GET /predictions/:matchId/history — returns chronological runs', async () => {
     await ctx.prisma.predictionRun.create({
       data: {

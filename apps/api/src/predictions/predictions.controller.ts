@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, Post, Query } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { PredictionsService } from './predictions.service.js';
 import {
@@ -9,6 +9,8 @@ import {
   PredictionPerformanceHistoryQuery,
   PredictionPerformanceQuery,
   PredictionChartDto,
+  BulkPredictionsRequestDto,
+  BulkPredictionsResponseDto,
 } from './dto/predictions.dto.js';
 
 @ApiTags('predictions')
@@ -39,6 +41,18 @@ export class PredictionsController {
   })
   getPerformanceHistory(@Query() query: PredictionPerformanceHistoryQuery) {
     return this.predictionsService.listPerformanceHistory(query);
+  }
+
+  @Post('bulk')
+  @HttpCode(200)
+  @ApiOperation({
+    summary: 'Latest card-ready predictions for multiple matches',
+    description: 'Returns the latest pre-match and live stored runs keyed by match id.',
+  })
+  @ApiResponse({ status: 200, description: 'Predictions keyed by match id.', type: BulkPredictionsResponseDto })
+  @ApiResponse({ status: 400, description: 'Invalid match ids or more than 50 ids.' })
+  getBulk(@Body() body: BulkPredictionsRequestDto) {
+    return this.predictionsService.getBulk(body.matchIds);
   }
 
   @Get(':matchId/history')
