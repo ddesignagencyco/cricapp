@@ -154,6 +154,33 @@ describe('ingestion integration', () => {
       },
     ]);
 
+    await saveSportEventRecords([
+      {
+        kind: 'daily_schedule',
+        scopeKey: '2026-09-09',
+        eventId: TEST_MATCH_ID,
+        status: 'not_started',
+        scheduled: '2026-09-09T10:00:00Z',
+        payload: {
+          sport_event: {
+            id: TEST_MATCH_ID,
+            status: 'not_started',
+            scheduled: '2026-09-09T10:00:00Z',
+            competitors: [
+              { id: 'sr:team:a', name: 'Team A', abbreviation: 'TMA', qualifier: 'home' },
+              { id: 'sr:team:b', name: 'Team B', abbreviation: 'TMB', qualifier: 'away' },
+            ],
+          },
+        },
+      },
+    ]);
+
+    const match = await query(
+      `SELECT status FROM matches WHERE match_id = $1`,
+      [TEST_MATCH_ID],
+    );
+    assert.equal(match.rows[0].status, 'completed');
+
     const liveSet = await redis.smembers(redisKeys.liveMatches());
     assert.equal(liveSet.includes(TEST_MATCH_ID), false);
   });
