@@ -6,6 +6,7 @@ import { fetchToursPage, type ToursListParams, type ToursPageResult } from '../s
 import { fetchTournamentsPage, type TournamentsListParams, type TournamentPageResult } from '../services/tournaments';
 import { fetchLiveMatches, fetchMatchesPage, type MatchesListParams, type MatchesPageResult } from '../services/matches';
 import { fetchSiteSettings, type SiteSettings } from '../services/siteSettings';
+import { fetchGalleryPage, type GalleryListParams, type GalleryPageResult } from '../services/gallery';
 import {
   normalizeParams,
   playerKeys,
@@ -13,7 +14,9 @@ import {
   tourKeys,
   tournamentKeys,
   matchKeys,
+  galleryKeys,
   siteSettingsKeys,
+  type GalleryQueryParams,
   type MatchesQueryParams,
   type PlayersQueryParams,
   type TeamsQueryParams,
@@ -79,6 +82,16 @@ export function useTournamentsQuery(params: TournamentsQueryParams) {
     queryKey: tournamentKeys.list(normalized),
     queryFn: ({ signal }) => runAbortable(signal, (requestSignal) => fetchTournamentsPage(asListParams<TournamentsListParams>(normalized), requestSignal)),
     placeholderData: keepPreviousListData<TournamentPageResult>(normalized),
+  });
+}
+
+export function useGalleryQuery(params: GalleryQueryParams, enabled = true) {
+  const normalized = normalizeParams(params as Record<string, unknown>);
+  return useQuery<GalleryPageResult, Error>({
+    queryKey: galleryKeys.list(normalized),
+    queryFn: ({ signal }) => runAbortable(signal, (requestSignal) => fetchGalleryPage(asListParams<GalleryListParams>(normalized), requestSignal)),
+    placeholderData: keepPreviousListData<GalleryPageResult>(normalized),
+    enabled,
   });
 }
 

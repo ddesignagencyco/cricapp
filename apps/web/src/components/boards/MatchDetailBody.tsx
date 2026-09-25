@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Calendar, ClipboardList, Clock, FileText, MapPin, Newspaper, Radio, Scale, Sparkles, Swords, Trophy, Users } from 'lucide-react';
 import LiveIndicator from '../LiveIndicator';
@@ -101,7 +101,34 @@ function usefulResultText(value: unknown): string {
   return text;
 }
 
-function displaySide(match: any, index: 0 | 1) {
+function scoreFromMatch(match: any, index: 0 | 1): string {
+  const teams = match?.teams;
+  const isObj = teams && typeof teams === 'object' && !Array.isArray(teams);
+  const side = isObj ? (index === 0 ? teams.home : teams.away) : null;
+  const extra = index === 0 ? match?.home : match?.away;
+  const teamScores = index === 0 ? match?.teamScores?.home : match?.teamScores?.away;
+  return usefulScore(teamScores?.score || side?.score || extra?.score);
+}
+
+function scoreRuns(value: unknown): number | null {
+  const parsed = usefulScore(value).match(/^(\d+)/);
+  return parsed ? Number(parsed[1]) : null;
+}
+
+function preferredScore(matchScore: unknown, timelineScore: unknown, live: boolean): string {
+  const stored = usefulScore(matchScore);
+  const timeline = usefulScore(timelineScore);
+  if (!live) return timeline || stored;
+  if (!timeline) return stored;
+  if (!stored) return timeline;
+  const storedRuns = scoreRuns(stored);
+  const timelineRuns = scoreRuns(timeline);
+  if (storedRuns === null) return timeline;
+  if (timelineRuns === null) return stored;
+  return timelineRuns >= storedRuns ? timeline : stored;
+}
+
+function displaySide(match: any, index: 0 | 1, scoreOverride?: unknown) {
   const teams = match.teams;
   const isObj = teams && typeof teams === 'object' && !Array.isArray(teams);
   const side = isObj ? (index === 0 ? teams.home : teams.away) : null;
@@ -115,7 +142,7 @@ function displaySide(match: any, index: 0 | 1) {
     name,
     code: badCode ? getInitials(name) : codeStr.toUpperCase(),
     raw: String(rawCode || rawName || ''),
-    score: usefulScore(side?.score || extra?.score),
+    score: usefulScore(scoreOverride) || scoreFromMatch(match, index),
     overs: String(side?.overs || extra?.overs || '').trim(),
   };
 }
@@ -136,14 +163,24 @@ export default function MatchDetailBody({
   const [h2hLoading, setH2hLoading] = useState(false);
   const [h2hReady, setH2hReady] = useState(false);
   const matchId = decodeEntityId(initialMatch?.matchId || initialMatch?.id);
+  const isLive = match?.status === 'live';
+  const isUpcoming = match?.status === 'upcoming';
+  const isCompleted = match?.status === 'completed';
+  const isCancelled = match?.status === 'cancelled';
+  const showPredictions = isLive || isUpcoming;
+  const activeTabs = isCompleted || isCancelled ? completedTabs : detailTabs;
   const { articles: relatedNews, loading: newsLoading } = useLinkedNews({ matchId });
-  const liveUpdate = useMatchStream(matchId, initialMatch?.status === 'live');
-  const wantsTimeline = tab === 'commentary' || tab === 'timeline' || tab === 'scorecard' || tab === 'squads';
+  const liveUpdate = useMatchStream(matchId, isLive);
+  const wantsTimeline = (tab === 'live' && isLive) || tab === 'commentary' || tab === 'timeline' || tab === 'scorecard' || tab === 'squads';
   const wantsH2H = tab === 'h2h';
+  const initialMatchIdRef = useRef(matchId);
 
   useEffect(() => {
+    if (initialMatchIdRef.current === matchId) return;
+    initialMatchIdRef.current = matchId;
     setMatch(initialMatch);
-  }, [initialMatch]);
+    setTab(initialMatch?.status === 'completed' || initialMatch?.status === 'cancelled' ? 'result' : 'live');
+  }, [initialMatch, matchId]);
 
   useEffect(() => {
     setTimeline(null);
@@ -221,15 +258,10 @@ export default function MatchDetailBody({
     };
   }, [wantsH2H, h2hReady, initialMatch]);
 
-  const isLive = match?.status === 'live';
-  const isUpcoming = match?.status === 'upcoming';
-  const isCompleted = match?.status === 'completed';
-  const isCancelled = match?.status === 'cancelled';
-  const showPredictions = isLive || isUpcoming;
-  const activeTabs = isCompleted || isCancelled ? completedTabs : detailTabs;
-
   useEffect(() => {
     if (!showPredictions && tab === 'predictions') setTab(isCompleted || isCancelled ? 'result' : 'live');
+    if ((isCompleted || isCancelled) && tab === 'live') setTab('result');
+    if (!(isCompleted || isCancelled) && tab === 'result') setTab('live');
     if (tab === 'stats') setTab('scorecard');
   }, [showPredictions, tab, isCompleted, isCancelled]);
 
@@ -241,8 +273,11 @@ export default function MatchDetailBody({
     );
   }
 
-  const home = displaySide(match, 0);
-  const away = displaySide(match, 1);
+  const timelineSummary = matchSummary(timeline);
+  const storedHomeScore = scoreFromMatch(match, 0);
+  const storedAwayScore = scoreFromMatch(match, 1);
+  const home = displaySide(match, 0, preferredScore(storedHomeScore, timelineSummary.homeScore, isLive));
+  const away = displaySide(match, 1, preferredScore(storedAwayScore, timelineSummary.awayScore, isLive));
   const homeCode = home.code;
   const awayCode = away.code;
   const homeName = home.name;
@@ -251,21 +286,20 @@ export default function MatchDetailBody({
   const inn = match.currentInnings;
   const phaseRaw = String(match.matchStatus || '');
   const phase = matchStatusLabel(phaseRaw);
-  const timelineSummary = matchSummary(timeline);
   const displayScore = usefulScore(match.displayScore) || usefulScore(timelineSummary.displayScore);
   const board = buildMatchScoreboard({
     home: {
       code: home.code,
       name: home.name,
       raw: home.raw,
-      score: home.score || timelineSummary.homeScore,
+      score: home.score,
       overs: home.overs,
     },
     away: {
       code: away.code,
       name: away.name,
       raw: away.raw,
-      score: away.score || timelineSummary.awayScore,
+      score: away.score,
       overs: away.overs,
     },
     battingTeam: String(inn?.battingTeam || ''),
@@ -278,15 +312,21 @@ export default function MatchDetailBody({
     live: !isUpcoming,
   });
   const {
-    homeScore,
-    awayScore,
+    homeScore: rawHomeScore,
+    awayScore: rawAwayScore,
     homeOvers,
     awayOvers,
     scoreLine,
     oversLabel,
     rrLabel,
     battingLabel,
+    battingIsHome,
   } = board;
+  const duplicateLiveScore = Boolean(
+    isLive && scoreLine && rawHomeScore && rawAwayScore && rawHomeScore === rawAwayScore
+  );
+  const homeScore = duplicateLiveScore && !battingIsHome ? '' : rawHomeScore;
+  const awayScore = duplicateLiveScore && battingIsHome ? '' : rawAwayScore;
   const usefulOvers = Boolean(oversLabel);
   const usefulRr = Boolean(rrLabel && rrLabel !== '—');
   const hasInnings = Boolean(scoreLine) || usefulOvers;
@@ -449,6 +489,8 @@ export default function MatchDetailBody({
                 <LiveStrip match={match} />
                 <OversFromTimeline timeline={timeline} inning={/second_innings|2nd/i.test(phaseRaw) ? 2 : 1} />
               </div>
+            ) : isLive && (timelineLoading || !timelineReady) ? (
+              <TabPanelLoader />
             ) : isUpcoming ? (
               <EmptyState
                 title="This match hasn't started yet"

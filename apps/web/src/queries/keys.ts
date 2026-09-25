@@ -1,5 +1,12 @@
 export type QueryParam = string | number | boolean;
 
+export interface GalleryQueryParams {
+  [key: string]: string | number | boolean | undefined;
+  type?: 'image' | 'short' | 'video';
+  page?: number;
+  limit?: number;
+}
+
 export interface MatchesQueryParams {
   [key: string]: string | number | boolean | undefined;
   q?: string;
@@ -84,6 +91,15 @@ export function parsePositiveInt(value: unknown, fallback: number): number {
 export function parseLimit(value: unknown, fallback: number): number {
   return Math.min(100, parsePositiveInt(value, fallback));
 }
+
+const galleryLists = () => ['gallery', 'list'] as const;
+
+export const galleryKeys = {
+  all: ['gallery'] as const,
+  lists: galleryLists,
+  list: (params: GalleryQueryParams | Record<string, unknown>) =>
+    [...galleryLists(), normalizeParams(params as Record<string, unknown>)] as const,
+};
 
 const matchLists = () => ['matches', 'list'] as const;
 

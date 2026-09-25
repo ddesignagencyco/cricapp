@@ -74,7 +74,7 @@ export default function MatchTickerBar({ matches: initialMatches }: MatchTickerB
             type="button"
             onClick={() => scroll('left')}
             disabled={!canScrollLeft}
-            className="carousel-control"
+            className="carousel-control hidden sm:grid"
             aria-label="Scroll left"
           >
             <ChevronLeft size={16} />
@@ -95,7 +95,7 @@ export default function MatchTickerBar({ matches: initialMatches }: MatchTickerB
             type="button"
             onClick={() => scroll('right')}
             disabled={!canScrollRight}
-            className="carousel-control"
+            className="carousel-control hidden sm:grid"
             aria-label="Scroll right"
           >
             <ChevronRight size={16} />
@@ -132,7 +132,7 @@ function TickerCard({ match }: { match: any }) {
     <Link
       href={`/matches/${match.matchId || match.id}`}
       prefetch={false}
-      className="group flex w-[260px] shrink-0 flex-col overflow-hidden rounded-xl bg-card p-3 ring-1 ring-lborder transition-colors hover:bg-[var(--color-row-hover)] hover:ring-border-strong"
+      className="group flex w-[calc(100vw-2rem)] max-w-[420px] shrink-0 flex-col overflow-hidden rounded-xl bg-card p-3 ring-1 ring-lborder transition-colors hover:bg-[var(--color-row-hover)] hover:ring-border-strong sm:w-[260px] sm:max-w-none"
     >
       <div className="mb-2 flex items-center justify-between gap-2">
         <span className="min-w-0 truncate text-xs font-semibold tracking-wide text-stext">

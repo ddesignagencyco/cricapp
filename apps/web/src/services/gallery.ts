@@ -17,16 +17,30 @@ export interface GalleryMedia {
   createdAt?: string;
 }
 
+export interface GalleryListParams {
+  [key: string]: string | number | boolean | undefined;
+  page?: number;
+  limit?: number;
+  type?: GalleryMediaType;
+}
+
+export interface GalleryPageResult {
+  items: GalleryMedia[];
+  total: number;
+  totalPages: number;
+}
+
 export async function fetchGalleryPage(
-  params: { page?: number; limit?: number; type?: GalleryMediaType } = {}
-): Promise<{ items: GalleryMedia[]; total: number; totalPages: number }> {
-  const res = await apiGet('/gallery', { page: 1, limit: 40, ...params });
+  params: GalleryListParams = {},
+  signal?: AbortSignal
+): Promise<GalleryPageResult> {
+  const res = await apiGet('/gallery', { page: 1, limit: 40, ...params }, { signal });
   const { items, meta } = extractPage<GalleryMedia>(res);
   return { items, total: meta.total, totalPages: meta.totalPages };
 }
 
-export function fetchGalleryItem(id: string): Promise<GalleryMedia | null> {
-  return apiGetOptional<GalleryMedia>(`/gallery/${id}`);
+export function fetchGalleryItem(id: string, signal?: AbortSignal): Promise<GalleryMedia | null> {
+  return apiGetOptional<GalleryMedia>(`/gallery/${id}`, undefined, { signal });
 }
 
 export async function uploadGalleryMedia(input: {

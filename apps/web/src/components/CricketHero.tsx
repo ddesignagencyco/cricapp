@@ -48,7 +48,7 @@ export default function CricketHero({ match: _match }: CricketHeroProps) {
           </div>
 
           {/* Right — Quick links grid */}
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 w-full max-w-xs sm:max-w-sm lg:max-w-xs">
+          <div className="grid w-full max-w-xs grid-cols-1 gap-3 sm:max-w-sm sm:grid-cols-2 sm:gap-4 lg:max-w-xs">
             {[
               { icon: Calendar, label: 'Schedule', sub: 'Fixtures & Results', href: '/schedules' },
               { icon: Trophy, label: 'PSL 2026', sub: 'Points Table & More', href: '/psl' },

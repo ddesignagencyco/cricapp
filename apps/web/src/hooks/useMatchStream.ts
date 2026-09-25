@@ -62,6 +62,17 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
 
+function mergeTeamScores(prev: unknown, incoming: unknown): unknown {
+  if (incoming === undefined || incoming === null) return prev;
+  if (!isPlainObject(incoming)) return prev ?? incoming;
+  if (!isPlainObject(prev)) return incoming;
+  return {
+    ...prev,
+    home: { ...(isPlainObject(prev.home) ? prev.home : {}), ...(isPlainObject(incoming.home) ? incoming.home : {}) },
+    away: { ...(isPlainObject(prev.away) ? prev.away : {}), ...(isPlainObject(incoming.away) ? incoming.away : {}) },
+  };
+}
+
 function mergeTeams(prev: unknown, incoming: unknown): unknown {
   if (incoming === undefined || incoming === null) return prev;
   if (Array.isArray(incoming)) {
@@ -138,6 +149,10 @@ export function mergeMatchLivePayload<T extends Record<string, unknown>>(
       next.teams = mergeTeams(prev.teams, value);
       continue;
     }
+    if (key === 'teamScores') {
+      next.teamScores = mergeTeamScores(prev.teamScores, value);
+      continue;
+    }
     if (key === 'teamNames') {
       if (Array.isArray(value) && value.length >= 2 && value.some(Boolean)) next.teamNames = value;
       continue;
@@ -206,6 +221,7 @@ export function useMatchStream(matchId?: string | null, enabled = true): LiveUpd
 
   useEffect(() => {
     if (!enabled || typeof window === 'undefined') return;
+    setUpdate(null);
 
     const socket = acquireMatchesSocket();
     let cancelled = false;
