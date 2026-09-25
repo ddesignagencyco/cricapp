@@ -16,6 +16,7 @@ import {
   fetchTournaments,
   fetchTournamentResults,
   fetchTournamentSeasons,
+  fetchTournamentInfo,
   fetchMatchLineups,
   fetchMatchSummary,
 } from './sportradar.js';
@@ -47,12 +48,14 @@ import {
   savePlayerProfile,
   saveTeamsPlayers,
   saveTournamentSeasons,
+  saveTournamentInfo,
   listActiveSeasonIds,
   listActiveTournamentIds,
   listEventIdsWithoutTimeline,
   listLiveMatchIds,
   listEventIdsWithoutMatchSummary,
   listHeadToHeadPairs,
+  listUpcomingHeadToHeadPairs,
   listTeamsWithoutSync,
   materializeTeamEvents,
   listMatchesForRosterlessTeams,
@@ -72,9 +75,17 @@ import redis, { redisKeys } from './redis.js';
 const log = createLogger('ref');
 const warn = log.warn;
 
-const REFERENCE_SYNC_INTERVAL_MS = Number(
-  process.env.REFERENCE_SYNC_INTERVAL_MS || 3600000,
+function nonNegativeEnvNumber(name, fallback) {
+  const value = Number(process.env[name] ?? fallback);
+  return Number.isFinite(value) && value >= 0 ? Math.floor(value) : fallback;
+}
+
+const REFERENCE_SYNC_INTERVAL_MS = nonNegativeEnvNumber(
+  'REFERENCE_SYNC_INTERVAL_MS',
+  3600000,
 );
+const REFERENCE_SYNC_PAST_DAYS = nonNegativeEnvNumber('REFERENCE_SYNC_PAST_DAYS', 2);
+const REFERENCE_SYNC_FUTURE_DAYS = nonNegativeEnvNumber('REFERENCE_SYNC_FUTURE_DAYS', 30);
 const PAUSE_REF_WHEN_LIVE =
   String(process.env.PAUSE_REF_SYNC_WHEN_LIVE || 'true').toLowerCase() !== 'false';
 
@@ -125,8 +136,10 @@ export async function syncTourCatalog({ force = false } = {}) {
   log.info('tour catalog complete', { tournaments: tournamentCount, toursFromCategories: tourCount });
   if (force) {
     await clearSyncStamp('tournamentSeasons', PSL.TOURNAMENT_ID);
+    await clearSyncStamp('tournamentInfo', PSL.TOURNAMENT_ID);
   }
   await syncTournamentSeasonsFor(PSL.TOURNAMENT_ID);
+  await syncTournamentInfoFor(PSL.TOURNAMENT_ID);
   return { tournaments: tournamentCount, toursFromCategories: tourCount };
 }
 
@@ -136,6 +149,19 @@ export async function syncTournamentSeasonsFor(tournamentId) {
   const count = await saveTournamentSeasons(rows);
   log.info(`tournament ${tournamentId}: ${count} seasons`);
   return count;
+}
+
+/**
+ * tournaments/{id}/info.json → store tournament groups (team lists) on the
+ * tournament row and flatten the teams into the teams table. This is what
+ * supplies the app's full tournament + teams shape (e.g. all IPL franchises)
+ * instead of the thin tournament-list metadata.
+ */
+export async function syncTournamentInfoFor(tournamentId) {
+  const raw = await fetchTournamentInfo(tournamentId);
+  const teamCount = await saveTournamentInfo(tournamentId, raw);
+  log.info(`tournament ${tournamentId}: ${teamCount} teams + groups stored`);
+  return teamCount;
 }
 
 /**
@@ -352,12 +378,21 @@ export async function syncDaily({ date = isoDate(), schedule = true, results = t
  * Daily schedule/results for a rolling window, gated per date so each day is
  * only re-fetched when its stamp is stale.
  */
-async function syncDailyWindowStale(days = 3) {
-  for (let i = days - 1; i >= 0; i -= 1) {
+async function syncDailyWindowStale({
+  pastDays = REFERENCE_SYNC_PAST_DAYS,
+  futureDays = REFERENCE_SYNC_FUTURE_DAYS,
+} = {}) {
+  for (let offset = -pastDays; offset <= futureDays; offset += 1) {
     const d = new Date();
-    d.setDate(d.getDate() - i);
+    d.setUTCDate(d.getUTCDate() + offset);
     const date = isoDate(d);
-    await runStale('daily', date, REF_CADENCE.daily, () => syncDaily({ date }), 500);
+    await runStale(
+      'daily',
+      date,
+      REF_CADENCE.daily,
+      () => syncDaily({ date, results: offset <= 0 }),
+      500,
+    );
   }
 }
 
@@ -449,6 +484,8 @@ export async function syncTournamentResults(tournamentOrSeasonId, { persist = tr
  * are refreshed weekly, slow data every few hours, and timelines/lineups once.
  */
 export async function refSyncAll(options = {}) {
+  await syncDailyWindowStale();
+
   if (PAUSE_REF_WHEN_LIVE) {
     const liveCount = await liveMatchCount();
     if (liveCount > 0) {
@@ -469,12 +506,12 @@ export async function refSyncAll(options = {}) {
     teamLimit = 10,
     lineupLimit = 20,
     playerProfileLimit = 15,
+    headToHeadLimit = 50,
   } = options;
 
   await runStale('tours', null, REF_CADENCE.tours, syncTourList);
   await runStale('tournaments', null, REF_CADENCE.tournaments, syncTournamentList);
   await safeRun(backfillTours);
-  await syncDailyWindowStale(3);
 
   // Tournament results/seasons: derive targets from the synced tournament
   // list's `current_season` (active years only) instead of hardcoded ids.
@@ -486,6 +523,13 @@ export async function refSyncAll(options = {}) {
   const derivedTournamentIds = await listActiveTournamentIds({ limit: seasonLimit });
   for (const id of [...new Set([...derivedTournamentIds, ...tournamentIds])]) {
     await runStale('tournamentSeasons', id, REF_CADENCE.tournamentSeasons, () => syncTournamentSeasonsFor(id), delay);
+  }
+
+  // Tournament info (groups + team lists): same derived targets, own cadence.
+  // This keeps the /info team lists fresh for every active tournament even
+  // when only the tournament list row exists in the DB.
+  for (const id of [...new Set([...derivedTournamentIds, ...tournamentIds])]) {
+    await runStale('tournamentInfo', id, REF_CADENCE.tournamentInfo, () => syncTournamentInfoFor(id), delay);
   }
 
   // Materialize per-team schedule/results from the match records we already
@@ -506,9 +550,10 @@ export async function refSyncAll(options = {}) {
 
   // Head-to-head: keep existing pairs fresh, plus any env-configured pairs.
   const existingPairs = await listHeadToHeadPairs();
+  const upcomingPairs = await listUpcomingHeadToHeadPairs({ limit: headToHeadLimit });
   const allPairs = [
     ...new Map(
-      [...existingPairs, ...pairIds].map((p) => [p.join('::'), p]),
+      [...existingPairs, ...upcomingPairs, ...pairIds].map((p) => [p.join('::'), p]),
     ).values(),
   ];
   for (const [a, b] of allPairs) {
@@ -608,12 +653,34 @@ async function runStale(category, id, cadenceMs, fn, delay = 0) {
  * targets, then according to REFERENCE_SYNC_INTERVAL_MS.
  */
 export async function startReferenceSync(options) {
-  await refSyncAll(options);
+  let inFlight = false;
+  const run = async (reason) => {
+    if (inFlight) {
+      log.info('reference sync already running — skip', { reason });
+      return null;
+    }
+    inFlight = true;
+    try {
+      return await refSyncAll(options);
+    } finally {
+      inFlight = false;
+    }
+  };
+
   if (REFERENCE_SYNC_INTERVAL_MS > 0) {
     setInterval(() => {
-      refSyncAll(options).catch((err) =>
+      run('interval').catch((err) =>
         warn(`reference periodic sync failed: ${err.message}`),
       );
     }, REFERENCE_SYNC_INTERVAL_MS);
+    log.info('reference sync scheduled', {
+      intervalMs: REFERENCE_SYNC_INTERVAL_MS,
+      pastDays: REFERENCE_SYNC_PAST_DAYS,
+      futureDays: REFERENCE_SYNC_FUTURE_DAYS,
+    });
+  } else {
+    log.warn('periodic reference sync disabled; startup sync only');
   }
+
+  return run('startup');
 }
