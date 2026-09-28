@@ -180,28 +180,54 @@ describe('sideScoreLine', () => {
 });
 
 describe('describeMatchResult', () => {
-  it('describes a chase won with wickets in hand', () => {
+  it('reports the run difference, because the batting order is not in the scorecard', () => {
+    // 181/4 v 180/7 reads like a chase, but nothing in the payload says who batted
+    // first, so the only margin derivable here is the run difference. Real chases
+    // carry an API `result` (see the next test) and never reach this fallback.
     expect(
       describeMatchResult({
         teams: { home: { name: 'Lahore', score: '181/4' }, away: { name: 'Islamabad', score: '180/7' } },
         status: 'completed',
       })
-    ).toBe('Lahore won by 6 wickets');
+    ).toBe('Lahore won by 1 run');
   });
 
-  it('describes a comfortable win, and exposes a known limitation', () => {
-    // KNOWN BUG (matchScoreboard.ts:222): `chased` is decided by
-    // `loserScore.runs < winnerScore.runs`, which assumes the winner chased. With
-    // 200/8 vs 150/9 the winner actually batted first and defended, so the honest
-    // answer is "A won by 50 runs" — but the code says wickets because it cannot
-    // see who batted first. This test pins the current behaviour so the change is
-    // deliberate when someone fixes it.
+  it('describes a defended total as a runs win instead of inventing wickets', () => {
+    // The old `chased` test was `loserScore.runs < winnerScore.runs`, which is true
+    // for every decided match, so a defended 200/8 was reported as "won by 2
+    // wickets". The run difference is the honest answer.
     expect(
       describeMatchResult({
         teams: { home: { name: 'A', score: '200/8' }, away: { name: 'B', score: '150/9' } },
         status: 'completed',
       })
-    ).toBe('A won by 2 wickets');
+    ).toBe('A won by 50 runs');
+  });
+
+  it('does not fabricate a margin for an innings that stopped short', () => {
+    // The loser's innings ended with wickets in hand and fewer overs than the
+    // winner's, so the match was cut short - not a 261-run defeat.
+    expect(
+      describeMatchResult({
+        teams: {
+          home: { name: 'Limpopo', score: '7/0', overs: '2' },
+          away: { name: 'Northern Cape', score: '356/7', overs: '96.5' },
+        },
+        status: 'completed',
+      })
+    ).toBe('No result');
+  });
+
+  it('still derives a run margin when the losing innings was bowled out', () => {
+    expect(
+      describeMatchResult({
+        teams: {
+          home: { name: 'Karachi', score: '199/6', overs: '20' },
+          away: { name: 'Hyderabad', score: '130/10', overs: '20' },
+        },
+        status: 'completed',
+      })
+    ).toBe('Karachi won by 69 runs');
   });
 
   it('prefers a stored result string over anything it derives', () => {
@@ -221,7 +247,7 @@ describe('describeMatchResult', () => {
         teams: { home: { name: 'Lahore', score: '181/4' }, away: { name: 'Islamabad', score: '180/7' } },
         status: 'completed',
       })
-    ).toBe('Lahore won by 6 wickets');
+    ).toBe('Lahore won by 1 run');
   });
 
   it('reports a tie rather than picking a winner', () => {

@@ -208,23 +208,52 @@ export function sideScoreLine(match: any, side: 'home' | 'away'): string {
   return overs ? `${score} (${overs})` : score;
 }
 
+/** Overs as a number, e.g. "19.5" -> 19.5. Null when absent or unparseable. */
+function oversValue(overs: string): number | null {
+  const m = String(overs || '')
+    .trim()
+    .match(/^(\d+(?:\.\d+)?)/);
+  if (!m) return null;
+  const n = Number(m[1]);
+  return Number.isFinite(n) ? n : null;
+}
+
+/** Longest innings in the match, used to tell limited-overs from first-class. */
+function maxOvers(...sides: string[]): number {
+  const values = sides.map(oversValue).filter((v): v is number => v !== null && v > 0);
+  return values.length ? Math.max(...values) : 0;
+}
+
 export function describeMatchResult(match: any): string {
   const stored = usefulText(match?.result || match?.resultText || match?.matchResult);
   if (stored && !/^(ended|completed|finished|match ended)$/i.test(stored)) return stored;
-  const { home, away, homeScore, awayScore } = scoreboardFromMatch(match);
+  const { home, away, homeScore, awayScore, homeOvers, awayOvers } = scoreboardFromMatch(match);
   const homeParsed = parseScore(homeScore);
   const awayParsed = parseScore(awayScore);
   if (!homeParsed || !awayParsed) return stored;
   if (homeParsed.runs === awayParsed.runs) return 'Match tied';
   const homeWon = homeParsed.runs > awayParsed.runs;
   const winner = homeWon ? home.name : away.name;
-  const winnerScore = homeWon ? homeParsed : awayParsed;
   const loserScore = homeWon ? awayParsed : homeParsed;
-  const chased = winnerScore.wickets !== null && winnerScore.wickets < 10 && loserScore.runs < winnerScore.runs;
-  if (chased) {
-    const left = 10 - winnerScore.wickets;
-    return `${winner} won by ${left} wicket${left === 1 ? '' : 's'}`;
-  }
+  const loserOvers = oversValue(homeWon ? awayOvers : homeOvers);
+  const winnerOvers = oversValue(homeWon ? homeOvers : awayOvers);
+  const limit = maxOvers(homeOvers, awayOvers);
+  // An innings that ended without all ten wickets stopped at the overs limit, so
+  // if it also finished short of the other innings it was cut short - rain, a
+  // shortened target, an abandoned fixture. Those scorecards carry no `result`,
+  // and any margin derived from them would be invented.
+  const loserIncomplete =
+    loserScore.wickets !== null &&
+    loserScore.wickets < 10 &&
+    loserOvers !== null &&
+    ((limit > 0 && limit <= 20 && loserOvers < limit) ||
+      (winnerOvers !== null && loserOvers < winnerOvers));
+  if (loserIncomplete) return 'No result';
+  // Runs-vs-wickets needs the batting order, which a finished scorecard does not
+  // carry: the higher total is the winner's either way, and `currentInnings` is a
+  // live field that goes stale (often `runs: 0`) once a match ends. The API's
+  // `result` is authoritative and is preferred above, so this fallback reports the
+  // run difference, which is the only margin derivable from the score alone.
   const margin = Math.abs(homeParsed.runs - awayParsed.runs);
   return `${winner} won by ${margin} run${margin === 1 ? '' : 's'}`;
 }
