@@ -50,6 +50,18 @@ export interface MatchPredictions {
   live?: PredictionRun | null;
 }
 
+export interface BulkPredictionsMeta {
+  requested: number;
+  returned: number;
+  missing: number;
+}
+
+/** `POST /predictions/bulk` — latest runs for many matches, keyed by match id. */
+export interface BulkPredictionsResponse {
+  data: Record<string, MatchPredictions>;
+  meta: BulkPredictionsMeta;
+}
+
 export interface PredictionHistory {
   matchId: string;
   runs: PredictionRun[];
