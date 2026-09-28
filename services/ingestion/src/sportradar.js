@@ -6,6 +6,11 @@ const LANG = 'en';
 const REQUEST_TIMEOUT_MS = Number(process.env.SPORTRADAR_TIMEOUT_MS || 15000);
 const MAX_RETRIES = Number(process.env.SPORTRADAR_MAX_RETRIES || 3);
 
+// After a 401/403 (bad key, IP allow-list, or account blocked) retrying is
+// futile and just burns quota/cycles, so the client pauses all Sportradar
+// calls for this long and surfaces a single clear error instead.
+const AUTH_PAUSE_MS = Number(process.env.SPORTRADAR_AUTH_PAUSE_MS || 5 * 60 * 1000);
+
 // Self-throttle to a token bucket at RATE_QPS so we stay under the provider
 // quota and stop paying the 429 multiply-by-4 penalty. Trial tier is 1 QPS;
 // raise SPORTRADAR_QPS for higher purchased tiers.
@@ -16,8 +21,10 @@ let lastRefill = Date.now();
 
 const stats = { calls: 0, retries: 0, throttledMs: 0, lastError: null };
 
+let authPausedUntil = 0;
+
 export function getCallStats() {
-  return { ...stats };
+  return { ...stats, authPausedUntil: authPausedUntil === 0 ? null : new Date(authPausedUntil).toISOString() };
 }
 
 function sleep(ms) {
@@ -43,6 +50,12 @@ async function acquireToken() {
 }
 
 async function fetchJson(path, options = {}, attempt = 0) {
+  if (Date.now() < authPausedUntil) {
+    throw new Error(
+      `sportradar temporarily disabled until ${new Date(authPausedUntil).toISOString()} after an auth failure (401/403); check SPORTRADAR_API_KEY and the account/IP allow-list`,
+    );
+  }
+
   const url = `${BASE_URL}/cricket-${ACCESS_LEVEL}2/${LANG}/${path}`;
   const params = new URLSearchParams({ api_key: API_KEY });
   if (options.since) params.set('since', options.since);
@@ -68,20 +81,34 @@ async function fetchJson(path, options = {}, attempt = 0) {
 
   stats.calls += 1;
 
-  if (res.status === 429 && attempt < MAX_RETRIES) {
-    stats.retries += 1;
-    const retryAfterMs = (Number(res.headers.get('retry-after') || 0) || 1) * 1000;
-    const backoffMs = Math.min(15000, retryAfterMs * 2 ** attempt);
-    const jitter = 0.5 + Math.random() * 0.5;
-    const wait = Math.round(backoffMs * jitter);
-    console.warn(`[sportradar] 429 retry ${attempt + 1}/${MAX_RETRIES} wait=${wait}ms ${path}`);
-    await sleep(wait);
-    return fetchJson(path, options, attempt + 1);
-  }
-
   if (!res.ok) {
-    stats.lastError = `${res.status}: ${url}`;
-    throw new Error(`sportradar request failed (${res.status}): ${url}`);
+    const bodySnippet = (await res.text().catch(() => ''))
+      .replace(/\s+/g, ' ')
+      .slice(0, 200);
+    stats.lastError = `${res.status}: ${url} ${bodySnippet}`;
+
+    if (res.status === 401 || res.status === 403 || res.status === 400) {
+      authPausedUntil = Date.now() + AUTH_PAUSE_MS;
+      console.error(
+        `[sportradar] ${res.status} auth/permission failure for ${API_KEY ? API_KEY.slice(0, 6) + '...' : '(no key)'}: ${url} ${bodySnippet ? 'body=' + bodySnippet : ''} — pausing Sportradar calls for ${Math.round(AUTH_PAUSE_MS / 60000)}min. Verify the key in the Sportradar console (account active, IP allow-listed, access level "t2" subscribed).`,
+      );
+      throw new Error(
+        `sportradar ${res.status} authentication error: ${url} body="${bodySnippet}"`,
+      );
+    }
+
+    if (res.status === 429 && attempt < MAX_RETRIES) {
+      stats.retries += 1;
+      const retryAfterMs = (Number(res.headers.get('retry-after') || 0) || 1) * 1000;
+      const backoffMs = Math.min(15000, retryAfterMs * 2 ** attempt);
+      const jitter = 0.5 + Math.random() * 0.5;
+      const wait = Math.round(backoffMs * jitter);
+      console.warn(`[sportradar] 429 retry ${attempt + 1}/${MAX_RETRIES} wait=${wait}ms ${path}`);
+      await sleep(wait);
+      return fetchJson(path, options, attempt + 1);
+    }
+
+    throw new Error(`sportradar request failed (${res.status}): ${url} ${bodySnippet}`);
   }
   return res.json();
 }

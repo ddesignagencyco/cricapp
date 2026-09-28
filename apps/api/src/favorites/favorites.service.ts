@@ -85,6 +85,20 @@ export class FavoritesService {
         if (article) target = article;
         break;
       }
+      case 'author': {
+        const author = await this.prisma.author.findFirst({
+          where: { OR: [{ id: row.targetId }, { slug: row.targetId }] },
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            bio: true,
+            avatarUrl: true,
+          },
+        });
+        if (author) target = author;
+        break;
+      }
       case 'tour': {
         const tour = await this.prisma.tour.findUnique({
           where: { id: row.targetId },
@@ -157,6 +171,14 @@ export class FavoritesService {
         throw new BadRequestException('Published news article not found');
       }
       dto = { ...dto, targetId: article.id };
+    }
+    if (dto.targetType === 'author') {
+      const author = await this.prisma.author.findFirst({
+        where: { OR: [{ id: dto.targetId }, { slug: dto.targetId }] },
+        select: { id: true },
+      });
+      if (!author) throw new BadRequestException('Author not found');
+      dto = { ...dto, targetId: author.id };
     }
     if (dto.targetType === 'tour') {
       const tour = await this.prisma.tour.findUnique({

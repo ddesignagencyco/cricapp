@@ -205,6 +205,16 @@ model TournamentSeason {
   @@map("tournament_seasons")
 }
 
+// Tournament Detail endpoint -> raw tournaments/{id}/info.json payload.
+model TournamentInfo {
+  tournamentId String   @id @map("tournament_id")
+  payload      Json
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("tournament_info")
+}
+
 // Daily Schedule / Daily Results / Team Schedule / Team Results / Tournament Results
 // all return the same rich `sport_event` shape. Store one row per event, keyed by
 // a "kind" (daily_schedule, daily_results, team_schedule, team_results,

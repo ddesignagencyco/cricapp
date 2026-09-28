@@ -129,6 +129,7 @@ export async function cleanDatabase(prisma: PrismaService): Promise<void> {
     'sport_event_records',
     'tournament_seasons',
     'tournaments',
+    'tournament_info',
     'tours',
     'psl_leaders',
     'psl_fixtures',

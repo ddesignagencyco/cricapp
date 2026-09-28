@@ -131,6 +131,39 @@ describe('FavoritesModule (integration)', () => {
       .expect(400);
   });
 
+  it('POST /favorites — bookmarks an author by slug and expands it', async () => {
+    const author = await ctx.prisma.author.create({
+      data: {
+        name: 'Ayesha Khan',
+        slug: 'ayesha-khan',
+        bio: 'Cricket writer',
+      },
+    });
+
+    const created = await ctx.agent
+      .post('/favorites')
+      .set('Authorization', `Bearer ${userToken}`)
+      .send({ targetType: 'author', targetId: author.slug })
+      .expect(201);
+    expect(created.body.targetId).toBe(author.id);
+
+    const listed = await ctx.agent
+      .get('/favorites?targetType=author&expand=true')
+      .set('Authorization', `Bearer ${userToken}`)
+      .expect(200);
+    expect(listed.body.data[0].target).toEqual(
+      expect.objectContaining({ id: author.id, name: 'Ayesha Khan', slug: 'ayesha-khan' }),
+    );
+  });
+
+  it('POST /favorites — rejects a missing author', async () => {
+    await ctx.agent
+      .post('/favorites')
+      .set('Authorization', `Bearer ${userToken}`)
+      .send({ targetType: 'author', targetId: 'missing-author' })
+      .expect(400);
+  });
+
   it('favorites and expands tours and tournaments', async () => {
     await ctx.prisma.tour.create({
       data: { id: 'sr:tour:1', name: 'World Cricket Tour' },
