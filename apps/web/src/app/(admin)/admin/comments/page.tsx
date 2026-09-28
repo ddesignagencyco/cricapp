@@ -142,11 +142,11 @@ export default function CommentsPage() {
                           {report.comment?.targetType || '—'}
                         </p>
                         {href ? (
-                          <Link href={href} className="mt-1 inline-flex items-center gap-1 text-xs font-bold" style={{ color: 'var(--admin-accent)' }}>
+                          <Link href={href} className="mt-1 inline-flex items-center gap-1 text-xs font-semibold" style={{ color: 'var(--admin-accent)' }}>
                             Open <ExternalLink size={12} />
                           </Link>
                         ) : (
-                          <p className="mt-1 text-xs" style={{ color: 'var(--admin-text-muted)' }}>{report.comment?.targetId || '—'}</p>
+                          <p className="mt-1 text-xs" style={{ color: 'var(--admin-text-muted)' }}>Unlinked comment</p>
                         )}
                       </td>
                       <td className="px-4 py-3 align-top">

@@ -215,7 +215,7 @@ export default function AdminContactPage() {
                           style={{ color: 'var(--admin-text-secondary)' }}
                         >
                           <span className="line-clamp-2 whitespace-pre-wrap">{item.message}</span>
-                          <span className="mt-1 block text-[11px] font-bold" style={{ color: 'var(--admin-accent)' }}>
+                          <span className="mt-1 block text-[11px] font-semibold" style={{ color: 'var(--admin-accent)' }}>
                             Open message
                           </span>
                         </button>

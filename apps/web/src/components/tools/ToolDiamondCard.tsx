@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import type { ToolDef } from '../../lib/toolsCatalog';
-import { toolSource } from '../../lib/toolsCatalog';
+import { TOOL_SOURCE_LABEL, toolSource } from '../../lib/toolsCatalog';
 import ToolDiamondIcon from './ToolDiamondIcon';
 
 export default function ToolDiamondCard({ tool }: { tool: ToolDef }) {
@@ -24,7 +24,9 @@ export default function ToolDiamondCard({ tool }: { tool: ToolDef }) {
         </div>
       </div>
       <div className="mt-auto flex items-center justify-between border-t border-lborder/80 px-4 py-3 sm:px-5">
-        <span className="text-[10px] font-bold uppercase tracking-widest text-stext">Calculator</span>
+        <span className="text-[10px] font-bold uppercase tracking-widest text-stext">
+          {source === 'api' ? 'Live prices' : source === 'stored' ? 'Saved results' : 'Work it out'}
+        </span>
         <span className="flex items-center gap-1 text-xs font-semibold text-accent">
           Open
           <ArrowRight size={14} className="transition-transform duration-200 group-hover:translate-x-0.5" />
@@ -34,7 +36,7 @@ export default function ToolDiamondCard({ tool }: { tool: ToolDef }) {
   );
 }
 
-function SourceBadge({ source }: { source: 'formula' | 'api' | 'stored' }) {
+function SourceBadge({ source }: { source: 'formula' | 'stored' | 'api' }) {
   const cls =
     source === 'formula'
       ? 'bg-secondary text-stext'
@@ -42,11 +44,9 @@ function SourceBadge({ source }: { source: 'formula' | 'api' | 'stored' }) {
         ? 'bg-brand-soft text-accent'
         : 'bg-accent/10 text-accent';
 
-  const label = source === 'formula' ? 'Formula' : source === 'api' ? 'API' : 'Stored';
-
   return (
     <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${cls}`}>
-      {label}
+      {TOOL_SOURCE_LABEL[source]}
     </span>
   );
 }

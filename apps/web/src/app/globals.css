@@ -2586,6 +2586,48 @@ h3.news-copy[dir="rtl"] {
   background: var(--admin-text, var(--color-mtext));
 }
 
+/* TableScrollRail takes over from the native bar: touch platforms hide overlay
+   bars until you flick, so the rail below is the only permanent affordance. */
+[data-table-rail='on'] {
+  scrollbar-width: none;
+}
+
+[data-table-rail='on']::-webkit-scrollbar {
+  display: none;
+}
+
+.table-scroll-rail {
+  display: none;
+  height: 0.875rem;
+  padding: 0.1875rem 0.5rem;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.table-scroll-rail[data-state='ready'] {
+  display: block;
+}
+
+.table-scroll-rail[data-dragging='true'] {
+  cursor: grabbing;
+}
+
+.table-scroll-rail__thumb {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--color-border-strong);
+  transition: background-color var(--motion-duration) var(--motion-ease);
+}
+
+.table-scroll-rail:hover .table-scroll-rail__thumb {
+  background: var(--color-text-muted);
+}
+
+.table-scroll-rail[data-dragging='true'] .table-scroll-rail__thumb {
+  background: var(--color-text-secondary);
+}
+
 @media (max-width: 767px) {
   table {
     width: 100%;

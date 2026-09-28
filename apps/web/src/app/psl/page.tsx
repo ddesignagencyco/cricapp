@@ -61,8 +61,8 @@ export default async function PSLPage({ searchParams }: { searchParams: Promise<
         </section>
         <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
           <ErrorState
-            title="Server unavailable"
-            message="Can't reach the API, so PSL seasons, tables and fixtures aren't listed. Start the backend or try again."
+            title="We could not load this page"
+            message="PSL seasons, tables and fixtures are not showing right now. Please try again in a moment."
           />
         </section>
       </div>
@@ -104,8 +104,8 @@ export default async function PSLPage({ searchParams }: { searchParams: Promise<
         </section>
         <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
           <ErrorState
-            title="Server unavailable"
-            message="Can't reach the API, so PSL tables and fixtures aren't listed. Start the backend or try again."
+            title="We could not load this page"
+            message="PSL tables and fixtures are not showing right now. Please try again in a moment."
           />
         </section>
       </div>

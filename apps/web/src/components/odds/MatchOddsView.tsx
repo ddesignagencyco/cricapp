@@ -131,6 +131,14 @@ export default function MatchOddsView({
   const selectedHistoryKey = selectionGroups.has(historySelection)
     ? historySelection
     : columnKeys[0] ?? '';
+  /** Slug → readable name. The history API returns slugs only, never display names. */
+  const sourceNames = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const market of data?.markets ?? []) {
+      for (const row of market.selections) map[row.sourceSlug] = row.sourceName;
+    }
+    return map;
+  }, [data]);
 
   useEffect(() => {
     if (!activeMarket || !selectedHistoryKey || forbidden) {
@@ -161,7 +169,7 @@ export default function MatchOddsView({
   if (forbidden) {
     return (
       <p className="rounded-2xl bg-secondary px-4 py-3 text-sm text-stext ring-1 ring-lborder">
-        Odds comparison is not available in this region or environment.
+        Prices are not available in your area right now.
       </p>
     );
   }
@@ -169,8 +177,8 @@ export default function MatchOddsView({
   if (notFound) {
     return (
       <EmptyState
-        title="No odds stored yet"
-        message="Licensed prices are not saved for this fixture. Run the dev odds seed against this match id, or try an upcoming/live fixture."
+        title="No prices for this match yet"
+        message="We have not added prices for this match. Try a match that is live or coming up."
         icon={Scale}
       />
     );
@@ -191,8 +199,8 @@ export default function MatchOddsView({
   if (!data) {
     return (
       <EmptyState
-        title="Odds unavailable"
-        message="We could not load comparison data right now."
+        title="Prices could not be loaded"
+        message="Something went wrong on our side. Please try again in a moment."
         icon={Scale}
       />
     );
@@ -208,7 +216,7 @@ export default function MatchOddsView({
         selectionGroups.get(selectedHistoryKey)?.[0]?.label,
       )
     : '';
-  const marketTitle = activeMarket ? marketDisplayName(activeMarket.name) : 'Odds comparison';
+  const marketTitle = activeMarket ? marketDisplayName(activeMarket.name) : 'Price comparison';
   const hasSeedPrices = activeMarket?.selections.some((row) => isOddsSeedSource(row)) === true;
   const showStaleWarning =
     pollLive &&
@@ -216,8 +224,6 @@ export default function MatchOddsView({
 
   return (
     <div className="space-y-5">
-      <OddsComplianceBanner compliance={data.compliance} />
-
       {needsAgeGate ? (
         <AgeGate
           onConfirm={() => {
@@ -232,10 +238,10 @@ export default function MatchOddsView({
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-widest text-stext">
-                {hasSeedPrices ? 'Development seed comparison' : 'Licensed price comparison'}
+                {hasSeedPrices ? 'Example prices' : 'Live price comparison'}
               </p>
               <h2 className={`mt-0.5 font-bold tracking-tight text-mtext ${compact ? 'text-lg' : 'text-xl'}`}>
-                {hasMarkets && activeMarket ? marketTitle : 'Odds comparison'}
+                {hasMarkets && activeMarket ? marketTitle : 'Price comparison'}
               </h2>
             </div>
             <FormatToggle value={priceFormat} onChange={setPriceFormat} />
@@ -249,18 +255,19 @@ export default function MatchOddsView({
 
           {hasSeedPrices ? (
             <p className="rounded-lg bg-brand-soft px-3 py-2 text-xs text-mtext ring-1 ring-lborder">
-              Development seed prices are shown for UI testing. Live Sportradar prices use this same view when available.
+              These are example prices, here to show you how this page works. Real prices from our
+              partners appear in this same place once they are available.
             </p>
           ) : null}
 
           {!hasMarkets && data.unavailable ? (
             <EmptyState
-              title="No licensed prices yet"
+              title="No prices yet"
               message={data.unavailable}
               icon={Scale}
             >
               <Link href="/matches" className="text-sm font-semibold text-accent hover:underline">
-                Browse fixtures →
+                See other matches →
               </Link>
             </EmptyState>
           ) : null}
@@ -302,8 +309,11 @@ export default function MatchOddsView({
                   <div className="flex flex-wrap items-center justify-between gap-2 border-b border-lborder px-4 py-3">
                     <p className="text-sm font-bold text-mtext">{marketDisplayName(activeMarket.name)}</p>
                     {activeMarket.bookmakerMargin !== null && activeMarket.bookmakerMargin !== undefined ? (
-                      <span className="rounded-full bg-secondary px-2.5 py-0.5 text-[11px] font-medium text-stext">
-                        Market margin {formatMarginPercent(activeMarket.bookmakerMargin)}
+                      <span
+                        className="rounded-full bg-secondary px-2.5 py-0.5 text-[11px] font-medium text-stext"
+                        title="The extra amount bookmakers build into these prices. Lower is better for you."
+                      >
+                        Added by bookmakers {formatMarginPercent(activeMarket.bookmakerMargin)}
                       </span>
                     ) : null}
                   </div>
@@ -358,7 +368,11 @@ export default function MatchOddsView({
                         <Skeleton height={180} />
                       </div>
                     ) : (
-                      <OddsHistoryChart points={historyPoints ?? []} selectionLabel={historyLabel} />
+                      <OddsHistoryChart
+                        points={historyPoints ?? []}
+                        selectionLabel={historyLabel}
+                        sourceNames={sourceNames}
+                      />
                     )}
                   </>
                 ) : null}
@@ -377,23 +391,16 @@ export default function MatchOddsView({
   );
 }
 
-function OddsComplianceBanner({ compliance }: { compliance: MatchOddsResponse['compliance'] }) {
-  return (
-    <div className="rounded-xl border border-lborder bg-brand-soft px-4 py-3 text-sm leading-relaxed text-mtext">
-      <p className="font-medium">{compliance.responsibleUseMessage}</p>
-    </div>
-  );
-}
-
 function AgeGate({ onConfirm }: { onConfirm: () => void }) {
   return (
     <div className="rounded-2xl bg-card p-6 ring-1 ring-lborder">
       <h3 className="text-base font-bold text-mtext">Age confirmation</h3>
       <p className="mt-2 text-sm text-stext">
-        You must be of legal age to view odds comparison in your region. This is informational only — not betting advice.
+        You must be old enough to view betting prices where you live. Prices are shown for
+        information only — this is not advice to place a bet.
       </p>
       <button type="button" onClick={onConfirm} className="btn-brand mt-4 rounded-md px-5 py-2.5 text-sm font-semibold">
-        I confirm I am of legal age
+        I am old enough
       </button>
     </div>
   );
@@ -406,19 +413,23 @@ function FormatToggle({
   value: OddsPriceFormat;
   onChange: (_mode: OddsPriceFormat) => void;
 }) {
-  const modes: OddsPriceFormat[] = ['decimal', 'fractional', 'american'];
+  const modes: { key: OddsPriceFormat; label: string }[] = [
+    { key: 'decimal', label: 'Decimal (2.50)' },
+    { key: 'fractional', label: 'Fractional (5/2)' },
+    { key: 'american', label: 'American (+150)' },
+  ];
   return (
-    <div className="flex rounded-full bg-secondary p-0.5 ring-1 ring-lborder" role="group" aria-label="Odds format">
+    <div className="flex flex-wrap rounded-full bg-secondary p-0.5 ring-1 ring-lborder" role="group" aria-label="Show prices as">
       {modes.map((mode) => (
         <button
-          key={mode}
+          key={mode.key}
           type="button"
-          onClick={() => onChange(mode)}
-          className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${
-            value === mode ? 'bg-card text-mtext shadow-sm' : 'text-stext hover:text-mtext'
+          onClick={() => onChange(mode.key)}
+          className={`rounded-full px-3 py-1 text-xs font-semibold ${
+            value === mode.key ? 'bg-card text-mtext shadow-sm' : 'text-stext hover:text-mtext'
           }`}
         >
-          {mode}
+          {mode.label}
         </button>
       ))}
     </div>
@@ -441,21 +452,21 @@ function PriceCell({ row, format }: { row: OddsSelectionPrice; format: OddsPrice
         {formatOddsPrice(row.current, format)}
         {row.isBestDisplayedPrice ? (
           <span className="ml-2 align-middle text-[10px] font-bold uppercase tracking-wide text-accent">
-            Best displayed price
+            Highest price
           </span>
         ) : null}
       </p>
       {row.opening ? (
         <p className="text-xs text-stext">
-          Open {formatOddsPrice(row.opening, format)}
-          {movement ? <span className={`ml-1 font-medium ${movementTone}`}>{movement}</span> : null}
+          Started at {formatOddsPrice(row.opening, format)}
+          {movement ? <span className={`ml-1 font-medium ${movementTone}`}>now {movement}</span> : null}
         </p>
       ) : null}
       <p
         className={`text-[10px] ${isOddsCaptureStale(row.capturedAt) ? 'font-medium text-warning' : 'text-stext'}`}
         title={`Received ${row.receivedAt}`}
       >
-        Price time {formatOddsUtc(row.capturedAt)}
+        Updated {formatOddsUtc(row.capturedAt)}
       </p>
     </div>
   );
@@ -472,17 +483,17 @@ function ModelVsMarketPanel({
 }) {
   return (
     <section className="rounded-2xl bg-card p-5 ring-1 ring-lborder">
-      <h3 className="text-sm font-bold uppercase tracking-wider text-stext">Analysis</h3>
+      <h3 className="text-sm font-bold uppercase tracking-wider text-stext">Our estimate vs the prices</h3>
       <p className="mt-1 text-xs leading-relaxed text-stext">
-        Our stored prediction model estimates match win
-        probability for informational comparison. It may not follow the same settlement rules as bookmakers (D/L,
-        voids, super-over timing). This is not betting advice.
+        We do our own maths to guess who is likely to win. It is a rough guess, for interest only —
+        it does not work the same way bookmakers settle bets, and it can be wrong. Please do not treat
+        it as advice to bet.
       </p>
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
-        <CompareRow label={`Prediction model — ${homeLabel}`} value={modelPercent(data.homeWinProb)} />
-        <CompareRow label={`Market implied — ${homeLabel}`} value={impliedPercent(data.marketHomeImplied)} />
-        <CompareRow label={`Prediction model — ${awayLabel}`} value={modelPercent(data.awayWinProb)} />
-        <CompareRow label={`Market implied — ${awayLabel}`} value={impliedPercent(data.marketAwayImplied)} />
+        <CompareRow label={`We think — ${homeLabel}`} value={modelPercent(data.homeWinProb)} />
+        <CompareRow label={`Prices suggest — ${homeLabel}`} value={impliedPercent(data.marketHomeImplied)} />
+        <CompareRow label={`We think — ${awayLabel}`} value={modelPercent(data.awayWinProb)} />
+        <CompareRow label={`Prices suggest — ${awayLabel}`} value={impliedPercent(data.marketAwayImplied)} />
       </div>
       <p className="mt-4 rounded-lg bg-secondary px-3 py-2 text-xs leading-relaxed text-stext">{data.note}</p>
     </section>

@@ -6,10 +6,8 @@ import { useDebouncedValue } from '../../../../hooks/useDebouncedValue';
 import { useMatchesQuery } from '../../../../queries/useDirectoryQueries';
 import type { Match } from '../../../../types';
 import Pagination from '../../../../components/admin/AdminPagination';
-import { AdminPageHeader, LoadingState, EmptyState, StatusBadge, AdminSearchField, AdminEntityLink } from '../../../../components/admin/AdminShared';
-import EntityAvatar from '../../../../components/EntityAvatar';
-import { getInitials } from '../../../../utils/helpers';
-import { compactMatchScore } from '../../../../lib/matchScoreboard';
+import { AdminPageHeader, LoadingState, EmptyState, StatusBadge, AdminSearchField, AdminEntityLink, ScoreLine } from '../../../../components/admin/AdminShared';
+import { sideScoreLine } from '../../../../lib/matchScoreboard';
 
 export default function MatchesPage() {
   const [page, setPage] = useState(1);
@@ -92,8 +90,8 @@ export default function MatchesPage() {
             <table className="w-full text-left text-xs">
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--admin-border)', background: 'var(--admin-table-header)' }}>
-                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Teams</th>
-                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Score</th>
+                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Home</th>
+                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Away</th>
                   <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Tournament</th>
                   <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Venue</th>
                   <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Date</th>
@@ -105,21 +103,23 @@ export default function MatchesPage() {
                   const t = getTeamInfo(m);
                   const homeLabel = t.homeName;
                   const awayLabel = t.awayName;
+                  const homeScore = sideScoreLine(m, 'home');
+                  const awayScore = sideScoreLine(m, 'away');
                   return (
                     <tr key={m.matchId || m.id} style={{ borderBottom: '1px solid var(--admin-border)' }}
                       onMouseEnter={(e) => e.currentTarget.style.background = 'var(--admin-table-row-hover)'}
                       onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
-                      <td className="px-4 py-2.5" style={{ color: 'var(--admin-text)' }}>
+                      <td className="max-w-[14rem] truncate px-4 py-2.5" style={{ color: 'var(--admin-text)' }}>
                         {m.matchId || m.id ? (
-                          <AdminEntityLink href={`/matches/${m.matchId || m.id}`}>
-                            <TeamMatchup home={homeLabel} away={awayLabel} />
-                          </AdminEntityLink>
+                          <AdminEntityLink href={`/matches/${m.matchId || m.id}`}>{homeLabel}</AdminEntityLink>
                         ) : (
-                          <TeamMatchup home={homeLabel} away={awayLabel} />
+                          homeLabel
                         )}
+                        {homeScore ? <ScoreLine value={homeScore} /> : null}
                       </td>
-                      <td className="px-4 py-2.5 font-mono font-bold" style={{ color: 'var(--admin-text)' }}>
-                        {compactMatchScore(m)}
+                      <td className="max-w-[14rem] truncate px-4 py-2.5" style={{ color: 'var(--admin-text)' }}>
+                        {awayLabel}
+                        {awayScore ? <ScoreLine value={awayScore} /> : null}
                       </td>
                       <td className="px-4 py-2.5" style={{ color: 'var(--admin-text-secondary)' }}>
                         {m.tournamentId ? (
@@ -145,28 +145,5 @@ export default function MatchesPage() {
         </div>
       )}
     </div>
-  );
-}
-
-function TeamMatchup({ home, away }: { home: string; away: string }) {
-  return (
-    <div className="flex items-center gap-2 whitespace-nowrap">
-      <span className="flex items-center gap-1.5">
-        <TeamBadge code={home} />
-        <span className="text-[13px] font-semibold">{home}</span>
-      </span>
-      <span className="text-[11px] font-bold uppercase" style={{ color: 'var(--admin-text-muted)' }}>vs</span>
-      <span className="flex items-center gap-1.5">
-        <TeamBadge code={away} />
-        <span className="text-[13px] font-semibold">{away}</span>
-      </span>
-    </div>
-  );
-}
-
-function TeamBadge({ code }: { code: string }) {
-  if (!code) return null;
-  return (
-    <EntityAvatar className="h-6 w-6 text-xs font-bold">{getInitials(code)}</EntityAvatar>
   );
 }

@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { TOOL_GROUPS, TOOLS, toolBySlug, toolSource, type ToolDef } from '../../lib/toolsCatalog';
+import { TOOL_GROUPS, TOOL_SOURCE_LABEL, TOOLS, toolBySlug, toolSource, type ToolDef } from '../../lib/toolsCatalog';
+import ResultShareButton from './ResultShareButton';
+import { ToolDefProvider } from './toolResultContext';
 import ToolDiamondCard from './ToolDiamondCard';
 import ToolDiamondIcon from './ToolDiamondIcon';
 
@@ -83,10 +85,16 @@ export function ToolCheckbox({
   );
 }
 
-export function ResultBox({ label = 'Result', value }: { label?: string; value: string }) {
+export function ResultBox({ label = 'Result', value, hint }: { label?: string; value: string; hint?: string }) {
   return (
     <div className="tool-result-hero">
-      <p className="text-[10px] font-bold uppercase tracking-widest text-stext">{label}</p>
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-stext">{label}</p>
+          {hint ? <p className="mt-1 text-[11px] leading-relaxed text-stext">{hint}</p> : null}
+        </div>
+        <ResultShareButton label={label} value={value} />
+      </div>
       <p className="tool-result-hero__value mt-3 break-words font-mono text-3xl font-black leading-tight tabular-nums text-accent">
         {value || '—'}
       </p>
@@ -94,19 +102,17 @@ export function ResultBox({ label = 'Result', value }: { label?: string; value: 
   );
 }
 
+/** Where the numbers come from, in words a first-time visitor understands. */
+const SOURCE_CLASS: Record<'formula' | 'api' | 'stored', string> = {
+  formula: 'bg-secondary text-stext',
+  api: 'bg-brand-soft text-accent',
+  stored: 'bg-accent/10 text-accent',
+};
+
 function SourceBadge({ source }: { source: 'formula' | 'api' | 'stored' }) {
-  const cls =
-    source === 'formula'
-      ? 'bg-secondary text-stext'
-      : source === 'api'
-        ? 'bg-brand-soft text-accent'
-        : 'bg-accent/10 text-accent';
-
-  const label = source === 'formula' ? 'Formula' : source === 'api' ? 'API' : 'Stored';
-
   return (
-    <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${cls}`}>
-      {label}
+    <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${SOURCE_CLASS[source]}`}>
+      {TOOL_SOURCE_LABEL[source]}
     </span>
   );
 }
@@ -180,12 +186,14 @@ export function ToolPage({
   children: ReactNode;
 }) {
   return (
-    <div className="space-y-5">
-      <ToolPageHeader tool={tool} />
-      {note ? <ToolNote>{note}</ToolNote> : null}
-      {children}
-      <MoreTools currentSlug={tool.slug} />
-    </div>
+    <ToolDefProvider tool={tool}>
+      <div className="space-y-5">
+        <ToolPageHeader tool={tool} />
+        {note ? <ToolNote>{note}</ToolNote> : null}
+        {children}
+        <MoreTools currentSlug={tool.slug} />
+      </div>
+    </ToolDefProvider>
   );
 }
 

@@ -8,6 +8,7 @@ import {
   AdminIconButton,
   AdminInput,
   AdminMenu,
+  AdminEntityLink,
   AdminPageHeader,
   AdminSelect,
   ConfirmDialog,
@@ -425,7 +426,12 @@ export default function AdminStreamsPage() {
                         <div className="min-w-0">
                           <p className="truncate font-semibold" style={{ color: 'var(--admin-text)' }}>{stream.title}</p>
                           {stream.matchId ? (
-                            <p className="truncate text-xs" style={{ color: 'var(--admin-text-muted)' }}>{stream.matchId}</p>
+                            <AdminEntityLink
+                              href={`/matches/${stream.matchId}`}
+                              className="truncate text-xs font-medium"
+                            >
+                              Linked match
+                            </AdminEntityLink>
                           ) : null}
                         </div>
                       </div>

@@ -1,6 +1,7 @@
 import './globals.css';
 import { Inter, JetBrains_Mono, Noto_Nastaliq_Urdu } from 'next/font/google';
 import ScrollToTop from '../components/ScrollToTop';
+import TableScrollRail from '../components/TableScrollRail';
 import JsonLd from './json-ld';
 import ThemeProvider from '../components/ThemeProvider';
 import AuthProvider from '../components/AuthProvider';
@@ -70,6 +71,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body className="bg-primary text-mtext font-sans antialiased" suppressHydrationWarning>
         <ScrollToTop />
+        <TableScrollRail />
         <JsonLd
           data={{
             '@context': 'https://schema.org',

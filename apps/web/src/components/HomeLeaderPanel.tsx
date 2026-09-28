@@ -54,15 +54,15 @@ export function LeaderPanel({ group }: { group: any }) {
                 <td className="px-4 py-2.5">
                   <div className="flex items-center gap-2.5">
                     <PlayerAvatar name={row.playerName} />
-                    <span className="text-xs font-bold text-mtext">{row.playerName}</span>
+                    <span className="text-xs font-semibold text-mtext">{row.playerName}</span>
                   </div>
                 </td>
                 <td className="px-4 py-2.5">
-                  <span className="text-xs font-bold uppercase text-stext">{row.teamAbbr}</span>
+                  <span className="text-xs font-semibold uppercase text-stext">{row.teamAbbr}</span>
                 </td>
                 <td className="px-4 py-2.5 text-center font-mono text-xs text-stext">{row.matches ?? '—'}</td>
                 <td className="px-4 py-2.5 text-center font-mono text-xs text-stext">{row.innings ?? '—'}</td>
-                <td className={`px-4 py-2.5 text-center font-mono text-xs font-bold ${meta.tone}`}>
+                <td className={`px-4 py-2.5 text-center font-mono text-xs font-semibold ${meta.tone}`}>
                   {row.value}
                 </td>
                 <td className="px-4 py-2.5 text-center font-mono text-xs text-stext">{row.rate ?? '—'}</td>

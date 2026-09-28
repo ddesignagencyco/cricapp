@@ -87,11 +87,15 @@ export default function ToolOdds({ tool }: { tool: ToolDef }) {
       <ToolPanel
         aside={
           <>
-            <ResultBox label="Implied probability" value={formatPct(implied)} />
-            <ResultBox label="Decimal" value={decimal ? decimal.toFixed(3) : '—'} />
+            <ResultBox
+              label="Chance this wins"
+              value={formatPct(implied)}
+              hint="What the price is telling you. A price of 2.00 means a 50% chance."
+            />
+            <ResultBox label="Decimal price" value={decimal ? decimal.toFixed(3) : '—'} />
             {apiPending || apiError ? (
               <p className="text-xs text-stext">
-                {apiPending ? 'Updating…' : 'Could not convert — showing a local estimate.'}
+                {apiPending ? 'Updating…' : 'We could not check this online — showing a quick estimate.'}
               </p>
             ) : null}
             <p className="text-xs text-stext">

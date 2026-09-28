@@ -6,6 +6,7 @@ import { Clapperboard, Expand, Images, Play, Video } from 'lucide-react';
 import RemoteImage from '../RemoteImage';
 import EmptyState from '../EmptyState';
 import ErrorState from '../ErrorState';
+import MediaActions from '../MediaActions';
 import Pagination from '../Pagination';
 import PhotoLightbox from '../gallery/PhotoLightbox';
 import ShortsViewer from '../gallery/ShortsViewer';
@@ -64,6 +65,13 @@ function PlayBadge() {
     </span>
   );
 }
+
+/** Hover-only cluster pinned to the top-right of every tile. */
+const ACTION_REVEAL =
+  'absolute right-1.5 top-1.5 z-10 flex items-center gap-1 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100';
+
+/** Same chip as MediaActions' badge variant, so the row of icons reads as one set. */
+const CHIP = 'on-media grid h-7 w-7 place-items-center rounded-full bg-black/55 text-white ring-1 ring-white/20 transition-colors hover:bg-black/70';
 
 interface GalleryBoardProps {
   initialTab?: GalleryTab | 'photos' | 'stories';
@@ -175,29 +183,46 @@ export default function GalleryBoard({ initialTab = 'images' }: GalleryBoardProp
           {tab === 'images' && (
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
               {images.map((photo, index) => (
-                <button
-                  key={photo.id}
-                  type="button"
-                  onClick={() => setPhotoIndex(index)}
-                  className="group relative overflow-hidden rounded-lg bg-secondary ring-1 ring-lborder"
-                >
-                  <span className="relative block aspect-square">
-                    <RemoteImage
-                      src={photo.src}
-                      alt={photo.title}
-                      fill
-                      sizes="160px"
-                      fit="cover"
-                      className="news-image"
-                    />
-                    <span className="pointer-events-none absolute right-1.5 top-1.5 grid h-6 w-6 place-items-center rounded-full bg-black/55 text-white ring-1 ring-white/20">
-                      <Expand size={11} />
+                <div key={photo.id} className="group relative overflow-hidden rounded-lg bg-secondary ring-1 ring-lborder">
+                  <button
+                    type="button"
+                    onClick={() => setPhotoIndex(index)}
+                    className="block w-full"
+                    aria-label={`Open ${photo.title}`}
+                  >
+                    <span className="relative block aspect-square">
+                      <RemoteImage
+                        src={photo.src}
+                        alt={photo.title}
+                        fill
+                        sizes="160px"
+                        fit="cover"
+                        className="news-image"
+                      />
+                      <TileOverlay>
+                        <span className="line-clamp-1 block text-[11px] font-semibold text-white">{photo.title}</span>
+                      </TileOverlay>
                     </span>
-                    <TileOverlay>
-                      <span className="line-clamp-1 block text-[11px] font-semibold text-white">{photo.title}</span>
-                    </TileOverlay>
-                  </span>
-                </button>
+                  </button>
+                  <div className={ACTION_REVEAL}>
+                    <button
+                      type="button"
+                      onClick={() => setPhotoIndex(index)}
+                      className={CHIP}
+                      aria-label={`Open ${photo.title}`}
+                      title={`Open ${photo.title}`}
+                    >
+                      <Expand size={12} aria-hidden />
+                    </button>
+                    <MediaActions
+                      url={photo.src}
+                      title={photo.title}
+                      shareHref={photo.href}
+                      variant="badge"
+                      size="xs"
+                    />
+                  </div>
+                </div>
               ))}
             </div>
           )}
@@ -205,24 +230,35 @@ export default function GalleryBoard({ initialTab = 'images' }: GalleryBoardProp
           {tab === 'shorts' && (
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
               {shorts.map((short, index) => (
-                <button
-                  key={short.id}
-                  type="button"
-                  onClick={() => setShortIndex(index)}
-                  className="group relative overflow-hidden rounded-lg bg-secondary ring-1 ring-lborder"
-                >
-                  <span className="relative block aspect-[3/4]">
-                    {short.image ? (
-                      <RemoteImage src={short.image} alt={short.title} fill sizes="160px" fit="cover" className="news-image" />
-                    ) : (
-                      <span className="grid h-full place-items-center media-fallback" />
-                    )}
-                    <PlayBadge />
-                    <TileOverlay>
-                      <span className="line-clamp-1 block text-[11px] font-semibold text-white">{short.title}</span>
-                    </TileOverlay>
-                  </span>
-                </button>
+                <div key={short.id} className="group relative overflow-hidden rounded-lg bg-secondary ring-1 ring-lborder">
+                  <button
+                    type="button"
+                    onClick={() => setShortIndex(index)}
+                    className="block w-full"
+                    aria-label={`Play ${short.title}`}
+                  >
+                    <span className="relative block aspect-[3/4]">
+                      {short.image ? (
+                        <RemoteImage src={short.image} alt={short.title} fill sizes="160px" fit="cover" className="news-image" />
+                      ) : (
+                        <span className="grid h-full place-items-center media-fallback" />
+                      )}
+                      <PlayBadge />
+                      <TileOverlay>
+                        <span className="line-clamp-1 block text-[11px] font-semibold text-white">{short.title}</span>
+                      </TileOverlay>
+                    </span>
+                  </button>
+                  <div className={ACTION_REVEAL}>
+                    <MediaActions
+                      url={short.rawUrl || short.embedUrl || short.image || ''}
+                      title={short.title}
+                      shareHref={short.href}
+                      variant="badge"
+                      size="xs"
+                    />
+                  </div>
+                </div>
               ))}
             </div>
           )}
@@ -230,24 +266,35 @@ export default function GalleryBoard({ initialTab = 'images' }: GalleryBoardProp
           {tab === 'videos' && (
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
               {videos.map((video, index) => (
-                <button
-                  key={video.id}
-                  type="button"
-                  onClick={() => setVideoIndex(index)}
-                  className="group overflow-hidden rounded-lg bg-card text-left ring-1 ring-lborder"
-                >
-                  <span className="relative block aspect-video bg-secondary">
-                    {video.image ? (
-                      <RemoteImage src={video.image} alt={video.title} fill sizes="240px" fit="cover" className="news-image" />
-                    ) : (
-                      <span className="grid h-full place-items-center media-fallback" />
-                    )}
-                    <PlayBadge />
-                  </span>
-                  <span className="block px-2 py-1.5">
-                    <span className="line-clamp-1 block text-xs font-semibold text-mtext">{video.title}</span>
-                  </span>
-                </button>
+                <div key={video.id} className="group relative overflow-hidden rounded-lg bg-card text-left ring-1 ring-lborder">
+                  <button
+                    type="button"
+                    onClick={() => setVideoIndex(index)}
+                    className="block w-full text-left"
+                    aria-label={`Play ${video.title}`}
+                  >
+                    <span className="relative block aspect-video bg-secondary">
+                      {video.image ? (
+                        <RemoteImage src={video.image} alt={video.title} fill sizes="240px" fit="cover" className="news-image" />
+                      ) : (
+                        <span className="grid h-full place-items-center media-fallback" />
+                      )}
+                      <PlayBadge />
+                    </span>
+                    <span className="block px-2 py-1.5">
+                      <span className="line-clamp-1 block text-xs font-semibold text-mtext">{video.title}</span>
+                    </span>
+                  </button>
+                  <div className={ACTION_REVEAL}>
+                    <MediaActions
+                      url={video.rawUrl || video.embedUrl || video.image || ''}
+                      title={video.title}
+                      shareHref={video.href}
+                      variant="badge"
+                      size="xs"
+                    />
+                  </div>
+                </div>
               ))}
             </div>
           )}

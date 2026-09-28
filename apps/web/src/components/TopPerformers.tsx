@@ -38,32 +38,34 @@ function LeaderList({
 
   return (
     <div className="card-diamond overflow-hidden rounded-md border border-lborder bg-card">
-      <table className="w-full text-left text-sm">
-        <thead>
-          <tr>
-            <th className="w-10 px-4 py-2.5">#</th>
-            <th className="px-4 py-2.5">{title}</th>
-            <th className="px-4 py-2.5 text-right">{unit}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {entries.map((entry, index) => (
-            <tr
-              key={entry.playerId || `${entry.playerName}-${index}`}
-              className="border-b border-lborder/60 last:border-0"
-            >
-              <td className="px-4 py-2.5 font-mono text-xs text-stext">{index + 1}</td>
-              <td className="px-4 py-2.5">
-                <p className="truncate font-medium text-mtext">{formatPlayerName(entry.playerName)}</p>
-                {entry.teamName ? <p className="truncate text-xs text-stext">{entry.teamName}</p> : null}
-              </td>
-              <td className="px-4 py-2.5 text-right font-mono text-sm font-semibold text-mtext">
-                {entry.value}
-              </td>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[280px] text-left text-sm">
+          <thead>
+            <tr>
+              <th className="w-10 px-4 py-2.5">#</th>
+              <th className="px-4 py-2.5">{title}</th>
+              <th className="px-4 py-2.5 text-right">{unit}</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {entries.map((entry, index) => (
+              <tr
+                key={entry.playerId || `${entry.playerName}-${index}`}
+                className="border-b border-lborder/60 last:border-0"
+              >
+                <td className="px-4 py-2.5 font-mono text-xs text-stext">{index + 1}</td>
+                <td className="px-4 py-2.5">
+                  <p className="truncate font-medium text-mtext">{formatPlayerName(entry.playerName)}</p>
+                  {entry.teamName ? <p className="truncate text-xs text-stext">{entry.teamName}</p> : null}
+                </td>
+                <td className="px-4 py-2.5 text-right font-mono text-sm text-mtext">
+                  {entry.value}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

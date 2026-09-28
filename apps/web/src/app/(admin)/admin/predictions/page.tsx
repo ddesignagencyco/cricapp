@@ -6,7 +6,6 @@ import AdminPagination from '../../../../components/admin/AdminPagination';
 import {
   AdminChip,
   AdminEntityLink,
-  AdminInput,
   AdminSearchField,
   AdminPageHeader,
   AdminSelect,
@@ -330,26 +329,19 @@ export default function AdminPredictionsPage() {
                     const name = run.matchName;
                     return (
                       <tr key={run.runId} style={{ borderBottom: '1px solid var(--admin-border)' }}>
-                        <td className="px-3 py-2.5">
+                        <td className="max-w-[16rem] truncate px-3 py-2.5">
                           {id ? (
-                            <div className="min-w-[12rem]">
-                              <AdminEntityLink href={`/predictions/${id}`}>
-                                {name || id}
-                              </AdminEntityLink>
-                              {name ? (
-                                <p className="mt-0.5 font-mono text-[11px]" style={{ color: 'var(--admin-text-muted)' }}>
-                                  {id}
-                                </p>
-                              ) : null}
-                            </div>
+                            <AdminEntityLink href={`/predictions/${id}`}>
+                              {name || 'Open match'}
+                            </AdminEntityLink>
                           ) : (
                             '—'
                           )}
                         </td>
                         <td className="px-3 py-2.5">{stageLabel(run.stage)}</td>
                         <td className="px-3 py-2.5 font-mono">{run.modelVersion}</td>
-                        <td className="px-3 py-2.5 font-mono font-bold">{asPercent(run.homeWinProb)}</td>
-                        <td className="px-3 py-2.5 font-mono font-bold">{asPercent(run.awayWinProb)}</td>
+                        <td className="px-3 py-2.5 font-mono">{asPercent(run.homeWinProb)}</td>
+                        <td className="px-3 py-2.5 font-mono">{asPercent(run.awayWinProb)}</td>
                         <td className="px-3 py-2.5 font-mono">{run.confidence}</td>
                         <td className="px-3 py-2.5">{run.calibrationBand}</td>
                         <td className="px-3 py-2.5" style={{ color: 'var(--admin-text-muted)' }}>{when(run.createdAt)}</td>
@@ -489,7 +481,7 @@ function RunDetailBody({ run }: { run: AdminPredictionRunDetail }) {
       {run.matchId && (
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <p className="text-sm font-semibold" style={{ color: 'var(--admin-text)' }}>
-            {run.matchName || run.matchId}
+            {run.matchName || 'Prediction run'}
           </p>
           <AdminEntityLink href={`/predictions/${run.matchId}`}>Open public match</AdminEntityLink>
         </div>

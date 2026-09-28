@@ -212,6 +212,17 @@ export function StatusBadge({ status }: { status: string }) {
   return <SharedStatusBadge status={status} />;
 }
 
+/* ─── Table Score Line ──────────────────────────────────────── */
+
+/** Sits under a team name so the score rides with its side instead of its own column. */
+export function ScoreLine({ value }: { value: string }) {
+  return (
+    <p className="mt-0.5 truncate text-[11px]" style={{ color: 'var(--admin-text-muted)' }}>
+      {value}
+    </p>
+  );
+}
+
 /* ─── Chip ─────────────────────────────────────────────────── */
 
 export function AdminChip({

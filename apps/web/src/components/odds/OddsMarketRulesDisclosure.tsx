@@ -12,12 +12,12 @@ export default function OddsMarketRulesDisclosure({ marketKey }: Props) {
   return (
     <details className="rounded-xl bg-secondary/70 ring-1 ring-lborder">
       <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-mtext">
-        How this market is settled
+        How winner bets are settled
       </summary>
       <div className="space-y-4 border-t border-lborder px-4 py-4 text-sm leading-relaxed text-stext">
         <p>{MATCH_WINNER_SETTLEMENT}</p>
         <div>
-          <p className="mb-2 text-xs font-bold uppercase tracking-wider text-mtext">Important</p>
+          <p className="mb-2 text-xs font-bold uppercase tracking-wider text-mtext">Good to know</p>
           <ul className="list-disc space-y-2 pl-5">
             {MATCH_WINNER_IMPORTANT_NOTES.map((note) => (
               <li key={note}>{note}</li>

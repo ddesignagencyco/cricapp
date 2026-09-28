@@ -199,6 +199,15 @@ export function compactMatchScore(match: any): string {
   return usefulText(match?.displayScore) || '—';
 }
 
+/** Per-side score for table cells, e.g. "181/4 (20.0)". Empty when the side has no score yet. */
+export function sideScoreLine(match: any, side: 'home' | 'away'): string {
+  const board = scoreboardFromMatch(match);
+  const score = usefulText(side === 'home' ? board.homeScore : board.awayScore);
+  if (!score) return '';
+  const overs = side === 'home' ? board.homeOvers : board.awayOvers;
+  return overs ? `${score} (${overs})` : score;
+}
+
 export function describeMatchResult(match: any): string {
   const stored = usefulText(match?.result || match?.resultText || match?.matchResult);
   if (stored && !/^(ended|completed|finished|match ended)$/i.test(stored)) return stored;

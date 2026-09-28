@@ -257,7 +257,7 @@ export default function CategoryManager() {
                                 }}
                               />
                             ) : (
-                              <span className="font-bold" style={{ color: 'var(--admin-text)' }}>{c.name}</span>
+                              <span className="font-semibold" style={{ color: 'var(--admin-text)' }}>{c.name}</span>
                             )}
                           </div>
                         </td>

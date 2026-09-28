@@ -155,9 +155,6 @@ export default function AdminOddsPage() {
                         <tr key={source.id} style={{ borderBottom: '1px solid var(--admin-border)' }}>
                           <td className="px-3 py-2.5">
                             <p className="font-semibold" style={{ color: 'var(--admin-text)' }}>{source.name}</p>
-                            <p className="mt-0.5 font-mono text-[11px]" style={{ color: 'var(--admin-text-muted)' }}>
-                              {source.id}
-                            </p>
                           </td>
                           <td className="px-3 py-2.5 font-mono" style={{ color: 'var(--admin-text-secondary)' }}>
                             {source.slug}
