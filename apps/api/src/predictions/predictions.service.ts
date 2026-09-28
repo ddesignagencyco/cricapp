@@ -261,6 +261,79 @@ export class PredictionsService {
     return { matchId, preMatch, live };
   }
 
+  async getBulk(matchIds: string[]) {
+    const uniqueMatchIds = [...new Set(matchIds)];
+    if (uniqueMatchIds.length === 0) {
+      return { data: {}, meta: { requested: 0, returned: 0, missing: 0 } };
+    }
+
+    const latest = await this.prisma.$queryRaw<
+      Array<{ id: string; matchId: string; stage: string }>
+    >(Prisma.sql`
+      SELECT DISTINCT ON (match_id, stage)
+        id,
+        match_id AS "matchId",
+        stage
+      FROM prediction_runs
+      WHERE match_id IN (${Prisma.join(uniqueMatchIds)})
+        AND stage IN ('pre_match', 'live')
+      ORDER BY match_id, stage, created_at DESC, id DESC
+    `);
+    const rows = latest.length
+      ? await this.prisma.predictionRun.findMany({
+          where: { id: { in: latest.map((run) => run.id) } },
+          include: { result: true, features: true, narrative: true },
+        })
+      : [];
+    const presented = await Promise.all(
+      rows.map(async (row) => {
+        const view = mapRun(row);
+        if (!view) return null;
+        if (row.narrative) {
+          return {
+            ...view,
+            narrative: row.narrative.text,
+            narrativeSource: row.narrative.source,
+          };
+        }
+        return this.presentRun(row);
+      }),
+    );
+    const byMatch = new Map<
+      string,
+      { matchId: string; preMatch: PredictionRunView | null; live: PredictionRunView | null }
+    >();
+    for (const view of presented) {
+      if (!view?.matchId) continue;
+      const current = byMatch.get(view.matchId) ?? {
+        matchId: view.matchId,
+        preMatch: null,
+        live: null,
+      };
+      if (view.stage === 'pre_match') current.preMatch = view;
+      if (view.stage === 'live') current.live = view;
+      byMatch.set(view.matchId, current);
+    }
+
+    const data = Object.fromEntries(
+      uniqueMatchIds.map((matchId) => [
+        matchId,
+        byMatch.get(matchId) ?? { matchId, preMatch: null, live: null },
+      ]),
+    );
+    const returned = [...byMatch.values()].filter(
+      (prediction) => prediction.preMatch !== null || prediction.live !== null,
+    ).length;
+    return {
+      data,
+      meta: {
+        requested: uniqueMatchIds.length,
+        returned,
+        missing: uniqueMatchIds.length - returned,
+      },
+    };
+  }
+
   async getHistory(matchId: string) {
     const rows = await this.prisma.predictionRun.findMany({
       where: { matchId },

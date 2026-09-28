@@ -1,6 +1,17 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsIn, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import {
+  ArrayMaxSize,
+  ArrayMinSize,
+  IsArray,
+  IsIn,
+  IsInt,
+  IsOptional,
+  IsString,
+  Matches,
+  Max,
+  Min,
+} from 'class-validator';
 
 export class PredictionExplanationDto {
   @ApiPropertyOptional()
@@ -86,6 +97,35 @@ export class MatchPredictionsDto {
 
   @ApiPropertyOptional({ type: PredictionRunDto })
   live: PredictionRunDto | null;
+}
+
+export class BulkPredictionsRequestDto {
+  @ApiProperty({ type: [String], minItems: 1, maxItems: 50 })
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(50)
+  @IsString({ each: true })
+  @Matches(/^sr:match:[A-Za-z0-9][A-Za-z0-9_-]*$/, { each: true })
+  matchIds: string[];
+}
+
+export class BulkPredictionsMetaDto {
+  @ApiProperty()
+  requested: number;
+
+  @ApiProperty()
+  returned: number;
+
+  @ApiProperty()
+  missing: number;
+}
+
+export class BulkPredictionsResponseDto {
+  @ApiProperty({ type: Object, additionalProperties: true })
+  data: Record<string, MatchPredictionsDto>;
+
+  @ApiProperty({ type: BulkPredictionsMetaDto })
+  meta: BulkPredictionsMetaDto;
 }
 
 export class PredictionHistoryDto {
