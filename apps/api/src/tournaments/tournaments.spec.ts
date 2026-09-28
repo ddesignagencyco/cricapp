@@ -68,6 +68,57 @@ describe('TournamentsModule (integration)', () => {
     expect(res.body.data[0].id).toBe('sr:season:131399');
   });
 
+  it('GET /tournaments/:id/info — returns the raw stored Sportradar payload', async () => {
+    await ctx.prisma.tournamentInfo.create({
+      data: {
+        tournamentId: 'sr:tournament:2472',
+        payload: {
+          generated_at: '2026-01-17T21:56:55.259Z',
+          groups: [
+            {
+              name: 'Group A',
+              teams: [{ id: 'sr:competitor:152316', name: 'Sunrisers Hyderabad', abbreviation: 'SRH' }],
+            },
+          ],
+          tournament: {
+            id: 'sr:tournament:2472',
+            name: 'Indian Premier League',
+            type: 't20',
+            current_season: { id: 'sr:season:131399', year: '2026' },
+          },
+        },
+      },
+    });
+
+    const res = await ctx.agent.get('/tournaments/sr:tournament:2472/info').expect(200);
+    expect(res.body.generated_at).toBe('2026-01-17T21:56:55.259Z');
+    expect(res.body.groups[0].name).toBe('Group A');
+    expect(res.body.tournament.name).toBe('Indian Premier League');
+  });
+
+  it('GET /tournaments/:seasonId/info — resolves a season id to its tournament', async () => {
+    await ctx.prisma.tournamentSeason.create({
+      data: {
+        id: 'sr:season:131399',
+        tournamentId: 'sr:tournament:2472',
+        name: 'Indian Premier League 2026',
+        year: '2026',
+      },
+    });
+
+    const res = await ctx.agent.get('/tournaments/sr:season:131399/info').expect(200);
+    expect(res.body.tournament.id).toBe('sr:tournament:2472');
+    expect(res.body.groups).toHaveLength(1);
+    expect(res.body.groups[0].teams.map((t: { abbreviation: string }) => t.abbreviation)).toEqual([
+      'SRH',
+      'MI',
+    ]);
+  });
+
+  it('GET /tournaments/:id/info — returns 404 for unknown tournament or season', async () => {
+    await ctx.agent.get('/tournaments/sr:tournament:0000/info').expect(404);
+  });
+
   it('GET /tournaments/:id — returns 404 for unknown tournament', async () => {
     await ctx.agent.get('/tournaments/sr:tournament:0000').expect(404);
   });

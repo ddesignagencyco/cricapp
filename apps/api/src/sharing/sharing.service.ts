@@ -20,6 +20,7 @@ export class SharingService {
 
     let ogTitle = 'CricApp';
     let ogDescription = 'Cricket scores, news and live streams';
+    let ogImage: string | undefined;
 
     switch (shareType) {
       case 'match': {
@@ -56,6 +57,17 @@ export class SharingService {
         if (team) {
           ogTitle = `${team.name} — CricApp`;
           ogDescription = `${team.country ?? ''} • ${team.abbr}`;
+        }
+        break;
+      }
+      case 'gallery': {
+        const media = await this.prisma.galleryMedia.findFirst({
+          where: { id, purpose: 'gallery' },
+        });
+        if (media) {
+          ogTitle = `${media.title ?? 'Gallery image'} — CricApp`;
+          ogDescription = media.caption ?? media.title ?? 'Cricket gallery media';
+          ogImage = media.thumbnailUrl ?? media.url;
         }
         break;
       }
@@ -96,13 +108,15 @@ export class SharingService {
         ? 'matches'
         : shareType === 'news'
           ? 'news'
-          : `${shareType}s`;
+          : shareType === 'gallery'
+            ? 'gallery'
+            : `${shareType}s`;
 
     return {
       url: `${BASE_URL}/${path}/${id}`,
       ogTitle,
       ogDescription,
-      ogImage: `${BASE_URL}/api/og/${shareType}/${id}`,
+      ogImage: ogImage ?? `${BASE_URL}/api/og/${shareType}/${id}`,
     };
   }
 

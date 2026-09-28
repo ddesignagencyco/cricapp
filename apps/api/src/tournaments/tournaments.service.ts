@@ -101,6 +101,58 @@ export class TournamentsService {
     return this.toSummary(row);
   }
 
+  /**
+   * Tournament Detail endpoint — /tournaments/{tournament_or_season_id}/info.json.
+   * Serves the raw Sportradar payload stored by the ingestion pipeline; falls
+   * back to composing a payload from the tournaments row when no raw payload
+   * has been stored yet.
+   */
+  async info(tournamentOrSeasonId: string): Promise<Record<string, unknown>> {
+    const [asTournament, asSeason] = await Promise.all([
+      this.prisma.tournament.findUnique({ where: { id: tournamentOrSeasonId } }),
+      this.prisma.tournamentSeason.findUnique({
+        where: { id: tournamentOrSeasonId },
+        select: { tournamentId: true },
+      }),
+    ]);
+    const tournamentId = asTournament?.id ?? asSeason?.tournamentId;
+    if (!tournamentId) {
+      throw new NotFoundException(
+        `Tournament or season ${tournamentOrSeasonId} not found`,
+      );
+    }
+
+    const stored = await this.prisma.tournamentInfo.findUnique({
+      where: { tournamentId },
+    });
+    if (stored) {
+      return stored.payload as Record<string, unknown>;
+    }
+
+    const tournament = asTournament ?? (await this.prisma.tournament.findUnique({
+      where: { id: tournamentId },
+    }));
+    if (!tournament) {
+      throw new NotFoundException(`Tournament ${tournamentId} not found`);
+    }
+    const currentSeason = tournament.currentSeason as Record<string, unknown> | null;
+    return {
+      generated_at: new Date().toISOString(),
+      tournament: {
+        id: tournament.id,
+        name: tournament.name,
+        type: tournament.type,
+        gender: tournament.gender,
+        category: tournament.category,
+        current_season: currentSeason,
+        sport: tournament.sport,
+        tour_id: tournament.tourId,
+        parent_id: tournament.parentId,
+      },
+      groups: tournament.groups,
+    };
+  }
+
   async seasons(tournamentId: string, params?: { page?: number; limit?: number; offset?: number }) {
     const { page, limit, skip } = getPaginationOffset(params?.page, params?.limit, params?.offset);
     const where = { tournamentId };

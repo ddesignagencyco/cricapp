@@ -1078,9 +1078,10 @@ export async function saveTournamentTeams(tournamentInfo) {
 /**
  * Persist tournaments/{id}/info.json for a tournament: store the raw `groups`
  * array (each group carries the tournament's teams) on the tournaments row so
- * the API can re-serve the full tournament + teams shape, and flatten the
- * teams into the teams table for lookups. Sets groups to NULL when the info
- * payload carries none.
+ * the API can re-serve the full tournament + teams shape, flatten the teams
+ * into the teams table for lookups, and upsert the full raw payload into
+ * tournament_info so the Tournament Detail endpoint can serve it verbatim.
+ * Sets groups to NULL when the info payload carries none.
  */
 export async function saveTournamentInfo(tournamentId, tournamentInfo) {
   let teamCount = 0;
@@ -1095,6 +1096,13 @@ export async function saveTournamentInfo(tournamentId, tournamentInfo) {
   await query(
     `UPDATE tournaments SET groups = $2, updated_at = NOW() WHERE id = $1`,
     [tournamentId, groupsJson],
+  );
+  await query(
+    `INSERT INTO tournament_info (tournament_id, payload, created_at, updated_at)
+     VALUES ($1, $2::jsonb, NOW(), NOW())
+     ON CONFLICT (tournament_id)
+     DO UPDATE SET payload = EXCLUDED.payload, updated_at = NOW()`,
+    [tournamentId, JSON.stringify(tournamentInfo)],
   );
   return teamCount;
 }

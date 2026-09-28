@@ -55,3 +55,20 @@ export class TournamentSeasonDto {
   @ApiPropertyOptional({ description: 'ISO end date.' })
   endDate: string | null;
 }
+
+export class TournamentInfoDto {
+  @ApiProperty({ description: 'ISO timestamp of when the payload was generated.' })
+  generated_at: string;
+
+  @ApiPropertyOptional({
+    description: 'Tournament structure; each group carries the tournament teams.',
+    type: 'array',
+  })
+  groups: Record<string, unknown>[] | null;
+
+  @ApiPropertyOptional({
+    description: 'Tournament object: id, name, type, gender, category, current_season, season_coverage_info, sport, tour_id, parent_id.',
+    type: 'object',
+  })
+  tournament: Record<string, unknown> | null;
+}

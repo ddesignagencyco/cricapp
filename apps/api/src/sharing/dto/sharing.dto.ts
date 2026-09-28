@@ -6,6 +6,7 @@ export const SHARE_TARGET_TYPES = [
   'news',
   'player',
   'team',
+  'gallery',
   'tour',
   'tournament',
 ] as const;

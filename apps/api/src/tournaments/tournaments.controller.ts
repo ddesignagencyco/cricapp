@@ -1,7 +1,7 @@
 import { Controller, Get, Param, Query, UsePipes, ValidationPipe } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { TournamentsService } from './tournaments.service.js';
-import { TournamentDto } from './dto/tournament.dto.js';
+import { TournamentDto, TournamentInfoDto } from './dto/tournament.dto.js';
 import { TextSearchQuery } from '../common/dto/text-search.query.js';
 import { PaginationQuery } from '../common/dto/pagination.query.js';
 
@@ -49,5 +49,14 @@ export class TournamentsController {
     @Query() query: PaginationQuery,
   ) {
     return this.tournamentsService.results(id, query);
+  }
+
+  @Get(':tournamentOrSeasonId/info')
+  @ApiOperation({ summary: 'Tournament detail (raw Sportradar info.json payload)', description: 'Groups, participating teams, current season, coverage info. Accepts a tournament or season id.' })
+  @ApiParam({ name: 'tournamentOrSeasonId', description: 'Tournament or season id (e.g. sr:tournament:14931 or sr:season:119197).' })
+  @ApiResponse({ status: 200, description: 'Tournament detail payload.', type: TournamentInfoDto })
+  @ApiResponse({ status: 404, description: 'Tournament or season not found.' })
+  info(@Param('tournamentOrSeasonId') id: string) {
+    return this.tournamentsService.info(id);
   }
 }

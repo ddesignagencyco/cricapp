@@ -8,6 +8,7 @@ export const FAVORITE_TARGET_TYPES = [
   'player',
   'match',
   'news',
+  'author',
   'tour',
   'tournament',
 ] as const;
