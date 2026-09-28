@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Download, Loader2, Share2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { downloadMedia } from '../utils/mediaDownload';
+import { getShareLink, type ShareType } from '../services/sharing';
 
 type MediaActionsVariant = 'media' | 'card' | 'badge';
 type MediaActionsSize = 'xs' | 'sm' | 'md';
@@ -51,6 +52,9 @@ interface MediaActionsProps {
   /** Site path to share. Defaults to the page the button sits on. */
   shareHref?: string;
   shareText?: string;
+  /** When set, the share link is resolved through the API (better OG text + share tracking). */
+  shareType?: ShareType;
+  shareId?: string;
   /** Icon size. Defaults to md (matches the lightbox toolbar). */
   size?: MediaActionsSize;
   /** `media` for the lightbox toolbar, `badge` for chips over a photo, `card` for light surfaces. */
@@ -68,6 +72,8 @@ export default function MediaActions({
   title,
   shareHref,
   shareText,
+  shareType,
+  shareId,
   size = 'md',
   variant = 'media',
   className = '',
@@ -84,14 +90,27 @@ export default function MediaActions({
   const share = async () => {
     if (sharing) return;
     setSharing(true);
+    const fallbackUrl = () =>
+      shareHref && typeof window !== 'undefined'
+        ? `${window.location.origin}${shareHref}`
+        : typeof window !== 'undefined'
+          ? window.location.href
+          : '';
     try {
-      const origin = typeof window === 'undefined' ? '' : window.location.origin;
-      const target = shareHref
-        ? `${origin}${shareHref}`
-        : typeof window === 'undefined'
-          ? ''
-          : window.location.href;
-      const text = shareText || title;
+      let target = fallbackUrl();
+      let text = shareText || title;
+      if (shareType && shareId) {
+        // The API owns the canonical link and records the share.
+        const link = await getShareLink(shareType, shareId);
+        if (link.url) {
+          try {
+            target = `${window.location.origin}${new URL(link.url).pathname}`;
+          } catch {
+            target = link.url;
+          }
+        }
+        text = link.ogDescription || link.ogTitle || text;
+      }
       if (typeof navigator !== 'undefined' && navigator.share && target) {
         await navigator.share({ title, text, url: target });
         return;
@@ -105,12 +124,7 @@ export default function MediaActions({
       );
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') return;
-      const target =
-        shareHref && typeof window !== 'undefined'
-          ? `${window.location.origin}${shareHref}`
-          : typeof window !== 'undefined'
-            ? window.location.href
-            : '';
+      const target = fallbackUrl();
       if (target && (await copyText(target))) toast.success('Link copied to clipboard.');
       else toast.error('Could not create the share link.');
     } finally {

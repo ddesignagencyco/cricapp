@@ -10,6 +10,7 @@ import RecentResultCard from '../../components/RecentResultCard';
 import TopPerformers from '../../components/TopPerformers';
 import Newsletter from '../../components/Newsletter';
 import AdSlot from '../../components/AdSlot';
+import DummyAd from '../../components/advertisements/DummyAd';
 import RemoteImage from '../../components/RemoteImage';
 import NewsCopy from '../../components/NewsCopy';
 import Badge, { StatusBadge } from '../../components/Badge';
@@ -94,7 +95,16 @@ export default async function HomePage() {
 
   return (
     <div className="min-h-screen">
-      <MatchTickerBar matches={tickerMatches} />
+      {/* Below sm the ticker is one full-width card behind a swipe, which reads as
+          dead space on a phone — so that slot carries a banner instead. */}
+      <div className="hidden sm:block">
+        <MatchTickerBar matches={tickerMatches} />
+      </div>
+      <div className="border-b border-lborder sm:hidden">
+        <div className="mx-auto w-full max-w-7xl px-4 py-3">
+          <DummyAd size="leaderboard" placement="home-top-mobile" />
+        </div>
+      </div>
       <CricketHero match={heroMatch ?? undefined} />
 
       <div className="flex flex-col gap-12 pt-12 pb-12">

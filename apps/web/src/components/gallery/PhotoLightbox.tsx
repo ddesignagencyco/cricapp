@@ -98,8 +98,10 @@ export default function PhotoLightbox({ items, index, onClose, onIndexChange }: 
           <MediaActions
             url={item.src}
             title={item.title || 'Gallery image'}
-            shareHref={articleHref || undefined}
+            shareHref={articleHref || `/gallery/${encodeURIComponent(item.id)}`}
             shareText={item.excerpt}
+            shareType="gallery"
+            shareId={item.id}
             variant="media"
           />
           <button type="button" onClick={onClose} className={`${iconButton} ml-1`} aria-label="Close photo">

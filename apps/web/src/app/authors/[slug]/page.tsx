@@ -58,7 +58,7 @@ export default async function AuthorDetailPage({
           </div>
 
           <div className="flex shrink-0 items-center gap-3">
-            <AuthorActions name={author.name} slug={author.slug} />
+            <AuthorActions name={author.name} slug={author.slug} id={author.id} />
             <div className="rounded-md border border-lborder bg-secondary px-5 py-3 text-center sm:min-w-28">
               <p className="text-2xl font-semibold tabular-nums text-mtext">{author.articleCount}</p>
               <p className="mt-0.5 text-xs font-medium uppercase tracking-wider text-stext">Published</p>

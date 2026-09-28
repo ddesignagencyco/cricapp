@@ -154,15 +154,15 @@ export default function AdminDashboard() {
           </Link>
           <Link
             href="/admin/matches"
-            className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold"
-            style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)', color: 'var(--admin-text)' }}
+            className="admin-chip-btn inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold"
+            style={{ color: 'var(--admin-text)' }}
           >
             <Trophy size={13} style={{ color: 'var(--admin-accent)' }} /> Match Center
           </Link>
           <Link
             href="/admin/comments"
-            className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold"
-            style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)', color: 'var(--admin-text)' }}
+            className="admin-chip-btn inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold"
+            style={{ color: 'var(--admin-text)' }}
           >
             <MessageSquare size={13} style={{ color: 'var(--admin-warning)' }} /> Moderate
           </Link>
@@ -251,10 +251,10 @@ export default function AdminDashboard() {
 
       <FavoritesCard analytics={analytics} />
 
-      <div className="admin-panel grid grid-cols-1 gap-3 divide-y p-4 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+      <div className="admin-card-3d grid grid-cols-1 gap-3 divide-y rounded-lg p-4 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
         <div className="flex items-center gap-3 sm:pr-4">
           <div
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-lg"
+            className="admin-icon-well grid h-10 w-10 shrink-0 place-items-center rounded-lg"
             style={{
               background: health?.status === 'healthy' ? 'var(--admin-success-bg)' : 'var(--admin-warning-bg)',
               color: health?.status === 'healthy' ? 'var(--admin-success)' : 'var(--admin-warning)',
@@ -270,7 +270,7 @@ export default function AdminDashboard() {
           </div>
         </div>
         <div className="flex items-center gap-3 sm:px-4">
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg" style={{ background: 'var(--admin-info-bg)', color: 'var(--admin-accent)' }}>
+          <div className="admin-icon-well grid h-10 w-10 shrink-0 place-items-center rounded-lg" style={{ background: 'var(--admin-info-bg)', color: 'var(--admin-accent)' }}>
             <Database size={18} />
           </div>
           <div>
@@ -279,7 +279,7 @@ export default function AdminDashboard() {
           </div>
         </div>
         <div className="flex items-center gap-3 sm:pl-4">
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg" style={{ background: 'var(--admin-warning-bg)', color: 'var(--admin-warning)' }}>
+          <div className="admin-icon-well grid h-10 w-10 shrink-0 place-items-center rounded-lg" style={{ background: 'var(--admin-warning-bg)', color: 'var(--admin-warning)' }}>
             <RefreshCw size={18} />
           </div>
           <div>
@@ -299,8 +299,8 @@ export default function AdminDashboard() {
         </div>
         {predictionModels.length === 0 ? (
           <p
-            className="rounded-lg px-4 py-6 text-center text-xs"
-            style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)', color: 'var(--admin-text-muted)' }}
+            className="admin-card-3d rounded-lg px-4 py-6 text-center text-xs"
+            style={{ color: 'var(--admin-text-muted)' }}
           >
             No stored model versions yet.
           </p>
@@ -309,8 +309,7 @@ export default function AdminDashboard() {
             {predictionModels.slice(0, 4).map((model) => (
               <div
                 key={`${model.modelVersion}-${model.stage}`}
-                className="rounded-lg p-4"
-                style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}
+                className="admin-card-3d rounded-lg p-4"
               >
                 <div className="flex items-start justify-between gap-2">
                   <p className="font-mono text-sm font-bold" style={{ color: 'var(--admin-text)' }}>{model.modelVersion}</p>
@@ -352,10 +351,8 @@ export default function AdminDashboard() {
           ) : recentArticles.slice(0, 5).map((a: any) => (
             <div
               key={a.id}
-              className="flex items-start gap-2.5 px-4 py-2.5"
+              className="admin-row-hover flex items-start gap-2.5 px-4 py-2.5"
               style={{ borderBottom: '1px solid var(--admin-border)' }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--admin-table-row-hover)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
             >
               <div
                 className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded"
@@ -415,9 +412,7 @@ export default function AdminDashboard() {
                   return (
                     <tr
                       key={run.runId}
-                      style={{ borderBottom: '1px solid var(--admin-border)' }}
-                      onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--admin-table-row-hover)'; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                      className="admin-row-hover" style={{ borderBottom: '1px solid var(--admin-border)' }}
                     >
                       <td className="max-w-[14rem] truncate px-4 py-2.5" style={{ color: 'var(--admin-text)' }}>
                         {matchId ? (
@@ -460,9 +455,7 @@ export default function AdminDashboard() {
                   return (
                     <tr
                       key={u.id}
-                      style={{ borderBottom: '1px solid var(--admin-border)' }}
-                      onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--admin-table-row-hover)'; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                      className="admin-row-hover" style={{ borderBottom: '1px solid var(--admin-border)' }}
                     >
                       <td className="px-4 py-2.5">
                         <div className="flex items-center gap-2.5">
@@ -501,8 +494,7 @@ function SectionCard({
 }) {
   return (
     <div
-      className="flex h-full flex-col overflow-hidden rounded-lg"
-      style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}
+      className="flex h-full flex-col overflow-hidden rounded-lg admin-card-3d"
     >
       <div
         className="flex h-11 shrink-0 items-center justify-between px-4"
@@ -557,9 +549,7 @@ function MatchPreviewTable({
                 return (
                   <tr
                     key={m.matchId || m.id}
-                    style={{ borderBottom: '1px solid var(--admin-border)' }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--admin-table-row-hover)'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                    className="admin-row-hover" style={{ borderBottom: '1px solid var(--admin-border)' }}
                   >
                     <td className="max-w-[10rem] truncate px-4 py-2.5 sm:max-w-none" style={{ color: 'var(--admin-text)' }}>
                       {m.matchId || m.id ? (
@@ -623,8 +613,7 @@ function FavoritesCard({ analytics }: { analytics: AdminAnalytics | null }) {
 
   return (
     <section
-      className="overflow-hidden rounded-lg"
-      style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}
+      className="admin-card-3d overflow-hidden rounded-lg"
     >
       <div
         className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
@@ -632,7 +621,7 @@ function FavoritesCard({ analytics }: { analytics: AdminAnalytics | null }) {
       >
         <div className="flex items-center gap-3">
           <div
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-lg"
+            className="admin-icon-well grid h-10 w-10 shrink-0 place-items-center rounded-lg"
             style={{ background: 'var(--admin-danger-bg)', color: 'var(--admin-danger)' }}
           >
             <Heart size={18} />
@@ -657,9 +646,9 @@ function FavoritesCard({ analytics }: { analytics: AdminAnalytics | null }) {
         {types.map((item) => {
           const Icon = item.icon;
           return (
-            <div key={item.key} className="flex items-center gap-3 px-4 py-3.5" style={{ background: 'var(--admin-card)' }}>
+            <div key={item.key} className="flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-[var(--admin-table-row-hover)]" style={{ background: 'var(--admin-card)' }}>
               <div
-                className="grid h-8 w-8 shrink-0 place-items-center rounded-md"
+                className="admin-icon-well grid h-8 w-8 shrink-0 place-items-center rounded-md"
                 style={{ background: 'var(--admin-danger-bg)', color: 'var(--admin-danger)' }}
               >
                 <Icon size={15} />
@@ -693,14 +682,10 @@ function MetricCard({
 }) {
   return (
     <div
-      className="flex min-w-0 items-center gap-3 rounded-lg px-3 py-2.5"
-      style={{
-        border: '1px solid var(--admin-border)',
-        background: 'var(--admin-card)',
-      }}
+      className="admin-card-3d flex min-w-0 items-center gap-3 rounded-lg px-3 py-2.5"
     >
       <div
-        className="grid h-8 w-8 shrink-0 place-items-center rounded-md"
+        className="admin-icon-well grid h-8 w-8 shrink-0 place-items-center rounded-md"
         style={{ background: accentBg, color: accentColor }}
       >
         {icon}

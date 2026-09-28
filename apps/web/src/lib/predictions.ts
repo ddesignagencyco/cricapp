@@ -389,6 +389,47 @@ function storedText(value: unknown): string {
   return text;
 }
 
+/**
+ * The API stores the toss as a raw competitor id (`sr:competitor:195222`).
+ * Resolve it to a side's display name, and drop the row entirely when the id
+ * matches neither side rather than printing the id at the reader.
+ */
+function readableTossWinner(
+  raw: string,
+  match: Match | Record<string, unknown> | null | undefined,
+  sides: MatchSideLabels
+): string | null {
+  const value = raw.trim();
+  if (!value) return null;
+
+  const rec = (match || {}) as Record<string, unknown>;
+  const teams = rec.teams;
+  const isObj = !isNil(teams) && typeof teams === 'object' && !Array.isArray(teams);
+  const pair = isObj
+    ? (teams as { home?: Record<string, unknown>; away?: Record<string, unknown> })
+    : Array.isArray(teams)
+      ? { home: { code: teams[0] }, away: { code: teams[1] } }
+      : null;
+  const homeRaw = String(pair?.home?.code ?? '').trim();
+  const awayRaw = String(pair?.away?.code ?? '').trim();
+  const needle = value.toLowerCase();
+  // Also try the bare id/code with its namespace stripped, e.g. `195221`.
+  const homeKey = homeRaw.replace(/^sr:[^:]+:/i, '').toLowerCase();
+  const awayKey = awayRaw.replace(/^sr:[^:]+:/i, '').toLowerCase();
+
+  if (value === homeRaw) return sides.homeName;
+  if (value === awayRaw) return sides.awayName;
+  if (needle && needle === homeKey) return sides.homeName;
+  if (needle && needle === awayKey) return sides.awayName;
+  if (needle === sides.homeCode.toLowerCase()) return sides.homeName;
+  if (needle === sides.awayCode.toLowerCase()) return sides.awayName;
+
+  // Anything still namespace-prefixed is an id we could not place. Never show it.
+  if (/^sr:/i.test(value)) return null;
+
+  return value.replace(/\bhome\b/i, sides.homeName).replace(/\baway\b/i, sides.awayName);
+}
+
 export function publicTossFact(
   run: PredictionRun | null | undefined,
   match: Match | Record<string, unknown> | null | undefined,
@@ -396,17 +437,18 @@ export function publicTossFact(
 ): string | null {
   const rec = (match || {}) as Record<string, unknown>;
   const explanation = run?.explanation || {};
-  const listed = stringField(rec, 'toss') || stringField(rec, 'tossWinner') || stringField(rec, 'tossWonBy');
+  const listed = readableTossWinner(
+    stringField(rec, 'toss') || stringField(rec, 'tossWinner') || stringField(rec, 'tossWonBy'),
+    match,
+    sides
+  );
   const decision = storedText(explanation.tossDecision);
   const adjusted = explanation.tossAdjusted === true;
   if (!adjusted && !listed && !decision) return null;
-  const who = listed
-    .replace(/\bhome\b/i, sides.homeName)
-    .replace(/\baway\b/i, sides.awayName);
   if (adjusted) {
-    return ['Toss is already in this chance', who || decision].filter(Boolean).join(' · ');
+    return ['Toss is already in this chance', listed || decision].filter(Boolean).join(' · ');
   }
-  return who || (decision ? `Toss: ${decision}` : null);
+  return listed || (decision ? `Toss: ${decision}` : null);
 }
 
 export function publicVenueWeatherFact(

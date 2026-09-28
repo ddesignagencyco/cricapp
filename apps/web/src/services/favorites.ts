@@ -1,7 +1,23 @@
 import { apiGet, apiPost, apiDelete, extractPage, type PageMeta } from './api/client';
 import { authHeaders } from './auth';
 
-export type FavoriteTarget = 'team' | 'player' | 'match' | 'news' | 'tour' | 'tournament';
+export type FavoriteTarget =
+  | 'team'
+  | 'player'
+  | 'match'
+  | 'news'
+  | 'tour'
+  | 'tournament'
+  | 'author';
+
+/** Shape returned on `target` when `targetType === 'author'` and `expand=true`. */
+export interface FavoriteAuthorTarget {
+  id?: string | null;
+  name?: string | null;
+  slug?: string | null;
+  bio?: string | null;
+  avatarUrl?: string | null;
+}
 
 export interface FavoriteItem {
   id: string;

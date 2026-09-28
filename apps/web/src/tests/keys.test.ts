@@ -8,7 +8,7 @@ import {
   teamKeys,
   tourKeys,
   tournamentKeys,
-} from './keys';
+} from '../queries/keys';
 
 describe('directory query keys', () => {
   it('normalizes strings, trims values, drops empty values, and sorts keys', () => {

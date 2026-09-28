@@ -1,6 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { useDebouncedUrlQuery } from './useDebouncedUrlQuery';
+import { useDebouncedUrlQuery } from '../hooks/useDebouncedUrlQuery';
 
 const mockReplace = vi.fn();
 const mockPush = vi.fn();

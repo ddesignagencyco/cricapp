@@ -17,6 +17,7 @@ import {
   LogOut,
   Moon,
   Newspaper,
+  PenLine,
   Radio,
   Search,
   Shield,
@@ -55,10 +56,11 @@ const exploreItems: NavItem[] = [
   { to: '/teams', label: 'Teams', icon: Shield },
   { to: '/players', label: 'Players', icon: UserRound },
   { to: '/psl', label: 'PSL', icon: Trophy },
-  { to: '/tools', label: 'Tools', icon: Wrench },
   { to: '/tours', label: 'Tours', icon: Globe },
   { to: '/tournaments', label: 'Tournaments', icon: Award },
+  { to: '/tools', label: 'Tools', icon: Wrench },
   { to: '/news', label: 'News', icon: Newspaper },
+  { to: '/authors', label: 'Authors', icon: PenLine },
   { to: '/gallery', label: 'Gallery', icon: Images },
 ];
 

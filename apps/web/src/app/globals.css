@@ -1557,6 +1557,8 @@ textarea#comment-body:focus-visible {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .admin-card-3d:hover,
+  .admin-chip-btn:active,
   .card-interactive:hover,
   .card-featured:hover,
   :is(a, button).prediction-card:hover,
@@ -1757,6 +1759,20 @@ button:disabled,
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+}
+
+/* PSL hero. Uses its own artwork (banner.jpg) so the league page is not a
+   duplicate of the homepage, and always pairs with .hero-scrim — without that
+   scrim the raw image reads as a bright lightbulb behind the title. */
+.hero-grad-psl {
+  background-image: url('/banner.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.light .hero-grad-psl {
+  background-image: url('/banner.jpg');
 }
 
 /* Brand controls — 3D gradient (tabs, chips, pagination current share .ui-3d-brand rules). */
@@ -2196,6 +2212,99 @@ h3.news-copy[dir="rtl"] {
   border-radius: var(--radius-md);
 }
 
+/* Admin cards borrow the public elevation system so the dashboard reads with
+   the same raised-bevel depth as the rest of the site. The admin palette
+   already aliases --color-card, so the gradient and bevel land on the exact
+   same surface colour without re-tinting anything. */
+.admin-card-3d {
+  border: 1px solid var(--admin-border);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--admin-card) 97%, #fff) 0%,
+    var(--admin-card) 100%
+  );
+  box-shadow:
+    inset 0 1px 2px rgb(0 0 0 / 0.06),
+    var(--shadow-sm);
+  transition:
+    transform var(--motion-duration) var(--motion-ease),
+    box-shadow var(--motion-duration) var(--motion-ease),
+    border-color var(--motion-duration) var(--motion-ease);
+}
+
+@media (hover: hover) {
+  .admin-card-3d:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--admin-accent) 26%, var(--admin-border));
+    box-shadow:
+      inset 0 1px 2px rgb(0 0 0 / 0.05),
+      var(--shadow-md);
+  }
+}
+
+.admin-card-3d:active {
+  transform: translateY(0);
+  box-shadow:
+    inset 0 1px 2px rgb(0 0 0 / 0.08),
+    var(--shadow-xs);
+}
+
+/* Settles flat on touch, where there is no hover to reveal. */
+@media (hover: none) {
+  .admin-card-3d:hover {
+    transform: none;
+  }
+}
+
+/* Icon wells: a top highlight sells the chip as raised rather than painted on. */
+.admin-icon-well {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.14),
+    0 1px 2px rgb(0 0 0 / 0.16);
+}
+
+/* Secondary header action: same bevel, presses down instead of lifting. */
+.admin-chip-btn {
+  border: 1px solid var(--admin-border);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--admin-card) 97%, #fff) 0%,
+    var(--admin-card) 100%
+  );
+  color: var(--admin-text);
+  box-shadow:
+    inset 0 1px 2px rgb(0 0 0 / 0.06),
+    var(--shadow-xs);
+  transition:
+    transform var(--motion-duration) var(--motion-ease),
+    box-shadow var(--motion-duration) var(--motion-ease),
+    border-color var(--motion-duration) var(--motion-ease);
+}
+
+@media (hover: hover) {
+  .admin-chip-btn:hover {
+    border-color: color-mix(in srgb, var(--admin-accent) 30%, var(--admin-border));
+    box-shadow:
+      inset 0 1px 2px rgb(0 0 0 / 0.05),
+      var(--shadow-sm);
+  }
+}
+
+.admin-chip-btn:active {
+  transform: translateY(1px);
+  box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.08);
+}
+
+/* Row hover used to be inline onMouseEnter/onMouseLeave on every table row,
+   which could not animate. Used by table rows and list rows alike. */
+.admin-row-hover {
+  transition: background-color var(--motion-duration) var(--motion-ease);
+}
+
+.admin-row-hover:hover {
+  background: var(--admin-table-row-hover);
+}
+
 /* Shared modal scrim */
 .scrim {
   background: rgb(8 17 31 / 0.6);
@@ -2501,9 +2610,12 @@ h3.news-copy[dir="rtl"] {
   text-underline-offset: 3px;
 }
 
+/* Fallback only. `!important` here used to beat the inline style RemoteImage
+   sets from its `fit` prop, so every fit="cover" in the app was a no-op.
+   RemoteImage already defaults to contain when no `fit` is passed. */
 .news-image {
-  object-fit: contain !important;
-  object-position: center !important;
+  object-fit: contain;
+  object-position: center;
 }
 
 .tiptap-content img,
@@ -2584,48 +2696,6 @@ h3.news-copy[dir="rtl"] {
 .table-scroll::-webkit-scrollbar-thumb:hover,
 :has(> table)::-webkit-scrollbar-thumb:hover {
   background: var(--admin-text, var(--color-mtext));
-}
-
-/* TableScrollRail takes over from the native bar: touch platforms hide overlay
-   bars until you flick, so the rail below is the only permanent affordance. */
-[data-table-rail='on'] {
-  scrollbar-width: none;
-}
-
-[data-table-rail='on']::-webkit-scrollbar {
-  display: none;
-}
-
-.table-scroll-rail {
-  display: none;
-  height: 0.875rem;
-  padding: 0.1875rem 0.5rem;
-  cursor: grab;
-  touch-action: none;
-  user-select: none;
-}
-
-.table-scroll-rail[data-state='ready'] {
-  display: block;
-}
-
-.table-scroll-rail[data-dragging='true'] {
-  cursor: grabbing;
-}
-
-.table-scroll-rail__thumb {
-  height: 100%;
-  border-radius: 999px;
-  background: var(--color-border-strong);
-  transition: background-color var(--motion-duration) var(--motion-ease);
-}
-
-.table-scroll-rail:hover .table-scroll-rail__thumb {
-  background: var(--color-text-muted);
-}
-
-.table-scroll-rail[data-dragging='true'] .table-scroll-rail__thumb {
-  background: var(--color-text-secondary);
 }
 
 @media (max-width: 767px) {

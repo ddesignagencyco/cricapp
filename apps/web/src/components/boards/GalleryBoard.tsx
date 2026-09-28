@@ -217,7 +217,9 @@ export default function GalleryBoard({ initialTab = 'images' }: GalleryBoardProp
                     <MediaActions
                       url={photo.src}
                       title={photo.title}
-                      shareHref={photo.href}
+                      shareHref={`/gallery/${encodeURIComponent(photo.id)}`}
+                      shareType="gallery"
+                      shareId={photo.id}
                       variant="badge"
                       size="xs"
                     />
@@ -253,7 +255,9 @@ export default function GalleryBoard({ initialTab = 'images' }: GalleryBoardProp
                     <MediaActions
                       url={short.rawUrl || short.embedUrl || short.image || ''}
                       title={short.title}
-                      shareHref={short.href}
+                      shareHref={`/gallery/${encodeURIComponent(short.id)}`}
+                      shareType="gallery"
+                      shareId={short.id}
                       variant="badge"
                       size="xs"
                     />
@@ -289,7 +293,9 @@ export default function GalleryBoard({ initialTab = 'images' }: GalleryBoardProp
                     <MediaActions
                       url={video.rawUrl || video.embedUrl || video.image || ''}
                       title={video.title}
-                      shareHref={video.href}
+                      shareHref={`/gallery/${encodeURIComponent(video.id)}`}
+                      shareType="gallery"
+                      shareId={video.id}
                       variant="badge"
                       size="xs"
                     />

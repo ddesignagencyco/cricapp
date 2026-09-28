@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ApiError } from './api/client';
+import { ApiError } from '../services/api/client';
 
 const post = vi.fn();
 const get = vi.fn();
 
-vi.mock('./api/client', async () => {
-  const actual = await vi.importActual<typeof import('./api/client')>('./api/client');
+vi.mock('../services/api/client', async () => {
+  const actual = await vi.importActual<typeof import('../services/api/client')>('../services/api/client');
   return {
     ...actual,
     apiPost: (...args: unknown[]) => post(...args),
@@ -13,9 +13,9 @@ vi.mock('./api/client', async () => {
   };
 });
 
-vi.mock('./auth', () => ({ authHeaders: () => ({}) }));
+vi.mock('../services/auth', () => ({ authHeaders: () => ({}) }));
 
-const { fetchBulkPredictions } = await import('./predictions');
+const { fetchBulkPredictions } = await import('../services/predictions');
 
 const run = (matchId: string) => ({ runId: `run-${matchId}`, matchId, homeWinProb: 0.5 });
 

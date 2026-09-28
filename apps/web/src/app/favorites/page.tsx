@@ -16,9 +16,16 @@ import {
   Sparkles,
   Globe,
   ChevronRight,
+  PenLine,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { listFavorites, removeFavorite, type FavoriteItem, type FavoriteTarget } from '../../services/favorites';
+import {
+  listFavorites,
+  removeFavorite,
+  type FavoriteAuthorTarget,
+  type FavoriteItem,
+  type FavoriteTarget,
+} from '../../services/favorites';
 import { useAuth } from '../../components/AuthProvider';
 import RemoteImage from '../../components/RemoteImage';
 import EntityAvatar from '../../components/EntityAvatar';
@@ -41,6 +48,7 @@ interface EnrichedFavorite {
   news?: NewsArticle | null;
   tour?: Tour | null;
   tournament?: TournamentApi | null;
+  author?: FavoriteAuthorTarget | null;
 }
 
 type TabKey = 'all' | FavoriteTarget;
@@ -58,6 +66,7 @@ const SECTION_ORDER: {
   { key: 'news', label: 'News', icon: Newspaper, href: '/news', emptyHint: 'Read articles and tap the heart to save them.' },
   { key: 'tour', label: 'Tours', icon: Globe, href: '/tours', emptyHint: 'Discover tours and tap the heart to save them.' },
   { key: 'tournament', label: 'Tournaments', icon: Trophy, href: '/tournaments', emptyHint: 'Follow tournaments and tap the heart to save them.' },
+  { key: 'author', label: 'Authors', icon: PenLine, href: '/authors', emptyHint: 'Read writers you follow and tap the heart to save them.' },
 ];
 
 export default function FavoritesPage() {
@@ -90,6 +99,7 @@ export default function FavoritesPage() {
             news: item.targetType === 'news' ? mapFavoriteNews(target) : undefined,
             tour: item.targetType === 'tour' ? (target as Tour | null) : undefined,
             tournament: item.targetType === 'tournament' ? (target as TournamentApi | null) : undefined,
+            author: item.targetType === 'author' ? (target as FavoriteAuthorTarget | null) : undefined,
           };
         }
         setEnrichedMap(initial);
@@ -129,6 +139,7 @@ export default function FavoritesPage() {
       news: favorites.filter((f) => f.targetType === 'news').length,
       tour: favorites.filter((f) => f.targetType === 'tour').length,
       tournament: favorites.filter((f) => f.targetType === 'tournament').length,
+      author: favorites.filter((f) => f.targetType === 'author').length,
     }),
     [favorites],
   );
@@ -141,6 +152,7 @@ export default function FavoritesPage() {
       news: [],
       tour: [],
       tournament: [],
+      author: [],
     };
     for (const favorite of favorites) {
       map[favorite.targetType].push(favorite);
@@ -375,6 +387,11 @@ function FavoriteCard({
           onRemove={() => onRemove(name)}
         />
       );
+    }
+    case 'author': {
+      const author = data?.author;
+      const name = humanLabel(author?.name, 'Author');
+      return <AuthorFavCard fav={fav} author={author} name={name} isBusy={isBusy} onRemove={() => onRemove(name)} />;
     }
     default: {
       const _exhaustive: never = fav.targetType;
@@ -675,6 +692,48 @@ function TournamentFavCard({
   );
 }
 
+function AuthorFavCard({
+  fav,
+  author,
+  name,
+  isBusy,
+  onRemove,
+}: {
+  fav: FavoriteItem;
+  author?: FavoriteAuthorTarget | null;
+  name: string;
+  isBusy: boolean;
+  onRemove: () => void;
+}) {
+  const slug = str(author?.slug);
+  // Deep link by slug, as the guide specifies; fall back to the id if slug is missing.
+  const href = slug ? `/authors/${encodeURIComponent(slug)}` : `/authors/${encodeURIComponent(fav.targetId)}`;
+  const bio = str(author?.bio);
+  const avatar = str(author?.avatarUrl);
+
+  return (
+    <FavShell isBusy={isBusy} onRemove={onRemove}>
+      <Link href={href} className="flex min-w-0 flex-1 items-center gap-3">
+        {avatar ? (
+          <RemoteImage
+            src={avatar}
+            alt={name}
+            width={48}
+            height={48}
+            className="h-12 w-12 shrink-0 rounded-full bg-entity-avatar object-cover"
+          />
+        ) : (
+          <EntityAvatar className="h-12 w-12 text-sm">{getInitials(name)}</EntityAvatar>
+        )}
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate text-sm font-semibold text-mtext transition-colors group-hover:text-accent">{name}</h3>
+          <p className="mt-0.5 line-clamp-2 text-xs text-stext">{bio || 'Author'}</p>
+        </div>
+      </Link>
+    </FavShell>
+  );
+}
+
 function FavShell({
   children,
   isBusy,
@@ -848,6 +907,7 @@ function isTabKey(value: string): value is TabKey {
     case 'news':
     case 'tour':
     case 'tournament':
+    case 'author':
       return true;
     default:
       return false;

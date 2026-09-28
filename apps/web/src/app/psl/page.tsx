@@ -42,7 +42,8 @@ export default async function PSLPage({ searchParams }: { searchParams: Promise<
     return (
       <div className="min-h-screen">
         <section className="relative overflow-hidden">
-          <div className="hero-grad absolute inset-0" />
+          <div className="hero-grad-psl absolute inset-0" />
+          <div className="hero-scrim pointer-events-none absolute inset-0" />
           <div className="hero-content relative mx-auto max-w-7xl px-4 py-14 sm:px-6">
             <div className="max-w-2xl">
               <div className="mb-4 flex items-center gap-2">
@@ -93,7 +94,8 @@ export default async function PSLPage({ searchParams }: { searchParams: Promise<
     return (
       <div className="min-h-screen">
         <section className="relative overflow-hidden">
-          <div className="hero-grad absolute inset-0" />
+          <div className="hero-grad-psl absolute inset-0" />
+          <div className="hero-scrim pointer-events-none absolute inset-0" />
           <div className="hero-content relative mx-auto max-w-7xl px-4 py-14 sm:px-6">
             <div className="max-w-2xl">
               <h1 className="hero-title text-4xl font-black tracking-tight sm:text-5xl">
@@ -127,7 +129,8 @@ export default async function PSLPage({ searchParams }: { searchParams: Promise<
     <div className="min-h-screen">
       {/* Hero */}
       <section className="relative overflow-hidden">
-        <div className="hero-grad absolute inset-0" />
+        <div className="hero-grad-psl absolute inset-0" />
+          <div className="hero-scrim pointer-events-none absolute inset-0" />
         <div className="hero-content relative mx-auto max-w-7xl px-4 py-14 sm:px-6">
           <div className="max-w-2xl">
             <div className="mb-4 flex items-center gap-2">

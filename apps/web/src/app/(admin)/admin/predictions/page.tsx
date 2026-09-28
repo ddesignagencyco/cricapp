@@ -791,7 +791,10 @@ function readableConditions(explanation: Record<string, unknown>): Array<{ label
 function readableToss(explanation: Record<string, unknown>, features?: Record<string, unknown> | null): string | null {
   const adjusted = explanation.tossAdjusted === true;
   const decision = asText(explanation.tossDecision) || asText(nested(features, 'toss.decision'));
-  const wonBy = asText(nested(features, 'toss.wonBy')) || asText(nested(features, 'toss.won_by'));
+  // Features store the winning side as a raw `sr:competitor:` id, which must
+  // never be printed as-is. No match object here, so only readable text passes.
+  const wonByRaw = asText(nested(features, 'toss.wonBy')) || asText(nested(features, 'toss.won_by'));
+  const wonBy = wonByRaw && !/^sr:/i.test(wonByRaw) ? wonByRaw : null;
   if (!adjusted && !decision && !wonBy) return null;
   if (!adjusted) return 'Stored, not adjusted';
   return [wonBy ? `Won by ${wonBy}` : 'Included', decision].filter(Boolean).join(' · ');

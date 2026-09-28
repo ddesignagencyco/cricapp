@@ -52,7 +52,9 @@ export default function ShortsViewer({ items, index, onClose, onIndexChange, lay
         <MediaActions
           url={item.rawUrl || item.embedUrl || item.image || ''}
           title={item.title || 'Short'}
-          shareHref={item.href}
+          shareHref={item.href || `/gallery/${encodeURIComponent(item.id)}`}
+          shareType="gallery"
+          shareId={item.id}
           variant="media"
         />
         <button type="button" onClick={onClose} className="btn-on-media on-media ml-auto grid h-9 w-9 shrink-0 place-items-center rounded-full" aria-label="Close short">

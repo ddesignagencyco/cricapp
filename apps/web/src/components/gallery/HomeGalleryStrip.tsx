@@ -22,7 +22,7 @@ export default function HomeGalleryStrip() {
                 alt={item.title || 'Gallery image'}
                 fill
                 sizes="180px"
-                fit="contain"
+                fit="cover"
                 className="news-image"
               />
             </div>
