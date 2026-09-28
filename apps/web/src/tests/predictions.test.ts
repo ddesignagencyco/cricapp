@@ -1,11 +1,11 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '../services/api/client';
+import { fetchBulkPredictions } from '../services/predictions';
 
-const post = vi.fn();
-const get = vi.fn();
+const post = jest.fn();
+const get = jest.fn();
 
-vi.mock('../services/api/client', async () => {
-  const actual = await vi.importActual<typeof import('../services/api/client')>('../services/api/client');
+jest.mock('../services/api/client', () => {
+  const actual = jest.requireActual('../services/api/client');
   return {
     ...actual,
     apiPost: (...args: unknown[]) => post(...args),
@@ -13,9 +13,7 @@ vi.mock('../services/api/client', async () => {
   };
 });
 
-vi.mock('../services/auth', () => ({ authHeaders: () => ({}) }));
-
-const { fetchBulkPredictions } = await import('../services/predictions');
+jest.mock('../services/auth', () => ({ authHeaders: () => ({}) }));
 
 const run = (matchId: string) => ({ runId: `run-${matchId}`, matchId, homeWinProb: 0.5 });
 
@@ -25,7 +23,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  vi.restoreAllMocks();
+  jest.restoreAllMocks();
 });
 
 describe('fetchBulkPredictions', () => {
@@ -103,7 +101,7 @@ describe('fetchBulkPredictions', () => {
   });
 
   it('retries on 429 before giving up', async () => {
-    vi.spyOn(globalThis, 'setTimeout').mockImplementation(((fn: () => void) => {
+    jest.spyOn(globalThis, 'setTimeout').mockImplementation(((fn: () => void) => {
       fn();
       return 0 as unknown as NodeJS.Timeout;
     }) as typeof setTimeout);

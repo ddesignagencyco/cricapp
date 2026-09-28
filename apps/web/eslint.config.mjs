@@ -22,8 +22,12 @@ const eslintConfig = [
       ".next/**",
       "out/**",
       "public/**",
+      "coverage/**",
       "*.config.mjs",
       "*.config.js",
+      // eslint-config-next only registers the react plugin for js/jsx/ts/tsx, so
+      // linting a CommonJS config file fails on the react/* rules above.
+      "*.config.cjs",
     ],
   },
 ];

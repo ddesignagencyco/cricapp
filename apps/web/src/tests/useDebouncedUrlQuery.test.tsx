@@ -1,12 +1,12 @@
 import { act, renderHook } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { useDebouncedUrlQuery } from '../hooks/useDebouncedUrlQuery';
 
-const mockReplace = vi.fn();
-const mockPush = vi.fn();
+const mockReplace = jest.fn();
+const mockPush = jest.fn();
 let mockSearch = '';
 
-vi.mock('next/navigation', () => ({
+jest.mock('next/navigation', () => ({
   useRouter: () => ({ replace: mockReplace, push: mockPush }),
   usePathname: () => '/players',
   useSearchParams: () => new URLSearchParams(mockSearch),
@@ -14,14 +14,14 @@ vi.mock('next/navigation', () => ({
 
 describe('useDebouncedUrlQuery', () => {
   beforeEach(() => {
-    vi.useFakeTimers();
+    jest.useFakeTimers();
     mockReplace.mockReset();
     mockPush.mockReset();
     mockSearch = '';
   });
 
   afterEach(() => {
-    vi.useRealTimers();
+    jest.useRealTimers();
   });
 
   it('keeps immediate local input, trims, debounces, and resets page', () => {
@@ -32,10 +32,10 @@ describe('useDebouncedUrlQuery', () => {
     expect(result.current.input).toBe('  Babar  ');
     expect(mockReplace).not.toHaveBeenCalled();
 
-    act(() => vi.advanceTimersByTime(349));
+    act(() => jest.advanceTimersByTime(349));
     expect(mockReplace).not.toHaveBeenCalled();
 
-    act(() => vi.advanceTimersByTime(1));
+    act(() => jest.advanceTimersByTime(1));
     expect(mockReplace).toHaveBeenCalledWith('/players?search=Babar', { scroll: false });
   });
 
@@ -44,7 +44,7 @@ describe('useDebouncedUrlQuery', () => {
     const { result } = renderHook(() => useDebouncedUrlQuery({ param: 'search' }));
 
     act(() => result.current.setInput(''));
-    act(() => vi.advanceTimersByTime(350));
+    act(() => jest.advanceTimersByTime(350));
 
     expect(mockReplace).toHaveBeenCalledWith('/players', { scroll: false });
   });

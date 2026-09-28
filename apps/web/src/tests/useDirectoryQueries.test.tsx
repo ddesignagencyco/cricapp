@@ -1,13 +1,13 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { fetchPlayersPage } from '../services/players';
 import { usePlayersQuery } from '../queries/useDirectoryQueries';
 
-vi.mock('../services/players', () => ({
-  fetchPlayersPage: vi.fn(),
-  fetchPlayerById: vi.fn(),
+jest.mock('../services/players', () => ({
+  fetchPlayersPage: jest.fn(),
+  fetchPlayerById: jest.fn(),
 }));
 
 function createWrapper(client: QueryClient) {
@@ -32,11 +32,11 @@ const emptyPage = { items: [], total: 0, totalPages: 1 };
 
 describe('directory query hooks', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   it('passes the abort signal, reuses cached requests, and separates parameter caches', async () => {
-    vi.mocked(fetchPlayersPage).mockResolvedValue(emptyPage);
+    jest.mocked(fetchPlayersPage).mockResolvedValue(emptyPage);
     const client = createClient();
     const wrapper = createWrapper(client);
     const { result, rerender } = renderHook(
@@ -61,7 +61,7 @@ describe('directory query hooks', () => {
   });
 
   it('keeps previous page data visible while a same-search page is fetching', async () => {
-    vi.mocked(fetchPlayersPage)
+    jest.mocked(fetchPlayersPage)
       .mockResolvedValueOnce({ items: [], total: 40, totalPages: 2 })
       .mockImplementationOnce(() => new Promise(() => undefined));
     const client = createClient();
@@ -80,7 +80,7 @@ describe('directory query hooks', () => {
 
   it('does not surface expected abort errors when a query key changes', async () => {
     let calls = 0;
-    vi.mocked(fetchPlayersPage).mockImplementation((_params, signal) => {
+    jest.mocked(fetchPlayersPage).mockImplementation((_params, signal) => {
       calls += 1;
       if (calls === 1 && signal) {
         return new Promise((_, reject) => {
@@ -104,7 +104,7 @@ describe('directory query hooks', () => {
 
   it('exposes pending, empty, and error states without converting errors into empty data', async () => {
     let resolvePage: ((_value: typeof emptyPage) => void) | undefined;
-    vi.mocked(fetchPlayersPage).mockReturnValueOnce(
+    jest.mocked(fetchPlayersPage).mockReturnValueOnce(
       new Promise((resolve) => {
         resolvePage = resolve;
       })
@@ -118,7 +118,7 @@ describe('directory query hooks', () => {
     expect(pending.result.current.data).toEqual(emptyPage);
 
     pending.unmount();
-    vi.mocked(fetchPlayersPage).mockRejectedValueOnce(new Error('network'));
+    jest.mocked(fetchPlayersPage).mockRejectedValueOnce(new Error('network'));
     const errored = renderHook(() => usePlayersQuery({ limit: 20, page: 2 }), { wrapper });
     await waitFor(() => expect(errored.result.current.isError).toBe(true));
     expect(errored.result.current.data).toBeUndefined();

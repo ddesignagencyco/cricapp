@@ -1,4 +1,3 @@
-import { describe, expect, it } from 'vitest';
 import { matchSides, publicTossFact } from '../lib/predictions';
 import type { PredictionRun } from '../types/predictions';
 

@@ -61,6 +61,8 @@ export function formatScheduled(iso: string | undefined): ScheduledDate {
 export function formatDate(iso: string | undefined): string {
   if (!iso) return '';
   const d: Date = new Date(iso + 'T00:00:00');
+  // Without this guard a malformed value renders the literal text "Invalid Date".
+  if (Number.isNaN(d.getTime())) return '';
   return d.toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
