@@ -364,8 +364,8 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
         metaDescription: 'Short search snippet',
       };
 
-  const searchPlayers = useCallback(async (q: string): Promise<EntityChoice[]> => {
-    const res = await searchAll(q);
+  const searchPlayers = useCallback(async (q: string, signal?: AbortSignal): Promise<EntityChoice[]> => {
+    const res = await searchAll(q, signal);
     return res.players
       .map((player) => ({
         id: String(player.id || player.playerId || ''),
@@ -374,8 +374,8 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
       .filter((row) => row.id);
   }, []);
 
-  const searchTeams = useCallback(async (q: string): Promise<EntityChoice[]> => {
-    const res = await searchAll(q);
+  const searchTeams = useCallback(async (q: string, signal?: AbortSignal): Promise<EntityChoice[]> => {
+    const res = await searchAll(q, signal);
     return res.teams
       .map((team) => ({
         id: String(team.id || team.teamId || ''),
@@ -384,7 +384,7 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
       .filter((row) => row.id);
   }, []);
 
-  const searchMatches = useCallback(async (q: string): Promise<EntityChoice[]> => {
+  const searchMatches = useCallback(async (q: string, signal?: AbortSignal): Promise<EntityChoice[]> => {
     const found = new Map<string, EntityChoice>();
     const addHit = (id: string, label: string) => {
       if (id && !found.has(id)) found.set(id, { id, label });
@@ -392,22 +392,28 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
 
     const looksLikeId = /^(sr:match:|[0-9a-f-]{8,})/i.test(q);
     if (looksLikeId) {
-      const exact = await fetchMatchById(q).catch(() => null);
+      const exact = await fetchMatchById(q, signal).catch(() => null);
       if (exact) addHit(matchIdOf(exact), matchLabel(exact));
     }
 
-    const res = await searchAll(q);
+    const res = await searchAll(q, signal);
     for (const match of res.matches) {
       addHit(matchIdOf(match), matchLabel(match));
     }
 
+    /*
+     * WORKAROUND (delete once the backend returns match ids from /api/search):
+     * `searchAll` currently yields match rows with no usable id, so this fan-out is
+     * the only thing that returns linkable matches. It is capped at 2 teams x 2
+     * calls so a single keystroke costs 4 requests instead of 6.
+     */
     if (found.size === 0) {
-      const teamIds = res.teams.map((team) => String(team.id || '')).filter(Boolean).slice(0, 3);
+      const teamIds = res.teams.map((team) => String(team.id || '')).filter(Boolean).slice(0, 2);
       const fixtures = await Promise.all(
         teamIds.map(async (teamId) => {
           const [schedule, results] = await Promise.all([
-            fetchTeamSchedule(teamId, { limit: 20 }).catch(() => []),
-            fetchTeamResults(teamId, { limit: 20 }).catch(() => []),
+            fetchTeamSchedule(teamId, { limit: 12 }, signal).catch(() => []),
+            fetchTeamResults(teamId, { limit: 12 }, signal).catch(() => []),
           ]);
           return [...schedule, ...results];
         })
@@ -422,8 +428,8 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
     return [...found.values()];
   }, []);
 
-  const searchSeries = useCallback(async (q: string): Promise<EntityChoice[]> => {
-    const res = await searchAll(q);
+  const searchSeries = useCallback(async (q: string, signal?: AbortSignal): Promise<EntityChoice[]> => {
+    const res = await searchAll(q, signal);
     return res.tournaments
       .map((row) => ({
         id: String(row.id || row.tournamentId || ''),

@@ -123,8 +123,12 @@ function inningsSides(match: Record<string, unknown>, number: number): { batting
     (!/first_innings_away|second_innings_home|away_batting/i.test(phase) && Boolean(home.score));
   const firstBat = homeFirst ? home.name : away.name;
   const firstBowl = homeFirst ? away.name : home.name;
-  if (number <= 1) return { battingTeam: firstBat, bowlingTeam: firstBowl };
-  return { battingTeam: firstBowl, bowlingTeam: firstBat };
+  // Innings strictly alternate, so a Test has four of them: odd innings the
+  // side that batted first, even innings the other. Returning the same side for
+  // every innings after the first mislabels innings 3, 4, 5, ...
+  return number % 2 === 1
+    ? { battingTeam: firstBat, bowlingTeam: firstBowl }
+    : { battingTeam: firstBowl, bowlingTeam: firstBat };
 }
 
 function labelCard(card: Omit<InningsScorecard, 'label'> & { label?: string }): InningsScorecard {

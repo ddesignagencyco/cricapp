@@ -33,10 +33,27 @@ module.exports = {
   moduleNameMapper: {
     // Allow `import x from './y.js'` in source to resolve to './y'.
     '^(\\.{1,2}/.*)\\.js$': '$1',
+    // Components import css (e.g. Skeletons pulls react-loading-skeleton.css).
+    // Jest has no css pipeline, so map every stylesheet to a stub.
+    '\\.(css|scss|sass|less)$': '<rootDir>/test/styleStub.js',
   },
   transformIgnorePatterns: ['node_modules[/\\\\](?!(@cricapp)/)'],
-  collectCoverageFrom: ['**/*.(t|j)s', '!tests/**', '!test/**'],
+  // `*.(t|j)s?(x)` — the `?(x)` is required. Without it the glob matches only
+  // .ts/.js and every .tsx component is silently excluded from the report,
+  // which understated coverage against ~285 files.
+  collectCoverageFrom: ['**/*.(t|j)s?(x)', '!tests/**', '!test/**'],
   coverageDirectory: '../coverage',
+  // Ratchet: set just under the real number so coverage can only go up. These
+  // track the whole app including the ~280 untested .tsx files, so they are low
+  // on purpose — raise them as tests are added.
+  coverageThreshold: {
+    global: {
+      statements: 28,
+      branches: 21,
+      functions: 26,
+      lines: 28,
+    },
+  },
   clearMocks: true,
   maxWorkers: 1,
   testTimeout: 30000,

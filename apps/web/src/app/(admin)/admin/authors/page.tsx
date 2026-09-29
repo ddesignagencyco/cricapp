@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { FileEdit, PenLine, Trash2, Upload, X } from 'lucide-react';
 import {
@@ -22,6 +22,7 @@ import {
   type AdminAuthor,
 } from '../../../../services/admin';
 import { uploadGalleryMedia } from '../../../../services/gallery';
+import { describeDuplicates, findSimilarAuthors } from '../../../../utils/authorIdentity';
 
 const emptyForm = { name: '', bio: '', avatarUrl: '' };
 
@@ -35,6 +36,13 @@ export default function AuthorsPage() {
   const [file, setFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [deleteTarget, setDeleteTarget] = useState<AdminAuthor | null>(null);
+
+  // Author identity is a free-text byline, so the same person can get two profiles.
+  // The public /authors page lists every row in the table, so catch it at entry.
+  const duplicateWarning = useMemo(
+    () => describeDuplicates(findSimilarAuthors(form.name, authors, editing?.id)),
+    [form.name, authors, editing?.id]
+  );
 
   const load = () => {
     setLoading(true);
@@ -79,6 +87,15 @@ export default function AuthorsPage() {
     e.preventDefault();
     if (!form.name.trim()) {
       toast.error('Name is required.');
+      return;
+    }
+    // A slug collision is rejected by the API anyway, so fail fast with a clear
+    // message instead of a generic "Could not create the author."
+    const slugClash = findSimilarAuthors(form.name, authors, editing?.id).find(
+      (match) => match.reason === 'slug'
+    );
+    if (slugClash) {
+      toast.error(`Slug "${slugClash.author.slug}" is already used by ${slugClash.author.name}.`);
       return;
     }
     setSaving(true);
@@ -134,6 +151,11 @@ export default function AuthorsPage() {
         {editing && (
           <p className="w-full text-xs font-semibold" style={{ color: 'var(--admin-text-secondary)' }}>
             Editing {editing.name}
+          </p>
+        )}
+        {duplicateWarning && (
+          <p role="alert" className="w-full text-xs" style={{ color: 'var(--admin-text-secondary)' }}>
+            {duplicateWarning}
           </p>
         )}
         <div className="w-44">

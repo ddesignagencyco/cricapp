@@ -24,6 +24,7 @@ import {
 import { formatScheduled, getInitials } from '../../utils/helpers';
 import { formatCricketOvers } from '../../lib/cricketMath';
 import { buildMatchScoreboard, describeMatchResult } from '../../lib/matchScoreboard';
+import { marginClarifier, matchFacts } from '../../lib/matchFacts';
 import { matchStatusLabel } from '../../lib/predictions';
 import { fetchMatchTimeline, matchSideIds } from '../../services/matches';
 import { fetchHeadToHead } from '../../services/headToHead';
@@ -64,6 +65,7 @@ interface Props {
   match: any;
   initialOdds?: MatchOddsResponse | null;
   initialOddsForbidden?: boolean;
+  initialTimeline?: Record<string, unknown> | null;
 }
 
 function looksLikeTeamId(value: string): boolean {
@@ -118,9 +120,14 @@ function scoreRuns(value: unknown): number | null {
 function preferredScore(matchScore: unknown, timelineScore: unknown, live: boolean): string {
   const stored = usefulScore(matchScore);
   const timeline = usefulScore(timelineScore);
-  if (!live) return timeline || stored;
-  if (!timeline) return stored;
+  // The stored teamScores are the current state of the match. The timeline
+  // summary is an AGGREGATE across every innings a side batted, which is only
+  // the same thing in a two-innings match — in a Test, 260 + 8 reads as a single
+  // "268/3" and would replace the real 8/0. So the timeline is a fallback for
+  // when there is no stored score, never an override.
   if (!stored) return timeline;
+  if (!timeline) return stored;
+  if (!live) return stored;
   const storedRuns = scoreRuns(stored);
   const timelineRuns = scoreRuns(timeline);
   if (storedRuns === null) return timeline;
@@ -151,12 +158,15 @@ export default function MatchDetailBody({
   match: initialMatch,
   initialOdds = null,
   initialOddsForbidden = false,
+  initialTimeline = null,
 }: Props) {
   const [match, setMatch] = useState(initialMatch);
   const [tab, setTab] = useState(
     initialMatch?.status === 'completed' || initialMatch?.status === 'cancelled' ? 'result' : 'live'
   );
-  const [timeline, setTimeline] = useState<Record<string, unknown> | null>(null);
+  // Seeded from the server render so the result line and the scores are correct
+  // on first paint. A tab that reloads it refreshes rather than starting empty.
+  const [timeline, setTimeline] = useState<Record<string, unknown> | null>(initialTimeline);
   const [timelineLoading, setTimelineLoading] = useState(false);
   const [timelineReady, setTimelineReady] = useState(false);
   const [headToHead, setHeadToHead] = useState<HeadToHead | null>(null);
@@ -167,6 +177,8 @@ export default function MatchDetailBody({
   const isUpcoming = match?.status === 'upcoming';
   const isCompleted = match?.status === 'completed';
   const isCancelled = match?.status === 'cancelled';
+  // Some feeds use 'scheduled' or 'postponed' rather than 'upcoming'.
+  const isScheduled = match?.status === 'scheduled' || match?.status === 'postponed';
   const showPredictions = isLive || isUpcoming;
   const activeTabs = isCompleted || isCancelled ? completedTabs : detailTabs;
   const { articles: relatedNews, loading: newsLoading } = useLinkedNews({ matchId });
@@ -309,7 +321,12 @@ export default function MatchDetailBody({
     innOvers: Number(inn?.overs),
     innRr: Number(inn?.runRate),
     displayScore,
-    live: !isUpcoming,
+    // Only a match actually in progress may have the live innings override the
+    // stored team score. A completed match is NOT live, even though it is not
+    // upcoming: `display_score` there is the winner's total, so applying it to
+    // the batting side would overwrite the loser's real score and print one
+    // number on both sides.
+    live: isLive || isScheduled,
   });
   const {
     homeScore: rawHomeScore,
@@ -333,13 +350,15 @@ export default function MatchDetailBody({
   const resultText =
     usefulResultText(match.result) ||
     usefulResultText(timelineSummary.result) ||
-    describeMatchResult(match);
+    describeMatchResult(match, { format: timelineSummary.format });
+  const marginNote = marginClarifier(resultText);
   const finalScoreLine = [homeScore && `${homeCode} ${homeScore}`, awayScore && `${awayCode} ${awayScore}`]
     .filter(Boolean)
     .join('  ·  ') || displayScore;
 
   const { date, time } = formatScheduled(match.scheduled);
   const breadcrumbName = `${homeName} vs ${awayName}`;
+  const facts = matchFacts(match as Record<string, unknown>);
 
   return (
     <div className="match-detail-page mx-auto max-w-7xl space-y-4 px-4 py-6 sm:space-y-5 sm:px-6 sm:py-8">
@@ -418,6 +437,7 @@ export default function MatchDetailBody({
         {(isCompleted || isCancelled) && resultText ? (
           <p className="match-detail-result-banner" role="status">
             {resultText}
+            {marginNote ? <span className="ml-2 font-normal opacity-80">({marginNote})</span> : null}
           </p>
         ) : null}
 
@@ -559,6 +579,12 @@ export default function MatchDetailBody({
               {time && <InfoRow label="Time" value={time} />}
               <InfoRow label="Venue" value={match.venue || 'TBA'} />
               {match.matchStatus && <InfoRow label="Official status" value={String(match.matchStatus)} />}
+              {/* Toss, winner, margin and the period split all come from the API
+                  but were never rendered. matchFacts drops anything unknown so
+                  this adds rows only when there is something real to show. */}
+              {facts.map((fact) => (
+                <InfoRow key={fact.label} label={fact.label} value={fact.value} />
+              ))}
             </div>
           )}
 

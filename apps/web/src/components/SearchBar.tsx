@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { Calendar, Shield, Trophy, UserRound, X } from 'lucide-react';
 import SearchField from './SearchField';
 import toast from 'react-hot-toast';
-import { searchAll } from '../services/search';
+import { searchAll, searchRowId } from '../services/search';
 import type { Match, SearchResults, TournamentApi } from '../types/index';
 import { PlayerSearchAvatar, TeamSearchAvatar, TypeSearchAvatar } from './SearchAvatars';
 import { Skeleton } from './skeletons/Skeletons';
@@ -96,8 +96,15 @@ export default function SearchBar({ autoFocus = false, onDone }: SearchBarProps)
     router.push(path);
   };
 
+  // A match row with no id cannot be linked, so it is dropped rather than
+  // rendered as a row that navigates to `/matches/undefined`.
+  const linkableMatches = useMemo(
+    () => (results ? results.matches.filter((match) => searchRowId(match)) : []),
+    [results]
+  );
+
   const total = results
-    ? results.players.length + results.teams.length + results.matches.length + results.tournaments.length
+    ? results.players.length + results.teams.length + linkableMatches.length + results.tournaments.length
     : 0;
 
   if (typeof document === 'undefined') return null;
@@ -201,15 +208,15 @@ export default function SearchBar({ autoFocus = false, onDone }: SearchBarProps)
               <ResultGroup
                 title="Matches"
                 icon={<Calendar size={14} />}
-                count={results.matches.length}
-                items={results.matches}
-                itemKey={(item, index) => String(item.matchId || item.id || `match-${index}`)}
+                count={linkableMatches.length}
+                items={linkableMatches}
+                itemKey={(item, index) => searchRowId(item) || `match-${index}`}
                 render={(item) => (
                   <ResultButton
                     title={matchTitle(item)}
                     subtitle={matchSubtitle(item)}
                     avatar={<TypeSearchAvatar type="match" />}
-                    onClick={() => go(`/matches/${item.matchId || item.id}`)}
+                    onClick={() => go(`/matches/${searchRowId(item)}`)}
                   />
                 )}
               />

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import { AdminSearchField } from './AdminShared';
 
@@ -9,34 +9,63 @@ export interface EntityChoice {
   label: string;
 }
 
+type EntitySearch = (_query: string, _signal?: AbortSignal) => Promise<EntityChoice[]>;
+
 interface Props {
   label: string;
   hint: string;
   values: EntityChoice[];
   onChange: (_next: EntityChoice[]) => void;
-  search: (_query: string) => Promise<EntityChoice[]>;
+  search: EntitySearch;
 }
+
+const DEBOUNCE_MS = 280;
+
+type Phase = 'idle' | 'loading' | 'error';
 
 export default function EntityIdPicker({ label, hint, values, onChange, search }: Props) {
   const [query, setQuery] = useState('');
   const [hits, setHits] = useState<EntityChoice[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [phase, setPhase] = useState<Phase>('idle');
+  /**
+   * Bumped on every keystroke. A response whose id no longer matches the current
+   * one is dropped, so a slow early request can never overwrite a faster later one.
+   */
+  const requestId = useRef(0);
 
   useEffect(() => {
     const q = query.trim();
+    requestId.current += 1;
+    const current = requestId.current;
+    const isStale = () => current !== requestId.current;
+
     if (!q) {
       setHits([]);
-      setLoading(false);
+      setPhase('idle');
       return;
     }
-    setLoading(true);
+
+    setPhase('loading');
+    const controller = new AbortController();
     const timer = window.setTimeout(() => {
-      search(q)
-        .then(setHits)
-        .catch(() => setHits([]))
-        .finally(() => setLoading(false));
-    }, 280);
-    return () => window.clearTimeout(timer);
+      search(q, controller.signal)
+        .then((rows) => {
+          if (isStale()) return;
+          setHits(rows);
+          setPhase('idle');
+        })
+        .catch((err: unknown) => {
+          if (isStale() || controller.signal.aborted) return;
+          if ((err as { name?: string } | null)?.name === 'AbortError') return;
+          setHits([]);
+          setPhase('error');
+        });
+    }, DEBOUNCE_MS);
+
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
   }, [query, search]);
 
   const add = (item: EntityChoice) => {
@@ -44,6 +73,7 @@ export default function EntityIdPicker({ label, hint, values, onChange, search }
     onChange([...values, item]);
     setQuery('');
     setHits([]);
+    setPhase('idle');
   };
 
   const addRaw = () => {
@@ -51,6 +81,8 @@ export default function EntityIdPicker({ label, hint, values, onChange, search }
     if (!id) return;
     add({ id, label: id });
   };
+
+  const showNoMatches = phase === 'idle' && query.trim().length > 0 && hits.length === 0;
 
   return (
     <div>
@@ -97,8 +129,9 @@ export default function EntityIdPicker({ label, hint, values, onChange, search }
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               e.preventDefault();
-              if (hits[0]) add(hits[0]);
-              else addRaw();
+              // Only ever pick from a settled result list. Previously this fell back to
+              // writing the raw typed text as an id, which the API then rejected on save.
+              if (phase !== 'loading' && hits[0]) add(hits[0]);
             }
           }}
           placeholder={hint || 'Search by name'}
@@ -117,16 +150,20 @@ export default function EntityIdPicker({ label, hint, values, onChange, search }
           Add id
         </button>
       </div>
-      {loading && (
-        <p className="mt-1 text-xs" style={{ color: 'var(--admin-text-muted)' }}>Searching…</p>
-      )}
-      {!loading && hits.length > 0 && (
+      {/*
+        The list stays mounted while a newer search is in flight. Hiding it on
+        `loading` made the dropdown blink out for the whole debounce + network
+        round trip on every keystroke.
+      */}
+      {hits.length > 0 && (
         <ul
+          role="listbox"
+          aria-label={`${label} results`}
           className="mt-1 max-h-40 overflow-auto rounded-md"
           style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-input-bg)' }}
         >
           {hits.map((hit) => (
-            <li key={hit.id}>
+            <li key={hit.id} role="option" aria-selected={false}>
               <button
                 type="button"
                 onClick={() => add(hit)}
@@ -139,6 +176,19 @@ export default function EntityIdPicker({ label, hint, values, onChange, search }
             </li>
           ))}
         </ul>
+      )}
+      {phase === 'loading' && (
+        <p className="mt-1 text-xs" style={{ color: 'var(--admin-text-muted)' }}>Searching…</p>
+      )}
+      {phase === 'error' && (
+        <p role="alert" className="mt-1 text-xs font-semibold" style={{ color: 'var(--admin-danger, #dc2626)' }}>
+          Search failed. Check your connection and try again.
+        </p>
+      )}
+      {showNoMatches && (
+        <p className="mt-1 text-xs" style={{ color: 'var(--admin-text-muted)' }}>
+          No matches. Use “Add id” to link a known id.
+        </p>
       )}
     </div>
   );

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Check, Share2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useToolDef } from './toolResultContext';
+import { buildResultUrl, buildShareText, isShareableValue, shareSheetTitle, type ShareInput } from '../../lib/toolShare';
 
 const NOT_READY = new Set(['', '—', '–', '…', 'Loading']);
 
@@ -30,25 +31,43 @@ async function copyText(value: string): Promise<boolean> {
 }
 
 /**
- * Shares the computed result — not the bare tool page. The number goes in the
- * shared text so the recipient sees it without re-running the calculator.
+ * Shares the computed result, not the bare tool page. The answer is the first
+ * line of the shared text and the inputs ride along in the query string, so the
+ * recipient reads the number straight away and their copy of the page reopens
+ * already filled in rather than showing a blank form.
  */
-export default function ResultShareButton({ label, value }: { label: string; value: string }) {
+export default function ResultShareButton({
+  label,
+  value,
+  inputs,
+}: {
+  label: string;
+  value: string;
+  inputs?: ShareInput[];
+}) {
   const tool = useToolDef();
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
-  const ready = !NOT_READY.has(value.trim());
-  const headline = `${label}: ${value.trim()}`;
+  const ready = !NOT_READY.has(value.trim()) && isShareableValue(value);
 
   const share = async () => {
     if (busy || !ready) return;
     setBusy(true);
-    const text = tool ? `${tool.title} — ${headline}` : headline;
-    const url = typeof window === 'undefined' ? '' : window.location.href;
     try {
+      const title = tool?.title ?? label;
+      const base = typeof window === 'undefined' ? '' : window.location.href;
+      const url = base ? buildResultUrl(base, tool?.slug ?? '', inputs) : '';
+      const text = buildShareText({
+        toolTitle: title,
+        label,
+        value,
+        url,
+        inputs,
+      });
+
       if (typeof navigator !== 'undefined' && navigator.share) {
-        await navigator.share({ title: tool ? `${tool.title} result` : label, text, url });
-      } else if ((await copyText(url ? `${text}\n${url}` : text))) {
+        await navigator.share({ title: shareSheetTitle(title, label), text, url: url || undefined });
+      } else if (await copyText(text)) {
         toast.success('Result copied to clipboard.');
       } else {
         toast.error('Sharing is not supported on this device.');
@@ -64,7 +83,7 @@ export default function ResultShareButton({ label, value }: { label: string; val
     }
   };
 
-  const hint = ready ? `Share result: ${headline}` : 'No result to share yet';
+  const hint = ready ? `Share result: ${label} ${value.trim()}` : 'No result to share yet';
 
   return (
     <button

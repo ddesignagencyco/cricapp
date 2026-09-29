@@ -318,10 +318,15 @@ export function matchSummary(payload: Record<string, unknown> | null | undefined
   homeScore: string;
   awayScore: string;
   scores: string[];
+  format?: string;
 } {
   const data = unwrapPayload(payload);
   const status = asRecord(data?.sport_event_status);
+  const event = asRecord(data?.sport_event);
   const periods = Array.isArray(status?.period_scores) ? status.period_scores : [];
+  // The tournament type is the only reliable signal for first-class vs
+  // limited-overs; the match record itself does not carry it.
+  const tournamentType = asRecord(event?.tournament)?.type ?? asRecord(status?.tournament)?.type;
   const scores = periods
     .map((item) => {
       const rec = asRecord(item);
@@ -339,6 +344,7 @@ export function matchSummary(payload: Record<string, unknown> | null | undefined
     homeScore: periodSideTotal(periods, 'home'),
     awayScore: periodSideTotal(periods, 'away'),
     scores,
+    format: str(tournamentType) || undefined,
   };
 }
 

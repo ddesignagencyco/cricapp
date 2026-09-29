@@ -6,7 +6,7 @@ import SearchField from '../SearchField';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
-import { searchAll } from '../../services/search';
+import { searchAll, searchRowId } from '../../services/search';
 import type { Match, SearchResults } from '../../types/index';
 import EmptyState from '../EmptyState';
 import { PlayerSearchAvatar, TeamSearchAvatar, TypeSearchAvatar } from '../SearchAvatars';
@@ -44,11 +44,11 @@ type SearchRow = { id?: string | null; matchId?: string | null };
 
 /** Search rows can arrive without an id, so never trust a bare `item.id` as a key. */
 function rowKey(item: SearchRow, index: number): string {
-  return `${String(item.matchId || item.id || '').trim() || 'row'}-${index}`;
+  return `${searchRowId(item) || 'row'}-${index}`;
 }
 
 function rowHref(item: SearchRow, base: string): string {
-  const id = String(item.matchId || item.id || '').trim();
+  const id = searchRowId(item);
   return id ? `${base}/${id}` : base;
 }
 
@@ -105,14 +105,21 @@ export default function SearchResultsBody() {
       .finally(() => setLoading(false));
   }, [debouncedQuery]);
 
+  // A match row with no id has no destination, so it is excluded from both the
+  // count and the list instead of linking to `/matches`.
+  const linkableMatches = useMemo(
+    () => (results ? results.matches.filter((match) => searchRowId(match)) : []),
+    [results]
+  );
+
   const counts = useMemo(() => {
     if (!results) return { players: 0, teams: 0, matches: 0, tournaments: 0, total: 0 };
     const players = results.players.length;
     const teams = results.teams.length;
-    const matches = results.matches.length;
+    const matches = linkableMatches.length;
     const tournaments = results.tournaments.length;
     return { players, teams, matches, tournaments, total: players + teams + matches + tournaments };
-  }, [results]);
+  }, [results, linkableMatches]);
 
   const show = (key: Filter) => filter === 'all' || filter === key;
 
@@ -199,7 +206,7 @@ export default function SearchResultsBody() {
             )}
             {show('matches') && (
               <SearchSection title="Matches" icon={<Calendar size={16} />} count={counts.matches}>
-                {results.matches.map((item, index) => (
+                {linkableMatches.map((item, index) => (
                   <SearchCard
                     key={rowKey(item, index)}
                     href={rowHref(item, '/matches')}

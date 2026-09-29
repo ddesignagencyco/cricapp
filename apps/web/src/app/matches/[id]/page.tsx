@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import MatchDetailBody from '../../../components/boards/MatchDetailBody';
-import { fetchMatchById } from '../../../services/matches';
+import { fetchMatchById, fetchMatchTimeline } from '../../../services/matches';
 import { fetchMatchOdds } from '../../../services/odds';
 import { sharePageMetadata } from '../../../services/sharing';
 
@@ -27,9 +27,14 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
   } catch {
     matchId = id;
   }
-  const [match, oddsResult] = await Promise.all([
+  // The timeline carries the tournament type, which is the only reliable signal
+  // for first-class vs limited-overs. Fetching it here rather than per-tab means
+  // the result line ("Match drawn" vs "No result") is right on first paint and
+  // does not change when a tab loads.
+  const [match, oddsResult, timeline] = await Promise.all([
     fetchMatchById(matchId),
     fetchMatchOdds(matchId).catch(() => null),
+    fetchMatchTimeline(matchId).catch(() => null),
   ]);
   if (!match) {
     return notFound();
@@ -43,6 +48,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
       match={match}
       initialOdds={initialOdds}
       initialOddsForbidden={initialOddsForbidden}
+      initialTimeline={timeline?.payload ?? null}
     />
   );
 }

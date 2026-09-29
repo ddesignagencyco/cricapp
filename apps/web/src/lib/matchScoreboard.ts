@@ -224,7 +224,15 @@ function maxOvers(...sides: string[]): number {
   return values.length ? Math.max(...values) : 0;
 }
 
-export function describeMatchResult(match: any): string {
+/** Formats with no overs limit, where an innings only ends on wickets or time. */
+const FIRST_CLASS_FORMATS = /^(test|fc|first[-_ ]?class|multi|championship|series|four[-_ ]day|5[-_ ]day|list[-_ ]a)/i;
+
+export function isFirstClassFormat(format: unknown): boolean {
+  const value = String(format ?? '').trim();
+  return value ? FIRST_CLASS_FORMATS.test(value) : false;
+}
+
+export function describeMatchResult(match: any, opts?: { format?: string | null }): string {
   const stored = usefulText(match?.result || match?.resultText || match?.matchResult);
   if (stored && !/^(ended|completed|finished|match ended)$/i.test(stored)) return stored;
   const { home, away, homeScore, awayScore, homeOvers, awayOvers } = scoreboardFromMatch(match);
@@ -238,6 +246,11 @@ export function describeMatchResult(match: any): string {
   const loserOvers = oversValue(homeWon ? awayOvers : homeOvers);
   const winnerOvers = oversValue(homeWon ? homeOvers : awayOvers);
   const limit = maxOvers(homeOvers, awayOvers);
+  // In first-class cricket there is no overs limit, so an innings that stops
+  // short with wickets in hand is the match closing, not an abandonment. Reading
+  // a 18-over Test innings against a hard-coded 20 would call every drawn Test
+  // "No result".
+  const firstClass = isFirstClassFormat(opts?.format ?? match?.format ?? match?.matchFormat);
   // An innings that ended without all ten wickets stopped at the overs limit, so
   // if it also finished short of the other innings it was cut short - rain, a
   // shortened target, an abandoned fixture. Those scorecards carry no `result`,
@@ -248,7 +261,7 @@ export function describeMatchResult(match: any): string {
     loserOvers !== null &&
     ((limit > 0 && limit <= 20 && loserOvers < limit) ||
       (winnerOvers !== null && loserOvers < winnerOvers));
-  if (loserIncomplete) return 'No result';
+  if (loserIncomplete) return firstClass ? 'Match drawn' : 'No result';
   // Runs-vs-wickets needs the batting order, which a finished scorecard does not
   // carry: the higher total is the winner's either way, and `currentInnings` is a
   // live field that goes stale (often `runs: 0`) once a match ends. The API's

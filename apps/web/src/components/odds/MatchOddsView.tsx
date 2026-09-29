@@ -116,9 +116,17 @@ export default function MatchOddsView({
     ?? availableMarkets.find((market) => market.marketKey === 'match_winner')
     ?? availableMarkets[0]
     ?? null;
+  // A market is only "example prices" when EVERY row is seed data. If any real
+  // bookmaker is present the seed rows are dropped entirely: leaving them in
+  // would let a fake price sit in the column a reader scans for the best offer,
+  // and it would rank against genuine quotes.
+  const allSelections = activeMarket?.selections ?? [];
+  const realSelections = allSelections.filter((row) => !isOddsSeedSource(row));
+  const visibleSelections = realSelections.length > 0 ? realSelections : allSelections;
+  const hasSeedPrices = realSelections.length === 0 && allSelections.length > 0;
   const selectionGroups = useMemo(
-    () => (activeMarket ? groupSelectionsByKey(activeMarket.selections) : new Map()),
-    [activeMarket],
+    () => (activeMarket ? groupSelectionsByKey(visibleSelections) : new Map()),
+    [activeMarket, visibleSelections],
   );
   const columnKeys = useMemo(() => {
     const order = ['home', 'draw', 'away'];
@@ -217,10 +225,8 @@ export default function MatchOddsView({
       )
     : '';
   const marketTitle = activeMarket ? marketDisplayName(activeMarket.name) : 'Price comparison';
-  const hasSeedPrices = activeMarket?.selections.some((row) => isOddsSeedSource(row)) === true;
   const showStaleWarning =
-    pollLive &&
-    activeMarket?.selections.some((row) => isOddsCaptureStale(row.capturedAt)) === true;
+    pollLive && visibleSelections.some((row) => isOddsCaptureStale(row.capturedAt)) === true;
 
   return (
     <div className="space-y-5">
@@ -334,7 +340,7 @@ export default function MatchOddsView({
                             const cell = selectionGroups.get(key)?.[rowIndex];
                             return (
                               <td key={key} className="align-top px-4 py-3">
-                                {cell ? <PriceCell row={cell} format={priceFormat} /> : null}
+                                {cell ? <PriceCell row={cell} format={priceFormat} allowBestBadge={!hasSeedPrices} /> : null}
                               </td>
                             );
                           })}
@@ -436,7 +442,15 @@ function FormatToggle({
   );
 }
 
-function PriceCell({ row, format }: { row: OddsSelectionPrice; format: OddsPriceFormat }) {
+function PriceCell({
+  row,
+  format,
+  allowBestBadge = true,
+}: {
+  row: OddsSelectionPrice;
+  format: OddsPriceFormat;
+  allowBestBadge?: boolean;
+}) {
   const movement = formatMovementPercent(row.movementPercent);
   const movementTone =
     row.movementPercent !== null && row.movementPercent !== undefined && row.movementPercent > 0
@@ -444,13 +458,18 @@ function PriceCell({ row, format }: { row: OddsSelectionPrice; format: OddsPrice
       : row.movementPercent !== null && row.movementPercent !== undefined && row.movementPercent < 0
         ? 'text-danger'
         : 'text-stext';
+  // The API flags the best row even when every row is seeded data, because the
+  // seed happens to be the only quote. Repeating that as a recommendation would
+  // be fabricating advice, so the badge is withheld for a market with no real
+  // bookmakers behind it.
+  const showBest = allowBestBadge && row.isBestDisplayedPrice;
 
   return (
     <div className="space-y-1">
       <p className="text-[11px] font-semibold text-stext">{row.sourceName}</p>
       <p className="font-mono text-lg font-black tabular-nums text-mtext">
         {formatOddsPrice(row.current, format)}
-        {row.isBestDisplayedPrice ? (
+        {showBest ? (
           <span className="ml-2 align-middle text-[10px] font-bold uppercase tracking-wide text-accent">
             Highest price
           </span>
