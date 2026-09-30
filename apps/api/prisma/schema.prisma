@@ -823,6 +823,10 @@ model SiteSettings {
   mapsUrl      String?  @map("maps_url")
   workingHours String?  @map("working_hours")
   socials      Json     @default("[]")
+  // Advertisement delivery config: mode (off/house/adsense), AdSense publisher id,
+  // per-size default ad units and per-placement overrides. Shape documented in
+  // src/site-settings/ad.config.ts.
+  ads          Json     @default("{}")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
