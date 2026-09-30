@@ -66,7 +66,7 @@ export default function MatchesPage() {
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search by team, tournament or venue..."
         />
-        <div className="flex gap-1.5">
+        <div className="flex flex-wrap gap-1.5">
           {['all', 'live', 'upcoming', 'completed'].map((s) => (
             <button key={s} type="button" onClick={() => setFilterStatus(s)} className="rounded-md px-3 py-1.5 text-xs font-semibold transition-colors"
               style={{
@@ -92,8 +92,8 @@ export default function MatchesPage() {
                 <tr style={{ borderBottom: '1px solid var(--admin-border)', background: 'var(--admin-table-header)' }}>
                   <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Home</th>
                   <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Away</th>
-                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Tournament</th>
-                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Venue</th>
+                  <th className="hidden px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider lg:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>Tournament</th>
+                  <th className="hidden px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider sm:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>Venue</th>
                   <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Date</th>
                   <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-right" style={{ color: 'var(--admin-text-secondary)' }}>Status</th>
                 </tr>
@@ -109,7 +109,7 @@ export default function MatchesPage() {
                     <tr key={m.matchId || m.id} style={{ borderBottom: '1px solid var(--admin-border)' }}
                       onMouseEnter={(e) => e.currentTarget.style.background = 'var(--admin-table-row-hover)'}
                       onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
-                      <td className="max-w-[14rem] truncate px-4 py-2.5" style={{ color: 'var(--admin-text)' }}>
+                      <td className="max-w-[8.5rem] truncate px-4 py-2.5 sm:max-w-[14rem]" style={{ color: 'var(--admin-text)' }} title={homeLabel}>
                         {m.matchId || m.id ? (
                           <AdminEntityLink href={`/matches/${m.matchId || m.id}`}>{homeLabel}</AdminEntityLink>
                         ) : (
@@ -117,19 +117,19 @@ export default function MatchesPage() {
                         )}
                         {homeScore ? <ScoreLine value={homeScore} /> : null}
                       </td>
-                      <td className="max-w-[14rem] truncate px-4 py-2.5" style={{ color: 'var(--admin-text)' }}>
+                      <td className="max-w-[8.5rem] truncate px-4 py-2.5 sm:max-w-[14rem]" style={{ color: 'var(--admin-text)' }} title={awayLabel}>
                         {awayLabel}
                         {awayScore ? <ScoreLine value={awayScore} /> : null}
                       </td>
-                      <td className="px-4 py-2.5" style={{ color: 'var(--admin-text-secondary)' }}>
+                      <td className="hidden max-w-[12rem] truncate px-4 py-2.5 lg:table-cell" style={{ color: 'var(--admin-text-secondary)' }} title={m.tournament || undefined}>
                         {m.tournamentId ? (
                           <AdminEntityLink href={`/tournaments/${m.tournamentId}`}>{m.tournament || 'Tournament'}</AdminEntityLink>
                         ) : (
                           m.tournament || '—'
                         )}
                       </td>
-                      <td className="px-4 py-2.5 max-w-[120px] truncate" style={{ color: 'var(--admin-text-muted)' }}>{m.venue || '—'}</td>
-                      <td className="px-4 py-2.5 font-mono" style={{ color: 'var(--admin-text-muted)' }}>
+                      <td className="hidden max-w-[120px] truncate px-4 py-2.5 sm:table-cell" style={{ color: 'var(--admin-text-muted)' }} title={m.venue || undefined}>{m.venue || '—'}</td>
+                      <td className="whitespace-nowrap px-4 py-2.5 font-mono" style={{ color: 'var(--admin-text-muted)' }}>
                         {m.scheduled ? new Date(m.scheduled).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}
                       </td>
                       <td className="px-4 py-2.5 text-right"><StatusBadge status={m.status} /></td>

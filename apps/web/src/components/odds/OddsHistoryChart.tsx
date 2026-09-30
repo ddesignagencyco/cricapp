@@ -17,7 +17,7 @@ export default function OddsHistoryChart({ points, selectionLabel, sourceNames }
   const { series, minT, maxT, minY, maxY } = useMemo(() => buildSeries(points, sourceNames), [points, sourceNames]);
 
   if (series.length === 0 || series.every((s) => s.points.length === 0)) {
-    return <p className="py-8 text-center text-sm text-stext">We have no price history for this yet.</p>;
+    return <p className="py-8 text-center text-sm text-stext">No price history yet.</p>;
   }
 
   const width = 860;
@@ -35,9 +35,9 @@ export default function OddsHistoryChart({ points, selectionLabel, sourceNames }
           <LineChart size={16} className="text-stext" aria-hidden />
           Price history — {selectionLabel}
         </h3>
-        <p className="text-[11px] text-stext">How the price has changed over time (UTC)</p>
+        <p className="text-[11px] text-stext">How this price has moved</p>
       </div>
-      <svg viewBox={`0 0 ${width} ${height}`} className="h-52 w-full" role="img" aria-label="Odds history chart">
+      <svg viewBox={`0 0 ${width} ${height}`} className="h-52 w-full" role="img" aria-label="Price history chart">
         {[0, 0.5, 1].map((frac) => {
           const yVal = minY + spanY * (1 - frac);
           const y = toY(yVal);
@@ -66,7 +66,7 @@ export default function OddsHistoryChart({ points, selectionLabel, sourceNames }
           );
         })}
         <text x={width / 2} y={height - 8} textAnchor="middle" className="fill-stext text-[10px]">
-          Time (UTC)
+          Time
         </text>
         <text
           x={12}
@@ -90,7 +90,7 @@ export default function OddsHistoryChart({ points, selectionLabel, sourceNames }
           </li>
         ))}
       </ul>
-      <p className="mt-2 text-[11px] text-stext">Past prices do not tell you what will happen next.</p>
+      <p className="mt-2 text-[11px] text-stext">Past prices do not predict the next price.</p>
     </div>
   );
 }
@@ -120,5 +120,5 @@ function buildSeries(points: OddsHistoryPoint[], sourceNames?: Record<string, st
 /** `demo-book-a` → `Demo book a`, used only when the API gave us no display name. */
 function readableSlug(slug: string): string {
   const words = String(slug).replace(/[-_]+/g, ' ').trim();
-  return words ? words.charAt(0).toUpperCase() + words.slice(1) : 'Unknown source';
+  return words ? words.charAt(0).toUpperCase() + words.slice(1) : 'Bookmaker';
 }

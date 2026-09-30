@@ -24,7 +24,7 @@ export default function TeamsPage() {
     <div className="space-y-5">
       <AdminPageHeader title="Teams" subtitle="View all teams from the sports data provider." />
 
-      <div className="flex items-center gap-3 rounded-lg p-3" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
+      <div className="flex flex-col items-stretch gap-3 rounded-lg p-3 sm:flex-row sm:items-center" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
         <AdminSearchField
           wrapperClassName="max-w-md"
           value={query}
@@ -45,8 +45,8 @@ export default function TeamsPage() {
                 <tr style={{ borderBottom: '1px solid var(--admin-border)', background: 'var(--admin-table-header)' }}>
                   <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Team</th>
                   <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Code</th>
-                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>City</th>
-                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Country</th>
+                  <th className="hidden px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider sm:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>City</th>
+                  <th className="hidden px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider md:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>Country</th>
                 </tr>
               </thead>
               <tbody>
@@ -58,18 +58,20 @@ export default function TeamsPage() {
                       onMouseEnter={(e) => e.currentTarget.style.background = 'var(--admin-table-row-hover)'}
                       onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
                       <td className="px-4 py-2.5" style={{ color: 'var(--admin-text)' }}>
-                        <div className="flex items-center gap-2.5">
-                          <AdminAvatar name={badgeLabel} src={t.logo} size={28} />
-                          {t.id ? (
-                            <AdminEntityLink href={`/teams/${t.id}`}>{t.name}</AdminEntityLink>
-                          ) : (
-                            <span className="font-semibold" style={{ color: 'var(--admin-text)' }}>{t.name}</span>
-                          )}
+                        <div className="flex min-w-0 items-center gap-2.5">
+                          <span className="shrink-0"><AdminAvatar name={badgeLabel} src={t.logo} size={28} /></span>
+                          <span className="block min-w-0 max-w-[10rem] truncate sm:max-w-[14rem]" title={t.name}>
+                            {t.id ? (
+                              <AdminEntityLink href={`/teams/${t.id}`}>{t.name}</AdminEntityLink>
+                            ) : (
+                              <span className="font-semibold" style={{ color: 'var(--admin-text)' }}>{t.name}</span>
+                            )}
+                          </span>
                         </div>
                       </td>
-                      <td className="px-4 py-2.5 font-mono" style={{ color: 'var(--admin-text-secondary)' }}>{code || '—'}</td>
-                      <td className="px-4 py-2.5" style={{ color: 'var(--admin-text-secondary)' }}>{cap(t.city)}</td>
-                      <td className="px-4 py-2.5" style={{ color: 'var(--admin-text-secondary)' }}>{cap(t.country)}</td>
+                      <td className="max-w-[4.5rem] truncate px-4 py-2.5 font-mono" style={{ color: 'var(--admin-text-secondary)' }} title={code}>{code || '—'}</td>
+                      <td className="hidden max-w-[8rem] truncate px-4 py-2.5 sm:table-cell" style={{ color: 'var(--admin-text-secondary)' }} title={cap(t.city)}>{cap(t.city)}</td>
+                      <td className="hidden max-w-[8rem] truncate px-4 py-2.5 md:table-cell" style={{ color: 'var(--admin-text-secondary)' }} title={cap(t.country)}>{cap(t.country)}</td>
                     </tr>
                   );
                 })}

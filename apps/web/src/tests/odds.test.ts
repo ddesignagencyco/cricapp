@@ -154,8 +154,8 @@ describe('groupSelectionsByKey', () => {
 
 describe('marketDisplayName', () => {
   it('falls back to a readable name when the API omits it', () => {
-    expect(marketDisplayName('')).toBe('Match winner (incl. super over)');
-    expect(marketDisplayName(null)).toBe('Match winner (incl. super over)');
+    expect(marketDisplayName('')).toBe('Match Winner');
+    expect(marketDisplayName(null)).toBe('Match Winner');
   });
 
   it('passes a real market name through', () => {

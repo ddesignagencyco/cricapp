@@ -87,23 +87,23 @@ export default function MediaPicker({
       <div
         ref={dialogRef}
         tabIndex={-1}
-        className="flex max-h-[85vh] w-full max-w-xl flex-col overflow-hidden rounded-lg"
+        className="flex max-h-[85dvh] w-full max-w-xl flex-col overflow-hidden rounded-lg"
         style={{ background: 'var(--admin-card)', boxShadow: 'var(--elevation-overlay)' }}
         onClick={(event) => event.stopPropagation()}
       >
         <div
-          className="flex items-center justify-between gap-3 px-4 py-3"
+          className="flex flex-wrap items-center justify-between gap-2 px-4 py-3"
           style={{ borderBottom: '1px solid var(--admin-border)' }}
         >
-          <h3 id="media-picker-title" className="text-sm font-bold" style={{ color: 'var(--admin-text)' }}>
+          <h3 id="media-picker-title" className="min-w-0 break-words text-sm font-bold" style={{ color: 'var(--admin-text)' }}>
             {title}
           </h3>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             <label
-              className="inline-flex cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold"
+              className="inline-flex cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-1.5 text-xs font-semibold"
               style={{ border: '1px dashed var(--admin-border)', color: 'var(--admin-accent)' }}
             >
-              {busy ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
+              {busy ? <Loader2 size={13} className="shrink-0 animate-spin" /> : <Upload size={13} className="shrink-0" />}
               {busy ? 'Uploading…' : 'Upload image'}
               <input
                 type="file"
@@ -121,7 +121,7 @@ export default function MediaPicker({
               type="button"
               onClick={onClose}
               disabled={busy}
-              className="grid h-7 w-7 place-items-center rounded-md disabled:opacity-50"
+              className="grid h-7 w-7 shrink-0 place-items-center rounded-md disabled:opacity-50"
               style={{ color: 'var(--admin-text-secondary)', border: '1px solid var(--admin-border)' }}
               aria-label="Close gallery"
             >
@@ -130,7 +130,7 @@ export default function MediaPicker({
           </div>
         </div>
 
-        <div className="space-y-3 overflow-y-auto p-4">
+        <div className="space-y-3 overflow-y-auto p-3 sm:p-4">
           {galleryQuery.isPending ? (
             <p className="py-8 text-center text-xs font-medium" style={{ color: 'var(--admin-text-muted)' }}>Loading gallery…</p>
           ) : galleryQuery.isError ? (

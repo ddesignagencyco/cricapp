@@ -8,10 +8,10 @@ import { Skeleton } from '../skeletons/Skeletons';
 import OddsHistoryChart from './OddsHistoryChart';
 import OddsMarketRulesDisclosure from './OddsMarketRulesDisclosure';
 import {
-  formatMarginPercent,
   formatMovementPercent,
   formatOddsPrice,
   formatOddsUtc,
+  formatPayoutPercent,
   groupSelectionsByKey,
   impliedPercent,
   isOddsCaptureStale,
@@ -20,7 +20,7 @@ import {
   readOddsAgeConsent,
   storeOddsAgeConsent,
 } from '../../lib/oddsDisplay';
-import { marketDisplayName } from '../../lib/oddsMarketRules';
+import { isHiddenSelection, marketLabel, partitionMarkets, selectionLabel } from '../../lib/oddsMarketLabels';
 import { fetchMatchOdds, fetchOddsHistory } from '../../services/odds';
 import type {
   MatchOddsResponse,
@@ -54,7 +54,7 @@ export default function MatchOddsView({
   const [loading, setLoading] = useState(!initial && !initialForbidden);
   const [priceFormat, setPriceFormat] = useState<OddsPriceFormat>('decimal');
   const [activeMarketKey, setActiveMarketKey] = useState('');
-  const [historySelection, setHistorySelection] = useState('home');
+  // The chart always follows the first column now, so there is nothing to switch.
   const [historyPoints, setHistoryPoints] = useState<OddsHistoryPoint[] | null>(null);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [ageOk, setAgeOk] = useState(false);
@@ -104,16 +104,21 @@ export default function MatchOddsView({
     return () => window.clearInterval(id);
   }, [pollLive, forbidden, data?.markets.length, refresh]);
 
-  const availableMarkets = useMemo(() => {
-    if (!data) return [];
-    return [...data.markets].sort((a, b) => {
-      const aRank = a.marketKey === 'match_winner' ? 0 : 1;
-      const bRank = b.marketKey === 'match_winner' ? 0 : 1;
-      return aRank - bRank || a.name.localeCompare(b.name);
-    });
-  }, [data]);
+  // The feed sends whatever wording its source used, so the tab row is built from a
+  // plain-English shortlist instead: the markets a reader recognises come first, in a
+  // fixed order, and anything else is folded into a "More markets" disclosure rather
+  // than sitting beside them as noise.
+  const { common: commonMarkets, more: extraMarkets } = useMemo(
+    () => partitionMarkets(data?.markets ?? []),
+    [data],
+  );
+  const availableMarkets = useMemo(
+    () => [...commonMarkets, ...extraMarkets],
+    [commonMarkets, extraMarkets],
+  );
   const activeMarket = availableMarkets.find((market) => market.marketKey === activeMarketKey)
     ?? availableMarkets.find((market) => market.marketKey === 'match_winner')
+    ?? commonMarkets[0]
     ?? availableMarkets[0]
     ?? null;
   // A market is only "example prices" when EVERY row is seed data. If any real
@@ -134,11 +139,15 @@ export default function MatchOddsView({
       const index = order.indexOf(key);
       return index === -1 ? order.length : index;
     };
-    return [...selectionGroups.keys()].sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
+    return [...selectionGroups.keys()]
+      .filter((key) => !isHiddenSelection(key))
+      .sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
   }, [selectionGroups]);
-  const selectedHistoryKey = selectionGroups.has(historySelection)
-    ? historySelection
-    : columnKeys[0] ?? '';
+  // The history chart used to have its own row of pills, one per column, directly
+  // under a table whose column headings already said the same thing. Two identical
+  // label rows in a row read as two different controls, so the chart now simply
+  // follows the first column — the one a reader was looking at first anyway.
+  const selectedHistoryKey = columnKeys[0] ?? '';
   /** Slug → readable name. The history API returns slugs only, never display names. */
   const sourceNames = useMemo(() => {
     const map: Record<string, string> = {};
@@ -224,7 +233,7 @@ export default function MatchOddsView({
         selectionGroups.get(selectedHistoryKey)?.[0]?.label,
       )
     : '';
-  const marketTitle = activeMarket ? marketDisplayName(activeMarket.name) : 'Price comparison';
+  const marketTitle = activeMarket ? marketLabel(activeMarket) : 'Prices';
   const showStaleWarning =
     pollLive && visibleSelections.some((row) => isOddsCaptureStale(row.capturedAt)) === true;
 
@@ -244,10 +253,10 @@ export default function MatchOddsView({
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-widest text-stext">
-                {hasSeedPrices ? 'Example prices' : 'Live price comparison'}
+                {hasSeedPrices ? 'Example prices' : 'Live prices'}
               </p>
               <h2 className={`mt-0.5 font-bold tracking-tight text-mtext ${compact ? 'text-lg' : 'text-xl'}`}>
-                {hasMarkets && activeMarket ? marketTitle : 'Price comparison'}
+                {hasMarkets && activeMarket ? marketTitle : 'Prices'}
               </h2>
             </div>
             <FormatToggle value={priceFormat} onChange={setPriceFormat} />
@@ -255,14 +264,14 @@ export default function MatchOddsView({
 
           {showStaleWarning ? (
             <p className="rounded-lg bg-warning-soft px-3 py-2 text-xs text-mtext ring-1 ring-lborder">
-              Some displayed prices are more than 15 minutes old. Check the timestamp on each source before relying on them.
+              Some of these prices are over 15 minutes old. Check the time under each one.
             </p>
           ) : null}
 
           {hasSeedPrices ? (
             <p className="rounded-lg bg-brand-soft px-3 py-2 text-xs text-mtext ring-1 ring-lborder">
-              These are example prices, here to show you how this page works. Real prices from our
-              partners appear in this same place once they are available.
+              These are example prices, so you can see how this page works. Real prices appear
+              here as soon as we have them.
             </p>
           ) : null}
 
@@ -281,45 +290,69 @@ export default function MatchOddsView({
           {hasMarkets && activeMarket ? (
             <>
               {availableMarkets.length > 1 ? (
-                <div
-                  className="flex flex-wrap gap-2"
-                  role="tablist"
-                  aria-label="Odds markets"
-                >
-                  {availableMarkets.map((market) => {
-                    const active = market.marketKey === activeMarket.marketKey;
-                    return (
-                      <button
-                        key={market.marketKey}
-                        type="button"
-                        role="tab"
-                        aria-selected={active}
-                        onClick={() => setActiveMarketKey(market.marketKey)}
-                        className={`rounded-full px-3 py-1.5 text-xs font-semibold ring-1 ${
-                          active
-                            ? 'bg-brand text-brand-fg ring-brand'
-                            : 'bg-card text-mtext ring-lborder hover:bg-secondary'
-                        }`}
-                      >
-                        {marketDisplayName(market.name)}
-                      </button>
-                    );
-                  })}
-                </div>
+                <>
+                  {commonMarkets.length > 0 ? (
+                    <div className="flex flex-wrap gap-2" role="tablist" aria-label="Odds markets">
+                      {commonMarkets.map((market) => {
+                        const active = market.marketKey === activeMarket.marketKey;
+                        return (
+                          <button
+                            key={market.marketKey}
+                            type="button"
+                            role="tab"
+                            aria-selected={active}
+                            onClick={() => setActiveMarketKey(market.marketKey)}
+                            className={`rounded-full px-3 py-1.5 text-xs font-semibold ring-1 ${
+                              active
+                                ? 'bg-brand text-brand-fg ring-brand'
+                                : 'bg-card text-mtext ring-lborder hover:bg-secondary'
+                            }`}
+                          >
+                            {marketLabel(market)}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : null}
+                  {extraMarkets.length > 0 ? (
+                    <details
+                      className="rounded-xl bg-card px-3 py-2 ring-1 ring-lborder"
+                      open={commonMarkets.length === 0}
+                    >
+                      <summary className="cursor-pointer text-xs font-semibold text-stext">
+                        More markets ({extraMarkets.length})
+                      </summary>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {extraMarkets.map((market) => (
+                          <button
+                            key={market.marketKey}
+                            type="button"
+                            onClick={() => setActiveMarketKey(market.marketKey)}
+                            className={`rounded-full px-3 py-1.5 text-xs font-semibold ring-1 ${
+                              market.marketKey === activeMarket.marketKey
+                                ? 'bg-brand text-brand-fg ring-brand'
+                                : 'bg-secondary text-mtext ring-lborder hover:bg-card'
+                            }`}
+                          >
+                            {marketLabel(market)}
+                          </button>
+                        ))}
+                      </div>
+                    </details>
+                  ) : null}
+                </>
               ) : null}
 
               <div id="odds-market-panel" role="tabpanel" className="space-y-5">
-                <OddsMarketRulesDisclosure marketKey={activeMarket.marketKey} />
-
                 <div className="overflow-x-auto rounded-2xl bg-card ring-1 ring-lborder">
                   <div className="flex flex-wrap items-center justify-between gap-2 border-b border-lborder px-4 py-3">
-                    <p className="text-sm font-bold text-mtext">{marketDisplayName(activeMarket.name)}</p>
+                    <p className="text-sm font-bold text-mtext">{marketTitle}</p>
                     {activeMarket.bookmakerMargin !== null && activeMarket.bookmakerMargin !== undefined ? (
                       <span
                         className="rounded-full bg-secondary px-2.5 py-0.5 text-[11px] font-medium text-stext"
-                        title="The extra amount bookmakers build into these prices. Lower is better for you."
+                        title="Of every 100 you bet across both sides, this much goes to the bookmaker as their cut. Lower is better for you."
                       >
-                        Added by bookmakers {formatMarginPercent(activeMarket.bookmakerMargin)}
+                        Payout {formatPayoutPercent(activeMarket.bookmakerMargin)}
                       </span>
                     ) : null}
                   </div>
@@ -351,37 +384,20 @@ export default function MatchOddsView({
                 </div>
 
                 {columnKeys.length > 0 ? (
-                  <>
-                    <div className="flex flex-wrap gap-2" aria-label="History selection">
-                      {columnKeys.map((key) => (
-                        <button
-                          key={key}
-                          type="button"
-                          onClick={() => setHistorySelection(key)}
-                          className={`rounded-full px-3 py-1.5 text-xs font-semibold ring-1 ${
-                            selectedHistoryKey === key
-                              ? 'bg-brand text-brand-fg ring-brand'
-                              : 'bg-card text-mtext ring-lborder hover:bg-secondary'
-                          }`}
-                        >
-                          {labelForSelection(key, homeLabel, awayLabel, selectionGroups.get(key)?.[0]?.label)}
-                        </button>
-                      ))}
+                  historyLoading ? (
+                    <div className="rounded-2xl bg-card p-5 ring-1 ring-lborder" aria-busy="true">
+                      <Skeleton height={180} />
                     </div>
-
-                    {historyLoading ? (
-                      <div className="rounded-2xl bg-card p-5 ring-1 ring-lborder" aria-busy="true">
-                        <Skeleton height={180} />
-                      </div>
-                    ) : (
-                      <OddsHistoryChart
-                        points={historyPoints ?? []}
-                        selectionLabel={historyLabel}
-                        sourceNames={sourceNames}
-                      />
-                    )}
-                  </>
+                  ) : (
+                    <OddsHistoryChart
+                      points={historyPoints ?? []}
+                      selectionLabel={historyLabel}
+                      sourceNames={sourceNames}
+                    />
+                  )
                 ) : null}
+
+                <OddsMarketRulesDisclosure marketKey={activeMarket.marketKey} />
               </div>
 
               {data.modelVsMarket ? <ModelVsMarketPanel data={data.modelVsMarket} homeLabel={homeLabel} awayLabel={awayLabel} /> : null}
@@ -400,10 +416,9 @@ export default function MatchOddsView({
 function AgeGate({ onConfirm }: { onConfirm: () => void }) {
   return (
     <div className="rounded-2xl bg-card p-6 ring-1 ring-lborder">
-      <h3 className="text-base font-bold text-mtext">Age confirmation</h3>
+      <h3 className="text-base font-bold text-mtext">Confirm your age</h3>
       <p className="mt-2 text-sm text-stext">
-        You must be old enough to view betting prices where you live. Prices are shown for
-        information only — this is not advice to place a bet.
+        You must be old enough to see betting prices where you live.
       </p>
       <button type="button" onClick={onConfirm} className="btn-brand mt-4 rounded-md px-5 py-2.5 text-sm font-semibold">
         I am old enough
@@ -419,10 +434,13 @@ function FormatToggle({
   value: OddsPriceFormat;
   onChange: (_mode: OddsPriceFormat) => void;
 }) {
+  // Decimal is what almost every reader wants and what the feed is stored in, so it is
+  // first. The worked examples that used to sit in the labels ("5/2", "+150") just
+  // added three numbers to read before any price appeared.
   const modes: { key: OddsPriceFormat; label: string }[] = [
-    { key: 'decimal', label: 'Decimal (2.50)' },
-    { key: 'fractional', label: 'Fractional (5/2)' },
-    { key: 'american', label: 'American (+150)' },
+    { key: 'decimal', label: 'Decimal' },
+    { key: 'fractional', label: 'Fractional' },
+    { key: 'american', label: 'American' },
   ];
   return (
     <div className="flex flex-wrap rounded-full bg-secondary p-0.5 ring-1 ring-lborder" role="group" aria-label="Show prices as">
@@ -471,13 +489,13 @@ function PriceCell({
         {formatOddsPrice(row.current, format)}
         {showBest ? (
           <span className="ml-2 align-middle text-[10px] font-bold uppercase tracking-wide text-accent">
-            Highest price
+            Best price
           </span>
         ) : null}
       </p>
       {row.opening ? (
         <p className="text-xs text-stext">
-          Started at {formatOddsPrice(row.opening, format)}
+          Opened at {formatOddsPrice(row.opening, format)}
           {movement ? <span className={`ml-1 font-medium ${movementTone}`}>now {movement}</span> : null}
         </p>
       ) : null}
@@ -485,12 +503,19 @@ function PriceCell({
         className={`text-[10px] ${isOddsCaptureStale(row.capturedAt) ? 'font-medium text-warning' : 'text-stext'}`}
         title={`Received ${row.receivedAt}`}
       >
-        Updated {formatOddsUtc(row.capturedAt)}
+        {formatOddsUtc(row.capturedAt)}
       </p>
     </div>
   );
 }
 
+/**
+ * One row per side, with our number and the market's side by side.
+ *
+ * This used to be four boxes — "We think — India", "Prices suggest — India", and the
+ * same again for the other side — under a paragraph explaining that our maths is not
+ * advice. Two numbers in one row per team says the same thing with half the reading.
+ */
 function ModelVsMarketPanel({
   data,
   homeLabel,
@@ -502,28 +527,35 @@ function ModelVsMarketPanel({
 }) {
   return (
     <section className="rounded-2xl bg-card p-5 ring-1 ring-lborder">
-      <h3 className="text-sm font-bold uppercase tracking-wider text-stext">Our estimate vs the prices</h3>
+      <h3 className="text-sm font-bold uppercase tracking-wider text-stext">Our prediction</h3>
       <p className="mt-1 text-xs leading-relaxed text-stext">
-        We do our own maths to guess who is likely to win. It is a rough guess, for interest only —
-        it does not work the same way bookmakers settle bets, and it can be wrong. Please do not treat
-        it as advice to bet.
+        Our own estimate, next to what the prices say. It is a rough guess for interest only.
       </p>
-      <div className="mt-4 grid gap-4 sm:grid-cols-2">
-        <CompareRow label={`We think — ${homeLabel}`} value={modelPercent(data.homeWinProb)} />
-        <CompareRow label={`Prices suggest — ${homeLabel}`} value={impliedPercent(data.marketHomeImplied)} />
-        <CompareRow label={`We think — ${awayLabel}`} value={modelPercent(data.awayWinProb)} />
-        <CompareRow label={`Prices suggest — ${awayLabel}`} value={impliedPercent(data.marketAwayImplied)} />
+      <div className="mt-4 space-y-3">
+        <ModelRow
+          team={homeLabel}
+          ours={modelPercent(data.homeWinProb)}
+          market={impliedPercent(data.marketHomeImplied)}
+        />
+        <ModelRow
+          team={awayLabel}
+          ours={modelPercent(data.awayWinProb)}
+          market={impliedPercent(data.marketAwayImplied)}
+        />
       </div>
-      <p className="mt-4 rounded-lg bg-secondary px-3 py-2 text-xs leading-relaxed text-stext">{data.note}</p>
     </section>
   );
 }
 
-function CompareRow({ label, value }: { label: string; value: string }) {
+function ModelRow({ team, ours, market }: { team: string; ours: string; market: string }) {
   return (
-    <div className="rounded-xl bg-secondary px-3 py-2.5 ring-1 ring-lborder">
-      <p className="text-[11px] font-medium text-stext">{label}</p>
-      <p className="font-mono text-lg font-bold tabular-nums text-mtext">{value}</p>
+    <div className="flex flex-wrap items-baseline justify-between gap-2 rounded-xl bg-secondary px-3 py-2.5 ring-1 ring-lborder">
+      <p className="min-w-0 truncate text-sm font-semibold text-mtext">{team}</p>
+      <p className="font-mono text-sm tabular-nums text-stext">
+        <span className="font-bold text-mtext">{ours}</span>
+        <span className="mx-1.5 text-lborder">vs</span>
+        {market}
+      </p>
     </div>
   );
 }
@@ -534,10 +566,7 @@ function labelForSelection(
   away: string,
   fallback?: string,
 ): string {
-  if (key === 'home') return home;
-  if (key === 'away') return away;
-  if (key === 'draw') return 'Draw';
-  return fallback || key;
+  return selectionLabel(key, home, away, fallback);
 }
 
 function maxSourceRows(groups: Map<string, OddsSelectionPrice[]>, keys: string[]): number[] {

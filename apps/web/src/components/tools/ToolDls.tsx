@@ -43,15 +43,6 @@ export default function ToolDls({ tool }: { tool: ToolDef }) {
             <ResultBox
               label="Revised target"
               value={result?.target !== null && result?.target !== undefined ? String(result.target) : '—'}
-              inputs={[
-                { label: 'Format', value: format.toUpperCase() },
-                { label: 'Team 1 score', value: t1Score },
-                { label: 'Team 1 overs faced', value: t1Overs },
-                { label: 'Team 1 wickets', value: t1Wkts },
-                { label: 'Team 2 overs available', value: t2Overs },
-                { label: 'Team 2 overs faced', value: t2Faced },
-                { label: 'Team 2 wickets', value: t2Wkts },
-              ]}
             />
             <ResultBox
               label="Par now"

@@ -234,7 +234,7 @@ export default function UsersPage() {
               <thead>
                 <tr style={{ background: 'var(--admin-table-header)', borderBottom: '1px solid var(--admin-border)' }}>
                   <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>User</th>
-                  <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Email</th>
+                  <th className="hidden px-4 py-3 text-xs font-bold uppercase tracking-wider lg:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>Email</th>
                   <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Admin</th>
                   <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Verified</th>
                   <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Actions</th>
@@ -252,17 +252,17 @@ export default function UsersPage() {
                       onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--admin-table-row-hover)'; }}
                       onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
                     >
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <AdminAvatar name={name} src={user.avatarUrl} size={32} />
+                      <td className="max-w-[11rem] px-4 py-3 sm:max-w-[18rem]">
+                        <div className="flex min-w-0 items-center gap-3">
+                          <span className="shrink-0"><AdminAvatar name={name} src={user.avatarUrl} size={32} /></span>
                           <div className="min-w-0">
-                            <p className="truncate font-semibold" style={{ color: 'var(--admin-text)' }}>{name}</p>
+                            <p className="truncate font-semibold" style={{ color: 'var(--admin-text)' }} title={name}>{name}</p>
                             <p className="truncate text-xs" style={{ color: 'var(--admin-text-muted)' }}>@{user.username}</p>
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3" style={{ color: 'var(--admin-text-secondary)' }}>{user.email}</td>
-                      <td className="px-4 py-3">
+                      <td className="hidden max-w-[14rem] truncate px-4 py-3 lg:table-cell" style={{ color: 'var(--admin-text-secondary)' }} title={user.email}>{user.email}</td>
+                      <td className="whitespace-nowrap px-4 py-3">
                         {locked ? (
                           <Badge tone="primary">Superadmin</Badge>
                         ) : (
@@ -279,10 +279,10 @@ export default function UsersPage() {
                           </div>
                         )}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="whitespace-nowrap px-4 py-3">
                         {locked ? (
                           <span
-                            className="rounded-full px-2 py-0.5 text-[11px] font-bold"
+                            className="inline-flex rounded-full px-2 py-0.5 text-[11px] font-bold"
                             style={{
                               background: user.emailVerified ? 'var(--admin-success-bg)' : 'var(--admin-input-bg)',
                               color: user.emailVerified ? 'var(--admin-success)' : 'var(--admin-text-secondary)',
@@ -323,7 +323,7 @@ export default function UsersPage() {
               </tbody>
             </table>
           </div>
-          <div className="flex justify-end px-4 py-3" style={{ borderTop: '1px solid var(--admin-border)' }}>
+          <div className="flex justify-center px-4 py-3 sm:justify-end" style={{ borderTop: '1px solid var(--admin-border)' }}>
             <AdminPagination page={page} totalPages={totalPages} total={total} limit={LIMIT} onPageChange={(p) => load(p, q)} />
           </div>
         </div>

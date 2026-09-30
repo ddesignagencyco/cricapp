@@ -240,15 +240,15 @@ export default function AdminStreamsPage() {
       <form
         onSubmit={submit}
         noValidate
-        className="rounded-lg p-4"
+        className="rounded-lg p-3 sm:p-4"
         style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}
       >
-        <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <p className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text)' }}>
             {editingId ? 'Edit stream' : 'New stream'}
           </p>
           {editingId ? (
-            <span className="truncate text-xs font-semibold" style={{ color: 'var(--admin-text-muted)' }}>
+            <span className="min-w-0 break-words text-xs font-semibold" style={{ color: 'var(--admin-text-muted)' }}>
               {form.title || 'Untitled'}
             </span>
           ) : null}
@@ -344,6 +344,7 @@ export default function AdminStreamsPage() {
                   </span>
                 )}
                 <AdminInput
+                  className="min-w-0"
                   value={form.thumbnailUrl || ''}
                   onChange={(e) => setForm((f) => ({ ...f, thumbnailUrl: e.target.value }))}
                   placeholder="https://…"
@@ -401,7 +402,7 @@ export default function AdminStreamsPage() {
               <thead>
                 <tr style={{ background: 'var(--admin-table-header)', borderBottom: '1px solid var(--admin-border)' }}>
                   <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Stream</th>
-                  <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Provider</th>
+                  <th className="hidden px-4 py-3 text-xs font-bold uppercase tracking-wider sm:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>Provider</th>
                   <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Status</th>
                   <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-right" style={{ color: 'var(--admin-text-secondary)' }}>Actions</th>
                 </tr>
@@ -414,8 +415,8 @@ export default function AdminStreamsPage() {
                     onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--admin-table-row-hover)'; }}
                     onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
                   >
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
+                    <td className="max-w-[11rem] px-4 py-3 sm:max-w-[18rem]">
+                      <div className="flex min-w-0 items-center gap-3">
                         {stream.image ? (
                           <RemoteImage src={stream.image} alt="" width={56} height={36} className="h-9 w-14 shrink-0 rounded object-cover" style={{ border: '1px solid var(--admin-border)' }} />
                         ) : (
@@ -424,11 +425,11 @@ export default function AdminStreamsPage() {
                           </span>
                         )}
                         <div className="min-w-0">
-                          <p className="truncate font-semibold" style={{ color: 'var(--admin-text)' }}>{stream.title}</p>
+                          <p className="truncate font-semibold" style={{ color: 'var(--admin-text)' }} title={stream.title}>{stream.title}</p>
                           {stream.matchId ? (
                             <AdminEntityLink
                               href={`/matches/${stream.matchId}`}
-                              className="truncate text-xs font-medium"
+                              className="block truncate text-xs font-medium"
                             >
                               Linked match
                             </AdminEntityLink>
@@ -436,11 +437,11 @@ export default function AdminStreamsPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3" style={{ color: 'var(--admin-text-secondary)' }}>{stream.host || '—'}</td>
-                    <td className="px-4 py-3">
+                    <td className="hidden max-w-[10rem] truncate px-4 py-3 sm:table-cell" style={{ color: 'var(--admin-text-secondary)' }} title={stream.host || undefined}>{stream.host || '—'}</td>
+                    <td className="whitespace-nowrap px-4 py-3">
                       {stream.status === 'ended' ? <Badge>Ended</Badge> : <StatusBadge status={stream.status} />}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="whitespace-nowrap px-4 py-3">
                       <div className="flex justify-end gap-1.5">
                         <AdminIconButton label="Edit stream" tone="accent" onClick={() => startEdit(stream)}>
                           <Pencil size={16} />
@@ -465,7 +466,7 @@ export default function AdminStreamsPage() {
               </tbody>
             </table>
           </div>
-          <div className="flex justify-end px-4 py-3" style={{ borderTop: '1px solid var(--admin-border)' }}>
+          <div className="flex justify-center px-4 py-3 sm:justify-end" style={{ borderTop: '1px solid var(--admin-border)' }}>
             <AdminPagination page={page} totalPages={totalPages} total={total} limit={LIMIT} onPageChange={load} />
           </div>
         </div>

@@ -121,8 +121,8 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
     load(nextPage, true);
   }, [highlightId, comments, loading, page, totalPages, load]);
 
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const submit = async (e?: React.FormEvent) => {
+    e?.preventDefault();
     const text = body.trim();
     if (!text) {
       toast.error('Comment is required.');
@@ -139,6 +139,13 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const onBodyKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key !== 'Enter' || e.shiftKey) return;
+    e.preventDefault();
+    if (submitting || !body.trim()) return;
+    void submit();
   };
 
   const remove = async () => {
@@ -231,13 +238,20 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
               rows={2}
               value={body}
               onChange={(e) => setBody(e.target.value)}
-              placeholder={`Share your thoughts as ${composerName}…`}
+              onKeyDown={onBodyKeyDown}
+              placeholder="Share your thoughts…"
               maxLength={1000}
-              className="min-h-[52px] w-full resize-none bg-transparent text-sm leading-snug text-mtext shadow-none outline-none ring-0 placeholder:text-stext focus:border-transparent focus:outline-none focus:ring-0 focus-visible:border-transparent focus-visible:outline-none focus-visible:ring-0"
+              className="min-h-[52px] w-full resize-none whitespace-pre-line bg-transparent text-sm leading-snug text-mtext shadow-none outline-none ring-0 placeholder:text-stext focus:border-transparent focus:outline-none focus:ring-0 focus-visible:border-transparent focus-visible:outline-none focus-visible:ring-0"
             />
           </div>
-          <div className="mt-2 flex items-center justify-end gap-2.5">
-            <span className="text-[11px] font-medium tabular-nums text-stext">{body.length}/1000</span>
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-2.5">
+            <span className="text-[11px] text-stext">
+              <kbd className="rounded bg-secondary px-1 py-0.5 font-mono text-[10px] text-mtext">Enter</kbd> to post
+              <span className="mx-1.5">·</span>
+              <kbd className="rounded bg-secondary px-1 py-0.5 font-mono text-[10px] text-mtext">Shift</kbd>+
+              <kbd className="rounded bg-secondary px-1 py-0.5 font-mono text-[10px] text-mtext">Enter</kbd> for new line
+            </span>
+            <span className="ml-auto text-[11px] font-medium tabular-nums text-stext">{body.length}/1000</span>
             <button
               type="submit"
               disabled={submitting || !body.trim()}

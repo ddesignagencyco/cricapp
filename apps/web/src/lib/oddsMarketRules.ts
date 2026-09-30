@@ -1,5 +1,5 @@
 /** Sportradar OC market #1 — fallback when API `name` is missing. */
-export const MATCH_WINNER_MARKET_FALLBACK_NAME = 'Match winner (incl. super over)';
+export const MATCH_WINNER_MARKET_FALLBACK_NAME = 'Match Winner';
 
 export function marketDisplayName(name: string | undefined | null): string {
   const trimmed = String(name ?? '').trim();
@@ -11,13 +11,19 @@ export function marketDisplayName(name: string | undefined | null): string {
  * betting terms. Legal must still sign off on the wording before launch.
  */
 export const MATCH_WINNER_SETTLEMENT =
-  'Bets on who wins the match are settled using the official competition rules. If the weather interrupts a match, bets are settled on the official result.';
+  'Winner bets are settled on the official result. If weather stops play, the official result stands.';
 
+/**
+ * The two things a reader actually needs, rather than every edge case in the rules.
+ *
+ * This list was six paragraphs and sat above the prices, where it was the first thing
+ * on the page — the hardest possible place for the longest text. A reader opening a
+ * match to see a price should see the price first and be able to open the rest on
+ * demand, so the disclosure now moves below the table and this list keeps only the
+ * points that change what a bet pays out.
+ */
 export const MATCH_WINNER_IMPORTANT_NOTES: readonly string[] = [
-  'A super over is counted here if one is played to decide the winner. Most other cricket bets do not count the super over unless the bet name says so.',
-  'At least 90% of the overs must have been bowled when the bet was placed, unless the innings finished early — for example, the team declared or was bowled out.',
-  'If the match is called off before any play, bets are void unless the match is replayed within 48 hours of the original start time.',
-  'If the match is tied and the official rules do not decide a winner — including a winner decided by a coin toss or drawing of lots — bets that were still open are void.',
-  'If an over was not finished, bets on that over are void unless the innings finished early.',
-  'Bookmakers may void bets if the prices stayed open on a wrong score that made a real difference to the price. This page is for information only.',
+  'A super over counts if one is played to decide the winner. Other bets usually ignore it.',
+  'You normally need at least 90% of the overs bowled, unless the innings finished early.',
+  'A match called off before any play is void, and a tied match is void unless the rules give a winner.',
 ];

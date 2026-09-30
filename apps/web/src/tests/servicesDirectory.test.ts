@@ -256,6 +256,30 @@ describe('mapNewsItem', () => {
     expect(mapNewsItem({ id: 'n', tags: 'psl' }).tags).toEqual([]);
   });
 
+  it('keeps the source the API returned', () => {
+    // `source` was stored by the editor but never mapped here, so it was invisible on
+    // the article page no matter what the newsroom typed.
+    expect(mapNewsItem({ id: 'n', source: 'PCB' }).source).toBe('PCB');
+    expect(mapNewsItem({ id: 'n' }).source).toBe('');
+  });
+
+  it('keeps the stored byline even when an author profile supplies the name', () => {
+    const item = mapNewsItem({
+      id: 'n',
+      author: 'Guest Reporter',
+      authorId: 'a1',
+      authorRef: { id: 'a1', name: 'Ali Khan' },
+    });
+    expect(item.author).toBe('Ali Khan');
+    expect(item.authorByline).toBe('Guest Reporter');
+  });
+
+  it('credits the byline when no author profile is linked', () => {
+    const item = mapNewsItem({ id: 'n', author: 'Guest Reporter' });
+    expect(item.author).toBe('Guest Reporter');
+    expect(item.authorByline).toBe('Guest Reporter');
+  });
+
   it('strips html out of the excerpt built from the summary', () => {
     // The stripped copy lands in `excerpt`; the raw `summary` is left alone by
     // the `...item` spread, so consumers must read `excerpt` for plain text.

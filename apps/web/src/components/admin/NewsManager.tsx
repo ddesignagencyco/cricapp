@@ -116,9 +116,9 @@ export default function NewsManager() {
     <div className="space-y-5">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
+        <div className="min-w-0">
           <h1 className="text-xl font-bold" style={{ color: 'var(--admin-text)' }}>News Management</h1>
-          <p className="mt-1 text-sm" style={{ color: 'var(--admin-text-secondary)' }}>
+          <p className="mt-1 break-words text-sm" style={{ color: 'var(--admin-text-secondary)' }}>
             Draft, publish, edit and organize news.
           </p>
         </div>
@@ -139,7 +139,7 @@ export default function NewsManager() {
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search by title, author, or excerpt..."
         />
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex w-full shrink-0 flex-wrap items-center gap-2 md:w-auto">
           <AdminSelect
             value={filterCategory}
             onChange={(e) => setFilterCategory(e.target.value)}
@@ -168,19 +168,19 @@ export default function NewsManager() {
       ) : filtered.length === 0 ? (
         <div className="rounded-lg border border-dashed p-10 text-center" style={{ borderColor: 'var(--admin-border)', background: 'var(--admin-card)' }}>
           <FileText size={28} className="mx-auto mb-2" style={{ color: 'var(--admin-text-muted)' }} />
-          <p className="text-xs" style={{ color: 'var(--admin-text-secondary)' }}>No news match your criteria.</p>
+          <p className="break-words text-xs" style={{ color: 'var(--admin-text-secondary)' }}>No news match your criteria.</p>
         </div>
       ) : (
         <div className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
           <div className="table-scroll">
-            <table className="w-full min-w-[760px] text-left text-xs">
+            <table className="w-full text-left text-xs">
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--admin-border)', background: 'var(--admin-table-header)' }}>
                   <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>News</th>
-                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Author</th>
-                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Category</th>
+                  <th className="hidden px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider sm:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>Author</th>
+                  <th className="hidden px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider md:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>Category</th>
                   <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Status</th>
-                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Date</th>
+                  <th className="hidden px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider sm:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>Date</th>
                   <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-right" style={{ color: 'var(--admin-text-secondary)' }}>Actions</th>
                 </tr>
               </thead>
@@ -195,8 +195,8 @@ export default function NewsManager() {
                     onMouseEnter={(e) => e.currentTarget.style.background = 'var(--admin-table-row-hover)'}
                     onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                   >
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-3 max-w-md">
+                    <td className="max-w-[10rem] px-4 py-3 sm:max-w-[18rem]">
+                      <div className="flex min-w-0 items-center gap-3">
                         {a.imageUrl ? (
                           <RemoteImage src={a.imageUrl} alt="" width={48} height={36} className="news-image h-9 w-12 shrink-0 rounded object-contain" style={{ border: '1px solid var(--admin-border)' }} />
                         ) : (
@@ -214,45 +214,45 @@ export default function NewsManager() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="hidden max-w-[9rem] px-4 py-3 sm:table-cell">
                       {authorName ? (
                         <div className="flex min-w-0 items-center gap-2">
-                          <AdminAvatar name={authorName} src={authorImage} size={26} />
-                          <p className="truncate font-semibold" style={{ color: 'var(--admin-text)' }}>{authorName}</p>
+                          <span className="shrink-0"><AdminAvatar name={authorName} src={authorImage} size={26} /></span>
+                          <p className="truncate font-semibold" style={{ color: 'var(--admin-text)' }} title={authorName}>{authorName}</p>
                         </div>
                       ) : (
                         <span style={{ color: 'var(--admin-text-muted)' }}>—</span>
                       )}
                     </td>
-                    <td className="px-4 py-3">
-                      <span className="rounded-full px-2 py-0.5 text-xs font-bold" style={{ background: 'var(--admin-input-bg)', color: 'var(--admin-text-secondary)' }}>
+                    <td className="hidden px-4 py-3 md:table-cell">
+                      <span className="inline-block max-w-[9rem] truncate rounded-full px-2 py-0.5 text-xs font-bold" style={{ background: 'var(--admin-input-bg)', color: 'var(--admin-text-secondary)' }} title={a.category?.name || 'General'}>
                         {a.category?.name || 'General'}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="whitespace-nowrap px-4 py-3">
                       <button
                         type="button"
                         disabled={busyId === a.id}
                         onClick={() => togglePublish(a)}
-                        className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold transition-colors duration-[180ms] motion-reduce:transition-none disabled:opacity-50"
+                        className="inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-semibold transition-colors duration-[180ms] motion-reduce:transition-none disabled:opacity-50"
                         style={{
                           background: a.isPublished ? 'var(--admin-success-bg)' : 'var(--admin-warning-bg)',
                           color: a.isPublished ? 'var(--admin-success)' : 'var(--admin-warning)',
                         }}
                       >
-                        {a.isPublished ? <CheckCircle2 size={10} /> : <Clock size={10} />}
+                        {a.isPublished ? <CheckCircle2 size={10} className="shrink-0" /> : <Clock size={10} className="shrink-0" />}
                         {a.isPublished ? 'Published' : 'Draft'}
                       </button>
                     </td>
-                    <td className="px-4 py-3 font-mono" style={{ color: 'var(--admin-text-muted)' }}>
+                    <td className="hidden whitespace-nowrap px-4 py-3 font-mono sm:table-cell" style={{ color: 'var(--admin-text-muted)' }}>
                       {new Date(a.publishedAt || a.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="whitespace-nowrap px-4 py-3">
                       <div className="flex items-center justify-end gap-2">
                         <Link
                           href={newsHref(a)}
                           target="_blank"
-                          className="grid h-8 w-8 place-items-center rounded-md"
+                          className="grid h-8 w-8 shrink-0 place-items-center rounded-md"
                           style={{ background: 'var(--admin-info-bg)', color: 'var(--admin-info)' }}
                           title="View"
                         >
@@ -260,7 +260,7 @@ export default function NewsManager() {
                         </Link>
                         <Link
                           href={`/admin/news/${a.id}/edit`}
-                          className="grid h-8 w-8 place-items-center rounded-md"
+                          className="grid h-8 w-8 shrink-0 place-items-center rounded-md"
                           style={{ background: 'var(--admin-info-bg)', color: 'var(--admin-accent)' }}
                           title="Edit"
                         >
@@ -269,7 +269,7 @@ export default function NewsManager() {
                         {(a.translations || []).some((row) => row.language === otherNewsLanguage(a.language)) ? null : (
                           <Link
                             href={`/admin/news/new?translateFrom=${a.id}`}
-                            className="grid h-8 w-8 place-items-center rounded-md"
+                            className="grid h-8 w-8 shrink-0 place-items-center rounded-md"
                             style={{ background: 'var(--admin-info-bg)', color: 'var(--admin-accent)' }}
                             title={`Create ${otherNewsLanguage(a.language) === 'ur' ? 'Urdu' : 'English'} translation`}
                           >
@@ -280,7 +280,7 @@ export default function NewsManager() {
                           type="button"
                           disabled={busyId === a.id}
                           onClick={() => setDeleteTarget(a)}
-                          className="grid h-8 w-8 place-items-center rounded-md disabled:opacity-50"
+                          className="grid h-8 w-8 shrink-0 place-items-center rounded-md disabled:opacity-50"
                           style={{ background: 'var(--admin-danger-bg)', color: 'var(--admin-danger)' }}
                           title="Delete"
                         >

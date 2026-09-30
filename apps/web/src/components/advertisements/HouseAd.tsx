@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import Badge from '../Badge';
 import {
   LEADERBOARD_SLOT_META,
   dummyAdAlt,
@@ -7,7 +8,7 @@ import {
   type LeaderboardVariant,
 } from '../../lib/advertisements/placements';
 
-export type DummyAdProps = {
+export type HouseAdProps = {
   size:
     | 'leaderboard'
     | 'tablet-banner'
@@ -20,86 +21,57 @@ export type DummyAdProps = {
   inFeed?: boolean;
 };
 
+/**
+ * The `house` mode creative: a placeholder image standing in for a paid slot.
+ *
+ * This is the markup the site has always rendered. `AdSlot` decides *whether* it
+ * appears at all — mode, placement toggle, route gate and slot id — so this
+ * component stays a pure presentational leaf with no knowledge of the ad config.
+ */
+function AdBadge() {
+  return (
+    <span aria-hidden="true" data-ad-badge="" className="absolute right-2 top-2 z-10">
+      <Badge tone="neutral" className="shadow-sm">
+        Ad
+      </Badge>
+    </span>
+  );
+}
+
 function mediaKind(src: string): 'video' | 'image' {
   return /\.(mp4|webm|ogg)$/i.test(src) ? 'video' : 'image';
 }
 
-function CreativeMedia({
-  src,
-  width,
-  height,
-  alt,
-  className = '',
-}: {
-  src: string;
-  width: number;
-  height: number;
-  alt: string;
-  className?: string;
+function CreativeMedia({ src, width, height, alt, className = '' }: {
+  src: string; width: number; height: number; alt: string; className?: string;
 }) {
   const frame = `pointer-events-none block h-full w-full select-none ${className}`.trim();
   const fit = {
-    width: '100%',
-    height: '100%',
-    objectFit: 'cover' as const,
-    objectPosition: 'center',
+    width: '100%', height: '100%', objectFit: 'cover' as const, objectPosition: 'center',
   };
 
   if (mediaKind(src) === 'video') {
     return (
-      <video
-        src={src}
-        width={width}
-        height={height}
-        autoPlay
-        muted
-        loop
-        playsInline
-        disablePictureInPicture
-        controls={false}
-        aria-label={alt}
-        className={frame}
-        style={fit}
-      />
+      <video src={src} width={width} height={height} autoPlay muted loop playsInline
+             disablePictureInPicture controls={false} aria-label={alt}
+             className={frame} style={fit} />
     );
   }
 
   return (
     // eslint-disable-next-line @next/next/no-img-element -- external placeholder creatives
-    <img
-      src={src}
-      alt={alt}
-      width={width}
-      height={height}
-      loading="lazy"
-      decoding="async"
-      draggable={false}
-      referrerPolicy="no-referrer"
-      className={frame}
-      style={fit}
-    />
+    <img src={src} alt={alt} width={width} height={height} loading="lazy" decoding="async"
+         draggable={false} referrerPolicy="no-referrer" className={frame} style={fit} />
   );
 }
 
-function SlotFrame({
-  width,
-  height,
-  children,
-  fill = false,
-}: {
-  width: number;
-  height: number;
-  children: ReactNode;
-  fill?: boolean;
+function SlotFrame({ width, height, children, fill = false }: {
+  width: number; height: number; children: ReactNode; fill?: boolean;
 }) {
   return (
     <div
       className="relative overflow-hidden rounded-md border border-lborder bg-secondary"
-      style={{
-        width: '100%',
-        maxWidth: fill ? '100%' : width,
-        aspectRatio: `${width} / ${height}`,
-      }}
+      style={{ width: '100%', maxWidth: fill ? '100%' : width, aspectRatio: `${width} / ${height}` }}
     >
       <div className="absolute inset-0">{children}</div>
     </div>
@@ -118,8 +90,9 @@ function ResponsiveLeaderboard({ placement }: { placement: string }) {
     <aside
       data-ad-placement={placement}
       aria-label="Advertisement"
-      className="w-full min-w-0 max-w-full"
+      className="relative flex w-full min-w-0 max-w-full flex-col"
     >
+      <AdBadge />
       <div className="w-full">
         {LEADERBOARD_BREAKPOINTS.map(({ variant, className }) => {
           const creative = resolveDummyAdCreative('leaderboard', placement, variant);
@@ -127,12 +100,8 @@ function ResponsiveLeaderboard({ placement }: { placement: string }) {
           return (
             <div key={variant} className={className}>
               <SlotFrame width={meta.width} height={meta.height} fill>
-                <CreativeMedia
-                  src={creative.src}
-                  width={meta.width}
-                  height={meta.height}
-                  alt={dummyAdAlt(creative.advertiser, creative.line)}
-                />
+                <CreativeMedia src={creative.src} width={meta.width} height={meta.height}
+                               alt={dummyAdAlt(creative.advertiser, creative.line)} />
               </SlotFrame>
             </div>
           );
@@ -142,7 +111,7 @@ function ResponsiveLeaderboard({ placement }: { placement: string }) {
   );
 }
 
-export default function DummyAd({ size, placement, className = '', inFeed = false }: DummyAdProps) {
+export default function HouseAd({ size, placement, className = '', inFeed = false }: HouseAdProps) {
   if (size === 'leaderboard' && !inFeed) {
     return (
       <div className={`w-full min-w-0 max-w-full ${className}`.trim()}>
@@ -160,8 +129,9 @@ export default function DummyAd({ size, placement, className = '', inFeed = fals
       <aside
         data-ad-placement={placement}
         aria-label="Advertisement"
-        className={`flex h-full min-h-[148px] flex-col overflow-hidden rounded-md border border-lborder bg-secondary ${className}`.trim()}
+        className={`relative flex h-full min-h-[148px] flex-col overflow-hidden rounded-md border border-lborder bg-secondary ${className}`.trim()}
       >
+        <AdBadge />
         <div className="relative min-h-0 flex-1">
           <div className="absolute inset-0">
             <CreativeMedia src={creative.src} width={creative.width} height={creative.height} alt={alt} />
@@ -175,9 +145,10 @@ export default function DummyAd({ size, placement, className = '', inFeed = fals
     <aside
       data-ad-placement={placement}
       aria-label="Advertisement"
-      className={`mx-auto w-full min-w-0 max-w-full overflow-hidden ${hideOnMobile ? 'hidden lg:block' : ''} ${className}`.trim()}
+      className={`relative mx-auto flex w-full min-w-0 max-w-full flex-col ${hideOnMobile ? 'hidden lg:flex' : ''} ${className}`.trim()}
       style={{ maxWidth: creative.width }}
     >
+      <AdBadge />
       <SlotFrame width={creative.width} height={creative.height}>
         <CreativeMedia src={creative.src} width={creative.width} height={creative.height} alt={alt} />
       </SlotFrame>

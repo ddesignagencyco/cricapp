@@ -217,6 +217,10 @@ export interface NewsArticle {
   tag?: string;
   tags?: string[];
   author: string;
+  /** The byline as stored, kept even when an author profile supplies the display name. */
+  authorByline?: string;
+  /** Where the story came from, e.g. `PCB` or `ICC`. Empty when not stated. */
+  source?: string;
   readTime: string;
   excerpt: string;
   content: string;

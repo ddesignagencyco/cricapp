@@ -16,7 +16,7 @@ import Tabs from '../Tabs';
 import EmptyState from '../EmptyState';
 import ErrorState from '../ErrorState';
 import Pagination from '../Pagination';
-import DummyAd from '../advertisements/DummyAd';
+import AdSlot from '../advertisements/AdSlot';
 import RemoteImage from '../RemoteImage';
 import NewsCopy from '../NewsCopy';
 import { AuthorByline } from '../PersonAvatar';
@@ -314,14 +314,14 @@ export default function NewsBoard({
             <Fragment key={item.id}>
               <ArticleCard item={item} language={language} />
               {filtered.length >= 4 && index === 3 ? (
-                <DummyAd size="large-rectangle" placement="news-list-infeed" inFeed />
+                <AdSlot placement="news-list-infeed" />
               ) : null}
             </Fragment>
           ))}
           </div>
           {filtered.length >= 8 ? (
             <div className="mt-8">
-              <DummyAd size="leaderboard" placement="news-list-bottom" />
+              <AdSlot placement="news-list-bottom" />
             </div>
           ) : null}
         </>
@@ -355,7 +355,7 @@ function ArticleCard({ item, language }: { item: NewsArticle; language: 'en' | '
   return (
     <Link
       href={newsHref(item)}
-      className="news-card group flex h-full flex-col overflow-hidden rounded-md"
+      className="news-card card-interactive group flex h-full flex-col overflow-hidden rounded-md"
     >
       <div className="news-card-media relative aspect-[16/9] bg-secondary media-fallback">
         {item.image ? (

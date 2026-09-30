@@ -151,3 +151,17 @@ export const siteSettingsKeys = {
   all: ['site-settings'] as const,
   current: () => ['site-settings', 'current'] as const,
 };
+
+export const adSenseKeys = {
+  all: ['admin-adsense'] as const,
+  status: () => ['admin-adsense', 'status'] as const,
+  adUnits: (includeArchived: boolean) => ['admin-adsense', 'ad-units', { includeArchived }] as const,
+  policyIssues: () => ['admin-adsense', 'policy-issues'] as const,
+  /**
+   * Every distinct parameter set is a separate upstream call (cached 5 min per set
+   * server-side), so the query is only a cache key — the 5 min TTL is longer than
+   * the default staleTime and `refetchOnWindowFocus` is left off to avoid burning
+   * quota on a panel the admin is not looking at.
+   */
+  report: (query: Record<string, unknown>) => ['admin-adsense', 'report', query] as const,
+};

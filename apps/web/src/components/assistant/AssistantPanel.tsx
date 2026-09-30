@@ -217,7 +217,7 @@ export default function AssistantPanel({
 
         <div className="shrink-0 bg-card px-5 pb-[max(0.85rem,env(safe-area-inset-bottom))] pt-2">
           {followUps.length > 0 && !busy ? (
-            <div className="mb-3 flex gap-2 overflow-x-auto overscroll-x-contain py-0.5 [-ms-overflow-style:auto] [scrollbar-width:thin]">
+            <div className="mb-3 flex gap-2 overflow-x-auto overscroll-x-contain py-0.5">
               {followUps.slice(0, 3).map((prompt) => (
                 <button
                   key={prompt}

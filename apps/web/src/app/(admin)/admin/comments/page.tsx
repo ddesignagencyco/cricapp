@@ -97,13 +97,13 @@ export default function CommentsPage() {
       ) : (
         <div className="overflow-hidden rounded-lg" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
           <div className="table-scroll">
-            <table className="w-full min-w-[800px] text-left text-sm">
+            <table className="w-full text-left text-sm">
               <thead>
                 <tr style={{ background: 'var(--admin-table-header)', borderBottom: '1px solid var(--admin-border)' }}>
                   <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Reason</th>
                   <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Comment</th>
-                  <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Author</th>
-                  <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Target</th>
+                  <th className="hidden px-4 py-3 text-xs font-bold uppercase tracking-wider sm:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>Author</th>
+                  <th className="hidden px-4 py-3 text-xs font-bold uppercase tracking-wider lg:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>Target</th>
                   <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-right" style={{ color: 'var(--admin-text-secondary)' }}>Actions</th>
                 </tr>
               </thead>
@@ -119,37 +119,37 @@ export default function CommentsPage() {
                       onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--admin-table-row-hover)'; }}
                       onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
                     >
-                      <td className="px-4 py-3 align-top">
+                      <td className="whitespace-nowrap px-4 py-3 align-top">
                         <StatusBadge status={report.reason} />
-                        <p className="mt-1.5 text-xs" style={{ color: 'var(--admin-text-muted)' }}>{formatWhen(report.createdAt)}</p>
+                        <p className="mt-1.5 whitespace-nowrap text-xs" style={{ color: 'var(--admin-text-muted)' }}>{formatWhen(report.createdAt)}</p>
                       </td>
-                      <td className="px-4 py-3 align-top">
-                        <p className="max-w-md text-sm leading-relaxed" style={{ color: 'var(--admin-text)' }}>
+                      <td className="max-w-[9rem] px-4 py-3 align-top sm:max-w-[20rem]">
+                        <p className="truncate text-sm leading-relaxed" style={{ color: 'var(--admin-text)' }} title={report.comment?.body || undefined}>
                           {report.comment?.body || 'Comment missing'}
                         </p>
                       </td>
-                      <td className="px-4 py-3 align-top">
-                        <div className="flex items-center gap-2.5">
-                          <AdminAvatar name={author} src={report.comment?.user?.avatarUrl} size={28} />
-                          <div>
-                            <p className="font-semibold" style={{ color: 'var(--admin-text)' }}>{author}</p>
-                            <p className="text-xs" style={{ color: 'var(--admin-text-muted)' }}>{report.comment?.user?.email || '—'}</p>
+                      <td className="hidden max-w-[11rem] px-4 py-3 align-top sm:table-cell">
+                        <div className="flex min-w-0 items-center gap-2.5">
+                          <span className="shrink-0"><AdminAvatar name={author} src={report.comment?.user?.avatarUrl} size={28} /></span>
+                          <div className="min-w-0">
+                            <p className="truncate font-semibold" style={{ color: 'var(--admin-text)' }} title={author}>{author}</p>
+                            <p className="truncate text-xs" style={{ color: 'var(--admin-text-muted)' }} title={report.comment?.user?.email || undefined}>{report.comment?.user?.email || '—'}</p>
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3 align-top">
+                      <td className="hidden px-4 py-3 align-top lg:table-cell">
                         <p className="text-xs font-semibold capitalize" style={{ color: 'var(--admin-text-secondary)' }}>
                           {report.comment?.targetType || '—'}
                         </p>
                         {href ? (
                           <Link href={href} className="mt-1 inline-flex items-center gap-1 text-xs font-semibold" style={{ color: 'var(--admin-accent)' }}>
-                            Open <ExternalLink size={12} />
+                            Open <ExternalLink size={12} className="shrink-0" />
                           </Link>
                         ) : (
                           <p className="mt-1 text-xs" style={{ color: 'var(--admin-text-muted)' }}>Unlinked comment</p>
                         )}
                       </td>
-                      <td className="px-4 py-3 align-top">
+                      <td className="whitespace-nowrap px-4 py-3 align-top">
                         <div className="flex justify-end gap-2">
                           <button
                             type="button"
@@ -157,10 +157,10 @@ export default function CommentsPage() {
                             onClick={() => finish(report, null, 'dismissed', 'Report dismissed.')}
                             title="Dismiss report"
                             aria-label="Dismiss report"
-                            className="inline-flex h-8 items-center gap-1 rounded-md px-2.5 text-xs font-semibold disabled:opacity-50"
+                            className="inline-flex h-8 items-center gap-1 whitespace-nowrap rounded-md px-2.5 text-xs font-semibold disabled:opacity-50"
                             style={{ background: 'var(--admin-input-bg)', color: 'var(--admin-text-secondary)', border: '1px solid var(--admin-border)' }}
                           >
-                            <X size={13} />
+                            <X size={13} className="shrink-0" />
                             Dismiss
                           </button>
                           <button
@@ -169,10 +169,10 @@ export default function CommentsPage() {
                             onClick={() => setDeleteTarget(report)}
                             title="Delete comment"
                             aria-label="Delete comment"
-                            className="inline-flex h-8 items-center gap-1 rounded-md px-2.5 text-xs font-semibold disabled:opacity-50"
+                            className="inline-flex h-8 items-center gap-1 whitespace-nowrap rounded-md px-2.5 text-xs font-semibold disabled:opacity-50"
                             style={{ background: 'var(--admin-danger-bg)', color: 'var(--admin-danger)' }}
                           >
-                            <Trash2 size={13} />
+                            <Trash2 size={13} className="shrink-0" />
                             Delete
                           </button>
                         </div>

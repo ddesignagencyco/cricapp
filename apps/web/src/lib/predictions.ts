@@ -1,4 +1,5 @@
 import { formatCricketOvers, getInitials } from '../utils/helpers';
+import { deriveMatchState } from '../hooks/useMatchState';
 import type { Match } from '../types';
 import type {
   MatchSideLabels,
@@ -226,14 +227,20 @@ export function predictionSituation(
     ? (rec.currentInnings as Record<string, unknown>)
     : {};
   const explanation = run?.explanation || {};
-  const display = String(rec.displayScore || '').trim();
-  const displayScore = /^\d+\s*\/\s*\d+/.test(display) ? display.replace(/\s+/g, '') : '';
-  const parsedScore = displayScore.match(/^(\d+)\/(\d+)/);
+  // Scores come from the shared match state, not from `displayScore` alone. The
+  // predictions page and the homepage both read `/matches/live`, but this function
+  // only ever looked at `displayScore` and `currentInnings` — so a live match whose
+  // score had landed in `teamScores` (or `teams.*.score`) rendered a card with no
+  // score on it while the homepage showed the score perfectly well.
+  const state = deriveMatchState(rec);
+  const stateScore = (state.score ?? '').trim();
+  const parsedScore = stateScore.match(/^(\d+)\/(\d+)/);
   const scoreRuns = parsedScore ? Number(parsedScore[1]) : null;
   const scoreWkts = parsedScore ? Number(parsedScore[2]) : null;
-  const innRuns = finiteNum(inn.runs);
-  const innWkts = finiteNum(inn.wickets);
-  const innOvers = finiteNum(inn.overs);
+  const displayScore = parsedScore ? parsedScore[0] : '';
+  const innRuns = state.runs;
+  const innWkts = state.wickets;
+  const innOvers = finiteNum(state.oversLabel);
   const innEmpty = (innRuns === null || innRuns === 0) && (innWkts === null || innWkts === 0);
   const modelOver = finiteNum(explanation.over);
   const inning = finiteNum(explanation.inning);

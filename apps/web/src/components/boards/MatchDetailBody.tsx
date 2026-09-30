@@ -12,7 +12,7 @@ import TeamLogo from '../TeamLogo';
 import FavoriteButton from '../FavoriteButton';
 import ShareButton from '../ShareButton';
 import CommentsSection from '../CommentsSection';
-import DummyAd from '../advertisements/DummyAd';
+import AdSlot from '../advertisements/AdSlot';
 import MatchTimeline, { matchSummary } from '../MatchTimeline';
 import {
   LiveStrip,
@@ -22,7 +22,9 @@ import {
   SquadsPanel,
 } from './MatchCentrePanels';
 import { formatScheduled, getInitials } from '../../utils/helpers';
-import { formatCricketOvers } from '../../lib/cricketMath';
+import { formatCricketOvers, formatRate, isFurtherAlong } from '../../lib/cricketMath';
+import { deriveMatchState } from '../../hooks/useMatchState';
+import { timelineInningsState } from '../../lib/matchTimelineState';
 import { buildMatchScoreboard, describeMatchResult } from '../../lib/matchScoreboard';
 import { marginClarifier, matchFacts } from '../../lib/matchFacts';
 import { matchStatusLabel } from '../../lib/predictions';
@@ -154,6 +156,15 @@ function displaySide(match: any, index: 0 | 1, scoreOverride?: unknown) {
   };
 }
 
+/**
+ * Floor between two ball-by-ball refetches while live.
+ *
+ * The API already refuses to re-fetch upstream inside 30 seconds, so asking again in
+ * that window only returns the identical cached payload. Without this floor a match
+ * whose timeline stays behind would re-request it on every SSE tick.
+ */
+const TIMELINE_REFRESH_MIN_GAP_MS = 15_000;
+
 export default function MatchDetailBody({
   match: initialMatch,
   initialOdds = null,
@@ -232,6 +243,46 @@ export default function MatchDetailBody({
     };
   }, [wantsTimeline, matchId, timelineReady]);
 
+  // The scorecard advances over SSE, but the ball-by-ball timeline is a separate
+  // endpoint that used to be fetched exactly once per match. Left that way the
+  // commentary froze on whatever was current at page load and fell further behind with
+  // every ball, which is exactly the "commentary lags the scorecard" symptom.
+  //
+  // So refetch when the live innings has moved past what the timeline shows. Two guards
+  // keep this from becoming a hot loop: the API holds its own 30s floor on upstream
+  // fetches, and the client will not ask again within `TIMELINE_REFRESH_MIN_GAP_MS`. If
+  // the timeline is still behind afterwards, waiting is correct — asking again would
+  // just re-request the same cached payload.
+  const liveInningsOvers = Number(match?.currentInnings?.overs);
+  const lastTimelineFetchRef = useRef(0);
+  useEffect(() => {
+    if (!wantsTimeline || !matchId || !timelineReady || !isLive) return;
+    if (!Number.isFinite(liveInningsOvers) || liveInningsOvers <= 0) return;
+
+    const shown = timelineInningsState(timeline).overs;
+    if (shown !== null && !isFurtherAlong(liveInningsOvers, shown)) return;
+
+    const now = Date.now();
+    if (now - lastTimelineFetchRef.current < TIMELINE_REFRESH_MIN_GAP_MS) return;
+    lastTimelineFetchRef.current = now;
+
+    let cancelled = false;
+    setTimelineLoading(true);
+    fetchMatchTimeline(matchId)
+      .then((res) => {
+        if (!cancelled && res?.payload) setTimeline(res.payload);
+      })
+      .catch(() => {
+        /* keep the previous timeline rather than blanking the commentary */
+      })
+      .finally(() => {
+        if (!cancelled) setTimelineLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [wantsTimeline, matchId, timelineReady, isLive, liveInningsOvers, timeline]);
+
   useEffect(() => {
     if (!wantsH2H || h2hReady) return;
     const sides = matchSideIds(initialMatch);
@@ -298,7 +349,31 @@ export default function MatchDetailBody({
   const inn = match.currentInnings;
   const phaseRaw = String(match.matchStatus || '');
   const phase = matchStatusLabel(phaseRaw);
-  const displayScore = usefulScore(match.displayScore) || usefulScore(timelineSummary.displayScore);
+
+  // The match row and the timeline are written by different paths and disagree by a
+  // ball or two in either direction. On a refresh the timeline is often the fresher of
+  // the two, which used to print "32.6 overs" in the commentary directly above a
+  // scorecard reading "32.4". Whichever source is further along in balls wins, so the
+  // card and the commentary can never contradict each other.
+  //
+  // This is `deriveMatchState` rather than a second reconciliation written here, because
+  // a second copy of the same rule is how the page and the cards drifted apart in the
+  // first place. It resolves the score, the runs, the overs and the run rate as one
+  // block, from one source.
+  const state = deriveMatchState(match, isLive || isScheduled ? timeline : null);
+  const tlInnings = isLive || isScheduled ? timelineInningsState(timeline) : null;
+  const inningsOvers = state.oversLabel ? Number(state.oversLabel) : Number(inn?.overs);
+  const inningsRuns = state.runs ?? Number(inn?.runs);
+
+  const displayScore =
+    usefulScore(match.displayScore) ||
+    usefulScore(timelineSummary.displayScore) ||
+    tlInnings?.score ||
+    '';
+
+  // One overs value for the whole page. `inningsOvers` is already reconciled against
+  // the timeline, so reading `match.displayOvers` here instead would reintroduce the
+  // split this page had — the header showing one over and the "Overs" stat another.
   const board = buildMatchScoreboard({
     home: {
       code: home.code,
@@ -316,9 +391,9 @@ export default function MatchDetailBody({
     },
     battingTeam: String(inn?.battingTeam || ''),
     matchStatus: phaseRaw,
-    innRuns: Number(inn?.runs),
+    innRuns: inningsRuns,
     innWkts: Number(inn?.wickets),
-    innOvers: Number(inn?.overs),
+    innOvers: inningsOvers,
     innRr: Number(inn?.runRate),
     displayScore,
     // Only a match actually in progress may have the live innings override the
@@ -335,16 +410,29 @@ export default function MatchDetailBody({
     awayOvers,
     scoreLine,
     oversLabel,
-    rrLabel,
+    rrLabel: boardRrLabel,
     battingLabel,
     battingIsHome,
   } = board;
+
+  // While live, the run rate is taken from the same reconciled state as the score and
+  // overs printed above it, so the three can never describe different moments. The
+  // board's own label stands for a finished match, where there is nothing to reconcile.
+  const rrLabel =
+    isLive && state.runs !== null && state.oversLabel
+      ? formatRate(state.runRate ?? 0)
+      : boardRrLabel;
   const duplicateLiveScore = Boolean(
     isLive && scoreLine && rawHomeScore && rawAwayScore && rawHomeScore === rawAwayScore
   );
   const homeScore = duplicateLiveScore && !battingIsHome ? '' : rawHomeScore;
   const awayScore = duplicateLiveScore && battingIsHome ? '' : rawAwayScore;
-  const usefulOvers = Boolean(oversLabel);
+  // The board normalises to whole overs, which turns the provider's "28.6" into "29".
+  // Use the provider string whenever we have one so both panels read identically.
+  // The board's label is the single reconciled value, so the header and the "Overs"
+  // stat are guaranteed to print the same thing.
+  const oversText = oversLabel;
+  const usefulOvers = Boolean(oversText);
   const usefulRr = Boolean(rrLabel && rrLabel !== '—');
   const hasInnings = Boolean(scoreLine) || usefulOvers;
   const resultText =
@@ -445,7 +533,7 @@ export default function MatchDetailBody({
           <div className="match-detail-stat-band relative mt-5 grid grid-cols-2 text-xs sm:grid-cols-5">
             <InningsStat label="Batting" value={battingLabel || '—'} />
             <InningsStat label="Score" value={scoreLine} />
-            <InningsStat label="Overs" value={usefulOvers ? `${oversLabel} ov` : '—'} />
+            <InningsStat label="Overs" value={usefulOvers ? `${oversText} ov` : '—'} />
             <InningsStat label="RR" value={usefulRr ? rrLabel : '—'} />
             <InningsStat label="Innings" value={phase || '—'} className="col-span-2 sm:col-span-1" />
             {match.lastEvent?.type && match.lastEvent.type !== 'none' ? (
@@ -482,7 +570,7 @@ export default function MatchDetailBody({
       </header>
 
       <div className="py-3 sm:py-4">
-        <DummyAd size="leaderboard" placement="match-detail-after-overview" />
+        <AdSlot placement="match-detail-after-overview" />
       </div>
 
       <div className="match-detail-tabs-sticky">
@@ -497,7 +585,7 @@ export default function MatchDetailBody({
                 <h3 className="mb-4 text-lg font-bold text-mtext">Live Score</h3>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                   <InfoStat label="Score" value={`${battingLabel} ${scoreLine || match.displayScore || '—'}`} big />
-                  <InfoStat label="Overs" value={usefulOvers ? oversLabel : '—'} />
+                  <InfoStat label="Overs" value={usefulOvers ? oversText : '—'} />
                   <InfoStat label="Run Rate" value={usefulRr ? rrLabel : '—'} />
                 </div>
                 {match.lastEvent?.type && match.lastEvent.type !== 'none' && (
@@ -623,7 +711,7 @@ export default function MatchDetailBody({
 
         <aside className="min-w-0 space-y-5 lg:mt-3 lg:space-y-6">
           <div className="flex justify-center lg:justify-start">
-            <DummyAd size="medium-rectangle" placement="match-detail-sidebar" />
+            <AdSlot placement="match-detail-sidebar" />
           </div>
           {relatedNews.length > 0 && (
             <div className="match-detail-aside-card">

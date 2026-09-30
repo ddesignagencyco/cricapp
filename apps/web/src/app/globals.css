@@ -1112,6 +1112,7 @@ textarea#comment-body:focus-visible {
 .pagination-btn {
   display: grid;
   place-items: center;
+  flex-shrink: 0;
   height: 2.25rem;
   width: 2.25rem;
   border-radius: 0.5rem;
@@ -1620,24 +1621,8 @@ button:disabled,
   cursor: not-allowed;
 }
 
-/* Scrollbar styling */
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--color-background);
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--color-lborder);
-  border-radius: var(--radius-md);
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--color-stext);
-}
+/* Scrollbars: site-wide default (OS/browser native, with arrow buttons).
+   No custom ::-webkit-scrollbar painting anywhere. */
 
 .native-scrollbar {
   scrollbar-width: auto;
@@ -2698,18 +2683,28 @@ h3.news-copy[dir="rtl"] {
   background: var(--admin-text, var(--color-mtext));
 }
 
-@media (max-width: 767px) {
-  table {
-    width: 100%;
-    min-width: max-content;
-  }
+/* Never let a table push its own container wider than the viewport. */
+table {
+  max-width: 100%;
+}
 
+@media (max-width: 767px) {
   table th {
     white-space: nowrap;
   }
+
+  /* Tables inside an explicit scroll wrapper keep their intrinsic width so the
+     bar stays usable. Anything else compresses to the screen instead of
+     bleeding out of the card. */
+  .table-scroll > table,
+  .table-scroll table {
+    width: 100%;
+    min-width: max-content;
+  }
 }
 
-html[data-hide-dummy-ads] [data-ad-placement] {
+/* Suppresses every ad slot on a given screen, in any mode. Set by <HideAds />. */
+html[data-hide-ads] [data-ad-placement] {
   display: none !important;
 }
 

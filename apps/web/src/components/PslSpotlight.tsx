@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Calendar, MapPin, Users, ChevronRight, TrendingUp } from 'lucide-react';
 import TeamLogo from './TeamLogo';
-import DummyAd from './advertisements/DummyAd';
+import AdSlot from './advertisements/AdSlot';
 
 interface PslSpotlightProps {
   standings?: any[];
@@ -129,7 +129,7 @@ export default function PslSpotlight({ standings = [] }: PslSpotlightProps) {
           </div>
         </div>
           <div className="h-full">
-            <DummyAd size="medium-rectangle" placement="home-sidebar" inFeed className="h-full" />
+            <AdSlot placement="home-sidebar" className="h-full" />
           </div>
         </div>
       </div>

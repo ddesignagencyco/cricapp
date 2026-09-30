@@ -24,7 +24,7 @@ export default function PlayersPage() {
     <div className="space-y-5">
       <AdminPageHeader title="Players" subtitle="View all players from the sports data provider." />
 
-      <div className="flex items-center gap-3 rounded-lg p-3" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
+      <div className="flex flex-col items-stretch gap-3 rounded-lg p-3 sm:flex-row sm:items-center" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
         <AdminSearchField
           wrapperClassName="max-w-md"
           value={query}
@@ -45,10 +45,10 @@ export default function PlayersPage() {
                 <tr style={{ borderBottom: '1px solid var(--admin-border)', background: 'var(--admin-table-header)' }}>
                   <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Player</th>
                   <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Team</th>
-                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Country</th>
-                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Role</th>
-                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Batting</th>
-                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Bowling</th>
+                  <th className="hidden px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider sm:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>Country</th>
+                  <th className="hidden px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider md:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>Role</th>
+                  <th className="hidden px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider lg:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>Batting</th>
+                  <th className="hidden px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider lg:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>Bowling</th>
                 </tr>
               </thead>
               <tbody>
@@ -59,28 +59,30 @@ export default function PlayersPage() {
                       onMouseEnter={(e) => e.currentTarget.style.background = 'var(--admin-table-row-hover)'}
                       onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
                       <td className="px-4 py-2.5" style={{ color: 'var(--admin-text)' }}>
-                        <div className="flex items-center gap-2.5">
-                          <AdminAvatar name={displayName} src={typeof p.image === 'string' ? p.image : null} size={28} />
-                          <div>
+                        <div className="flex min-w-0 items-center gap-2.5">
+                          <span className="shrink-0"><AdminAvatar name={displayName} src={typeof p.image === 'string' ? p.image : null} size={28} /></span>
+                          <div className="min-w-0 max-w-[10rem] sm:max-w-[14rem]">
                             {p.id ? (
-                              <AdminEntityLink href={`/players/${p.id}`}>{p.fullName || p.name}</AdminEntityLink>
+                              <span className="block truncate" title={p.fullName || p.name}><AdminEntityLink href={`/players/${p.id}`}>{p.fullName || p.name}</AdminEntityLink></span>
                             ) : (
-                              <p className="font-semibold" style={{ color: 'var(--admin-text)' }}>{p.fullName}</p>
+                              <p className="truncate font-semibold" style={{ color: 'var(--admin-text)' }}>{p.fullName}</p>
                             )}
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-2.5 text-xs" style={{ color: 'var(--admin-text-secondary)' }}>
-                        {p.teamId ? (
-                          <AdminEntityLink href={`/teams/${p.teamId}`}>{cap(p.teamName) || 'Team'}</AdminEntityLink>
-                        ) : (
-                          cap(p.teamName)
-                        )}
+                      <td className="max-w-[8rem] px-4 py-2.5 text-xs sm:max-w-[10rem]" style={{ color: 'var(--admin-text-secondary)' }}>
+                        <span className="block truncate">
+                          {p.teamId ? (
+                            <AdminEntityLink href={`/teams/${p.teamId}`}>{cap(p.teamName) || 'Team'}</AdminEntityLink>
+                          ) : (
+                            cap(p.teamName)
+                          )}
+                        </span>
                       </td>
-                      <td className="px-4 py-2.5 text-xs" style={{ color: 'var(--admin-text-secondary)' }}>{cap(p.country)}</td>
-                      <td className="px-4 py-2.5 text-xs" style={{ color: 'var(--admin-text-secondary)' }}>{cap(p.role)}</td>
-                      <td className="px-4 py-2.5 text-xs" style={{ color: 'var(--admin-text-secondary)' }}>{cap(p.battingStyle)}</td>
-                      <td className="px-4 py-2.5 text-xs" style={{ color: 'var(--admin-text-secondary)' }}>{cap(p.bowlingStyle)}</td>
+                      <td className="hidden max-w-[7rem] truncate px-4 py-2.5 text-xs sm:table-cell" style={{ color: 'var(--admin-text-secondary)' }} title={cap(p.country)}>{cap(p.country)}</td>
+                      <td className="hidden max-w-[7rem] truncate px-4 py-2.5 text-xs md:table-cell" style={{ color: 'var(--admin-text-secondary)' }} title={cap(p.role)}>{cap(p.role)}</td>
+                      <td className="hidden max-w-[7rem] truncate px-4 py-2.5 text-xs lg:table-cell" style={{ color: 'var(--admin-text-secondary)' }} title={cap(p.battingStyle)}>{cap(p.battingStyle)}</td>
+                      <td className="hidden max-w-[7rem] truncate px-4 py-2.5 text-xs lg:table-cell" style={{ color: 'var(--admin-text-secondary)' }} title={cap(p.bowlingStyle)}>{cap(p.bowlingStyle)}</td>
                     </tr>
                   );
                 })}

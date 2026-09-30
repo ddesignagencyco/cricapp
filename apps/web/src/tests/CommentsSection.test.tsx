@@ -462,32 +462,56 @@ describe('CommentsSection deep link', () => {
   });
 });
 
-describe('CommentsSection composer identity', () => {
-  it('prefers the display name in the composer', async () => {
+describe('CommentsSection composer prompt', () => {
+  /**
+   * The prompt is fixed copy. It used to read "Share your thoughts as <name>", which put
+   * the signed-in reader's account name into the page; the name belongs on the avatar
+   * beside the box, not in the prompt itself.
+   */
+  it('asks the writer to share their thoughts', async () => {
     auth.mockReturnValue(member);
     list.mockReturnValue(page([]));
     await renderComments();
-    expect(screen.getByPlaceholderText(/as Me/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/share your thoughts/i)).toBeInTheDocument();
   });
 
-  it('falls back to the username, then a generic label', async () => {
+  it('does not put the display name in the prompt', async () => {
+    auth.mockReturnValue(member);
+    list.mockReturnValue(page([]));
+    await renderComments();
+    expect(screen.queryByPlaceholderText(/\bMe\b/)).not.toBeInTheDocument();
+    expect(screen.queryByPlaceholderText(/\bas\b/i)).not.toBeInTheDocument();
+  });
+
+  it('does not fall back to the username in the prompt', async () => {
     auth.mockReturnValue({
       ...(member as unknown as Record<string, unknown>),
       user: { id: 'u1', username: 'crickfan', displayName: null },
     } as never);
     list.mockReturnValue(page([]));
     await renderComments();
-    expect(screen.getByPlaceholderText(/as crickfan/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/share your thoughts/i)).toBeInTheDocument();
+    expect(screen.queryByPlaceholderText(/crickfan/i)).not.toBeInTheDocument();
   });
 
-  it('falls back to a fan when the user has no name at all', async () => {
+  it('does not fall back to a generic name in the prompt', async () => {
     auth.mockReturnValue({
       ...(member as unknown as Record<string, unknown>),
       user: { id: 'u1', username: null, displayName: null },
     } as never);
     list.mockReturnValue(page([]));
     await renderComments();
-    expect(screen.getByPlaceholderText(/as a fan/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/share your thoughts/i)).toBeInTheDocument();
+    expect(screen.queryByPlaceholderText(/\bas a fan\b/i)).not.toBeInTheDocument();
+  });
+
+  it('shows the keyboard hint beside the box, not inside the prompt', async () => {
+    auth.mockReturnValue(member);
+    list.mockReturnValue(page([]));
+    await renderComments();
+    // The hint is its own row of <kbd> keys under the box.
+    expect(screen.getByText(/for new line/i)).toBeInTheDocument();
+    expect(screen.queryByPlaceholderText(/enter to post/i)).not.toBeInTheDocument();
   });
 });
 

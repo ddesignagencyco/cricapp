@@ -9,8 +9,7 @@ import PslSpotlight from '../../components/PslSpotlight';
 import RecentResultCard from '../../components/RecentResultCard';
 import TopPerformers from '../../components/TopPerformers';
 import Newsletter from '../../components/Newsletter';
-import AdSlot from '../../components/AdSlot';
-import DummyAd from '../../components/advertisements/DummyAd';
+import AdSlot from '../../components/advertisements/AdSlot';
 import RemoteImage from '../../components/RemoteImage';
 import NewsCopy from '../../components/NewsCopy';
 import Badge, { StatusBadge } from '../../components/Badge';
@@ -102,7 +101,7 @@ export default async function HomePage() {
       </div>
       <div className="border-b border-lborder sm:hidden">
         <div className="mx-auto w-full max-w-7xl px-4 py-3">
-          <DummyAd size="leaderboard" placement="home-top-mobile" />
+          <AdSlot placement="home-top-mobile" />
         </div>
       </div>
       <CricketHero match={heroMatch ?? undefined} />
@@ -159,7 +158,7 @@ export default async function HomePage() {
       </section>
 
       <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
-        <AdSlot slot="home-mid" format="leaderboard" />
+        <AdSlot placement="home-mid" />
       </section>
 
       {/* PSL Spotlight */}
@@ -275,7 +274,7 @@ export default async function HomePage() {
       <Newsletter />
 
       <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
-        <AdSlot slot="home-footer" format="leaderboard" />
+        <AdSlot placement="home-footer" />
       </section>
       </div>
     </div>

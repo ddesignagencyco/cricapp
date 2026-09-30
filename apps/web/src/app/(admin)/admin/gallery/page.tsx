@@ -131,7 +131,7 @@ export default function AdminGalleryPage() {
         style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}
         onSubmit={(event) => void onSubmit(event)}
       >
-        <div className="w-[7.5rem] shrink-0">
+        <div className="w-full shrink-0 sm:w-[7.5rem]">
           <AdminField label="Type" required>
             <AdminSelect
               value={type}
@@ -160,7 +160,7 @@ export default function AdminGalleryPage() {
             <AdminInput value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Caption" />
           </AdminField>
         </div>
-        <div className="w-[8.5rem] shrink-0">
+        <div className="w-full shrink-0 sm:w-[8.5rem]">
           <AdminField label="File" required>
             <label
               className="inline-flex h-[38px] w-full cursor-pointer items-center justify-center gap-1.5 rounded-md px-2 text-xs font-semibold"
@@ -220,7 +220,7 @@ export default function AdminGalleryPage() {
                 )}
                 <div className="flex items-center justify-between gap-1 px-2 py-1.5">
                   <div className="min-w-0">
-                    <p className="truncate text-xs font-semibold" style={{ color: 'var(--admin-text)' }}>
+                    <p className="truncate text-xs font-semibold" style={{ color: 'var(--admin-text)' }} title={item.title || item.type}>
                       {item.title || item.type}
                     </p>
                     <p className="text-[10px] capitalize" style={{ color: 'var(--admin-text-muted)' }}>{item.type}</p>

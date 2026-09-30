@@ -86,11 +86,22 @@ export function buildMatchScoreboard(input: {
     Number.isFinite(innRuns) && (innRuns > 0 || (Number.isFinite(innWkts) && innWkts > 0))
       ? `${innRuns}/${Number.isFinite(innWkts) ? innWkts : 0}`
       : '';
-  const oversLabel = formatCricketOvers(innOvers);
+  const normalizedOversLabel = formatCricketOvers(innOvers);
+  // One spelling everywhere. Five overs and six balls IS six overs, so it prints as
+  // `"6"` — the same string the home card, ticker and commentary all produce. Passing a
+  // provider string through instead made this page disagree with every other surface.
+  const oversLabel = normalizedOversLabel;
   const computedRr = currentRunRate(Number.isFinite(innRuns) ? innRuns : 0, innOvers);
   const innRr = Number(input.innRr);
+  // The run rate is derived from the runs and overs printed directly above it, never
+  // taken from `currentInnings.runRate` when both are known.
+  //
+  // `runRate` is a third, separately-written field and it lags: a live response was seen
+  // carrying `runs: 314, overs: 30.4, runRate: 10.18`, where 314 from 30.4 overs is
+  // 10.35. Preferring it put a run rate on the page that did not match the score beside
+  // it. The stored value is only used when runs or overs are missing entirely.
   const rrLabel =
-    Number.isFinite(innRr) && innRr > 0 ? formatRate(innRr) : formatRate(computedRr);
+    Number.isFinite(innRuns) && innOvers > 0 ? formatRate(computedRr) : formatRate(innRr);
 
   const homeBat = isBattingSide(input.battingTeam, input.home);
   const awayBat = isBattingSide(input.battingTeam, input.away);

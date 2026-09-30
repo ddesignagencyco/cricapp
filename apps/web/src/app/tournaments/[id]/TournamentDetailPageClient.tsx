@@ -4,7 +4,7 @@ import { useMemo, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { Calendar, CalendarDays, Info, MapPin, Newspaper, Users } from 'lucide-react';
 import EmptyState from '../../../components/EmptyState';
-import DummyAd from '../../../components/advertisements/DummyAd';
+import AdSlot from '../../../components/advertisements/AdSlot';
 import { StatusBadge } from '../../../components/Badge';
 import FavoriteButton from '../../../components/FavoriteButton';
 import ShareButton from '../../../components/ShareButton';
@@ -388,7 +388,7 @@ export default function TournamentDetailPageClient({
         </div>
       </header>
 
-      <DummyAd size="leaderboard" placement="tournament-detail-after-intro" />
+      <AdSlot placement="tournament-detail-after-intro" />
 
       <div className="detail-tabs-sticky">
         <Tabs tabs={seriesTabs} active={tab} onChange={setTab} />
@@ -538,7 +538,7 @@ export default function TournamentDetailPageClient({
                 ))}
               </div>
               <div className="flex justify-center lg:justify-start">
-                <DummyAd size="medium-rectangle" placement="tournament-detail-sidebar" />
+                <AdSlot placement="tournament-detail-sidebar" />
               </div>
             </div>
           ) : (

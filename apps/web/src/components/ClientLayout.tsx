@@ -7,7 +7,7 @@ import Footer from '../components/Footer';
 import ScrollTopButton from '../components/ScrollTopButton';
 import MobileBottomNav from './MobileBottomNav';
 import AssistantLauncher from './assistant/AssistantLauncher';
-import DummyAd from './advertisements/DummyAd';
+import AdSlot from './advertisements/AdSlot';
 import { shouldHideDummyAds } from '../lib/advertisements/placements';
 import type { SiteSettings } from '../services/siteSettings';
 
@@ -55,7 +55,7 @@ export default function ClientLayout({
       <Navbar />
       {showGlobalTopAd(pathname) ? (
         <div className="mx-auto w-full min-w-0 max-w-7xl px-4 py-5 sm:px-6">
-          <DummyAd size="leaderboard" placement={`global-top:${pathname}`} />
+          <AdSlot placement="global-top" />
         </div>
       ) : null}
       <main id="main-content" className="min-h-screen min-w-0 flex-1 pb-16 lg:pb-0">

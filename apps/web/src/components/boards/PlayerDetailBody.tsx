@@ -12,7 +12,7 @@ import RemoteImage from '../RemoteImage';
 import EntityAvatar from '../EntityAvatar';
 import FavoriteButton from '../FavoriteButton';
 import ShareButton from '../ShareButton';
-import DummyAd from '../advertisements/DummyAd';
+import AdSlot from '../advertisements/AdSlot';
 import { getInitials } from '../../utils/helpers';
 import type { NewsArticle } from '../../types';
 import { RelatedNewsPanel, useLinkedNews } from './RelatedNewsPanel';
@@ -147,7 +147,7 @@ export default function PlayerDetailBody({ player, relatedNews = [] }: Props) {
         </div>
       </header>
 
-      <DummyAd size="leaderboard" placement="player-detail-after-intro" />
+      <AdSlot placement="player-detail-after-intro" />
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard compact label="Player ID" value={String(player.id || '').split(':').pop() || '—'} sub="Provider id" icon={User} />

@@ -1,6 +1,8 @@
 'use client';
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useMemo } from 'react';
+import { mergeLiveUpdate, useMatchStream } from '../../hooks/useMatchStream';
 import DirectoryPageHeader from '../DirectoryPageHeader';
 import PageToolbar from '../PageToolbar';
 import Badge from '../Badge';
@@ -47,7 +49,17 @@ export default function PredictionsHub({
   const sample = performance?.sampleSize ?? 0;
   const hasPerformance = Boolean(performance && sample > 0);
   const hasUpcoming = upcoming.length > 0 || upcomingTotal > 0;
-  const visible = tab === 'live' ? live : upcoming;
+    // The page is server-rendered with a 30s cache, so a live card would sit on a stale
+  // score for the whole time a match is running. The homepage and the matches page
+  // both patch in SSE updates; the predictions page did not, which is why live cards
+  // here were the only place a live score could look frozen or missing.
+  const liveUpdate = useMatchStream(undefined, tab === 'live');
+  const liveCards = useMemo(
+    () => live.map((card) => ({ ...card, match: mergeLiveUpdate([card.match], liveUpdate)[0] ?? card.match })),
+    [live, liveUpdate],
+  );
+
+  const visible = tab === 'live' ? liveCards : upcoming;
   const tabTotal = tab === 'live' ? live.length : upcomingTotal;
 
   const handleTabChange = (nextTab: string) => {

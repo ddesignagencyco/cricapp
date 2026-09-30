@@ -309,16 +309,16 @@ export default function AdminDashboard() {
             {predictionModels.slice(0, 4).map((model) => (
               <div
                 key={`${model.modelVersion}-${model.stage}`}
-                className="admin-card-3d rounded-lg p-4"
+                className="admin-card-3d min-w-0 rounded-lg p-3 sm:p-4"
               >
-                <div className="flex items-start justify-between gap-2">
-                  <p className="font-mono text-sm font-bold" style={{ color: 'var(--admin-text)' }}>{model.modelVersion}</p>
-                  {model.isCurrent && <StatusBadge status="active" />}
+                <div className="flex min-w-0 items-start justify-between gap-2">
+                  <p className="min-w-0 truncate font-mono text-sm font-bold" style={{ color: 'var(--admin-text)' }} title={model.modelVersion}>{model.modelVersion}</p>
+                  {model.isCurrent && <span className="shrink-0"><StatusBadge status="active" /></span>}
                 </div>
-                <p className="mt-2 text-xs" style={{ color: 'var(--admin-text-secondary)' }}>
+                <p className="mt-2 truncate text-xs" style={{ color: 'var(--admin-text-secondary)' }}>
                   {stageLabel(model.stage)} · {model.runCount.toLocaleString()} runs
                 </p>
-                <p className="mt-1 text-xs" style={{ color: 'var(--admin-text-muted)' }}>
+                <p className="mt-1 truncate text-xs" style={{ color: 'var(--admin-text-muted)' }}>
                   Last {model.lastRunAt ? new Date(model.lastRunAt).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'}
                 </p>
               </div>
@@ -458,12 +458,12 @@ export default function AdminDashboard() {
                       className="admin-row-hover" style={{ borderBottom: '1px solid var(--admin-border)' }}
                     >
                       <td className="px-4 py-2.5">
-                        <div className="flex items-center gap-2.5">
-                          <AdminAvatar name={name} src={u.avatarUrl} size={24} />
-                          <span className="text-[13px] font-semibold" style={{ color: 'var(--admin-text)' }}>{name}</span>
+                        <div className="flex min-w-0 items-center gap-2.5">
+                          <span className="shrink-0"><AdminAvatar name={name} src={u.avatarUrl} size={24} /></span>
+                          <span className="block min-w-0 max-w-[9rem] truncate text-[13px] font-semibold sm:max-w-none" style={{ color: 'var(--admin-text)' }} title={name}>{name}</span>
                         </div>
                       </td>
-                      <td className="hidden px-4 py-2.5 sm:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>{u.email}</td>
+                      <td className="hidden max-w-[14rem] truncate px-4 py-2.5 sm:table-cell" style={{ color: 'var(--admin-text-secondary)' }} title={u.email}>{u.email}</td>
                       <td className="px-4 py-2.5 text-right">
                         <Badge tone={u.isSuperAdmin || u.isAdmin ? 'primary' : 'neutral'}>
                           {u.isSuperAdmin ? 'Superadmin' : u.isAdmin ? 'Admin' : 'Member'}
@@ -497,14 +497,14 @@ function SectionCard({
       className="flex h-full flex-col overflow-hidden rounded-lg admin-card-3d"
     >
       <div
-        className="flex h-11 shrink-0 items-center justify-between px-4"
+        className="flex min-h-11 shrink-0 flex-wrap items-center justify-between gap-x-2 gap-y-1 px-4 py-2"
         style={{ borderBottom: '1px solid var(--admin-border)' }}
       >
-        <div className="flex items-center gap-2">
-          <span style={{ color: 'var(--admin-accent)' }}>{icon}</span>
-          <h2 className="text-sm font-semibold" style={{ color: 'var(--admin-text)' }}>{title}</h2>
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="shrink-0" style={{ color: 'var(--admin-accent)' }}>{icon}</span>
+          <h2 className="truncate text-sm font-semibold" style={{ color: 'var(--admin-text)' }}>{title}</h2>
         </div>
-        <Link href={href} className="text-xs font-semibold" style={{ color: 'var(--admin-accent)' }}>View all →</Link>
+        <Link href={href} className="shrink-0 text-xs font-semibold" style={{ color: 'var(--admin-accent)' }}>View all →</Link>
       </div>
       <div className="min-h-0 flex-1">{children}</div>
     </div>
@@ -551,7 +551,7 @@ function MatchPreviewTable({
                     key={m.matchId || m.id}
                     className="admin-row-hover" style={{ borderBottom: '1px solid var(--admin-border)' }}
                   >
-                    <td className="max-w-[10rem] truncate px-4 py-2.5 sm:max-w-none" style={{ color: 'var(--admin-text)' }}>
+                    <td className="max-w-[10rem] truncate px-4 py-2.5 sm:max-w-none" style={{ color: 'var(--admin-text)' }} title={t.homeName}>
                       {m.matchId || m.id ? (
                         <AdminEntityLink href={`/matches/${m.matchId || m.id}`}>{t.homeName}</AdminEntityLink>
                       ) : (
@@ -559,12 +559,12 @@ function MatchPreviewTable({
                       )}
                       {homeScore ? <ScoreLine value={homeScore} /> : null}
                     </td>
-                    <td className="max-w-[10rem] truncate px-4 py-2.5 sm:max-w-none" style={{ color: 'var(--admin-text)' }}>
+                    <td className="max-w-[10rem] truncate px-4 py-2.5 sm:max-w-none" style={{ color: 'var(--admin-text)' }} title={t.awayName}>
                       {t.awayName}
                       {awayScore ? <ScoreLine value={awayScore} /> : null}
                     </td>
-                    <td className="hidden px-4 py-2.5 md:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>
-                      <span className="line-clamp-2 max-w-[14rem]">
+                    <td className="hidden max-w-[14rem] px-4 py-2.5 md:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>
+                      <span className="line-clamp-2" title={m.tournament || undefined}>
                         {m.tournamentId ? (
                           <AdminEntityLink href={`/tournaments/${m.tournamentId}`}>{m.tournament || 'Tournament'}</AdminEntityLink>
                         ) : (
@@ -572,7 +572,7 @@ function MatchPreviewTable({
                         )}
                       </span>
                     </td>
-                    <td className="px-4 py-2.5 font-mono" style={{ color: 'var(--admin-text-muted)' }}>
+                    <td className="whitespace-nowrap px-4 py-2.5 font-mono" style={{ color: 'var(--admin-text-muted)' }}>
                       {m.scheduled ? new Date(m.scheduled).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}
                     </td>
                     <td className="px-4 py-2.5 text-right"><StatusBadge status={m.status} /></td>
@@ -654,10 +654,10 @@ function FavoritesCard({ analytics }: { analytics: AdminAnalytics | null }) {
                 <Icon size={15} />
               </div>
               <div className="min-w-0">
-                <p className="text-lg font-bold tabular-nums leading-tight" style={{ color: 'var(--admin-text)' }}>
+                <p className="truncate text-lg font-bold tabular-nums leading-tight" style={{ color: 'var(--admin-text)' }}>
                   {n(item.count)}
                 </p>
-                <p className="truncate text-xs" style={{ color: 'var(--admin-text-secondary)' }}>{item.label}</p>
+                <p className="truncate text-xs" style={{ color: 'var(--admin-text-secondary)' }} title={item.label}>{item.label}</p>
               </div>
             </div>
           );
@@ -691,10 +691,10 @@ function MetricCard({
         {icon}
       </div>
       <div className="min-w-0">
-        <p className="truncate text-[11px] font-medium capitalize" style={{ color: 'var(--admin-text-secondary)' }}>
+        <p className="truncate text-[11px] font-medium capitalize" style={{ color: 'var(--admin-text-secondary)' }} title={label}>
           {label}
         </p>
-        <p className="text-lg font-bold tabular-nums leading-tight" style={{ color: 'var(--admin-text)' }}>
+        <p className="truncate text-lg font-bold tabular-nums leading-tight" style={{ color: 'var(--admin-text)' }}>
           {value}
         </p>
       </div>

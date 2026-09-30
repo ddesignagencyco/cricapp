@@ -109,7 +109,7 @@ export default function RichTextEditor({ value, onChange, placeholder, language 
   if (!editor) return null;
 
   const btnClass = (active: boolean) =>
-    `grid h-8 w-8 place-items-center rounded-lg transition-colors ${
+    `grid h-8 w-8 shrink-0 place-items-center rounded-lg transition-colors ${
       active ? 'text-white' : ''
     }`;
 
@@ -210,10 +210,10 @@ export default function RichTextEditor({ value, onChange, placeholder, language 
       />
 
       {/* Word count footer */}
-      <div className="flex items-center justify-between border-t px-4 py-2 text-xs"
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-t px-4 py-2 text-xs"
         style={{ borderColor: 'var(--admin-border)', color: 'var(--admin-text-muted)' }}>
-        <span>Rich text editor • TipTap</span>
-        <span>{editor.storage.characterCount?.characters?.() ?? editor.getText().length} chars • {editor.storage.characterCount?.words?.() ?? editor.getText().split(/\s+/).filter(Boolean).length} words</span>
+        <span className="shrink-0">Rich text editor • TipTap</span>
+        <span className="min-w-0 break-words">{editor.storage.characterCount?.characters?.() ?? editor.getText().length} chars • {editor.storage.characterCount?.words?.() ?? editor.getText().split(/\s+/).filter(Boolean).length} words</span>
       </div>
 
     </div>

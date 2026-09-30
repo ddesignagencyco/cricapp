@@ -49,15 +49,15 @@ export default function Pagination({ page, totalPages, total, limit, className =
     : null;
 
   return (
-    <nav className={`mt-8 flex flex-col items-center justify-between gap-3 sm:flex-row ${className}`} aria-label="Pagination">
-      <p className="text-xs font-medium text-muted-foreground" aria-live="polite">
+    <nav className={`mt-8 flex w-full min-w-0 flex-col items-center justify-between gap-3 sm:flex-row ${className}`} aria-label="Pagination">
+      <p className="text-center text-xs font-medium text-muted-foreground sm:text-left" aria-live="polite">
         {showingFrom !== null && showingTo !== null && total !== undefined
           ? `Showing ${showingFrom}–${showingTo} of ${total}`
           : `Page ${safePage} of ${safeTotalPages}`}
       </p>
 
       {canPaginate && (
-        <div className="flex items-center gap-1">
+        <div className="-mx-1 flex w-full max-w-full flex-wrap items-center justify-center gap-1 px-1 sm:w-auto sm:flex-nowrap sm:justify-end">
           <button
             type="button"
             onClick={() => onPageChange(Math.max(1, safePage - 1))}

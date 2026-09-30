@@ -149,16 +149,16 @@ export default function AuthorsPage() {
         style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}
       >
         {editing && (
-          <p className="w-full text-xs font-semibold" style={{ color: 'var(--admin-text-secondary)' }}>
+          <p className="w-full break-words text-xs font-semibold" style={{ color: 'var(--admin-text-secondary)' }}>
             Editing {editing.name}
           </p>
         )}
         {duplicateWarning && (
-          <p role="alert" className="w-full text-xs" style={{ color: 'var(--admin-text-secondary)' }}>
+          <p role="alert" className="w-full break-words text-xs" style={{ color: 'var(--admin-text-secondary)' }}>
             {duplicateWarning}
           </p>
         )}
-        <div className="w-44">
+        <div className="w-full shrink-0 sm:w-44">
           <AdminField label="Name" required>
             <AdminInput value={form.name} onChange={(e) => setField('name', e.target.value)} placeholder="Name" />
           </AdminField>
@@ -168,7 +168,7 @@ export default function AuthorsPage() {
             <AdminInput value={form.bio} onChange={(e) => setField('bio', e.target.value)} placeholder="Short bio" />
           </AdminField>
         </div>
-        <div className="w-[8.5rem] shrink-0">
+        <div className="w-full shrink-0 sm:w-[8.5rem]">
           <AdminField label="Avatar">
             <label
               className="inline-flex h-[38px] w-full cursor-pointer items-center justify-center gap-1.5 rounded-md px-2 text-xs font-semibold"
@@ -230,7 +230,7 @@ export default function AuthorsPage() {
             <thead>
               <tr style={{ background: 'var(--admin-table-header)', borderBottom: '1px solid var(--admin-border)' }}>
                 <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Author</th>
-                <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Slug</th>
+                <th className="hidden px-4 py-3 text-xs font-bold uppercase tracking-wider sm:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>Slug</th>
                 <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Bio</th>
                 <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Actions</th>
               </tr>
@@ -246,17 +246,17 @@ export default function AuthorsPage() {
                   onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--admin-table-row-hover)'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = editing?.id === author.id ? 'var(--admin-table-row-hover)' : 'transparent'; }}
                 >
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <AdminAvatar name={author.name} src={author.avatarUrl} size={36} />
-                      <p className="font-semibold" style={{ color: 'var(--admin-text)' }}>{author.name}</p>
+                  <td className="max-w-[10rem] px-4 py-3 sm:max-w-[16rem]">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span className="shrink-0"><AdminAvatar name={author.name} src={author.avatarUrl} size={36} /></span>
+                      <span className="min-w-0 truncate font-semibold" style={{ color: 'var(--admin-text)' }} title={author.name}>{author.name}</span>
                     </div>
                   </td>
-                  <td className="px-4 py-3 font-mono text-xs" style={{ color: 'var(--admin-text-muted)' }}>{author.slug}</td>
-                  <td className="max-w-xs px-4 py-3 text-sm" style={{ color: 'var(--admin-text-secondary)' }}>
+                  <td className="hidden max-w-[9rem] truncate px-4 py-3 font-mono text-xs sm:table-cell" style={{ color: 'var(--admin-text-muted)' }} title={author.slug}>{author.slug}</td>
+                  <td className="max-w-[10rem] truncate px-4 py-3 text-sm sm:max-w-[20rem]" style={{ color: 'var(--admin-text-secondary)' }} title={author.bio || undefined}>
                     {author.bio || '—'}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="whitespace-nowrap px-4 py-3">
                     <div className="flex items-center justify-end gap-1.5">
                       <AdminIconButton label="Edit author" tone="accent" onClick={() => startEdit(author)}>
                         <FileEdit size={16} />

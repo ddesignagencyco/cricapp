@@ -6,6 +6,7 @@ import ThemeProvider from '../components/ThemeProvider';
 import AuthProvider from '../components/AuthProvider';
 import QueryProvider from '../components/QueryProvider';
 import ClientLayout from '../components/ClientLayout';
+import AdProvider from '../components/advertisements/AdProvider';
 import { Toaster } from 'react-hot-toast';
 import { loadSiteSettings } from '../services/siteSettings';
 
@@ -82,7 +83,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <ThemeProvider>
           <AuthProvider>
             <QueryProvider>
-              <ClientLayout settings={settings}>{children}</ClientLayout>
+              <AdProvider config={settings.ads}>
+                <ClientLayout settings={settings}>{children}</ClientLayout>
+              </AdProvider>
               <Toaster
                 position="top-right"
                 gutter={10}

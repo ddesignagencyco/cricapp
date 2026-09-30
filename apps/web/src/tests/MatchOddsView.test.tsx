@@ -139,7 +139,7 @@ describe('MatchOddsView market rendering', () => {
     expect(headers).toEqual(['Lahore', 'Islamabad']);
   });
 
-  it('labels the draw column explicitly', async () => {
+  it('never shows a draw column, because cricket has no draw', async () => {
     const market = {
       marketKey: 'match_winner',
       marketType: 'moneyline',
@@ -153,7 +153,10 @@ describe('MatchOddsView market rendering', () => {
     };
     await renderView({ initial: response({ markets: [market] }) as never });
     const headers = within(screen.getByRole('table')).getAllByRole('columnheader').map((h) => h.textContent);
-    expect(headers).toEqual(['Lahore', 'Draw', 'Islamabad']);
+    // Cricket has no draw, so the feed's draw column is not rendered. Offering a bet
+    // that cannot pay out the way a reader would expect is worse than omitting it.
+    expect(headers).toEqual(['Lahore', 'Islamabad']);
+    expect(headers).not.toContain('Draw');
   });
 
   it('puts match winner first regardless of the api order', async () => {
@@ -182,12 +185,12 @@ describe('MatchOddsView market rendering', () => {
 
   it('shows the bookmaker margin only when the api provides one', async () => {
     await renderView({ initial: response() });
-    expect(screen.getByText(/added by bookmakers/i)).toBeInTheDocument();
+    expect(screen.getByText(/payout/i)).toBeInTheDocument();
   });
 
   it('omits the margin chip when it is null', async () => {
     await renderView({ initial: response({ markets: [winnerMarket([])] }) as never });
-    expect(screen.queryByText(/added by bookmakers/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/payout/i)).not.toBeInTheDocument();
   });
 
   it('renders one table row per bookmaker column', async () => {
@@ -218,12 +221,12 @@ describe('MatchOddsView price display', () => {
       selections: [price({ selectionKey: 'home', isBestDisplayedPrice: true })],
     };
     await renderView({ initial: response({ markets: [market] }) as never });
-    expect(screen.getByText('Highest price')).toBeInTheDocument();
+    expect(screen.getByText('Best price')).toBeInTheDocument();
   });
 
   it('shows the opening price and the movement when there is one', async () => {
     await renderView({ initial: response() });
-    expect(screen.getByText(/started at/i)).toBeInTheDocument();
+    expect(screen.getByText(/opened at/i)).toBeInTheDocument();
   });
 
   it('switches to fractional when that format is chosen', async () => {
@@ -252,7 +255,7 @@ describe('MatchOddsView compliance and seeding', () => {
         compliance: { disclaimer: 'd', ageGatingRequired: true },
       } as never),
     });
-    expect(screen.getByText('Age confirmation')).toBeInTheDocument();
+    expect(screen.getByText('Confirm your age')).toBeInTheDocument();
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
   });
 
@@ -299,12 +302,12 @@ describe('MatchOddsView compliance and seeding', () => {
     };
     await renderView({ initial: response({ markets: [market] }) as never });
     expect(screen.getByText('Example prices')).toBeInTheDocument();
-    expect(screen.getByText(/here to show you how this page works/i)).toBeInTheDocument();
+    expect(screen.getByText(/so you can see how this page works/i)).toBeInTheDocument();
   });
 
-  it('says live price comparison for real prices', async () => {
+  it('says live prices for real prices', async () => {
     await renderView({ initial: response() });
-    expect(screen.getByText('Live price comparison')).toBeInTheDocument();
+    expect(screen.getByText('Live prices')).toBeInTheDocument();
   });
 
   it('warns about stale prices only when live polling is on', async () => {
@@ -330,7 +333,7 @@ describe('MatchOddsView compliance and seeding', () => {
       selections: [price({ capturedAt: stale })],
     };
     await renderView({ initial: response({ markets: [market] }) as never, pollLive: true });
-    expect(screen.getByText(/more than 15 minutes old/i)).toBeInTheDocument();
+    expect(screen.getByText(/over 15 minutes old/i)).toBeInTheDocument();
   });
 
   it('shows an empty state with a link when there are no markets at all', async () => {
@@ -360,15 +363,17 @@ describe('MatchOddsView history panel', () => {
     await waitFor(() => expect(screen.getByTestId('history-chart')).toHaveAttribute('data-label', 'Lahore'));
   });
 
-  it('switches the history column when another selection is chosen', async () => {
+  it('charts the first column, without a second row of duplicate labels', async () => {
+    // There used to be a "History selection" pill row directly under a table whose
+    // column headings already said the same thing. The chart now follows the first
+    // column and the duplicate control is gone.
     await renderView({ initial: response({ markets: [winnerMarket([])] }) as never });
-    const picker = screen.getByLabelText('History selection');
-    await userEvent.click(within(picker).getByRole('button', { name: 'Islamabad' }));
+    expect(screen.queryByLabelText('History selection')).not.toBeInTheDocument();
 
     await waitFor(() =>
       expect(fetchHistory).toHaveBeenLastCalledWith('m1', {
         marketKey: 'match_winner',
-        selectionKey: 'away',
+        selectionKey: 'home',
         limit: 500,
       }),
     );
@@ -398,21 +403,32 @@ describe('MatchOddsView model comparison panel', () => {
 
   it('renders the panel when the api supplies a model comparison', async () => {
     await renderView({ initial: response({ modelVsMarket: model }) as never });
-    expect(screen.getByText('Our estimate vs the prices')).toBeInTheDocument();
-    expect(screen.getByText('A rough guess for interest only.')).toBeInTheDocument();
+    expect(screen.getByText('Our prediction')).toBeInTheDocument();
+    expect(screen.getByText(/rough guess for interest only/i)).toBeInTheDocument();
   });
 
   it('omits the panel when the api has no model comparison', async () => {
     await renderView({ initial: response() });
-    expect(screen.queryByText('Our estimate vs the prices')).not.toBeInTheDocument();
+    expect(screen.queryByText('Our prediction')).not.toBeInTheDocument();
   });
 
-  it('shows both our estimate and the market implied for each side', async () => {
+  it('shows our estimate next to the market one, in a single row per side', async () => {
+    // Four boxes labelled "We think" / "Prices suggest" per team became one row per
+    // team, because a reader comparing two numbers does not need four separate boxes.
     await renderView({ initial: response({ modelVsMarket: model }) as never });
-    expect(screen.getByText('We think — Lahore')).toBeInTheDocument();
-    expect(screen.getByText('Prices suggest — Lahore')).toBeInTheDocument();
-    expect(screen.getByText('We think — Islamabad')).toBeInTheDocument();
-    expect(screen.getByText('Prices suggest — Islamabad')).toBeInTheDocument();
+    expect(screen.getAllByText('Lahore').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Islamabad').length).toBeGreaterThan(0);
+    expect(screen.getByText('62.0%')).toBeInTheDocument();
+    expect(screen.getByText('55.0%')).toBeInTheDocument();
+    expect(screen.getByText('38.0%')).toBeInTheDocument();
+    expect(screen.getByText('45.0%')).toBeInTheDocument();
+    expect(screen.queryByText(/^We think/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^Prices suggest/)).not.toBeInTheDocument();
+  });
+
+  it('does not repeat the api jargon note', async () => {
+    await renderView({ initial: response({ modelVsMarket: model }) as never });
+    expect(screen.queryByText('A rough guess for interest only.')).not.toBeInTheDocument();
   });
 });
 

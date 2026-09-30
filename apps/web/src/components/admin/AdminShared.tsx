@@ -52,10 +52,10 @@ export function AdminPageHeader({
 }) {
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-      <div>
+      <div className="min-w-0">
         {(badge || icon) && (
-          <div className="flex items-center gap-2 mb-1.5">
-            {icon && <span style={{ color: iconColor || 'var(--admin-accent)' }}>{icon}</span>}
+          <div className="mb-1.5 flex flex-wrap items-center gap-2">
+            {icon && <span className="shrink-0" style={{ color: iconColor || 'var(--admin-accent)' }}>{icon}</span>}
             {badge && (
               <span
                 className="inline-flex items-center rounded px-2 py-0.5 text-xs font-medium tracking-wide"
@@ -66,16 +66,16 @@ export function AdminPageHeader({
             )}
           </div>
         )}
-        <h1 className="text-2xl font-semibold tracking-tight" style={{ color: 'var(--admin-text)' }}>
+        <h1 className="break-words text-2xl font-semibold tracking-tight" style={{ color: 'var(--admin-text)' }}>
           {title}
         </h1>
         {subtitle && (
-          <p className="mt-1 text-sm" style={{ color: 'var(--admin-text-secondary)' }}>
+          <p className="mt-1 break-words text-sm" style={{ color: 'var(--admin-text-secondary)' }}>
             {subtitle}
           </p>
         )}
       </div>
-      {actions && <div className="flex flex-wrap items-center gap-2 sm:justify-end">{actions}</div>}
+      {actions && <div className="flex min-w-0 flex-wrap items-center gap-2 sm:justify-end">{actions}</div>}
     </div>
   );
 }
@@ -99,28 +99,28 @@ export function StatCard({
 }) {
   return (
     <div
-      className="rounded-lg p-4"
+      className="min-w-0 rounded-lg p-3 sm:p-4"
       style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}
     >
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <span
-          className="text-xs font-semibold uppercase tracking-wider"
+          className="min-w-0 truncate text-xs font-semibold uppercase tracking-wider"
           style={{ color: 'var(--admin-text-secondary)' }}
         >
           {label}
         </span>
         <div
-          className="grid h-7 w-7 place-items-center rounded-md"
+          className="grid h-7 w-7 shrink-0 place-items-center rounded-md"
           style={{ background: bgColor || 'var(--admin-input-bg)', color: color || 'var(--admin-accent)' }}
         >
           {icon}
         </div>
       </div>
-      <p className="mt-2 text-2xl font-bold tabular-nums" style={{ color: 'var(--admin-text)' }}>
+      <p className="mt-2 truncate text-2xl font-bold tabular-nums" style={{ color: 'var(--admin-text)' }}>
         {value}
       </p>
       {sub && (
-        <p className="mt-0.5 text-xs" style={{ color: 'var(--admin-text-muted)' }}>
+        <p className="mt-0.5 truncate text-xs" style={{ color: 'var(--admin-text-muted)' }}>
           {sub}
         </p>
       )}
@@ -154,7 +154,7 @@ export function EmptyState({
 }) {
   return (
     <div
-      className="rounded-lg border border-dashed p-10 text-center"
+      className="rounded-lg border border-dashed p-6 text-center sm:p-10"
       style={{ borderColor: 'var(--admin-border)', background: 'var(--admin-card)' }}
     >
       {icon && (
@@ -162,11 +162,11 @@ export function EmptyState({
           {icon}
         </div>
       )}
-      <h3 className="text-sm font-semibold" style={{ color: 'var(--admin-text)' }}>
+      <h3 className="break-words text-sm font-semibold" style={{ color: 'var(--admin-text)' }}>
         {title}
       </h3>
       {message && (
-        <p className="mt-1 text-xs max-w-sm mx-auto" style={{ color: 'var(--admin-text-secondary)' }}>
+        <p className="mx-auto mt-1 max-w-sm break-words text-xs" style={{ color: 'var(--admin-text-secondary)' }}>
           {message}
         </p>
       )}
@@ -509,11 +509,17 @@ export function AdminMenu({
     if (!btn) return;
     if (!open) {
       const rect = btn.getBoundingClientRect();
-      const height = options.length * 36 + 10;
+      const natural = options.length * 36 + 10;
+      const maxHeight = Math.max(120, window.innerHeight - 16);
+      const height = Math.min(natural, maxHeight);
       const top = rect.bottom + 6 + height > window.innerHeight
         ? Math.max(8, rect.top - 6 - height)
         : rect.bottom + 6;
-      setPos({ top, left: Math.min(rect.right - 168, window.innerWidth - 176) });
+      const width = Math.min(168, window.innerWidth - 16);
+      setPos({
+        top: Math.min(Math.max(8, top), Math.max(8, window.innerHeight - height - 8)),
+        left: Math.min(rect.right - width, window.innerWidth - width - 8),
+      });
     }
     setOpen((prev) => !prev);
   };
@@ -563,11 +569,12 @@ export function AdminMenu({
               ref={menuRef}
               role="listbox"
               aria-label={label}
-              className="fixed z-[80] overflow-hidden rounded-lg py-1 shadow-lg"
+              className="fixed z-[80] overflow-y-auto overscroll-contain overflow-x-hidden rounded-lg py-1 shadow-lg"
               style={{
                 top: pos.top,
                 left: Math.max(8, pos.left),
-                width: 168,
+                width: Math.min(168, typeof window !== 'undefined' ? window.innerWidth - 16 : 168),
+                maxHeight: 'calc(100dvh - 16px)',
                 background: 'var(--admin-card)',
                 border: '1px solid var(--admin-border)',
               }}
@@ -637,7 +644,7 @@ export function CardHeader({
 }) {
   return (
     <div
-      className="flex items-center justify-between px-4 py-3"
+      className="flex flex-wrap items-center justify-between gap-2 px-4 py-3"
       style={{ borderBottom: '1px solid var(--admin-border)' }}
     >
       {children}

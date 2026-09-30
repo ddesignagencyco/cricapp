@@ -85,14 +85,14 @@ export default function EntityIdPicker({ label, hint, values, onChange, search }
   const showNoMatches = phase === 'idle' && query.trim().length > 0 && hits.length === 0;
 
   return (
-    <div>
-      <p className="mb-1 text-xs font-semibold" style={{ color: 'var(--admin-text-secondary)' }}>{label}</p>
+    <div className="min-w-0">
+      <p className="mb-1 break-words text-xs font-semibold" style={{ color: 'var(--admin-text-secondary)' }}>{label}</p>
       {values.length > 0 && (
         <ul className="mb-2 flex flex-wrap gap-1.5">
           {values.map((item) => (
             <li key={item.id}>
               <span
-                className="inline-flex max-w-full items-center gap-1 rounded px-2 py-1 text-xs font-medium"
+                className="inline-flex max-w-full min-w-0 items-center gap-1 rounded px-2 py-1 text-xs font-medium"
                 style={{
                   background: 'var(--admin-input-bg)',
                   color: 'var(--admin-text)',
@@ -100,9 +100,9 @@ export default function EntityIdPicker({ label, hint, values, onChange, search }
                 }}
               >
                 <span className="min-w-0">
-                  <span className="block truncate font-semibold">{item.id}</span>
+                  <span className="block max-w-[12rem] truncate font-semibold" title={item.id}>{item.id}</span>
                   {item.label && item.label !== item.id ? (
-                    <span className="block truncate text-[10px]" style={{ color: 'var(--admin-text-muted)' }}>
+                    <span className="block max-w-[12rem] truncate text-[10px]" style={{ color: 'var(--admin-text-muted)' }} title={item.label}>
                       {item.label}
                     </span>
                   ) : null}
@@ -170,8 +170,8 @@ export default function EntityIdPicker({ label, hint, values, onChange, search }
                 className="flex w-full flex-col items-start px-2.5 py-1.5 text-left text-xs hover:opacity-80"
                 style={{ color: 'var(--admin-text)' }}
               >
-                <span className="font-semibold">{hit.label}</span>
-                <span style={{ color: 'var(--admin-text-muted)' }}>{hit.id}</span>
+                <span className="max-w-full truncate font-semibold" title={hit.label}>{hit.label}</span>
+                <span className="max-w-full truncate" style={{ color: 'var(--admin-text-muted)' }} title={hit.id}>{hit.id}</span>
               </button>
             </li>
           ))}

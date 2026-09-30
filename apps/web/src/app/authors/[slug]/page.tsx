@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import EmptyState from '../../../components/EmptyState';
-import DummyAd from '../../../components/advertisements/DummyAd';
+import AdSlot from '../../../components/advertisements/AdSlot';
 import RemoteImage from '../../../components/RemoteImage';
 import NewsCopy from '../../../components/NewsCopy';
 import { fetchPublicAuthor } from '../../../services/authors';
@@ -68,7 +68,7 @@ export default async function AuthorDetailPage({
       </header>
 
       {articles.length > 0 ? (
-        <DummyAd size="leaderboard" placement="author-after-intro" />
+        <AdSlot placement="author-after-intro" />
       ) : null}
 
       <section>

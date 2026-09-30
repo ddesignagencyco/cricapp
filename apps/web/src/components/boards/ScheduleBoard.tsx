@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Calendar, ChevronLeft, ChevronRight, Clock, MapPin } from 'lucide-react';
 import { StatusBadge } from '../Badge';
 import LiveIndicator from '../LiveIndicator';
-import DummyAd from '../advertisements/DummyAd';
+import AdSlot from '../advertisements/AdSlot';
 import EmptyState from '../EmptyState';
 import ErrorState from '../ErrorState';
 import PageToolbar from '../PageToolbar';
@@ -228,7 +228,7 @@ export default function ScheduleBoard({
               <div key={record.eventId} className="contents">
                 <ScheduleCard record={record} />
                 {visibleEvents.length >= 4 && index === 3 ? (
-                  <DummyAd size="large-rectangle" placement="schedule-infeed" inFeed />
+                  <AdSlot placement="schedule-infeed" />
                 ) : null}
               </div>
             ))}

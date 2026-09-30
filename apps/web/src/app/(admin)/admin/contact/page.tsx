@@ -171,12 +171,12 @@ export default function AdminContactPage() {
       ) : (
         <div className="overflow-hidden rounded-lg" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
           <div className="table-scroll">
-            <table className="w-full min-w-[52rem] text-left text-sm">
+            <table className="w-full text-left text-sm">
               <thead>
                 <tr style={{ background: 'var(--admin-table-header)', borderBottom: '1px solid var(--admin-border)' }}>
                   <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>From</th>
                   <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Message</th>
-                  <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Date</th>
+                  <th className="hidden px-4 py-3 text-xs font-bold uppercase tracking-wider sm:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>Date</th>
                   <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Status</th>
                   <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Actions</th>
                 </tr>
@@ -191,39 +191,40 @@ export default function AdminContactPage() {
                       onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--admin-table-row-hover)'; }}
                       onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
                     >
-                      <td className="px-4 py-3 align-top">
-                        <div className="flex items-center gap-3">
-                          <AdminAvatar name={item.name || item.email} size={32} />
+                      <td className="max-w-[10rem] px-4 py-3 align-top sm:max-w-[16rem]">
+                        <div className="flex min-w-0 items-center gap-3">
+                          <span className="shrink-0"><AdminAvatar name={item.name || item.email} size={32} /></span>
                           <div className="min-w-0">
-                            <p className="truncate font-semibold" style={{ color: 'var(--admin-text)' }}>{item.name || '—'}</p>
+                            <p className="truncate font-semibold" style={{ color: 'var(--admin-text)' }} title={item.name || undefined}>{item.name || '—'}</p>
                             <a
                               href={`mailto:${item.email}`}
-                              className="mt-0.5 inline-flex items-center gap-1 truncate text-xs hover:underline"
+                              className="mt-0.5 inline-flex max-w-full items-center gap-1 text-xs hover:underline"
                               style={{ color: 'var(--admin-accent)' }}
+                              title={item.email}
                             >
-                              <Mail size={11} />
-                              {item.email}
+                              <Mail size={11} className="shrink-0" />
+                              <span className="min-w-0 truncate">{item.email}</span>
                             </a>
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3 align-top">
+                      <td className="max-w-[10rem] px-4 py-3 align-top sm:max-w-[24rem]">
                         <button
                           type="button"
                           onClick={() => setOpenId(item.id)}
-                          className="max-w-md text-left text-sm leading-relaxed"
+                          className="max-w-full text-left text-sm leading-relaxed"
                           style={{ color: 'var(--admin-text-secondary)' }}
                         >
-                          <span className="line-clamp-2 whitespace-pre-wrap">{item.message}</span>
+                          <span className="line-clamp-2 whitespace-pre-wrap break-words">{item.message}</span>
                           <span className="mt-1 block text-[11px] font-semibold" style={{ color: 'var(--admin-accent)' }}>
                             Open message
                           </span>
                         </button>
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 align-top text-xs" style={{ color: 'var(--admin-text-muted)' }}>
+                      <td className="hidden whitespace-nowrap px-4 py-3 align-top text-xs sm:table-cell" style={{ color: 'var(--admin-text-muted)' }}>
                         {formatWhen(item.createdAt)}
                       </td>
-                      <td className="px-4 py-3 align-top">
+                      <td className="whitespace-nowrap px-4 py-3 align-top">
                         <StatusBadge status={item.status} />
                       </td>
                       <td className="px-4 py-3 align-top">
@@ -234,7 +235,7 @@ export default function AdminContactPage() {
                               type="button"
                               disabled={busy}
                               onClick={() => setPending({ item, next })}
-                              className="rounded-md px-2.5 py-1.5 text-xs font-semibold capitalize disabled:opacity-50"
+                              className="whitespace-nowrap rounded-md px-2.5 py-1.5 text-xs font-semibold capitalize disabled:opacity-50"
                               style={{
                                 border: '1px solid var(--admin-border)',
                                 color: 'var(--admin-text-secondary)',
@@ -252,7 +253,7 @@ export default function AdminContactPage() {
               </tbody>
             </table>
           </div>
-          <div className="flex justify-end px-4 py-3" style={{ borderTop: '1px solid var(--admin-border)' }}>
+          <div className="flex justify-center px-4 py-3 sm:justify-end" style={{ borderTop: '1px solid var(--admin-border)' }}>
             <AdminPagination
               page={page}
               totalPages={totalPages}
@@ -272,17 +273,17 @@ export default function AdminContactPage() {
           aria-labelledby="contact-message-title"
         >
           <div
-            className="w-full max-w-lg rounded-lg p-5"
+            className="max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-lg p-4 sm:p-5"
             style={{ background: 'var(--admin-card)', boxShadow: 'var(--elevation-overlay)' }}
           >
             <div className="flex items-start justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3">
-                <AdminAvatar name={openItem.name || openItem.email} size={36} />
+                <span className="shrink-0"><AdminAvatar name={openItem.name || openItem.email} size={36} /></span>
                 <div className="min-w-0">
                   <h3 id="contact-message-title" className="truncate text-sm font-bold" style={{ color: 'var(--admin-text)' }}>
                     {openItem.name || 'Message'}
                   </h3>
-                  <a href={`mailto:${openItem.email}`} className="text-xs hover:underline" style={{ color: 'var(--admin-accent)' }}>
+                  <a href={`mailto:${openItem.email}`} className="block truncate text-xs hover:underline" style={{ color: 'var(--admin-accent)' }}>
                     {openItem.email}
                   </a>
                 </div>
@@ -290,7 +291,7 @@ export default function AdminContactPage() {
               <button
                 type="button"
                 onClick={() => setOpenId(null)}
-                className="grid h-8 w-8 place-items-center rounded-md"
+                className="grid h-8 w-8 shrink-0 place-items-center rounded-md"
                 style={{ color: 'var(--admin-text-secondary)', border: '1px solid var(--admin-border)' }}
                 aria-label="Close message"
               >
@@ -299,9 +300,9 @@ export default function AdminContactPage() {
             </div>
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <StatusBadge status={openItem.status} />
-              <p className="text-xs" style={{ color: 'var(--admin-text-muted)' }}>{formatWhen(openItem.createdAt)}</p>
+              <p className="whitespace-nowrap text-xs" style={{ color: 'var(--admin-text-muted)' }}>{formatWhen(openItem.createdAt)}</p>
             </div>
-            <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed" style={{ color: 'var(--admin-text)' }}>
+            <p className="mt-4 whitespace-pre-wrap break-words text-sm leading-relaxed" style={{ color: 'var(--admin-text)' }}>
               {openItem.message}
             </p>
             <div className="mt-5 flex flex-wrap justify-end gap-1.5">

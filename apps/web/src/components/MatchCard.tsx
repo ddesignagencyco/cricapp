@@ -5,7 +5,8 @@ import { Calendar, Clock, MapPin } from 'lucide-react';
 import { StatusBadge, BlinkingDot } from './Badge';
 import RemoteImage from './RemoteImage';
 import EntityAvatar from './EntityAvatar';
-import { formatCricketOvers, formatScheduled, getInitials, getPslLogo } from '../utils/helpers';
+import { formatScheduled, getInitials, getPslLogo } from '../utils/helpers';
+import { deriveMatchState } from '../hooks/useMatchState';
 import { describeMatchResult, scoreboardFromMatch } from '../lib/matchScoreboard';
 import { cardInteractive } from './ui/interaction';
 
@@ -28,9 +29,18 @@ export default function MatchCard({ match, dense = false, showVenue = true }: Ma
   const result = describeMatchResult(match);
   const homeScore = board.homeScore;
   const awayScore = board.awayScore;
-  const homeOvers = board.homeOvers;
-  const awayOvers = board.awayOvers;
-  const homeBatting = isLive && board.battingIsHome;
+  // `board.homeOvers` / `board.awayOvers` come from `teams.*.overs`, which the API
+  // rounds to whole overs — the card would print "9 ov" while the match page, reading
+  // `displayOvers`, printed "9.4 ov". While live, the batting side's overs must come
+  // from the single shared source instead so both pages agree.
+  const state = deriveMatchState(match);
+  const homeOvers = state.isLive && state.battingIsHome && state.oversLabel
+    ? state.oversLabel
+    : board.homeOvers;
+  const awayOvers = state.isLive && !state.battingIsHome && state.oversLabel
+    ? state.oversLabel
+    : board.awayOvers;
+  const homeBatting = isLive && state.battingIsHome;
   const awayBatting = isLive && !board.battingIsHome;
   const sharedScore = !homeScore && !awayScore && !isUpcoming ? match.displayScore || '' : '';
   const formatLabel = matchFormatLabel(match);
@@ -128,8 +138,8 @@ export default function MatchCard({ match, dense = false, showVenue = true }: Ma
               <span className="truncate font-semibold tabular-nums text-danger">
                 <BlinkingDot className="mr-1.5 align-middle" />
                 {board.battingLabel ? `${board.battingLabel} batting · ` : ''}
-                {inn.overs !== null && inn.overs !== undefined
-                  ? `${formatCricketOvers(inn.overs) || inn.overs} ov`
+                {state.isLive && state.oversLabel
+                  ? `${state.oversLabel} ov`
                   : 'In play'}
                 {board.rrLabel && board.rrLabel !== '—' ? ` · RR ${board.rrLabel}` : ''}
               </span>

@@ -31,6 +31,7 @@
     "@tiptap/starter-kit": "^3.31.3",
     "@types/react-select": "^5.0.0",
     "hoist-non-react-statics": "^3.3.2",
+    "libphonenumber-js": "^1.13.14",
     "lucide-react": "^1.38.0",
     "next": "^16.2.0",
     "react": "^19.2.8",

@@ -6,7 +6,8 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Badge, { normalizeStatus } from './Badge';
 import LiveIndicator from './LiveIndicator';
 import EntityAvatar from './EntityAvatar';
-import { formatCricketOvers, getInitials } from '../utils/helpers';
+import { getInitials } from '../utils/helpers';
+import { deriveMatchState } from '../hooks/useMatchState';
 import { mergeLiveUpdate, useMatchStream } from '../hooks/useMatchStream';
 import { describeMatchResult, scoreboardFromMatch } from '../lib/matchScoreboard';
 
@@ -126,7 +127,12 @@ function TickerCard({ match }: { match: any }) {
   const badgeLabel = isCompleted ? 'Result' : normalizedStatus.label;
   const badgeTone = normalizedStatus.tone;
 
-  const overs = board.oversLabel || match.currentInnings?.overs || '';
+  // `board.oversLabel` and `match.currentInnings?.overs` are two separate
+  // derivations, and the match page reads the timeline as well — so the ticker could
+  // print a different over from the card and the page at the same moment. The shared
+  // state resolves all three and normalises once.
+  const state = deriveMatchState(match);
+  const overs = state.oversLabel;
 
   return (
     <Link
@@ -167,7 +173,7 @@ function TickerCard({ match }: { match: any }) {
           {isLive && overs !== '' ? (
             <span className="shrink-0 font-semibold text-danger">
               {board.battingLabel ? `${board.battingLabel} batting · ` : ''}
-              {formatCricketOvers(overs) || overs} ov
+              {overs} ov
               {board.rrLabel && board.rrLabel !== '—' ? ` · RR ${board.rrLabel}` : ''}
             </span>
           ) : null}

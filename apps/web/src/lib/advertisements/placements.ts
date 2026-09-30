@@ -83,6 +83,22 @@ export const LEADERBOARD_SLOT_META: Record<LeaderboardVariant, SlotMeta> = {
   },
 };
 
+/**
+ * Pixel dimensions per ad size, as a display string for admin labels and the
+ * ad-unit dropdown. The canonical numbers are the `SLOT_META` / `LEADERBOARD_SLOT_META`
+ * entries above — these strings must stay in step with them, and with
+ * `AD_SIZE_BY_DIMENSIONS` in `apps/api/src/site-settings/ad.config.ts`, which is what
+ * maps an AdSense unit's reported size back onto these six buckets.
+ */
+export const AD_SIZE_DIMENSIONS: Record<DummyAdSize, { label: string; width: number; height: number }> = {
+  leaderboard: { label: '970×90 / 728×90 / 468×60 / 320×100', width: 728, height: 90 },
+  'tablet-banner': { label: '468×60', width: SLOT_META['tablet-banner'].width, height: SLOT_META['tablet-banner'].height },
+  'mobile-banner': { label: '320×100', width: SLOT_META['mobile-banner'].width, height: SLOT_META['mobile-banner'].height },
+  'medium-rectangle': { label: '300×250', width: SLOT_META['medium-rectangle'].width, height: SLOT_META['medium-rectangle'].height },
+  'large-rectangle': { label: '336×280', width: SLOT_META['large-rectangle'].width, height: SLOT_META['large-rectangle'].height },
+  'half-page': { label: '300×600', width: SLOT_META['half-page'].width, height: SLOT_META['half-page'].height },
+};
+
 /** Stable per placement + size — different slots get different photos, same slot stays consistent. */
 export function dummyAdPlaceholderUrl(width: number, height: number, seed: string): string {
   const safe = seed.replace(/[^a-zA-Z0-9-_]/g, '-').slice(0, 96);

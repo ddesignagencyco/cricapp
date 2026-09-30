@@ -66,10 +66,10 @@ describe('seed source detection', () => {
 });
 
 describe('a market that is all demo data', () => {
-  it('says Example prices rather than Live price comparison', () => {
+  it('says Example prices rather than Live prices', () => {
     render(<MatchOddsView matchId="m1" homeLabel="Home" awayLabel="Away" initial={wrap([seed()])} />);
     expect(screen.getByText('Example prices')).toBeInTheDocument();
-    expect(screen.queryByText('Live price comparison')).not.toBeInTheDocument();
+    expect(screen.queryByText('Live prices')).not.toBeInTheDocument();
   });
 
   it('shows the explainer banner', () => {
@@ -82,11 +82,11 @@ describe('a market that is all demo data', () => {
     expect(screen.getAllByText(/Demo Book/).length).toBeGreaterThan(0);
   });
 
-  it('never calls a demo price the highest price', () => {
+  it('never calls a demo price the best price', () => {
     // The API marks the seed row as isBestDisplayedPrice, because it is the only
     // row. Repeating that to a reader would be a fabricated recommendation.
     render(<MatchOddsView matchId="m1" homeLabel="Home" awayLabel="Away" initial={wrap([seed({ isBestDisplayedPrice: true })])} />);
-    expect(screen.queryByText('Highest price')).not.toBeInTheDocument();
+    expect(screen.queryByText('Best price')).not.toBeInTheDocument();
   });
 });
 
@@ -99,15 +99,15 @@ describe('a market with real prices alongside demo ones', () => {
     expect(screen.getByText('Betfair')).toBeInTheDocument();
   });
 
-  it('calls itself Live price comparison, not Example prices', () => {
+  it('calls itself Live prices, not Example prices', () => {
     render(<MatchOddsView matchId="m1" homeLabel="Home" awayLabel="Away" initial={mixed} />);
-    expect(screen.getByText('Live price comparison')).toBeInTheDocument();
+    expect(screen.getByText('Live prices')).toBeInTheDocument();
     expect(screen.queryByText('Example prices')).not.toBeInTheDocument();
   });
 
   it('keeps the highest-price badge for the real book', () => {
     const { container } = render(<MatchOddsView matchId="m1" homeLabel="Home" awayLabel="Away" initial={mixed} />);
-    expect(container.textContent).toContain('Highest price');
+    expect(container.textContent).toContain('Best price');
   });
 
   it('shows no explainer banner when real prices are present', () => {
@@ -119,7 +119,7 @@ describe('a market with real prices alongside demo ones', () => {
 describe('a market with only real prices', () => {
   it('is untouched', () => {
     render(<MatchOddsView matchId="m1" homeLabel="Home" awayLabel="Away" initial={wrap([real()])} />);
-    expect(screen.getByText('Live price comparison')).toBeInTheDocument();
+    expect(screen.getByText('Live prices')).toBeInTheDocument();
     expect(screen.getByText('Betfair')).toBeInTheDocument();
   });
 });

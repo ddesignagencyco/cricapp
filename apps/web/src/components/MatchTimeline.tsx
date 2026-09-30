@@ -1,8 +1,25 @@
 'use client';
 
 import { Radio } from 'lucide-react';
+import type { ReactNode } from 'react';
 import EmptyState from './EmptyState';
 import BallTracker from './BallTracker';
+
+/** Renders a meta list with the middot separators the plain-text version used. */
+function ChipList({ items }: { items: ReactNode[] }) {
+  const shown = items.filter(Boolean);
+  if (!shown.length) return null;
+  return (
+    <>
+      {shown.map((item, index) => (
+        <span key={index}>
+          {index > 0 ? <span aria-hidden> · </span> : null}
+          {item}
+        </span>
+      ))}
+    </>
+  );
+}
 
 export interface TimelineEvent {
   id?: string | number;
@@ -17,13 +34,18 @@ export interface TimelineEvent {
   extraType?: string;
   commentary?: string;
   batsman?: string;
+  /** Sportradar player id, when the payload carries one, so the name can link out. */
+  batsmanId?: string;
   nonStriker?: string;
+  nonStrikerId?: string;
   bowler?: string;
+  bowlerId?: string;
   shot?: string;
   connect?: string;
   zone?: string;
   dismissal?: string;
   dismissed?: string;
+  dismissedId?: string;
   period?: string;
   freeHit?: boolean;
   dropped?: boolean;
@@ -65,6 +87,19 @@ function pickName(value: unknown): string | undefined {
   if (!rec) return undefined;
   const name = rec.name || rec.full_name || rec.short_name;
   return typeof name === 'string' ? formatPlayerName(name) : undefined;
+}
+
+/**
+ * The player's own id, used to link a name to their profile page.
+ *
+ * Only a real provider id is worth linking. A name-only reference has nowhere to go,
+ * and guessing a slug would produce a dead link, which is worse than plain text.
+ */
+function pickId(value: unknown): string | undefined {
+  const rec = asRecord(value);
+  if (!rec) return undefined;
+  const id = str(rec.id);
+  return id && !/^\s*$/.test(id) ? id : undefined;
 }
 
 function num(value: unknown): number | undefined {
@@ -137,13 +172,17 @@ export function parseTimelineEvents(rawPayload: Record<string, unknown> | null |
         extraType,
         commentary: commentaryText(rec.commentary ?? rec.text ?? rec.description ?? rec.match_note),
         batsman: pickName(batting?.striker ?? rec.batsman ?? rec.striker),
+        batsmanId: pickId(batting?.striker ?? rec.batsman ?? rec.striker),
         nonStriker: pickName(batting?.non_striker ?? rec.non_striker),
+        nonStrikerId: pickId(batting?.non_striker ?? rec.non_striker),
         bowler: pickName(bowling?.bowler ?? rec.bowler),
+        bowlerId: pickId(bowling?.bowler ?? rec.bowler),
         shot: humanize(str(batting?.shot_type)),
         connect: humanize(str(batting?.connect)),
         zone: humanize(str(batting?.zone_played_in)),
         dismissal: humanize(str(details?.type)),
         dismissed: pickName(dismissal?.player),
+        dismissedId: pickId(dismissal?.player),
         period: str(rec.period_name ?? rec.period),
         freeHit: rec.free_hit === true,
         dropped: fielding?.catch_dropped === true,
@@ -269,8 +308,8 @@ function eventTitle(event: TimelineEvent): string {
   return `${overBall} · ${type}`;
 }
 
-function eventMeta(event: TimelineEvent): string[] {
-  const chips: string[] = [];
+function eventMeta(event: TimelineEvent): ReactNode[] {
+  const chips: ReactNode[] = [];
   if (event.bowler && event.batsman) chips.push(`${event.bowler} to ${event.batsman}`);
   else if (event.batsman) chips.push(event.batsman);
   else if (event.bowler) chips.push(event.bowler);
@@ -396,7 +435,7 @@ export default function MatchTimeline({
         </div>
         {event.commentary && <p className="mt-1 text-sm leading-relaxed text-mtext">{event.commentary}</p>}
         {meta.length > 0 && (
-          <p className="mt-1.5 text-[11px] leading-relaxed text-stext">{meta.join(' · ')}</p>
+          <p className="mt-1.5 text-[11px] leading-relaxed text-stext"><ChipList items={meta} /></p>
         )}
       </div>
     );

@@ -11,7 +11,7 @@ import { cardDiamond } from '../ui/interaction';
 import EmptyState from '../EmptyState';
 import ErrorState from '../ErrorState';
 import Pagination from '../Pagination';
-import DummyAd from '../advertisements/DummyAd';
+import AdSlot from '../advertisements/AdSlot';
 import dynamic from 'next/dynamic';
 
 const CompareBoard = dynamic(() => import('./CompareBoard'), { ssr: false });
@@ -102,7 +102,7 @@ export default function TeamsDirectory() {
       </div>
 
       {!query.isPending && !query.isError && teams.length > 0 ? (
-        <DummyAd size="leaderboard" placement="teams-after-intro" />
+        <AdSlot placement="teams-after-intro" />
       ) : null}
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

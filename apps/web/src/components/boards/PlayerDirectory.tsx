@@ -8,7 +8,7 @@ import PlayerCard from '../PlayerCard';
 import EmptyState from '../EmptyState';
 import ErrorState from '../ErrorState';
 import Pagination from '../Pagination';
-import DummyAd from '../advertisements/DummyAd';
+import AdSlot from '../advertisements/AdSlot';
 import { DirectoryGridSkeleton } from '../skeletons/Skeletons';
 import { useDebouncedUrlQuery } from '../../hooks/useDebouncedUrlQuery';
 import { fetchPlayersPage } from '../../services/players';
@@ -94,7 +94,7 @@ export default function PlayerDirectory() {
       />
 
       {!query.isPending && !query.isError && filtered.length > 0 ? (
-        <DummyAd size="leaderboard" placement="players-after-intro" />
+        <AdSlot placement="players-after-intro" />
       ) : null}
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

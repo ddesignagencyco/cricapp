@@ -5,7 +5,7 @@ import TeamLogo from '../../components/TeamLogo';
 import StatsBoard from '../../components/boards/StatsBoard';
 import PslSeasonFilter from '../../components/PslSeasonFilter';
 import PslFixturesTable from '../../components/PslFixturesTable';
-import DummyAd from '../../components/advertisements/DummyAd';
+import AdSlot from '../../components/advertisements/AdSlot';
 import PslSquadsBoard from '../../components/PslSquadsBoard';
 import { formatScheduled } from '../../utils/helpers';
 import ErrorState from '../../components/ErrorState';
@@ -167,7 +167,7 @@ export default async function PSLPage({ searchParams }: { searchParams: Promise<
       </section>
 
       <section className="mx-auto max-w-7xl px-4 pb-6 sm:px-6">
-        <DummyAd size="leaderboard" placement="psl-after-intro" />
+        <AdSlot placement="psl-after-intro" />
       </section>
 
       {/* Full Leaders / Stats */}
@@ -228,7 +228,7 @@ export default async function PSLPage({ searchParams }: { searchParams: Promise<
                 <PslFixturesTable matches={regular} />
               </div>
               <div className="hidden w-[300px] shrink-0 lg:block">
-                <DummyAd size="half-page" placement="psl-half-page" />
+                <AdSlot placement="psl-half-page" />
               </div>
             </div>
           ) : (

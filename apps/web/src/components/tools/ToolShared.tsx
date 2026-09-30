@@ -1,8 +1,6 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { TOOL_GROUPS, TOOL_SOURCE_LABEL, TOOLS, toolBySlug, toolSource, type ToolDef } from '../../lib/toolsCatalog';
-import type { ShareInput } from '../../lib/toolShare';
-import ResultShareButton from './ResultShareButton';
 import { ToolDefProvider } from './toolResultContext';
 import ToolDiamondCard from './ToolDiamondCard';
 import ToolDiamondIcon from './ToolDiamondIcon';
@@ -86,25 +84,28 @@ export function ToolCheckbox({
   );
 }
 
+/**
+ * The result of a tool.
+ *
+ * There used to be a share button here, which turned every one of the eleven tools
+ * into a share target. It was the only action on the box, so it read as the tool's
+ * main output control, and it invited people to publish a number they had just typed
+ * in themselves. The result is the answer; nothing else belongs beside it.
+ */
 export function ResultBox({
   label = 'Result',
   value,
   hint,
-  inputs,
 }: {
   label?: string;
   value: string;
   hint?: string;
-  inputs?: ShareInput[];
 }) {
   return (
     <div className="tool-result-hero">
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-stext">{label}</p>
-          {hint ? <p className="mt-1 text-[11px] leading-relaxed text-stext">{hint}</p> : null}
-        </div>
-        <ResultShareButton label={label} value={value} inputs={inputs} />
+      <div className="min-w-0">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-stext">{label}</p>
+        {hint ? <p className="mt-1 text-[11px] leading-relaxed text-stext">{hint}</p> : null}
       </div>
       <p className="tool-result-hero__value mt-3 break-words font-mono text-3xl font-black leading-tight tabular-nums text-accent">
         {value || '—'}

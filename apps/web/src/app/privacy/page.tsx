@@ -1,6 +1,8 @@
 import EditorialDocument from '../../components/EditorialDocument';
 import EditorialLayout from '../../components/EditorialLayout';
 import { fetchEditorialPage } from '../../services/editorial';
+import { loadSiteSettings } from '../../services/siteSettings';
+import type { AdConfig } from '../../lib/advertisements/registry';
 
 export const metadata = {
   title: 'Privacy Policy',
@@ -8,7 +10,9 @@ export const metadata = {
     'Privacy policy for PAK CRICZONE — how we collect, use and protect your information.',
 };
 
-const sections = [
+type Section = { id: string; title: string; text: string };
+
+const BASE_SECTIONS: Section[] = [
   {
     id: 'information-we-collect',
     title: 'Information We Collect',
@@ -22,8 +26,11 @@ const sections = [
   {
     id: 'cookies-tracking',
     title: 'Cookies & Tracking',
-    text: 'PAK CRICZONE uses cookies to maintain your session preferences and analyse traffic. You can control cookie settings through your browser. We do not use third-party advertising trackers.',
+    text: '',
   },
+];
+
+const TRAILING_SECTIONS: Section[] = [
   {
     id: 'data-sharing',
     title: 'Data Sharing',
@@ -46,9 +53,48 @@ const sections = [
   },
 ];
 
+/**
+ * The advertising disclosure has to follow the live ad mode.
+ *
+ * This page previously claimed "We do not use third-party advertising trackers",
+ * which is true while placements render our own placeholder creatives and false the
+ * moment `ads.mode` is switched to `adsense` — AdSense sets third-party cookies.
+ * Deriving the copy from the config means the claim cannot drift out of date again.
+ */
+function sectionsFor(ads: AdConfig): Section[] {
+  const advertisingLive = ads.mode === 'adsense' && Boolean(ads.clientId);
+
+  const cookies: Section = advertisingLive
+    ? {
+        id: 'cookies-tracking',
+        title: 'Cookies & Tracking',
+        text: 'PAK CRICZONE uses cookies to maintain your session preferences and analyse traffic. While advertising is enabled we also use Google AdSense, which places third-party cookies and similar technologies to serve ads based on your prior visits to this and other websites. You can control or remove cookies through your browser settings, and you can opt out of personalised advertising at Google Ads Settings and of third-party vendor cookies at aboutads.info.',
+      }
+    : {
+        id: 'cookies-tracking',
+        title: 'Cookies & Tracking',
+        text: 'PAK CRICZONE uses cookies to maintain your session preferences and analyse traffic. You can control cookie settings through your browser. We do not use third-party advertising trackers.',
+      };
+
+  const advertising: Section[] = advertisingLive
+    ? [
+        {
+          id: 'advertising',
+          title: 'Advertising',
+          text: 'We use Google AdSense to display advertisements on this site. Google and its partners may use cookies and device identifiers to serve and measure ads based on your visits to this and other sites. Advertising is not served on every page: some routes are excluded, and some placements are switched off entirely. Where an ad is served, Google may use your activity to personalise the ads you see. Learn more about how Google uses data from sites and apps that use its services in the Google Privacy & Terms site.',
+        },
+      ]
+    : [];
+
+  return [BASE_SECTIONS[0], BASE_SECTIONS[1], cookies, ...advertising, ...TRAILING_SECTIONS];
+}
+
 export default async function PrivacyPage() {
   const cms = await fetchEditorialPage('privacy').catch(() => null);
   if (cms?.content?.trim()) return <EditorialDocument page={cms} />;
+
+  const { ads } = await loadSiteSettings();
+  const sections = sectionsFor(ads);
 
   return (
     <EditorialLayout

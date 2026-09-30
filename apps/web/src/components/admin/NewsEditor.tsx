@@ -1,13 +1,15 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { EditorSkeleton } from '../skeletons/Skeletons';
 import {
   ArrowLeft,
+  Bell,
   Loader2,
   Save,
+  Search,
   Send,
   Tag,
   User,
@@ -25,29 +27,38 @@ import {
   updateNews,
   type NewsArticleAdmin,
   type NewsCategory,
-  type NewsInput,
 } from '../../services/newsAdmin';
 import RichTextEditor from './RichTextEditor';
 import MediaPicker from './MediaPicker';
 import { AdminField, AdminInput, AdminSelect } from './AdminShared';
 import EntityIdPicker, { type EntityChoice } from './EntityIdPicker';
+import { matchLabel, searchLinkedMatches } from '../../lib/newsLinkedMatches';
 import { fetchMatchById } from '../../services/matches';
 import { fetchPlayerById } from '../../services/players';
-import { fetchTeamById, fetchTeamResults, fetchTeamSchedule } from '../../services/teams';
+import { fetchTeamById } from '../../services/teams';
 import { fetchTournamentById } from '../../services/tournaments';
 import { searchAll } from '../../services/search';
 import { fetchAdminAuthors, type AdminAuthor } from '../../services/admin';
 import RemoteImage from '../RemoteImage';
 import {
-  NEWS_LANGUAGES,
   NEWS_TITLE_MAX_WORDS,
   countWords,
-  isEmptyRichText,
   isUrduLanguage,
   isValidNewsSlug,
   otherNewsLanguage,
   slugifyNews,
 } from '../../utils/newsConstraints';
+import {
+  NEWS_META_DESCRIPTION_SUGGESTED,
+  NEWS_META_TITLE_SUGGESTED,
+  NEWS_PUSH_BODY_MAX,
+  NEWS_PUSH_TITLE_MAX,
+  NEWS_SOCIAL_COPY_MAX,
+  blockingNewsFields,
+  buildNewsPayload,
+  bylineForProfile,
+  validateNewsDraft,
+} from '../../lib/newsForm';
 import { newsLocale } from '../../utils/locale';
 import { translateNewsCopy } from '../../lib/machineTranslate';
 
@@ -70,6 +81,9 @@ interface FormState {
   metaTitle: string;
   metaDescription: string;
   canonicalUrl: string;
+  pushNotificationTitle: string;
+  pushNotificationBody: string;
+  socialCopy: string;
   players: EntityChoice[];
   teams: EntityChoice[];
   matches: EntityChoice[];
@@ -90,11 +104,32 @@ const emptyForm: FormState = {
   metaTitle: '',
   metaDescription: '',
   canonicalUrl: '',
+  pushNotificationTitle: '',
+  pushNotificationBody: '',
+  socialCopy: '',
   players: [],
   teams: [],
   matches: [],
   series: [],
 };
+
+/**
+ * `12/150` beside a field. For the push and social fields the limit is the one the API
+ * enforces, so an over-long value is caught while typing instead of at save.
+ */
+function CharCount({ value, max, limitIsApi }: { value: string; max: number; limitIsApi?: boolean }) {
+  const length = value.trim().length;
+  const over = length > max;
+  return (
+    <span
+      className="text-xs tabular-nums"
+      style={{ color: over ? 'var(--admin-danger)' : 'var(--admin-text-muted)' }}
+      title={limitIsApi ? 'The API rejects anything longer' : 'Search results truncate around this length'}
+    >
+      {length}/{max}
+    </span>
+  );
+}
 
 function asIdList(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
@@ -108,77 +143,6 @@ function asIdList(value: unknown): string[] {
       return '';
     })
     .filter(Boolean);
-}
-
-function asRecord(value: unknown): Record<string, unknown> {
-  return value && typeof value === 'object' && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : {};
-}
-
-function asText(value: unknown): string {
-  if (value === null || value === undefined) return '';
-  if (typeof value === 'string') {
-    const text = value.trim();
-    return !text || text === '[object Object]' ? '' : text;
-  }
-  if (typeof value === 'number' && Number.isFinite(value)) return String(value);
-  if (Array.isArray(value)) return value.map(asText).filter(Boolean).join(' ');
-  if (typeof value !== 'object') return '';
-  const rec = asRecord(value);
-  const nested = rec.name ?? rec.full_name ?? rec.fullName ?? rec.short_name ?? rec.shortName ?? rec.abbr ?? rec.title;
-  if (nested === undefined || nested === null || nested === value) return '';
-  return asText(nested);
-}
-
-function matchIdOf(match: unknown): string {
-  const row = asRecord(match);
-  const raw = row.matchId ?? row.match_id ?? row.id;
-  if (typeof raw === 'string' || typeof raw === 'number') return String(raw).trim();
-  return asText(raw);
-}
-
-function teamNameList(match: unknown): string[] {
-  const row = asRecord(match);
-  const names = row.teamNames ?? row.team_names;
-  return Array.isArray(names) ? names.map(asText).filter(Boolean) : [];
-}
-
-function sideName(side: unknown): string {
-  const rec = asRecord(side);
-  return asText(rec.name ?? rec.full_name ?? rec.fullName ?? rec.short_name ?? rec.qualifier ?? side);
-}
-
-function matchLabel(match: unknown): string {
-  if (!match) return 'Match';
-  const row = asRecord(match);
-  const names = teamNameList(match);
-  const teamsVal = row.teams;
-  let home = '';
-  let away = '';
-  if (Array.isArray(teamsVal)) {
-    home = sideName(teamsVal[0]) || names[0] || '';
-    away = sideName(teamsVal[1]) || names[1] || '';
-  } else {
-    const teams = asRecord(teamsVal);
-    home = sideName(teams.home) || names[0] || sideName(row.home);
-    away = sideName(teams.away) || names[1] || sideName(row.away);
-  }
-  if (home && away) return `${home} vs ${away}`;
-  if (home || away) return home || away;
-  return asText(row.tournamentName) || asText(row.tournament) || asText(row.matchId) || 'Match';
-}
-
-function sportEventLabel(event: { eventId?: string; payload?: Record<string, unknown> }): string {
-  const payload = asRecord(event.payload);
-  const names = Array.isArray(payload.teamNames) ? payload.teamNames.map(asText).filter(Boolean) : [];
-  if (names.length >= 2) return `${names[0]} vs ${names[1]}`;
-  const ev = asRecord(payload.sport_event);
-  const comps = Array.isArray(ev.competitors) ? ev.competitors : [];
-  const home = sideName(comps[0]);
-  const away = sideName(comps[1]);
-  if (home && away) return `${home} vs ${away}`;
-  return asText(payload.tournament) || asText(event.eventId) || 'Match';
 }
 
 async function resolveLinkedEntities(
@@ -241,6 +205,12 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [sourceId, setSourceId] = useState<string | null>(isTranslate ? translateFrom : null);
   const [hasOtherTranslation, setHasOtherTranslation] = useState(false);
+
+  /**
+   * Whether the byline is the author profile's name rather than something a writer typed.
+   * A typed byline is never overwritten when the profile changes; an auto one follows it.
+   */
+  const bylineAutoRef = useRef(true);
 
   useEffect(() => {
     fetchNewsCategories().then(setCategories).catch(() => setCategories([]));
@@ -313,11 +283,16 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
             metaTitle: article.metaTitle || '',
             metaDescription: article.metaDescription || '',
             canonicalUrl: article.canonicalUrl || '',
+            pushNotificationTitle: article.pushNotificationTitle || '',
+            pushNotificationBody: article.pushNotificationBody || '',
+            socialCopy: article.socialCopy || '',
             players: [],
             teams: [],
             matches: [],
             series: [],
           });
+          // A byline already on the article is a writer's choice, not an auto-filled one.
+          bylineAutoRef.current = !(article.author || '').trim();
           void resolveLinkedEntities(article).then((linked) => {
             setForm((current) => ({ ...current, ...linked }));
           });
@@ -338,7 +313,19 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
     }));
   };
 
+  /** Picking an author profile fills the byline, unless the writer typed their own. */
+  const selectAuthorProfile = (authorId: string) => {
+    const profile = authors.find((row) => row.id === authorId);
+    setForm((f) => {
+      const next = bylineForProfile(profile?.name ?? '', f.author, bylineAutoRef.current);
+      bylineAutoRef.current = next.isAuto;
+      return { ...f, authorId, author: next.byline };
+    });
+  };
+
   const titleWordCount = countWords(form.title);
+  // Drives the character counters and the wording of the save-time toast.
+  const errors = useMemo(() => validateNewsDraft(form), [form]);
   const copyLocale = newsLocale(form.language, `${form.title} ${form.summary}`);
   const copyField = {
     className: 'news-copy',
@@ -384,49 +371,10 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
       .filter((row) => row.id);
   }, []);
 
-  const searchMatches = useCallback(async (q: string, signal?: AbortSignal): Promise<EntityChoice[]> => {
-    const found = new Map<string, EntityChoice>();
-    const addHit = (id: string, label: string) => {
-      if (id && !found.has(id)) found.set(id, { id, label });
-    };
-
-    const looksLikeId = /^(sr:match:|[0-9a-f-]{8,})/i.test(q);
-    if (looksLikeId) {
-      const exact = await fetchMatchById(q, signal).catch(() => null);
-      if (exact) addHit(matchIdOf(exact), matchLabel(exact));
-    }
-
-    const res = await searchAll(q, signal);
-    for (const match of res.matches) {
-      addHit(matchIdOf(match), matchLabel(match));
-    }
-
-    /*
-     * WORKAROUND (delete once the backend returns match ids from /api/search):
-     * `searchAll` currently yields match rows with no usable id, so this fan-out is
-     * the only thing that returns linkable matches. It is capped at 2 teams x 2
-     * calls so a single keystroke costs 4 requests instead of 6.
-     */
-    if (found.size === 0) {
-      const teamIds = res.teams.map((team) => String(team.id || '')).filter(Boolean).slice(0, 2);
-      const fixtures = await Promise.all(
-        teamIds.map(async (teamId) => {
-          const [schedule, results] = await Promise.all([
-            fetchTeamSchedule(teamId, { limit: 12 }, signal).catch(() => []),
-            fetchTeamResults(teamId, { limit: 12 }, signal).catch(() => []),
-          ]);
-          return [...schedule, ...results];
-        })
-      );
-      for (const event of fixtures.flat()) {
-        const id = String(event.eventId || '');
-        if (!id) continue;
-        addHit(id, sportEventLabel(event));
-      }
-    }
-
-    return [...found.values()];
-  }, []);
+  const searchMatches = useCallback(
+    (q: string, signal?: AbortSignal) => searchLinkedMatches(q, signal),
+    [],
+  );
 
   const searchSeries = useCallback(async (q: string, signal?: AbortSignal): Promise<EntityChoice[]> => {
     const res = await searchAll(q, signal);
@@ -456,50 +404,19 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
   };
 
   const submit = async (publish: boolean) => {
-    const title = form.title.trim();
-    const slug = slugifyNews(form.slug.trim() || title);
-    const wordCount = countWords(title);
-    const missing: string[] = [];
-    if (!title) missing.push('Headline');
-    if (isEmptyRichText(form.content)) missing.push('Content');
-    if (missing.length) {
-      toast.error(`${missing.join(' and ')} ${missing.length === 1 ? 'is' : 'are'} required.`);
-      return;
-    }
-    if (wordCount > NEWS_TITLE_MAX_WORDS) {
-      toast.error(`Title must be ${NEWS_TITLE_MAX_WORDS} words or fewer.`);
-      return;
-    }
-    if (slug && !isValidNewsSlug(slug)) {
-      toast.error('Slug can use letters, numbers, and hyphens only.');
-      return;
-    }
-    if (form.language && !NEWS_LANGUAGES.includes(form.language as (typeof NEWS_LANGUAGES)[number])) {
-      toast.error('Language must be English or Urdu.');
+    // One validator decides what is wrong and supplies the wording, so the toast can
+    // never describe a different problem from the one the API would reject.
+    const blocking = blockingNewsFields(errors);
+    if (blocking.length) {
+      toast.error(
+        blocking.map(({ field }) => errors[field]).filter(Boolean).join(' '),
+        { duration: 5000 },
+      );
       return;
     }
 
     setSaving(true);
-    const payload: NewsInput = {
-      title,
-      content: form.content.trim(),
-      isPublished: publish,
-    };
-    if (slug) payload.slug = slug;
-    if (form.summary.trim()) payload.summary = form.summary.trim();
-    if (form.imageUrl.trim()) payload.imageUrl = form.imageUrl.trim();
-    if (form.author.trim()) payload.author = form.author.trim();
-    if (form.authorId.trim()) payload.authorId = form.authorId.trim();
-    if (form.source.trim()) payload.source = form.source.trim();
-    if (form.categoryId.trim()) payload.categoryId = form.categoryId.trim();
-    if (form.language.trim()) payload.language = form.language.trim();
-    if (form.metaTitle.trim()) payload.metaTitle = form.metaTitle.trim();
-    if (form.metaDescription.trim()) payload.metaDescription = form.metaDescription.trim();
-    if (form.canonicalUrl.trim()) payload.canonicalUrl = form.canonicalUrl.trim();
-    payload.playerIds = form.players.map((row) => row.id);
-    payload.teamIds = form.teams.map((row) => row.id);
-    payload.matchIds = form.matches.map((row) => row.id);
-    payload.seriesIds = form.series.map((row) => row.id);
+    const payload = buildNewsPayload(form, publish);
 
     try {
       if (mode === 'create' && sourceId) {
@@ -536,20 +453,20 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
     <div className="space-y-5">
       {/* Top Bar */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pb-4" style={{ borderBottom: '1px solid var(--admin-border)' }}>
-        <div className="flex items-center gap-3">
+        <div className="flex min-w-0 items-center gap-3">
           <Link
             href="/admin/news"
-            className="grid h-8 w-8 place-items-center rounded-md transition-colors"
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-md transition-colors"
             style={{ border: '1px solid var(--admin-border)', color: 'var(--admin-text-secondary)' }}
             title="Back to News"
           >
             <ArrowLeft size={14} />
           </Link>
-          <div>
+          <div className="min-w-0">
             <h1 className="text-lg font-bold" style={{ color: 'var(--admin-text)' }}>
               {isTranslate ? `Create ${form.language === 'ur' ? 'Urdu' : 'English'} translation` : mode === 'create' ? 'Create News' : 'Edit News'}
             </h1>
-            <p className="text-xs" style={{ color: 'var(--admin-text-muted)' }}>
+            <p className="break-words text-xs" style={{ color: 'var(--admin-text-muted)' }}>
               {isTranslate
                 ? 'Headline, summary and body are machine-translated. Review the Urdu, then save. Slug stays blank so it stays unique.'
                 : mode === 'create'
@@ -558,14 +475,14 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {mode === 'edit' && id && !hasOtherTranslation ? (
             <Link
               href={`/admin/news/new?translateFrom=${id}`}
               className="inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-xs font-bold transition-colors"
               style={{ border: '1px solid var(--admin-border)', color: 'var(--admin-text-secondary)' }}
             >
-              <Languages size={12} />
+              <Languages size={12} className="shrink-0" />
               Create {form.language === 'ur' ? 'English' : 'Urdu'} translation
             </Link>
           ) : null}
@@ -573,19 +490,19 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
             type="button"
             disabled={saving}
             onClick={() => submit(false)}
-            className="inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-xs font-bold transition-colors disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-2 text-xs font-bold transition-colors disabled:opacity-50"
             style={{ border: '1px solid var(--admin-border)', color: 'var(--admin-text-secondary)' }}
           >
-            {saving ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />}
+            {saving ? <Loader2 size={12} className="shrink-0 animate-spin" /> : <Save size={12} className="shrink-0" />}
             Save Draft
           </button>
           <button
             type="button"
             disabled={saving}
             onClick={() => submit(true)}
-            className="btn-brand inline-flex items-center gap-1.5 rounded-md px-4 py-2 text-xs font-bold transition-colors disabled:opacity-50"
+            className="btn-brand inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-4 py-2 text-xs font-bold transition-colors disabled:opacity-50"
           >
-            {saving ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
+            {saving ? <Loader2 size={12} className="shrink-0 animate-spin" /> : <Send size={12} className="shrink-0" />}
             Publish Live
           </button>
         </div>
@@ -662,10 +579,10 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
         {/* Right: Metadata */}
         <div className="space-y-4">
           {/* Category */}
-          <div className="rounded-lg p-4" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
+          <div className="rounded-lg p-3 sm:p-4" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
             <div className="flex items-center justify-between mb-2">
               <label className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5" style={{ color: 'var(--admin-text)' }}>
-                <Tag size={12} style={{ color: 'var(--admin-accent)' }} /> Category
+                <Tag size={12} className="shrink-0" style={{ color: 'var(--admin-accent)' }} /> Category
               </label>
               <button type="button" onClick={() => setShowAddCat((s) => !s)} className="text-xs font-bold" style={{ color: 'var(--admin-accent)' }}>
                 {showAddCat ? 'Cancel' : '+ New'}
@@ -702,9 +619,9 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
           </div>
 
           {/* Featured Image */}
-          <div className="rounded-lg p-4" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
+          <div className="rounded-lg p-3 sm:p-4" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
             <label className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 mb-2" style={{ color: 'var(--admin-text)' }}>
-              <ImageIcon size={12} style={{ color: 'var(--admin-accent)' }} /> Cover Image
+              <ImageIcon size={12} className="shrink-0" style={{ color: 'var(--admin-accent)' }} /> Cover Image
             </label>
             <button
               type="button"
@@ -730,10 +647,10 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
             )}
           </div>
 
-          <div className="rounded-lg p-4 space-y-3" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
+          <div className="rounded-lg p-3 space-y-3 sm:p-4" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
             <div>
               <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--admin-text-secondary)' }}>Author profile</label>
-              <AdminSelect value={form.authorId} onChange={(e) => set('authorId', e.target.value)}>
+              <AdminSelect value={form.authorId} onChange={(e) => selectAuthorProfile(e.target.value)}>
                 <option value="">No author profile</option>
                 {authors.map((author) => (
                   <option key={author.id} value={author.id}>{author.name}</option>
@@ -744,8 +661,22 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
               <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--admin-text-secondary)' }}>Author byline</label>
               <div className="relative">
                 <User size={12} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--admin-text-muted)' }} />
-                <AdminInput type="text" value={form.author} onChange={(e) => set('author', e.target.value)} placeholder="PakCricZone Editorial" style={{ paddingLeft: '2rem' }} />
+                <AdminInput
+                  type="text"
+                  value={form.author}
+                  onChange={(e) => {
+                    bylineAutoRef.current = false;
+                    set('author', e.target.value);
+                  }}
+                  placeholder="PakCricZone Editorial"
+                  style={{ paddingLeft: '2rem' }}
+                />
               </div>
+              <p className="mt-1 text-xs" style={{ color: 'var(--admin-text-muted)' }}>
+                {bylineAutoRef.current && form.author
+                  ? 'Filled from the author profile. Type here to override it.'
+                  : 'Shown on the article. Blank credits the author profile.'}
+              </p>
             </div>
             <div>
               <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--admin-text-secondary)' }}>Source</label>
@@ -753,10 +684,13 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
                 <Globe size={12} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--admin-text-muted)' }} />
                 <AdminInput type="text" value={form.source} onChange={(e) => set('source', e.target.value)} placeholder="PCB / ICC" style={{ paddingLeft: '2rem' }} />
               </div>
+              <p className="mt-1 text-xs" style={{ color: 'var(--admin-text-muted)' }}>
+                Shown beside the byline on the article. Blank hides it.
+              </p>
             </div>
           </div>
 
-          <div className="rounded-lg p-4 space-y-3" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
+          <div className="rounded-lg p-3 space-y-3 sm:p-4" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
             <p className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text)' }}>
               Linked to
             </p>
@@ -793,16 +727,70 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
             />
           </div>
 
-          <div className="rounded-lg p-4 space-y-3" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
-            <p className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text)' }}>SEO</p>
+          <div className="rounded-lg p-3 space-y-3 sm:p-4" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
+            <p className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5" style={{ color: 'var(--admin-text)' }}>
+              <Search size={12} className="shrink-0" style={{ color: 'var(--admin-accent)' }} /> SEO
+            </p>
             <AdminField label="SEO title">
               <AdminInput value={form.metaTitle} onChange={(e) => set('metaTitle', e.target.value)} placeholder={placeholders.metaTitle} {...copyField} />
+              <div className="mt-1 flex justify-end">
+                <CharCount value={form.metaTitle} max={NEWS_META_TITLE_SUGGESTED} />
+              </div>
             </AdminField>
             <AdminField label="SEO description">
               <AdminInput value={form.metaDescription} onChange={(e) => set('metaDescription', e.target.value)} placeholder={placeholders.metaDescription} {...copyField} />
+              <div className="mt-1 flex justify-end">
+                <CharCount value={form.metaDescription} max={NEWS_META_DESCRIPTION_SUGGESTED} />
+              </div>
             </AdminField>
             <AdminField label="Canonical URL">
               <AdminInput value={form.canonicalUrl} onChange={(e) => set('canonicalUrl', e.target.value)} placeholder="https://…" />
+            </AdminField>
+            {/* What a reader will actually see in a result, using the same fallbacks the
+                published page applies when the meta fields are blank. */}
+            <div className="rounded-md p-3" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-bg)' }}>
+              <p className="mb-1 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-muted)' }}>
+                Search preview
+              </p>
+              <p className="truncate text-sm font-medium" style={{ color: 'var(--color-brand)' }} title={form.metaTitle.trim() || form.title.trim() || 'Headline appears here'}>
+                {form.metaTitle.trim() || form.title.trim() || 'Headline appears here'}
+              </p>
+              <p className="break-all text-[11px]" style={{ color: 'var(--admin-text-muted)' }}>
+                {form.canonicalUrl.trim() ||
+                  `cricapp.com/${form.language === 'ur' ? 'ur/' : ''}news/${form.slug || slugifyNews(form.title) || '…'}`}
+              </p>
+              <p className="mt-1 line-clamp-2 break-words text-xs" style={{ color: 'var(--admin-text-secondary)' }}>
+                {form.metaDescription.trim() || form.summary.trim() || 'Meta description appears here. Leave it blank and the summary is used.'}
+              </p>
+            </div>
+          </div>
+
+          {/* Push and social copy. The API has stored these columns all along, but the
+              editor had no way to fill them, so they were always sent empty. */}
+          <div className="rounded-lg p-3 space-y-3 sm:p-4" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
+            <p className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5" style={{ color: 'var(--admin-text)' }}>
+              <Bell size={12} className="shrink-0" style={{ color: 'var(--admin-accent)' }} /> Push &amp; Social
+            </p>
+            <p className="text-xs" style={{ color: 'var(--admin-text-muted)' }}>
+              Draft copy stored with the article for a later push or social post. Leave blank to skip it.
+            </p>
+            <AdminField label="Push title">
+              <AdminInput value={form.pushNotificationTitle} onChange={(e) => set('pushNotificationTitle', e.target.value)} placeholder="Short line for the notification" {...copyField} />
+              <div className="mt-1 flex justify-end">
+                <CharCount value={form.pushNotificationTitle} max={NEWS_PUSH_TITLE_MAX} limitIsApi />
+              </div>
+            </AdminField>
+            <AdminField label="Push body">
+              <AdminInput value={form.pushNotificationBody} onChange={(e) => set('pushNotificationBody', e.target.value)} placeholder="One or two lines of detail" {...copyField} />
+              <div className="mt-1 flex justify-end">
+                <CharCount value={form.pushNotificationBody} max={NEWS_PUSH_BODY_MAX} limitIsApi />
+              </div>
+            </AdminField>
+            <AdminField label="Social copy">
+              <AdminInput value={form.socialCopy} onChange={(e) => set('socialCopy', e.target.value)} placeholder="Caption for the social post" {...copyField} />
+              <div className="mt-1 flex justify-end">
+                <CharCount value={form.socialCopy} max={NEWS_SOCIAL_COPY_MAX} limitIsApi />
+              </div>
             </AdminField>
           </div>
         </div>

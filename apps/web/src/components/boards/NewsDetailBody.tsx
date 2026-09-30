@@ -1,9 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowLeft, ArrowRight, Calendar, Clock, Newspaper, Tag } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Calendar, Clock, Newspaper, Radio, Tag } from 'lucide-react';
 import Badge from '../Badge';
-import DummyAd from '../advertisements/DummyAd';
+import AdSlot from '../advertisements/AdSlot';
 import RemoteImage from '../RemoteImage';
 import ShareButton from '../ShareButton';
 import FavoriteButton from '../FavoriteButton';
@@ -136,6 +136,12 @@ export default function NewsDetailBody({ item, related = [], authorHref, related
                 size={22}
                 className="text-xs"
               />
+              {/* Stated on the article only when the editor recorded where it came from. */}
+              {item.source ? (
+                <span className="flex items-center gap-1.5" title="Source">
+                  <Radio size={14} /> {item.source}
+                </span>
+              ) : null}
               <span className="flex items-center gap-1.5">
                 <Calendar size={14} /> {item.date}
               </span>
@@ -178,7 +184,7 @@ export default function NewsDetailBody({ item, related = [], authorHref, related
             {contentAfterAd && (
               <>
                 <div className="my-8 flex justify-center">
-                  <DummyAd size="large-rectangle" placement="news-detail-inarticle" />
+                  <AdSlot placement="news-detail-inarticle" />
                 </div>
                 <div
                   className={`${proseClass} news-copy`}
@@ -189,13 +195,10 @@ export default function NewsDetailBody({ item, related = [], authorHref, related
               </>
             )}
 
-            <div className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-lborder pt-6">
+            <div className="mt-10 flex flex-wrap items-center gap-3 border-t border-lborder pt-6">
               <Link href="/news" className="inline-flex items-center gap-1.5 text-sm font-semibold text-accent">
                 <ArrowLeft size={15} /> Back to all news
               </Link>
-              <span className="flex items-center gap-1.5 text-xs text-stext">
-                <Newspaper size={14} /> PAK CRICZONE Newsroom
-              </span>
             </div>
 
             {relatedLinks.length > 0 && (
@@ -234,9 +237,9 @@ export default function NewsDetailBody({ item, related = [], authorHref, related
         </article>
 
         <aside className="min-w-0 lg:sticky lg:top-16 lg:z-10 lg:self-start">
-          <div className="space-y-8 lg:max-h-[calc(100dvh-5rem)] lg:overflow-y-auto">
+          <div className="space-y-6 lg:max-h-[calc(100dvh-5rem)] lg:overflow-y-auto lg:pr-1">
             <div className="flex justify-center lg:justify-start">
-              <DummyAd size="medium-rectangle" placement="news-detail-sidebar" />
+              <AdSlot placement="news-detail-sidebar" />
             </div>
 
             {related.length > 0 && (
@@ -249,15 +252,15 @@ export default function NewsDetailBody({ item, related = [], authorHref, related
                     All <ArrowRight size={13} />
                   </Link>
                 </div>
-                <div className="space-y-4">
+                <div className="space-y-2.5">
                   {related.map((a) => (
                     <Link
                       key={a.id}
                       href={newsHref(a)}
-                      className="group flex gap-3"
+                      className="news-card card-interactive group flex items-center gap-3 rounded-md p-2.5"
                     >
                       <div
-                        className={`relative h-16 w-20 shrink-0 overflow-hidden rounded-sm bg-secondary ring-1 ring-lborder ${
+                        className={`news-card-media relative h-16 w-20 shrink-0 overflow-hidden rounded-sm bg-secondary ${
                           a.image ? '' : 'media-fallback'
                         }`}
                       >
@@ -272,7 +275,7 @@ export default function NewsDetailBody({ item, related = [], authorHref, related
                           />
                         )}
                       </div>
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         <NewsCopy
                           as="p"
                           language={a.language}
@@ -296,7 +299,7 @@ export default function NewsDetailBody({ item, related = [], authorHref, related
 
       {related.length > 0 ? (
         <div className="mt-10">
-          <DummyAd size="leaderboard" placement="news-detail-after-related" />
+          <AdSlot placement="news-detail-after-related" />
         </div>
       ) : null}
 

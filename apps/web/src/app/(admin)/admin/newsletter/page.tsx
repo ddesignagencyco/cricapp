@@ -48,7 +48,7 @@ export default function AdminNewsletterPage() {
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search email"
         />
-        <div className="w-36">
+        <div className="w-full shrink-0 sm:w-36">
           <AdminSelect value={status} onChange={(e) => setStatus(e.target.value)}>
             <option value="">All</option>
             <option value="active">Active</option>
@@ -69,7 +69,7 @@ export default function AdminNewsletterPage() {
       ) : (
         <div className="overflow-hidden rounded-lg" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
           <div className="table-scroll">
-            <table className="w-full min-w-[28rem] text-left text-sm">
+            <table className="w-full text-left text-sm">
               <thead>
                 <tr style={{ background: 'var(--admin-table-header)', borderBottom: '1px solid var(--admin-border)' }}>
                   <th className="px-4 py-3 text-xs font-bold uppercase" style={{ color: 'var(--admin-text-secondary)' }}>Email</th>
@@ -79,8 +79,8 @@ export default function AdminNewsletterPage() {
               <tbody>
                 {items.map((item) => (
                   <tr key={item.id} style={{ borderBottom: '1px solid var(--admin-border)' }}>
-                    <td className="px-4 py-3" style={{ color: 'var(--admin-text)' }}>{item.email}</td>
-                    <td className="px-4 py-3"><StatusBadge status={item.status} /></td>
+                    <td className="max-w-[11rem] truncate px-4 py-3 sm:max-w-none" style={{ color: 'var(--admin-text)' }} title={item.email}>{item.email}</td>
+                    <td className="whitespace-nowrap px-4 py-3"><StatusBadge status={item.status} /></td>
                   </tr>
                 ))}
               </tbody>

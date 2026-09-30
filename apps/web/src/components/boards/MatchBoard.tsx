@@ -13,7 +13,7 @@ import EmptyState from '../EmptyState';
 import ErrorState from '../ErrorState';
 import PageToolbar from '../PageToolbar';
 import Pagination from '../Pagination';
-import DummyAd from '../advertisements/DummyAd';
+import AdSlot from '../advertisements/AdSlot';
 import { MatchCardGridSkeleton } from '../skeletons/Skeletons';
 import { matchKeys, parsePositiveInt } from '../../queries/keys';
 import { useLiveMatchesQuery, useMatchesQuery, usePrefetchNextPage } from '../../queries/useDirectoryQueries';
@@ -129,7 +129,7 @@ export default function MatchBoard() {
               <Fragment key={`${m.matchId || m.id || 'match'}-${index}`}>
                 <MatchCard match={m} />
                 {visibleMatches.length >= 4 && index === 3 ? (
-                  <DummyAd size="medium-rectangle" placement="matches-infeed" inFeed />
+                  <AdSlot placement="matches-infeed" />
                 ) : null}
               </Fragment>
             ))}
