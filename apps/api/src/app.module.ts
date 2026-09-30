@@ -32,6 +32,7 @@ import { NewsletterModule } from './newsletter/newsletter.module.js';
 import { ContactModule } from './contact/contact.module.js';
 import { GalleryModule } from './gallery/gallery.module.js';
 import { SiteSettingsModule } from './site-settings/site-settings.module.js';
+import { AdSenseModule } from './adsense/adsense.module.js';
 import { SportradarModule } from './sportradar/sportradar.module.js';
 import { RequestLogger } from './common/request-logger.middleware.js';
 
@@ -80,6 +81,7 @@ import { RequestLogger } from './common/request-logger.middleware.js';
     ContactModule,
     GalleryModule,
     SiteSettingsModule,
+    AdSenseModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
