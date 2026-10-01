@@ -19,11 +19,27 @@ import {
  */
 
 describe('building a link only when there is something to link to', () => {
-  it('links a real id', () => {
-    expect(teamHref('sr:team:1')).toBe('/teams/sr%3Ateam%3A1');
-    expect(playerHref('sr:player:9')).toBe('/players/sr%3Aplayer%3A9');
-    expect(tournamentHref('tour:2026')).toBe('/tournaments/tour%3A2026');
-    expect(matchHref('sr:match:7')).toBe('/matches/sr%3Amatch%3A7');
+  it('links a real id, keeping the colon readable', () => {
+    // A colon is a legal path character, so it is left as-is rather than becoming
+    // `%3A`. The rest of the site already interpolates raw ids in its match and ticker
+    // links, so encoding them here gave one site two spellings of the same URL.
+    expect(teamHref('sr:team:1')).toBe('/teams/sr:team:1');
+    expect(playerHref('sr:player:9')).toBe('/players/sr:player:9');
+    expect(tournamentHref('tour:2026')).toBe('/tournaments/tour:2026');
+    expect(matchHref('sr:match:7')).toBe('/matches/sr:match:7');
+  });
+
+  it('keeps the whole provider id, not a stripped number', () => {
+    // `/api/teams/142690` is a 404; `/api/teams/sr:competitor:142690` resolves. The id
+    // is what the teams table stores, so it is what the link has to carry.
+    expect(teamHref('sr:competitor:142690')).toBe('/teams/sr:competitor:142690');
+    expect(playerHref('sr:player:680246')).toBe('/players/sr:player:680246');
+  });
+
+  it('still escapes anything that would break a path segment', () => {
+    // A space is not a `pchar`, so it is still encoded; only the colon is left alone.
+    expect(teamHref('a b')).toBeNull();
+    expect(tournamentHref('a/b')).toBe('/tournaments/a%2Fb');
   });
 
   it('refuses to build a link from a name, a blank, or a missing id', () => {
@@ -36,15 +52,17 @@ describe('building a link only when there is something to link to', () => {
     expect(teamHref(undefined)).toBeNull();
   });
 
-  it('strips a provider prefix that leaked into the name', () => {
-    expect(teamHref('sr:team:1')).toBe('/teams/sr%3Ateam%3A1');
+  it('strips a display-name prefix but never an id prefix', () => {
+    // `sr:sportradar:` leaks into a *name*; `sr:competitor:` is the id itself.
+    expect(teamHref('sr:sportradar:India')).toBeNull();
+    expect(teamHref('sr:team:1')).toBe('/teams/sr:team:1');
   });
 });
 
 describe('the link components', () => {
   it('renders a link when the id is known', () => {
     render(<TeamLink teamId="sr:team:1" name="India" />);
-    expect(screen.getByRole('link', { name: 'India' })).toHaveAttribute('href', '/teams/sr%3Ateam%3A1');
+    expect(screen.getByRole('link', { name: 'India' })).toHaveAttribute('href', '/teams/sr:team:1');
   });
 
   it('renders plain text when the id is missing, and no href at all', () => {

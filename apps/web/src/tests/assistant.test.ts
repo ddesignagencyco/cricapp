@@ -1,9 +1,11 @@
 import {
   assistantContextFromLocation,
+  assistantClipboardText,
   localAssistantReply,
   normalizeAssistantQuestion,
   assistantRequestSlots,
   assistantSessionId,
+  copyToClipboard,
   sourceChipLabel,
   sourceHref,
   isScopeUnavailable,
@@ -120,12 +122,133 @@ describe('assistantContextFromLocation', () => {
   it('returns generic starters on an unrelated page', () => {
     const ctx = assistantContextFromLocation('/news');
     expect(ctx.slots).toEqual({});
-    expect(ctx.starters.map((s) => s.label)).toContain('PSL cutoff');
+    expect(ctx.starters.map((s) => s.question)).toContain('What is the PSL 2026 playoff cutoff?');
   });
 
   it('ignores a bare team id with no id segment', () => {
     // "/teams" alone must not be read as an id of "teams".
     expect(assistantContextFromLocation('/teams').slots).toEqual({});
+  });
+
+  it('gives every starter a question that reads like a question', () => {
+    const pages = [
+      '/',
+      '/news',
+      '/psl',
+      '/matches/sr:match:1',
+      '/predictions/sr:match:1',
+      '/players/sr:player:3',
+      '/teams/sr:competitor:7',
+      '/tools',
+    ];
+    for (const pathname of pages) {
+      const starters = assistantContextFromLocation(pathname).starters;
+      expect(starters.length).toBeGreaterThan(0);
+      for (const starter of starters) {
+        // Chips render the question verbatim, so it has to stand on its own.
+        expect(starter.question.trim()).toBe(starter.question);
+        expect(starter.question.length).toBeGreaterThan(8);
+        expect(starter.question).toMatch(/[?.]$/);
+      }
+    }
+  });
+
+  it('never offers a chip with only a shorthand label instead of a question', () => {
+    // "Explain the live %" taught the user nothing about how to phrase a query.
+    const pages = ['/', '/news', '/psl', '/matches/sr:match:1', '/players/sr:player:3'];
+    for (const pathname of pages) {
+      for (const starter of assistantContextFromLocation(pathname).starters) {
+        expect(starter).not.toHaveProperty('label');
+        expect(starter.question.length).toBeGreaterThan(12);
+      }
+    }
+  });
+
+  it('only offers starters that name one of the supported intents', () => {
+    const supported = new Set([
+      'team_head_to_head',
+      'match_prediction_summary',
+      'live_win_prob_explain',
+      'player_compare',
+      'player_recent_form',
+      'standings_qualification',
+    ]);
+    const pages = ['/', '/news', '/psl', '/teams/sr:competitor:7', '/tools'];
+    for (const pathname of pages) {
+      for (const starter of assistantContextFromLocation(pathname).starters) {
+        if (starter.intent) expect(supported.has(starter.intent)).toBe(true);
+      }
+    }
+  });
+
+  it('asks about news and tools with questions the api can classify', () => {
+    expect(assistantContextFromLocation('/news').slots).toEqual({});
+    expect(assistantContextFromLocation('/tools').slots).toEqual({});
+  });
+});
+
+describe('assistantClipboardText', () => {
+  it('includes the question, the answer and the source links', () => {
+    const text = assistantClipboardText({
+      question: 'Lahore vs Karachi H2H',
+      answerText: 'Lahore lead 3-1.',
+      sources: [
+        { type: 'head_to_head', teamAId: 'sr:c:1', teamBId: 'sr:c:2' },
+        { type: 'match', matchId: 'sr:match:9' },
+      ],
+    });
+    expect(text).toContain('Q: Lahore vs Karachi H2H');
+    expect(text).toContain('A: Lahore lead 3-1.');
+    expect(text).toContain('Sources:');
+    expect(text).toContain('/teams?a=sr:c:1&b=sr:c:2');
+    expect(text).toContain('/matches/sr:match:9');
+  });
+
+  it('omits the question line when the question is unknown', () => {
+    const text = assistantClipboardText({ answerText: 'Answer only.', sources: [] });
+    expect(text).toBe('A: Answer only.');
+    expect(text).not.toContain('Sources:');
+  });
+
+  it('skips a source with no href instead of printing a broken link', () => {
+    const text = assistantClipboardText({
+      answerText: 'Answer.',
+      sources: [{ type: 'match' }, { type: 'player', id: 'sr:player:1' }],
+    });
+    expect(text).toContain('/players/sr:player:1');
+    expect(text.match(/\/matches/g)).toBeNull();
+  });
+});
+
+describe('copyToClipboard', () => {
+  afterEach(() => {
+    delete (navigator as unknown as { clipboard?: Clipboard }).clipboard;
+  });
+
+  it('uses the async clipboard api when it is available', async () => {
+    const writeText = jest.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+    await expect(copyToClipboard('hello')).resolves.toBe(true);
+    expect(writeText).toHaveBeenCalledWith('hello');
+  });
+
+  it('falls back to execCommand when the clipboard api rejects', async () => {
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText: jest.fn().mockRejectedValue(new Error('denied')) },
+      configurable: true,
+    });
+    document.execCommand = jest.fn().mockReturnValue(true);
+    await expect(copyToClipboard('hello')).resolves.toBe(true);
+    expect(document.execCommand).toHaveBeenCalledWith('copy');
+  });
+
+  it('reports failure when there is no way to copy', async () => {
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText: jest.fn().mockRejectedValue(new Error('denied')) },
+      configurable: true,
+    });
+    document.execCommand = jest.fn().mockReturnValue(false);
+    await expect(copyToClipboard('hello')).resolves.toBe(false);
   });
 });
 

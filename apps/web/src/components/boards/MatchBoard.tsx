@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import SearchField from '../SearchField';
 import type { Match } from '../../types/index';
@@ -16,7 +16,7 @@ import Pagination from '../Pagination';
 import AdSlot from '../advertisements/AdSlot';
 import { MatchCardGridSkeleton } from '../skeletons/Skeletons';
 import { matchKeys, parsePositiveInt } from '../../queries/keys';
-import { useLiveMatchesQuery, useMatchesQuery, usePrefetchNextPage } from '../../queries/useDirectoryQueries';
+import { useLiveMatchesQuery, useMatchDetailsQuery, useMatchesQuery, usePrefetchNextPage } from '../../queries/useDirectoryQueries';
 
 /**
  * 24 = 3 cards per row × 8 rows, matching the `xl:grid-cols-3` grid below. The API
@@ -60,10 +60,51 @@ export default function MatchBoard() {
     setStreamMatches((previous) => mergeLiveUpdate(previous, liveUpdate));
   }, [liveUpdate, liveEndpoint]);
 
+  const nextParams = { status: tab, limit: LIMIT, page: page + 1, q: q || undefined };
+
+  /**
+   * Searching returns rows with no scores.
+   *
+   * `GET /matches?q=…` takes a different code path in the API than the paginated list:
+   * it reads straight from the `matches` table, so `teams` comes back as a plain
+   * abbreviation array and `team_scores` is null. Every card then printed an em dash
+   * where the score belonged, even though the match has obviously been played — the
+   * scores exist, they are simply not in the search response.
+   *
+   * The ids of those thin rows are topped up from `/matches/:id`, which does return the
+   * scores. The hook is already cached and shared, so the extra calls are one per
+   * incomplete card, once per session, and nothing at all when no search is running.
+   */
+  const thinIds = !q
+    ? []
+    : matches
+        .filter((match) => {
+          if (String(match.status) !== 'completed') return false;
+          const teams = match.teams as unknown;
+          if (!teams || typeof teams !== 'object' || Array.isArray(teams)) return true;
+          const sides = teams as { home?: { score?: string }; away?: { score?: string } };
+          return !(sides.home?.score || sides.away?.score);
+        })
+        .map((match) => String(match.matchId ?? match.id ?? ''))
+        .filter(Boolean);
+  // `useMatchDetailsQuery` keys itself on the joined id string, so a fresh array
+  // identity here costs nothing and no memo is needed.
+  const thinDetails = useMatchDetailsQuery(thinIds);
+
+  const matchesWithScores = useMemo(
+    () =>
+      matches.map((match) => {
+        const id = String(match.matchId ?? match.id ?? '');
+        const detail = id ? thinDetails[id] : undefined;
+        // The detail row is a superset of the search row, so it replaces it wholesale.
+        return detail ?? match;
+      }),
+    [matches, thinDetails],
+  );
+
   const visibleMatches = liveEndpoint
     ? streamMatches.filter((match) => match.status === 'live')
-    : matches;
-  const nextParams = { status: tab, limit: LIMIT, page: page + 1, q: q || undefined };
+    : matchesWithScores;
 
   usePrefetchNextPage({
     page,

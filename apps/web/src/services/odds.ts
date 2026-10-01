@@ -23,12 +23,16 @@ function oddsMatchPath(matchId: string): string {
 
 export async function fetchMatchOdds(
   matchId: string,
-  options?: { revalidate?: number | false },
+  options?: { revalidate?: number | false; signal?: AbortSignal },
 ): Promise<MatchOddsFetchResult> {
+  const requestOptions: { revalidate?: number | false; signal?: AbortSignal } = {
+    revalidate: options?.revalidate ?? 30,
+  };
+  // Only forwarded when supplied, so the request options of a caller that passes
+  // neither `revalidate` nor `signal` are byte-identical to before.
+  if (options?.signal) requestOptions.signal = options.signal;
   try {
-    const data = await apiGet<MatchOddsResponse>(oddsMatchPath(matchId), undefined, {
-      revalidate: options?.revalidate ?? 30,
-    });
+    const data = await apiGet<MatchOddsResponse>(oddsMatchPath(matchId), undefined, requestOptions);
     return { status: 'ok', data };
   } catch (error) {
     if (error instanceof ApiError && error.status === 403) return { status: 'forbidden' };

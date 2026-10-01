@@ -1460,6 +1460,886 @@ textarea#comment-body:focus-visible {
   text-align: center;
 }
 
+/* ==========================================================================
+   Match centre
+   --------------------------------------------------------------------------
+   Scoped to `.mc-page` so nothing here can reach another page. Every rule below
+   is additive: it introduces a class the match centre is the only user of, and
+   changes no existing selector, so the rest of the site is unaffected.
+
+   The sizes follow the reference layout: 1240-1280px content width, a 70/30
+   main/sidebar split with a 20-24px gutter, 8px card radius, 16-20px card
+   padding. Light mode stays predominantly white with a very slight lift on
+   raised surfaces; dark mode is the default theme and every value below is a
+   token, so both themes are covered by the same rules.
+   ========================================================================== */
+
+.mc-page {
+  --mc-radius: 8px;
+  --mc-gap: 20px;
+  --mc-pad: 16px;
+}
+
+@media (min-width: 640px) {
+  .mc-page {
+    --mc-gap: 24px;
+    --mc-pad: 20px;
+  }
+}
+
+/* --- Page header ------------------------------------------------------- */
+
+.mc-breadcrumb {
+  color: var(--color-text-secondary);
+}
+
+.mc-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  color: var(--color-text-primary);
+}
+
+@media (min-width: 640px) {
+  .mc-title {
+    font-size: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .mc-title {
+    font-size: 1.75rem;
+  }
+}
+
+.mc-title__vs {
+  margin-inline: 0.4em;
+  font-size: 0.62em;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: lowercase;
+}
+
+.mc-title__fixture {
+  color: var(--color-text-secondary);
+  font-weight: 600;
+}
+
+/* --- Scoreboard -------------------------------------------------------- */
+
+.mc-board {
+  border: 1px solid var(--color-border);
+  border-radius: var(--mc-radius);
+  background: var(--color-card);
+  padding: var(--mc-pad);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
+}
+
+.light .mc-board {
+  background: #fff;
+  box-shadow: 0 1px 3px rgb(16 24 40 / 0.06);
+}
+
+.mc-board__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+
+@media (min-width: 640px) {
+  .mc-board__grid {
+    gap: 16px;
+  }
+}
+
+.mc-side {
+  min-width: 0;
+}
+
+/*
+ * Both sides read the same way: logo, then the team name, then the score.
+ *
+ * The away side used to be mirrored — `row-reverse` plus right-aligned text — so the
+ * board read `logo | name | vs | name | logo`. The logo sat on the inside of the `vs`
+ * on one side and the outside on the other, and scanning the two teams meant reading
+ * left-to-right on one and right-to-left on the other. Now it reads
+ * `logo | name | vs | logo | name`, so the eye only ever moves in one direction.
+ *
+ * The away block is pushed to the outer edge of its column with `justify-content`
+ * rather than by reversing it. Reversing put the logo on the wrong side; leaving the
+ * block left-aligned put it hard against the `vs` with a gap at the right of the card.
+ * Pushing it out keeps the space either side of `vs` equal, because the two `1fr`
+ * columns are the same width and each block now hugs its own edge.
+ */
+.mc-side--away > div {
+  flex-direction: row;
+  justify-content: flex-end;
+}
+
+.mc-score {
+  font-family: var(--font-mono);
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--color-brand);
+}
+
+@media (min-width: 640px) {
+  .mc-score {
+    font-size: 1.875rem;
+  }
+}
+
+.mc-board__vs {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  font-size: 0.625rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+}
+
+@media (min-width: 640px) {
+  .mc-board__vs {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+}
+
+.mc-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  flex-shrink: 0;
+  border-radius: 999px;
+  padding: 0.1rem 0.4rem;
+  font-size: 0.5625rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.mc-chip--live {
+  background: var(--color-danger-soft);
+  color: var(--color-live);
+}
+
+.mc-chip--winner {
+  background: var(--color-badge-warning-bg);
+  color: var(--color-badge-warning-fg);
+}
+
+/* The innings strip only appears when a side batted more than once, i.e. a Test. */
+.mc-innings-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border);
+}
+
+.mc-innings-strip__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--color-secondary) 55%, var(--color-card));
+  padding: 0.2rem 0.55rem;
+  font-size: 0.6875rem;
+  color: var(--color-text-secondary);
+  min-width: 0;
+}
+
+.mc-innings-strip__item--home {
+  border-color: color-mix(in srgb, var(--color-brand) 40%, var(--color-border));
+}
+
+.mc-innings-strip__no {
+  font-weight: 800;
+  color: var(--color-brand);
+  text-transform: uppercase;
+  font-size: 0.625rem;
+}
+
+.mc-innings-strip__team {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 0;
+  max-width: 8rem;
+}
+
+.mc-innings-strip__score {
+  font-weight: 800;
+  color: var(--color-text-primary);
+}
+
+.mc-innings-strip__overs {
+  color: var(--color-text-muted);
+}
+
+.mc-board__result {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  margin-top: 12px;
+  border-radius: 6px;
+  border: 1px solid color-mix(in srgb, var(--color-success) 34%, var(--color-border));
+  background: color-mix(in srgb, var(--color-success) 9%, var(--color-card));
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8125rem;
+  text-align: center;
+  color: var(--color-text-primary);
+}
+
+.mc-board__situation {
+  min-width: 0;
+}
+
+.mc-board__rate {
+  margin-top: 8px;
+  text-align: center;
+  font-size: 0.6875rem;
+  color: var(--color-text-secondary);
+}
+
+/* --- Tabs -------------------------------------------------------------- */
+
+.mc-tabs-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  margin-top: 16px;
+}
+
+/*
+ * The bar is a rounded container like every other card on the page, and the tabs
+ * inside it share the width evenly.
+ *
+ * `flex: 1 1 0` with a `min-width: 0` basis is what makes them equal: a tab's
+ * natural width differs by hundreds of pixels between "Head to Head" and "Info", so
+ * sizing by content left one wide pill and a row of narrow ones. A zero flex-basis
+ * makes every tab start from the same width and divide what is left equally.
+ *
+ * The list itself is a wrapping grid on wide screens and a horizontal scroller on
+ * narrow ones, so eight tabs fit on a phone without the page ever widening: the
+ * container is `min-w-0` inside a `minmax(0, 1fr)` grid track.
+ */
+.mc-tabs {
+  border: 1px solid var(--color-border);
+  border-radius: var(--mc-radius);
+  background: var(--color-card);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
+  padding: 4px;
+  min-width: 0;
+}
+
+.light .mc-tabs {
+  background: #fff;
+  box-shadow: 0 1px 3px rgb(16 24 40 / 0.05);
+}
+
+.mc-tabs__list {
+  min-width: 0;
+  display: flex;
+  gap: 4px;
+}
+
+@media (min-width: 640px) {
+  .mc-tabs__list {
+    flex-wrap: wrap;
+  }
+}
+
+@media (min-width: 640px) {
+  .mc-tab {
+    flex: 1 1 0;
+    min-width: 0;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 639px) {
+  .mc-tabs__list {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+  }
+}
+
+/*
+ * A tab reuses the site's own `tab-pill` treatment, so the match page's tabs are the
+ * same raised pills as the Upcoming / Live / Completed filters on the matches page.
+ * What this block adds is layout only: equal widths, the 44px hit target, and the
+ * overflow rules. Colour, gradient and shadow all come from `tab-pill--idle` and
+ * `tab-pill--active`.
+ */
+.mc-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex-shrink: 0;
+  min-height: 44px;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.8125rem;
+  white-space: nowrap;
+}
+
+.mc-tab:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: -2px;
+}
+
+.mc-tab__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mc-tab__short {
+  display: none;
+}
+
+@media (max-width: 399px) {
+  .mc-tab__label {
+    display: none;
+  }
+
+  .mc-tab__short {
+    display: inline;
+  }
+}
+
+/* --- Section cards ------------------------------------------------------ */
+
+.mc-section {
+  border: 1px solid var(--color-border);
+  border-radius: var(--mc-radius);
+  background: var(--color-card);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
+  min-width: 0;
+}
+
+.light .mc-section {
+  background: #fff;
+  box-shadow: 0 1px 3px rgb(16 24 40 / 0.05);
+}
+
+.mc-section__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.625rem var(--mc-pad);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.mc-section__icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--color-brand) 14%, transparent);
+  color: var(--color-brand);
+}
+
+.mc-section__icon--brand {
+  background: var(--color-brand);
+  color: var(--color-brand-fg);
+}
+
+.mc-section__title {
+  font-size: 0.8125rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  color: var(--color-text-primary);
+}
+
+.mc-section__desc {
+  font-size: 0.6875rem;
+  color: var(--color-text-muted);
+}
+
+.mc-section__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.125rem;
+  flex-shrink: 0;
+  min-height: 32px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-brand);
+}
+
+.mc-section__action:hover {
+  text-decoration: underline;
+}
+
+.mc-section__action:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.mc-section__body {
+  padding: var(--mc-pad);
+}
+
+/* --- Performers --------------------------------------------------------- */
+
+.mc-performer {
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--color-secondary) 40%, var(--color-card));
+  padding: 0.75rem;
+  min-width: 0;
+}
+
+.mc-performer--pom {
+  border-color: color-mix(in srgb, var(--color-warning) 38%, var(--color-border));
+  background: color-mix(in srgb, var(--color-warning) 8%, var(--color-card));
+}
+
+.mc-performer__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.625rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-secondary);
+}
+
+.mc-performer__figure {
+  font-family: var(--font-mono);
+  font-size: 1.375rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--color-brand);
+}
+
+/* --- Tables ------------------------------------------------------------- */
+
+/*
+ * Every table sits in a light grey bordered frame.
+ *
+ * Without a frame the header band and the figure rows float in the card and the
+ * reader has nothing to trace a column back to, so "161" floats free of "Runs" and
+ * "305" of "Balls". The border plus the header band give the eye a column to follow.
+ */
+.mc-table-wrap {
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-card);
+  overflow: hidden;
+}
+
+.mc-table-wrap > .table-scroll {
+  border-radius: 0;
+}
+
+/* A sub-heading above a table: "Top batters", "Leading bowlers". */
+.mc-table__title {
+  margin-bottom: 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-secondary);
+}
+
+/*
+ * Column headings.
+ *
+ * Colour and background are deliberately **not** set here. The site styles table
+ * headers globally — `table thead tr` gets the brand fill and `table thead th` gets
+ * `color: var(--color-table-header-fg) !important` — so setting either one locally
+ * paints a band the global rule then lays white text on top of, which is how these
+ * headings ended up white-on-near-white and invisible.
+ *
+ * So the house header is used as-is and this block only adds the part that was
+ * missing: weight, spacing, a divider and the size the density needs. The result is
+ * a royal-blue band with white text, identical to every other table on the site.
+ */
+.mc-table__head th {
+  padding: 0.5rem 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+/* The divider between headings and rows, kept off the brand fill's own shadow. */
+.mc-table__head th {
+  border-bottom: 1px solid var(--color-border-strong);
+}
+
+/*
+ * A light grid on every cell, so each figure sits in its own box and the eye can
+ * follow a column from the heading down. The vertical rules are lighter than the
+ * horizontal ones so the row rhythm still reads first.
+ */
+.mc-table-wrap .mc-table__row > th,
+.mc-table-wrap .mc-table__row > td,
+.mc-table__row > th,
+.mc-table__row > td {
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
+  border-right: 1px solid color-mix(in srgb, var(--color-border) 45%, transparent);
+  padding: 0.45rem 0.5rem;
+  vertical-align: middle;
+}
+
+.mc-table-wrap .mc-table__row > *:last-child,
+.mc-table__row > *:last-child {
+  border-right: 0;
+}
+
+.mc-table-wrap .mc-table__head th + th,
+.mc-table__head th + th {
+  border-right: 1px solid color-mix(in srgb, var(--color-border) 45%, transparent);
+}
+
+.mc-table__row:last-child > th,
+.mc-table__row:last-child > td {
+  border-bottom: 0;
+}
+
+/* A zebra tint on alternate rows, so a long card is scannable. */
+.mc-table__row:nth-child(even) > th,
+.mc-table__row:nth-child(even) > td {
+  background: color-mix(in srgb, var(--color-secondary) 30%, transparent);
+}
+
+.mc-cell-name {
+  text-align: left;
+  width: 40%;
+  max-width: 12rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/*
+ * Figures never wrap.
+ *
+ * `161` breaking into `1` over `61` is what made the value look like it belonged to no
+ * column at all. The figure cells are nowrap and right-aligned, and the name column
+ * takes the truncation instead — it is the only cell with a variable-length value.
+ */
+.mc-cell-num {
+  text-align: right;
+  white-space: nowrap;
+  color: var(--color-text-secondary);
+  font-size: 0.8125rem;
+}
+
+.mc-cell-num--lead {
+  color: var(--color-text-primary);
+  font-weight: 700;
+}
+
+.mc-compare__team {
+  text-align: left;
+  font-weight: 500;
+  width: 40%;
+}
+
+.mc-compare__bar-cell {
+  width: 30%;
+}
+
+.mc-compare__num {
+  text-align: right;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.mc-bar {
+  display: inline-block;
+  height: 0.5rem;
+  min-width: 2px;
+  margin-right: 0.5rem;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--color-brand), color-mix(in srgb, var(--color-brand) 60%, var(--color-accent)));
+  vertical-align: middle;
+}
+
+.mc-compare__team + .mc-compare__bar-cell .mc-bar {
+  background: linear-gradient(90deg, var(--color-accent), color-mix(in srgb, var(--color-accent) 60%, var(--color-brand)));
+}
+
+/* --- Fall of wickets ---------------------------------------------------- */
+
+/*
+ * A reflowing grid rather than a horizontal scroller. `auto-fill` with a floor keeps
+ * the chips evenly sized and lets them wrap to as many rows as the innings needs, so
+ * no wicket is clipped and none is hidden behind a scroll the reader cannot see.
+ */
+.mc-fow-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(7rem, 1fr));
+  gap: 8px;
+}
+
+.mc-fow {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--color-secondary) 45%, var(--color-card));
+  padding: 0.375rem 0.5rem;
+}
+
+.mc-fow__runs {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--color-text-primary);
+}
+
+.mc-fow__overs {
+  font-size: 0.625rem;
+  color: var(--color-text-muted);
+}
+
+.mc-fow__batter {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.625rem;
+  color: var(--color-text-secondary);
+}
+
+/* --- Buttons ------------------------------------------------------------ */
+
+.mc-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  min-height: 36px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  background: var(--color-card);
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  transition: background-color var(--motion-duration) var(--motion-ease);
+}
+
+.mc-btn-ghost:hover {
+  background: var(--color-row-hover);
+}
+
+.mc-btn-ghost:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 1px;
+}
+
+/* --- Sidebar rail -------------------------------------------------------- */
+
+.mc-rail {
+  border: 1px solid var(--color-border);
+  border-radius: var(--mc-radius);
+  background: var(--color-card);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
+  min-width: 0;
+  /* The list is the flexible part; the heading and footer keep their own height. */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.light .mc-rail {
+  background: #fff;
+  box-shadow: 0 1px 3px rgb(16 24 40 / 0.05);
+}
+
+.mc-rail__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  /* Matches the section cards so the rail and the main column line up. */
+  padding: 0.625rem var(--mc-pad);
+  border-bottom: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--color-secondary) 45%, var(--color-card));
+}
+
+.mc-rail__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-width: 0;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  color: var(--color-text-primary);
+}
+
+.mc-rail__action {
+  flex-shrink: 0;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--color-brand);
+}
+
+.mc-rail__action:hover {
+  text-decoration: underline;
+}
+
+.mc-rail__action:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.mc-rail__footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  margin-top: auto;
+  border-top: 1px solid var(--color-border);
+  padding: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-brand);
+}
+
+/* The list inside a rail, so every card in the sidebar uses the same inset. */
+.mc-rail__body {
+  padding: 0.5rem 0.625rem 0.625rem;
+}
+
+.mc-rail__footer:hover {
+  background: var(--color-row-hover);
+}
+
+.mc-other-match {
+  position: relative;
+  display: block;
+  border-radius: 6px;
+  padding: 0.5rem 1.5rem 0.5rem 0.625rem;
+  transition: background-color var(--motion-duration) var(--motion-ease);
+}
+
+.mc-other-match:hover {
+  background: var(--color-row-hover);
+}
+
+.mc-other-match:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: -2px;
+}
+
+.mc-other-match__chev {
+  position: absolute;
+  right: 0.375rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-text-muted);
+  transition: transform var(--motion-duration) var(--motion-ease);
+}
+
+.mc-other-match:hover .mc-other-match__chev {
+  transform: translateY(-50%) translateX(2px);
+}
+
+.mc-series-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+  transition: background-color var(--motion-duration) var(--motion-ease);
+}
+
+.mc-series-row:hover {
+  background: var(--color-row-hover);
+}
+
+.mc-series-row:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: -2px;
+}
+
+.mc-series-row--current {
+  background: color-mix(in srgb, var(--color-brand) 8%, transparent);
+  cursor: default;
+}
+
+.mc-series-row__label {
+  flex-shrink: 0;
+  width: 4.25rem;
+  font-size: 0.625rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+}
+
+/* --- Match info rows ------------------------------------------------------ */
+
+.mc-info__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
+  padding: 0.4375rem 0;
+}
+
+.mc-info__row:last-child {
+  border-bottom: 0;
+}
+
+.mc-info__label {
+  flex-shrink: 0;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+}
+
+.mc-info__value {
+  min-width: 0;
+  text-align: right;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mc-other-match,
+  .mc-other-match__chev,
+  .mc-series-row,
+  .mc-btn-ghost {
+    transition: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .match-detail-hero--live::after {
     animation: none;

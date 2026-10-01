@@ -513,7 +513,9 @@ function ProfileMenuLink({
       role="menuitem"
       aria-current={active ? 'page' : undefined}
       className={`flex items-center gap-3 rounded-md px-2.5 py-2 transition-colors ${
-        active ? 'bg-accent/10 text-accent' : 'text-mtext hover:bg-[var(--color-row-hover)]'
+        active
+          ? 'text-accent after:absolute after:inset-x-2.5 after:-bottom-0.5 after:h-0.5 after:rounded-full after:bg-accent'
+          : 'text-mtext hover:bg-[var(--color-row-hover)]'
       }`}
     >
       <span
@@ -547,7 +549,9 @@ function MobileNavLink({ item, active }: { item: NavItem; active: boolean }) {
       href={item.to}
       aria-current={active ? 'page' : undefined}
       className={`flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-semibold transition-colors ${
-        active ? 'bg-accent/10 text-accent' : 'text-mtext hover:bg-[var(--color-row-hover)]'
+        active
+          ? 'text-accent after:absolute after:inset-x-2.5 after:-bottom-0.5 after:h-0.5 after:rounded-full after:bg-accent'
+          : 'text-mtext hover:bg-[var(--color-row-hover)]'
       }`}
     >
       <span

@@ -776,9 +776,21 @@ type FilterKey = 'all' | 'fours' | 'sixes' | 'wickets' | `inning-${number}`;
 export default function MatchTimeline({
   payload,
   upcoming,
+  showOverSummaries = true,
 }: {
   payload: Record<string, unknown> | null;
   upcoming?: boolean;
+  /**
+   * Whether to render the per-over summary card — the row headed "End of over · N"
+   * with the score, the two batters at the crease and the bowler's figures.
+   *
+   * It is on by default and the match centre turns it off. The card restates the
+   * running score, the two batters and the bowler after every over, and on a dense
+   * match page that repeats the scoreboard three times per over and pushes the actual
+   * deliveries apart. The data is still computed either way; only the rendering is
+   * optional, so a consumer that does want the summaries keeps getting them.
+   */
+  showOverSummaries?: boolean;
 }) {
   const [filter, setFilter] = useState<FilterKey>('all');
   const [visibleCount, setVisibleCount] = useState(20);
@@ -937,7 +949,7 @@ export default function MatchTimeline({
                   </p>
                 )}
                 {renderEvent(event)}
-                {showOverEnd && context ? (
+                {showOverEnd && context && showOverSummaries ? (
                   <EndOfOverCard
                     over={context}
                     batters={context.batters}

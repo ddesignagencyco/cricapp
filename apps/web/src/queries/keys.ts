@@ -110,6 +110,19 @@ export const matchKeys = {
     [...matchLists(), normalizeParams(params as Record<string, unknown>)] as const,
   live: () => [...matchLists(), { live: true }] as const,
   detail: (matchId: string) => ['matches', 'detail', matchId] as const,
+  /**
+   * Every match-detail key carries the match id.
+   *
+   * A key without it lets one match's timeline, odds or news be served on another
+   * match's page, which is exactly the "cached data from another match" symptom the
+   * match centre was rebuilt to remove. The id is the third segment so the shape
+   * stays greppable and the list keys keep their own namespace.
+   */
+  timeline: (matchId: string) => ['matches', 'detail', matchId, 'timeline'] as const,
+  headToHead: (matchId: string, teamAId: string, teamBId: string) =>
+    ['matches', 'detail', matchId, 'h2h', teamAId, teamBId] as const,
+  odds: (matchId: string) => ['matches', 'detail', matchId, 'odds'] as const,
+  news: (matchId: string) => ['matches', 'detail', matchId, 'news'] as const,
 };
 
 const playerLists = () => ['players', 'list'] as const;

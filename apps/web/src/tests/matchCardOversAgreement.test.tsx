@@ -54,11 +54,20 @@ function liveMatch(overrides: Record<string, unknown> = {}) {
   } as never;
 }
 
-/** Every `<n> ov` / `<n>.<n> ov` string the component actually rendered. */
+/**
+ * Every `<n> ov` / `<n>.<n> ov` string the component actually rendered.
+ *
+ * The card prints overs inline with the score as `(9.4 ov)`, so the wrapping
+ * parentheses are stripped here: the assertions are about the overs value, not
+ * about the punctuation around it.
+ */
 function renderedOvers(): string[] {
   return screen
     .getAllByText(/\b\d{1,3}(?:\.\d)?\s*ov\b/)
-    .map((el) => el.textContent?.replace(/\s+/g, ' ').trim() ?? '');
+    .map(
+      (el) =>
+        el.textContent?.replace(/\s+/g, ' ').replace(/^\((.*)\)$/, '$1').trim() ?? '',
+    );
 }
 
 describe('the card and the match page cannot disagree', () => {

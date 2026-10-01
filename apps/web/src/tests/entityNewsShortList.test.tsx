@@ -121,10 +121,12 @@ describe('the panel cutting a long list down', () => {
 
 describe('the four entity pages pointing at their own news page', () => {
   it('builds the archive url for each kind of entity', () => {
-    expect(entityNewsHref('match', 'sr:match:7')).toBe('/news/by/match/sr%3Amatch%3A7');
-    expect(entityNewsHref('team', 'sr:team:1')).toBe('/news/by/team/sr%3Ateam%3A1');
-    expect(entityNewsHref('player', 'sr:player:9')).toBe('/news/by/player/sr%3Aplayer%3A9');
-    expect(entityNewsHref('series', 'tour:2026')).toBe('/news/by/series/tour%3A2026');
+    // The colon is left readable — a legal path character, and the same spelling the
+    // rest of the site uses in its match and ticker links.
+    expect(entityNewsHref('match', 'sr:match:7')).toBe('/news/by/match/sr:match:7');
+    expect(entityNewsHref('team', 'sr:team:1')).toBe('/news/by/team/sr:team:1');
+    expect(entityNewsHref('player', 'sr:player:9')).toBe('/news/by/player/sr:player:9');
+    expect(entityNewsHref('series', 'tour:2026')).toBe('/news/by/series/tour:2026');
   });
 
   it('builds nothing when the id is missing, so the page cannot link to /undefined', () => {

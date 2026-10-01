@@ -1,4 +1,6 @@
 import './globals.css';
+import './site-header.css';
+import './assistant.css';
 import { Inter, JetBrains_Mono, Noto_Nastaliq_Urdu } from 'next/font/google';
 import ScrollToTop from '../components/ScrollToTop';
 import JsonLd from './json-ld';

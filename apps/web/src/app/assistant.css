@@ -1,0 +1,66 @@
+/* ==========================================================================
+   PCZ Assistant panel
+   --------------------------------------------------------------------------
+   Lives in its own stylesheet, imported after `globals.css`, so it never edits
+   the shared sheet and cannot be clobbered by changes elsewhere.
+
+   Everything is scoped to the three `.pcz-assistant-*` classes used by
+   `components/assistant/AssistantPanel.tsx`. Colours come from the same tokens
+   the rest of the site uses, so both themes are covered by one rule set.
+   ========================================================================== */
+
+/* --- Header band -------------------------------------------------------- */
+
+/*
+ * The panel header was a flat `--color-brand` fill, which read as a generic
+ * blue slab above a near-black card. A shallow brand gradient plus a hairline
+ * of light at the top edge separates the header from the conversation below
+ * and gives the panel the same "filled chrome" treatment as the site header.
+ */
+.pcz-assistant-head {
+  position: relative;
+  background-image: linear-gradient(
+    135deg,
+    var(--color-assistant-header) 0%,
+    var(--color-brand-hover) 100%
+  );
+  color: var(--color-brand-fg);
+}
+
+.pcz-assistant-head::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 1px;
+  background-color: rgb(255 255 255 / 0.22);
+}
+
+/* White disc behind the bot glyph: an inverse mark on a filled surface. */
+.pcz-assistant-head__badge {
+  background-color: var(--color-brand-fg);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.24);
+}
+
+/* --- User bubble -------------------------------------------------------- */
+
+/*
+ * Mirrors the header so a question reads as "mine" and an answer reads as
+ * "from the desk", without needing a separate colour on every state.
+ */
+.pcz-assistant-bubble-user {
+  background-image: linear-gradient(
+    135deg,
+    var(--color-assistant-header) 0%,
+    var(--color-brand-hover) 100%
+  );
+  color: var(--color-brand-fg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pcz-assistant-head,
+  .pcz-assistant-bubble-user {
+    background-image: none;
+    background-color: var(--color-assistant-header);
+  }
+}

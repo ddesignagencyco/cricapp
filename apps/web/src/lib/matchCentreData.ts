@@ -2,6 +2,8 @@ import { currentRunRate, formatCricketOvers } from './cricketMath';
 import { parseTimelineEvents, type TimelineEvent } from '../components/MatchTimeline';
 import { batterRuns, bowlerRuns } from './commentary';
 import { pickMatchSides } from './matchScoreboard';
+import { readCompetitors, readStatisticsInnings, readToss, unwrapTimelinePayload } from './matchInnings';
+import { readProviderInningsCards } from './matchScorecardData';
 import type { BattingRow, BowlingRow } from '../types';
 
 export type InningsScorecard = {
@@ -123,20 +125,142 @@ function humanNames(rows: Array<{ name: string }>): boolean {
   return rows.some((row) => row.name && !/^sr:player:|^Player\s+\d+/i.test(row.name));
 }
 
-function inningsSides(match: Record<string, unknown>, number: number): { battingTeam: string; bowlingTeam: string } {
+/**
+ * Which side batted an innings, and which bowled to it.
+ *
+ * Resolution order, strongest evidence first:
+ *
+ *  1. `statistics.innings[].batting_team` — a stable provider competitor id, matched
+ *     against `sport_event.competitors[].id`. This is the authoritative mapping and
+ *     it is what a Test's third and fourth innings depend on.
+ *  2. `sport_event.competitors[].qualifier` via the toss — the side that won the
+ *     toss and chose to bat opened, so it anchors the alternation.
+ *  3. `matchStatus` text, for payloads that carry neither.
+ *  4. Strict alternation from the first innings' side.
+ *
+ * Innings strictly alternate, so a Test has four of them: odd innings the side that
+ * batted first, even innings the other. Returning the same side for every innings
+ * after the first mislabels innings 3, 4, 5, ...
+ */
+function inningsSides(
+  match: Record<string, unknown>,
+  number: number,
+  timeline: Record<string, unknown> | null,
+): { battingTeam: string; bowlingTeam: string } {
   const { home, away } = pickMatchSides(match);
-  const phase = String(match.matchStatus || '');
-  const homeFirst =
-    /first_innings_home|second_innings_away|home_batting/i.test(phase) ||
-    (!/first_innings_away|second_innings_home|away_batting/i.test(phase) && Boolean(home.score));
-  const firstBat = homeFirst ? home.name : away.name;
-  const firstBowl = homeFirst ? away.name : home.name;
-  // Innings strictly alternate, so a Test has four of them: odd innings the
-  // side that batted first, even innings the other. Returning the same side for
-  // every innings after the first mislabels innings 3, 4, 5, ...
-  return number % 2 === 1
-    ? { battingTeam: firstBat, bowlingTeam: firstBowl }
-    : { battingTeam: firstBowl, bowlingTeam: firstBat };
+  const payload = unwrapTimelinePayload(timeline);
+  const competitors = readCompetitors(payload);
+  const statistics = readStatisticsInnings(payload);
+
+  const byId = (id: string): 'home' | 'away' | null => {
+    if (!id) return null;
+    const needle = id.toLowerCase();
+    if (competitors.home?.id && competitors.home.id.toLowerCase() === needle) return 'home';
+    if (competitors.away?.id && competitors.away.id.toLowerCase() === needle) return 'away';
+    return null;
+  };
+
+  const stats = statistics.get(number);
+  let firstBat: 'home' | 'away' | null = null;
+  if (stats) {
+    const resolved = byId(stats.battingTeamId) ?? invert(byId(stats.bowlingTeamId));
+    if (resolved) {
+      const opponent = resolved === 'home' ? 'away' : 'home';
+      return {
+        battingTeam: resolved === 'home' ? home.name : away.name,
+        bowlingTeam: opponent === 'home' ? home.name : away.name,
+      };
+    }
+  }
+
+  const toss = readToss(match, payload);
+  if (toss.side) firstBat = toss.side;
+
+  if (!firstBat) {
+    const phase = String(match.matchStatus || '');
+    firstBat = /first_innings_home|second_innings_away|home_batting/i.test(phase)
+      ? 'home'
+      : /first_innings_away|second_innings_home|away_batting/i.test(phase)
+        ? 'away'
+        : null;
+  }
+
+  if (!firstBat) {
+    firstBat = (() => {
+      const first = statistics.get(1);
+      if (first) return byId(first.battingTeamId) ?? invert(byId(first.bowlingTeamId));
+      return null;
+    })();
+  }
+
+  if (!firstBat) {
+    // With no id, no toss and no statistics, the only evidence left is which side
+    // already has a total. Home having one and away having none means home batted
+    // first; anything else means away did. This is deliberately the same rule the
+    // pre-stable-id code used, so payloads that were already labelled correctly stay
+    // labelled correctly.
+    const homeScore = String(home.score ?? '').trim();
+    firstBat = homeScore ? 'home' : 'away';
+  }
+
+  // Innings alternate, so parity from the first-batting side is the whole rule.
+  const offset = Math.max(0, number - 1);
+  const batting = offset % 2 === 0 ? firstBat : invert(firstBat) ?? firstBat;
+  const bowling = invert(batting) ?? batting;
+  return {
+    battingTeam: batting === 'home' ? home.name : away.name,
+    bowlingTeam: bowling === 'home' ? home.name : away.name,
+  };
+}
+
+function invert(side: 'home' | 'away' | null): 'home' | 'away' | null {
+  if (side === 'home') return 'away';
+  if (side === 'away') return 'home';
+  return null;
+}
+
+/**
+ * Scorecards read from the provider's `statistics.innings[]` rather than replayed
+ * from the ball-by-ball.
+ *
+ * `overs_bowled` and the dismissal overs arrive already in cricket notation, so
+ * they are passed through `formatCricketOvers` rather than re-derived.
+ */
+function providerScorecards(
+  match: Record<string, unknown>,
+  timeline: Record<string, unknown> | null,
+): InningsScorecard[] {
+  const cards = readProviderInningsCards(timeline);
+  if (cards.length === 0) return [];
+  return cards.map((card) => {
+    const sides = inningsSides(match, card.number, timeline);
+    const batting: BattingRow[] = card.batting.map((row) => ({
+      id: row.id,
+      name: row.name,
+      out: row.out,
+      runs: row.runs ?? 0,
+      balls: row.balls ?? 0,
+      fours: row.fours ?? 0,
+      sixes: row.sixes ?? 0,
+      sr: row.strikeRate ?? 0,
+    }));
+    const bowling: BowlingRow[] = card.bowling.map((row) => ({
+      id: row.id,
+      name: row.name,
+      overs: row.overs,
+      maidens: row.maidens ?? 0,
+      runs: row.runs ?? 0,
+      wickets: row.wickets ?? 0,
+      econ: row.economy ?? '—',
+    }));
+    return labelCard({
+      number: card.number,
+      battingTeam: card.battingTeamName || sides.battingTeam,
+      bowlingTeam: card.bowlingTeamName || sides.bowlingTeam,
+      batting,
+      bowling,
+    });
+  });
 }
 
 function labelCard(card: Omit<InningsScorecard, 'label'> & { label?: string }): InningsScorecard {
@@ -152,20 +276,26 @@ export function extractInningsScorecards(
   match: Record<string, unknown>,
   timeline: Record<string, unknown> | null
 ): InningsScorecard[] {
+  // The provider's own figures win when the payload carries them. Rebuilding a
+  // scorecard by replaying every ball is a second implementation of cricket, and
+  // it disagrees with the provider on maidens, extras and economy.
+  const fromProvider = providerScorecards(match, timeline);
+  if (fromProvider.length) return fromProvider;
+
   const fromEvents = scorecardsFromEvents(parseTimelineEvents(timeline)).map((card) => {
-    const sides = inningsSides(match, card.number);
+    const sides = inningsSides(match, card.number, timeline);
     return labelCard({ ...card, ...sides });
   });
   const stored = Array.isArray(match.inningsScorecards) ? (match.inningsScorecards as InningsScorecard[]) : [];
   if (!stored.length) return fromEvents;
   if (!fromEvents.length) {
-    return stored.map((card) => labelCard({ ...card, ...inningsSides(match, card.number), ...card }));
+    return stored.map((card) => labelCard({ ...card, ...inningsSides(match, card.number, timeline), ...card }));
   }
   const numbers = new Set([...stored.map((inn) => inn.number), ...fromEvents.map((inn) => inn.number)]);
   return [...numbers].sort((a, b) => a - b).map((number) => {
     const api = stored.find((inn) => inn.number === number);
     const live = fromEvents.find((inn) => inn.number === number);
-    const sides = inningsSides(match, number);
+    const sides = inningsSides(match, number, timeline);
     const batting = api?.batting?.length && (!live?.batting.length || humanNames(api.batting) || !humanNames(live.batting))
       ? api.batting
       : live?.batting ?? api?.batting ?? [];

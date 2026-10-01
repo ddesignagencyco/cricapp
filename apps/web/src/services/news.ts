@@ -116,9 +116,13 @@ export interface NewsListParams {
 }
 
 export async function fetchNews(
-  { category, tag, q, language, playerId, teamId, matchId, seriesId, authorId, limit = 50 }: NewsListParams = {}
+  { category, tag, q, language, playerId, teamId, matchId, seriesId, authorId, limit = 50 }: NewsListParams = {},
+  signal?: AbortSignal
 ): Promise<NewsArticle[]> {
-  const res = await apiGet('/news', { category, tag, q, language, playerId, teamId, matchId, seriesId, authorId, limit });
+  const params = { category, tag, q, language, playerId, teamId, matchId, seriesId, authorId, limit };
+  const res = signal
+    ? await apiGet('/news', params, { signal })
+    : await apiGet('/news', params);
   return extractPage<Record<string, unknown>>(res).items.map(mapNewsItem);
 }
 

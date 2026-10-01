@@ -15,8 +15,13 @@ import Link from 'next/link';
 
 function clean(value: unknown): string {
   const trimmed = String(value ?? '').trim();
-  // Sportradar ids occasionally arrive prefixed inside a display name.
-  return trimmed.replace(/^sr:(competitor|sportradar):/i, '');
+  // Only a `sportradar:` prefix is stripped, and only because it turns up inside a
+  // *display name*. A real id is left exactly as the API gave it: the teams table
+  // stores `sr:competitor:142690`, and `/api/teams/142690` is a 404 while
+  // `/api/teams/sr:competitor:142690` resolves. Stripping the prefix built a dead link
+  // to a number that does not exist, on every team name, player name and logo on the
+  // match page.
+  return trimmed.replace(/^sr:sportradar:/i, '');
 }
 
 /**
@@ -37,24 +42,41 @@ function isUsableId(value: unknown): boolean {
   return /\d/.test(id);
 }
 
+/**
+ * Percent-encodes an id for a URL path, leaving the colon intact.
+ *
+ * `sr:competitor:142690` became `sr%3Acompetitor%3A142690`, which resolved to the same
+ * place but read as noise in every href on the page — and, worse, disagreed with the
+ * rest of the site, where the ticker and the match cards interpolate the raw id and
+ * produce `/matches/sr:match:42214237`. Two spellings of the same link on one site is
+ * the thing to avoid.
+ *
+ * A colon is a legal `pchar` in a path segment (RFC 3986), so it is left alone.
+ * Everything else still goes through `encodeURIComponent`, so a name containing a
+ * space or a slash is escaped exactly as before.
+ */
+function encodeId(value: string): string {
+  return encodeURIComponent(value).replace(/%3A/gi, ':');
+}
+
 export function teamHref(teamId: unknown): string | null {
   const id = clean(teamId);
-  return isUsableId(id) ? `/teams/${encodeURIComponent(id)}` : null;
+  return isUsableId(id) ? `/teams/${encodeId(id)}` : null;
 }
 
 export function playerHref(playerId: unknown): string | null {
   const id = clean(playerId);
-  return isUsableId(id) ? `/players/${encodeURIComponent(id)}` : null;
+  return isUsableId(id) ? `/players/${encodeId(id)}` : null;
 }
 
 export function tournamentHref(tournamentId: unknown): string | null {
   const id = clean(tournamentId);
-  return isUsableId(id) ? `/tournaments/${encodeURIComponent(id)}` : null;
+  return isUsableId(id) ? `/tournaments/${encodeId(id)}` : null;
 }
 
 export function matchHref(matchId: unknown): string | null {
   const id = clean(matchId);
-  return isUsableId(id) ? `/matches/${encodeURIComponent(id)}` : null;
+  return isUsableId(id) ? `/matches/${encodeId(id)}` : null;
 }
 
 /** The entity kinds that can have their own news listing. */
@@ -82,7 +104,7 @@ export function entityNewsHref(type: NewsEntityType, id: unknown): string | null
   if (!isNewsEntityType(type)) return null;
   const entityId = clean(id);
   if (!isUsableId(entityId)) return null;
-  return `/news/by/${type}/${encodeURIComponent(entityId)}`;
+  return `/news/by/${type}/${encodeId(entityId)}`;
 }
 
 const LINK_CLASS = 'transition-colors hover:text-accent';

@@ -142,6 +142,7 @@ export const AD_PLACEMENTS: readonly AdPlacement[] = [
   { key: 'news-detail-after-related', label: 'Detail — after related', size: 'leaderboard', group: 'news' },
 
   { key: 'matches-infeed', label: 'Matches list — in feed', size: 'medium-rectangle', group: 'matches', inFeed: true },
+  { key: 'match-detail-leaderboard', label: 'Match detail — leaderboard', size: 'leaderboard', group: 'matches' },
   { key: 'match-detail-after-overview', label: 'Match detail — after overview', size: 'leaderboard', group: 'matches' },
   { key: 'match-detail-sidebar', label: 'Match detail — sidebar', size: 'medium-rectangle', group: 'matches' },
   { key: 'schedule-infeed', label: 'Schedule — in feed', size: 'large-rectangle', group: 'matches', inFeed: true },
