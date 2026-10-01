@@ -170,7 +170,7 @@ export default function Navbar() {
         Skip to content
       </a>
       <nav className="mx-auto flex h-full max-w-7xl items-center justify-between gap-3 px-4 sm:px-6">
-        <Logo size="lg" />
+        <Logo size="lg" priority />
 
         <div className="hidden items-center gap-1 lg:flex">
           {navItems.map((item) => (

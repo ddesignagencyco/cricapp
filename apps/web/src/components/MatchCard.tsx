@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { Calendar, Clock, MapPin } from 'lucide-react';
 import { StatusBadge, BlinkingDot } from './Badge';
@@ -15,9 +16,27 @@ interface MatchCardProps {
   /** Compact layout — four cards per row on wide screens. */
   dense?: boolean;
   showVenue?: boolean;
+  /**
+   * Uniform layout for mixed-status grids such as the favourites page: every card
+   * uses the same stacked footer (status/result line over the date) and the team
+   * rows print scores only — never overs — so completed, live and upcoming cards
+   * all take the same shape.
+   */
+  uniform?: boolean;
+  /**
+   * Rendered in the header, before the status badge. Favourited cards slot their
+   * remove button here so it sits beside the badge instead of stacked on top of it.
+   */
+  action?: ReactNode;
 }
 
-export default function MatchCard({ match, dense = false, showVenue = true }: MatchCardProps) {
+export default function MatchCard({
+  match,
+  dense = false,
+  showVenue = true,
+  uniform = false,
+  action,
+}: MatchCardProps) {
   const board = scoreboardFromMatch(match);
   const home = board.home;
   const away = board.away;
@@ -58,7 +77,15 @@ export default function MatchCard({ match, dense = false, showVenue = true }: Ma
       : '';
   const footerRightIsVenue = isUpcoming && !!locationLine;
   const footerRightIsMeta = isUpcoming && !locationLine && !!footerRight;
-  const showStackedResult = !isLive && !isUpcoming && Boolean(footerRight);
+  // A live card has no result to print, so in uniform mode the blinking "Live"
+  // label takes the status slot — the footer keeps the same lines as its neighbours.
+  const statusLine = uniform && isLive ? 'Live' : footerRight;
+  const statusTone = uniform && isLive ? 'text-danger' : isUpcoming ? 'text-stext' : 'text-gold';
+  const showStackedResult = uniform || (!isLive && !isUpcoming && Boolean(footerRight));
+  // Overs vary from card to card and are the reason a grid of favourites lined up
+  // raggedly; the uniform variant drops them and keeps the score alone.
+  const homeRowOvers = uniform ? '' : homeOvers;
+  const awayRowOvers = uniform ? '' : awayOvers;
 
   return (
     <Link
@@ -74,7 +101,10 @@ export default function MatchCard({ match, dense = false, showVenue = true }: Ma
         >
           {tournament}
         </p>
-        <StatusBadge status={match.status} />
+        <div className="flex shrink-0 items-center gap-1.5">
+          <StatusBadge status={match.status} />
+          {action}
+        </div>
       </div>
 
       <div className={dense ? 'space-y-1' : 'space-y-1.5'}>
@@ -82,7 +112,7 @@ export default function MatchCard({ match, dense = false, showVenue = true }: Ma
           code={home.code}
           name={home.name}
           score={isUpcoming ? null : homeScore}
-          overs={homeOvers}
+          overs={homeRowOvers}
           live={homeBatting}
           upcoming={isUpcoming}
           dense={dense}
@@ -91,7 +121,7 @@ export default function MatchCard({ match, dense = false, showVenue = true }: Ma
           code={away.code}
           name={away.name}
           score={isUpcoming ? null : awayScore}
-          overs={awayOvers}
+          overs={awayRowOvers}
           live={awayBatting}
           upcoming={isUpcoming}
           dense={dense}
@@ -102,12 +132,15 @@ export default function MatchCard({ match, dense = false, showVenue = true }: Ma
         <div
           className={`border-t border-lborder ${dense ? 'mt-2 space-y-1.5 pt-1.5' : 'mt-2.5 space-y-2 pt-2.5'}`}
         >
-          <p
-            className={`font-semibold leading-snug text-gold ${dense ? 'text-[11px]' : 'text-xs sm:text-sm'}`}
-            title={footerRight}
-          >
-            {footerRight}
-          </p>
+          {statusLine ? (
+            <p
+              className={`font-semibold leading-snug ${statusTone} ${dense ? 'text-[11px]' : 'text-xs sm:text-sm'}`}
+              title={statusLine}
+            >
+              {uniform && isLive ? <BlinkingDot className="mr-1.5 align-middle" /> : null}
+              {statusLine}
+            </p>
+          ) : null}
           {(date || (isUpcoming && time)) && (
             <p
               className={`flex flex-wrap items-center gap-x-3 gap-y-1 text-stext ${dense ? 'text-[10px]' : 'text-xs'}`}
@@ -263,10 +296,11 @@ function TeamRow({
             }`}
           >
             {upcoming ? '—' : score || '—'}
-          </p>
-          {!upcoming && overs && (
-            <p className="font-mono text-xs font-medium tabular-nums text-muted-foreground">{overs} ov</p>
+            {!upcoming && overs && (
+            <span className="font-mono text-xs font-medium tabular-nums text-muted-foreground ml-2">({overs} ov)</span>
           )}
+          </p>
+          
         </div>
       )}
     </div>

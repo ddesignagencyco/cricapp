@@ -3,11 +3,15 @@ import { join } from 'node:path';
 import {
   AD_MODES,
   AD_PLACEMENTS,
+  AD_PLACEMENT_GROUPS,
   AD_SIZES,
   EMPTY_AD_CONFIG,
+  UNREGISTERED_GROUP,
   adPlacement,
   adPlacementEnabled,
+  adPlacementGroup,
   adPlacementSize,
+  groupAdPlacementRows,
   isGamblingRoute,
   isValidAdUnitId,
   isValidPublisherId,
@@ -86,6 +90,61 @@ describe('the placement registry', () => {
 
     expect(used.size).toBeGreaterThan(0);
     [...used].forEach((key) => expect(keys.has(key)).toBe(true));
+  });
+});
+
+describe('placement grouping', () => {
+  it('puts every placement in a declared group', () => {
+    // A typo in `group` would silently dump the row into the "not in the registry"
+    // bucket, where it reads as dead config and cannot be found by page.
+    const ids = new Set<string>(AD_PLACEMENT_GROUPS.map((group) => group.id));
+    AD_PLACEMENTS.forEach((placement) => {
+      expect(ids.has(placement.group)).toBe(true);
+    });
+  });
+
+  it('has no duplicate group ids', () => {
+    const ids = AD_PLACEMENT_GROUPS.map((group) => group.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it('buckets rows in declaration order and drops empty groups', () => {
+    const groups = groupAdPlacementRows([
+      { key: 'home-mid', group: 'home' },
+      { key: 'global-top', group: 'site' },
+      { key: 'news-list-bottom', group: 'news' },
+    ]);
+    expect(groups.map((group) => group.id)).toEqual(['site', 'home', 'news']);
+  });
+
+  it('keeps every placement exactly once', () => {
+    const groups = groupAdPlacementRows(AD_PLACEMENTS);
+    expect(groups.flatMap((group) => group.rows.map((row) => row.key)).sort()).toEqual(
+      AD_PLACEMENTS.map((placement) => placement.key).sort(),
+    );
+  });
+
+  it('splits the 26 placements into a handful of page groups', () => {
+    // The admin screen shows one switch cluster per group. A single group holding
+    // every row would put the overload straight back.
+    const groups = groupAdPlacementRows(AD_PLACEMENTS);
+    expect(groups.length).toBeGreaterThan(2);
+    groups.forEach((group) => expect(group.rows.length).toBeLessThan(AD_PLACEMENTS.length / 2));
+  });
+
+  it('parks an unknown or missing group last, as config debt', () => {
+    const groups = groupAdPlacementRows([
+      { key: 'home-mid', group: 'home' },
+      { key: 'legacy-slot', group: 'some-removed-group' },
+      { key: 'no-group-at-all' },
+    ]);
+    expect(groups.map((group) => group.id)).toEqual(['home', UNREGISTERED_GROUP.id]);
+    expect(groups[1].rows.map((row) => row.key)).toEqual(['legacy-slot', 'no-group-at-all']);
+  });
+
+  it('falls back to the unregistered bucket for an unknown id', () => {
+    expect(adPlacementGroup('nope')).toEqual(UNREGISTERED_GROUP);
+    expect(adPlacementGroup('home')).toEqual({ id: 'home', label: 'Home page', hint: '/' });
   });
 });
 

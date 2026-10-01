@@ -101,9 +101,21 @@ export interface ConfidenceBandAccuracy {
 
 export interface PredictionPerformance {
   modelVersion: string;
+  stage?: string | null;
   sampleSize: number;
   accuracy?: number | null;
   brierScore?: number | null;
+  expectedCalibrationError?: number | null;
+  /**
+   * Whether the accuracy may be published as a headline figure. The API decides this
+   * and refuses it on a thin sample — a headline accuracy over a handful of settled
+   * matches is not a measurement.
+   */
+  claimReady?: boolean | null;
+  /** Sample size the API requires before `claimReady` flips. */
+  publishMinSamples?: number | null;
+  /** The API's own sentence explaining the threshold. */
+  guidance?: string | null;
   byFormat: FormatAccuracy[];
   byConfidenceBand: ConfidenceBandAccuracy[];
 }

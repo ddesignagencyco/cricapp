@@ -1,5 +1,6 @@
 import { currentRunRate, formatCricketOvers } from './cricketMath';
 import { parseTimelineEvents, type TimelineEvent } from '../components/MatchTimeline';
+import { batterRuns, bowlerRuns } from './commentary';
 import { pickMatchSides } from './matchScoreboard';
 import type { BattingRow, BowlingRow } from '../types';
 
@@ -35,7 +36,7 @@ function isWicket(event: TimelineEvent): boolean {
 }
 
 function scorecardsFromEvents(events: TimelineEvent[]): InningsScorecard[] {
-  const innings = new Map<number, { batting: Map<string, BattingRow>; bowling: Map<string, { balls: number; runs: number; wickets: number; maidens: number; overRuns: number }> }>();
+  const innings = new Map<number, { batting: Map<string, BattingRow>; bowling: Map<string, { id: string; balls: number; runs: number; wickets: number; maidens: number; overRuns: number }> }>();
 
   const bucket = (inning: number) => {
     const key = inning || 1;
@@ -46,11 +47,12 @@ function scorecardsFromEvents(events: TimelineEvent[]): InningsScorecard[] {
   for (const event of events) {
     if (event.over === undefined && !event.batsman && !event.bowler) continue;
     const inn = bucket(event.inning || 1);
-    const runs = Number(event.runs) || 0;
-    const extras = Number(event.extras) || 0;
     if (event.batsman) {
       const row = inn.batting.get(event.batsman) || {
         name: event.batsman,
+        // Carried through from the feed so the scorecard can link the name to the player
+        // page. It was parsed and then dropped, which is why every batter was plain text.
+        id: event.batsmanId || '',
         out: false,
         runs: 0,
         balls: 0,
@@ -58,18 +60,23 @@ function scorecardsFromEvents(events: TimelineEvent[]): InningsScorecard[] {
         sixes: 0,
         sr: 0,
       };
-      row.runs = Number(row.runs) + runs;
+      row.runs = Number(row.runs) + batterRuns(event);
       if (isLegal(event) && event.over !== undefined) row.balls = Number(row.balls) + 1;
-      if (runs === 4) row.fours = Number(row.fours) + 1;
-      if (runs === 6) row.sixes = Number(row.sixes) + 1;
+      const scored = batterRuns(event);
+      if (scored === 4) row.fours = Number(row.fours) + 1;
+      if (scored === 6) row.sixes = Number(row.sixes) + 1;
       if (isWicket(event) && (event.dismissed === event.batsman || !event.dismissed)) row.out = true;
       const balls = Number(row.balls);
       row.sr = balls > 0 ? Number(((Number(row.runs) / balls) * 100).toFixed(2)) : 0;
       inn.batting.set(event.batsman, row);
     }
     if (event.bowler && event.over !== undefined) {
-      const row = inn.bowling.get(event.bowler) || { balls: 0, runs: 0, wickets: 0, maidens: 0, overRuns: 0 };
-      const conceded = isLegal(event) ? runs + extras : extras || runs;
+      const row = inn.bowling.get(event.bowler) || { id: event.bowlerId || '', balls: 0, runs: 0, wickets: 0, maidens: 0, overRuns: 0 };
+      // `bowlerRuns` is the single source of truth for what a bowler is charged: the penalty
+      // on a wide or a no-ball, nothing at all for a bye, and the runs otherwise. The old
+      // `isLegal(event) ? runs + extras : extras || runs` counted the extras a second time
+      // because the feed's `runs` already contains them, which also hid every maiden.
+      const conceded = bowlerRuns(event);
       row.runs += conceded;
       if (isLegal(event)) {
         row.balls += 1;
@@ -92,6 +99,7 @@ function scorecardsFromEvents(events: TimelineEvent[]): InningsScorecard[] {
         const econ = currentRunRate(row.runs, Number(overs));
         return {
           name,
+          id: row.id,
           overs,
           maidens: row.maidens,
           runs: row.runs,
@@ -172,18 +180,38 @@ export function extractInningsScorecards(
   });
 }
 
+/** A squad entry, carrying the player's id when the payload carries one. */
+export type SquadPlayer = { name: string; id: string };
+
+/**
+ * Reads the playing XI for both sides.
+ *
+ * The player's id comes along with the name so a squad can link to the player page. A row
+ * the feed gave us as a bare string has no id, so it is listed as plain text rather than
+ * linked to a guessed slug.
+ */
 export function extractSquads(
   match: Record<string, unknown>,
   timeline: Record<string, unknown> | null
-): { home: string[]; away: string[] } {
+): { home: SquadPlayer[]; away: SquadPlayer[] } {
   const { home: homeSide } = pickMatchSides(match);
   const teams = asRecord(match.teams);
+  const toPlayer = (item: unknown): SquadPlayer | null => {
+    if (typeof item === 'string') {
+      const name = item.trim();
+      return name ? { name, id: '' } : null;
+    }
+    const rec = asRecord(item);
+    if (!rec) return null;
+    const name = String(rec.name || rec.full_name || rec.short_name || '').trim();
+    if (!name) return null;
+    const id = String(rec.id || rec.player_id || rec.playerId || '').trim();
+    return { name, id: /^\s*$/.test(id) ? '' : id };
+  };
   const read = (side: Record<string, unknown> | null) => {
     const raw = side?.players || side?.lineup || side?.squad || side?.xi;
     if (!Array.isArray(raw)) return [];
-    return raw
-      .map((item) => (typeof item === 'string' ? item : String((item as { name?: string }).name || '')))
-      .filter(Boolean);
+    return raw.map(toPlayer).filter((row): row is SquadPlayer => row !== null);
   };
   let home = read(asRecord(teams?.home));
   let away = read(asRecord(teams?.away));
@@ -195,9 +223,7 @@ export function extractSquads(
     for (const lineup of lineups) {
       const rec = asRecord(lineup);
       const names = Array.isArray(rec?.starting_lineup)
-        ? rec.starting_lineup
-            .map((player) => String((player as { name?: string }).name || ''))
-            .filter(Boolean)
+        ? rec.starting_lineup.map(toPlayer).filter((row): row is SquadPlayer => row !== null)
         : [];
       if (rec?.team === 'home') home = names;
       if (rec?.team === 'away') away = names;
@@ -206,14 +232,23 @@ export function extractSquads(
   if (home.length && away.length) return { home, away };
 
   const cards = extractInningsScorecards(match, timeline);
-  const homeNames = new Set<string>(home);
-  const awayNames = new Set<string>(away);
+  const homeNames = new Map<string, SquadPlayer>();
+  const awayNames = new Map<string, SquadPlayer>();
+  home.forEach((row) => homeNames.set(row.name, row));
+  away.forEach((row) => awayNames.set(row.name, row));
   for (const card of cards) {
     const battingIsHome = card.battingTeam === homeSide.name;
     const bat = battingIsHome ? homeNames : awayNames;
     const bowl = battingIsHome ? awayNames : homeNames;
-    card.batting.forEach((row) => row.name && bat.add(row.name));
-    card.bowling.forEach((row) => row.name && bowl.add(row.name));
+    // A name the lineup did not have, found on the scorecard, still gets an entry so the
+    // side is complete. It carries no id, because the scorecard row did not give us one,
+    // so it stays plain text rather than linking to a guess.
+    card.batting.forEach((row) => {
+      if (row.name && !bat.has(row.name)) bat.set(row.name, { name: row.name, id: '' });
+    });
+    card.bowling.forEach((row) => {
+      if (row.name && !bowl.has(row.name)) bowl.set(row.name, { name: row.name, id: '' });
+    });
   }
-  return { home: [...homeNames], away: [...awayNames] };
+  return { home: [...homeNames.values()], away: [...awayNames.values()] };
 }

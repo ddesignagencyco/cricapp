@@ -2545,10 +2545,19 @@ h3.news-copy[dir="rtl"] {
   margin: 1.5rem 0;
 }
 
+/* Policy / editorial long-form pages (/about, /privacy, /terms, /editorial/*).
+   The CMS writes this HTML, so the rules below are what give a bare TipTap
+   document its reading rhythm: a comfortable measure, a visible heading
+   anchor, indented lists and links that never overflow on narrow screens. */
 .editorial-doc {
   color: var(--color-stext);
   font-size: 1.0625rem;
-  line-height: 1.85;
+  line-height: 1.8;
+  overflow-wrap: break-word;
+}
+
+.editorial-doc > :first-child {
+  margin-top: 0;
 }
 
 .editorial-doc h1,
@@ -2556,21 +2565,22 @@ h3.news-copy[dir="rtl"] {
 .editorial-doc h3 {
   color: var(--color-mtext);
   letter-spacing: -0.02em;
-  scroll-margin-top: 6rem;
+  scroll-margin-top: 6.5rem;
+  text-wrap: balance;
 }
 
 .editorial-doc h2 {
-  font-size: 1.25rem;
+  font-size: 1.3rem;
   font-weight: 700;
-  margin: 2.25rem 0 0.85rem;
-  padding-bottom: 0.55rem;
-  border-bottom: 1px solid var(--color-lborder);
+  margin: 2.5rem 0 1rem;
+  padding-left: 0.9rem;
+  border-left: 3px solid var(--color-accent);
 }
 
 .editorial-doc h3 {
-  font-size: 1.05rem;
-  font-weight: 600;
-  margin: 1.75rem 0 0.6rem;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  margin: 1.85rem 0 0.6rem;
 }
 
 .editorial-doc p {
@@ -2584,15 +2594,81 @@ h3.news-copy[dir="rtl"] {
 
 .editorial-doc ul,
 .editorial-doc ol {
-  margin: 0 0 1.25rem;
+  margin: 0 0 1.35rem;
+  padding-left: 1.35rem;
+}
+
+.editorial-doc ul {
+  list-style: none;
+  padding-left: 1.15rem;
+}
+
+.editorial-doc ul > li {
+  position: relative;
+}
+
+.editorial-doc ul > li::before {
+  content: "";
+  position: absolute;
+  left: -0.9rem;
+  top: 0.78em;
+  width: 0.35rem;
+  height: 0.35rem;
+  border-radius: 9999px;
+  background: var(--color-accent);
+}
+
+.editorial-doc ol {
+  list-style: decimal;
 }
 
 .editorial-doc li {
-  margin: 0.45rem 0;
+  margin: 0.5rem 0;
+}
+
+.editorial-doc li > ul,
+.editorial-doc li > ol {
+  margin: 0.4rem 0 0.2rem;
+}
+
+.editorial-doc strong,
+.editorial-doc b {
+  color: var(--color-mtext);
+  font-weight: 700;
+}
+
+.editorial-doc blockquote {
+  margin: 1.5rem 0;
+  padding: 0.9rem 1.15rem;
+  border: 1px solid var(--color-lborder);
+  border-left: 3px solid var(--color-accent);
+  border-radius: var(--radius-md);
+  background: var(--color-secondary);
+  color: var(--color-stext);
 }
 
 .editorial-doc a {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
   text-underline-offset: 3px;
+  overflow-wrap: anywhere;
+}
+
+.editorial-doc a:hover {
+  text-decoration-thickness: 2px;
+}
+
+.editorial-doc img {
+  margin: 0.5rem 0 1.35rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-lborder);
+}
+
+.editorial-doc pre {
+  margin: 1.35rem 0;
+  font-size: 0.8125rem;
+  line-height: 1.7;
 }
 
 /* Fallback only. `!important` here used to beat the inline style RemoteImage

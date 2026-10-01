@@ -10,6 +10,7 @@ import FavoriteButton from '../../../components/FavoriteButton';
 import ShareButton from '../../../components/ShareButton';
 import Tabs from '../../../components/Tabs';
 import { RelatedNewsPanel, useLinkedNews } from '../../../components/boards/RelatedNewsPanel';
+import { entityNewsHref } from '../../../components/EntityLinks';
 import EntityAvatar from '../../../components/EntityAvatar';
 import { APP_TIME_ZONE, getInitials } from '../../../utils/helpers';
 import type { TournamentInfo } from '../../../services/tournaments';
@@ -400,6 +401,9 @@ export default function TournamentDetailPageClient({
           loading={newsLoading}
           emptyTitle="No series news"
           emptyHint="Publish a story from Admin → News and link this series. Drafts do not appear here."
+          limit={6}
+          viewAllHref={entityNewsHref('series', tournamentId)}
+          viewAllLabel="All news on this series"
         />
       )}
 

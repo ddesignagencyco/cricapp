@@ -99,6 +99,19 @@ export const AD_SIZE_DIMENSIONS: Record<DummyAdSize, { label: string; width: num
   'half-page': { label: '300×600', width: SLOT_META['half-page'].width, height: SLOT_META['half-page'].height },
 };
 
+/**
+ * Plain-English name for each size. The registry key (`leaderboard`) is AdSense
+ * jargon; an admin picking a default wants to know what the box will look like.
+ */
+export const AD_SIZE_LABELS: Record<DummyAdSize, { label: string; hint: string }> = {
+  leaderboard: { label: 'Responsive banner', hint: 'Full-width strip between content blocks' },
+  'tablet-banner': { label: 'Tablet banner', hint: 'Narrow strip for tablet widths' },
+  'mobile-banner': { label: 'Mobile banner', hint: 'Small strip at the top of a phone screen' },
+  'medium-rectangle': { label: 'Medium rectangle', hint: 'Boxy unit, usually a sidebar' },
+  'large-rectangle': { label: 'Large rectangle', hint: 'Tall unit that sits inside an article' },
+  'half-page': { label: 'Half page', hint: 'Tall unit for a wide sidebar' },
+};
+
 /** Stable per placement + size — different slots get different photos, same slot stays consistent. */
 export function dummyAdPlaceholderUrl(width: number, height: number, seed: string): string {
   const safe = seed.replace(/[^a-zA-Z0-9-_]/g, '-').slice(0, 96);

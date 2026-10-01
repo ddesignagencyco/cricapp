@@ -18,6 +18,7 @@ import type { NewsArticle, Player, SportEventRecord } from '../../types/index';
 import { formatScheduled } from '../../utils/helpers';
 import { isSportRadarId, str } from '../../utils/extract';
 import { RelatedNewsPanel, useLinkedNews } from './RelatedNewsPanel';
+import { entityNewsHref } from '../EntityLinks';
 
 const teamTabs = [
   { key: 'overview', label: 'Overview', icon: Shield },
@@ -243,11 +244,16 @@ export default function TeamDetailBody({
 
       {tab === 'news' && (
         <div className="fade-in">
+          {/* A short list plus a link. Rendering every linked story made the tab longer
+              than the team's own page; the full list lives on its own paginated page. */}
           <RelatedNewsPanel
             articles={news}
             loading={newsLoading}
             emptyTitle="No team news"
             emptyHint="Publish a story from Admin → News and link this team. Drafts do not appear here."
+            limit={6}
+            viewAllHref={entityNewsHref('team', team?.id)}
+            viewAllLabel="All news on this team"
           />
         </div>
       )}

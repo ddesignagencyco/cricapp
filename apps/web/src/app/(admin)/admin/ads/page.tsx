@@ -46,10 +46,10 @@ export default function AdminAdsPage() {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-8">
       <AdminPageHeader
         title="Ads Manager"
-        subtitle="Control which ad slots render on the public site, and monitor the AdSense account."
+        subtitle="Choose where ads appear on the site, then check how they are performing."
       />
 
       {settingsQuery.isError ? (
@@ -62,38 +62,64 @@ export default function AdminAdsPage() {
             verified={adUnitsQuery.isSuccess ? true : adUnitsQuery.isError ? false : undefined}
           />
 
-          <AdConfigPanel
-            config={settingsQuery.data.ads}
-            adUnits={adUnitsQuery.data?.adUnits ?? []}
-            onSaved={onSaved}
-          />
-
-          {configured ? (
-            <>
-              <AdUnitsNotice
-                skipped={adUnitsQuery.data?.skipped ?? 0}
-                loading={adUnitsQuery.isPending}
-                error={adUnitsQuery.error}
-                includeArchived={includeArchived}
-                onToggleArchived={() => setIncludeArchived((prev) => !prev)}
-              />
-
-              <AdSensePolicyPanel enabled={configured} />
-              <AdSenseEarningsPanel enabled={configured} />
-            </>
-          ) : (
-            <CardPanel>
-              <div className="p-4">
-                <EmptyState
-                  icon={<ShieldAlert size={28} />}
-                  title="AdSense reporting is not configured"
-                  message="Set ADSENSE_SERVICE_ACCOUNT_JSON or ADSENSE_SERVICE_ACCOUNT_FILE on the API service, and grant the service account access to the AdSense account under Account → Users and permissions. The configuration above works without it — only the reporting panels need it."
+          <div className="space-y-3">
+            <SectionHeading
+              title="Ad delivery"
+              hint="Saved to site settings and used by every page. Nothing below this heading needs AdSense credentials."
+            />
+            <AdConfigPanel
+              config={settingsQuery.data.ads}
+              adUnits={adUnitsQuery.data?.adUnits ?? []}
+              includeArchived={includeArchived}
+              onToggleArchived={() => setIncludeArchived((prev) => !prev)}
+              adUnitsNotice={
+                <AdUnitsNotice
+                  skipped={adUnitsQuery.data?.skipped ?? 0}
+                  loading={adUnitsQuery.isPending}
+                  error={adUnitsQuery.error}
                 />
-              </div>
-            </CardPanel>
-          )}
+              }
+              onSaved={onSaved}
+            />
+          </div>
+
+          <div className="space-y-3">
+            <SectionHeading
+              title="AdSense reporting"
+              hint="Read-only. Earnings and policy data comes straight from Google and needs API credentials to be set."
+            />
+            {configured ? (
+              <>
+                <AdSensePolicyPanel enabled={configured} />
+                <AdSenseEarningsPanel enabled={configured} />
+              </>
+            ) : (
+              <CardPanel>
+                <div className="p-4">
+                  <EmptyState
+                    icon={<ShieldAlert size={28} />}
+                    title="AdSense reporting is not configured"
+                    message="Set ADSENSE_SERVICE_ACCOUNT_JSON or ADSENSE_SERVICE_ACCOUNT_FILE on the API service, and grant the service account access to the AdSense account under Account → Users and permissions. The ad delivery settings above work without it — only this section needs it."
+                  />
+                </div>
+              </CardPanel>
+            )}
+          </div>
         </>
       )}
+    </div>
+  );
+}
+
+function SectionHeading({ title, hint }: { title: string; hint: string }) {
+  return (
+    <div>
+      <h2 className="text-lg font-semibold tracking-tight" style={{ color: 'var(--admin-text)' }}>
+        {title}
+      </h2>
+      <p className="mt-0.5 text-xs" style={{ color: 'var(--admin-text-muted)' }}>
+        {hint}
+      </p>
     </div>
   );
 }
@@ -130,7 +156,7 @@ function AdSenseStatusCard({ verified }: { verified?: boolean }) {
         <span className="flex items-center gap-2">
           <BadgeDollarSign size={15} aria-hidden style={{ color: 'var(--admin-text-muted)' }} />
           <span className="font-semibold" style={{ color: 'var(--admin-text)' }}>
-            Management API
+            AdSense connection
           </span>
           <StatusBadge status={badge.status} />
           <span style={{ color: 'var(--admin-text-muted)' }}>{badge.hint}</span>
@@ -154,49 +180,24 @@ function AdSenseStatusCard({ verified }: { verified?: boolean }) {
   );
 }
 
-function AdUnitsNotice({
-  skipped,
-  loading,
-  error,
-  includeArchived,
-  onToggleArchived,
-}: {
-  skipped: number;
-  loading: boolean;
-  error: unknown;
-  includeArchived: boolean;
-  onToggleArchived: () => void;
-}) {
+function AdUnitsNotice({ skipped, loading, error }: { skipped: number; loading: boolean; error: unknown }) {
   return (
-    <CardPanel>
-      <div className="flex flex-wrap items-center justify-between gap-3 p-4 text-xs">
-        <span style={{ color: error ? 'var(--admin-danger)' : 'var(--admin-text-secondary)' }}>
-          {loading
-            ? 'Loading ad units…'
-            : error
-              ? // The backend distinguishes "no credentials" from "Google rejected
-                // them", and the fix is different for each, so pass its wording through.
-                adSenseErrorMessage(
-                  error,
-                  'The ad unit list could not be loaded, so the dropdown is empty — type slot ids by hand.',
-                )
-              : skipped === 0
-                ? 'Ad unit list loaded. Archived units can still serve ads.'
-                : `${skipped} ad unit(s) were dropped because they had no usable numeric id.`}
-        </span>
-        <button
-          type="button"
-          onClick={onToggleArchived}
-          aria-pressed={includeArchived}
-          className="rounded-md px-3 py-1.5 text-xs font-bold"
-          style={{
-            border: `1px solid ${includeArchived ? 'var(--admin-accent)' : 'var(--admin-border)'}`,
-            color: includeArchived ? 'var(--admin-accent)' : 'var(--admin-text-secondary)',
-          }}
-        >
-          {includeArchived ? 'Hide archived units' : 'Show archived units'}
-        </button>
-      </div>
-    </CardPanel>
+    <span
+      className="block text-[11px] leading-snug"
+      style={{ color: error ? 'var(--admin-danger)' : 'var(--admin-text-muted)' }}
+    >
+      {loading
+        ? 'Loading ad units…'
+        : error
+          ? // The backend distinguishes "no credentials" from "Google rejected
+            // them", and the fix is different for each, so pass its wording through.
+            adSenseErrorMessage(
+              error,
+              'The ad unit list could not be loaded, so the dropdown is empty — type slot ids by hand.',
+            )
+          : skipped === 0
+            ? 'Ad unit list loaded from your AdSense account. Archived units can still serve ads.'
+            : `${skipped} ad unit(s) were dropped because they had no usable numeric id.`}
+    </span>
   );
 }

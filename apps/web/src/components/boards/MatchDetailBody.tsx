@@ -37,8 +37,8 @@ import MatchOddsTab from '../odds/MatchOddsTab';
 import { Skeleton } from '../skeletons/Skeletons';
 import type { HeadToHead, Team } from '../../types';
 import type { MatchOddsResponse } from '../../types/odds';
-import { decodeEntityId, useLinkedNews } from './RelatedNewsPanel';
-import { newsHref } from '../../utils/newsConstraints';
+import { RelatedNewsPanel, decodeEntityId, useLinkedNews } from './RelatedNewsPanel';
+import { TeamLink, entityNewsHref, teamHref, tournamentHref } from '../EntityLinks';
 
 const detailTabs = [
   { key: 'live', label: 'Live', icon: Users },
@@ -151,6 +151,10 @@ function displaySide(match: any, index: 0 | 1, scoreOverride?: unknown) {
     name,
     code: badCode ? getInitials(name) : codeStr.toUpperCase(),
     raw: String(rawCode || rawName || ''),
+    // Threaded through so the team name in the header, the batting stat and the match info
+    // rows can link to the team page. It was available on the payload the whole time and
+    // simply never extracted, which is why every team name on this page was plain text.
+    teamId: String(side?.id || side?.teamId || extra?.id || extra?.teamId || '').trim(),
     score: usefulScore(scoreOverride) || scoreFromMatch(match, index),
     overs: String(side?.overs || extra?.overs || '').trim(),
   };
@@ -654,15 +658,21 @@ export default function MatchDetailBody({
             )
           )}
 
-          {tab === 'news' && <MatchNewsPanel articles={relatedNews} loading={newsLoading} />}
+          {tab === 'news' && (
+            <MatchNewsPanel
+              articles={relatedNews}
+              loading={newsLoading}
+              viewAllHref={entityNewsHref('match', matchId)}
+            />
+          )}
 
           {tab === 'info' && (
             <div className="match-detail-panel match-detail-panel-pad">
               <h3 className="mb-4 text-sm font-bold uppercase tracking-widest text-stext">Match Details</h3>
-              <InfoRow label="Tournament" value={match.tournament || '—'} />
+        <InfoRow label="Tournament" value={match.tournament || '-'} href={tournamentHref(match.tournamentId)} />
               <InfoRow label="Status" value={`${match.status || '—'}`} cap />
-              <InfoRow label="Home" value={homeName} />
-              <InfoRow label="Away" value={awayName} />
+              <InfoRow label="Home" value={homeName} href={teamHref(home.teamId)} />
+              <InfoRow label="Away" value={awayName} href={teamHref(away.teamId)} />
               {date && <InfoRow label="Date" value={date} />}
               {time && <InfoRow label="Time" value={time} />}
               <InfoRow label="Venue" value={match.venue || 'TBA'} />
@@ -709,23 +719,29 @@ export default function MatchDetailBody({
           )}
         </div>
 
-        <aside className="min-w-0 space-y-5 lg:mt-3 lg:space-y-6">
+        {/*
+          The rail is sticky so a reader who scrolls a long innings keeps the ad and the
+          stories in view. It was the only detail-page rail on the site that was not.
+        */}
+        <aside className="min-w-0 space-y-5 lg:sticky lg:top-16 lg:z-10 lg:mt-3 lg:self-start lg:space-y-6">
           <div className="flex justify-center lg:justify-start">
             <AdSlot placement="match-detail-sidebar" />
           </div>
           {relatedNews.length > 0 && (
             <div className="match-detail-aside-card">
               <h3 className="mb-3 text-xs font-bold uppercase tracking-widest text-stext">Related news</h3>
-              <ul className="space-y-2">
-                {relatedNews.map((article) => (
-                  <li key={article.id}>
-                    <Link href={newsHref(article)} className="block text-sm font-semibold text-mtext hover:text-accent">
-                      {article.title}
-                    </Link>
-                    <p className="text-xs text-stext">{article.date}</p>
-                  </li>
-                ))}
-              </ul>
+              {/* Three is what fits the rail without turning the page into a news index.
+                  The rest live on the match's own news page, which is one link away and
+                  paginates properly. */}
+              <RelatedNewsPanel
+                articles={relatedNews}
+                emptyTitle="No match news"
+                emptyHint=""
+                compact
+                limit={3}
+                viewAllHref={entityNewsHref('match', matchId)}
+                viewAllLabel="All news on this match"
+              />
             </div>
           )}
         </aside>
@@ -768,13 +784,23 @@ function InningsStat({
   );
 }
 
-function TeamSide({ code, name, score, overs, align }: { code: string; name: string; score: string; overs: string | number; align: string }) {
+function TeamSide({ code, name, teamId, score, overs, align }: { code: string; name: string; teamId?: string; score: string; overs: string | number; align: string }) {
   const right = align === 'right';
   return (
     <div className={`flex min-w-0 items-center gap-2 sm:gap-4 ${right ? 'flex-row-reverse text-right' : 'text-left'}`}>
-      <TeamLogo code={code} name={name} size="md" className="h-10 w-10 shrink-0 sm:h-16 sm:w-16" link={false} />
+      <TeamLogo
+        code={code}
+        name={name}
+        teamId={teamId}
+        size="md"
+        className="h-10 w-10 shrink-0 sm:h-16 sm:w-16"
+      />
       <div className="min-w-0">
-        <p className="truncate text-xs font-black tracking-tight text-mtext sm:text-lg">{name}</p>
+        <TeamLink
+          teamId={teamId}
+          name={name}
+          className="block truncate text-xs font-black tracking-tight text-mtext sm:text-lg"
+        />
         {score ? (
           <div className="mt-0.5">
             <p className="font-mono text-xl font-black tabular-nums leading-none tracking-tighter text-accent sm:text-4xl">
@@ -801,13 +827,18 @@ function InfoStat({ label, value, big = false }: { label: string; value: string;
   );
 }
 
-function InfoRow({ label, value, cap = false }: { label: string; value: string; cap?: boolean }) {
+function InfoRow({ label, value, cap = false, href }: { label: string; value: string; cap?: boolean; href?: string | null }) {
+  const cls = `text-right text-sm font-semibold ${cap ? 'capitalize text-mtext' : 'text-mtext'}`;
   return (
     <div className="flex items-start justify-between gap-4 border-b border-lborder/60 px-1 py-2.5 last:border-0">
       <span className="text-xs uppercase tracking-wider text-stext">{label}</span>
-      <span className={`text-right text-sm font-semibold ${cap ? 'capitalize text-mtext' : 'text-mtext'}`}>
-        {value}
-      </span>
+      {href ? (
+        <Link href={href} prefetch={false} className={`${cls} transition-colors hover:text-accent`}>
+          {value}
+        </Link>
+      ) : (
+        <span className={cls}>{value}</span>
+      )}
     </div>
   );
 }

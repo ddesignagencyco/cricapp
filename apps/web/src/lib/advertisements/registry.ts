@@ -70,12 +70,56 @@ export const EMPTY_AD_CONFIG: AdConfig = {
 
 /* ─── Placement registry ─── */
 
+/**
+ * Where each placement lives on the site. Purely a UI concern — the API stores a
+ * flat `placements` map and has no idea what a "page" is. Grouping exists so the
+ * admin screen can show seven switch clusters instead of one wall of 26 identical
+ * rows, and so the label can name the route the admin has to visit to see the slot.
+ */
+export const AD_PLACEMENT_GROUPS = [
+  { id: 'site', label: 'Site-wide', hint: 'Every page' },
+  { id: 'home', label: 'Home page', hint: '/' },
+  { id: 'news', label: 'News', hint: '/news' },
+  { id: 'matches', label: 'Matches & schedule', hint: '/matches · /schedule' },
+  { id: 'directory', label: 'Players, teams & authors', hint: '/players · /teams · /authors' },
+  { id: 'competitions', label: 'Tournaments & PSL', hint: '/tournaments · /psl' },
+  { id: 'betting', label: 'Odds & predictions', hint: '/odds · /predictions' },
+] as const;
+
+export type AdPlacementGroupId = (typeof AD_PLACEMENT_GROUPS)[number]['id'];
+
+/**
+ * A stored key the registry does not know. It renders nowhere, so it is kept out of
+ * the page groups and shown last — it is config debt, not a real slot.
+ */
+export const UNREGISTERED_GROUP = {
+  id: 'unregistered',
+  label: 'Not in the site registry',
+  hint: 'Stored keys that render nowhere',
+} as const;
+
+export type AdPlacementGroup = {
+  id: string;
+  label: string;
+  hint: string;
+};
+
+const GROUPS_BY_ID: Record<string, AdPlacementGroup> = Object.fromEntries(
+  [...AD_PLACEMENT_GROUPS, UNREGISTERED_GROUP].map((group) => [group.id, group as AdPlacementGroup]),
+);
+
+export function adPlacementGroup(id: string): AdPlacementGroup {
+  return GROUPS_BY_ID[id] ?? UNREGISTERED_GROUP;
+}
+
 export type AdPlacement = {
   /** Storage key. Must match the API's `AD_PLACEMENT_KEY_RE`, or the API drops it. */
   key: string;
   /** Human label for the admin table. */
   label: string;
   size: AdSize;
+  /** Must be one of `AD_PLACEMENT_GROUPS`, or the row falls back to the unregistered bucket. */
+  group: string;
   /** Fills its grid cell instead of reserving the slot's own box. */
   inFeed?: boolean;
   /** Rendered on every route from `ClientLayout`, so one key covers all of them. */
@@ -83,33 +127,61 @@ export type AdPlacement = {
 };
 
 export const AD_PLACEMENTS: readonly AdPlacement[] = [
-  { key: 'global-top', label: 'Global top banner', size: 'leaderboard', perRoute: true },
-  { key: 'home-top-mobile', label: 'Home — mobile top', size: 'leaderboard' },
-  { key: 'home-mid', label: 'Home — mid page', size: 'leaderboard' },
-  { key: 'home-footer', label: 'Home — footer', size: 'leaderboard' },
-  { key: 'home-sidebar', label: 'Home — sidebar', size: 'medium-rectangle', inFeed: true },
-  { key: 'layout-sidebar', label: 'Layout sidebar', size: 'medium-rectangle' },
-  { key: 'news-list-infeed', label: 'News list — in feed', size: 'large-rectangle', inFeed: true },
-  { key: 'news-list-bottom', label: 'News list — bottom', size: 'leaderboard' },
-  { key: 'news-detail-inarticle', label: 'News detail — in article', size: 'large-rectangle' },
-  { key: 'news-detail-sidebar', label: 'News detail — sidebar', size: 'medium-rectangle' },
-  { key: 'news-detail-after-related', label: 'News detail — after related', size: 'leaderboard' },
-  { key: 'matches-infeed', label: 'Matches — in feed', size: 'medium-rectangle', inFeed: true },
-  { key: 'match-detail-after-overview', label: 'Match detail — after overview', size: 'leaderboard' },
-  { key: 'match-detail-sidebar', label: 'Match detail — sidebar', size: 'medium-rectangle' },
-  { key: 'schedule-infeed', label: 'Schedule — in feed', size: 'large-rectangle', inFeed: true },
-  { key: 'players-after-intro', label: 'Players — after intro', size: 'leaderboard' },
-  { key: 'player-detail-after-intro', label: 'Player detail — after intro', size: 'leaderboard' },
-  { key: 'teams-after-intro', label: 'Teams — after intro', size: 'leaderboard' },
-  { key: 'team-detail-after-intro', label: 'Team detail — after intro', size: 'leaderboard' },
-  { key: 'tournament-detail-after-intro', label: 'Tournament — after intro', size: 'leaderboard' },
-  { key: 'tournament-detail-sidebar', label: 'Tournament — sidebar', size: 'medium-rectangle' },
-  { key: 'psl-after-intro', label: 'PSL — after intro', size: 'leaderboard' },
-  { key: 'psl-half-page', label: 'PSL — half page', size: 'half-page' },
-  { key: 'author-after-intro', label: 'Author — after intro', size: 'leaderboard' },
-  { key: 'prediction-detail-sidebar', label: 'Prediction detail — sidebar', size: 'half-page' },
-  { key: 'prediction-detail-sidebar-mid', label: 'Prediction detail — sidebar (medium)', size: 'medium-rectangle' },
+  { key: 'global-top', label: 'Global top banner', size: 'leaderboard', group: 'site', perRoute: true },
+  { key: 'layout-sidebar', label: 'Layout sidebar', size: 'medium-rectangle', group: 'site' },
+
+  { key: 'home-top-mobile', label: 'Mobile top', size: 'leaderboard', group: 'home' },
+  { key: 'home-mid', label: 'Mid page', size: 'leaderboard', group: 'home' },
+  { key: 'home-footer', label: 'Footer', size: 'leaderboard', group: 'home' },
+  { key: 'home-sidebar', label: 'Sidebar', size: 'medium-rectangle', group: 'home', inFeed: true },
+
+  { key: 'news-list-infeed', label: 'List — in feed', size: 'large-rectangle', group: 'news', inFeed: true },
+  { key: 'news-list-bottom', label: 'List — bottom', size: 'leaderboard', group: 'news' },
+  { key: 'news-detail-inarticle', label: 'Detail — in article', size: 'large-rectangle', group: 'news' },
+  { key: 'news-detail-sidebar', label: 'Detail — sidebar', size: 'medium-rectangle', group: 'news' },
+  { key: 'news-detail-after-related', label: 'Detail — after related', size: 'leaderboard', group: 'news' },
+
+  { key: 'matches-infeed', label: 'Matches list — in feed', size: 'medium-rectangle', group: 'matches', inFeed: true },
+  { key: 'match-detail-after-overview', label: 'Match detail — after overview', size: 'leaderboard', group: 'matches' },
+  { key: 'match-detail-sidebar', label: 'Match detail — sidebar', size: 'medium-rectangle', group: 'matches' },
+  { key: 'schedule-infeed', label: 'Schedule — in feed', size: 'large-rectangle', group: 'matches', inFeed: true },
+
+  { key: 'players-after-intro', label: 'Players list — after intro', size: 'leaderboard', group: 'directory' },
+  { key: 'player-detail-after-intro', label: 'Player detail — after intro', size: 'leaderboard', group: 'directory' },
+  { key: 'teams-after-intro', label: 'Teams list — after intro', size: 'leaderboard', group: 'directory' },
+  { key: 'team-detail-after-intro', label: 'Team detail — after intro', size: 'leaderboard', group: 'directory' },
+  { key: 'author-after-intro', label: 'Author — after intro', size: 'leaderboard', group: 'directory' },
+
+  { key: 'tournament-detail-after-intro', label: 'Tournament — after intro', size: 'leaderboard', group: 'competitions' },
+  { key: 'tournament-detail-sidebar', label: 'Tournament — sidebar', size: 'medium-rectangle', group: 'competitions' },
+  { key: 'psl-after-intro', label: 'PSL — after intro', size: 'leaderboard', group: 'competitions' },
+  { key: 'psl-half-page', label: 'PSL — half page', size: 'half-page', group: 'competitions' },
+
+  { key: 'prediction-detail-sidebar', label: 'Prediction detail — sidebar', size: 'half-page', group: 'betting' },
+  { key: 'prediction-detail-sidebar-mid', label: 'Prediction detail — sidebar (medium)', size: 'medium-rectangle', group: 'betting' },
 ];
+
+/**
+ * Buckets rows into the group order declared above, with the unregistered bucket
+ * pinned last. Empty groups are dropped so the admin never sees a heading with
+ * nothing under it.
+ */
+export function groupAdPlacementRows<T extends { key: string; group?: string }>(
+  rows: readonly T[],
+): Array<AdPlacementGroup & { rows: T[] }> {
+  const buckets = new Map<string, T[]>();
+  for (const row of rows) {
+    const id = row.group && GROUPS_BY_ID[row.group] ? row.group : UNREGISTERED_GROUP.id;
+    const bucket = buckets.get(id);
+    if (bucket) bucket.push(row);
+    else buckets.set(id, [row]);
+  }
+
+  const order = [...AD_PLACEMENT_GROUPS.map((group) => group.id as string), UNREGISTERED_GROUP.id];
+  return order
+    .filter((id) => (buckets.get(id)?.length ?? 0) > 0)
+    .map((id) => ({ ...adPlacementGroup(id), rows: buckets.get(id) as T[] }));
+}
 
 const PLACEMENTS_BY_KEY: Record<string, AdPlacement> = Object.fromEntries(
   AD_PLACEMENTS.map((placement) => [placement.key, placement]),

@@ -109,6 +109,7 @@ export const matchKeys = {
   list: (params: MatchesQueryParams | Record<string, unknown>) =>
     [...matchLists(), normalizeParams(params as Record<string, unknown>)] as const,
   live: () => [...matchLists(), { live: true }] as const,
+  detail: (matchId: string) => ['matches', 'detail', matchId] as const,
 };
 
 const playerLists = () => ['players', 'list'] as const;

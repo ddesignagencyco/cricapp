@@ -5,12 +5,39 @@ import type {
   MatchSideLabels,
   PartnershipProjection,
   PredictionChartPoint,
+  PredictionPerformance,
   PredictionRun,
   PredictionScoreRange,
 } from '../types/predictions';
 
 export function isNil(value: unknown): value is null | undefined {
   return value === null || value === undefined;
+}
+
+/**
+ * Sample size the API requires before an accuracy figure may be published. Mirrors
+ * `publishMinSamples` in the performance payload; used only as a fallback for an API
+ * build that sends `claimReady` without the threshold.
+ */
+export const MIN_PUBLISHABLE_PREDICTION_SAMPLES = 200;
+
+/**
+ * Whether the accuracy is old and well-sampled enough to be shown as a headline.
+ *
+ * The API already refuses to publish a thin sample and says so in the payload
+ * (`claimReady: false`, `publishMinSamples: 200`, plus a `guidance` sentence). The
+ * page used to gate on `sampleSize > 0` alone and print the number anyway, so three
+ * settled matches rendered as "0% accuracy" — an unsupported claim rather than a
+ * measurement, and alarming besides.
+ *
+ * The backend's own verdict wins whenever it sends one; the sample-size rule is only
+ * a fallback for an older build that omits `claimReady`.
+ */
+export function isAccuracyPublishable(performance: PredictionPerformance | null | undefined): boolean {
+  if (!performance) return false;
+  if (typeof performance.claimReady === 'boolean') return performance.claimReady;
+  const min = finiteNum(performance.publishMinSamples) ?? MIN_PUBLISHABLE_PREDICTION_SAMPLES;
+  return (finiteNum(performance.sampleSize) ?? 0) >= min;
 }
 
 export function finiteNum(value: unknown): number | null {

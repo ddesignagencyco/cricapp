@@ -18,7 +18,11 @@ import TournamentCard from '../TournamentCard';
 import { parsePositiveInt, tournamentKeys } from '../../queries/keys';
 import { usePrefetchNextPage, useTournamentsQuery } from '../../queries/useDirectoryQueries';
 
-const LIMIT = 20;
+/**
+ * 24 = 3 cards per row × 8 rows, matching the `xl:grid-cols-3` grid below. The API
+ * default is 20, which leaves two orphans stranded on the last row.
+ */
+const LIMIT = 24;
 const EMPTY_TOURNAMENTS: TournamentApi[] = [];
 
 interface Props {

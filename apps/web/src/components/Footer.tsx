@@ -15,36 +15,32 @@ import { phoneHref, whatsappHref } from '../lib/socialPlatforms';
 
 const CURRENT_YEAR = new Date().getFullYear();
 
+/**
+ * The header already carries every browse destination (matches, teams,
+ * players, tools, news, gallery, PSL, tours, …), so repeating them here only
+ * adds noise and maintenance. The footer keeps what the header does not
+ * surface: the CMS-driven editorial pages and the handful of secondary
+ * routes that are not in the primary navigation.
+ */
 const footerCols = [
   {
-    title: 'Cricket',
-    links: [
-      { label: 'Matches', to: '/matches' },
-      { label: 'Predictions', to: '/predictions' },
-      { label: 'Tools', to: '/tools' },
-      { label: 'Teams', to: '/teams' },
-      { label: 'Players', to: '/players' },
-      { label: 'Authors', to: '/authors' },
-      { label: 'Gallery', to: '/gallery' },
-      { label: 'Contact', to: '/contact' },
-    ],
-  },
-  {
-    title: 'PSL & More',
-    links: [
-      { label: 'PSL / Pakistan', to: '/psl' },
-      { label: 'Tournaments', to: '/tournaments' },
-      { label: 'Tours', to: '/tours' },
-    ],
-  },
-  {
     title: 'Company',
+    span: 'lg:col-span-3',
     links: [
       { label: 'About', to: '/about' },
-      { label: 'Privacy Policy', to: '/privacy' },
-      { label: 'Terms of Service', to: '/terms' },
       { label: 'Editorial Policy', to: '/editorial/editorial-policy' },
       { label: 'Corrections', to: '/editorial/corrections' },
+      { label: 'Privacy Policy', to: '/privacy' },
+      { label: 'Terms of Service', to: '/terms' },
+    ],
+  },
+  {
+    title: 'More',
+    span: 'lg:col-span-2',
+    links: [
+      { label: 'Urdu News', to: '/ur/news' },
+      { label: 'Pakistan Cricket', to: '/pakistan' },
+      { label: 'Contact Us', to: '/contact' },
     ],
   },
 ];
@@ -56,87 +52,112 @@ export default function Footer({ settings }: { settings?: SiteSettings | null })
   const phone = settings?.phone?.trim() || '';
   const whatsapp = settings?.whatsapp?.trim() || '';
   const mapLink = mapsHref(settings?.mapsUrl);
+  const hasContact = Boolean(email || phone || whatsapp || location);
 
   return (
-    <footer className="mt-16 border-t border-lborder bg-card">
-      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
-        <div className="grid grid-cols-2 items-start gap-x-8 gap-y-10 sm:grid-cols-3 lg:grid-cols-[1.4fr_repeat(3,minmax(0,1fr))_1.15fr]">
-          <div className="col-span-2 sm:col-span-3 lg:col-span-1">
-            <Logo size="4xl" tone="on-light" />
-            <p className="mt-4 max-w-xs text-sm leading-relaxed text-stext">
-              Every Run. Every Ball. Live. Your home for cricket live scores, PSL fixtures, teams, players and in-depth analysis.
+    <footer className="mt-12 border-t border-lborder bg-card sm:mt-16">
+      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12">
+        <div className="grid grid-cols-1 gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-12 lg:gap-y-12">
+          <div className="sm:col-span-2 lg:col-span-5">
+            <Logo size="footer" />
+            <p className="mt-5 max-w-sm text-sm leading-relaxed text-stext">
+              Every Run. Every Ball. Live. Your home for cricket live scores, PSL fixtures, teams,
+              players and in-depth analysis.
             </p>
-            {(email || phone || whatsapp || location) ? (
-              <ul className="mt-4 max-w-xs space-y-1.5 text-sm text-stext">
+
+            {hasContact ? (
+              <ul className="mt-5 max-w-sm space-y-2.5 text-sm text-stext">
                 {email ? (
-                  <li>
-                    <a href={`mailto:${email}`} className="inline-flex items-center gap-2 hover:text-accent">
-                      <Mail size={13} className="shrink-0" />
+                  <li className="flex min-w-0 items-start gap-2.5">
+                    <span className="mt-px grid h-6 w-6 shrink-0 place-items-center rounded-md bg-secondary">
+                      <Mail size={13} aria-hidden="true" />
+                    </span>
+                    <a
+                      href={`mailto:${email}`}
+                      className="min-w-0 break-all transition-colors hover:text-accent"
+                    >
                       {email}
                     </a>
                   </li>
                 ) : null}
                 {phone ? (
-                  <li>
-                    <a href={phoneHref(phone)} className="inline-flex items-center gap-2 hover:text-accent">
-                      <Phone size={13} className="shrink-0" />
+                  <li className="flex min-w-0 items-start gap-2.5">
+                    <span className="mt-px grid h-6 w-6 shrink-0 place-items-center rounded-md bg-secondary">
+                      <Phone size={13} aria-hidden="true" />
+                    </span>
+                    <a
+                      href={phoneHref(phone)}
+                      className="min-w-0 break-words transition-colors hover:text-accent"
+                    >
                       {phone}
                     </a>
                   </li>
                 ) : null}
                 {whatsapp ? (
-                  <li>
-                    <a href={whatsappHref(whatsapp)} className="inline-flex items-center gap-2 hover:text-accent" target="_blank" rel="noopener noreferrer">
+                  <li className="flex min-w-0 items-start gap-2.5">
+                    <span className="mt-px grid h-6 w-6 shrink-0 place-items-center rounded-md bg-secondary">
                       <SocialBrandIcon id="whatsapp" size={16} />
+                    </span>
+                    <a
+                      href={whatsappHref(whatsapp)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="min-w-0 break-words transition-colors hover:text-accent"
+                    >
                       {whatsapp}
                     </a>
                   </li>
                 ) : null}
                 {location ? (
-                  <li>
+                  <li className="flex min-w-0 items-start gap-2.5">
+                    <span className="mt-px grid h-6 w-6 shrink-0 place-items-center rounded-md bg-secondary">
+                      <MapPin size={13} aria-hidden="true" />
+                    </span>
                     {mapLink ? (
-                      <a href={mapLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-start gap-2 hover:text-accent">
-                        <MapPin size={13} className="mt-0.5 shrink-0" />
+                      <a
+                        href={mapLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="min-w-0 break-words transition-colors hover:text-accent"
+                      >
                         {location}
                       </a>
                     ) : (
-                      <span className="inline-flex items-start gap-2">
-                        <MapPin size={13} className="mt-0.5 shrink-0" />
-                        {location}
-                      </span>
+                      <span className="min-w-0 break-words">{location}</span>
                     )}
                   </li>
                 ) : null}
               </ul>
             ) : null}
-            <SiteSocialLinks socials={socials} className="mt-4" />
+
+            <SiteSocialLinks socials={socials} className="mt-5" />
           </div>
 
           {footerCols.map((col) => (
-            <div key={col.title}>
-              <p className="mb-4 text-xs font-bold uppercase tracking-wider text-stext">
+            <nav key={col.title} className={`min-w-0 ${col.span}`} aria-label={col.title}>
+              <p className="mb-4 text-[11px] font-bold uppercase tracking-[0.14em] text-mtext">
                 {col.title}
               </p>
-              <ul className="space-y-2.5">
+              <ul className="grid grid-cols-2 gap-x-4 gap-y-2.5 sm:grid-cols-1">
                 {col.links.map((link) => (
-                  <li key={link.to}>
+                  <li key={link.to} className="min-w-0">
                     <Link
                       href={link.to}
-                      className="text-sm text-stext transition-colors hover:text-accent"
+                      className="block text-sm leading-snug text-stext transition-colors hover:text-accent"
                     >
                       {link.label}
                     </Link>
                   </li>
                 ))}
               </ul>
-            </div>
+            </nav>
           ))}
 
-          <div>
-            <p className="mb-4 text-xs font-bold uppercase tracking-wider text-stext">
+          <div className="min-w-0 sm:col-span-2 lg:col-span-2">
+            <p className="mb-4 text-[11px] font-bold uppercase tracking-[0.14em] text-mtext">
               Get the app
             </p>
-            <p className="mb-4 text-sm leading-relaxed text-stext">
+            <p className="mb-4 max-w-[14rem] text-sm leading-relaxed text-stext">
               Live scores, news and more on the go.
             </p>
             <div className="flex w-full max-w-[14rem] flex-col gap-2">
@@ -162,10 +183,9 @@ export default function Footer({ settings }: { settings?: SiteSettings | null })
       </div>
 
       <div className="border-t border-lborder">
-        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6">
-          <p className="text-center text-xs text-stext">
-            &copy; {CURRENT_YEAR} PakCricZone. All rights reserved.
-          </p>
+        <div className="mx-auto flex max-w-7xl flex-col items-center gap-1.5 px-4 py-5 text-center text-xs text-stext sm:flex-row sm:justify-between sm:px-6 sm:text-left">
+          <p>&copy; {CURRENT_YEAR} PakCricZone. All rights reserved.</p>
+          <p className="text-muted-foreground">Every run. Every ball. Live.</p>
         </div>
       </div>
     </footer>

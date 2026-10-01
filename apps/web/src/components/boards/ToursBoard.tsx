@@ -18,7 +18,11 @@ import TourCard from '../TourCard';
 import { parsePositiveInt, tourKeys } from '../../queries/keys';
 import { usePrefetchNextPage, useToursQuery } from '../../queries/useDirectoryQueries';
 
-const LIMIT = 20;
+/**
+ * 24 = 3 cards per row × 8 rows, matching the `xl:grid-cols-3` grid below. The API
+ * default is 20, which leaves two orphans stranded on the last row.
+ */
+const LIMIT = 24;
 const EMPTY_TOURS: Tour[] = [];
 
 export default function ToursBoard() {

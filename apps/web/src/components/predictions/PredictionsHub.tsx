@@ -10,7 +10,7 @@ import EmptyState from '../EmptyState';
 import Tabs from '../Tabs';
 import PredictionMatchCard from './PredictionMatchCard';
 import PredictionsUpcomingPager from './PredictionsUpcomingPager';
-import { asPercent, bandTone } from '../../lib/predictions';
+import { asPercent, bandTone, isAccuracyPublishable } from '../../lib/predictions';
 import type { Match } from '../../types';
 import type { MatchPredictions, PredictionChartPoint, PredictionPerformance } from '../../types/predictions';
 
@@ -47,7 +47,14 @@ export default function PredictionsHub({
   const tab =
     fromUrl === 'live' || fromUrl === 'upcoming' ? fromUrl : initialTab ?? firstWithItems;
   const sample = performance?.sampleSize ?? 0;
-  const hasPerformance = Boolean(performance && sample > 0);
+  /**
+   * The API refuses to publish an accuracy figure until the sample is large enough
+   * (`claimReady: false` at 3 settled matches) and the page used to ignore that,
+   * printing "0%" as a headline accuracy. Behind a handful of settled games the
+   * figure is noise, so the whole card stays hidden until the backend says it is
+   * safe to publish.
+   */
+  const hasPerformance = isAccuracyPublishable(performance);
   const hasUpcoming = upcoming.length > 0 || upcomingTotal > 0;
     // The page is server-rendered with a 30s cache, so a live card would sit on a stale
   // score for the whole time a match is running. The homepage and the matches page

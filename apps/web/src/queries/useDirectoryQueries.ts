@@ -1,10 +1,10 @@
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { fetchPlayersPage, type PlayersListParams, type PlayersPageResult } from '../services/players';
 import { fetchTeamsPage, type TeamsListParams, type TeamPageResult } from '../services/teams';
 import { fetchToursPage, type ToursListParams, type ToursPageResult } from '../services/tours';
 import { fetchTournamentsPage, type TournamentsListParams, type TournamentPageResult } from '../services/tournaments';
-import { fetchLiveMatches, fetchMatchesPage, type MatchesListParams, type MatchesPageResult } from '../services/matches';
+import { fetchLiveMatches, fetchMatchById, fetchMatchesPage, type MatchesListParams, type MatchesPageResult } from '../services/matches';
 import { fetchSiteSettings, type SiteSettings } from '../services/siteSettings';
 import { fetchGalleryPage, type GalleryListParams, type GalleryPageResult } from '../services/gallery';
 import {
@@ -25,6 +25,7 @@ import {
 } from './keys';
 import { QUERY_STALE_TIME } from './constants';
 import { runAbortable } from './queryUtils';
+import type { Match } from '../types/index';
 
 function sameListContext(currentParams: Record<string, unknown>, previousQuery: any): boolean {
   const previousParams = previousQuery?.queryKey?.[2];
@@ -110,6 +111,42 @@ export function useLiveMatchesQuery(enabled = true) {
     queryKey: matchKeys.live(),
     queryFn: ({ signal }) => runAbortable(signal, (requestSignal) => fetchLiveMatches(requestSignal)),
     enabled,
+  });
+}
+
+/**
+ * Full match records for a set of ids, keyed by id.
+ *
+ * `/favorites?expand=true` returns a deliberately thin match — no `team_scores`,
+ * no `result_text` and a `teams` array rather than `{home, away}` — so a completed
+ * favourite has nothing for `scoreboardFromMatch` or `describeMatchResult` to read
+ * and the card renders blank. `/matches/:id` returns the complete summary, so each
+ * missing row is topped up from there.
+ *
+ * Deduplicated and cached under `matchKeys.detail`, so a match shown on several
+ * cards — or revisited on a later visit — is fetched once and reused. A `null` value
+ * means the id is genuinely gone, which is cached too: without that, every render
+ * would retry a 404 forever.
+ */
+export function useMatchDetailsQuery(matchIds: readonly string[]) {
+  const ids = useMemo(
+    () => [...new Set(matchIds.map((id) => id.trim()).filter(Boolean))].sort(),
+    [matchIds],
+  );
+  // A stable key so the query instance is not rebuilt on every parent render.
+  const key = useMemo(() => ids.join('|'), [ids]);
+
+  return useQuery<Record<string, Match>, Error>({
+    queryKey: [...matchKeys.all, 'details', key],
+    enabled: ids.length > 0,
+    staleTime: QUERY_STALE_TIME,
+    queryFn: ({ signal }) =>
+      runAbortable(signal, async (requestSignal) => {
+        const entries = await Promise.all(
+          ids.map(async (id) => [id, await fetchMatchById(id, requestSignal)] as const),
+        );
+        return Object.fromEntries(entries) as Record<string, Match>;
+      }),
   });
 }
 

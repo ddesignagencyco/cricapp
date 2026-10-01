@@ -78,14 +78,42 @@ describe('extractInningsScorecards', () => {
     const timeline = {
       timeline: [
         ball({ over: 1, striker: 'Ali', bowler: 'Babar', runs: 0 }),
-        ball({ over: 1, striker: 'Ali', bowler: 'Babar', runs: 4, extras: 1, extraType: 'no_ball' }),
+        // The feed's `runs_scored` is the *total* on the ball, so a no-ball where the batter
+        // also hit a run reports the penalty inside it. This is the real delivery: a single
+        // off the bat plus the no-ball, written as 2.
+        ball({ over: 1, striker: 'Ali', bowler: 'Babar', runs: 2, extras: 1, extraType: 'no_ball' }),
       ],
     };
     const [inn] = extractInningsScorecards(match, timeline);
     const ali = inn.batting.find((r) => r.name === 'Ali');
     expect(ali?.balls).toBe(1);
-    // The runs off the bat still count toward the batter.
-    expect(ali?.runs).toBe(4);
+    // The single off the bat is the batter's; the penalty is the team's, not his.
+    expect(ali?.runs).toBe(1);
+  });
+
+  it('charges a bowler for a no-ball they also conceded a run off of', () => {
+    // Same delivery as above: the bowler is charged the penalty *and* the run off the bat,
+    // which is 2. Charging only the penalty lost a run per no-ball and the innings figures
+    // stopped adding up to the team's score.
+    const timeline = {
+      timeline: [ball({ over: 1, striker: 'Ali', bowler: 'Babar', runs: 2, extras: 1, extraType: 'no_ball' })],
+    };
+    const [inn] = extractInningsScorecards(match, timeline);
+    expect(inn.bowling.find((r) => r.name === 'Babar')?.runs).toBe(2);
+  });
+
+  it('gives a batter nothing for a bye or a leg bye, and a bowler nothing either', () => {
+    const timeline = {
+      timeline: [
+        ball({ over: 1, striker: 'Ali', bowler: 'Babar', runs: 1, extras: 1, extraType: 'bye' }),
+        ball({ over: 1, striker: 'Ali', bowler: 'Babar', runs: 1, extras: 1, extraType: 'leg_bye' }),
+      ],
+    };
+    const [inn] = extractInningsScorecards(match, timeline);
+    // The run belongs to the team. Charging it to the batter is what the over card was
+    // showing: a batter credited with a run off a bye.
+    expect(inn.batting.find((r) => r.name === 'Ali')?.runs).toBe(0);
+    expect(inn.bowling.find((r) => r.name === 'Babar')?.runs).toBe(0);
   });
 
   it('credits extras to the bowler but not to the batter', () => {
@@ -240,6 +268,13 @@ describe('extractInningsScorecards', () => {
   });
 });
 
+/**
+ * Squad entries carry the player's id so the squad list can link to the player page. The
+ * name-only assertions below read through `names()` so each test stays about which players
+ * were found, not about the shape of the row.
+ */
+const names = (rows: { name: string }[]) => rows.map((row) => row.name);
+
 describe('extractSquads', () => {
   it('reads players straight off the teams object', () => {
     const full = {
@@ -248,19 +283,36 @@ describe('extractSquads', () => {
         away: { name: 'Islamabad', players: ['Babar'] },
       },
     };
-    expect(extractSquads(full, null)).toEqual({ home: ['Ali', 'Hasan'], away: ['Babar'] });
+    expect(names(extractSquads(full, null).home)).toEqual(['Ali', 'Hasan']);
+    expect(names(extractSquads(full, null).away)).toEqual(['Babar']);
+  });
+
+  it('carries the player id through when the payload has one', () => {
+    const full = {
+      teams: {
+        home: { players: [{ id: 'sr:player:1', name: 'Ali' }] },
+        away: { players: [{ name: 'Babar' }] },
+      },
+    };
+    const squads = extractSquads(full, null);
+    expect(squads.home[0]).toEqual({ name: 'Ali', id: 'sr:player:1' });
+    // A name with no id must stay empty rather than be guessed at, so the squad list can
+    // render it as plain text instead of linking to a dead URL.
+    expect(squads.away[0]).toEqual({ name: 'Babar', id: '' });
   });
 
   it('accepts an array of name strings', () => {
     const full = { teams: { home: { players: ['Ali'] }, away: { lineup: ['Babar'] } } };
-    expect(extractSquads(full, null)).toEqual({ home: ['Ali'], away: ['Babar'] });
+    expect(names(extractSquads(full, null).home)).toEqual(['Ali']);
+    expect(names(extractSquads(full, null).away)).toEqual(['Babar']);
   });
 
   it('maps player objects down to their names', () => {
     const full = {
       teams: { home: { squad: [{ name: 'Ali' }, { name: '' }] }, away: { xi: ['Babar'] } },
     };
-    expect(extractSquads(full, null)).toEqual({ home: ['Ali'], away: ['Babar'] });
+    expect(names(extractSquads(full, null).home)).toEqual(['Ali']);
+    expect(names(extractSquads(full, null).away)).toEqual(['Babar']);
   });
 
   it('falls back to timeline lineups when the teams object has no players', () => {
@@ -271,7 +323,8 @@ describe('extractSquads', () => {
         { team: 'away', starting_lineup: [{ name: 'Babar' }] },
       ],
     };
-    expect(extractSquads(bare, timeline)).toEqual({ home: ['Ali'], away: ['Babar'] });
+    expect(names(extractSquads(bare, timeline).home)).toEqual(['Ali']);
+    expect(names(extractSquads(bare, timeline).away)).toEqual(['Babar']);
   });
 
   it('derives the squads from the scorecard when nothing else is available', () => {
@@ -281,8 +334,8 @@ describe('extractSquads', () => {
     const bare = { teams: { home: { name: 'Lahore' }, away: { name: 'Islamabad' } } };
     const timeline = { timeline: [ball({ over: 1, striker: 'Ali', bowler: 'Babar', runs: 1 })] };
     const squads = extractSquads(bare, timeline);
-    expect(squads.away).toContain('Ali');
-    expect(squads.home).toContain('Babar');
+    expect(names(squads.away)).toContain('Ali');
+    expect(names(squads.home)).toContain('Babar');
   });
 
   it('assigns scorecard names to the correct side when home bats first', () => {
@@ -293,8 +346,8 @@ describe('extractSquads', () => {
     const timeline = { timeline: [ball({ over: 1, striker: 'Ali', bowler: 'Babar', runs: 1 })] };
     const squads = extractSquads(homeFirst, timeline);
     // Home bat first, so the striker is a home player and the bowler is away.
-    expect(squads.home).toContain('Ali');
-    expect(squads.away).toContain('Babar');
+    expect(names(squads.home)).toContain('Ali');
+    expect(names(squads.away)).toContain('Babar');
   });
 
   it('does not duplicate a player who appears in both innings', () => {
@@ -308,7 +361,7 @@ describe('extractSquads', () => {
     const squads = extractSquads(bare, timeline);
     const all = [...squads.home, ...squads.away];
     // Each name is collected once even though both players appear in both cards.
-    expect(all.sort()).toEqual(['Ali', 'Babar']);
+    expect(names(all).sort()).toEqual(['Ali', 'Babar']);
   });
 
   it('returns empty sides rather than throwing when there is nothing to read', () => {
