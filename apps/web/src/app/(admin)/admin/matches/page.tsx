@@ -1,51 +1,31 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { Trophy } from 'lucide-react';
-import { fetchMatchesPage } from '../../../../services/matches';
+import { useDebouncedValue } from '../../../../hooks/useDebouncedValue';
+import { useMatchesQuery } from '../../../../queries/useDirectoryQueries';
 import type { Match } from '../../../../types';
 import Pagination from '../../../../components/admin/AdminPagination';
-import { AdminPageHeader, LoadingState, EmptyState, StatusBadge, AdminSearchField, AdminEntityLink } from '../../../../components/admin/AdminShared';
-import EntityAvatar from '../../../../components/EntityAvatar';
-import { getInitials } from '../../../../utils/helpers';
-import { compactMatchScore } from '../../../../lib/matchScoreboard';
+import { AdminPageHeader, LoadingState, EmptyState, StatusBadge, AdminSearchField, AdminEntityLink, ScoreLine } from '../../../../components/admin/AdminShared';
+import { sideScoreLine } from '../../../../lib/matchScoreboard';
 
 export default function MatchesPage() {
-  const [matches, setMatches] = useState<Match[]>([]);
-  const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [total, setTotal] = useState(0);
   const [filterStatus, setFilterStatus] = useState('all');
   const [query, setQuery] = useState('');
   const limit = 20;
-
-  const load = useCallback((p: number) => {
-    setLoading(true);
-    const params: Record<string, string | number | boolean | undefined | null> = { limit, page: p };
-    if (filterStatus !== 'all') params.status = filterStatus;
-    fetchMatchesPage(params)
-      .then((res) => {
-        setMatches(res.items);
-        setTotalPages(res.totalPages);
-        setTotal(res.total);
-      })
-      .catch(() => { setMatches([]); setTotalPages(1); setTotal(0); })
-      .finally(() => setLoading(false));
-  }, [filterStatus]);
-
-  useEffect(() => { setPage(1); }, [filterStatus]);
-  useEffect(() => { load(page); }, [page, load]);
-
-  const filtered = matches.filter((m) => {
-    if (!query) return true;
-    const q = query.toLowerCase();
-    const teams = m.teams;
-    const isObj = teams && typeof teams === 'object' && !Array.isArray(teams);
-    const home = isObj ? (teams.home?.name || teams.home?.code) : Array.isArray(teams) ? teams[0] : '';
-    const away = isObj ? (teams.away?.name || teams.away?.code) : Array.isArray(teams) ? teams[1] : '';
-    return (home || '').toLowerCase().includes(q) || (away || '').toLowerCase().includes(q) || (m.tournament || '').toLowerCase().includes(q) || (m.venue || '').toLowerCase().includes(q);
+  const debouncedQuery = useDebouncedValue(query, 350);
+  const matchesQuery = useMatchesQuery({
+    limit,
+    page,
+    q: debouncedQuery.trim() || undefined,
+    status: filterStatus === 'all' ? undefined : filterStatus,
   });
+  const matches = matchesQuery.data?.items || [];
+  const total = matchesQuery.data?.total || 0;
+  const totalPages = Math.max(1, matchesQuery.data?.totalPages || Math.ceil(total / limit));
+
+  useEffect(() => { setPage(1); }, [filterStatus, debouncedQuery]);
 
   const getTeamInfo = (m: Match) => {
     const teams = m.teams;
@@ -86,7 +66,7 @@ export default function MatchesPage() {
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search by team, tournament or venue..."
         />
-        <div className="flex gap-1.5">
+        <div className="flex flex-wrap gap-1.5">
           {['all', 'live', 'upcoming', 'completed'].map((s) => (
             <button key={s} type="button" onClick={() => setFilterStatus(s)} className="rounded-md px-3 py-1.5 text-xs font-semibold transition-colors"
               style={{
@@ -100,7 +80,9 @@ export default function MatchesPage() {
         </div>
       </div>
 
-      {loading ? <LoadingState variant="table" /> : filtered.length === 0 ? (
+      {matchesQuery.isPending ? <LoadingState variant="table" /> : matchesQuery.isError ? (
+        <EmptyState icon={<Trophy size={28} />} title="Matches unavailable" message="Try again." />
+      ) : matches.length === 0 ? (
         <EmptyState icon={<Trophy size={28} />} title="No matches found" message="No matches match your current filters." />
       ) : (
         <div className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
@@ -108,44 +90,46 @@ export default function MatchesPage() {
             <table className="w-full text-left text-xs">
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--admin-border)', background: 'var(--admin-table-header)' }}>
-                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Teams</th>
-                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Score</th>
-                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Tournament</th>
-                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Venue</th>
+                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Home</th>
+                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Away</th>
+                  <th className="hidden px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider lg:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>Tournament</th>
+                  <th className="hidden px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider sm:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>Venue</th>
                   <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Date</th>
                   <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-right" style={{ color: 'var(--admin-text-secondary)' }}>Status</th>
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((m) => {
+                {matches.map((m) => {
                   const t = getTeamInfo(m);
                   const homeLabel = t.homeName;
                   const awayLabel = t.awayName;
+                  const homeScore = sideScoreLine(m, 'home');
+                  const awayScore = sideScoreLine(m, 'away');
                   return (
                     <tr key={m.matchId || m.id} style={{ borderBottom: '1px solid var(--admin-border)' }}
                       onMouseEnter={(e) => e.currentTarget.style.background = 'var(--admin-table-row-hover)'}
                       onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
-                      <td className="px-4 py-2.5" style={{ color: 'var(--admin-text)' }}>
+                      <td className="max-w-[8.5rem] truncate px-4 py-2.5 sm:max-w-[14rem]" style={{ color: 'var(--admin-text)' }} title={homeLabel}>
                         {m.matchId || m.id ? (
-                          <AdminEntityLink href={`/matches/${m.matchId || m.id}`}>
-                            <TeamMatchup home={homeLabel} away={awayLabel} />
-                          </AdminEntityLink>
+                          <AdminEntityLink href={`/matches/${m.matchId || m.id}`}>{homeLabel}</AdminEntityLink>
                         ) : (
-                          <TeamMatchup home={homeLabel} away={awayLabel} />
+                          homeLabel
                         )}
+                        {homeScore ? <ScoreLine value={homeScore} /> : null}
                       </td>
-                      <td className="px-4 py-2.5 font-mono font-bold" style={{ color: 'var(--admin-text)' }}>
-                        {compactMatchScore(m)}
+                      <td className="max-w-[8.5rem] truncate px-4 py-2.5 sm:max-w-[14rem]" style={{ color: 'var(--admin-text)' }} title={awayLabel}>
+                        {awayLabel}
+                        {awayScore ? <ScoreLine value={awayScore} /> : null}
                       </td>
-                      <td className="px-4 py-2.5" style={{ color: 'var(--admin-text-secondary)' }}>
+                      <td className="hidden max-w-[12rem] truncate px-4 py-2.5 lg:table-cell" style={{ color: 'var(--admin-text-secondary)' }} title={m.tournament || undefined}>
                         {m.tournamentId ? (
                           <AdminEntityLink href={`/tournaments/${m.tournamentId}`}>{m.tournament || 'Tournament'}</AdminEntityLink>
                         ) : (
                           m.tournament || '—'
                         )}
                       </td>
-                      <td className="px-4 py-2.5 max-w-[120px] truncate" style={{ color: 'var(--admin-text-muted)' }}>{m.venue || '—'}</td>
-                      <td className="px-4 py-2.5 font-mono" style={{ color: 'var(--admin-text-muted)' }}>
+                      <td className="hidden max-w-[120px] truncate px-4 py-2.5 sm:table-cell" style={{ color: 'var(--admin-text-muted)' }} title={m.venue || undefined}>{m.venue || '—'}</td>
+                      <td className="whitespace-nowrap px-4 py-2.5 font-mono" style={{ color: 'var(--admin-text-muted)' }}>
                         {m.scheduled ? new Date(m.scheduled).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}
                       </td>
                       <td className="px-4 py-2.5 text-right"><StatusBadge status={m.status} /></td>
@@ -161,28 +145,5 @@ export default function MatchesPage() {
         </div>
       )}
     </div>
-  );
-}
-
-function TeamMatchup({ home, away }: { home: string; away: string }) {
-  return (
-    <div className="flex items-center gap-2 whitespace-nowrap">
-      <span className="flex items-center gap-1.5">
-        <TeamBadge code={home} />
-        <span className="text-[13px] font-semibold">{home}</span>
-      </span>
-      <span className="text-[11px] font-bold uppercase" style={{ color: 'var(--admin-text-muted)' }}>vs</span>
-      <span className="flex items-center gap-1.5">
-        <TeamBadge code={away} />
-        <span className="text-[13px] font-semibold">{away}</span>
-      </span>
-    </div>
-  );
-}
-
-function TeamBadge({ code }: { code: string }) {
-  if (!code) return null;
-  return (
-    <EntityAvatar className="h-6 w-6 text-xs font-bold">{getInitials(code)}</EntityAvatar>
   );
 }

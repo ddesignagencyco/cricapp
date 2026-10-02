@@ -6,7 +6,7 @@ import SearchField from '../SearchField';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
-import { searchAll } from '../../services/search';
+import { searchAll, searchRowId } from '../../services/search';
 import type { Match, SearchResults } from '../../types/index';
 import EmptyState from '../EmptyState';
 import { PlayerSearchAvatar, TeamSearchAvatar, TypeSearchAvatar } from '../SearchAvatars';
@@ -40,6 +40,18 @@ function tournamentSubtitle(item: { category?: unknown; gender?: unknown; type?:
 
 type Filter = 'all' | 'players' | 'teams' | 'matches' | 'tournaments';
 
+type SearchRow = { id?: string | null; matchId?: string | null };
+
+/** Search rows can arrive without an id, so never trust a bare `item.id` as a key. */
+function rowKey(item: SearchRow, index: number): string {
+  return `${searchRowId(item) || 'row'}-${index}`;
+}
+
+function rowHref(item: SearchRow, base: string): string {
+  const id = searchRowId(item);
+  return id ? `${base}/${id}` : base;
+}
+
 export default function SearchResultsBody() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -58,16 +70,21 @@ export default function SearchResultsBody() {
   }, [initialQ]);
 
   useEffect(() => {
+    // Without this guard, router.replace below changes searchParams identity,
+    // which re-runs this effect, which replaces again — an endless request loop.
+    const trimmed = inputVal.trim();
+    if (trimmed === initialQ) return;
+
     const timer = window.setTimeout(() => {
-      setDebouncedQuery(inputVal.trim());
+      setDebouncedQuery(trimmed);
       const params = new URLSearchParams(searchParams.toString());
-      if (inputVal.trim()) params.set('q', inputVal.trim());
+      if (trimmed) params.set('q', trimmed);
       else params.delete('q');
       const qs = params.toString();
       router.replace(`${pathname}${qs ? `?${qs}` : ''}`, { scroll: false });
     }, 300);
     return () => window.clearTimeout(timer);
-  }, [inputVal, pathname, router, searchParams]);
+  }, [inputVal, initialQ, pathname, router, searchParams]);
 
   useEffect(() => {
     if (!debouncedQuery) {
@@ -88,14 +105,21 @@ export default function SearchResultsBody() {
       .finally(() => setLoading(false));
   }, [debouncedQuery]);
 
+  // A match row with no id has no destination, so it is excluded from both the
+  // count and the list instead of linking to `/matches`.
+  const linkableMatches = useMemo(
+    () => (results ? results.matches.filter((match) => searchRowId(match)) : []),
+    [results]
+  );
+
   const counts = useMemo(() => {
     if (!results) return { players: 0, teams: 0, matches: 0, tournaments: 0, total: 0 };
     const players = results.players.length;
     const teams = results.teams.length;
-    const matches = results.matches.length;
+    const matches = linkableMatches.length;
     const tournaments = results.tournaments.length;
     return { players, teams, matches, tournaments, total: players + teams + matches + tournaments };
-  }, [results]);
+  }, [results, linkableMatches]);
 
   const show = (key: Filter) => filter === 'all' || filter === key;
 
@@ -156,10 +180,10 @@ export default function SearchResultsBody() {
           <div className="space-y-8">
             {show('players') && (
               <SearchSection title="Players" icon={<UserRound size={16} />} count={counts.players}>
-                {results.players.map((item) => (
+                {results.players.map((item, index) => (
                   <SearchCard
-                    key={item.id}
-                    href={`/players/${item.id}`}
+                    key={rowKey(item, index)}
+                    href={rowHref(item, '/players')}
                     title={item.name || item.fullName || 'Player'}
                     subtitle={[item.teamName, item.role].filter(Boolean).join(' · ')}
                     avatar={<PlayerSearchAvatar name={item.name || item.fullName || 'Player'} />}
@@ -169,10 +193,10 @@ export default function SearchResultsBody() {
             )}
             {show('teams') && (
               <SearchSection title="Teams" icon={<Shield size={16} />} count={counts.teams}>
-                {results.teams.map((item) => (
+                {results.teams.map((item, index) => (
                   <SearchCard
-                    key={item.id}
-                    href={`/teams/${item.id}`}
+                    key={rowKey(item, index)}
+                    href={rowHref(item, '/teams')}
                     title={item.name}
                     subtitle={[item.code || item.shortName, item.country || item.city].filter(Boolean).join(' · ')}
                     avatar={<TeamSearchAvatar id={item.id} name={item.name} code={item.code || item.shortName} />}
@@ -182,10 +206,10 @@ export default function SearchResultsBody() {
             )}
             {show('matches') && (
               <SearchSection title="Matches" icon={<Calendar size={16} />} count={counts.matches}>
-                {results.matches.map((item) => (
+                {linkableMatches.map((item, index) => (
                   <SearchCard
-                    key={item.matchId || item.id}
-                    href={`/matches/${item.matchId || item.id}`}
+                    key={rowKey(item, index)}
+                    href={rowHref(item, '/matches')}
                     title={matchTitle(item)}
                     subtitle={matchSubtitle(item)}
                     avatar={<TypeSearchAvatar type="match" />}
@@ -195,10 +219,10 @@ export default function SearchResultsBody() {
             )}
             {show('tournaments') && (
               <SearchSection title="Tournaments" icon={<Trophy size={16} />} count={counts.tournaments}>
-                {results.tournaments.map((item) => (
+                {results.tournaments.map((item, index) => (
                   <SearchCard
-                    key={item.id}
-                    href={`/tournaments/${item.id}`}
+                    key={rowKey(item, index)}
+                    href={rowHref(item, '/tournaments')}
                     title={item.name}
                     subtitle={tournamentSubtitle(item)}
                     avatar={<TypeSearchAvatar type="tournament" />}

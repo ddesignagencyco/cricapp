@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import { AdminSearchField } from './AdminShared';
 
@@ -9,34 +9,63 @@ export interface EntityChoice {
   label: string;
 }
 
+type EntitySearch = (_query: string, _signal?: AbortSignal) => Promise<EntityChoice[]>;
+
 interface Props {
   label: string;
   hint: string;
   values: EntityChoice[];
   onChange: (_next: EntityChoice[]) => void;
-  search: (_query: string) => Promise<EntityChoice[]>;
+  search: EntitySearch;
 }
+
+const DEBOUNCE_MS = 280;
+
+type Phase = 'idle' | 'loading' | 'error';
 
 export default function EntityIdPicker({ label, hint, values, onChange, search }: Props) {
   const [query, setQuery] = useState('');
   const [hits, setHits] = useState<EntityChoice[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [phase, setPhase] = useState<Phase>('idle');
+  /**
+   * Bumped on every keystroke. A response whose id no longer matches the current
+   * one is dropped, so a slow early request can never overwrite a faster later one.
+   */
+  const requestId = useRef(0);
 
   useEffect(() => {
     const q = query.trim();
+    requestId.current += 1;
+    const current = requestId.current;
+    const isStale = () => current !== requestId.current;
+
     if (!q) {
       setHits([]);
-      setLoading(false);
+      setPhase('idle');
       return;
     }
-    setLoading(true);
+
+    setPhase('loading');
+    const controller = new AbortController();
     const timer = window.setTimeout(() => {
-      search(q)
-        .then(setHits)
-        .catch(() => setHits([]))
-        .finally(() => setLoading(false));
-    }, 280);
-    return () => window.clearTimeout(timer);
+      search(q, controller.signal)
+        .then((rows) => {
+          if (isStale()) return;
+          setHits(rows);
+          setPhase('idle');
+        })
+        .catch((err: unknown) => {
+          if (isStale() || controller.signal.aborted) return;
+          if ((err as { name?: string } | null)?.name === 'AbortError') return;
+          setHits([]);
+          setPhase('error');
+        });
+    }, DEBOUNCE_MS);
+
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
   }, [query, search]);
 
   const add = (item: EntityChoice) => {
@@ -44,6 +73,7 @@ export default function EntityIdPicker({ label, hint, values, onChange, search }
     onChange([...values, item]);
     setQuery('');
     setHits([]);
+    setPhase('idle');
   };
 
   const addRaw = () => {
@@ -52,15 +82,17 @@ export default function EntityIdPicker({ label, hint, values, onChange, search }
     add({ id, label: id });
   };
 
+  const showNoMatches = phase === 'idle' && query.trim().length > 0 && hits.length === 0;
+
   return (
-    <div>
-      <p className="mb-1 text-xs font-semibold" style={{ color: 'var(--admin-text-secondary)' }}>{label}</p>
+    <div className="min-w-0">
+      <p className="mb-1 break-words text-xs font-semibold" style={{ color: 'var(--admin-text-secondary)' }}>{label}</p>
       {values.length > 0 && (
         <ul className="mb-2 flex flex-wrap gap-1.5">
           {values.map((item) => (
             <li key={item.id}>
               <span
-                className="inline-flex max-w-full items-center gap-1 rounded px-2 py-1 text-xs font-medium"
+                className="inline-flex max-w-full min-w-0 items-center gap-1 rounded px-2 py-1 text-xs font-medium"
                 style={{
                   background: 'var(--admin-input-bg)',
                   color: 'var(--admin-text)',
@@ -68,9 +100,9 @@ export default function EntityIdPicker({ label, hint, values, onChange, search }
                 }}
               >
                 <span className="min-w-0">
-                  <span className="block truncate font-semibold">{item.id}</span>
+                  <span className="block max-w-[12rem] truncate font-semibold" title={item.id}>{item.id}</span>
                   {item.label && item.label !== item.id ? (
-                    <span className="block truncate text-[10px]" style={{ color: 'var(--admin-text-muted)' }}>
+                    <span className="block max-w-[12rem] truncate text-[10px]" style={{ color: 'var(--admin-text-muted)' }} title={item.label}>
                       {item.label}
                     </span>
                   ) : null}
@@ -97,8 +129,9 @@ export default function EntityIdPicker({ label, hint, values, onChange, search }
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               e.preventDefault();
-              if (hits[0]) add(hits[0]);
-              else addRaw();
+              // Only ever pick from a settled result list. Previously this fell back to
+              // writing the raw typed text as an id, which the API then rejected on save.
+              if (phase !== 'loading' && hits[0]) add(hits[0]);
             }
           }}
           placeholder={hint || 'Search by name'}
@@ -117,28 +150,45 @@ export default function EntityIdPicker({ label, hint, values, onChange, search }
           Add id
         </button>
       </div>
-      {loading && (
-        <p className="mt-1 text-xs" style={{ color: 'var(--admin-text-muted)' }}>Searching…</p>
-      )}
-      {!loading && hits.length > 0 && (
+      {/*
+        The list stays mounted while a newer search is in flight. Hiding it on
+        `loading` made the dropdown blink out for the whole debounce + network
+        round trip on every keystroke.
+      */}
+      {hits.length > 0 && (
         <ul
+          role="listbox"
+          aria-label={`${label} results`}
           className="mt-1 max-h-40 overflow-auto rounded-md"
           style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-input-bg)' }}
         >
           {hits.map((hit) => (
-            <li key={hit.id}>
+            <li key={hit.id} role="option" aria-selected={false}>
               <button
                 type="button"
                 onClick={() => add(hit)}
                 className="flex w-full flex-col items-start px-2.5 py-1.5 text-left text-xs hover:opacity-80"
                 style={{ color: 'var(--admin-text)' }}
               >
-                <span className="font-semibold">{hit.label}</span>
-                <span style={{ color: 'var(--admin-text-muted)' }}>{hit.id}</span>
+                <span className="max-w-full truncate font-semibold" title={hit.label}>{hit.label}</span>
+                <span className="max-w-full truncate" style={{ color: 'var(--admin-text-muted)' }} title={hit.id}>{hit.id}</span>
               </button>
             </li>
           ))}
         </ul>
+      )}
+      {phase === 'loading' && (
+        <p className="mt-1 text-xs" style={{ color: 'var(--admin-text-muted)' }}>Searching…</p>
+      )}
+      {phase === 'error' && (
+        <p role="alert" className="mt-1 text-xs font-semibold" style={{ color: 'var(--admin-danger, #dc2626)' }}>
+          Search failed. Check your connection and try again.
+        </p>
+      )}
+      {showNoMatches && (
+        <p className="mt-1 text-xs" style={{ color: 'var(--admin-text-muted)' }}>
+          No matches. Use “Add id” to link a known id.
+        </p>
       )}
     </div>
   );

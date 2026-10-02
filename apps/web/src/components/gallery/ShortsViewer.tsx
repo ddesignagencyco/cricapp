@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import Link from 'next/link';
 import { ChevronDown, ChevronUp, X } from 'lucide-react';
 import RemoteImage from '../RemoteImage';
+import MediaActions from '../MediaActions';
 import useFocusTrap from '../../hooks/useFocusTrap';
 import { buildGalleryEmbedUrl } from '../../utils/galleryEmbed';
 import type { GalleryShort } from './galleryTypes';
@@ -47,9 +48,19 @@ export default function ShortsViewer({ items, index, onClose, onIndexChange, lay
       aria-modal="true"
       aria-label={item.title || 'Short'}
     >
-      <button type="button" onClick={onClose} className="btn-on-media on-media absolute right-4 top-4 grid h-9 w-9 place-items-center rounded-full" aria-label="Close short">
-        <X size={18} aria-hidden="true" />
-      </button>
+      <div className="absolute inset-x-4 top-4 flex items-center justify-between gap-3 sm:inset-x-6">
+        <MediaActions
+          url={item.rawUrl || item.embedUrl || item.image || ''}
+          title={item.title || 'Short'}
+          shareHref={item.href || `/gallery/${encodeURIComponent(item.id)}`}
+          shareType="gallery"
+          shareId={item.id}
+          variant="media"
+        />
+        <button type="button" onClick={onClose} className="btn-on-media on-media ml-auto grid h-9 w-9 shrink-0 place-items-center rounded-full" aria-label="Close short">
+          <X size={18} aria-hidden="true" />
+        </button>
+      </div>
       <div className={`relative max-w-full overflow-hidden rounded-2xl bg-secondary ring-1 ring-white/10 ${
         layout === 'landscape'
           ? 'aspect-video w-[min(92vw,960px)]'

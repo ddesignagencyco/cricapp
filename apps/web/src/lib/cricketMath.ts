@@ -28,6 +28,40 @@ export function formatCricketOvers(overs: unknown): string {
   return rem === 0 ? String(completed) : `${completed}.${rem}`;
 }
 
+/**
+ * True when `candidate` represents more balls bowled than `reference`.
+ *
+ * The match row and the ball-by-ball timeline are written by different paths and
+ * routinely disagree by a ball or two, in either direction. Comparing the raw numbers
+ * is not enough: `29` and `28.6` are the same 174 balls, while `32.6` and `32.4`
+ * are two balls apart. Everything that reconciles the two sources compares in balls.
+ */
+export function isFurtherAlong(candidate: unknown, reference: unknown): boolean {
+  const a = oversToBalls(toOversNumber(candidate));
+  const b = oversToBalls(toOversNumber(reference));
+  if (a === null) return false;
+  if (b === null) return true;
+  return a > b;
+}
+
+/** `Number()` maps `null` and `''` to 0, which would read as "no balls bowled yet". */
+function toOversNumber(value: unknown): number | null {
+  if (value === '' || value === null || value === undefined) return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+/**
+ * Returns whichever of two overs values is further along in balls.
+ *
+ * Falls back to `preferred` when the other value is unusable, so a missing side never
+ * erases a good one.
+ */
+export function furtherOvers(preferred: unknown, alternative: unknown): unknown {
+  if (isFurtherAlong(alternative, preferred)) return alternative;
+  return preferred;
+}
+
 export function ballsToDecimalOvers(balls: number): number | null {
   if (!Number.isFinite(balls) || balls <= 0) return null;
   return balls / 6;

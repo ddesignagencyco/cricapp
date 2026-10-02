@@ -121,7 +121,7 @@ function LeaderSection({ stat, entries }: { stat: string; entries: LeaderEntry[]
                   >
                     <td className="px-4 py-3 align-middle font-mono">
                       <span
-                        className={`grid h-6 w-6 place-items-center rounded-sm text-xs font-black ${
+                        className={`grid h-6 w-6 place-items-center rounded-sm text-xs font-medium ${
                           index < 3 ? 'bg-brand text-white' : 'bg-elevated text-stext'
                         }`}
                       >
@@ -140,7 +140,7 @@ function LeaderSection({ stat, entries }: { stat: string; entries: LeaderEntry[]
                         </span>
                       </Link>
                     </td>
-                    <td className="px-4 py-3 text-right align-middle font-mono text-base font-bold tabular-nums text-mtext">
+                    <td className="px-4 py-3 text-right align-middle font-mono text-base tabular-nums text-mtext">
                       {formatStatValue(stat, row.value)}
                     </td>
                   </tr>

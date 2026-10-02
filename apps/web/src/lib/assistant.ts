@@ -62,8 +62,33 @@ export function sourceChipLabel(source: AssistantSource): string {
 
 export type AssistantPageContext = {
   slots: Omit<AssistantAskBody, 'question' | 'sessionId'>;
-  starters: Array<{ label: string; question: string; intent?: AssistantIntent }>;
+  starters: AssistantStarter[];
 };
+
+/**
+ * A suggested question.
+ *
+ * There is deliberately no separate `label`: the chip renders the question
+ * itself. A short label like "Explain the live %" hides the phrasing that makes
+ * the answer work, which is the whole point of showing an example. The questions
+ * are written to read as questions a person would actually type.
+ */
+export type AssistantStarter = {
+  question: string;
+  intent?: AssistantIntent;
+};
+
+/**
+ * Every starter here maps to an intent the API classifies today. A chip that
+ * silently falls through to "could not classify" is worse than no chip at all,
+ * so the list is deliberately restricted to the six supported intents.
+ */
+const GLOBAL_STARTERS: AssistantStarter[] = [
+  { question: 'What is the PSL 2026 playoff cutoff?' },
+  { question: 'Lahore Qalandars vs Karachi Kings head to head?', intent: 'team_head_to_head' },
+  { question: 'Compare players Babar Azam vs Mohammad Rizwan?', intent: 'player_compare' },
+  { question: 'How has Babar Azam been in PSL 2026?', intent: 'player_recent_form' },
+];
 
 function pathId(pathname: string, prefix: string): string {
   if (!pathname.startsWith(prefix) || pathname === prefix.slice(0, -1)) return '';
@@ -86,8 +111,8 @@ export function assistantContextFromLocation(pathname: string, search = ''): Ass
     return {
       slots: { matchId, intent: 'match_prediction_summary' },
       starters: [
-        { label: 'Win probability', question: 'Latest win probability for this match', intent: 'match_prediction_summary' },
-        { label: 'Why it moved', question: 'Why did the win probability change for this match?', intent: 'live_win_prob_explain' },
+        { question: 'What is the latest win probability for this match?', intent: 'match_prediction_summary' },
+        { question: 'Why did the win probability change for this match?', intent: 'live_win_prob_explain' },
       ],
     };
   }
@@ -95,9 +120,12 @@ export function assistantContextFromLocation(pathname: string, search = ''): Ass
   if (matchId) {
     return {
       slots: { matchId },
+      // Only the two intents a match id can actually answer. Anything needing two
+      // named teams would classify as "unknown" here, because this page supplies
+      // no team names.
       starters: [
-        { label: 'Who is favoured?', question: 'Latest win probability for this match' },
-        { label: 'Explain the live %', question: 'Why did the win probability change for this match?' },
+        { question: 'What is the latest win probability for this match?' },
+        { question: 'Why did the win probability change for this match?' },
       ],
     };
   }
@@ -106,8 +134,9 @@ export function assistantContextFromLocation(pathname: string, search = ''): Ass
     return {
       slots: { playerId, season: season || '2026' },
       starters: [
-        { label: 'Recent form', question: 'How has this player been in PSL 2026?', intent: 'player_recent_form' },
-        { label: 'PSL cutoff', question: 'What is the PSL 2026 playoff cutoff?', intent: 'standings_qualification' },
+        { question: 'How has this player been in PSL 2026?', intent: 'player_recent_form' },
+        { question: 'Compare this player vs Mohammad Rizwan?', intent: 'player_compare' },
+        { question: 'What is the PSL 2026 playoff cutoff?', intent: 'standings_qualification' },
       ],
     };
   }
@@ -116,7 +145,8 @@ export function assistantContextFromLocation(pathname: string, search = ''): Ass
     return {
       slots: { teamAId, teamBId, intent: 'team_head_to_head' },
       starters: [
-        { label: 'Head to head', question: 'What is the head to head between these two teams?', intent: 'team_head_to_head' },
+        { question: 'What is the head to head between these two teams?', intent: 'team_head_to_head' },
+        { question: 'What is the PSL 2026 playoff cutoff?', intent: 'standings_qualification' },
       ],
     };
   }
@@ -125,8 +155,9 @@ export function assistantContextFromLocation(pathname: string, search = ''): Ass
     return {
       slots: { teamId, season: season || '2026' },
       starters: [
-        { label: 'Can they qualify?', question: 'Can this team make the PSL 2026 playoffs?', intent: 'standings_qualification' },
-        { label: 'Playoff cutoff', question: 'What is the PSL 2026 playoff cutoff?', intent: 'standings_qualification' },
+        { question: 'Can this team make the PSL 2026 playoffs?', intent: 'standings_qualification' },
+        { question: 'What is the PSL 2026 playoff cutoff?', intent: 'standings_qualification' },
+        { question: 'Compare players Babar Azam vs Mohammad Rizwan?', intent: 'player_compare' },
       ],
     };
   }
@@ -135,21 +166,35 @@ export function assistantContextFromLocation(pathname: string, search = ''): Ass
     return {
       slots: { season: season || '2026' },
       starters: [
-        { label: 'Playoff cutoff', question: 'What is the PSL 2026 playoff cutoff?' },
-        { label: 'Babar vs Rizwan', question: 'Compare players Babar Azam vs Mohammad Rizwan' },
-        { label: 'Lahore vs Karachi', question: 'Lahore Qalandars vs Karachi Kings head to head' },
+        { question: 'What is the PSL 2026 playoff cutoff?' },
+        { question: 'What is the PSL 2026 standings and playoff cutoff?', intent: 'standings_qualification' },
+        { question: 'Lahore Qalandars vs Karachi Kings head to head?', intent: 'team_head_to_head' },
       ],
     };
   }
 
-  return {
-    slots: {},
-    starters: [
-      { label: 'PSL cutoff', question: 'What is the PSL 2026 playoff cutoff?' },
-      { label: 'Babar vs Rizwan', question: 'Compare players Babar Azam vs Mohammad Rizwan' },
-      { label: 'Lahore vs Karachi', question: 'Lahore Qalandars vs Karachi Kings head to head' },
-    ],
-  };
+  if (pathname === '/news' || pathname.startsWith('/news/')) {
+    return {
+      slots: {},
+      starters: [
+        { question: 'Compare players Babar Azam vs Mohammad Rizwan?', intent: 'player_compare' },
+        { question: 'Lahore Qalandars vs Karachi Kings head to head?', intent: 'team_head_to_head' },
+        { question: 'What is the PSL 2026 playoff cutoff?' },
+      ],
+    };
+  }
+
+  if (pathname === '/tools' || pathname.startsWith('/tools/')) {
+    return {
+      slots: {},
+      starters: [
+        { question: 'What is the PSL 2026 playoff cutoff?' },
+        { question: 'How has Babar Azam been in PSL 2026?', intent: 'player_recent_form' },
+      ],
+    };
+  }
+
+  return { slots: {}, starters: GLOBAL_STARTERS };
 }
 
 const GREETING_RE = /^(hi|hello|hey|yo|salaam|salam|thanks|thank you|ok|okay|bye)[\s!.]*$/i;
@@ -207,4 +252,58 @@ export function assistantRequestSlots(
 
 export function isScopeUnavailable(field: string): boolean {
   return field === 'scope';
+}
+
+/**
+ * Plain-text version of one answer, for the copy button. Includes the source
+ * links so a pasted answer keeps its provenance.
+ */
+export function assistantClipboardText(input: {
+  question?: string;
+  answerText: string;
+  sources: AssistantSource[];
+}): string {
+  const lines: string[] = [];
+  if (input.question) lines.push(`Q: ${input.question}`);
+  lines.push(`A: ${input.answerText.trim()}`);
+
+  const links = input.sources
+    .map((source) => {
+      const href = sourceHref(source);
+      return href ? `${sourceChipLabel(source)}: ${typeof window === 'undefined' ? href : new URL(href, window.location.origin).toString()}` : null;
+    })
+    .filter((line): line is string => Boolean(line));
+
+  if (links.length) lines.push('', 'Sources:', ...links);
+  return lines.join('\n');
+}
+
+/**
+ * Copy to clipboard with a graceful fallback. `navigator.clipboard` is missing
+ * on http origins and in older browsers, so the legacy path stays available.
+ */
+export async function copyToClipboard(text: string): Promise<boolean> {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {
+    // Fall through to the textarea path below.
+  }
+
+  try {
+    const area = document.createElement('textarea');
+    area.value = text;
+    area.setAttribute('readonly', '');
+    area.style.position = 'fixed';
+    area.style.opacity = '0';
+    document.body.appendChild(area);
+    area.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(area);
+    return ok;
+  } catch {
+    return false;
+  }
 }

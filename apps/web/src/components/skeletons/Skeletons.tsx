@@ -642,34 +642,76 @@ export function FavoritesPageSkeleton() {
 
 export function MatchDetailSkeleton() {
   return (
-    <Page className="space-y-5">
-      <Card className="p-5">
-        <Skeleton width={180} height={10} />
-        <div className="mt-5 flex items-center justify-between gap-4">
-          <div className="flex flex-1 flex-col items-center gap-2">
-            <Skeleton circle width={48} height={48} />
-            <Skeleton width={90} height={12} />
+    <div className="mx-auto w-full max-w-[1280px] space-y-4 px-4 pb-10 pt-4 sm:px-6 sm:pt-5">
+      <Skeleton width="100%" height={90} borderRadius={8} />
+      <div>
+        <Skeleton width={180} height={12} />
+        <Skeleton width={420} height={28} className="mt-2" containerClassName="block max-w-full" />
+        <Skeleton width={300} height={10} className="mt-2" />
+      </div>
+      <div className="rounded-md border border-lborder bg-card p-4">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-3">
+            <Skeleton circle width={52} height={52} containerClassName="shrink-0" />
+            <div className="min-w-0 flex-1">
+              <Skeleton width="70%" height={12} />
+              <Skeleton width={92} height={28} className="mt-1.5" />
+              <Skeleton width={48} height={9} className="mt-1.5" />
+            </div>
           </div>
-          <Skeleton width={72} height={28} />
-          <div className="flex flex-1 flex-col items-center gap-2">
-            <Skeleton circle width={48} height={48} />
-            <Skeleton width={90} height={12} />
+          <Skeleton circle width={32} height={32} />
+          <div className="flex flex-row-reverse items-center gap-3">
+            <Skeleton circle width={52} height={52} containerClassName="shrink-0" />
+            <div className="min-w-0 flex-1">
+              <Skeleton width="70%" height={12} containerClassName="flex justify-end" />
+              <Skeleton width={92} height={28} className="mt-1.5" containerClassName="flex justify-end" />
+              <Skeleton width={48} height={9} className="mt-1.5" containerClassName="flex justify-end" />
+            </div>
           </div>
         </div>
-      </Card>
-      <div className="flex gap-2">
-        <Skeleton width={88} height={32} />
-        <Skeleton width={88} height={32} />
-        <Skeleton width={88} height={32} />
+        <Skeleton height={30} borderRadius={6} className="mt-4" />
       </div>
-      <Card className="p-5">
-        <Skeleton count={8} />
-      </Card>
-      <Card className="p-5">
+      <div className="flex gap-1 overflow-hidden">
+        {[88, 96, 112, 80, 72, 88, 60, 92].map((w, i) => (
+          <Skeleton key={i} width={w} height={34} borderRadius={6} containerClassName="shrink-0" />
+        ))}
+      </div>
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,7fr)_minmax(0,3fr)]">
+        <div className="min-w-0 space-y-4">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="rounded-md border border-lborder bg-card">
+              <div className="flex items-center gap-2 border-b border-lborder px-4 py-2.5">
+                <Skeleton circle width={20} height={20} containerClassName="shrink-0" />
+                <Skeleton width={140} height={12} />
+              </div>
+              <div className="space-y-2.5 p-4">
+                <Skeleton height={12} />
+                <Skeleton width="92%" height={12} />
+                <Skeleton width="78%" height={12} />
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="min-w-0 space-y-4">
+          {[0, 1].map((i) => (
+            <div key={i} className="rounded-md border border-lborder bg-card">
+              <div className="border-b border-lborder px-3 py-2.5">
+                <Skeleton width={110} height={12} />
+              </div>
+              <div className="space-y-2 p-3">
+                <Skeleton height={38} />
+                <Skeleton height={38} />
+                <Skeleton height={38} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="rounded-md border border-lborder bg-card p-4">
         <Skeleton width={120} height={16} />
         <CommentListSkeleton count={2} />
-      </Card>
-    </Page>
+      </div>
+    </div>
   );
 }
 

@@ -80,6 +80,12 @@ export function mapNewsItem(item: Record<string, unknown>): NewsArticle {
     tags: tags,
     author: authorRef?.name || (item.author as string) || 'Editorial Team',
     authorId: (item.authorId as string) || authorRef?.id || '',
+    // The byline the API stored. The display name above prefers the linked author
+    // profile, so this is kept for the case where a profile is removed later.
+    authorByline: (item.author as string) || '',
+    // `source` is a real column the API returns and the editor writes, but nothing read
+    // it back before, so a byline's origin (PCB, ICC, a wire feed) was stored and lost.
+    source: (item.source as string) || '',
     authorRef,
     readTime: calculateReadTime(contentStr),
     excerpt: summary || (plainContent ? `${plainContent.slice(0, 160)}${plainContent.length > 160 ? '…' : ''}` : ''),
@@ -110,9 +116,13 @@ export interface NewsListParams {
 }
 
 export async function fetchNews(
-  { category, tag, q, language, playerId, teamId, matchId, seriesId, authorId, limit = 50 }: NewsListParams = {}
+  { category, tag, q, language, playerId, teamId, matchId, seriesId, authorId, limit = 50 }: NewsListParams = {},
+  signal?: AbortSignal
 ): Promise<NewsArticle[]> {
-  const res = await apiGet('/news', { category, tag, q, language, playerId, teamId, matchId, seriesId, authorId, limit });
+  const params = { category, tag, q, language, playerId, teamId, matchId, seriesId, authorId, limit };
+  const res = signal
+    ? await apiGet('/news', params, { signal })
+    : await apiGet('/news', params);
   return extractPage<Record<string, unknown>>(res).items.map(mapNewsItem);
 }
 

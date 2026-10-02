@@ -14,14 +14,30 @@ const SEARCH_LIMITS = {
   tournamentLimit: 20,
 } as const;
 
-export async function searchAll(query: string): Promise<SearchResults> {
+/**
+ * Best-effort id for a search row, across the shapes the API has used
+ * (`id`, `matchId`, `eventId`, and the snake_case aliases that come back from
+ * raw-SQL endpoints). Returns '' when the row carries no usable id, so callers
+ * can drop it instead of linking to `/matches/undefined`.
+ */
+export function searchRowId(row: unknown): string {
+  const rec = (row && typeof row === 'object' ? row : {}) as Record<string, unknown>;
+  for (const key of ['id', 'matchId', 'eventId', 'match_id', 'event_id']) {
+    const raw = rec[key];
+    if (typeof raw === 'string' && raw.trim()) return raw.trim();
+    if (typeof raw === 'number' && Number.isFinite(raw)) return String(raw);
+  }
+  return '';
+}
+
+export async function searchAll(query: string, signal?: AbortSignal): Promise<SearchResults> {
   const q = query.trim();
   if (!q) return emptyResults();
 
-  const res = await apiGet<SearchResults>('/search', {
-    q,
-    ...SEARCH_LIMITS,
-  });
+  const params = { q, ...SEARCH_LIMITS };
+  const res = signal
+    ? await apiGet<SearchResults>('/search', params, { signal })
+    : await apiGet<SearchResults>('/search', params);
 
   const players = asArray<Player>(res?.players).map((p: any) => {
     const displayName = p.name || p.fullName || p.shortName || 'Player';

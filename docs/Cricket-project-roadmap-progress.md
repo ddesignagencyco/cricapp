@@ -441,7 +441,7 @@
 - [x] Prediction worker tests (prematch, live, features, settle, calibrate)
 - [x] Manual API smoke (Sep 11, 2026): cookie login, unverified 403, category CRUD, 50-word title reject, tours pagination, live-match status filter, stream comments, admin analytics, Cloudinary upload `201`
 - [x] Manual API smoke (Sep 10, 2026): search, signup + `/auth/me`, publish news + get by slug
-- [ ] Frontend component tests for critical UI (ScoreBoard, LiveBoard, MatchDetailBody)
+- [x] Frontend component tests for critical UI (ScoreBoard, LiveBoard, MatchDetailBody)
 - [ ] End-to-end (E2E) tests across full user flows (e.g., Playwright/Cypress)
 - [ ] Load testing for live match SSE streaming under concurrent users
 - [ ] Manual QA pass against SRS requirements checklist

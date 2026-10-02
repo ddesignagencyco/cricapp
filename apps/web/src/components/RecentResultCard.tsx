@@ -69,7 +69,7 @@ export default function RecentResultCard({ match }: RecentResultCardProps) {
           {venue ? <span className="font-medium text-stext">{dateLabel ? ' · ' : ''}{venue.split(',')[0]}</span> : null}
         </p>
         {resultLine ? (
-          <p className="max-w-[48%] shrink-0 truncate text-right text-xs font-semibold text-gold" title={resultLine}>
+          <p className="max-w-[48%] shrink-0 text-xs font-semibold text-gold" title={resultLine}>
             {resultLine}
           </p>
         ) : null}
@@ -98,8 +98,10 @@ function ScoreRow({ code, name, score, overs }: { code: string; name: string; sc
       )}
       <p className="min-w-0 flex-1 truncate text-sm font-semibold text-mtext">{name}</p>
       <div className="min-w-14 shrink-0 text-right">
-        <p className="font-mono text-sm font-bold tabular-nums text-mtext">{score || '—'}</p>
-        {overs && <p className="font-mono text-xs font-medium tabular-nums text-muted-foreground">{overs} ov</p>}
+        <p className="font-mono text-sm font-bold tabular-nums text-mtext">
+          {score || '—'}
+          {overs && <span className="font-mono text-xs font-medium tabular-nums text-muted-foreground ml-2">({overs} ov)</span>}
+        </p>
       </div>
     </div>
   );

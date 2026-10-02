@@ -28,6 +28,7 @@ import {
   Inbox,
   Mail,
   Sparkles,
+  Megaphone,
 } from 'lucide-react';
 import { useAuth } from '../../../components/AuthProvider';
 import { useTheme } from '../../../components/ThemeProvider';
@@ -40,19 +41,20 @@ const adminNav = [
   { to: '/admin/authors', label: 'Authors', icon: PenLine },
   { to: '/admin/categories', label: 'Categories', icon: Tag },
   { to: '/admin/news', label: 'News', icon: FileText },
-  { to: '/admin/comments', label: 'Comments', icon: MessageSquare },
+  { to: '/admin/streams', label: 'Streams', icon: Radio },
   { to: '/admin/gallery', label: 'Gallery', icon: ImageIcon },
+  { to: '/admin/comments', label: 'Comments', icon: MessageSquare },
+  { to: '/admin/contact', label: 'Contact', icon: Inbox }, 
   { to: '/admin/teams', label: 'Teams', icon: Users },
   { to: '/admin/players', label: 'Players', icon: UserCircle },
-  { to: '/admin/matches', label: 'Matches', icon: Trophy },
   { to: '/admin/predictions', label: 'Predictions', icon: Sparkles },
-  { to: '/admin/odds', label: 'Odds', icon: Scale },
+  { to: '/admin/matches', label: 'Matches', icon: Trophy },
   { to: '/admin/tournaments', label: 'Tournaments', icon: Newspaper },
-  { to: '/admin/streams', label: 'Streams', icon: Radio },
+  { to: '/admin/odds', label: 'Odds', icon: Scale },
   { to: '/admin/users', label: 'Users', icon: UserCircle },
   { to: '/admin/newsletter', label: 'Newsletter', icon: Mail },
   { to: '/admin/editorial', label: 'Editorial', icon: ScrollText },
-  { to: '/admin/contact', label: 'Contact', icon: Inbox },
+  { to: '/admin/ads', label: 'Ads Manager', icon: Megaphone },
   { to: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 
@@ -102,7 +104,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   const userName = user?.displayName || user?.username || 'Admin';
 
   const sidebar = (
-    <div className="flex h-full min-h-0 w-full flex-col" style={{ width: 240, minWidth: 240, background: 'var(--admin-sidebar)' }}>
+    <div className="flex h-full min-h-0 w-full shrink-0 flex-col lg:w-[240px]" style={{ width: 'min(240px, 84vw)', background: 'var(--admin-sidebar)' }}>
       <div className="flex h-14 shrink-0 items-center justify-center px-2" style={{ borderBottom: '1px solid var(--admin-sidebar-border)' }}>
         <Logo to="/admin" size="lg" />
       </div>
@@ -184,45 +186,45 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       </div>
 
       {/* Main content */}
-      <div className="flex flex-1 flex-col lg:pl-[240px]">
+      <div className="flex min-w-0 flex-1 flex-col lg:pl-[240px]">
         {/* Top bar */}
-        <header className="sticky top-0 z-20 flex h-14 items-center gap-4 px-4 sm:px-6" style={{ background: 'var(--admin-topbar)', borderBottom: '1px solid var(--admin-border)' }}>
+        <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-2 px-3 sm:gap-4 sm:px-6" style={{ background: 'var(--admin-topbar)', borderBottom: '1px solid var(--admin-border)' }}>
           <button type="button" onClick={() => setMobileOpen(true)}
-            className="admin-icon-btn grid h-9 w-9 place-items-center rounded-md lg:hidden"
+            className="admin-icon-btn grid h-9 w-9 shrink-0 place-items-center rounded-md lg:hidden"
             aria-label="Open navigation" aria-expanded={mobileOpen} aria-controls="admin-mobile-nav">
             <Menu size={18} aria-hidden="true" />
           </button>
 
-          <div className="flex-1" />
+          <div className="min-w-0 flex-1" />
 
           {/* Theme toggle */}
           <button
             type="button"
             onClick={toggle}
-            className="admin-icon-btn grid h-9 w-9 place-items-center rounded-md"
+            className="admin-icon-btn grid h-9 w-9 shrink-0 place-items-center rounded-md"
             aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
           >
             {theme === 'dark' ? <Sun size={17} aria-hidden="true" /> : <Moon size={17} aria-hidden="true" />}
           </button>
 
           <a href="/" target="_blank"
-            className="admin-icon-btn inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold"
+            className="admin-icon-btn inline-flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-semibold sm:px-3"
             style={{ border: '1px solid var(--admin-border)' }}
             rel="noopener noreferrer">
             <Eye size={14} aria-hidden="true" />
-            View site
+            <span className="hidden sm:inline">View site</span>
           </a>
 
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             <AdminAvatar name={userName} src={user?.avatarUrl} size={32} />
-            <div className="hidden sm:block">
-              <p className="text-xs font-semibold" style={{ color: 'var(--admin-text)' }}>{userName}</p>
-              <p className="text-xs font-medium" style={{ color: 'var(--admin-text-secondary)' }}>{user?.isSuperAdmin ? 'Superadmin' : user?.isAdmin ? 'Administrator' : 'Editor'}</p>
+            <div className="hidden min-w-0 sm:block">
+              <p className="truncate text-xs font-semibold" style={{ color: 'var(--admin-text)' }}>{userName}</p>
+              <p className="truncate text-xs font-medium" style={{ color: 'var(--admin-text-secondary)' }}>{user?.isSuperAdmin ? 'Superadmin' : user?.isAdmin ? 'Administrator' : 'Editor'}</p>
             </div>
           </div>
         </header>
 
-        <main id="admin-content" className="min-w-0 flex-1 overflow-x-hidden p-3 sm:p-6">{children}</main>
+        <main id="admin-content" className="min-w-0 flex-1 overflow-x-clip p-3 sm:p-6">{children}</main>
       </div>
     </div>
   );

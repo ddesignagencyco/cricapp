@@ -36,14 +36,14 @@ export const TOOL_GROUPS: Array<{ key: ToolGroup; title: string; hint: string }>
   { key: 'bowling', title: 'Bowling', hint: 'Average and economy' },
   { key: 'match', title: 'Match', hint: 'Follow-on, what-if and innings projection' },
   { key: 'analysis', title: 'Comparison', hint: 'Players, head-to-head and fantasy points' },
-  { key: 'odds', title: 'Odds intelligence', hint: 'Licensed comparison, conversion and margin (API-backed)' },
+  { key: 'odds', title: 'Odds tools', hint: 'Compare prices, convert odds, and work out what bookmakers add on' },
 ];
 
 export const TOOLS: ToolDef[] = [
   { slug: 'nrr', title: 'Net run rate', blurb: 'Runs for and against ÷ cricket overs. All-out sides use the full quota.', kind: 'nrr', group: 'rates' },
   { slug: 'required-run-rate', title: 'Required run rate', blurb: 'Runs still needed from the balls left, per over.', kind: 'rrr', group: 'rates' },
   { slug: 'current-run-rate', title: 'Current run rate', blurb: 'Runs scored ÷ overs faced (10.3 means 10 overs + 3 balls).', kind: 'crr', group: 'rates' },
-  { slug: 'dls', title: 'DLS calculator', blurb: 'Educational Duckworth–Lewis resource target. Not the licensed ICC table.', kind: 'dls', group: 'rates' },
+  { slug: 'dls', title: 'DLS calculator', blurb: 'Works out the new target when rain shortens a match. An estimate, not the official ICC table.', kind: 'dls', group: 'rates' },
   { slug: 'batting-strike-rate', title: 'Batting strike rate', blurb: 'Runs per 100 balls faced.', kind: 'sr', group: 'batting' },
   { slug: 'batting-average', title: 'Batting average', blurb: 'Runs scored per dismissal (not-outs excluded).', kind: 'bat-avg', group: 'batting' },
   { slug: 'bowling-average', title: 'Bowling average', blurb: 'Runs conceded per wicket taken.', kind: 'bowl-avg', group: 'bowling' },
@@ -57,21 +57,21 @@ export const TOOLS: ToolDef[] = [
   {
     slug: 'odds-converter',
     title: 'Odds converter',
-    blurb: 'Convert decimal, fractional or American prices using the same rules as match odds.',
+    blurb: 'Change a price between decimal, fractional and American formats.',
     kind: 'odds',
     group: 'odds',
   },
   {
     slug: 'bookmaker-margin',
     title: 'Bookmaker margin',
-    blurb: 'Overround from decimal prices for every outcome in one market.',
+    blurb: 'Work out how much extra the bookmakers have built into a set of prices.',
     kind: 'implied',
     group: 'odds',
   },
   {
     slug: 'match-odds',
     title: 'Match odds checker',
-    blurb: 'Licensed match-winner comparison, movement chart and analysis for a fixture id.',
+    blurb: 'See who the bookmakers think will win, and how their prices have changed.',
     kind: 'odds-match',
     group: 'odds',
   },
@@ -80,6 +80,13 @@ export const TOOLS: ToolDef[] = [
 export function toolBySlug(slug: string): ToolDef | undefined {
   return TOOLS.find((tool) => tool.slug === slug);
 }
+
+/** Where the numbers come from, in words a first-time visitor understands. */
+export const TOOL_SOURCE_LABEL: Record<'formula' | 'stored' | 'api', string> = {
+  formula: 'Instant answer',
+  api: 'Live prices',
+  stored: 'Saved results',
+};
 
 /** Hub badge: client formula vs stored/API-backed tools. */
 export function toolSource(kind: ToolKind): 'formula' | 'stored' | 'api' {

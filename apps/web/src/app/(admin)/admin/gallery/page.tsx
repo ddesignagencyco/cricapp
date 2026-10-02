@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useRef, useState, type FormEvent } from 'react';
 import toast from 'react-hot-toast';
 import { ImageIcon, Trash2, Upload } from 'lucide-react';
 import {
@@ -17,11 +18,11 @@ import AdminPagination from '../../../../components/admin/AdminPagination';
 import RemoteImage from '../../../../components/RemoteImage';
 import {
   deleteGalleryMedia,
-  fetchGalleryPage,
   uploadGalleryMedia,
-  type GalleryMedia,
   type GalleryMediaType,
 } from '../../../../services/gallery';
+import { galleryKeys } from '../../../../queries/keys';
+import { useGalleryQuery } from '../../../../queries/useDirectoryQueries';
 
 const LIMIT = 24;
 const FILTERS: { key: '' | GalleryMediaType; label: string }[] = [
@@ -32,9 +33,6 @@ const FILTERS: { key: '' | GalleryMediaType; label: string }[] = [
 ];
 
 export default function AdminGalleryPage() {
-  const [items, setItems] = useState<GalleryMedia[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
   const [busy, setBusy] = useState(false);
   const [type, setType] = useState<GalleryMediaType>('image');
   const [filter, setFilter] = useState<'' | GalleryMediaType>('');
@@ -44,31 +42,11 @@ export default function AdminGalleryPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
-
-  const load = (nextPage = page, nextFilter = filter) => {
-    setLoading(true);
-    setError(false);
-    fetchGalleryPage({
-      page: nextPage,
-      limit: LIMIT,
-      ...(nextFilter ? { type: nextFilter } : {}),
-    })
-      .then((res) => {
-        setItems(res.items);
-        setTotal(res.total);
-        setTotalPages(Math.max(1, res.totalPages));
-        setPage(nextPage);
-      })
-      .catch(() => setError(true))
-      .finally(() => setLoading(false));
-  };
-
-  useEffect(() => {
-    load(1, filter);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filter]);
+  const queryClient = useQueryClient();
+  const galleryQuery = useGalleryQuery({ page, limit: LIMIT, type: filter || undefined });
+  const items = galleryQuery.data?.items || [];
+  const total = galleryQuery.data?.total || 0;
+  const totalPages = Math.max(1, galleryQuery.data?.totalPages || Math.ceil(total / LIMIT));
 
   const fileFitsType = (next: File, mediaType: GalleryMediaType) => {
     const isImage = next.type.startsWith('image/');
@@ -105,10 +83,11 @@ export default function AdminGalleryPage() {
         title: title.trim() || undefined,
         caption: caption.trim() || undefined,
       });
+      await queryClient.invalidateQueries({ queryKey: galleryKeys.lists() });
+      setPage(1);
       resetForm();
       toast.success('Media uploaded.');
-      if (filter === type) load(1, type);
-      else setFilter(type);
+      if (filter !== type) setFilter(type);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Upload failed.');
     } finally {
@@ -127,7 +106,10 @@ export default function AdminGalleryPage() {
               <button
                 key={item.key || 'all'}
                 type="button"
-                onClick={() => setFilter(item.key)}
+                onClick={() => {
+                  setFilter(item.key);
+                  setPage(1);
+                }}
                 className={`rounded-md px-3 py-1.5 text-xs font-semibold ${
                   filter === item.key ? 'btn-brand' : ''
                 }`}
@@ -149,7 +131,7 @@ export default function AdminGalleryPage() {
         style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}
         onSubmit={(event) => void onSubmit(event)}
       >
-        <div className="w-[7.5rem] shrink-0">
+        <div className="w-full shrink-0 sm:w-[7.5rem]">
           <AdminField label="Type" required>
             <AdminSelect
               value={type}
@@ -178,7 +160,7 @@ export default function AdminGalleryPage() {
             <AdminInput value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Caption" />
           </AdminField>
         </div>
-        <div className="w-[8.5rem] shrink-0">
+        <div className="w-full shrink-0 sm:w-[8.5rem]">
           <AdminField label="File" required>
             <label
               className="inline-flex h-[38px] w-full cursor-pointer items-center justify-center gap-1.5 rounded-md px-2 text-xs font-semibold"
@@ -210,10 +192,10 @@ export default function AdminGalleryPage() {
         </button>
       </form>
 
-      {loading ? (
+      {galleryQuery.isPending ? (
         <LoadingState variant="gallery" />
-      ) : error ? (
-        <ErrorState message="Could not load gallery." onRetry={() => load(page, filter)} />
+      ) : galleryQuery.isError ? (
+        <ErrorState message="Could not load gallery." onRetry={() => void galleryQuery.refetch()} />
       ) : items.length === 0 ? (
         <EmptyState icon={<ImageIcon size={28} />} title="No gallery media" message="Upload an image, short, or video." />
       ) : (
@@ -238,7 +220,7 @@ export default function AdminGalleryPage() {
                 )}
                 <div className="flex items-center justify-between gap-1 px-2 py-1.5">
                   <div className="min-w-0">
-                    <p className="truncate text-xs font-semibold" style={{ color: 'var(--admin-text)' }}>
+                    <p className="truncate text-xs font-semibold" style={{ color: 'var(--admin-text)' }} title={item.title || item.type}>
                       {item.title || item.type}
                     </p>
                     <p className="text-[10px] capitalize" style={{ color: 'var(--admin-text-muted)' }}>{item.type}</p>
@@ -261,7 +243,7 @@ export default function AdminGalleryPage() {
             totalPages={totalPages}
             total={total}
             limit={LIMIT}
-            onPageChange={(next) => load(next, filter)}
+            onPageChange={setPage}
           />
         </>
       )}
@@ -276,9 +258,9 @@ export default function AdminGalleryPage() {
           if (!deleteId) return;
           try {
             await deleteGalleryMedia(deleteId);
+            await queryClient.invalidateQueries({ queryKey: galleryKeys.lists() });
             toast.success('Deleted.');
-            const nextPage = items.length === 1 && page > 1 ? page - 1 : page;
-            load(nextPage, filter);
+            if (items.length === 1 && page > 1) setPage(page - 1);
           } catch {
             toast.error('Could not delete.');
           } finally {

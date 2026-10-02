@@ -29,7 +29,7 @@ export default function MatchOddsTeaser({ data, homeLabel, awayLabel, onOpen }: 
   return (
     <div className="card-diamond rounded-md border border-lborder bg-card p-4">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-stext">Match odds</p>
+        <p className="text-[10px] font-bold uppercase tracking-widest text-stext">Best prices</p>
         <Scale size={14} className="text-accent" aria-hidden />
       </div>
       <ul className="mt-3 space-y-2 text-sm">
@@ -42,12 +42,13 @@ export default function MatchOddsTeaser({ data, homeLabel, awayLabel, onOpen }: 
           <span className="font-mono font-bold tabular-nums text-accent">{bestPrice(market, 'away')}</span>
         </li>
       </ul>
+      <p className="mt-2 text-[11px] text-stext">The highest price on offer for each side.</p>
       <button
         type="button"
         onClick={onOpen}
-        className="mt-3 text-xs font-semibold text-accent hover:underline"
+        className="mt-2 text-xs font-semibold text-accent hover:underline"
       >
-        Full comparison →
+        Compare all prices →
       </button>
     </div>
   );

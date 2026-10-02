@@ -8,6 +8,7 @@ import SearchField from '../SearchField';
 import EmptyState from '../EmptyState';
 import PersonAvatar from '../PersonAvatar';
 import ShareButton from '../ShareButton';
+import FavoriteButton from '../FavoriteButton';
 import type { PublicAuthor } from '../../services/authors';
 
 export default function AuthorsBoard({ authors }: { authors: PublicAuthor[] }) {
@@ -76,11 +77,14 @@ export default function AuthorsBoard({ authors }: { authors: PublicAuthor[] }) {
                       aria-hidden="true"
                     />
                     </Link>
-                    <ShareButton
-                      fallbackTitle={author.name}
-                      href={`/authors/${encodeURIComponent(author.slug)}`}
-                      compact
-                    />
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      <FavoriteButton targetType="author" targetId={author.id} compact />
+                      <ShareButton
+                        fallbackTitle={author.name}
+                        href={`/authors/${encodeURIComponent(author.slug)}`}
+                        compact
+                      />
+                    </div>
                   </div>
                 </li>
               );

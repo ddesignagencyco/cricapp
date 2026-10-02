@@ -18,6 +18,8 @@ model Match {
   teamNames      Json     @map("team_names")
   teamScores     Json?    @map("team_scores")
   tournament     String?
+  /// Provider tournament id (e.g. "sr:tournament:1234"), used for /tournaments/:id links.
+  tournamentId   String?  @map("tournament_id")
   venue          String?
   scheduled      String?
   currentInnings Json?    @map("current_innings")
@@ -823,6 +825,10 @@ model SiteSettings {
   mapsUrl      String?  @map("maps_url")
   workingHours String?  @map("working_hours")
   socials      Json     @default("[]")
+  // Advertisement delivery config: mode (off/house/adsense), AdSense publisher id,
+  // per-size default ad units and per-placement overrides. Shape documented in
+  // src/site-settings/ad.config.ts.
+  ads          Json     @default("{}")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 

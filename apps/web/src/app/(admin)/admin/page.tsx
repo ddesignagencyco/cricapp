@@ -19,13 +19,14 @@ import {
   Globe,
   Map,
   Newspaper,
+  PencilLine,
   Sparkles,
 } from 'lucide-react';
 import { useAuth } from '../../../components/AuthProvider';
 import { fetchMatchesPage } from '../../../services/matches';
 import { fetchNewsAdmin } from '../../../services/newsAdmin';
 import type { Match } from '../../../types';
-import { AdminAvatar, AdminEntityLink, LoadingState, StatusBadge } from '../../../components/admin/AdminShared';
+import { AdminAvatar, AdminEntityLink, LoadingState, ScoreLine, StatusBadge } from '../../../components/admin/AdminShared';
 import Badge from '../../../components/Badge';
 import {
   fetchAdminAnalytics,
@@ -37,10 +38,8 @@ import {
 } from '../../../services/admin';
 import { asPercent, stageLabel } from '../../../lib/predictions';
 import { fetchAdminPredictionModels, fetchAdminPredictionRuns } from '../../../services/predictions';
-import type { AdminPredictionModelVersion, PredictionRun } from '../../../types/predictions';
-import { getInitials } from '../../../utils/helpers';
-import { compactMatchScore } from '../../../lib/matchScoreboard';
-import EntityAvatar from '../../../components/EntityAvatar';
+import type { AdminPredictionModelVersion, AdminPredictionRunDetail } from '../../../types/predictions';
+import { sideScoreLine } from '../../../lib/matchScoreboard';
 import NewsCopy from '../../../components/NewsCopy';
 
 function userRank(user: AdminUser): number {
@@ -60,7 +59,7 @@ export default function AdminDashboard() {
   const [health, setHealth] = useState<IngestionHealth | null>(null);
   const [recentArticles, setRecentArticles] = useState<any[]>([]);
   const [predictionModels, setPredictionModels] = useState<AdminPredictionModelVersion[]>([]);
-  const [predictionRuns, setPredictionRuns] = useState<PredictionRun[]>([]);
+  const [predictionRuns, setPredictionRuns] = useState<AdminPredictionRunDetail[]>([]);
 
   useEffect(() => {
     Promise.allSettled([
@@ -155,15 +154,15 @@ export default function AdminDashboard() {
           </Link>
           <Link
             href="/admin/matches"
-            className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold"
-            style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)', color: 'var(--admin-text)' }}
+            className="admin-chip-btn inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold"
+            style={{ color: 'var(--admin-text)' }}
           >
             <Trophy size={13} style={{ color: 'var(--admin-accent)' }} /> Match Center
           </Link>
           <Link
             href="/admin/comments"
-            className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold"
-            style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)', color: 'var(--admin-text)' }}
+            className="admin-chip-btn inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold"
+            style={{ color: 'var(--admin-text)' }}
           >
             <MessageSquare size={13} style={{ color: 'var(--admin-warning)' }} /> Moderate
           </Link>
@@ -252,10 +251,10 @@ export default function AdminDashboard() {
 
       <FavoritesCard analytics={analytics} />
 
-      <div className="admin-panel grid grid-cols-1 gap-3 divide-y p-4 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+      <div className="admin-card-3d grid grid-cols-1 gap-3 divide-y rounded-lg p-4 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
         <div className="flex items-center gap-3 sm:pr-4">
           <div
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-lg"
+            className="admin-icon-well grid h-10 w-10 shrink-0 place-items-center rounded-lg"
             style={{
               background: health?.status === 'healthy' ? 'var(--admin-success-bg)' : 'var(--admin-warning-bg)',
               color: health?.status === 'healthy' ? 'var(--admin-success)' : 'var(--admin-warning)',
@@ -271,7 +270,7 @@ export default function AdminDashboard() {
           </div>
         </div>
         <div className="flex items-center gap-3 sm:px-4">
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg" style={{ background: 'var(--admin-info-bg)', color: 'var(--admin-accent)' }}>
+          <div className="admin-icon-well grid h-10 w-10 shrink-0 place-items-center rounded-lg" style={{ background: 'var(--admin-info-bg)', color: 'var(--admin-accent)' }}>
             <Database size={18} />
           </div>
           <div>
@@ -280,7 +279,7 @@ export default function AdminDashboard() {
           </div>
         </div>
         <div className="flex items-center gap-3 sm:pl-4">
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg" style={{ background: 'var(--admin-warning-bg)', color: 'var(--admin-warning)' }}>
+          <div className="admin-icon-well grid h-10 w-10 shrink-0 place-items-center rounded-lg" style={{ background: 'var(--admin-warning-bg)', color: 'var(--admin-warning)' }}>
             <RefreshCw size={18} />
           </div>
           <div>
@@ -300,8 +299,8 @@ export default function AdminDashboard() {
         </div>
         {predictionModels.length === 0 ? (
           <p
-            className="rounded-lg px-4 py-6 text-center text-xs"
-            style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)', color: 'var(--admin-text-muted)' }}
+            className="admin-card-3d rounded-lg px-4 py-6 text-center text-xs"
+            style={{ color: 'var(--admin-text-muted)' }}
           >
             No stored model versions yet.
           </p>
@@ -310,17 +309,16 @@ export default function AdminDashboard() {
             {predictionModels.slice(0, 4).map((model) => (
               <div
                 key={`${model.modelVersion}-${model.stage}`}
-                className="rounded-lg p-4"
-                style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}
+                className="admin-card-3d min-w-0 rounded-lg p-3 sm:p-4"
               >
-                <div className="flex items-start justify-between gap-2">
-                  <p className="font-mono text-sm font-bold" style={{ color: 'var(--admin-text)' }}>{model.modelVersion}</p>
-                  {model.isCurrent && <StatusBadge status="active" />}
+                <div className="flex min-w-0 items-start justify-between gap-2">
+                  <p className="min-w-0 truncate font-mono text-sm font-bold" style={{ color: 'var(--admin-text)' }} title={model.modelVersion}>{model.modelVersion}</p>
+                  {model.isCurrent && <span className="shrink-0"><StatusBadge status="active" /></span>}
                 </div>
-                <p className="mt-2 text-xs" style={{ color: 'var(--admin-text-secondary)' }}>
+                <p className="mt-2 truncate text-xs" style={{ color: 'var(--admin-text-secondary)' }}>
                   {stageLabel(model.stage)} · {model.runCount.toLocaleString()} runs
                 </p>
-                <p className="mt-1 text-xs" style={{ color: 'var(--admin-text-muted)' }}>
+                <p className="mt-1 truncate text-xs" style={{ color: 'var(--admin-text-muted)' }}>
                   Last {model.lastRunAt ? new Date(model.lastRunAt).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'}
                 </p>
               </div>
@@ -343,7 +341,6 @@ export default function AdminDashboard() {
           empty="No upcoming fixtures"
           matches={upcoming}
           getTeamInfo={getTeamInfo}
-          hideScore
         />
       </div>
 
@@ -354,13 +351,17 @@ export default function AdminDashboard() {
           ) : recentArticles.slice(0, 5).map((a: any) => (
             <div
               key={a.id}
-              className="flex items-start gap-2.5 px-4 py-2.5"
+              className="admin-row-hover flex items-start gap-2.5 px-4 py-2.5"
               style={{ borderBottom: '1px solid var(--admin-border)' }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--admin-table-row-hover)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
             >
-              <div className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded text-[10px] font-bold" style={{ background: 'var(--admin-success-bg)', color: 'var(--admin-success)' }}>
-                <FileText size={11} />
+              <div
+                className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded"
+                style={{
+                  background: a.isPublished ? 'var(--admin-success-bg)' : 'var(--admin-warning-bg)',
+                  color: a.isPublished ? 'var(--admin-success)' : 'var(--admin-warning)',
+                }}
+              >
+                {a.isPublished ? <FileText size={14} aria-hidden /> : <PencilLine size={14} aria-hidden />}
               </div>
               <div className="min-w-0 flex-1">
                 <NewsCopy as="p" language={a.language} text={a.title} className="line-clamp-2 text-[13px] font-semibold" style={{ color: 'var(--admin-text)' }}>{a.title}</NewsCopy>
@@ -407,23 +408,21 @@ export default function AdminDashboard() {
                     <td colSpan={4} className="px-4 py-8 text-center" style={{ color: 'var(--admin-text-muted)' }}>No prediction runs yet</td>
                   </tr>
                 ) : predictionRuns.map((run) => {
-                  const matchId = String((run as PredictionRun & { matchId?: string }).matchId || '');
+                  const matchId = String(run.matchId || '');
                   return (
                     <tr
                       key={run.runId}
-                      style={{ borderBottom: '1px solid var(--admin-border)' }}
-                      onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--admin-table-row-hover)'; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                      className="admin-row-hover" style={{ borderBottom: '1px solid var(--admin-border)' }}
                     >
-                      <td className="px-4 py-2.5 font-mono text-[12px]" style={{ color: 'var(--admin-text)' }}>
+                      <td className="max-w-[14rem] truncate px-4 py-2.5" style={{ color: 'var(--admin-text)' }}>
                         {matchId ? (
-                          <AdminEntityLink href={`/predictions/${matchId}`}>{matchId.replace(/^sr:match:/, '')}</AdminEntityLink>
+                          <AdminEntityLink href={`/predictions/${matchId}`}>{run.matchName || 'Open match'}</AdminEntityLink>
                         ) : (
                           '—'
                         )}
                       </td>
                       <td className="px-4 py-2.5" style={{ color: 'var(--admin-text-secondary)' }}>{stageLabel(run.stage)}</td>
-                      <td className="hidden px-4 py-2.5 font-mono font-bold sm:table-cell" style={{ color: 'var(--admin-text)' }}>
+                      <td className="hidden px-4 py-2.5 font-mono sm:table-cell" style={{ color: 'var(--admin-text)' }}>
                         {asPercent(run.homeWinProb)} / {asPercent(run.awayWinProb)}
                       </td>
                       <td className="px-4 py-2.5 text-right font-mono" style={{ color: 'var(--admin-text-muted)' }}>
@@ -456,17 +455,15 @@ export default function AdminDashboard() {
                   return (
                     <tr
                       key={u.id}
-                      style={{ borderBottom: '1px solid var(--admin-border)' }}
-                      onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--admin-table-row-hover)'; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                      className="admin-row-hover" style={{ borderBottom: '1px solid var(--admin-border)' }}
                     >
                       <td className="px-4 py-2.5">
-                        <div className="flex items-center gap-2.5">
-                          <AdminAvatar name={name} src={u.avatarUrl} size={24} />
-                          <span className="text-[13px] font-semibold" style={{ color: 'var(--admin-text)' }}>{name}</span>
+                        <div className="flex min-w-0 items-center gap-2.5">
+                          <span className="shrink-0"><AdminAvatar name={name} src={u.avatarUrl} size={24} /></span>
+                          <span className="block min-w-0 max-w-[9rem] truncate text-[13px] font-semibold sm:max-w-none" style={{ color: 'var(--admin-text)' }} title={name}>{name}</span>
                         </div>
                       </td>
-                      <td className="hidden px-4 py-2.5 sm:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>{u.email}</td>
+                      <td className="hidden max-w-[14rem] truncate px-4 py-2.5 sm:table-cell" style={{ color: 'var(--admin-text-secondary)' }} title={u.email}>{u.email}</td>
                       <td className="px-4 py-2.5 text-right">
                         <Badge tone={u.isSuperAdmin || u.isAdmin ? 'primary' : 'neutral'}>
                           {u.isSuperAdmin ? 'Superadmin' : u.isAdmin ? 'Admin' : 'Member'}
@@ -497,18 +494,17 @@ function SectionCard({
 }) {
   return (
     <div
-      className="flex h-full flex-col overflow-hidden rounded-lg"
-      style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}
+      className="flex h-full flex-col overflow-hidden rounded-lg admin-card-3d"
     >
       <div
-        className="flex h-11 shrink-0 items-center justify-between px-4"
+        className="flex min-h-11 shrink-0 flex-wrap items-center justify-between gap-x-2 gap-y-1 px-4 py-2"
         style={{ borderBottom: '1px solid var(--admin-border)' }}
       >
-        <div className="flex items-center gap-2">
-          <span style={{ color: 'var(--admin-accent)' }}>{icon}</span>
-          <h2 className="text-sm font-semibold" style={{ color: 'var(--admin-text)' }}>{title}</h2>
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="shrink-0" style={{ color: 'var(--admin-accent)' }}>{icon}</span>
+          <h2 className="truncate text-sm font-semibold" style={{ color: 'var(--admin-text)' }}>{title}</h2>
         </div>
-        <Link href={href} className="text-xs font-semibold" style={{ color: 'var(--admin-accent)' }}>View all →</Link>
+        <Link href={href} className="shrink-0 text-xs font-semibold" style={{ color: 'var(--admin-accent)' }}>View all →</Link>
       </div>
       <div className="min-h-0 flex-1">{children}</div>
     </div>
@@ -521,14 +517,12 @@ function MatchPreviewTable({
   empty,
   matches,
   getTeamInfo,
-  hideScore,
 }: {
   title: string;
   icon: React.ReactNode;
   empty: string;
   matches: Match[];
   getTeamInfo: (_m: Match) => { homeName: string; awayName: string };
-  hideScore?: boolean;
 }) {
   return (
     <SectionCard title={title} icon={icon} href="/admin/matches">
@@ -536,10 +530,8 @@ function MatchPreviewTable({
           <table className="w-full text-left text-xs">
             <thead>
               <tr style={{ borderBottom: '1px solid var(--admin-border)', background: 'var(--admin-table-header)' }}>
-                <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Teams</th>
-                {!hideScore && (
-                  <th className="hidden px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider sm:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>Score</th>
-                )}
+                <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Home</th>
+                <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Away</th>
                 <th className="hidden px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider md:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>Tournament</th>
                 <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Date</th>
                 <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-right" style={{ color: 'var(--admin-text-secondary)' }}>Status</th>
@@ -548,53 +540,31 @@ function MatchPreviewTable({
             <tbody>
               {matches.length === 0 ? (
                 <tr>
-                  <td colSpan={hideScore ? 4 : 5} className="px-4 py-8 text-center" style={{ color: 'var(--admin-text-muted)' }}>{empty}</td>
+                  <td colSpan={5} className="px-4 py-8 text-center" style={{ color: 'var(--admin-text-muted)' }}>{empty}</td>
                 </tr>
               ) : matches.map((m) => {
                 const t = getTeamInfo(m);
+                const homeScore = sideScoreLine(m, 'home');
+                const awayScore = sideScoreLine(m, 'away');
                 return (
                   <tr
                     key={m.matchId || m.id}
-                    style={{ borderBottom: '1px solid var(--admin-border)' }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--admin-table-row-hover)'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                    className="admin-row-hover" style={{ borderBottom: '1px solid var(--admin-border)' }}
                   >
-                    <td className="px-4 py-2.5" style={{ color: 'var(--admin-text)' }}>
+                    <td className="max-w-[10rem] truncate px-4 py-2.5 sm:max-w-none" style={{ color: 'var(--admin-text)' }} title={t.homeName}>
                       {m.matchId || m.id ? (
-                        <AdminEntityLink href={`/matches/${m.matchId || m.id}`}>
-                          <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-                            <span className="flex min-w-0 items-center gap-1.5">
-                              <TeamBadge code={t.homeName} />
-                              <span className="max-w-[9rem] truncate text-[13px] font-semibold sm:max-w-none">{t.homeName}</span>
-                            </span>
-                            <span className="text-[11px] font-semibold" style={{ color: 'var(--admin-text-muted)' }}>vs</span>
-                            <span className="flex min-w-0 items-center gap-1.5">
-                              <TeamBadge code={t.awayName} />
-                              <span className="max-w-[9rem] truncate text-[13px] font-semibold sm:max-w-none">{t.awayName}</span>
-                            </span>
-                          </div>
-                        </AdminEntityLink>
+                        <AdminEntityLink href={`/matches/${m.matchId || m.id}`}>{t.homeName}</AdminEntityLink>
                       ) : (
-                        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-                          <span className="flex min-w-0 items-center gap-1.5">
-                            <TeamBadge code={t.homeName} />
-                            <span className="max-w-[9rem] truncate text-[13px] font-semibold sm:max-w-none" style={{ color: 'var(--admin-text)' }}>{t.homeName}</span>
-                          </span>
-                          <span className="text-[11px] font-semibold" style={{ color: 'var(--admin-text-muted)' }}>vs</span>
-                          <span className="flex min-w-0 items-center gap-1.5">
-                            <TeamBadge code={t.awayName} />
-                            <span className="max-w-[9rem] truncate text-[13px] font-semibold sm:max-w-none" style={{ color: 'var(--admin-text)' }}>{t.awayName}</span>
-                          </span>
-                        </div>
+                        t.homeName
                       )}
+                      {homeScore ? <ScoreLine value={homeScore} /> : null}
                     </td>
-                    {!hideScore && (
-                      <td className="hidden px-4 py-2.5 font-mono font-bold sm:table-cell" style={{ color: 'var(--admin-text)' }}>
-                        {compactMatchScore(m)}
-                      </td>
-                    )}
-                    <td className="hidden px-4 py-2.5 md:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>
-                      <span className="line-clamp-2 max-w-[14rem]">
+                    <td className="max-w-[10rem] truncate px-4 py-2.5 sm:max-w-none" style={{ color: 'var(--admin-text)' }} title={t.awayName}>
+                      {t.awayName}
+                      {awayScore ? <ScoreLine value={awayScore} /> : null}
+                    </td>
+                    <td className="hidden max-w-[14rem] px-4 py-2.5 md:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>
+                      <span className="line-clamp-2" title={m.tournament || undefined}>
                         {m.tournamentId ? (
                           <AdminEntityLink href={`/tournaments/${m.tournamentId}`}>{m.tournament || 'Tournament'}</AdminEntityLink>
                         ) : (
@@ -602,7 +572,7 @@ function MatchPreviewTable({
                         )}
                       </span>
                     </td>
-                    <td className="px-4 py-2.5 font-mono" style={{ color: 'var(--admin-text-muted)' }}>
+                    <td className="whitespace-nowrap px-4 py-2.5 font-mono" style={{ color: 'var(--admin-text-muted)' }}>
                       {m.scheduled ? new Date(m.scheduled).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}
                     </td>
                     <td className="px-4 py-2.5 text-right"><StatusBadge status={m.status} /></td>
@@ -643,8 +613,7 @@ function FavoritesCard({ analytics }: { analytics: AdminAnalytics | null }) {
 
   return (
     <section
-      className="overflow-hidden rounded-lg"
-      style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}
+      className="admin-card-3d overflow-hidden rounded-lg"
     >
       <div
         className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
@@ -652,7 +621,7 @@ function FavoritesCard({ analytics }: { analytics: AdminAnalytics | null }) {
       >
         <div className="flex items-center gap-3">
           <div
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-lg"
+            className="admin-icon-well grid h-10 w-10 shrink-0 place-items-center rounded-lg"
             style={{ background: 'var(--admin-danger-bg)', color: 'var(--admin-danger)' }}
           >
             <Heart size={18} />
@@ -677,18 +646,18 @@ function FavoritesCard({ analytics }: { analytics: AdminAnalytics | null }) {
         {types.map((item) => {
           const Icon = item.icon;
           return (
-            <div key={item.key} className="flex items-center gap-3 px-4 py-3.5" style={{ background: 'var(--admin-card)' }}>
+            <div key={item.key} className="flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-[var(--admin-table-row-hover)]" style={{ background: 'var(--admin-card)' }}>
               <div
-                className="grid h-8 w-8 shrink-0 place-items-center rounded-md"
+                className="admin-icon-well grid h-8 w-8 shrink-0 place-items-center rounded-md"
                 style={{ background: 'var(--admin-danger-bg)', color: 'var(--admin-danger)' }}
               >
                 <Icon size={15} />
               </div>
               <div className="min-w-0">
-                <p className="text-lg font-bold tabular-nums leading-tight" style={{ color: 'var(--admin-text)' }}>
+                <p className="truncate text-lg font-bold tabular-nums leading-tight" style={{ color: 'var(--admin-text)' }}>
                   {n(item.count)}
                 </p>
-                <p className="truncate text-xs" style={{ color: 'var(--admin-text-secondary)' }}>{item.label}</p>
+                <p className="truncate text-xs" style={{ color: 'var(--admin-text-secondary)' }} title={item.label}>{item.label}</p>
               </div>
             </div>
           );
@@ -713,33 +682,22 @@ function MetricCard({
 }) {
   return (
     <div
-      className="flex min-w-0 items-center gap-3 rounded-lg px-3 py-2.5"
-      style={{
-        border: '1px solid var(--admin-border)',
-        background: 'var(--admin-card)',
-      }}
+      className="admin-card-3d flex min-w-0 items-center gap-3 rounded-lg px-3 py-2.5"
     >
       <div
-        className="grid h-8 w-8 shrink-0 place-items-center rounded-md"
+        className="admin-icon-well grid h-8 w-8 shrink-0 place-items-center rounded-md"
         style={{ background: accentBg, color: accentColor }}
       >
         {icon}
       </div>
       <div className="min-w-0">
-        <p className="truncate text-[11px] font-medium capitalize" style={{ color: 'var(--admin-text-secondary)' }}>
+        <p className="truncate text-[11px] font-medium capitalize" style={{ color: 'var(--admin-text-secondary)' }} title={label}>
           {label}
         </p>
-        <p className="text-lg font-bold tabular-nums leading-tight" style={{ color: 'var(--admin-text)' }}>
+        <p className="truncate text-lg font-bold tabular-nums leading-tight" style={{ color: 'var(--admin-text)' }}>
           {value}
         </p>
       </div>
     </div>
-  );
-}
-
-function TeamBadge({ code }: { code: string }) {
-  if (!code) return null;
-  return (
-    <EntityAvatar className="h-6 w-6 text-[10px] font-bold">{getInitials(code)}</EntityAvatar>
   );
 }

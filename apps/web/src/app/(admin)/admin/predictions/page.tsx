@@ -6,7 +6,6 @@ import AdminPagination from '../../../../components/admin/AdminPagination';
 import {
   AdminChip,
   AdminEntityLink,
-  AdminInput,
   AdminSearchField,
   AdminPageHeader,
   AdminSelect,
@@ -136,7 +135,7 @@ export default function AdminPredictionsPage() {
 
       {error && <ErrorState message={error} onRetry={() => { setError(''); loadRuns(page); }} />}
 
-      <section className="rounded-lg p-4" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
+      <section className="rounded-lg p-3 sm:p-4" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
         <h2 className="mb-3 text-sm font-semibold" style={{ color: 'var(--admin-text)' }}>Model versions</h2>
         {loadingModels ? (
           <LoadingState />
@@ -150,9 +149,9 @@ export default function AdminPredictionsPage() {
                 className="rounded-md p-3"
                 style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-input-bg)' }}
               >
-                <div className="flex items-center justify-between gap-2">
-                  <p className="font-mono text-sm font-bold" style={{ color: 'var(--admin-text)' }}>{model.modelVersion}</p>
-                  {model.isCurrent && <StatusBadge status="active" />}
+                <div className="flex min-w-0 items-center justify-between gap-2">
+                  <p className="min-w-0 truncate font-mono text-sm font-bold" style={{ color: 'var(--admin-text)' }} title={model.modelVersion}>{model.modelVersion}</p>
+                  {model.isCurrent && <span className="shrink-0"><StatusBadge status="active" /></span>}
                 </div>
                 <p className="mt-1 text-xs" style={{ color: 'var(--admin-text-secondary)' }}>
                   {stageLabel(model.stage)} · {model.runCount} runs
@@ -166,7 +165,7 @@ export default function AdminPredictionsPage() {
         )}
       </section>
 
-      <section className="rounded-lg p-4" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
+      <section className="rounded-lg p-3 sm:p-4" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
         <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
@@ -179,7 +178,7 @@ export default function AdminPredictionsPage() {
               Reliability of settled pre-match guesses. This does not filter the run table below.
             </p>
           </div>
-          <div className="w-56">
+          <div className="w-full shrink-0 sm:w-56">
             <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>
               Score this model
             </label>
@@ -239,8 +238,8 @@ export default function AdminPredictionsPage() {
                   <tbody>
                     {calibration.bins.map((bin) => (
                       <tr key={bin.bin} style={{ borderBottom: '1px solid var(--admin-border)' }}>
-                        <td className="px-2 py-2 font-mono">{bin.bin}</td>
-                        <td className="px-2 py-2 font-mono">{bin.minProbability}–{bin.maxProbability}</td>
+                        <td className="whitespace-nowrap px-2 py-2 font-mono">{bin.bin}</td>
+                        <td className="whitespace-nowrap px-2 py-2 font-mono">{bin.minProbability}–{bin.maxProbability}</td>
                         <td className="px-2 py-2 font-mono">{asPercent(bin.meanPredicted)}</td>
                         <td className="px-2 py-2 font-mono">{asPercent(bin.actualRate)}</td>
                         <td className="px-2 py-2">{bin.sampleSize}</td>
@@ -256,7 +255,7 @@ export default function AdminPredictionsPage() {
       </section>
 
       <section className="overflow-hidden rounded-lg" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
-        <div className="flex flex-col gap-2 p-3 md:flex-row md:items-center" style={{ borderBottom: '1px solid var(--admin-border)' }}>
+        <div className="flex flex-col gap-2 p-3 md:flex-row md:flex-wrap md:items-center" style={{ borderBottom: '1px solid var(--admin-border)' }}>
           <AdminSearchField
             wrapperClassName="max-w-md flex-1"
             type="text"
@@ -270,7 +269,7 @@ export default function AdminPredictionsPage() {
               }
             }}
           />
-          <div className="w-40">
+          <div className="w-full shrink-0 sm:w-40">
             <AdminSelect
               value={stage}
               onChange={(e) => {
@@ -283,7 +282,7 @@ export default function AdminPredictionsPage() {
               <option value="live">Live</option>
             </AdminSelect>
           </div>
-          <div className="w-52">
+          <div className="w-full shrink-0 sm:w-52">
             <AdminSelect
               value={modelVersion}
               onChange={(e) => {
@@ -319,8 +318,18 @@ export default function AdminPredictionsPage() {
               <table className="w-full text-left text-xs">
                 <thead>
                   <tr style={{ borderBottom: '1px solid var(--admin-border)', background: 'var(--admin-table-header)' }}>
-                    {['Match', 'Stage', 'Model', 'Home', 'Away', 'Conf', 'Band', 'When', ''].map((h) => (
-                      <th key={h} className="px-3 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>{h}</th>
+                    {[
+                      { h: 'Match', cls: '' },
+                      { h: 'Stage', cls: '' },
+                      { h: 'Model', cls: 'hidden md:table-cell' },
+                      { h: 'Home', cls: '' },
+                      { h: 'Away', cls: 'hidden sm:table-cell' },
+                      { h: 'Conf', cls: 'hidden sm:table-cell' },
+                      { h: 'Band', cls: 'hidden md:table-cell' },
+                      { h: 'When', cls: '' },
+                      { h: '', cls: '' },
+                    ].map((col) => (
+                      <th key={col.h} className={`px-3 py-2.5 text-[11px] font-bold uppercase tracking-wider ${col.cls}`} style={{ color: 'var(--admin-text-secondary)' }}>{col.h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -330,33 +339,26 @@ export default function AdminPredictionsPage() {
                     const name = run.matchName;
                     return (
                       <tr key={run.runId} style={{ borderBottom: '1px solid var(--admin-border)' }}>
-                        <td className="px-3 py-2.5">
+                        <td className="max-w-[10rem] truncate px-3 py-2.5 sm:max-w-[16rem]">
                           {id ? (
-                            <div className="min-w-[12rem]">
-                              <AdminEntityLink href={`/predictions/${id}`}>
-                                {name || id}
-                              </AdminEntityLink>
-                              {name ? (
-                                <p className="mt-0.5 font-mono text-[11px]" style={{ color: 'var(--admin-text-muted)' }}>
-                                  {id}
-                                </p>
-                              ) : null}
-                            </div>
+                            <AdminEntityLink href={`/predictions/${id}`}>
+                              {name || 'Open match'}
+                            </AdminEntityLink>
                           ) : (
                             '—'
                           )}
                         </td>
-                        <td className="px-3 py-2.5">{stageLabel(run.stage)}</td>
-                        <td className="px-3 py-2.5 font-mono">{run.modelVersion}</td>
-                        <td className="px-3 py-2.5 font-mono font-bold">{asPercent(run.homeWinProb)}</td>
-                        <td className="px-3 py-2.5 font-mono font-bold">{asPercent(run.awayWinProb)}</td>
-                        <td className="px-3 py-2.5 font-mono">{run.confidence}</td>
-                        <td className="px-3 py-2.5">{run.calibrationBand}</td>
-                        <td className="px-3 py-2.5" style={{ color: 'var(--admin-text-muted)' }}>{when(run.createdAt)}</td>
-                        <td className="px-3 py-2.5 text-right">
+                        <td className="whitespace-nowrap px-3 py-2.5">{stageLabel(run.stage)}</td>
+                        <td className="hidden max-w-[14rem] truncate px-3 py-2.5 font-mono md:table-cell" title={run.modelVersion}>{run.modelVersion}</td>
+                        <td className="whitespace-nowrap px-3 py-2.5 font-mono">{asPercent(run.homeWinProb)}</td>
+                        <td className="hidden whitespace-nowrap px-3 py-2.5 font-mono sm:table-cell">{asPercent(run.awayWinProb)}</td>
+                        <td className="hidden whitespace-nowrap px-3 py-2.5 font-mono sm:table-cell">{run.confidence}</td>
+                        <td className="hidden max-w-[6rem] truncate px-3 py-2.5 md:table-cell">{run.calibrationBand}</td>
+                        <td className="max-w-[8.5rem] truncate px-3 py-2.5 sm:max-w-none" style={{ color: 'var(--admin-text-muted)' }}>{when(run.createdAt)}</td>
+                        <td className="whitespace-nowrap px-3 py-2.5 text-right">
                           <button
                             type="button"
-                            className="text-xs font-semibold"
+                            className="whitespace-nowrap text-xs font-semibold"
                             style={{ color: 'var(--admin-accent)' }}
                             onClick={() => openRun(run.runId)}
                           >
@@ -402,17 +404,17 @@ function RunDetail({
   return (
     <section
       ref={detailRef}
-      className="rounded-lg p-4"
+      className="rounded-lg p-3 sm:p-4"
       style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}
     >
-      <div className="mb-3 flex items-center justify-between">
-        <div>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="min-w-0">
           <h2 className="text-sm font-semibold" style={{ color: 'var(--admin-text)' }}>Selected run</h2>
           <p className="mt-0.5 text-xs" style={{ color: 'var(--admin-text-muted)' }}>
             Stored output only — no new probabilities.
           </p>
         </div>
-        <button type="button" className="text-xs font-semibold" style={{ color: 'var(--admin-text-muted)' }} onClick={onClose}>
+        <button type="button" className="shrink-0 text-xs font-semibold" style={{ color: 'var(--admin-text-muted)' }} onClick={onClose}>
           Close
         </button>
       </div>
@@ -489,7 +491,7 @@ function RunDetailBody({ run }: { run: AdminPredictionRunDetail }) {
       {run.matchId && (
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <p className="text-sm font-semibold" style={{ color: 'var(--admin-text)' }}>
-            {run.matchName || run.matchId}
+            {run.matchName || 'Prediction run'}
           </p>
           <AdminEntityLink href={`/predictions/${run.matchId}`}>Open public match</AdminEntityLink>
         </div>
@@ -513,7 +515,7 @@ function RunDetailBody({ run }: { run: AdminPredictionRunDetail }) {
 
         {range && (!isNil(range.low) || !isNil(range.expected)) ? (
           <Panel question="What score did it expect?">
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               <Stat label="Low" value={`${range.low ?? '—'}`} />
               <Stat label="Likely" value={`${range.expected ?? '—'}`} />
               <Stat label="High" value={`${range.high ?? '—'}`} />
@@ -555,7 +557,7 @@ function RunDetailBody({ run }: { run: AdminPredictionRunDetail }) {
 
       {liveMeters.length > 0 && (
         <Panel question="What live momentum, pressure and wicket-risk were stored?">
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {liveMeters.map((row) => (
               <Stat key={row.label} label={row.label} value={row.value} />
             ))}
@@ -569,11 +571,11 @@ function RunDetailBody({ run }: { run: AdminPredictionRunDetail }) {
             {facts.map((row) => (
               <div
                 key={`${row.label}-${row.value}`}
-                className="flex items-start justify-between gap-4 py-2"
+                className="flex flex-col gap-0.5 py-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4"
                 style={{ borderBottom: '1px solid var(--admin-border)' }}
               >
-                <dt className="shrink-0 text-xs" style={{ color: 'var(--admin-text-muted)' }}>{row.label}</dt>
-                <dd className="text-right text-sm" style={{ color: 'var(--admin-text)' }}>{row.value}</dd>
+                <dt className="text-xs sm:shrink-0" style={{ color: 'var(--admin-text-muted)' }}>{row.label}</dt>
+                <dd className="min-w-0 break-words text-sm sm:text-right" style={{ color: 'var(--admin-text)' }}>{row.value}</dd>
               </div>
             ))}
           </dl>
@@ -599,15 +601,15 @@ function RunDetailBody({ run }: { run: AdminPredictionRunDetail }) {
         <Panel question="What playing XI snapshot was stored?" hint={xiMeta || undefined}>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {homeXi.length > 0 && (
-              <div>
+              <div className="min-w-0">
                 <p className="mb-1 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-muted)' }}>Home</p>
-                <p className="text-sm leading-6" style={{ color: 'var(--admin-text)' }}>{homeXi.join(', ')}</p>
+                <p className="break-words text-sm leading-6" style={{ color: 'var(--admin-text)' }}>{homeXi.join(', ')}</p>
               </div>
             )}
             {awayXi.length > 0 && (
-              <div>
+              <div className="min-w-0">
                 <p className="mb-1 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-muted)' }}>Away</p>
-                <p className="text-sm leading-6" style={{ color: 'var(--admin-text)' }}>{awayXi.join(', ')}</p>
+                <p className="break-words text-sm leading-6" style={{ color: 'var(--admin-text)' }}>{awayXi.join(', ')}</p>
               </div>
             )}
           </div>
@@ -631,8 +633,8 @@ function RunDetailBody({ run }: { run: AdminPredictionRunDetail }) {
 function Panel({ question, hint, children }: { question: string; hint?: string; children: ReactNode }) {
   return (
     <div className="rounded-md p-3" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-input-bg)' }}>
-      <div className="mb-3 flex items-baseline justify-between gap-2">
-        <p className="text-sm font-semibold" style={{ color: 'var(--admin-text)' }}>{question}</p>
+      <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1">
+        <p className="min-w-0 break-words text-sm font-semibold" style={{ color: 'var(--admin-text)' }}>{question}</p>
         {hint ? <p className="shrink-0 text-[11px]" style={{ color: 'var(--admin-text-muted)' }}>{hint}</p> : null}
       </div>
       {children}
@@ -679,8 +681,8 @@ function KvTable({ title, rows }: { title?: string; rows: Array<{ key: string; v
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md p-3" style={{ border: '1px solid var(--admin-border)' }}>
-      <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-muted)' }}>{label}</p>
+    <div className="min-w-0 rounded-md p-2.5 sm:p-3" style={{ border: '1px solid var(--admin-border)' }}>
+      <p className="truncate text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-muted)' }} title={label}>{label}</p>
       <p className="mt-1 truncate text-sm font-semibold" style={{ color: 'var(--admin-text)' }} title={value}>{value}</p>
     </div>
   );
@@ -799,7 +801,10 @@ function readableConditions(explanation: Record<string, unknown>): Array<{ label
 function readableToss(explanation: Record<string, unknown>, features?: Record<string, unknown> | null): string | null {
   const adjusted = explanation.tossAdjusted === true;
   const decision = asText(explanation.tossDecision) || asText(nested(features, 'toss.decision'));
-  const wonBy = asText(nested(features, 'toss.wonBy')) || asText(nested(features, 'toss.won_by'));
+  // Features store the winning side as a raw `sr:competitor:` id, which must
+  // never be printed as-is. No match object here, so only readable text passes.
+  const wonByRaw = asText(nested(features, 'toss.wonBy')) || asText(nested(features, 'toss.won_by'));
+  const wonBy = wonByRaw && !/^sr:/i.test(wonByRaw) ? wonByRaw : null;
   if (!adjusted && !decision && !wonBy) return null;
   if (!adjusted) return 'Stored, not adjusted';
   return [wonBy ? `Won by ${wonBy}` : 'Included', decision].filter(Boolean).join(' · ');

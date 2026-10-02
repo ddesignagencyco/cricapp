@@ -2,18 +2,18 @@ import Link from 'next/link';
 import MatchCard from '../../components/MatchCard';
 import LiveNowSection from '../../components/LiveNowSection';
 import SectionHeader from '../../components/SectionHeader';
+import HomeGalleryStrip from '../../components/gallery/HomeGalleryStrip';
 import MatchTickerBar from '../../components/MatchTickerBar';
 import CricketHero from '../../components/CricketHero';
 import PslSpotlight from '../../components/PslSpotlight';
 import RecentResultCard from '../../components/RecentResultCard';
 import TopPerformers from '../../components/TopPerformers';
 import Newsletter from '../../components/Newsletter';
-import AdSlot from '../../components/AdSlot';
+import AdSlot from '../../components/advertisements/AdSlot';
 import RemoteImage from '../../components/RemoteImage';
 import NewsCopy from '../../components/NewsCopy';
 import Badge, { StatusBadge } from '../../components/Badge';
 
-import { fetchGalleryPage } from '../../services/gallery';
 import { fetchLiveMatches, fetchMatches } from '../../services/matches';
 import { fetchNews } from '../../services/news';
 import { newsHref } from '../../utils/newsConstraints';
@@ -45,7 +45,6 @@ export default async function HomePage() {
       fetchPslStandings(),
       fetchPslLeaders(),
       fetchStreams({ limit: 8 }),
-      fetchGalleryPage({ page: 1, limit: 6, type: 'image' }),
     ] as const);
   const liveMatches = results[0].status === 'fulfilled' ? results[0].value : [];
   const upcomingMatches = results[1].status === 'fulfilled' ? results[1].value : [];
@@ -54,7 +53,6 @@ export default async function HomePage() {
   const standings = results[4].status === 'fulfilled' ? results[4].value : [];
   const pslLeaders = results[5].status === 'fulfilled' ? results[5].value : [];
   const streams = results[6].status === 'fulfilled' ? results[6].value : [];
-  const galleryPhotos = results[7].status === 'fulfilled' ? results[7].value.items : [];
 
   const live = liveMatches || [];
   const upcoming = (upcomingMatches || []).slice(0, 3);
@@ -96,7 +94,16 @@ export default async function HomePage() {
 
   return (
     <div className="min-h-screen">
-      <MatchTickerBar matches={tickerMatches} />
+      {/* Below sm the ticker is one full-width card behind a swipe, which reads as
+          dead space on a phone — so that slot carries a banner instead. */}
+      <div className="hidden sm:block">
+        <MatchTickerBar matches={tickerMatches} />
+      </div>
+      <div className="border-b border-lborder sm:hidden">
+        <div className="mx-auto w-full max-w-7xl px-4 py-3">
+          <AdSlot placement="home-top-mobile" />
+        </div>
+      </div>
       <CricketHero match={heroMatch ?? undefined} />
 
       <div className="flex flex-col gap-12 pt-12 pb-12">
@@ -151,7 +158,7 @@ export default async function HomePage() {
       </section>
 
       <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
-        <AdSlot slot="home-mid" format="leaderboard" />
+        <AdSlot placement="home-mid" />
       </section>
 
       {/* PSL Spotlight */}
@@ -262,32 +269,12 @@ export default async function HomePage() {
         </section>
       )}
 
-      {galleryPhotos.length > 0 && (
-        <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
-          <SectionHeader title="Gallery" subtitle="Images, shorts and videos" icon="images" to="/gallery" actionLabel="Open gallery" />
-          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-6">
-            {galleryPhotos.map((item) => (
-              <Link key={item.id} href="/gallery?tab=images" className="card-diamond card-interactive group overflow-hidden rounded-md border border-lborder bg-card">
-                <div className="relative aspect-square bg-secondary">
-                  <RemoteImage
-                    src={item.thumbnailUrl || item.url}
-                    alt={item.title || 'Gallery image'}
-                    fill
-                    sizes="180px"
-                    fit="contain"
-                    className="news-image"
-                  />
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
+      <HomeGalleryStrip />
 
       <Newsletter />
 
       <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
-        <AdSlot slot="home-footer" format="leaderboard" />
+        <AdSlot placement="home-footer" />
       </section>
       </div>
     </div>

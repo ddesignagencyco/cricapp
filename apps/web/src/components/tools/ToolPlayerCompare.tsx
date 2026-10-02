@@ -6,7 +6,7 @@ import { X } from 'lucide-react';
 import { fetchPlayerById, fetchPlayers } from '../../services/players';
 import type { Player } from '../../types';
 import type { ToolDef } from '../../lib/toolsCatalog';
-import { ToolPage, ToolPanel, toolTextInputClass } from './ToolShared';
+import { ToolPage, ToolPanel, ResultBox, toolTextInputClass } from './ToolShared';
 
 const SEARCH_DEBOUNCE_MS = 400;
 
@@ -186,13 +186,15 @@ export default function ToolPlayerCompare({ tool }: { tool: ToolDef }) {
   const [right, setRight] = useState<Player | null>(null);
   const leftFull = usePlayerDetails(left);
   const rightFull = usePlayerDetails(right);
+  const comparison =
+    [displayName(leftFull), displayName(rightFull)].filter(Boolean).join(' vs ') || '—';
 
   return (
     <ToolPage
       tool={tool}
       note="Compares stored directory fields and recent matches. Career aggregates (runs, wickets, averages) need a player-stats API — we do not invent those numbers."
     >
-      <ToolPanel>
+      <ToolPanel aside={<ResultBox label="Comparison" value={comparison} />}>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <PlayerPick label="Player A" selected={left} onPick={setLeft} />
           <PlayerPick label="Player B" selected={right} onPick={setRight} />

@@ -1,0 +1,1909 @@
+{
+  "timeline": [
+    {
+      "id": 2477891094,
+      "time": "2026-09-30T08:31:42+00:00",
+      "type": "match_started"
+    },
+    {
+      "id": 2477891098,
+      "time": "2026-09-30T08:31:42+00:00",
+      "type": "period_start",
+      "period_name": "First innings, away team"
+    },
+    {
+      "id": 2478149738,
+      "time": "2026-09-30T15:33:24+00:00",
+      "type": "ball",
+      "inning": 2,
+      "commentary": {
+        "text": "Short of a length, pitching outside off stump once more. Shubman Gill moves onto the back foot and cuts for a single run."
+      },
+      "ball_number": 3,
+      "over_number": 29,
+      "display_overs": "28.3",
+      "display_score": "282/1",
+      "batting_params": {
+        "connect": "good",
+        "striker": {
+          "id": "sr:player:1097864",
+          "name": "Gill, Shubman",
+          "country_code": "IND"
+        },
+        "shot_type": "cut",
+        "non_striker": {
+          "id": "sr:player:643154",
+          "name": "Kohli, Virat",
+          "country_code": "IND"
+        },
+        "runs_scored": 1,
+        "zone_played_in": "deep_point",
+        "angle_traversed": 260,
+        "hit_to_boundary": false
+      },
+      "bowling_params": {
+        "bowler": {
+          "id": "sr:player:1969145",
+          "name": "Seales, Jayden",
+          "country_code": "TTO"
+        },
+        "pitch_x": 33,
+        "pitch_y": 65,
+        "beat_bat": false,
+        "bowling_end": "media_end",
+        "bowling_from": "over",
+        "delivery_type": "stock",
+        "extra_runs_conceded": 0
+      },
+      "fielding_params": {
+        "fielded": true,
+        "misfielded": false,
+        "overthrows": 0,
+        "runs_saved": 0,
+        "catch_dropped": false,
+        "run_out_missed": false,
+        "stumping_missed": false,
+        "pressure_applied": false,
+        "fielded_wicket_keeper": false
+      }
+    },
+    {
+      "id": 2478150342,
+      "time": "2026-09-30T15:34:10+00:00",
+      "type": "six",
+      "inning": 2,
+      "commentary": {
+        "text": "SIX! Short ball, pitching outside off. Kohli pushes forward and pulls for a half dozen runs."
+      },
+      "ball_number": 4,
+      "over_number": 29,
+      "display_overs": "28.4",
+      "display_score": "288/1",
+      "batting_params": {
+        "connect": "good",
+        "striker": {
+          "id": "sr:player:643154",
+          "name": "Kohli, Virat",
+          "country_code": "IND"
+        },
+        "shot_type": "pull",
+        "non_striker": {
+          "id": "sr:player:1097864",
+          "name": "Gill, Shubman",
+          "country_code": "IND"
+        },
+        "runs_scored": 6,
+        "zone_played_in": "deep_mid_wicket",
+        "angle_traversed": 120,
+        "hit_to_boundary": true
+      },
+      "bowling_params": {
+        "bowler": {
+          "id": "sr:player:1969145",
+          "name": "Seales, Jayden",
+          "country_code": "TTO"
+        },
+        "pitch_x": 33,
+        "pitch_y": 75,
+        "beat_bat": false,
+        "bowling_end": "media_end",
+        "bowling_from": "over",
+        "delivery_type": "stock",
+        "extra_runs_conceded": 0
+      },
+      "fielding_params": {
+        "fielded": false,
+        "misfielded": false,
+        "overthrows": 0,
+        "runs_saved": 0,
+        "catch_dropped": false,
+        "run_out_missed": false,
+        "stumping_missed": false,
+        "pressure_applied": false,
+        "fielded_wicket_keeper": false
+      }
+    },
+    {
+      "id": 2478150996,
+      "time": "2026-09-30T15:35:01+00:00",
+      "type": "boundary",
+      "inning": 2,
+      "commentary": {
+        "text": "FOUR! On a good length, pitching outside off stump once more. Kohli gets on the front foot and drives over the off side for 4 runs."
+      },
+      "ball_number": 5,
+      "over_number": 29,
+      "display_overs": "28.5",
+      "display_score": "292/1",
+      "batting_params": {
+        "connect": "good",
+        "striker": {
+          "id": "sr:player:643154",
+          "name": "Kohli, Virat",
+          "country_code": "IND"
+        },
+        "shot_type": "drive",
+        "non_striker": {
+          "id": "sr:player:1097864",
+          "name": "Gill, Shubman",
+          "country_code": "IND"
+        },
+        "runs_scored": 4,
+        "zone_played_in": "long_off",
+        "angle_traversed": 201,
+        "hit_to_boundary": true
+      },
+      "bowling_params": {
+        "bowler": {
+          "id": "sr:player:1969145",
+          "name": "Seales, Jayden",
+          "country_code": "TTO"
+        },
+        "pitch_x": 34,
+        "pitch_y": 43,
+        "beat_bat": false,
+        "bowling_end": "media_end",
+        "bowling_from": "over",
+        "delivery_type": "stock",
+        "extra_runs_conceded": 0
+      },
+      "fielding_params": {
+        "fielded": false,
+        "misfielded": false,
+        "overthrows": 0,
+        "runs_saved": 0,
+        "catch_dropped": false,
+        "run_out_missed": false,
+        "stumping_missed": false,
+        "pressure_applied": false,
+        "fielded_wicket_keeper": false
+      }
+    },
+    {
+      "id": 2478151680,
+      "time": "2026-09-30T15:36:02+00:00",
+      "type": "boundary",
+      "inning": 2,
+      "commentary": {
+        "text": "FOUR MORE! Full ball, on leg stump again. Kohli moves onto the front foot and plays a glance on the leg side for four runs."
+      },
+      "ball_number": 6,
+      "over_number": 29,
+      "display_overs": "28.6",
+      "display_score": "296/1",
+      "batting_params": {
+        "connect": "good",
+        "striker": {
+          "id": "sr:player:643154",
+          "name": "Kohli, Virat",
+          "country_code": "IND"
+        },
+        "shot_type": "glance",
+        "non_striker": {
+          "id": "sr:player:1097864",
+          "name": "Gill, Shubman",
+          "country_code": "IND"
+        },
+        "runs_scored": 4,
+        "zone_played_in": "deep_mid_wicket",
+        "angle_traversed": 111,
+        "hit_to_boundary": true
+      },
+      "bowling_params": {
+        "bowler": {
+          "id": "sr:player:1969145",
+          "name": "Seales, Jayden",
+          "country_code": "TTO"
+        },
+        "pitch_x": 52,
+        "pitch_y": 33,
+        "beat_bat": false,
+        "bowling_end": "media_end",
+        "bowling_from": "over",
+        "delivery_type": "stock",
+        "extra_runs_conceded": 0
+      },
+      "fielding_params": {
+        "fielded": false,
+        "misfielded": false,
+        "overthrows": 0,
+        "runs_saved": 0,
+        "catch_dropped": false,
+        "run_out_missed": false,
+        "stumping_missed": false,
+        "pressure_applied": false,
+        "fielded_wicket_keeper": false
+      }
+    },
+    {
+      "id": 2478152902,
+      "time": "2026-09-30T15:37:47+00:00",
+      "type": "boundary",
+      "inning": 2,
+      "ball_number": 1,
+      "over_number": 30,
+      "display_overs": "29.1",
+      "display_score": "300/1",
+      "batting_params": {
+        "connect": "good",
+        "striker": {
+          "id": "sr:player:1097864",
+          "name": "Gill, Shubman",
+          "country_code": "IND"
+        },
+        "shot_type": "drive",
+        "non_striker": {
+          "id": "sr:player:643154",
+          "name": "Kohli, Virat",
+          "country_code": "IND"
+        },
+        "runs_scored": 4,
+        "zone_played_in": "long_on",
+        "angle_traversed": 170,
+        "hit_to_boundary": true
+      },
+      "bowling_params": {
+        "bowler": {
+          "id": "sr:player:3020398",
+          "name": "Lawes, Vitel",
+          "country_code": "JAM"
+        },
+        "pitch_x": 43,
+        "pitch_y": 3,
+        "beat_bat": false,
+        "bowling_end": "pavilion_end",
+        "bowling_from": "over",
+        "delivery_type": "stock",
+        "extra_runs_conceded": 0
+      },
+      "fielding_params": {
+        "fielded": false,
+        "misfielded": false,
+        "overthrows": 0,
+        "runs_saved": 0,
+        "catch_dropped": false,
+        "run_out_missed": false,
+        "stumping_missed": false,
+        "pressure_applied": false,
+        "fielded_wicket_keeper": false
+      }
+    },
+    {
+      "id": 2478153202,
+      "time": "2026-09-30T15:38:11+00:00",
+      "type": "ball",
+      "inning": 2,
+      "ball_number": 2,
+      "over_number": 30,
+      "display_overs": "29.2",
+      "display_score": "301/1",
+      "batting_params": {
+        "connect": "good",
+        "striker": {
+          "id": "sr:player:1097864",
+          "name": "Gill, Shubman",
+          "country_code": "IND"
+        },
+        "shot_type": "defensive",
+        "non_striker": {
+          "id": "sr:player:643154",
+          "name": "Kohli, Virat",
+          "country_code": "IND"
+        },
+        "runs_scored": 1,
+        "zone_played_in": "cover",
+        "angle_traversed": 252,
+        "hit_to_boundary": false
+      },
+      "bowling_params": {
+        "bowler": {
+          "id": "sr:player:3020398",
+          "name": "Lawes, Vitel",
+          "country_code": "JAM"
+        },
+        "pitch_x": 53,
+        "pitch_y": 45,
+        "beat_bat": false,
+        "bowling_end": "pavilion_end",
+        "bowling_from": "over",
+        "delivery_type": "stock",
+        "extra_runs_conceded": 0
+      },
+      "fielding_params": {
+        "fielded": true,
+        "misfielded": false,
+        "overthrows": 0,
+        "runs_saved": 0,
+        "catch_dropped": false,
+        "run_out_missed": false,
+        "stumping_missed": false,
+        "pressure_applied": false,
+        "fielded_wicket_keeper": false
+      }
+    },
+    {
+      "id": 2478153374,
+      "time": "2026-09-30T15:38:26+00:00",
+      "type": "ball",
+      "inning": 2,
+      "commentary": {
+        "text": "Good length from Lawes, pitching outside leg and angled across. Kohli moves onto the front foot and glances for one run."
+      },
+      "ball_number": 3,
+      "over_number": 30,
+      "display_overs": "29.3",
+      "display_score": "302/1",
+      "batting_params": {
+        "connect": "good",
+        "striker": {
+          "id": "sr:player:643154",
+          "name": "Kohli, Virat",
+          "country_code": "IND"
+        },
+        "shot_type": "glance",
+        "non_striker": {
+          "id": "sr:player:1097864",
+          "name": "Gill, Shubman",
+          "country_code": "IND"
+        },
+        "runs_scored": 1,
+        "zone_played_in": "mid_wicket",
+        "angle_traversed": 115,
+        "hit_to_boundary": false
+      },
+      "bowling_params": {
+        "bowler": {
+          "id": "sr:player:3020398",
+          "name": "Lawes, Vitel",
+          "country_code": "JAM"
+        },
+        "pitch_x": 63,
+        "pitch_y": 46,
+        "beat_bat": false,
+        "bowling_end": "pavilion_end",
+        "bowling_from": "over",
+        "delivery_type": "stock",
+        "extra_runs_conceded": 0
+      },
+      "fielding_params": {
+        "fielded": true,
+        "misfielded": false,
+        "overthrows": 0,
+        "runs_saved": 0,
+        "catch_dropped": false,
+        "run_out_missed": false,
+        "stumping_missed": false,
+        "pressure_applied": false,
+        "fielded_wicket_keeper": false
+      }
+    },
+    {
+      "id": 2478153600,
+      "time": "2026-09-30T15:38:45+00:00",
+      "type": "ball",
+      "inning": 2,
+      "commentary": {
+        "text": "Good length, pitching outside leg stump and angling across. Shubman Gill moves onto the back foot and guides a glance for a run back behind square."
+      },
+      "ball_number": 4,
+      "over_number": 30,
+      "display_overs": "29.4",
+      "display_score": "303/1",
+      "batting_params": {
+        "connect": "good",
+        "striker": {
+          "id": "sr:player:1097864",
+          "name": "Gill, Shubman",
+          "country_code": "IND"
+        },
+        "shot_type": "glance",
+        "non_striker": {
+          "id": "sr:player:643154",
+          "name": "Kohli, Virat",
+          "country_code": "IND"
+        },
+        "runs_scored": 1,
+        "zone_played_in": "deep_square_leg",
+        "angle_traversed": 83,
+        "hit_to_boundary": false
+      },
+      "bowling_params": {
+        "bowler": {
+          "id": "sr:player:3020398",
+          "name": "Lawes, Vitel",
+          "country_code": "JAM"
+        },
+        "pitch_x": 60,
+        "pitch_y": 53,
+        "beat_bat": false,
+        "bowling_end": "pavilion_end",
+        "bowling_from": "over",
+        "delivery_type": "stock",
+        "extra_runs_conceded": 0
+      },
+      "fielding_params": {
+        "fielded": true,
+        "misfielded": false,
+        "overthrows": 0,
+        "runs_saved": 0,
+        "catch_dropped": false,
+        "run_out_missed": false,
+        "stumping_missed": false,
+        "pressure_applied": false,
+        "fielded_wicket_keeper": false
+      }
+    },
+    {
+      "id": 2478153708,
+      "time": "2026-09-30T15:38:53+00:00",
+      "type": "ball",
+      "inning": 2,
+      "commentary": {
+        "text": "Good length from Lawes, pitching outside leg stump and angling across Kohli. He goes back and plays a defensive stroke for one run."
+      },
+      "ball_number": 5,
+      "over_number": 30,
+      "display_overs": "29.5",
+      "display_score": "304/1",
+      "batting_params": {
+        "connect": "good",
+        "striker": {
+          "id": "sr:player:643154",
+          "name": "Kohli, Virat",
+          "country_code": "IND"
+        },
+        "shot_type": "defensive",
+        "non_striker": {
+          "id": "sr:player:1097864",
+          "name": "Gill, Shubman",
+          "country_code": "IND"
+        },
+        "runs_scored": 1,
+        "zone_played_in": "third_man",
+        "angle_traversed": 301,
+        "hit_to_boundary": false
+      },
+      "bowling_params": {
+        "bowler": {
+          "id": "sr:player:3020398",
+          "name": "Lawes, Vitel",
+          "country_code": "JAM"
+        },
+        "pitch_x": 55,
+        "pitch_y": 51,
+        "beat_bat": false,
+        "bowling_end": "pavilion_end",
+        "bowling_from": "over",
+        "delivery_type": "stock",
+        "extra_runs_conceded": 0
+      },
+      "fielding_params": {
+        "fielded": true,
+        "misfielded": false,
+        "overthrows": 0,
+        "runs_saved": 0,
+        "catch_dropped": false,
+        "run_out_missed": false,
+        "stumping_missed": false,
+        "pressure_applied": false,
+        "fielded_wicket_keeper": false
+      }
+    },
+    {
+      "id": 2478154014,
+      "time": "2026-09-30T15:39:17+00:00",
+      "type": "ball",
+      "inning": 2,
+      "commentary": {
+        "text": "Pitched up, outside leg again. Shubman Gill gets forward and eases a drive for a run through the on side field."
+      },
+      "ball_number": 6,
+      "over_number": 30,
+      "display_overs": "29.6",
+      "display_score": "305/1",
+      "batting_params": {
+        "connect": "good",
+        "striker": {
+          "id": "sr:player:1097864",
+          "name": "Gill, Shubman",
+          "country_code": "IND"
+        },
+        "shot_type": "drive",
+        "non_striker": {
+          "id": "sr:player:643154",
+          "name": "Kohli, Virat",
+          "country_code": "IND"
+        },
+        "runs_scored": 1,
+        "zone_played_in": "long_on",
+        "angle_traversed": 150,
+        "hit_to_boundary": false
+      },
+      "bowling_params": {
+        "bowler": {
+          "id": "sr:player:3020398",
+          "name": "Lawes, Vitel",
+          "country_code": "JAM"
+        },
+        "pitch_x": 60,
+        "pitch_y": 36,
+        "beat_bat": false,
+        "bowling_end": "pavilion_end",
+        "bowling_from": "over",
+        "delivery_type": "stock",
+        "extra_runs_conceded": 0
+      },
+      "fielding_params": {
+        "fielded": true,
+        "misfielded": false,
+        "overthrows": 0,
+        "runs_saved": 0,
+        "catch_dropped": false,
+        "run_out_missed": false,
+        "stumping_missed": false,
+        "pressure_applied": false,
+        "fielded_wicket_keeper": false
+      }
+    },
+    {
+      "id": 2478155360,
+      "time": "2026-09-30T15:41:08+00:00",
+      "type": "ball",
+      "inning": 2,
+      "commentary": {
+        "text": "Back of a length from Joseph, pitching outside off stump. Shubman Gill pushes forward and cuts poorly for 1 run."
+      },
+      "ball_number": 1,
+      "over_number": 31,
+      "display_overs": "30.1",
+      "display_score": "306/1",
+      "batting_params": {
+        "connect": "poor",
+        "striker": {
+          "id": "sr:player:1097864",
+          "name": "Gill, Shubman",
+          "country_code": "IND"
+        },
+        "shot_type": "square_cut",
+        "non_striker": {
+          "id": "sr:player:643154",
+          "name": "Kohli, Virat",
+          "country_code": "IND"
+        },
+        "runs_scored": 1,
+        "zone_played_in": "cover",
+        "angle_traversed": 215,
+        "hit_to_boundary": false
+      },
+      "bowling_params": {
+        "bowler": {
+          "id": "sr:player:2549267",
+          "name": "Joseph, Shamar",
+          "country_code": "IND"
+        },
+        "pitch_x": 35,
+        "pitch_y": 56,
+        "beat_bat": false,
+        "bowling_end": "media_end",
+        "bowling_from": "over",
+        "delivery_type": "stock",
+        "extra_runs_conceded": 0
+      },
+      "fielding_params": {
+        "fielded": true,
+        "misfielded": false,
+        "overthrows": 0,
+        "runs_saved": 0,
+        "catch_dropped": false,
+        "run_out_missed": false,
+        "stumping_missed": false,
+        "pressure_applied": false,
+        "fielded_wicket_keeper": false
+      }
+    },
+    {
+      "id": 2478155926,
+      "time": "2026-09-30T15:41:50+00:00",
+      "type": "ball",
+      "inning": 2,
+      "ball_number": 2,
+      "over_number": 31,
+      "display_overs": "30.2",
+      "display_score": "307/1",
+      "batting_params": {
+        "connect": "good",
+        "striker": {
+          "id": "sr:player:643154",
+          "name": "Kohli, Virat",
+          "country_code": "IND"
+        },
+        "shot_type": "defensive",
+        "non_striker": {
+          "id": "sr:player:1097864",
+          "name": "Gill, Shubman",
+          "country_code": "IND"
+        },
+        "runs_scored": 1,
+        "zone_played_in": "mid_on",
+        "angle_traversed": 157,
+        "hit_to_boundary": false
+      },
+      "bowling_params": {
+        "bowler": {
+          "id": "sr:player:2549267",
+          "name": "Joseph, Shamar",
+          "country_code": "IND"
+        },
+        "pitch_x": 41,
+        "pitch_y": 59,
+        "beat_bat": false,
+        "bowling_end": "media_end",
+        "bowling_from": "over",
+        "delivery_type": "stock",
+        "extra_runs_conceded": 0
+      },
+      "fielding_params": {
+        "fielded": true,
+        "misfielded": false,
+        "overthrows": 0,
+        "runs_saved": 0,
+        "catch_dropped": false,
+        "run_out_missed": false,
+        "stumping_missed": false,
+        "pressure_applied": false,
+        "fielded_wicket_keeper": false
+      }
+    },
+    {
+      "id": 2478156320,
+      "time": "2026-09-30T15:42:25+00:00",
+      "type": "ball",
+      "inning": 2,
+      "commentary": {
+        "text": "Length ball, outside off stump again. Shubman Gill gets forward and eases a drive for a single run on the off side."
+      },
+      "ball_number": 3,
+      "over_number": 31,
+      "display_overs": "30.3",
+      "display_score": "308/1",
+      "batting_params": {
+        "connect": "good",
+        "striker": {
+          "id": "sr:player:1097864",
+          "name": "Gill, Shubman",
+          "country_code": "IND"
+        },
+        "shot_type": "drive",
+        "non_striker": {
+          "id": "sr:player:643154",
+          "name": "Kohli, Virat",
+          "country_code": "IND"
+        },
+        "runs_scored": 1,
+        "zone_played_in": "deep_cover",
+        "angle_traversed": 239,
+        "hit_to_boundary": false
+      },
+      "bowling_params": {
+        "bowler": {
+          "id": "sr:player:2549267",
+          "name": "Joseph, Shamar",
+          "country_code": "IND"
+        },
+        "pitch_x": 27,
+        "pitch_y": 49,
+        "beat_bat": false,
+        "bowling_end": "media_end",
+        "bowling_from": "over",
+        "delivery_type": "stock",
+        "extra_runs_conceded": 0
+      },
+      "fielding_params": {
+        "fielded": true,
+        "misfielded": false,
+        "overthrows": 0,
+        "runs_saved": 0,
+        "catch_dropped": false,
+        "run_out_missed": false,
+        "stumping_missed": false,
+        "pressure_applied": false,
+        "fielded_wicket_keeper": false
+      }
+    },
+    {
+      "id": 2478156920,
+      "time": "2026-09-30T15:43:17+00:00",
+      "type": "ball",
+      "inning": 2,
+      "ball_number": 4,
+      "over_number": 31,
+      "display_overs": "30.4",
+      "display_score": "310/1",
+      "batting_params": {
+        "connect": "good",
+        "striker": {
+          "id": "sr:player:643154",
+          "name": "Kohli, Virat",
+          "country_code": "IND"
+        },
+        "shot_type": "drive",
+        "non_striker": {
+          "id": "sr:player:1097864",
+          "name": "Gill, Shubman",
+          "country_code": "IND"
+        },
+        "runs_scored": 2,
+        "zone_played_in": "deep_cover",
+        "angle_traversed": 237,
+        "hit_to_boundary": false
+      },
+      "bowling_params": {
+        "bowler": {
+          "id": "sr:player:2549267",
+          "name": "Joseph, Shamar",
+          "country_code": "IND"
+        },
+        "pitch_x": 30,
+        "pitch_y": 69,
+        "beat_bat": false,
+        "bowling_end": "media_end",
+        "bowling_from": "over",
+        "delivery_type": "stock",
+        "extra_runs_conceded": 0
+      },
+      "fielding_params": {
+        "fielded": true,
+        "misfielded": false,
+        "overthrows": 0,
+        "runs_saved": 0,
+        "catch_dropped": false,
+        "run_out_missed": false,
+        "stumping_missed": false,
+        "pressure_applied": false,
+        "fielded_wicket_keeper": false
+      }
+    },
+    {
+      "id": 2478157506,
+      "time": "2026-09-30T15:44:13+00:00",
+      "type": "boundary",
+      "inning": 2,
+      "commentary": {
+        "text": "FOUR! Pitched up, outside off stump once again. Kohli gets forward and drives over the off side field for four runs."
+      },
+      "ball_number": 5,
+      "over_number": 31,
+      "display_overs": "30.5",
+      "display_score": "314/1",
+      "batting_params": {
+        "connect": "good",
+        "striker": {
+          "id": "sr:player:643154",
+          "name": "Kohli, Virat",
+          "country_code": "IND"
+        },
+        "shot_type": "drive",
+        "non_striker": {
+          "id": "sr:player:1097864",
+          "name": "Gill, Shubman",
+          "country_code": "IND"
+        },
+        "runs_scored": 4,
+        "zone_played_in": "long_off",
+        "angle_traversed": 203,
+        "hit_to_boundary": true
+      },
+      "bowling_params": {
+        "bowler": {
+          "id": "sr:player:2549267",
+          "name": "Joseph, Shamar",
+          "country_code": "IND"
+        },
+        "pitch_x": 44,
+        "pitch_y": 39,
+        "beat_bat": false,
+        "bowling_end": "media_end",
+        "bowling_from": "over",
+        "delivery_type": "stock",
+        "extra_runs_conceded": 0
+      },
+      "fielding_params": {
+        "fielded": false,
+        "misfielded": false,
+        "overthrows": 0,
+        "runs_saved": 0,
+        "catch_dropped": false,
+        "run_out_missed": false,
+        "stumping_missed": false,
+        "pressure_applied": false,
+        "fielded_wicket_keeper": false
+      }
+    },
+    {
+      "id": 2478158020,
+      "time": "2026-09-30T15:44:59+00:00",
+      "type": "ball",
+      "inning": 2,
+      "commentary": {
+        "text": "Short of a length, outside off stump again. Kohli gets on the front foot and punches a sloppy drive for one run past the bowler."
+      },
+      "ball_number": 6,
+      "over_number": 31,
+      "display_overs": "30.6",
+      "display_score": "315/1",
+      "batting_params": {
+        "connect": "poor",
+        "striker": {
+          "id": "sr:player:643154",
+          "name": "Kohli, Virat",
+          "country_code": "IND"
+        },
+        "shot_type": "drive",
+        "non_striker": {
+          "id": "sr:player:1097864",
+          "name": "Gill, Shubman",
+          "country_code": "IND"
+        },
+        "runs_scored": 1,
+        "zone_played_in": "mid_on",
+        "angle_traversed": 165,
+        "hit_to_boundary": false
+      },
+      "bowling_params": {
+        "bowler": {
+          "id": "sr:player:2549267",
+          "name": "Joseph, Shamar",
+          "country_code": "IND"
+        },
+        "pitch_x": 34,
+        "pitch_y": 63,
+        "beat_bat": false,
+        "bowling_end": "media_end",
+        "bowling_from": "over",
+        "delivery_type": "stock",
+        "extra_runs_conceded": 0
+      },
+      "fielding_params": {
+        "fielded": false,
+        "misfielded": false,
+        "overthrows": 0,
+        "runs_saved": 0,
+        "catch_dropped": false,
+        "run_out_missed": false,
+        "stumping_missed": false,
+        "pressure_applied": false,
+        "fielded_wicket_keeper": false
+      }
+    },
+    {
+      "id": 2478159020,
+      "time": "2026-09-30T15:46:07+00:00",
+      "type": "ball",
+      "inning": 2,
+      "commentary": {
+        "text": "On a good length, pitching outside leg and angling across the batter. Kohli goes back and drives for one run through the leg side field."
+      },
+      "ball_number": 1,
+      "over_number": 32,
+      "display_overs": "31.1",
+      "display_score": "316/1",
+      "batting_params": {
+        "connect": "good",
+        "striker": {
+          "id": "sr:player:643154",
+          "name": "Kohli, Virat",
+          "country_code": "IND"
+        },
+        "shot_type": "drive",
+        "non_striker": {
+          "id": "sr:player:1097864",
+          "name": "Gill, Shubman",
+          "country_code": "IND"
+        },
+        "runs_scored": 1,
+        "zone_played_in": "long_on",
+        "angle_traversed": 153,
+        "hit_to_boundary": false
+      },
+      "bowling_params": {
+        "bowler": {
+          "id": "sr:player:684266",
+          "name": "Chase, Roston",
+          "country_code": "BRB"
+        },
+        "pitch_x": 56,
+        "pitch_y": 51,
+        "beat_bat": false,
+        "bowling_end": "pavilion_end",
+        "bowling_from": "around",
+        "delivery_type": "stock",
+        "extra_runs_conceded": 0
+      },
+      "fielding_params": {
+        "fielded": true,
+        "misfielded": false,
+        "overthrows": 0,
+        "runs_saved": 0,
+        "catch_dropped": false,
+        "run_out_missed": false,
+        "stumping_missed": false,
+        "pressure_applied": false,
+        "fielded_wicket_keeper": false
+      }
+    },
+    {
+      "id": 2478159448,
+      "time": "2026-09-30T15:46:48+00:00",
+      "type": "ball",
+      "inning": 2,
+      "commentary": {
+        "text": "Chase pitches one up, on leg stump and angled across Shubman Gill. He gets on the back foot and drives for a run."
+      },
+      "ball_number": 2,
+      "over_number": 32,
+      "display_overs": "31.2",
+      "display_score": "317/1",
+      "batting_params": {
+        "connect": "good",
+        "striker": {
+          "id": "sr:player:1097864",
+          "name": "Gill, Shubman",
+          "country_code": "IND"
+        },
+        "shot_type": "drive",
+        "non_striker": {
+          "id": "sr:player:643154",
+          "name": "Kohli, Virat",
+          "country_code": "IND"
+        },
+        "runs_scored": 1,
+        "zone_played_in": "long_off",
+        "angle_traversed": 195,
+        "hit_to_boundary": false
+      },
+      "bowling_params": {
+        "bowler": {
+          "id": "sr:player:684266",
+          "name": "Chase, Roston",
+          "country_code": "BRB"
+        },
+        "pitch_x": 51,
+        "pitch_y": 38,
+        "beat_bat": false,
+        "bowling_end": "pavilion_end",
+        "bowling_from": "around",
+        "delivery_type": "stock",
+        "extra_runs_conceded": 0
+      },
+      "fielding_params": {
+        "fielded": true,
+        "misfielded": false,
+        "overthrows": 0,
+        "runs_saved": 0,
+        "catch_dropped": false,
+        "run_out_missed": false,
+        "stumping_missed": false,
+        "pressure_applied": false,
+        "fielded_wicket_keeper": false
+      }
+    },
+    {
+      "id": 2478159766,
+      "time": "2026-09-30T15:47:16+00:00",
+      "type": "ball",
+      "inning": 2,
+      "commentary": {
+        "text": "Good length from Chase, outside leg and angled across the batter. Kohli gets on the back foot and punches a drive for a single run."
+      },
+      "ball_number": 3,
+      "over_number": 32,
+      "display_overs": "31.3",
+      "display_score": "318/1",
+      "batting_params": {
+        "connect": "good",
+        "striker": {
+          "id": "sr:player:643154",
+          "name": "Kohli, Virat",
+          "country_code": "IND"
+        },
+        "shot_type": "drive",
+        "non_striker": {
+          "id": "sr:player:1097864",
+          "name": "Gill, Shubman",
+          "country_code": "IND"
+        },
+        "runs_scored": 1,
+        "zone_played_in": "long_off",
+        "angle_traversed": 199,
+        "hit_to_boundary": false
+      },
+      "bowling_params": {
+        "bowler": {
+          "id": "sr:player:684266",
+          "name": "Chase, Roston",
+          "country_code": "BRB"
+        },
+        "pitch_x": 53,
+        "pitch_y": 44,
+        "beat_bat": false,
+        "bowling_end": "pavilion_end",
+        "bowling_from": "around",
+        "delivery_type": "stock",
+        "extra_runs_conceded": 0
+      },
+      "fielding_params": {
+        "fielded": true,
+        "misfielded": false,
+        "overthrows": 0,
+        "runs_saved": 0,
+        "catch_dropped": false,
+        "run_out_missed": false,
+        "stumping_missed": false,
+        "pressure_applied": false,
+        "fielded_wicket_keeper": false
+      }
+    },
+    {
+      "id": 2478160300,
+      "time": "2026-09-30T15:48:02+00:00",
+      "type": "ball",
+      "inning": 2,
+      "ball_number": 4,
+      "over_number": 32,
+      "display_overs": "31.4",
+      "display_score": "319/1",
+      "batting_params": {
+        "connect": "good",
+        "striker": {
+          "id": "sr:player:1097864",
+          "name": "Gill, Shubman",
+          "country_code": "IND"
+        },
+        "shot_type": "leg_glance",
+        "non_striker": {
+          "id": "sr:player:643154",
+          "name": "Kohli, Virat",
+          "country_code": "IND"
+        },
+        "runs_scored": 1,
+        "zone_played_in": "fine_leg",
+        "angle_traversed": 50,
+        "hit_to_boundary": false
+      },
+      "bowling_params": {
+        "bowler": {
+          "id": "sr:player:684266",
+          "name": "Chase, Roston",
+          "country_code": "BRB"
+        },
+        "pitch_x": 68,
+        "pitch_y": 54,
+        "beat_bat": false,
+        "bowling_end": "pavilion_end",
+        "bowling_from": "around",
+        "delivery_type": "stock",
+        "extra_runs_conceded": 0
+      },
+      "fielding_params": {
+        "fielded": true,
+        "misfielded": false,
+        "overthrows": 0,
+        "runs_saved": 0,
+        "catch_dropped": false,
+        "run_out_missed": false,
+        "stumping_missed": false,
+        "pressure_applied": false,
+        "fielded_wicket_keeper": false
+      }
+    },
+    {
+      "id": 2478160360,
+      "time": "2026-09-30T15:48:07+00:00",
+      "type": "ball",
+      "inning": 2,
+      "ball_number": 5,
+      "over_number": 32,
+      "display_overs": "31.5",
+      "display_score": "319/1",
+      "batting_params": {
+        "connect": "good",
+        "striker": {
+          "id": "sr:player:643154",
+          "name": "Kohli, Virat",
+          "country_code": "IND"
+        },
+        "shot_type": "cut",
+        "non_striker": {
+          "id": "sr:player:1097864",
+          "name": "Gill, Shubman",
+          "country_code": "IND"
+        },
+        "runs_scored": 0,
+        "zone_played_in": "cover",
+        "angle_traversed": 242,
+        "hit_to_boundary": false
+      },
+      "bowling_params": {
+        "bowler": {
+          "id": "sr:player:684266",
+          "name": "Chase, Roston",
+          "country_code": "BRB"
+        },
+        "pitch_x": 50,
+        "pitch_y": 46,
+        "beat_bat": false,
+        "bowling_end": "pavilion_end",
+        "bowling_from": "around",
+        "delivery_type": "stock",
+        "extra_runs_conceded": 0
+      },
+      "fielding_params": {
+        "fielded": false,
+        "misfielded": false,
+        "overthrows": 0,
+        "runs_saved": 0,
+        "catch_dropped": false,
+        "run_out_missed": false,
+        "stumping_missed": false,
+        "pressure_applied": false,
+        "fielded_wicket_keeper": false
+      }
+    },
+    {
+      "id": 2478160654,
+      "time": "2026-09-30T15:48:35+00:00",
+      "type": "ball",
+      "inning": 2,
+      "ball_number": 6,
+      "over_number": 32,
+      "display_overs": "31.6",
+      "display_score": "320/1",
+      "batting_params": {
+        "connect": "good",
+        "striker": {
+          "id": "sr:player:643154",
+          "name": "Kohli, Virat",
+          "country_code": "IND"
+        },
+        "shot_type": "drive",
+        "non_striker": {
+          "id": "sr:player:1097864",
+          "name": "Gill, Shubman",
+          "country_code": "IND"
+        },
+        "runs_scored": 1,
+        "zone_played_in": "long_on",
+        "angle_traversed": 151,
+        "hit_to_boundary": false
+      },
+      "bowling_params": {
+        "bowler": {
+          "id": "sr:player:684266",
+          "name": "Chase, Roston",
+          "country_code": "BRB"
+        },
+        "pitch_x": 50,
+        "pitch_y": 36,
+        "beat_bat": false,
+        "bowling_end": "pavilion_end",
+        "bowling_from": "around",
+        "delivery_type": "stock",
+        "extra_runs_conceded": 0
+      },
+      "fielding_params": {
+        "fielded": true,
+        "misfielded": false,
+        "overthrows": 0,
+        "runs_saved": 0,
+        "catch_dropped": false,
+        "run_out_missed": false,
+        "stumping_missed": false,
+        "pressure_applied": false,
+        "fielded_wicket_keeper": false
+      }
+    },
+    {
+      "id": 2478161328,
+      "time": "2026-09-30T15:49:35+00:00",
+      "type": "wicket",
+      "inning": 2,
+      "commentary": {
+        "text": "OUT! Caught. Dropped in short by Joseph, pitching outside off. Kohli goes back and guides a late cut back behind point. WEST INDIES appeal for a catch. The umpires meet and decide to call for an umpire review. The decision has been made by the third umpire, and Kohli has to go."
+      },
+      "ball_number": 1,
+      "over_number": 33,
+      "display_overs": "32.1",
+      "display_score": "320/2",
+      "batting_params": {
+        "connect": "good",
+        "striker": {
+          "id": "sr:player:643154",
+          "name": "Kohli, Virat",
+          "country_code": "IND"
+        },
+        "shot_type": "late_cut",
+        "non_striker": {
+          "id": "sr:player:1097864",
+          "name": "Gill, Shubman",
+          "country_code": "IND"
+        },
+        "runs_scored": 0,
+        "zone_played_in": "third_man",
+        "angle_traversed": 337,
+        "hit_to_boundary": false
+      },
+      "bowling_params": {
+        "bowler": {
+          "id": "sr:player:2549267",
+          "name": "Joseph, Shamar",
+          "country_code": "IND"
+        },
+        "pitch_x": 37,
+        "pitch_y": 76,
+        "beat_bat": false,
+        "bowling_end": "media_end",
+        "bowling_from": "over",
+        "delivery_type": "stock",
+        "extra_runs_conceded": 0
+      },
+      "fielding_params": {
+        "fielded": true,
+        "misfielded": false,
+        "overthrows": 0,
+        "runs_saved": 0,
+        "catch_dropped": false,
+        "run_out_missed": false,
+        "stumping_missed": false,
+        "pressure_applied": false,
+        "difficulty_rating": 3,
+        "fielded_wicket_keeper": false
+      },
+      "dismissal_params": {
+        "player": {
+          "id": "sr:player:643154",
+          "name": "Kohli, Virat",
+          "country_code": "IND"
+        },
+        "dismissal_details": {
+          "type": "caught",
+          "bowler_id": "sr:player:2549267",
+          "fielder_id": "sr:player:1344854"
+        }
+      }
+    },
+    {
+      "id": 2478164150,
+      "time": "2026-09-30T15:53:14+00:00",
+      "type": "ball",
+      "inning": 2,
+      "ball_number": 2,
+      "over_number": 33,
+      "display_overs": "32.2",
+      "display_score": "320/2",
+      "batting_params": {
+        "connect": "good",
+        "striker": {
+          "id": "sr:player:1117849",
+          "name": "Gaikwad, Ruturaj",
+          "country_code": "IND"
+        },
+        "shot_type": "defensive",
+        "non_striker": {
+          "id": "sr:player:1097864",
+          "name": "Gill, Shubman",
+          "country_code": "IND"
+        },
+        "runs_scored": 0,
+        "zone_played_in": "cover",
+        "angle_traversed": 220,
+        "hit_to_boundary": false
+      },
+      "bowling_params": {
+        "bowler": {
+          "id": "sr:player:2549267",
+          "name": "Joseph, Shamar",
+          "country_code": "IND"
+        },
+        "pitch_x": 39,
+        "pitch_y": 66,
+        "beat_bat": false,
+        "bowling_end": "media_end",
+        "bowling_from": "over",
+        "delivery_type": "stock",
+        "extra_runs_conceded": 0
+      },
+      "fielding_params": {
+        "fielded": false,
+        "misfielded": false,
+        "overthrows": 0,
+        "runs_saved": 0,
+        "catch_dropped": false,
+        "run_out_missed": false,
+        "stumping_missed": false,
+        "pressure_applied": false,
+        "fielded_wicket_keeper": false
+      }
+    },
+    {
+      "id": 2478164216,
+      "time": "2026-09-30T15:53:18+00:00",
+      "type": "ball",
+      "inning": 2,
+      "ball_number": 3,
+      "over_number": 33,
+      "display_overs": "32.3",
+      "display_score": "321/2",
+      "batting_params": {
+        "connect": "outside_edge",
+        "striker": {
+          "id": "sr:player:1117849",
+          "name": "Gaikwad, Ruturaj",
+          "country_code": "IND"
+        },
+        "shot_type": "drive",
+        "non_striker": {
+          "id": "sr:player:1097864",
+          "name": "Gill, Shubman",
+          "country_code": "IND"
+        },
+        "runs_scored": 1,
+        "zone_played_in": "third_man",
+        "angle_traversed": 333,
+        "hit_to_boundary": false
+      },
+      "bowling_params": {
+        "bowler": {
+          "id": "sr:player:2549267",
+          "name": "Joseph, Shamar",
+          "country_code": "IND"
+        },
+        "pitch_x": 31,
+        "pitch_y": 50,
+        "beat_bat": false,
+        "bowling_end": "media_end",
+        "bowling_from": "over",
+        "delivery_type": "stock",
+        "extra_runs_conceded": 0
+      },
+      "fielding_params": {
+        "fielded": true,
+        "misfielded": false,
+        "overthrows": 0,
+        "runs_saved": 0,
+        "catch_dropped": false,
+        "run_out_missed": false,
+        "stumping_missed": false,
+        "pressure_applied": false,
+        "fielded_wicket_keeper": false
+      }
+    },
+    {
+      "id": 2478164380,
+      "time": "2026-09-30T15:53:33+00:00",
+      "type": "ball",
+      "inning": 2,
+      "commentary": {
+        "text": "Good length from Joseph, outside off stump once more. Shubman Gill moves onto the front foot and tucks a glance back behind square for a run."
+      },
+      "ball_number": 4,
+      "over_number": 33,
+      "display_overs": "32.4",
+      "display_score": "322/2",
+      "batting_params": {
+        "connect": "good",
+        "striker": {
+          "id": "sr:player:1097864",
+          "name": "Gill, Shubman",
+          "country_code": "IND"
+        },
+        "shot_type": "glance",
+        "non_striker": {
+          "id": "sr:player:1117849",
+          "name": "Gaikwad, Ruturaj",
+          "country_code": "IND"
+        },
+        "runs_scored": 1,
+        "zone_played_in": "deep_square_leg",
+        "angle_traversed": 84,
+        "hit_to_boundary": false
+      },
+      "bowling_params": {
+        "bowler": {
+          "id": "sr:player:2549267",
+          "name": "Joseph, Shamar",
+          "country_code": "IND"
+        },
+        "pitch_x": 46,
+        "pitch_y": 44,
+        "beat_bat": false,
+        "bowling_end": "media_end",
+        "bowling_from": "over",
+        "delivery_type": "stock",
+        "extra_runs_conceded": 0
+      },
+      "fielding_params": {
+        "fielded": true,
+        "misfielded": false,
+        "overthrows": 0,
+        "runs_saved": 0,
+        "catch_dropped": false,
+        "run_out_missed": false,
+        "stumping_missed": false,
+        "pressure_applied": false,
+        "fielded_wicket_keeper": false
+      }
+    },
+    {
+      "id": 2478300001,
+      "time": "2026-09-30T15:41:00+00:00",
+      "type": "ball",
+      "inning": 2,
+      "commentary": {
+        "text": "Pitches up on a good length, and Gaikwad defends back down the pitch."
+      },
+      "ball_number": 1,
+      "over_number": 35,
+      "display_overs": "34.1",
+      "display_score": "322/2",
+      "batting_params": {
+        "connect": "good",
+        "striker": {
+          "id": "sr:player:1117849",
+          "name": "Gaikwad, Ruturaj",
+          "country_code": "IND"
+        },
+        "shot_type": "cut",
+        "non_striker": {
+          "id": "sr:player:1097864",
+          "name": "Gill, Shubman",
+          "country_code": "IND"
+        },
+        "runs_scored": 0,
+        "zone_played_in": "cover",
+        "angle_traversed": 250,
+        "hit_to_boundary": false
+      },
+      "bowling_params": {
+        "bowler": {
+          "id": "sr:player:1969199",
+          "name": "Chase, Roston",
+          "country_code": "TTO"
+        },
+        "pitch_x": 30,
+        "pitch_y": 60,
+        "beat_bat": false,
+        "bowling_end": "media_end",
+        "bowling_from": "over",
+        "delivery_type": "stock",
+        "extra_runs_conceded": 0
+      },
+      "fielding_params": {
+        "fielded": false,
+        "misfielded": false,
+        "overthrows": 0,
+        "runs_saved": 0,
+        "catch_dropped": false,
+        "run_out_missed": false,
+        "stumping_missed": false,
+        "pressure_applied": false,
+        "fielded_wicket_keeper": false
+      }
+    },
+    {
+      "id": 2478300002,
+      "time": "2026-09-30T15:42:00+00:00",
+      "type": "ball",
+      "inning": 2,
+      "commentary": {
+        "text": "Short of a length, outside off stump. Gaikwad opens the face and finds the gap for a single."
+      },
+      "ball_number": 2,
+      "over_number": 35,
+      "display_overs": "34.2",
+      "display_score": "323/2",
+      "batting_params": {
+        "connect": "good",
+        "striker": {
+          "id": "sr:player:1117849",
+          "name": "Gaikwad, Ruturaj",
+          "country_code": "IND"
+        },
+        "shot_type": "cut",
+        "non_striker": {
+          "id": "sr:player:1097864",
+          "name": "Gill, Shubman",
+          "country_code": "IND"
+        },
+        "runs_scored": 1,
+        "zone_played_in": "cover",
+        "angle_traversed": 250,
+        "hit_to_boundary": false
+      },
+      "bowling_params": {
+        "bowler": {
+          "id": "sr:player:1969199",
+          "name": "Chase, Roston",
+          "country_code": "TTO"
+        },
+        "pitch_x": 30,
+        "pitch_y": 60,
+        "beat_bat": false,
+        "bowling_end": "media_end",
+        "bowling_from": "over",
+        "delivery_type": "stock",
+        "extra_runs_conceded": 0
+      },
+      "fielding_params": {
+        "fielded": false,
+        "misfielded": false,
+        "overthrows": 0,
+        "runs_saved": 0,
+        "catch_dropped": false,
+        "run_out_missed": false,
+        "stumping_missed": false,
+        "pressure_applied": false,
+        "fielded_wicket_keeper": false
+      }
+    },
+    {
+      "id": 2478300003,
+      "time": "2026-09-30T15:43:00+00:00",
+      "type": "ball",
+      "inning": 2,
+      "commentary": {
+        "text": "Wide. Short of a length, pitching well down the leg side."
+      },
+      "ball_number": 3,
+      "over_number": 35,
+      "display_overs": "34.2",
+      "display_score": "324/2",
+      "batting_params": {
+        "connect": "none",
+        "striker": {
+          "id": "sr:player:1117849",
+          "name": "Gaikwad, Ruturaj",
+          "country_code": "IND"
+        },
+        "shot_type": "missing",
+        "non_striker": {
+          "id": "sr:player:1097864",
+          "name": "Gill, Shubman",
+          "country_code": "IND"
+        },
+        "runs_scored": 1,
+        "zone_played_in": "cover",
+        "angle_traversed": 250,
+        "hit_to_boundary": false
+      },
+      "bowling_params": {
+        "bowler": {
+          "id": "sr:player:1969199",
+          "name": "Chase, Roston",
+          "country_code": "TTO"
+        },
+        "pitch_x": 30,
+        "pitch_y": 60,
+        "beat_bat": true,
+        "bowling_end": "media_end",
+        "bowling_from": "over",
+        "delivery_type": "stock",
+        "extra_runs_type": "wide",
+        "extra_runs_conceded": 1
+      },
+      "fielding_params": {
+        "fielded": false,
+        "misfielded": false,
+        "overthrows": 0,
+        "runs_saved": 0,
+        "catch_dropped": false,
+        "run_out_missed": false,
+        "stumping_missed": false,
+        "pressure_applied": false,
+        "fielded_wicket_keeper": false
+      }
+    },
+    {
+      "id": 2478300004,
+      "time": "2026-09-30T15:44:00+00:00",
+      "type": "ball",
+      "inning": 2,
+      "commentary": {
+        "text": "Short of a length, outside off stump. Gaikwad swings and misses, and the ball rolls away to the keeper for a single bye."
+      },
+      "ball_number": 4,
+      "over_number": 35,
+      "display_overs": "34.3",
+      "display_score": "325/2",
+      "batting_params": {
+        "connect": "none",
+        "striker": {
+          "id": "sr:player:1117849",
+          "name": "Gaikwad, Ruturaj",
+          "country_code": "IND"
+        },
+        "shot_type": "missing",
+        "non_striker": {
+          "id": "sr:player:1097864",
+          "name": "Gill, Shubman",
+          "country_code": "IND"
+        },
+        "runs_scored": 1,
+        "zone_played_in": "cover",
+        "angle_traversed": 250,
+        "hit_to_boundary": false
+      },
+      "bowling_params": {
+        "bowler": {
+          "id": "sr:player:1969199",
+          "name": "Chase, Roston",
+          "country_code": "TTO"
+        },
+        "pitch_x": 30,
+        "pitch_y": 60,
+        "beat_bat": true,
+        "bowling_end": "media_end",
+        "bowling_from": "over",
+        "delivery_type": "stock",
+        "extra_runs_type": "bye",
+        "extra_runs_conceded": 1
+      },
+      "fielding_params": {
+        "fielded": false,
+        "misfielded": false,
+        "overthrows": 0,
+        "runs_saved": 0,
+        "catch_dropped": false,
+        "run_out_missed": false,
+        "stumping_missed": false,
+        "pressure_applied": false,
+        "fielded_wicket_keeper": false
+      }
+    },
+    {
+      "id": 2478300005,
+      "time": "2026-09-30T15:45:00+00:00",
+      "type": "ball",
+      "inning": 2,
+      "commentary": {
+        "text": "Full and straight, and Gaikwad is beaten by the pace on the outside."
+      },
+      "ball_number": 5,
+      "over_number": 35,
+      "display_overs": "34.4",
+      "display_score": "325/2",
+      "batting_params": {
+        "connect": "good",
+        "striker": {
+          "id": "sr:player:1117849",
+          "name": "Gaikwad, Ruturaj",
+          "country_code": "IND"
+        },
+        "shot_type": "cut",
+        "non_striker": {
+          "id": "sr:player:1097864",
+          "name": "Gill, Shubman",
+          "country_code": "IND"
+        },
+        "runs_scored": 0,
+        "zone_played_in": "cover",
+        "angle_traversed": 250,
+        "hit_to_boundary": false
+      },
+      "bowling_params": {
+        "bowler": {
+          "id": "sr:player:1969199",
+          "name": "Chase, Roston",
+          "country_code": "TTO"
+        },
+        "pitch_x": 30,
+        "pitch_y": 60,
+        "beat_bat": false,
+        "bowling_end": "media_end",
+        "bowling_from": "over",
+        "delivery_type": "stock",
+        "extra_runs_conceded": 0
+      },
+      "fielding_params": {
+        "fielded": false,
+        "misfielded": false,
+        "overthrows": 0,
+        "runs_saved": 0,
+        "catch_dropped": false,
+        "run_out_missed": false,
+        "stumping_missed": false,
+        "pressure_applied": false,
+        "fielded_wicket_keeper": false
+      }
+    },
+    {
+      "id": 2478300006,
+      "time": "2026-09-30T15:46:00+00:00",
+      "type": "ball",
+      "inning": 2,
+      "commentary": {
+        "text": "Short of a length, pitching on a good line but angling across the batter. There is a nick off the pads to leg for a single leg bye."
+      },
+      "ball_number": 6,
+      "over_number": 35,
+      "display_overs": "34.5",
+      "display_score": "326/2",
+      "batting_params": {
+        "connect": "none",
+        "striker": {
+          "id": "sr:player:1117849",
+          "name": "Gaikwad, Ruturaj",
+          "country_code": "IND"
+        },
+        "shot_type": "missing",
+        "non_striker": {
+          "id": "sr:player:1097864",
+          "name": "Gill, Shubman",
+          "country_code": "IND"
+        },
+        "runs_scored": 1,
+        "zone_played_in": "cover",
+        "angle_traversed": 250,
+        "hit_to_boundary": false
+      },
+      "bowling_params": {
+        "bowler": {
+          "id": "sr:player:1969199",
+          "name": "Chase, Roston",
+          "country_code": "TTO"
+        },
+        "pitch_x": 30,
+        "pitch_y": 60,
+        "beat_bat": true,
+        "bowling_end": "media_end",
+        "bowling_from": "over",
+        "delivery_type": "stock",
+        "extra_runs_type": "leg_bye",
+        "extra_runs_conceded": 1
+      },
+      "fielding_params": {
+        "fielded": true,
+        "misfielded": false,
+        "overthrows": 0,
+        "runs_saved": 0,
+        "catch_dropped": false,
+        "run_out_missed": false,
+        "stumping_missed": false,
+        "pressure_applied": false,
+        "fielded_wicket_keeper": false
+      }
+    },
+    {
+      "id": 2478300007,
+      "time": "2026-09-30T15:47:00+00:00",
+      "type": "ball",
+      "inning": 2,
+      "commentary": {
+        "text": "No ball. Good length, pitching outside off stump. Gaikwad gets on the front foot and eases a drive through the off side field for a single run."
+      },
+      "ball_number": 7,
+      "over_number": 35,
+      "display_overs": "34.5",
+      "display_score": "328/2",
+      "batting_params": {
+        "connect": "none",
+        "striker": {
+          "id": "sr:player:1117849",
+          "name": "Gaikwad, Ruturaj",
+          "country_code": "IND"
+        },
+        "shot_type": "missing",
+        "non_striker": {
+          "id": "sr:player:1097864",
+          "name": "Gill, Shubman",
+          "country_code": "IND"
+        },
+        "runs_scored": 2,
+        "zone_played_in": "cover",
+        "angle_traversed": 250,
+        "hit_to_boundary": false
+      },
+      "bowling_params": {
+        "bowler": {
+          "id": "sr:player:1969199",
+          "name": "Chase, Roston",
+          "country_code": "TTO"
+        },
+        "pitch_x": 30,
+        "pitch_y": 60,
+        "beat_bat": true,
+        "bowling_end": "media_end",
+        "bowling_from": "over",
+        "delivery_type": "stock",
+        "extra_runs_type": "no_ball",
+        "extra_runs_conceded": 1
+      },
+      "fielding_params": {
+        "fielded": false,
+        "misfielded": false,
+        "overthrows": 0,
+        "runs_saved": 0,
+        "catch_dropped": false,
+        "run_out_missed": false,
+        "stumping_missed": false,
+        "pressure_applied": false,
+        "fielded_wicket_keeper": false
+      }
+    },
+    {
+      "id": 2478300008,
+      "time": "2026-09-30T15:48:00+00:00",
+      "type": "ball",
+      "inning": 2,
+      "commentary": {
+        "text": "Length outside off, and Gaikwad waits on it before working a single into the deep."
+      },
+      "ball_number": 8,
+      "over_number": 35,
+      "display_overs": "34.6",
+      "display_score": "329/2",
+      "batting_params": {
+        "connect": "good",
+        "striker": {
+          "id": "sr:player:1117849",
+          "name": "Gaikwad, Ruturaj",
+          "country_code": "IND"
+        },
+        "shot_type": "cut",
+        "non_striker": {
+          "id": "sr:player:1097864",
+          "name": "Gill, Shubman",
+          "country_code": "IND"
+        },
+        "runs_scored": 1,
+        "zone_played_in": "cover",
+        "angle_traversed": 250,
+        "hit_to_boundary": false
+      },
+      "bowling_params": {
+        "bowler": {
+          "id": "sr:player:1969199",
+          "name": "Chase, Roston",
+          "country_code": "TTO"
+        },
+        "pitch_x": 30,
+        "pitch_y": 60,
+        "beat_bat": false,
+        "bowling_end": "media_end",
+        "bowling_from": "over",
+        "delivery_type": "stock",
+        "extra_runs_conceded": 0
+      },
+      "fielding_params": {
+        "fielded": false,
+        "misfielded": false,
+        "overthrows": 0,
+        "runs_saved": 0,
+        "catch_dropped": false,
+        "run_out_missed": false,
+        "stumping_missed": false,
+        "pressure_applied": false,
+        "fielded_wicket_keeper": false
+      }
+    }
+  ]
+}

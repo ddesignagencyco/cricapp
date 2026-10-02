@@ -6,7 +6,7 @@ import { Calendar, FileText, MapPin, MessageCircle, Target, TrendingUp, Users, Z
 import EmptyState from '../EmptyState';
 import Badge, { StatusBadge } from '../Badge';
 import TeamLogo from '../TeamLogo';
-import DummyAd from '../advertisements/DummyAd';
+import AdSlot from '../advertisements/AdSlot';
 import { Skeleton } from '../skeletons/Skeletons';
 import PredictionChart from './PredictionChart';
 import { WinSplitBar } from './WinProbabilityBar';
@@ -369,8 +369,8 @@ export default function MatchPredictionsView({
         </div>
 
         <aside className="w-full space-y-5 xl:w-[300px]">
-          <DummyAd size="half-page" placement="prediction-detail-sidebar" />
-          <DummyAd size="medium-rectangle" placement="prediction-detail-sidebar-mid" />
+          <AdSlot placement="prediction-detail-sidebar" />
+          <AdSlot placement="prediction-detail-sidebar-mid" />
         </aside>
       </div>
     </div>

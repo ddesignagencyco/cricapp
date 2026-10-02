@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import RemoteImage from './RemoteImage';
 import EntityAvatar from './EntityAvatar';
+import { teamHref } from './EntityLinks';
 import { getInitials, getPslLogo } from '../utils/helpers';
 
 interface TeamLogoProps {
@@ -65,8 +66,17 @@ export default function TeamLogo({ teamId, name, code, color, size = 'md', class
     return <div className={cls}>{inner}</div>;
   }
 
+  // Built through `teamHref` rather than by hand, so a logo and the team name beside
+  // it always resolve to the same URL. They used to disagree: the name went through
+  // `teamHref` (percent-encoded, prefix-stripped) and the logo interpolated the raw id,
+  // so the same team linked to two different places from one card.
+  const href = teamHref(teamId);
+  if (!href) {
+    return <div className={cls}>{inner}</div>;
+  }
+
   return (
-    <Link href={`/teams/${teamId}`} className={cls} title={displayName} prefetch={false}>
+    <Link href={href} className={cls} title={displayName} prefetch={false}>
       {inner}
     </Link>
   );

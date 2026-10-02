@@ -1,7 +1,10 @@
 import EmptyState from '../EmptyState';
 import { currentRunRate, formatRate } from '../../lib/cricketMath';
 import BallTracker from '../BallTracker';
+import type { ReactNode } from 'react';
 import { extractBalls } from '../MatchTimeline';
+import { PlayerLink } from '../EntityLinks';
+import type { SquadPlayer } from '../../lib/matchCentreData';
 import { extractInningsScorecards, extractSquads } from '../../lib/matchCentreData';
 import { RelatedNewsPanel } from './RelatedNewsPanel';
 import type {
@@ -112,7 +115,8 @@ function ScoreTable({
   title: string;
   team: string;
   headers: string[];
-  rows: string[][];
+  /** A cell can be a link, so this is a node rather than a string. */
+  rows: ReactNode[][];
 }) {
   if (rows.length === 0) return null;
   return (
@@ -194,7 +198,11 @@ export function ScorecardPanel({
             team={card.battingTeam || 'Batting side'}
             headers={['Batter', 'Runs', 'Balls', '4s', '6s', 'SR']}
             rows={card.batting.map((row) => [
-              `${row.name}${row.out === false ? ' (not out)' : ''}`,
+              <PlayerLink
+                key={row.name}
+                playerId={row.id}
+                name={row.name}
+              />,
               cell(row.runs),
               cell(row.balls),
               cell(row.fours),
@@ -207,7 +215,7 @@ export function ScorecardPanel({
             team={card.bowlingTeam || 'Bowling side'}
             headers={['Bowler', 'Overs', 'Maidens', 'Runs', 'Wickets', 'Econ']}
             rows={card.bowling.map((row) => [
-              cell(row.name),
+              <PlayerLink key={row.name} playerId={row.id} name={row.name} />,
               cell(row.overs),
               cell(row.maidens),
               cell(row.runs),
@@ -227,16 +235,16 @@ export function ScorecardPanel({
   );
 }
 
-function SquadList({ name, players }: { name: string; players: string[] }) {
+function SquadList({ name, players }: { name: string; players: SquadPlayer[] }) {
   return (
     <div className="rounded-2xl bg-card p-5 ring-1 ring-lborder">
       <p className="mb-3 text-xs font-bold uppercase tracking-wider text-stext">{name}</p>
       {players.length > 0 ? (
         <ol className="space-y-1.5 text-sm text-mtext">
           {players.map((player, index) => (
-            <li key={`${player}-${index}`} className="flex gap-2">
+            <li key={`${player.id || player.name}-${index}`} className="flex gap-2">
               <span className="w-5 shrink-0 font-mono text-xs text-stext">{index + 1}</span>
-              <span>{player}</span>
+              <PlayerLink playerId={player.id} name={player.name} />
             </li>
           ))}
         </ol>
@@ -270,17 +278,26 @@ export function SquadsPanel({
 export function MatchNewsPanel({
   articles,
   loading = false,
+  viewAllHref,
 }: {
   articles: NewsArticle[];
   loading?: boolean;
+  viewAllHref?: string | null;
 }) {
   return (
-    <RelatedNewsPanel
-      articles={articles}
-      loading={loading}
-      emptyTitle="No match news"
-      emptyHint="Publish a story from Admin → News and link this match. Drafts do not appear here."
-    />
+    <div className="match-detail-panel match-detail-panel-pad">
+      {/* A short list plus a link, rather than the whole backlog. The tab used to render
+          every linked story, which made the match page longer than the match. */}
+      <RelatedNewsPanel
+        articles={articles}
+        loading={loading}
+        emptyTitle="No match news"
+        emptyHint="Publish a story from Admin → News and link this match. Drafts do not appear here."
+        limit={6}
+        viewAllHref={viewAllHref}
+        viewAllLabel="All news on this match"
+      />
+    </div>
   );
 }
 

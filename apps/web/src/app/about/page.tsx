@@ -31,7 +31,7 @@ export default async function AboutPage() {
       </p>
 
       <h2 id="what-we-stand-for">What we stand for</h2>
-      <div className="not-prose my-6">
+      <div className="my-8">
         <AboutValues />
       </div>
 

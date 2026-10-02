@@ -350,9 +350,18 @@ export class OddsService {
     marketHomeImplied: number | null,
     marketAwayImplied: number | null,
   ) {
+    // Live first: on a live match the pre-match number is a forecast for a
+    // situation that has since changed, and it reads as current next to live
+    // prices. Both stages are returned so the client can label it honestly.
+    const preferred = pred?.live ?? pred?.preMatch ?? null;
     return {
-      homeWinProb: pred?.preMatch?.homeWinProb ?? pred?.live?.homeWinProb ?? null,
-      awayWinProb: pred?.preMatch?.awayWinProb ?? pred?.live?.awayWinProb ?? null,
+      stage: pred?.live ? 'live' : pred?.preMatch ? 'pre_match' : null,
+      homeWinProb: preferred?.homeWinProb ?? null,
+      awayWinProb: preferred?.awayWinProb ?? null,
+      preMatchHomeWinProb: pred?.preMatch?.homeWinProb ?? null,
+      preMatchAwayWinProb: pred?.preMatch?.awayWinProb ?? null,
+      liveHomeWinProb: pred?.live?.homeWinProb ?? null,
+      liveAwayWinProb: pred?.live?.awayWinProb ?? null,
       marketHomeImplied,
       marketAwayImplied,
       note: MODEL_VS_MARKET_NOTE,

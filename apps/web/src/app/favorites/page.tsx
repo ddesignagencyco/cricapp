@@ -16,17 +16,25 @@ import {
   Sparkles,
   Globe,
   ChevronRight,
+  PenLine,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { listFavorites, removeFavorite, type FavoriteItem, type FavoriteTarget } from '../../services/favorites';
+import {
+  listFavorites,
+  removeFavorite,
+  type FavoriteAuthorTarget,
+  type FavoriteItem,
+  type FavoriteTarget,
+} from '../../services/favorites';
 import { useAuth } from '../../components/AuthProvider';
+import MatchCard from '../../components/MatchCard';
 import RemoteImage from '../../components/RemoteImage';
 import EntityAvatar from '../../components/EntityAvatar';
-import { StatusBadge } from '../../components/Badge';
 import Tabs from '../../components/Tabs';
 import EmptyState from '../../components/EmptyState';
-import { formatScheduled, getInitials, getPslLogo } from '../../utils/helpers';
+import { getInitials, getPslLogo } from '../../utils/helpers';
 import { ConfirmDialog } from '../../components/admin/AdminShared';
+import { useMatchDetailsQuery } from '../../queries/useDirectoryQueries';
 import type { Team, Player, Match, NewsArticle, Tour, TournamentApi, TabItem } from '../../types/index';
 import { FavoritesPageSkeleton } from '../../components/skeletons/Skeletons';
 import { newsHref } from '../../utils/newsConstraints';
@@ -41,6 +49,7 @@ interface EnrichedFavorite {
   news?: NewsArticle | null;
   tour?: Tour | null;
   tournament?: TournamentApi | null;
+  author?: FavoriteAuthorTarget | null;
 }
 
 type TabKey = 'all' | FavoriteTarget;
@@ -58,6 +67,7 @@ const SECTION_ORDER: {
   { key: 'news', label: 'News', icon: Newspaper, href: '/news', emptyHint: 'Read articles and tap the heart to save them.' },
   { key: 'tour', label: 'Tours', icon: Globe, href: '/tours', emptyHint: 'Discover tours and tap the heart to save them.' },
   { key: 'tournament', label: 'Tournaments', icon: Trophy, href: '/tournaments', emptyHint: 'Follow tournaments and tap the heart to save them.' },
+  { key: 'author', label: 'Authors', icon: PenLine, href: '/authors', emptyHint: 'Read writers you follow and tap the heart to save them.' },
 ];
 
 export default function FavoritesPage() {
@@ -90,6 +100,7 @@ export default function FavoritesPage() {
             news: item.targetType === 'news' ? mapFavoriteNews(target) : undefined,
             tour: item.targetType === 'tour' ? (target as Tour | null) : undefined,
             tournament: item.targetType === 'tournament' ? (target as TournamentApi | null) : undefined,
+            author: item.targetType === 'author' ? (target as FavoriteAuthorTarget | null) : undefined,
           };
         }
         setEnrichedMap(initial);
@@ -99,6 +110,19 @@ export default function FavoritesPage() {
       })
       .finally(() => setLoading(false));
   }, [isAuthenticated]);
+
+  /**
+   * The favourites API hands back a thin match with no `team_scores`, no
+   * `result_text` and a `teams` array, so a completed card has no score or winner
+   * to show. Top each one up from `/matches/:id`, which returns the full summary —
+   * deduplicated and cached, so a match on two cards costs one request.
+   */
+  const favoritedMatchIds = useMemo(
+    () => favorites.filter((f) => f.targetType === 'match').map((f) => f.targetId),
+    [favorites],
+  );
+  const matchDetails = useMatchDetailsQuery(favoritedMatchIds);
+  const matchDetailsById = matchDetails.data ?? {};
 
   const remove = async () => {
     if (!deleteTarget) return;
@@ -129,6 +153,7 @@ export default function FavoritesPage() {
       news: favorites.filter((f) => f.targetType === 'news').length,
       tour: favorites.filter((f) => f.targetType === 'tour').length,
       tournament: favorites.filter((f) => f.targetType === 'tournament').length,
+      author: favorites.filter((f) => f.targetType === 'author').length,
     }),
     [favorites],
   );
@@ -141,6 +166,7 @@ export default function FavoritesPage() {
       news: [],
       tour: [],
       tournament: [],
+      author: [],
     };
     for (const favorite of favorites) {
       map[favorite.targetType].push(favorite);
@@ -295,6 +321,7 @@ export default function FavoritesPage() {
                       key={fav.id}
                       fav={fav}
                       data={enrichedMap[fav.id]}
+                      match={fav.targetType === 'match' ? matchDetailsById[fav.targetId] : undefined}
                       isBusy={busyId === fav.id}
                       onRemove={(name) => setDeleteTarget({ id: fav.id, name })}
                     />
@@ -323,11 +350,14 @@ export default function FavoritesPage() {
 function FavoriteCard({
   fav,
   data,
+  match,
   isBusy,
   onRemove,
 }: {
   fav: FavoriteItem;
   data?: EnrichedFavorite;
+  /** Full match record from `/matches/:id`; supersedes the thin `expand` payload. */
+  match?: Match;
   isBusy: boolean;
   onRemove: (_name: string) => void;
 }) {
@@ -344,11 +374,13 @@ function FavoriteCard({
       return <PlayerFavCard fav={fav} player={data?.player} name={name} isBusy={isBusy} onRemove={() => onRemove(name)} />;
     }
     case 'match': {
-      const sides = matchSides(data?.match);
+      // The full record wins; the `expand` payload is the fallback so the card still
+      // renders something useful while the top-up request is in flight.
+      const resolved = match ?? data?.match;
+      const sides = matchSides(resolved);
       return (
         <MatchFavCard
-          fav={fav}
-          match={data?.match}
+          match={resolved}
           home={sides.home}
           away={sides.away}
           isBusy={isBusy}
@@ -375,6 +407,11 @@ function FavoriteCard({
           onRemove={() => onRemove(name)}
         />
       );
+    }
+    case 'author': {
+      const author = data?.author;
+      const name = humanLabel(author?.name, 'Author');
+      return <AuthorFavCard fav={fav} author={author} name={name} isBusy={isBusy} onRemove={() => onRemove(name)} />;
     }
     default: {
       const _exhaustive: never = fav.targetType;
@@ -490,55 +527,68 @@ function PlayerFavCard({
   );
 }
 
+/**
+ * The same `MatchCard` the /matches tabs render, so a completed favourite shows the
+ * identical score and winner line instead of two bare team names. This card
+ * used to be a local fork with no score column at all, which is why completed
+ * favourites came up blank.
+ *
+ * `uniform` keeps every card in the grid the same shape: scores and result only —
+ * no overs — and one stacked footer (status line over the date) for completed,
+ * live and upcoming alike.
+ *
+ * `MatchCard` is a single `<Link>` around the whole card, so the remove control is
+ * handed over through its `action` slot — rendered beside the status badge rather
+ * than overlaid on top of it. `RemoveBtn` stops propagation, so the button stays
+ * clickable without navigating to the match.
+ */
 function MatchFavCard({
-  fav,
   match,
   home,
   away,
   isBusy,
   onRemove,
 }: {
-  fav: FavoriteItem;
   match?: Match | null;
   home: MatchSide;
   away: MatchSide;
   isBusy: boolean;
   onRemove: () => void;
 }) {
-  const tournament = humanLabel(match?.tournamentName, humanLabel(match?.tournament, 'Cricket'));
-  const status = typeof match?.status === 'string' ? match.status : '';
-  const { date, time } = formatScheduled(match?.scheduled);
-  const venue = humanLabel(match?.venue, '');
-  const href = `/matches/${fav.targetId}`;
-
-  return (
-    <div className="card-interactive group flex h-full flex-col rounded-md p-3.5">
-      <div className="mb-2.5 flex items-center justify-between gap-2">
-        <p className="min-w-0 truncate text-xs font-semibold uppercase tracking-wide text-stext">{tournament}</p>
-        <div className="flex shrink-0 items-center gap-1">
-          {status && <StatusBadge status={status} />}
+  // Nothing renderable yet — the top-up request has not landed and `expand` gave us
+  // no teams at all. A named placeholder beats an empty grid cell.
+  if (!match) {
+    return (
+      <div className="card-interactive flex h-full flex-col rounded-md p-3.5">
+        <div className="mb-2.5 flex items-center justify-between gap-2">
+          <p className="min-w-0 truncate text-xs font-semibold uppercase tracking-wide text-stext">Cricket</p>
           <RemoveBtn isBusy={isBusy} onRemove={onRemove} always />
         </div>
+        <div className="flex-1 space-y-1.5">
+          <TeamNameRow name={home.name} />
+          <TeamNameRow name={away.name} />
+        </div>
+        <div className="mt-2.5 border-t border-lborder pt-2 text-xs text-stext">Loading match details…</div>
       </div>
+    );
+  }
 
-      <Link href={href} prefetch={false} className="block space-y-1.5">
-        <MatchTeamRow name={home.name} code={home.code} />
-        <MatchTeamRow name={away.name} code={away.code} />
-      </Link>
+  return (
+    <MatchCard
+      match={match}
+      showVenue={false}
+      uniform
+      action={<RemoveBtn isBusy={isBusy} onRemove={onRemove} always />}
+    />
+  );
+}
 
-      <div className="mt-2.5 flex items-center justify-between gap-3 border-t border-lborder pt-2 text-xs text-stext">
-        <span className="inline-flex min-w-0 items-center gap-1 font-semibold tabular-nums text-accent">
-          <Calendar size={12} />
-          {date || 'TBD'}
-          {time ? ` · ${time}` : ''}
-        </span>
-        {venue && (
-          <span className="inline-flex max-w-[48%] items-center gap-1 truncate">
-            <MapPin size={12} className="shrink-0" />
-            <span className="truncate">{venue}</span>
-          </span>
-        )}
-      </div>
+/** Placeholder row for a match whose teams are known but whose record has not loaded. */
+function TeamNameRow({ name }: { name: string }) {
+  return (
+    <div className="flex items-center gap-2.5">
+      <EntityAvatar className="h-7 w-7 shrink-0 text-[10px]">{getInitials(name)}</EntityAvatar>
+      <p className="min-w-0 flex-1 truncate text-sm font-semibold text-mtext">{name}</p>
     </div>
   );
 }
@@ -675,6 +725,48 @@ function TournamentFavCard({
   );
 }
 
+function AuthorFavCard({
+  fav,
+  author,
+  name,
+  isBusy,
+  onRemove,
+}: {
+  fav: FavoriteItem;
+  author?: FavoriteAuthorTarget | null;
+  name: string;
+  isBusy: boolean;
+  onRemove: () => void;
+}) {
+  const slug = str(author?.slug);
+  // Deep link by slug, as the guide specifies; fall back to the id if slug is missing.
+  const href = slug ? `/authors/${encodeURIComponent(slug)}` : `/authors/${encodeURIComponent(fav.targetId)}`;
+  const bio = str(author?.bio);
+  const avatar = str(author?.avatarUrl);
+
+  return (
+    <FavShell isBusy={isBusy} onRemove={onRemove}>
+      <Link href={href} className="flex min-w-0 flex-1 items-center gap-3">
+        {avatar ? (
+          <RemoteImage
+            src={avatar}
+            alt={name}
+            width={48}
+            height={48}
+            className="h-12 w-12 shrink-0 rounded-full bg-entity-avatar object-cover"
+          />
+        ) : (
+          <EntityAvatar className="h-12 w-12 text-sm">{getInitials(name)}</EntityAvatar>
+        )}
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate text-sm font-semibold text-mtext transition-colors group-hover:text-accent">{name}</h3>
+          <p className="mt-0.5 line-clamp-2 text-xs text-stext">{bio || 'Author'}</p>
+        </div>
+      </Link>
+    </FavShell>
+  );
+}
+
 function FavShell({
   children,
   isBusy,
@@ -742,26 +834,6 @@ function RemoveBtn({ isBusy, onRemove, always = false }: { isBusy: boolean; onRe
     >
       {isBusy ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
     </button>
-  );
-}
-
-function MatchTeamRow({ name, code }: { name: string; code: string }) {
-  const pslLogo = getPslLogo(code);
-  return (
-    <div className="flex items-center gap-2.5">
-      {pslLogo ? (
-        <RemoteImage
-          src={pslLogo}
-          alt={name}
-          width={28}
-          height={28}
-          className="h-7 w-7 shrink-0 rounded-full border border-lborder bg-white object-contain p-0.5"
-        />
-      ) : (
-        <EntityAvatar className="h-7 w-7 text-[10px]">{getInitials(name || code)}</EntityAvatar>
-      )}
-      <p className="min-w-0 flex-1 truncate text-sm font-semibold text-mtext">{name}</p>
-    </div>
   );
 }
 
@@ -848,6 +920,7 @@ function isTabKey(value: string): value is TabKey {
     case 'news':
     case 'tour':
     case 'tournament':
+    case 'author':
       return true;
     default:
       return false;

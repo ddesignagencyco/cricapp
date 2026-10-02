@@ -143,9 +143,9 @@ export default function CategoryManager() {
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
+        <div className="min-w-0">
           <h1 className="text-xl font-bold" style={{ color: 'var(--admin-text)' }}>Category Management</h1>
-          <p className="mt-1 text-sm" style={{ color: 'var(--admin-text-secondary)' }}>
+          <p className="mt-1 break-words text-sm" style={{ color: 'var(--admin-text-secondary)' }}>
             Create and organize editorial categories.
           </p>
         </div>
@@ -153,7 +153,7 @@ export default function CategoryManager() {
 
       <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[300px_1fr]">
         {/* Create Form */}
-        <div className="rounded-lg p-4" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
+        <div className="rounded-lg p-3 sm:p-4" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
           <div className="flex items-center gap-2 mb-3 pb-3" style={{ borderBottom: '1px solid var(--admin-border)' }}>
             <FolderPlus size={14} style={{ color: 'var(--admin-accent)' }} />
             <h2 className="text-xs font-bold" style={{ color: 'var(--admin-text)' }}>Add Category</h2>
@@ -181,7 +181,7 @@ export default function CategoryManager() {
         {/* Categories List */}
         <div className="space-y-3">
           {/* Search Bar */}
-          <div className="flex items-center gap-3 rounded-lg p-3" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
+          <div className="flex flex-wrap items-center gap-3 rounded-lg p-3" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
             <AdminSearchField
               wrapperClassName="max-w-md"
               value={search}
@@ -195,7 +195,7 @@ export default function CategoryManager() {
 
           {articlesFailed && !loading && (
             <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg p-3 text-xs" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-warning-bg)', color: 'var(--admin-warning)' }}>
-              <span>News counts are unavailable because the news could not be loaded.</span>
+              <span className="min-w-0 break-words">News counts are unavailable because the news could not be loaded.</span>
               <button type="button" onClick={load} className="rounded px-2 py-1 font-semibold" style={{ color: 'var(--admin-accent)' }}>
                 Retry
               </button>
@@ -209,7 +209,7 @@ export default function CategoryManager() {
             <div className="rounded-lg border border-dashed p-8 text-center" style={{ borderColor: 'var(--admin-border)', background: 'var(--admin-card)' }}>
               <FolderArchive size={28} className="mx-auto mb-2" style={{ color: 'var(--admin-text-muted)' }} />
               <h3 className="text-sm font-semibold" style={{ color: 'var(--admin-text)' }}>No categories found</h3>
-              <p className="mt-1 text-xs" style={{ color: 'var(--admin-text-secondary)' }}>
+              <p className="mt-1 break-words text-xs" style={{ color: 'var(--admin-text-secondary)' }}>
                 {search ? `No results for "${search}".` : 'Create your first category above.'}
               </p>
             </div>
@@ -220,7 +220,7 @@ export default function CategoryManager() {
                 <thead>
                   <tr style={{ borderBottom: '1px solid var(--admin-border)', background: 'var(--admin-table-header)' }}>
                     <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Category</th>
-                    <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Slug</th>
+                    <th className="hidden px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider sm:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>Slug</th>
                     <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-center" style={{ color: 'var(--admin-text-secondary)' }}>News</th>
                     <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-center" style={{ color: 'var(--admin-text-secondary)' }}>Status</th>
                     <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-right" style={{ color: 'var(--admin-text-secondary)' }}>Actions</th>
@@ -239,13 +239,14 @@ export default function CategoryManager() {
                         onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = 'var(--admin-table-row-hover)'; }}
                         onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
                       >
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2">
-                            <div className="grid h-8 w-8 place-items-center rounded-md" style={{ background: 'var(--admin-info-bg)', color: 'var(--admin-accent)' }}>
+                        <td className="max-w-[9rem] px-4 py-3 sm:max-w-[16rem]">
+                          <div className="flex min-w-0 items-center gap-2">
+                            <div className="grid h-8 w-8 shrink-0 place-items-center rounded-md" style={{ background: 'var(--admin-info-bg)', color: 'var(--admin-accent)' }}>
                               <Tag size={14} />
                             </div>
                             {editingId === c.id ? (
                               <AdminInput
+                                className="min-w-0"
                                 value={editName}
                                 onChange={(e) => setEditName(e.target.value)}
                                 onKeyDown={(e) => {
@@ -257,19 +258,19 @@ export default function CategoryManager() {
                                 }}
                               />
                             ) : (
-                              <span className="font-bold" style={{ color: 'var(--admin-text)' }}>{c.name}</span>
+                              <span className="min-w-0 truncate font-semibold" style={{ color: 'var(--admin-text)' }} title={c.name}>{c.name}</span>
                             )}
                           </div>
                         </td>
-                        <td className="px-4 py-3 font-mono" style={{ color: 'var(--admin-text-muted)' }}>
-                          <span className="flex items-center gap-1"><Hash size={10} />{c.slug || c.name.toLowerCase().replace(/\s+/g, '-')}</span>
+                        <td className="hidden max-w-[9rem] px-4 py-3 font-mono sm:table-cell" style={{ color: 'var(--admin-text-muted)' }}>
+                          <span className="flex min-w-0 items-center gap-1" title={c.slug || c.name.toLowerCase().replace(/\s+/g, '-')}><Hash size={10} className="shrink-0" /><span className="truncate">{c.slug || c.name.toLowerCase().replace(/\s+/g, '-')}</span></span>
                         </td>
-                        <td className="px-4 py-3 text-center">
+                        <td className="whitespace-nowrap px-4 py-3 text-center">
                           <span className="rounded-full px-2 py-0.5 text-xs font-bold" style={{ background: 'var(--admin-input-bg)', color: 'var(--admin-text)' }}>
                             {articlesFailed ? '—' : count}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-center text-xs">
+                        <td className="whitespace-nowrap px-4 py-3 text-center text-xs">
                           {articlesFailed ? (
                             <span style={{ color: 'var(--admin-text-muted)' }}>Unavailable</span>
                           ) : (
@@ -280,7 +281,7 @@ export default function CategoryManager() {
                             </>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-right">
+                        <td className="whitespace-nowrap px-4 py-3 text-right">
                           <div className="flex items-center justify-end gap-1.5">
                             {editingId === c.id ? (
                               <>
@@ -336,15 +337,15 @@ export default function CategoryManager() {
 
           {/* Selected Category Drawer */}
           {selectedCategory && (
-            <div className="rounded-lg p-4" style={{ border: '1px solid var(--admin-accent)', background: 'var(--admin-card)' }}>
-              <div className="flex items-center justify-between pb-3 mb-3" style={{ borderBottom: '1px solid var(--admin-border)' }}>
-                <div>
+            <div className="rounded-lg p-3 sm:p-4" style={{ border: '1px solid var(--admin-accent)', background: 'var(--admin-card)' }}>
+              <div className="flex flex-wrap items-center justify-between gap-2 pb-3 mb-3" style={{ borderBottom: '1px solid var(--admin-border)' }}>
+                <div className="min-w-0">
                   <span className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-accent)' }}>News in Category</span>
-                  <h3 className="mt-0.5 text-sm font-bold" style={{ color: 'var(--admin-text)' }}>{selectedCategory.name}</h3>
+                  <h3 className="mt-0.5 truncate text-sm font-bold" style={{ color: 'var(--admin-text)' }}>{selectedCategory.name}</h3>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex shrink-0 items-center gap-2">
                   <Link href={`/admin/news/new?category=${selectedCategory.id}`} className="btn-brand inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-bold">
-                    <Plus size={12} /> New News
+                    <Plus size={12} className="shrink-0" /> New News
                   </Link>
                   <button type="button" onClick={() => setSelectedCatId(null)} className="rounded-md px-2 py-1 text-xs font-semibold" style={{ color: 'var(--admin-text-muted)' }}>
                     Close
@@ -361,7 +362,7 @@ export default function CategoryManager() {
                         <Link href={`/admin/news/${art.id}/edit`} className="block" style={{ color: 'var(--admin-text)' }}>
                           <NewsCopy as="span" language={art.language} text={art.title} className="block truncate text-xs font-semibold">{art.title}</NewsCopy>
                         </Link>
-                        <p className="text-xs" style={{ color: 'var(--admin-text-muted)' }}>{art.author || 'Editorial'} · {art.publishedAt || art.createdAt}</p>
+                        <p className="truncate text-xs" style={{ color: 'var(--admin-text-muted)' }}>{art.author || 'Editorial'} · {art.publishedAt || art.createdAt}</p>
                       </div>
                       <span
                         className="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold"

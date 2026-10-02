@@ -1,43 +1,30 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { Users } from 'lucide-react';
-import { fetchTeamsPage } from '../../../../services/teams';
-import type { Team } from '../../../../types';
+import { useDebouncedValue } from '../../../../hooks/useDebouncedValue';
+import { useTeamsQuery } from '../../../../queries/useDirectoryQueries';
 import Pagination from '../../../../components/admin/AdminPagination';
 import { AdminAvatar, AdminPageHeader, LoadingState, EmptyState, AdminSearchField, AdminEntityLink } from '../../../../components/admin/AdminShared';
 import { cap } from '../../../../utils/helpers';
 
 export default function TeamsPage() {
-  const [teams, setTeams] = useState<Team[]>([]);
-  const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [total, setTotal] = useState(0);
   const [query, setQuery] = useState('');
   const limit = 20;
+  const debouncedQuery = useDebouncedValue(query, 350);
+  const teamsQuery = useTeamsQuery({ limit, page, q: debouncedQuery.trim() || undefined });
+  const teams = teamsQuery.data?.items || [];
+  const total = teamsQuery.data?.total || 0;
+  const totalPages = Math.max(1, teamsQuery.data?.totalPages || Math.ceil(total / limit));
 
-  const load = useCallback((p: number) => {
-    setLoading(true);
-    fetchTeamsPage({ limit, page: p })
-      .then((res) => {
-        setTeams(res.items);
-        setTotalPages(res.totalPages);
-        setTotal(res.total);
-      })
-      .catch(() => { setTeams([]); setTotalPages(1); setTotal(0); })
-      .finally(() => setLoading(false));
-  }, []);
-
-  useEffect(() => { load(page); }, [page, load]);
-
-  const filtered = teams.filter((t) => !query || t.name.toLowerCase().includes(query.toLowerCase()) || (t.shortName || '').toLowerCase().includes(query.toLowerCase()));
+  useEffect(() => { setPage(1); }, [debouncedQuery]);
 
   return (
     <div className="space-y-5">
       <AdminPageHeader title="Teams" subtitle="View all teams from the sports data provider." />
 
-      <div className="flex items-center gap-3 rounded-lg p-3" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
+      <div className="flex flex-col items-stretch gap-3 rounded-lg p-3 sm:flex-row sm:items-center" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
         <AdminSearchField
           wrapperClassName="max-w-md"
           value={query}
@@ -46,7 +33,9 @@ export default function TeamsPage() {
         />
       </div>
 
-      {loading ? <LoadingState variant="people" /> : filtered.length === 0 ? (
+      {teamsQuery.isPending ? <LoadingState variant="people" /> : teamsQuery.isError ? (
+        <EmptyState icon={<Users size={28} />} title="Teams unavailable" message="Try again." />
+      ) : teams.length === 0 ? (
         <EmptyState icon={<Users size={28} />} title="No teams found" />
       ) : (
         <div className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
@@ -56,12 +45,12 @@ export default function TeamsPage() {
                 <tr style={{ borderBottom: '1px solid var(--admin-border)', background: 'var(--admin-table-header)' }}>
                   <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Team</th>
                   <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Code</th>
-                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>City</th>
-                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Country</th>
+                  <th className="hidden px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider sm:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>City</th>
+                  <th className="hidden px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider md:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>Country</th>
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((t) => {
+                {teams.map((t) => {
                   const code = t.shortName || t.code || '';
                   const badgeLabel = t.name || code || '?';
                   return (
@@ -69,18 +58,20 @@ export default function TeamsPage() {
                       onMouseEnter={(e) => e.currentTarget.style.background = 'var(--admin-table-row-hover)'}
                       onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
                       <td className="px-4 py-2.5" style={{ color: 'var(--admin-text)' }}>
-                        <div className="flex items-center gap-2.5">
-                          <AdminAvatar name={badgeLabel} src={t.logo} size={28} />
-                          {t.id ? (
-                            <AdminEntityLink href={`/teams/${t.id}`}>{t.name}</AdminEntityLink>
-                          ) : (
-                            <span className="font-semibold" style={{ color: 'var(--admin-text)' }}>{t.name}</span>
-                          )}
+                        <div className="flex min-w-0 items-center gap-2.5">
+                          <span className="shrink-0"><AdminAvatar name={badgeLabel} src={t.logo} size={28} /></span>
+                          <span className="block min-w-0 max-w-[10rem] truncate sm:max-w-[14rem]" title={t.name}>
+                            {t.id ? (
+                              <AdminEntityLink href={`/teams/${t.id}`}>{t.name}</AdminEntityLink>
+                            ) : (
+                              <span className="font-semibold" style={{ color: 'var(--admin-text)' }}>{t.name}</span>
+                            )}
+                          </span>
                         </div>
                       </td>
-                      <td className="px-4 py-2.5 font-mono" style={{ color: 'var(--admin-text-secondary)' }}>{code || '—'}</td>
-                      <td className="px-4 py-2.5" style={{ color: 'var(--admin-text-secondary)' }}>{cap(t.city)}</td>
-                      <td className="px-4 py-2.5" style={{ color: 'var(--admin-text-secondary)' }}>{cap(t.country)}</td>
+                      <td className="max-w-[4.5rem] truncate px-4 py-2.5 font-mono" style={{ color: 'var(--admin-text-secondary)' }} title={code}>{code || '—'}</td>
+                      <td className="hidden max-w-[8rem] truncate px-4 py-2.5 sm:table-cell" style={{ color: 'var(--admin-text-secondary)' }} title={cap(t.city)}>{cap(t.city)}</td>
+                      <td className="hidden max-w-[8rem] truncate px-4 py-2.5 md:table-cell" style={{ color: 'var(--admin-text-secondary)' }} title={cap(t.country)}>{cap(t.country)}</td>
                     </tr>
                   );
                 })}

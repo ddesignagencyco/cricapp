@@ -1,8 +1,10 @@
 import { notFound } from 'next/navigation';
 import {
   fetchTournamentById,
+  fetchTournamentInfo,
   fetchTournamentSeasons,
   fetchTournamentResults,
+  type TournamentInfo,
 } from '../../../services/tournaments';
 import TournamentDetailPageClient from './TournamentDetailPageClient';
 import type { TournamentSeason } from '../../../types/index';
@@ -60,12 +62,16 @@ export default async function TournamentDetailPage({ params }: { params: Promise
   const initialSeasonId =
     (current && seasons.some((season) => season.id === current.id) ? current.id : seasons[0]?.id) || '';
 
+  // The info endpoint accepts a tournament or a season id; prefer the tournament.
+  const info = await fetchTournamentInfo(id).catch(() => null as TournamentInfo | null);
+
   return (
     <TournamentDetailPageClient
       tournament={tournament}
       seasons={seasons}
       resultsBySeason={resultsBySeason}
       initialSeasonId={initialSeasonId}
+      info={info}
     />
   );
 }

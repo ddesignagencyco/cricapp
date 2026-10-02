@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { Trophy } from 'lucide-react';
-import { fetchTournamentsPage } from '../../../../services/tournaments';
+import { useDebouncedValue } from '../../../../hooks/useDebouncedValue';
+import { useTournamentsQuery } from '../../../../queries/useDirectoryQueries';
 import type { TournamentApi } from '../../../../types';
 import Pagination from '../../../../components/admin/AdminPagination';
 import {
@@ -42,34 +43,16 @@ function tournamentStatus(t: TournamentApi): string {
 }
 
 export default function TournamentsPage() {
-  const [tournaments, setTournaments] = useState<TournamentApi[]>([]);
-  const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [total, setTotal] = useState(0);
   const [query, setQuery] = useState('');
-  const [search, setSearch] = useState('');
   const limit = 20;
-
-  useEffect(() => {
-    const timer = setTimeout(() => setSearch(query.trim()), 300);
-    return () => clearTimeout(timer);
-  }, [query]);
-
-  const load = useCallback((p: number) => {
-    setLoading(true);
-    fetchTournamentsPage({ limit, page: p, q: search || undefined })
-      .then((res) => {
-        setTournaments(res.items);
-        setTotalPages(res.totalPages);
-        setTotal(res.total);
-      })
-      .catch(() => { setTournaments([]); setTotalPages(1); setTotal(0); })
-      .finally(() => setLoading(false));
-  }, [search]);
+  const search = useDebouncedValue(query, 350).trim();
+  const tournamentsQuery = useTournamentsQuery({ limit, page, q: search || undefined });
+  const tournaments = tournamentsQuery.data?.items || [];
+  const total = tournamentsQuery.data?.total || 0;
+  const totalPages = Math.max(1, tournamentsQuery.data?.totalPages || Math.ceil(total / limit));
 
   useEffect(() => { setPage(1); }, [search]);
-  useEffect(() => { load(page); }, [page, load]);
 
   return (
     <div className="space-y-5">
@@ -82,12 +65,14 @@ export default function TournamentsPage() {
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search tournaments..."
         />
-        <div className="shrink-0 sm:pl-1">
+        <div className="min-w-0 shrink-0 sm:pl-1">
           <AdminResultCount shown={tournaments.length} total={total} noun="tournaments" />
         </div>
       </div>
 
-      {loading ? <LoadingState variant="table" /> : tournaments.length === 0 ? (
+      {tournamentsQuery.isPending ? <LoadingState variant="table" /> : tournamentsQuery.isError ? (
+        <EmptyState icon={<Trophy size={28} />} title="Tournaments unavailable" message="Try again." />
+      ) : tournaments.length === 0 ? (
         <EmptyState icon={<Trophy size={28} />} title="No tournaments found" message="Try a different name or clear the search." />
       ) : (
         <div className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
@@ -112,17 +97,21 @@ export default function TournamentsPage() {
                       onMouseEnter={(e) => e.currentTarget.style.background = 'var(--admin-table-row-hover)'}
                       onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
                       <td className="px-4 py-2.5" style={{ color: 'var(--admin-text)' }}>
-                        <div className="flex items-center gap-2.5">
-                          <AdminAvatar
-                            name={t.name}
-                            src={typeof t.logo === 'string' ? t.logo : typeof t.image === 'string' ? t.image : null}
-                            size={32}
-                          />
-                          <div className="min-w-0">
+                        <div className="flex min-w-0 items-center gap-2.5">
+                          <span className="shrink-0">
+                            <AdminAvatar
+                              name={t.name}
+                              src={typeof t.logo === 'string' ? t.logo : typeof t.image === 'string' ? t.image : null}
+                              size={32}
+                            />
+                          </span>
+                          <div className="min-w-0 max-w-[10rem] sm:max-w-[16rem]">
                             {t.id ? (
-                              <AdminEntityLink href={`/tournaments/${t.id}`} className="truncate text-sm">
-                                {t.name}
-                              </AdminEntityLink>
+                              <span className="block truncate" title={t.name}>
+                                <AdminEntityLink href={`/tournaments/${t.id}`} className="text-sm">
+                                  {t.name}
+                                </AdminEntityLink>
+                              </span>
                             ) : (
                               <p className="truncate text-sm font-semibold" style={{ color: 'var(--admin-text)' }}>{t.name}</p>
                             )}
@@ -138,8 +127,8 @@ export default function TournamentsPage() {
                           {gender && <AdminChip label={gender} />}
                         </div>
                       </td>
-                      <td className="hidden px-4 py-2.5 md:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>{season || '—'}</td>
-                      <td className="px-4 py-2.5 text-right">
+                      <td className="hidden max-w-[12rem] truncate px-4 py-2.5 md:table-cell" style={{ color: 'var(--admin-text-secondary)' }} title={season || undefined}>{season || '—'}</td>
+                      <td className="whitespace-nowrap px-4 py-2.5 text-right">
                         <StatusBadge status={status} />
                       </td>
                     </tr>
@@ -148,7 +137,7 @@ export default function TournamentsPage() {
               </tbody>
             </table>
           </div>
-          <div className="px-4 py-2.5 flex justify-end" style={{ borderTop: '1px solid var(--admin-border)' }}>
+          <div className="flex justify-center px-4 py-2.5 sm:justify-end" style={{ borderTop: '1px solid var(--admin-border)' }}>
             <Pagination page={page} totalPages={totalPages} total={total} limit={limit} onPageChange={setPage} />
           </div>
         </div>

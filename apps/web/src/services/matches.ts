@@ -6,23 +6,48 @@ export interface MatchTimeline {
   payload: Record<string, unknown>;
 }
 
+export interface MatchesListParams {
+  [key: string]: string | number | boolean | undefined | null;
+  q?: string;
+  status?: string;
+  tournament?: string;
+  /**
+   * Exact provider tournament id, e.g. `sr:tournament:10020626`.
+   *
+   * Preferred over `tournament`, which the API matches as a substring: asking for
+   * "Global T20 Canada" also returns "Global T20 Canada 2024", so a competition's rail
+   * could list another competition's fixtures.
+   */
+  tournamentId?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface MatchesPageResult {
+  items: Match[];
+  total: number;
+  totalPages: number;
+}
+
 export async function fetchMatches(
-  params: Record<string, string | number | boolean | undefined | null> = {}
+  params: MatchesListParams = {},
+  signal?: AbortSignal
 ): Promise<Match[]> {
-  const res = await apiGet('/matches', params);
+  const res = await apiGet('/matches', params, { signal });
   return extractPage<Match>(res).items;
 }
 
 export async function fetchMatchesPage(
-  params: Record<string, string | number | boolean | undefined | null> = {}
-): Promise<{ items: Match[]; total: number; totalPages: number }> {
-  const res = await apiGet('/matches', params);
+  params: MatchesListParams = {},
+  signal?: AbortSignal
+): Promise<MatchesPageResult> {
+  const res = await apiGet('/matches', params, { signal });
   const { items, meta } = extractPage<Match>(res);
   return { items, total: meta.total, totalPages: meta.totalPages };
 }
 
-export async function fetchLiveMatches(): Promise<Match[]> {
-  const res = await apiGet('/matches/live');
+export async function fetchLiveMatches(signal?: AbortSignal): Promise<Match[]> {
+  const res = await apiGet('/matches/live', undefined, { signal });
   return extractPage<Match>(res).items;
 }
 
@@ -34,12 +59,12 @@ function normalizeMatchId(id: string): string {
   }
 }
 
-export async function fetchMatchById(id: string): Promise<Match | null> {
-  return apiGetOptional(`/matches/${normalizeMatchId(id)}`);
+export async function fetchMatchById(id: string, signal?: AbortSignal): Promise<Match | null> {
+  return apiGetOptional(`/matches/${normalizeMatchId(id)}`, undefined, { signal });
 }
 
-export async function fetchMatchTimeline(id: string): Promise<MatchTimeline | null> {
-  return apiGetOptional(`/matches/${normalizeMatchId(id)}/timeline`);
+export async function fetchMatchTimeline(id: string, signal?: AbortSignal): Promise<MatchTimeline | null> {
+  return apiGetOptional(`/matches/${normalizeMatchId(id)}/timeline`, undefined, { signal });
 }
 
 export function matchSideIds(match: Match): { home: string; away: string } {

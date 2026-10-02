@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { RedisService } from '../redis/redis.service.js';
@@ -23,6 +28,7 @@ import {
 import { sportEventStatusFromPayload } from '../common/sport-event-status.util.js';
 import { isLiveTimelineBehindMatch } from './timeline-stale.util.js';
 import { dedupeTimelineEvents } from './timeline-events.util.js';
+import { incrCounter, type StaleNotRefreshedReason } from '../common/metrics.util.js';
 
 export type MatchSummary = Pick<
   CanonicalMatch,
@@ -32,6 +38,7 @@ export type MatchSummary = Pick<
   | 'teamNames'
   | 'teamScores'
   | 'tournament'
+  | 'tournamentId'
   | 'venue'
   | 'scheduled'
   | 'currentInnings'
@@ -47,8 +54,103 @@ export type MatchSummary = Pick<
   | 'displayOvers'
 >;
 
+/**
+ * The one order the matches list is ever served in.
+ *
+ * `scheduled ASC` on its own opened the page on the oldest fixtures in the table — a
+ * reader arriving at `/matches` was shown matches from two years ago, because a finished
+ * match from 2023 sorts before anything scheduled for today. Flipping to `DESC` trades
+ * one wrong order for another: the default view would open on results nobody came for.
+ *
+ * So the order is by how much a reader wants the row:
+ *
+ *   1. live now        — nothing else is more relevant
+ *   2. upcoming        — soonest first, which is what a fixture list is for
+ *   3. everything else — newest first, so the most recent result is at the top
+ *
+ * Two details that are load-bearing rather than cosmetic:
+ *
+ * - `match_id ASC` last. Without a total tiebreak two rows with the same status and the
+ *   same `scheduled` have no defined order, and an unstable order makes `LIMIT`/`OFFSET`
+ *   paging repeat a row on one page and skip it on the next.
+ * - `NULLS LAST` on every `scheduled` key. A fixture with no start time is still a fixture
+ *   a reader wants to see; it just cannot be placed in time. Postgres already defaults to
+ *   `NULLS LAST` for `ASC` but to `NULLS FIRST` for `DESC`, so the `DESC` key states it.
+ *
+ * Prisma's `orderBy` cannot express a `CASE`, so the list and the search both run through
+ * this rather than each writing their own.
+ *
+ * ## Why fixtures are soonest-first but results are newest-first
+ *
+ * They are opposite on purpose. A result list is read by recency, so the newest result
+ * belongs at the top. A fixture list is read by urgency, and the next match is the one
+ * with the *smallest* future date, so ascending is the order that puts it first.
+ *
+ * ## The overdue bucket
+ *
+ * Ascending fixtures has one failure mode: a row still marked `upcoming` whose start time
+ * has already gone. Nothing re-polls those — measured, 19 of 46 rows in one database were
+ * `upcoming` with a start time up to two months past — and sorted ascending they take the
+ * top of the list, so the page opened on matches from August while the fixtures a reader
+ * could actually attend sat below them.
+ *
+ * The bucket is `upcoming` only. A live match has *always* got a start time in the past,
+ * so including `live` here would push every in-play match below the future fixtures and
+ * invert the one rule that matters most.
+ *
+ * The real fix is ingestion re-checking those rows. Until it does, they are sorted below
+ * the genuine fixtures rather than above them, which is what a reader would expect, and
+ * the `status` on the row keeps saying what it says rather than being quietly rewritten
+ * here to hide the problem.
+ *
+ * ## Why `now` is passed in rather than read from the database
+ *
+ * `scheduled` is `TEXT`. Every value ingestion writes is ISO 8601, but "ISO 8601" covers
+ * two different suffixes — `2026-10-05T14:00:00+00:00` and `2026-10-05T14:00:00Z` are the
+ * same instant written two ways, and comparing them as text gives an arbitrary answer at
+ * the one second where the two forms differ.
+ *
+ * So the comparison truncates to `left(scheduled, 19)` — the `YYYY-MM-DDTHH:MM:SS` part,
+ * which is byte-identical in both forms — on both sides. `now` is then formatted to the
+ * same shape and passed as a bound parameter, which keeps the whole clause free of casts:
+ * casting the column would throw on any value the provider ever writes in another shape,
+ * taking the entire list down over one bad row.
+ *
+ * This is only safe because no stored offset is non-UTC. If one ever is, `left(..., 19)`
+ * compares it as if it were UTC and the row lands in the wrong bucket. The durable fix is a
+ * real `timestamptz` column; that is a migration and out of scope here, and it is written
+ * up in the handoff rather than done quietly.
+ */
+function matchListOrder(now: string): Prisma.Sql {
+  return Prisma.sql`
+    ORDER BY
+      CASE status
+        WHEN 'live' THEN 0
+        WHEN 'upcoming' THEN 1
+        ELSE 2
+      END ASC,
+      CASE
+        WHEN status = 'upcoming'
+          AND scheduled IS NOT NULL
+          AND left(scheduled, 19) < left(${now}, 19)
+        THEN 1
+        ELSE 0
+      END ASC,
+      CASE WHEN status IN ('live', 'upcoming') THEN scheduled END ASC NULLS LAST,
+      scheduled DESC NULLS LAST,
+      match_id ASC
+  `;
+}
+
+/** The current time in the exact shape `matches.scheduled` is stored in. */
+function scheduledNow(): string {
+  return `${new Date().toISOString().slice(0, 19)}+00:00`;
+}
+
 @Injectable()
 export class MatchesService {
+  private readonly logger = new Logger(MatchesService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
@@ -68,16 +170,20 @@ export class MatchesService {
     }
     return {
       home: {
+        id: scores?.home?.id || '',
         code: scores?.home?.code || abbrs[0] || '',
         name: scores?.home?.name || names[0] || '',
         score: scores?.home?.score || '',
         overs: scores?.home?.overs || '',
+        oversBalls: scores?.home?.oversBalls ?? null,
       },
       away: {
+        id: scores?.away?.id || '',
         code: scores?.away?.code || abbrs[1] || '',
         name: scores?.away?.name || names[1] || '',
         score: scores?.away?.score || '',
         overs: scores?.away?.overs || '',
+        oversBalls: scores?.away?.oversBalls ?? null,
       },
     };
   }
@@ -90,6 +196,7 @@ export class MatchesService {
       teamNames: this.asStringArray(row.teamNames),
       teamScores: overrides?.teamScores ?? (row.teamScores as TeamScores | null) ?? null,
       tournament: row.tournament,
+      tournamentId: overrides?.tournamentId ?? row.tournamentId ?? null,
       venue: row.venue,
       scheduled: row.scheduled,
       currentInnings: row.currentInnings as unknown as CurrentInnings | null,
@@ -136,6 +243,7 @@ export class MatchesService {
             currentInning: statusView.currentInning ?? undefined,
             periodScores: statusView.periodScores ?? undefined,
             displayOvers: statusView.displayOvers ?? undefined,
+            displayScore: statusView.displayScore ?? undefined,
           }
         : {}),
     };
@@ -145,6 +253,7 @@ export class MatchesService {
     q?: string;
     status?: string;
     tournament?: string;
+    tournamentId?: string;
     page?: number;
     limit?: number;
     offset?: number;
@@ -155,21 +264,65 @@ export class MatchesService {
       return this.search(params);
     }
 
-    const where: Record<string, unknown> = {};
-    if (params.status) where.status = params.status;
-    if (params.tournament) where.tournament = { contains: params.tournament, mode: 'insensitive' };
+    const statusClause = params.status
+      ? Prisma.sql`AND status = ${params.status}`
+      : Prisma.empty;
+    const tournamentClause = params.tournament
+      ? Prisma.sql`AND tournament ILIKE ${`%${params.tournament}%`}`
+      : Prisma.empty;
+    // The exact filter the name-based one could never be. `tournament ILIKE %name%`
+    // matches on a substring, so "Global T20" also returned "Global T20 Canada 2024" and
+    // a series page could list another competition's fixtures. `tournament_id` is a column
+    // and cannot match more than one competition.
+    const tournamentIdClause = params.tournamentId
+      ? Prisma.sql`AND tournament_id = ${params.tournamentId}`
+      : Prisma.empty;
 
-    const [rows, total] = await Promise.all([
-      this.prisma.match.findMany({
-        where,
-        orderBy: [{ scheduled: 'asc' }],
-        take: limit,
-        skip,
-      }),
-      this.prisma.match.count({ where }),
+    // Only the *order* needs raw SQL, so only the order comes from raw SQL.
+    //
+    // Prisma's `orderBy` cannot express a `CASE`, so the ordering has to be written by
+    // hand. There is no need for the rows themselves to come from it too: this query
+    // returns one column with a name we chose, and Prisma then reads the page by id and
+    // keeps its own field mapping. A `SELECT *` raw query would hand back whatever the
+    // driver called each column and leave `toSummary` reading `undefined` off a row that
+    // is actually fine — a failure that looks like missing data rather than like a bug.
+    const [idRows, countRows] = await Promise.all([
+      this.prisma.$queryRaw<Array<{ match_id: string }>>(
+        Prisma.sql`
+          SELECT match_id
+          FROM matches
+          WHERE TRUE
+          ${statusClause}
+          ${tournamentClause}
+          ${tournamentIdClause}
+          ${matchListOrder(scheduledNow())}
+          LIMIT ${limit} OFFSET ${skip}
+        `,
+      ),
+      this.prisma.$queryRaw<Array<{ count: bigint }>>(
+        Prisma.sql`
+          SELECT COUNT(*)::bigint AS count
+          FROM matches
+          WHERE TRUE
+          ${statusClause}
+          ${tournamentClause}
+          ${tournamentIdClause}
+        `,
+      ),
     ]);
 
-    return createPaginatedResponse(rows.map((r) => this.toSummary(r)), total, page, limit);
+    const order = idRows.map((r) => r.match_id);
+    const rows = order.length
+      ? await this.prisma.match.findMany({ where: { matchId: { in: order } } })
+      : [];
+    // `findMany` has no idea what the order was, so it is reapplied here.
+    const byId = new Map(rows.map((r) => [r.matchId, r]));
+    const ordered = order
+      .map((id) => byId.get(id))
+      .filter((r): r is Match => r !== undefined);
+
+    const total = Number(countRows[0]?.count ?? 0);
+    return createPaginatedResponse(ordered.map((r) => this.toSummary(r)), total, page, limit);
   }
 
   async search(params: {
@@ -186,20 +339,28 @@ export class MatchesService {
       ? Prisma.sql`AND status = ${params.status}`
       : Prisma.empty;
 
-    const [rows, countRows] = await Promise.all([
-      this.prisma.$queryRaw<Match[]>(
+    const searchClause = Prisma.sql`
+      WHERE (
+        tournament ILIKE ${pattern}
+        OR venue ILIKE ${pattern}
+        OR display_score ILIKE ${pattern}
+        OR team_names::text ILIKE ${pattern}
+        OR teams::text ILIKE ${pattern}
+      )
+      ${statusClause}
+    `;
+
+    // Same shape as `list`, and for the same reason: a raw `SELECT *` does not come back
+    // with Prisma's field names, so `toSummary` would read `matchId` off a row that only
+    // ever had `match_id` and hand back a page of summaries with nothing filled in. Only
+    // the matching ids are selected; Prisma reads the rows.
+    const [idRows, countRows] = await Promise.all([
+      this.prisma.$queryRaw<Array<{ match_id: string }>>(
         Prisma.sql`
-          SELECT *
+          SELECT match_id
           FROM matches
-          WHERE (
-            tournament ILIKE ${pattern}
-            OR venue ILIKE ${pattern}
-            OR display_score ILIKE ${pattern}
-            OR team_names::text ILIKE ${pattern}
-            OR teams::text ILIKE ${pattern}
-          )
-          ${statusClause}
-          ORDER BY scheduled ASC NULLS LAST
+          ${searchClause}
+          ${matchListOrder(scheduledNow())}
           LIMIT ${limit} OFFSET ${skip}
         `,
       ),
@@ -207,27 +368,38 @@ export class MatchesService {
         Prisma.sql`
           SELECT COUNT(*)::bigint AS count
           FROM matches
-          WHERE (
-            tournament ILIKE ${pattern}
-            OR venue ILIKE ${pattern}
-            OR display_score ILIKE ${pattern}
-            OR team_names::text ILIKE ${pattern}
-            OR teams::text ILIKE ${pattern}
-          )
-          ${statusClause}
+          ${searchClause}
         `,
       ),
     ]);
 
+    const order = idRows.map((r) => r.match_id);
+    const rows = order.length
+      ? await this.prisma.match.findMany({ where: { matchId: { in: order } } })
+      : [];
+    const byId = new Map(rows.map((r) => [r.matchId, r]));
+    const ordered = order
+      .map((id) => byId.get(id))
+      .filter((r): r is Match => r !== undefined);
+
     const total = Number(countRows[0]?.count ?? 0);
-    return createPaginatedResponse(rows.map((r) => this.toSummary(r)), total, page, limit);
+    return createPaginatedResponse(ordered.map((r) => this.toSummary(r)), total, page, limit);
   }
 
+  /**
+   * Live matches only, soonest start first.
+   *
+   * Deliberately not on `matchListOrder`. Every row here shares one status, so the
+   * status grouping that clause exists for would collapse to a constant and do nothing.
+   * The only ordering a set of in-play matches has is by when each one started, and that
+   * is what `scheduled ASC` already gave. The `matchId` tiebreak is added so two matches
+   * kicking off at the same instant come back in a fixed order rather than the database's.
+   */
   async listLive() {
     const [rows, liveIds] = await Promise.all([
       this.prisma.match.findMany({
         where: { status: MATCH_STATUS.LIVE },
-        orderBy: [{ scheduled: 'asc' }],
+        orderBy: [{ scheduled: 'asc' }, { matchId: 'asc' }],
       }),
       this.redis.smembers(redisKeys.liveMatches()),
     ]);
@@ -307,6 +479,27 @@ export class MatchesService {
     return { matchId, payload };
   }
 
+  private logStaleNotRefreshed(
+    matchId: string,
+    reason: StaleNotRefreshedReason,
+    ageMs: number,
+    matchRow: Match,
+    storedPayload: Record<string, unknown>,
+  ): void {
+    const stored = sportEventStatusFromPayload(storedPayload);
+    this.logger.warn('timeline stale, not refreshed', {
+      matchId,
+      reason,
+      ageMs,
+      status: matchRow.status,
+      matchOvers: matchRow.displayOvers,
+      matchScore: matchRow.displayScore,
+      storedOvers: stored?.displayOvers ?? null,
+      storedScore: stored?.displayScore ?? null,
+    });
+    incrCounter(this.redis.cached, 'timeline_stale_not_refreshed_total', { reason });
+  }
+
   async getTimeline(matchId: string): Promise<{ matchId: string; payload: Record<string, unknown> }> {
     const [row, matchRow] = await Promise.all([
       this.prisma.matchTimeline.findUnique({ where: { matchId } }),
@@ -325,16 +518,23 @@ export class MatchesService {
         storedPayload,
       );
       const ageMs = row ? Date.now() - row.updatedAt.getTime() : Number.POSITIVE_INFINITY;
-      if (
-        stale &&
-        ageMs >= MatchesService.LIVE_TIMELINE_REFRESH_MIN_AGE_MS &&
-        this.sportradar.isConfigured
-      ) {
-        try {
-          const fresh = await this.sportradar.fetchMatchTimeline(matchId);
-          return this.upsertTimelinePayload(matchId, fresh);
-        } catch (err) {
-          if (err instanceof ServiceUnavailableException) throw err;
+      if (stale) {
+        let reason: 'not_configured' | 'too_recent' | null = null;
+        if (!this.sportradar.isConfigured) {
+          reason = 'not_configured';
+        } else if (ageMs < MatchesService.LIVE_TIMELINE_REFRESH_MIN_AGE_MS) {
+          reason = 'too_recent';
+        } else {
+          try {
+            const fresh = await this.sportradar.fetchMatchTimeline(matchId);
+            return this.upsertTimelinePayload(matchId, fresh);
+          } catch (err) {
+            if (err instanceof ServiceUnavailableException) throw err;
+            this.logStaleNotRefreshed(matchId, 'fetch_failed', ageMs, matchRow, storedPayload);
+          }
+        }
+        if (reason) {
+          this.logStaleNotRefreshed(matchId, reason, ageMs, matchRow, storedPayload);
         }
       }
       return { matchId: row!.matchId, payload: storedPayload };

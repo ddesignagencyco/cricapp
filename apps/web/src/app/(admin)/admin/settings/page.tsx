@@ -1,5 +1,6 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import Select from 'react-select';
@@ -10,21 +11,21 @@ import {
   AdminPageHeader,
 } from '../../../../components/admin/AdminShared';
 import SocialBrandIcon from '../../../../components/admin/SocialBrandIcon';
-import { fetchSiteSettings, saveSiteSettings, type SiteSocialLink } from '../../../../services/siteSettings';
+import { saveSiteSettings, type SiteSocialLink } from '../../../../services/siteSettings';
+import { siteSettingsKeys } from '../../../../queries/keys';
+import { useSiteSettingsQuery } from '../../../../queries/useDirectoryQueries';
 import { SOCIAL_PLATFORMS } from '../../../../lib/socialPlatforms';
 import {
-  COUNTRIES,
+  COUNTRY_OPTIONS,
+  DEFAULT_COUNTRY,
   WEEK_DAYS,
   countryByName,
   emptyWorkingHours,
   formatPhoneNumber,
-  isValidEmail,
-  isValidMapsUrl,
-  isValidPhone,
-  isValidWorkingHours,
+  hasErrors,
   parseWorkingHours,
   serializeWorkingHours,
-  validateSocialValue,
+  validateSiteContact,
   type WeekDayId,
   type WorkingHoursValue,
 } from '../../../../lib/siteContact';
@@ -53,7 +54,7 @@ const EMPTY: FormState = {
   whatsapp: '',
   address: '',
   city: '',
-  country: 'Pakistan',
+  country: DEFAULT_COUNTRY,
   mapsUrl: '',
   hours: emptyWorkingHours(),
   socials: [{ platform: 'facebook', value: '' }],
@@ -63,12 +64,6 @@ type PlatformOption = {
   value: string;
   label: string;
   placeholder: string;
-};
-
-type CountryOption = {
-  value: string;
-  label: string;
-  dial: string;
 };
 
 const selectStyles = {
@@ -121,63 +116,49 @@ function PlatformLabel({ id, label }: { id: string; label: string }) {
 function FieldError({ message }: { message?: string }) {
   if (!message) return null;
   return (
-    <p className="mt-1.5 text-[11px] font-medium" style={{ color: 'var(--admin-danger)' }}>
+    <p className="mt-1.5 break-words text-[11px] font-medium" style={{ color: 'var(--admin-danger)' }}>
       {message}
     </p>
   );
 }
 
+/**
+ * Every rule lives in `validateSiteContact` so it can be tested without rendering.
+ * This is only the shape adapter between the form and that function.
+ */
 function validateForm(form: FormState): FieldErrors {
-  const errors: FieldErrors = {};
-  if (!isValidEmail(form.email)) errors.email = 'Enter a valid email.';
-  if (!isValidEmail(form.supportEmail)) errors.supportEmail = 'Enter a valid support email.';
-  if (!isValidPhone(form.phone)) errors.phone = 'Enter a phone number with country code (10–15 digits).';
-  if (!isValidPhone(form.whatsapp)) errors.whatsapp = 'Enter a WhatsApp number with country code (10–15 digits).';
-  if (!isValidMapsUrl(form.mapsUrl)) errors.mapsUrl = 'Use a Google Maps https link.';
-  if (!isValidWorkingHours(form.hours)) errors.hours = 'Closing time must be after opening time.';
-  const socialsByIndex = form.socials.map((item) =>
-    item.value.trim() ? validateSocialValue(item.platform, item.value) : '',
-  );
-  if (socialsByIndex.some(Boolean)) {
-    errors.socials = 'Fix the highlighted social links.';
-    errors.socialsByIndex = socialsByIndex;
-  }
-  return errors;
+  return validateSiteContact(form) as FieldErrors;
 }
 
 export default function SettingsPage() {
   const [form, setForm] = useState<FormState>(EMPTY);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [saving, setSaving] = useState(false);
+  const settingsQuery = useSiteSettingsQuery();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
-    fetchSiteSettings()
-      .then((settings) => {
-        setForm({
-          email: settings.email || '',
-          supportEmail: settings.supportEmail || '',
-          phone: settings.phone || '',
-          whatsapp: settings.whatsapp || '',
-          address: settings.address || '',
-          city: settings.city || '',
-          country: settings.country || 'Pakistan',
-          mapsUrl: settings.mapsUrl || '',
-          hours: parseWorkingHours(settings.workingHours) || emptyWorkingHours(),
-          socials: settings.socials?.length ? settings.socials : [{ platform: 'facebook', value: '' }],
-        });
-      })
-      .catch(() => {
-        /* Keep the form usable if settings have not loaded. */
-      });
-  }, []);
+    const settings = settingsQuery.data;
+    if (!settings) return;
+    setForm({
+      email: settings.email || '',
+      supportEmail: settings.supportEmail || '',
+      phone: settings.phone || '',
+      whatsapp: settings.whatsapp || '',
+      address: settings.address || '',
+      city: settings.city || '',
+      country: settings.country || DEFAULT_COUNTRY,
+      mapsUrl: settings.mapsUrl || '',
+      hours: parseWorkingHours(settings.workingHours) || emptyWorkingHours(),
+      socials: settings.socials?.length ? settings.socials : [{ platform: 'facebook', value: '' }],
+    });
+  }, [settingsQuery.data]);
 
   const usedPlatforms = useMemo(() => new Set(form.socials.map((item) => item.platform)), [form.socials]);
   const unusedPlatforms = SOCIAL_PLATFORMS.filter((item) => !usedPlatforms.has(item.id));
-  const countryOptions: CountryOption[] = COUNTRIES.map((item) => ({
-    value: item.name,
-    label: `${item.name} (${item.dial})`,
-    dial: item.dial,
-  }));
+  // Pre-built once at module load in `siteContact` — rebuilding 245 options per
+  // render would allocate on every keystroke.
+  const countryOptions = COUNTRY_OPTIONS;
   const selectedCountry =
     countryOptions.find((item) => item.value === form.country) ||
     (form.country ? { value: form.country, label: form.country, dial: countryByName(form.country)?.dial || '' } : null);
@@ -238,7 +219,7 @@ export default function SettingsPage() {
     e.preventDefault();
     const nextErrors = validateForm(form);
     setErrors(nextErrors);
-    if (Object.values(nextErrors).some((value) => typeof value === 'string' && value)) {
+    if (hasErrors(nextErrors)) {
       toast.error('Please fix the highlighted fields.');
       return;
     }
@@ -256,6 +237,7 @@ export default function SettingsPage() {
         workingHours: serializeWorkingHours(form.hours),
         socials: form.socials.filter((item) => item.platform && item.value.trim()),
       });
+      queryClient.setQueryData(siteSettingsKeys.current(), saved);
       setForm((prev) => ({
         ...prev,
         socials: saved.socials.length ? saved.socials : [{ platform: 'facebook', value: '' }],
@@ -277,7 +259,7 @@ export default function SettingsPage() {
       />
 
       <form className="space-y-5" noValidate onSubmit={(e) => void onSave(e)}>
-        <section className="rounded-lg p-4" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
+        <section className="rounded-lg p-3 sm:p-4" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
           <h2 className="mb-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text)' }}>
             Contact
           </h2>
@@ -331,7 +313,7 @@ export default function SettingsPage() {
                   );
                 })}
               </div>
-              <div className="mt-2 grid grid-cols-2 gap-2 sm:max-w-sm">
+              <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2 sm:max-w-sm">
                 <label className="block text-[11px] font-semibold" style={{ color: 'var(--admin-text-muted)' }}>
                   Opens
                   <AdminInput
@@ -358,7 +340,7 @@ export default function SettingsPage() {
           </div>
         </section>
 
-        <section className="rounded-lg p-4" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
+        <section className="rounded-lg p-3 sm:p-4" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
           <h2 className="mb-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text)' }}>
             Location
           </h2>
@@ -388,8 +370,8 @@ export default function SettingsPage() {
           </div>
         </section>
 
-        <section className="rounded-lg p-4" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
-          <div className="mb-3 flex items-center justify-between gap-3">
+        <section className="rounded-lg p-3 sm:p-4" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text)' }}>
               Social links
             </h2>
@@ -397,14 +379,14 @@ export default function SettingsPage() {
               type="button"
               onClick={addSocial}
               disabled={unusedPlatforms.length === 0}
-              className="inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-bold disabled:opacity-40"
+              className="inline-flex shrink-0 items-center gap-1 rounded-md px-2.5 py-1 text-xs font-bold disabled:opacity-40"
               style={{ border: '1px solid var(--admin-border)', color: 'var(--admin-text)' }}
             >
-              <Plus size={12} />
+              <Plus size={12} className="shrink-0" />
               Add
             </button>
           </div>
-          <p className="mb-3 text-sm" style={{ color: 'var(--admin-text-muted)' }}>
+          <p className="mb-3 break-words text-sm" style={{ color: 'var(--admin-text-muted)' }}>
             Pick a network, then paste its official URL. WhatsApp accepts a number with country code.
           </p>
           <div className="space-y-3">
@@ -420,7 +402,7 @@ export default function SettingsPage() {
               const selected = options.find((option) => option.value === item.platform) || null;
               return (
                 <div key={`${item.platform}-${index}`}>
-                  <div className="grid grid-cols-1 items-end gap-2 sm:grid-cols-[14rem_1fr_auto]">
+                  <div className="grid grid-cols-[auto_1fr_auto] items-end gap-2 sm:grid-cols-[14rem_1fr_auto]">
                     <AdminField label="Platform" htmlFor={`social-platform-${index}`}>
                       <Select
                         inputId={`social-platform-${index}`}
@@ -455,7 +437,7 @@ export default function SettingsPage() {
                       type="button"
                       onClick={() => removeSocial(index)}
                       disabled={form.socials.length === 1}
-                      className="inline-flex h-[38px] w-[38px] items-center justify-center rounded-md disabled:opacity-40"
+                      className="inline-flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-md disabled:opacity-40"
                       style={{ border: '1px solid var(--admin-border)', color: 'var(--admin-danger)' }}
                       aria-label="Remove social link"
                     >

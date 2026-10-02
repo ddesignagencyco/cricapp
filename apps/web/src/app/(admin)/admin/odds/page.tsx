@@ -115,13 +115,13 @@ export default function AdminOddsPage() {
               className="flex flex-wrap items-center justify-between gap-2 px-4 py-3"
               style={{ borderBottom: '1px solid var(--admin-border)' }}
             >
-              <div>
+              <div className="min-w-0">
                 <h2 className="text-sm font-semibold" style={{ color: 'var(--admin-text)' }}>Feed health</h2>
-                <p className="mt-0.5 text-xs" style={{ color: 'var(--admin-text-muted)' }}>
+                <p className="mt-0.5 break-words text-xs" style={{ color: 'var(--admin-text-muted)' }}>
                   Prices are stale after {health.staleAfterMinutes} minutes without a new snapshot.
                 </p>
               </div>
-              <p className="text-xs" style={{ color: 'var(--admin-text-muted)' }}>
+              <p className="shrink-0 text-xs" style={{ color: 'var(--admin-text-muted)' }}>
                 Checked {checkedAt ? checkedAt.toLocaleTimeString() : 'just now'}
               </p>
             </div>
@@ -137,13 +137,20 @@ export default function AdminOddsPage() {
                 <table className="w-full text-left text-xs">
                   <thead>
                     <tr style={{ borderBottom: '1px solid var(--admin-border)', background: 'var(--admin-table-header)' }}>
-                      {['Source', 'Slug', 'Mode', 'License', 'Last price', 'Health'].map((heading) => (
+                      {[
+                        { h: 'Source', cls: '' },
+                        { h: 'Slug', cls: 'hidden sm:table-cell' },
+                        { h: 'Mode', cls: '' },
+                        { h: 'License', cls: 'hidden md:table-cell' },
+                        { h: 'Last price', cls: '' },
+                        { h: 'Health', cls: '' },
+                      ].map((heading) => (
                         <th
-                          key={heading}
-                          className="px-3 py-2.5 text-[11px] font-bold uppercase tracking-wider"
+                          key={heading.h}
+                          className={`px-3 py-2.5 text-[11px] font-bold uppercase tracking-wider ${heading.cls}`}
                           style={{ color: 'var(--admin-text-secondary)' }}
                         >
-                          {heading}
+                          {heading.h}
                         </th>
                       ))}
                     </tr>
@@ -153,13 +160,10 @@ export default function AdminOddsPage() {
                       const seed = isSeedSource(source.slug, source.name);
                       return (
                         <tr key={source.id} style={{ borderBottom: '1px solid var(--admin-border)' }}>
-                          <td className="px-3 py-2.5">
-                            <p className="font-semibold" style={{ color: 'var(--admin-text)' }}>{source.name}</p>
-                            <p className="mt-0.5 font-mono text-[11px]" style={{ color: 'var(--admin-text-muted)' }}>
-                              {source.id}
-                            </p>
+                          <td className="max-w-[9rem] truncate px-3 py-2.5 sm:max-w-[16rem]" style={{ color: 'var(--admin-text)' }} title={source.name}>
+                            {source.name}
                           </td>
-                          <td className="px-3 py-2.5 font-mono" style={{ color: 'var(--admin-text-secondary)' }}>
+                          <td className="hidden max-w-[8rem] truncate px-3 py-2.5 font-mono sm:table-cell" style={{ color: 'var(--admin-text-secondary)' }} title={source.slug}>
                             {source.slug}
                           </td>
                           <td className="px-3 py-2.5">
@@ -168,13 +172,13 @@ export default function AdminOddsPage() {
                               tone={seed ? 'warning' : 'info'}
                             />
                           </td>
-                          <td className="px-3 py-2.5">
+                          <td className="hidden px-3 py-2.5 md:table-cell">
                             <AdminChip
                               label={titleCase(source.licenseStatus)}
                               tone={source.licenseStatus.toLowerCase() === 'licensed' ? 'success' : 'neutral'}
                             />
                           </td>
-                          <td className="px-3 py-2.5" style={{ color: 'var(--admin-text-secondary)' }}>
+                          <td className="whitespace-nowrap px-3 py-2.5" style={{ color: 'var(--admin-text-secondary)' }}>
                             {formatTimestamp(source.lastCapturedAt)}
                           </td>
                           <td className="px-3 py-2.5">

@@ -1,6 +1,6 @@
 import PredictionsHub from '../../components/predictions/PredictionsHub';
 import { fetchLiveMatches, fetchMatchesPage } from '../../services/matches';
-import { fetchPredictionPerformance, fetchPredictionsByMatchIds } from '../../services/predictions';
+import { fetchBulkPredictions, fetchPredictionPerformance } from '../../services/predictions';
 import type { Match } from '../../types';
 import type { MatchPredictions, PredictionPerformance } from '../../types/predictions';
 
@@ -22,7 +22,7 @@ async function matchCards(matches: Match[]) {
 
   const items = [...unique.values()];
   const ids = items.map((match) => String(match.matchId || match.id));
-  const predictions = await fetchPredictionsByMatchIds(ids);
+  const predictions = await fetchBulkPredictions(ids);
 
   return items.map((match) => ({
     match,

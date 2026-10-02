@@ -146,6 +146,7 @@ describe("normalizeMatch", () => {
         display_score: "126/1",
         current_inning: 1,
         display_overs: 24,
+        // Upstream run_rate lags the score; normalize must derive 126/24 = 5.25.
         run_rate: 5.11,
         period_scores: [
           { home_score: 0, away_score: 126, type: "inning", number: 1, away_wickets: 1, display_score: "126/1" },
@@ -179,7 +180,7 @@ describe("normalizeMatch", () => {
     assert.equal(match.currentInnings.runs, 126);
     assert.equal(match.currentInnings.wickets, 1);
     assert.equal(match.currentInnings.overs, 24);
-    assert.equal(match.currentInnings.runRate, 5.11);
+    assert.equal(match.currentInnings.runRate, 5.25);
     assert.equal(match.displayScore, "126/1");
     assert.equal(match.matchStatus, "first_innings_away_team");
     assert.equal(match.teamScores.away.score, "126/1");

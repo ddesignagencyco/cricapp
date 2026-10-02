@@ -1,15 +1,43 @@
 import { formatCricketOvers, getInitials } from '../utils/helpers';
+import { deriveMatchState } from '../hooks/useMatchState';
 import type { Match } from '../types';
 import type {
   MatchSideLabels,
   PartnershipProjection,
   PredictionChartPoint,
+  PredictionPerformance,
   PredictionRun,
   PredictionScoreRange,
 } from '../types/predictions';
 
 export function isNil(value: unknown): value is null | undefined {
   return value === null || value === undefined;
+}
+
+/**
+ * Sample size the API requires before an accuracy figure may be published. Mirrors
+ * `publishMinSamples` in the performance payload; used only as a fallback for an API
+ * build that sends `claimReady` without the threshold.
+ */
+export const MIN_PUBLISHABLE_PREDICTION_SAMPLES = 200;
+
+/**
+ * Whether the accuracy is old and well-sampled enough to be shown as a headline.
+ *
+ * The API already refuses to publish a thin sample and says so in the payload
+ * (`claimReady: false`, `publishMinSamples: 200`, plus a `guidance` sentence). The
+ * page used to gate on `sampleSize > 0` alone and print the number anyway, so three
+ * settled matches rendered as "0% accuracy" — an unsupported claim rather than a
+ * measurement, and alarming besides.
+ *
+ * The backend's own verdict wins whenever it sends one; the sample-size rule is only
+ * a fallback for an older build that omits `claimReady`.
+ */
+export function isAccuracyPublishable(performance: PredictionPerformance | null | undefined): boolean {
+  if (!performance) return false;
+  if (typeof performance.claimReady === 'boolean') return performance.claimReady;
+  const min = finiteNum(performance.publishMinSamples) ?? MIN_PUBLISHABLE_PREDICTION_SAMPLES;
+  return (finiteNum(performance.sampleSize) ?? 0) >= min;
 }
 
 export function finiteNum(value: unknown): number | null {
@@ -226,14 +254,20 @@ export function predictionSituation(
     ? (rec.currentInnings as Record<string, unknown>)
     : {};
   const explanation = run?.explanation || {};
-  const display = String(rec.displayScore || '').trim();
-  const displayScore = /^\d+\s*\/\s*\d+/.test(display) ? display.replace(/\s+/g, '') : '';
-  const parsedScore = displayScore.match(/^(\d+)\/(\d+)/);
+  // Scores come from the shared match state, not from `displayScore` alone. The
+  // predictions page and the homepage both read `/matches/live`, but this function
+  // only ever looked at `displayScore` and `currentInnings` — so a live match whose
+  // score had landed in `teamScores` (or `teams.*.score`) rendered a card with no
+  // score on it while the homepage showed the score perfectly well.
+  const state = deriveMatchState(rec);
+  const stateScore = (state.score ?? '').trim();
+  const parsedScore = stateScore.match(/^(\d+)\/(\d+)/);
   const scoreRuns = parsedScore ? Number(parsedScore[1]) : null;
   const scoreWkts = parsedScore ? Number(parsedScore[2]) : null;
-  const innRuns = finiteNum(inn.runs);
-  const innWkts = finiteNum(inn.wickets);
-  const innOvers = finiteNum(inn.overs);
+  const displayScore = parsedScore ? parsedScore[0] : '';
+  const innRuns = state.runs;
+  const innWkts = state.wickets;
+  const innOvers = finiteNum(state.oversLabel);
   const innEmpty = (innRuns === null || innRuns === 0) && (innWkts === null || innWkts === 0);
   const modelOver = finiteNum(explanation.over);
   const inning = finiteNum(explanation.inning);
@@ -389,6 +423,47 @@ function storedText(value: unknown): string {
   return text;
 }
 
+/**
+ * The API stores the toss as a raw competitor id (`sr:competitor:195222`).
+ * Resolve it to a side's display name, and drop the row entirely when the id
+ * matches neither side rather than printing the id at the reader.
+ */
+function readableTossWinner(
+  raw: string,
+  match: Match | Record<string, unknown> | null | undefined,
+  sides: MatchSideLabels
+): string | null {
+  const value = raw.trim();
+  if (!value) return null;
+
+  const rec = (match || {}) as Record<string, unknown>;
+  const teams = rec.teams;
+  const isObj = !isNil(teams) && typeof teams === 'object' && !Array.isArray(teams);
+  const pair = isObj
+    ? (teams as { home?: Record<string, unknown>; away?: Record<string, unknown> })
+    : Array.isArray(teams)
+      ? { home: { code: teams[0] }, away: { code: teams[1] } }
+      : null;
+  const homeRaw = String(pair?.home?.code ?? '').trim();
+  const awayRaw = String(pair?.away?.code ?? '').trim();
+  const needle = value.toLowerCase();
+  // Also try the bare id/code with its namespace stripped, e.g. `195221`.
+  const homeKey = homeRaw.replace(/^sr:[^:]+:/i, '').toLowerCase();
+  const awayKey = awayRaw.replace(/^sr:[^:]+:/i, '').toLowerCase();
+
+  if (value === homeRaw) return sides.homeName;
+  if (value === awayRaw) return sides.awayName;
+  if (needle && needle === homeKey) return sides.homeName;
+  if (needle && needle === awayKey) return sides.awayName;
+  if (needle === sides.homeCode.toLowerCase()) return sides.homeName;
+  if (needle === sides.awayCode.toLowerCase()) return sides.awayName;
+
+  // Anything still namespace-prefixed is an id we could not place. Never show it.
+  if (/^sr:/i.test(value)) return null;
+
+  return value.replace(/\bhome\b/i, sides.homeName).replace(/\baway\b/i, sides.awayName);
+}
+
 export function publicTossFact(
   run: PredictionRun | null | undefined,
   match: Match | Record<string, unknown> | null | undefined,
@@ -396,17 +471,18 @@ export function publicTossFact(
 ): string | null {
   const rec = (match || {}) as Record<string, unknown>;
   const explanation = run?.explanation || {};
-  const listed = stringField(rec, 'toss') || stringField(rec, 'tossWinner') || stringField(rec, 'tossWonBy');
+  const listed = readableTossWinner(
+    stringField(rec, 'toss') || stringField(rec, 'tossWinner') || stringField(rec, 'tossWonBy'),
+    match,
+    sides
+  );
   const decision = storedText(explanation.tossDecision);
   const adjusted = explanation.tossAdjusted === true;
   if (!adjusted && !listed && !decision) return null;
-  const who = listed
-    .replace(/\bhome\b/i, sides.homeName)
-    .replace(/\baway\b/i, sides.awayName);
   if (adjusted) {
-    return ['Toss is already in this chance', who || decision].filter(Boolean).join(' · ');
+    return ['Toss is already in this chance', listed || decision].filter(Boolean).join(' · ');
   }
-  return who || (decision ? `Toss: ${decision}` : null);
+  return listed || (decision ? `Toss: ${decision}` : null);
 }
 
 export function publicVenueWeatherFact(

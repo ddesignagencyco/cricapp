@@ -5,7 +5,7 @@ import TeamLogo from '../../components/TeamLogo';
 import StatsBoard from '../../components/boards/StatsBoard';
 import PslSeasonFilter from '../../components/PslSeasonFilter';
 import PslFixturesTable from '../../components/PslFixturesTable';
-import DummyAd from '../../components/advertisements/DummyAd';
+import AdSlot from '../../components/advertisements/AdSlot';
 import PslSquadsBoard from '../../components/PslSquadsBoard';
 import { formatScheduled } from '../../utils/helpers';
 import ErrorState from '../../components/ErrorState';
@@ -42,7 +42,8 @@ export default async function PSLPage({ searchParams }: { searchParams: Promise<
     return (
       <div className="min-h-screen">
         <section className="relative overflow-hidden">
-          <div className="hero-grad absolute inset-0" />
+          <div className="hero-grad-psl absolute inset-0" />
+          <div className="hero-scrim pointer-events-none absolute inset-0" />
           <div className="hero-content relative mx-auto max-w-7xl px-4 py-14 sm:px-6">
             <div className="max-w-2xl">
               <div className="mb-4 flex items-center gap-2">
@@ -61,8 +62,8 @@ export default async function PSLPage({ searchParams }: { searchParams: Promise<
         </section>
         <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
           <ErrorState
-            title="Server unavailable"
-            message="Can't reach the API, so PSL seasons, tables and fixtures aren't listed. Start the backend or try again."
+            title="We could not load this page"
+            message="PSL seasons, tables and fixtures are not showing right now. Please try again in a moment."
           />
         </section>
       </div>
@@ -93,7 +94,8 @@ export default async function PSLPage({ searchParams }: { searchParams: Promise<
     return (
       <div className="min-h-screen">
         <section className="relative overflow-hidden">
-          <div className="hero-grad absolute inset-0" />
+          <div className="hero-grad-psl absolute inset-0" />
+          <div className="hero-scrim pointer-events-none absolute inset-0" />
           <div className="hero-content relative mx-auto max-w-7xl px-4 py-14 sm:px-6">
             <div className="max-w-2xl">
               <h1 className="hero-title text-4xl font-black tracking-tight sm:text-5xl">
@@ -104,8 +106,8 @@ export default async function PSLPage({ searchParams }: { searchParams: Promise<
         </section>
         <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
           <ErrorState
-            title="Server unavailable"
-            message="Can't reach the API, so PSL tables and fixtures aren't listed. Start the backend or try again."
+            title="We could not load this page"
+            message="PSL tables and fixtures are not showing right now. Please try again in a moment."
           />
         </section>
       </div>
@@ -127,7 +129,8 @@ export default async function PSLPage({ searchParams }: { searchParams: Promise<
     <div className="min-h-screen">
       {/* Hero */}
       <section className="relative overflow-hidden">
-        <div className="hero-grad absolute inset-0" />
+        <div className="hero-grad-psl absolute inset-0" />
+          <div className="hero-scrim pointer-events-none absolute inset-0" />
         <div className="hero-content relative mx-auto max-w-7xl px-4 py-14 sm:px-6">
           <div className="max-w-2xl">
             <div className="mb-4 flex items-center gap-2">
@@ -164,7 +167,7 @@ export default async function PSLPage({ searchParams }: { searchParams: Promise<
       </section>
 
       <section className="mx-auto max-w-7xl px-4 pb-6 sm:px-6">
-        <DummyAd size="leaderboard" placement="psl-after-intro" />
+        <AdSlot placement="psl-after-intro" />
       </section>
 
       {/* Full Leaders / Stats */}
@@ -225,7 +228,7 @@ export default async function PSLPage({ searchParams }: { searchParams: Promise<
                 <PslFixturesTable matches={regular} />
               </div>
               <div className="hidden w-[300px] shrink-0 lg:block">
-                <DummyAd size="half-page" placement="psl-half-page" />
+                <AdSlot placement="psl-half-page" />
               </div>
             </div>
           ) : (

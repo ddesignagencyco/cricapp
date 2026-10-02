@@ -94,7 +94,7 @@ export default function AdminEditorialPage() {
         <LoadingState variant="editorial" />
       ) : (
         <form
-          className="space-y-3 rounded-lg p-4"
+          className="space-y-3 rounded-lg p-3 sm:p-4"
           noValidate
           style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}
           onSubmit={async (e) => {
@@ -138,7 +138,7 @@ export default function AdminEditorialPage() {
       {pages.length === 0 ? (
         <EmptyState icon={<ScrollText size={28} />} title="No published pages" message="Save a policy above to publish it on the site." />
       ) : (
-        <p className="text-xs" style={{ color: 'var(--admin-text-muted)' }}>
+        <p className="break-words text-xs" style={{ color: 'var(--admin-text-muted)' }}>
           Live slugs: {pages.map((page) => page.slug).join(', ')}
         </p>
       )}

@@ -33,11 +33,13 @@ export default function ToolDls({ tool }: { tool: ToolDef }) {
   return (
     <ToolPage
       tool={tool}
-      note="Uses the published Duckworth–Lewis exponential resource curve. Official ICC DLS/Stern tables are licensed — this is an educational target only."
+      note="This follows the standard published formula for rain-affected matches. The official ICC table is licensed, so please treat this as a helpful estimate rather than the exact official figure."
     >
       <ToolPanel
         aside={
           <>
+            {/* The inputs travel with the share so the recipient sees how the
+                number was reached, and the link reopens this form filled in. */}
             <ResultBox
               label="Revised target"
               value={result?.target !== null && result?.target !== undefined ? String(result.target) : '—'}

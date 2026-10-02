@@ -12,10 +12,11 @@ import RemoteImage from '../RemoteImage';
 import EntityAvatar from '../EntityAvatar';
 import FavoriteButton from '../FavoriteButton';
 import ShareButton from '../ShareButton';
-import DummyAd from '../advertisements/DummyAd';
+import AdSlot from '../advertisements/AdSlot';
 import { getInitials } from '../../utils/helpers';
 import type { NewsArticle } from '../../types';
 import { RelatedNewsPanel, useLinkedNews } from './RelatedNewsPanel';
+import { entityNewsHref } from '../EntityLinks';
 
 const playerTabs = [
   { key: 'profile', label: 'Profile', icon: User },
@@ -147,7 +148,7 @@ export default function PlayerDetailBody({ player, relatedNews = [] }: Props) {
         </div>
       </header>
 
-      <DummyAd size="leaderboard" placement="player-detail-after-intro" />
+      <AdSlot placement="player-detail-after-intro" />
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard compact label="Player ID" value={String(player.id || '').split(':').pop() || '—'} sub="Provider id" icon={User} />
@@ -188,11 +189,15 @@ export default function PlayerDetailBody({ player, relatedNews = [] }: Props) {
 
       {tab === 'news' && (
         <div className="fade-in">
+          {/* Short list plus a link, for the same reason as the team and match tabs. */}
           <RelatedNewsPanel
             articles={news}
             loading={newsLoading}
             emptyTitle="No player news"
             emptyHint="Publish a story from Admin → News and link this player. Drafts do not appear here."
+            limit={6}
+            viewAllHref={entityNewsHref('player', player?.id)}
+            viewAllLabel="All news on this player"
           />
         </div>
       )}

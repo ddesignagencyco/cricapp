@@ -12,6 +12,7 @@ function sideTotal(periodScores: PeriodScore[], side: 'home' | 'away') {
   let runs = 0;
   let wickets: number | null = null;
   let overs = '';
+  let oversBalls: number | null = null;
   let recorded = false;
   for (const inning of periodScores) {
     const value = Number(inning[`${side}_score`]);
@@ -20,11 +21,19 @@ function sideTotal(periodScores: PeriodScore[], side: 'home' | 'away') {
       if (!Number.isNaN(value)) runs += value;
       recorded = true;
       if (!Number.isNaN(w)) wickets = w;
-      if (inning.display_overs != null) overs = String(inning.display_overs);
+      if (inning.display_overs != null) {
+        overs = String(inning.display_overs);
+        const numeric = Number(inning.display_overs);
+        if (!Number.isNaN(numeric)) oversBalls = numeric;
+      }
     }
   }
-  if (!recorded) return { score: '', overs: '' };
-  return { score: wickets !== null ? `${runs}/${wickets}` : String(runs), overs };
+  if (!recorded) return { score: '', overs: '', oversBalls: null };
+  return {
+    score: wickets !== null ? `${runs}/${wickets}` : String(runs),
+    overs,
+    oversBalls,
+  };
 }
 
 export function teamScoresFromSportEventPayload(
@@ -45,16 +54,20 @@ export function teamScoresFromSportEventPayload(
   const awayTotals = sideTotal(periods, 'away');
   return {
     home: {
+      id: String(homeComp?.id ?? ''),
       code: String(homeComp?.abbreviation ?? ''),
       name: String(homeComp?.name ?? ''),
       score: homeTotals.score,
       overs: homeTotals.overs,
+      oversBalls: homeTotals.oversBalls,
     },
     away: {
+      id: String(awayComp?.id ?? ''),
       code: String(awayComp?.abbreviation ?? ''),
       name: String(awayComp?.name ?? ''),
       score: awayTotals.score,
       overs: awayTotals.overs,
+      oversBalls: awayTotals.oversBalls,
     },
   };
 }

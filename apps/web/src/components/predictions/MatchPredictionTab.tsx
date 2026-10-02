@@ -54,7 +54,7 @@ export default function MatchPredictionTab({ match }: Props) {
     return (
       <EmptyState
         title="No predictions yet"
-        message="The model has not stored a pre-match or live run for this fixture."
+        message="We have not worked out a prediction for this match yet. Check back closer to the match."
         icon={TrendingUp}
       />
     );

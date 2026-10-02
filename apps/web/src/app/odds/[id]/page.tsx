@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const marketName = market ? marketDisplayName(market.name) : 'Match winner (incl. super over)';
   return sharePageMetadata({
     title: `${marketName} — odds comparison`,
-    description: 'Licensed price comparison with source timestamps and market settlement rules.',
+    description: 'Compare prices from different bookmakers, see when they last changed, and how winner bets are settled.',
     path: oddsPageHref(matchId),
   });
 }
@@ -42,7 +42,7 @@ export default async function MatchOddsPage({ params }: { params: Promise<{ id: 
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
       {match ? (
         <header className="mb-6">
-          <p className="text-xs font-bold uppercase tracking-widest text-stext">Odds intelligence</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-stext">Price comparison</p>
           <h1 className="mt-1 text-2xl font-black tracking-tight text-mtext sm:text-3xl">
             {sides.homeName} vs {sides.awayName}
           </h1>

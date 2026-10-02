@@ -1,0 +1,112 @@
+/* ==========================================================================
+   Site header chrome
+   --------------------------------------------------------------------------
+   Separate stylesheet, imported after `globals.css`, so the shared sheet stays
+   untouched. Every rule is scoped to `header.site-chrome` / `.site-chrome`, so
+   the mobile bottom bar that reuses `.site-chrome` keeps its own colours.
+
+   The problem this solves: in dark mode the header was one flat near-black
+   rectangle (`rgb(8 17 31 / 0.95)`) sitting on an equally dark page, with a
+   1px `--color-lborder` rule that disappeared against it. It read as an empty
+   strip rather than a bar. It now carries a faint brand wash, a solid shadow so
+   it lifts off the content scrolling underneath, and a brand hairline that
+   matches the active-link underline.
+   ========================================================================== */
+
+header.site-chrome {
+  /* Brand wash over the existing translucent base: a hint of the accent hue at
+     the top, fading to fully transparent, so page content still reads through
+     the lower half of the bar. */
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-brand) 22%, transparent) 0%,
+    color-mix(in srgb, var(--color-brand) 8%, transparent) 55%,
+    transparent 100%
+  );
+  box-shadow: 0 1px 0 0 var(--color-lborder), 0 6px 16px -8px rgb(0 0 0 / 0.55);
+}
+
+/*
+ * A brand-coloured underline under the whole bar. `::before` sits behind the
+ * content (`z-index: -1` on a positioned parent would escape), so it is drawn
+ * as a 2px strip pinned to the bottom edge instead — cheaper and it cannot
+ * affect layout.
+ */
+header.site-chrome::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  bottom: -1px;
+  height: 2px;
+  pointer-events: none;
+  background-image: linear-gradient(
+    90deg,
+    var(--color-brand) 0%,
+    color-mix(in srgb, var(--color-brand) 45%, transparent) 55%,
+    transparent 100%
+  );
+  opacity: 0.9;
+}
+
+/* --- Active navigation item --------------------------------------------- */
+
+/*
+ * The active page is marked by the underline alone. A filled pill behind it was
+ * tried and removed: it fought the `--color-chrome` translucency, made the bar
+ * look uneven, and the 2px rule is the site's existing active-state language.
+ *
+ * `globals.css` paints that underline plain white. Matching it to the bar's own
+ * hairline ties the "you are here" state to the chrome instead of leaving a lone
+ * white dash floating under the nav.
+ */
+header.site-chrome .site-nav-link[aria-current='page']::after {
+  background-color: var(--color-brand-fg);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--color-brand-fg) 55%, transparent);
+}
+
+/* --- Light theme --------------------------------------------------------- */
+
+/*
+ * In light mode the bar is already the solid brand blue, so the dark-mode brand
+ * wash would double up and mud it. Drop the gradient, keep the hairline and the
+ * shadow (which is what actually separates the bar from white content).
+ */
+.light header.site-chrome {
+  background-image: linear-gradient(
+    180deg,
+    rgb(255 255 255 / 0.14) 0%,
+    rgb(255 255 255 / 0.06) 60%,
+    transparent 100%
+  );
+  box-shadow: 0 1px 0 0 var(--color-chrome-border), 0 8px 20px -10px rgb(16 24 40 / 0.45);
+}
+
+.light header.site-chrome::after {
+  background-image: linear-gradient(
+    90deg,
+    rgb(255 255 255 / 0.55) 0%,
+    rgb(255 255 255 / 0.22) 55%,
+    transparent 100%
+  );
+}
+
+/* --- Mobile bottom bar --------------------------------------------------- */
+
+/*
+ * `.mobile-bottom-nav` also carries `.site-chrome`, but it is a bottom bar, not
+ * the header. Reset the header-only effects so the two do not fight.
+ */
+.mobile-bottom-nav {
+  background-image: none;
+  box-shadow: none;
+}
+
+.mobile-bottom-nav::after {
+  content: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  header.site-chrome {
+    box-shadow: 0 1px 0 0 var(--color-lborder);
+  }
+}

@@ -1,10 +1,14 @@
 import './globals.css';
+import './site-header.css';
+import './assistant.css';
 import { Inter, JetBrains_Mono, Noto_Nastaliq_Urdu } from 'next/font/google';
 import ScrollToTop from '../components/ScrollToTop';
 import JsonLd from './json-ld';
 import ThemeProvider from '../components/ThemeProvider';
 import AuthProvider from '../components/AuthProvider';
+import QueryProvider from '../components/QueryProvider';
 import ClientLayout from '../components/ClientLayout';
+import AdProvider from '../components/advertisements/AdProvider';
 import { Toaster } from 'react-hot-toast';
 import { loadSiteSettings } from '../services/siteSettings';
 
@@ -80,31 +84,35 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         />
         <ThemeProvider>
           <AuthProvider>
-            <ClientLayout settings={settings}>{children}</ClientLayout>
-            <Toaster
-              position="top-right"
-              gutter={10}
-              containerStyle={{ top: 16, right: 16, zIndex: 80 }}
-              toastOptions={{
-                duration: 3200,
-                className: 'pcz-toast',
-                style: {
-                  background: 'transparent',
-                  color: 'inherit',
-                  border: 'none',
-                  boxShadow: 'none',
-                  padding: 0,
-                },
-                success: {
-                  className: 'pcz-toast pcz-toast--success',
-                  iconTheme: { primary: 'var(--color-brand)', secondary: 'var(--color-surface-elevated)' },
-                },
-                error: {
-                  className: 'pcz-toast pcz-toast--error',
-                  iconTheme: { primary: 'var(--color-danger)', secondary: 'var(--color-surface-elevated)' },
-                },
-              }}
-            />
+            <QueryProvider>
+              <AdProvider config={settings.ads}>
+                <ClientLayout settings={settings}>{children}</ClientLayout>
+              </AdProvider>
+              <Toaster
+                position="top-right"
+                gutter={10}
+                containerStyle={{ top: 16, right: 16, zIndex: 80 }}
+                toastOptions={{
+                  duration: 3200,
+                  className: 'pcz-toast',
+                  style: {
+                    background: 'transparent',
+                    color: 'inherit',
+                    border: 'none',
+                    boxShadow: 'none',
+                    padding: 0,
+                  },
+                  success: {
+                    className: 'pcz-toast pcz-toast--success',
+                    iconTheme: { primary: 'var(--color-brand)', secondary: 'var(--color-surface-elevated)' },
+                  },
+                  error: {
+                    className: 'pcz-toast pcz-toast--error',
+                    iconTheme: { primary: 'var(--color-danger)', secondary: 'var(--color-surface-elevated)' },
+                  },
+                }}
+              />
+            </QueryProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

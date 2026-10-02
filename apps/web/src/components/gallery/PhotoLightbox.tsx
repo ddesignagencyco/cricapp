@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight, RotateCcw, X, ZoomIn, ZoomOut } from 'lucide-react';
 import NewsCopy from '../NewsCopy';
+import MediaActions from '../MediaActions';
 import ImageZoomer, { CLICK_ZOOM, MAX_ZOOM, MIN_ZOOM, STEP } from './ImageZoomer';
 import useFocusTrap from '../../hooks/useFocusTrap';
 import type { GalleryPhoto } from './galleryTypes';
@@ -62,7 +63,7 @@ export default function PhotoLightbox({ items, index, onClose, onIndexChange }: 
     >
       <div className="text-on-media flex items-center justify-between gap-3 px-4 py-3">
         <p className="text-on-media-muted text-xs font-medium tabular-nums">{index + 1} / {items.length}</p>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5 sm:gap-1">
           <button
             type="button"
             onClick={() => setZoom((value) => Math.max(MIN_ZOOM, value - STEP))}
@@ -72,7 +73,7 @@ export default function PhotoLightbox({ items, index, onClose, onIndexChange }: 
           >
             <ZoomOut size={16} aria-hidden="true" />
           </button>
-          <span className="text-on-media min-w-[3rem] text-center text-[11px] font-semibold tabular-nums">
+          <span className="text-on-media hidden min-w-[3rem] text-center text-[11px] font-semibold tabular-nums sm:inline">
             {Math.round(zoom * 100)}%
           </span>
           <button
@@ -93,6 +94,16 @@ export default function PhotoLightbox({ items, index, onClose, onIndexChange }: 
           >
             <RotateCcw size={15} aria-hidden="true" />
           </button>
+          <span className="mx-0.5 h-5 w-px bg-white/20 sm:mx-1" aria-hidden="true" />
+          <MediaActions
+            url={item.src}
+            title={item.title || 'Gallery image'}
+            shareHref={articleHref || `/gallery/${encodeURIComponent(item.id)}`}
+            shareText={item.excerpt}
+            shareType="gallery"
+            shareId={item.id}
+            variant="media"
+          />
           <button type="button" onClick={onClose} className={`${iconButton} ml-1`} aria-label="Close photo">
             <X size={18} aria-hidden="true" />
           </button>

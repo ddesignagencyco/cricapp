@@ -1,11 +1,10 @@
 'use client';
 
-import { Fragment } from 'react';
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import SearchField from '../SearchField';
 import type { Match } from '../../types/index';
-import { fetchMatchesPage, fetchLiveMatches } from '../../services/matches';
+import { fetchMatchesPage } from '../../services/matches';
 import { useDebouncedUrlQuery } from '../../hooks/useDebouncedUrlQuery';
 import { mergeLiveUpdate, useMatchStream } from '../../hooks/useMatchStream';
 import MatchCard from '../MatchCard';
@@ -14,10 +13,17 @@ import EmptyState from '../EmptyState';
 import ErrorState from '../ErrorState';
 import PageToolbar from '../PageToolbar';
 import Pagination from '../Pagination';
-import DummyAd from '../advertisements/DummyAd';
+import AdSlot from '../advertisements/AdSlot';
 import { MatchCardGridSkeleton } from '../skeletons/Skeletons';
+import { matchKeys, parsePositiveInt } from '../../queries/keys';
+import { useLiveMatchesQuery, useMatchDetailsQuery, useMatchesQuery, usePrefetchNextPage } from '../../queries/useDirectoryQueries';
 
-const LIMIT = 20;
+/**
+ * 24 = 3 cards per row × 8 rows, matching the `xl:grid-cols-3` grid below. The API
+ * default is 20, which leaves two orphans stranded on the last row.
+ */
+const LIMIT = 24;
+const EMPTY_MATCHES: Match[] = [];
 
 const TABS = [
   { key: 'upcoming', label: 'Upcoming' },
@@ -32,52 +38,81 @@ export default function MatchBoard() {
   const searchParams = useSearchParams();
 
   const tab = searchParams.get('tab') || 'upcoming';
-  const page = Math.max(1, Number(searchParams.get('page')) || 1);
-  const q = searchParams.get('q') || '';
-
-  const [matches, setMatches] = useState<Match[]>([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-  const [retryKey, setRetryKey] = useState(0);
+  const page = parsePositiveInt(searchParams.get('page'), 1);
+  const q = (searchParams.get('q') || '').trim();
   const { input: localSearch, setInput: setLocalSearch } = useDebouncedUrlQuery({ param: 'q' });
+  const liveEndpoint = tab === 'live' && !q;
+  const listQuery = useMatchesQuery({ status: tab, limit: LIMIT, page, q: q || undefined }, !liveEndpoint);
+  const liveQuery = useLiveMatchesQuery(liveEndpoint);
+  const activeQuery = liveEndpoint ? liveQuery : listQuery;
+  const matches = liveEndpoint ? liveQuery.data || EMPTY_MATCHES : listQuery.data?.items || EMPTY_MATCHES;
+  const total = liveEndpoint ? matches.length : listQuery.data?.total || 0;
+  const totalPages = liveEndpoint ? 1 : Math.max(1, listQuery.data?.totalPages || Math.ceil(total / LIMIT));
+  const [streamMatches, setStreamMatches] = useState<Match[]>([]);
   const liveUpdate = useMatchStream(undefined, tab === 'live');
-  const visibleMatches =
-    tab === 'live' ? matches.filter((match) => match.status === 'live') : matches;
 
   useEffect(() => {
-    if (!liveUpdate) return;
-    setMatches((prev) => mergeLiveUpdate(prev, liveUpdate));
-  }, [liveUpdate]);
+    if (liveEndpoint) setStreamMatches(matches);
+  }, [liveEndpoint, matches]);
 
   useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    setError(false);
-    const request =
-      tab === 'live' && !q
-        ? fetchLiveMatches().then((items) => ({ items, total: items.length, totalPages: 1 }))
-        : fetchMatchesPage({ status: tab, limit: LIMIT, page, q: q || undefined });
-    request
-      .then(({ items, total: t }) => {
-        if (!cancelled) {
-          setMatches(items);
-          setTotal(t);
-          setLoading(false);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setMatches([]);
-          setTotal(0);
-          setError(true);
-          setLoading(false);
-        }
-      });
-    return () => { cancelled = true; };
-  }, [tab, page, q, retryKey]);
+    if (!liveUpdate || !liveEndpoint) return;
+    setStreamMatches((previous) => mergeLiveUpdate(previous, liveUpdate));
+  }, [liveUpdate, liveEndpoint]);
 
-  const totalPages = Math.max(1, Math.ceil((total || 0) / LIMIT));
+  const nextParams = { status: tab, limit: LIMIT, page: page + 1, q: q || undefined };
+
+  /**
+   * Searching returns rows with no scores.
+   *
+   * `GET /matches?q=…` takes a different code path in the API than the paginated list:
+   * it reads straight from the `matches` table, so `teams` comes back as a plain
+   * abbreviation array and `team_scores` is null. Every card then printed an em dash
+   * where the score belonged, even though the match has obviously been played — the
+   * scores exist, they are simply not in the search response.
+   *
+   * The ids of those thin rows are topped up from `/matches/:id`, which does return the
+   * scores. The hook is already cached and shared, so the extra calls are one per
+   * incomplete card, once per session, and nothing at all when no search is running.
+   */
+  const thinIds = !q
+    ? []
+    : matches
+        .filter((match) => {
+          if (String(match.status) !== 'completed') return false;
+          const teams = match.teams as unknown;
+          if (!teams || typeof teams !== 'object' || Array.isArray(teams)) return true;
+          const sides = teams as { home?: { score?: string }; away?: { score?: string } };
+          return !(sides.home?.score || sides.away?.score);
+        })
+        .map((match) => String(match.matchId ?? match.id ?? ''))
+        .filter(Boolean);
+  // `useMatchDetailsQuery` keys itself on the joined id string, so a fresh array
+  // identity here costs nothing and no memo is needed.
+  const thinDetails = useMatchDetailsQuery(thinIds);
+
+  const matchesWithScores = useMemo(
+    () =>
+      matches.map((match) => {
+        const id = String(match.matchId ?? match.id ?? '');
+        const detail = id ? thinDetails[id] : undefined;
+        // The detail row is a superset of the search row, so it replaces it wholesale.
+        return detail ?? match;
+      }),
+    [matches, thinDetails],
+  );
+
+  const visibleMatches = liveEndpoint
+    ? streamMatches.filter((match) => match.status === 'live')
+    : matchesWithScores;
+
+  usePrefetchNextPage({
+    page,
+    totalPages,
+    enabled: !liveEndpoint && Boolean(listQuery.data && !listQuery.isPlaceholderData && listQuery.isSuccess),
+    queryKey: matchKeys.list(nextParams),
+    queryFn: (signal) => fetchMatchesPage(nextParams, signal),
+  });
 
   const handleTabChange = (newTab: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -88,11 +123,8 @@ export default function MatchBoard() {
 
   const handlePageChange = (p: number) => {
     const params = new URLSearchParams(searchParams.toString());
-    if (p <= 1) {
-      params.delete('page');
-    } else {
-      params.set('page', String(p));
-    }
+    if (p <= 1) params.delete('page');
+    else params.set('page', String(p));
     router.push(`${pathname}?${params.toString()}`, { scroll: false });
   };
 
@@ -109,6 +141,7 @@ export default function MatchBoard() {
           </div>
           <p className="text-xs text-stext">
             <span className="font-semibold text-mtext">{total}</span> {tab}
+            {activeQuery.isFetching && !activeQuery.isPending ? ' · Updating…' : ''}
           </p>
         </div>
       </header>
@@ -126,13 +159,13 @@ export default function MatchBoard() {
         <Tabs tabs={TABS} active={tab} onChange={handleTabChange} />
       </PageToolbar>
 
-      {loading ? (
+      {activeQuery.isPending ? (
         <MatchCardGridSkeleton />
-      ) : error ? (
+      ) : activeQuery.isError ? (
         <ErrorState
           title="Server unavailable"
           message="Can't reach the API, so matches aren't listed. Start the backend or try again."
-          onRetry={() => setRetryKey((key) => key + 1)}
+          onRetry={() => void activeQuery.refetch()}
         />
       ) : visibleMatches.length > 0 ? (
         <>
@@ -141,12 +174,14 @@ export default function MatchBoard() {
               <Fragment key={`${m.matchId || m.id || 'match'}-${index}`}>
                 <MatchCard match={m} />
                 {visibleMatches.length >= 4 && index === 3 ? (
-                  <DummyAd size="medium-rectangle" placement="matches-infeed" inFeed />
+                  <AdSlot placement="matches-infeed" />
                 ) : null}
               </Fragment>
             ))}
           </div>
-          <Pagination page={page} totalPages={totalPages} total={total} limit={LIMIT} onPageChange={handlePageChange} />
+          {!liveEndpoint ? (
+            <Pagination page={page} totalPages={totalPages} total={total} limit={LIMIT} onPageChange={handlePageChange} />
+          ) : null}
         </>
       ) : (
         <EmptyState

@@ -6,7 +6,8 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Badge, { normalizeStatus } from './Badge';
 import LiveIndicator from './LiveIndicator';
 import EntityAvatar from './EntityAvatar';
-import { formatCricketOvers, getInitials } from '../utils/helpers';
+import { getInitials } from '../utils/helpers';
+import { deriveMatchState } from '../hooks/useMatchState';
 import { mergeLiveUpdate, useMatchStream } from '../hooks/useMatchStream';
 import { describeMatchResult, scoreboardFromMatch } from '../lib/matchScoreboard';
 
@@ -74,7 +75,7 @@ export default function MatchTickerBar({ matches: initialMatches }: MatchTickerB
             type="button"
             onClick={() => scroll('left')}
             disabled={!canScrollLeft}
-            className="carousel-control"
+            className="carousel-control hidden sm:grid"
             aria-label="Scroll left"
           >
             <ChevronLeft size={16} />
@@ -95,7 +96,7 @@ export default function MatchTickerBar({ matches: initialMatches }: MatchTickerB
             type="button"
             onClick={() => scroll('right')}
             disabled={!canScrollRight}
-            className="carousel-control"
+            className="carousel-control hidden sm:grid"
             aria-label="Scroll right"
           >
             <ChevronRight size={16} />
@@ -126,13 +127,18 @@ function TickerCard({ match }: { match: any }) {
   const badgeLabel = isCompleted ? 'Result' : normalizedStatus.label;
   const badgeTone = normalizedStatus.tone;
 
-  const overs = board.oversLabel || match.currentInnings?.overs || '';
+  // `board.oversLabel` and `match.currentInnings?.overs` are two separate
+  // derivations, and the match page reads the timeline as well — so the ticker could
+  // print a different over from the card and the page at the same moment. The shared
+  // state resolves all three and normalises once.
+  const state = deriveMatchState(match);
+  const overs = state.oversLabel;
 
   return (
     <Link
       href={`/matches/${match.matchId || match.id}`}
       prefetch={false}
-      className="group flex w-[260px] shrink-0 flex-col overflow-hidden rounded-xl bg-card p-3 ring-1 ring-lborder transition-colors hover:bg-[var(--color-row-hover)] hover:ring-border-strong"
+      className="group flex w-[calc(100vw-2rem)] max-w-[420px] shrink-0 flex-col overflow-hidden rounded-xl bg-card p-3 ring-1 ring-lborder transition-colors hover:bg-[var(--color-row-hover)] hover:ring-border-strong sm:w-[260px] sm:max-w-none"
     >
       <div className="mb-2 flex items-center justify-between gap-2">
         <span className="min-w-0 truncate text-xs font-semibold tracking-wide text-stext">
@@ -167,7 +173,7 @@ function TickerCard({ match }: { match: any }) {
           {isLive && overs !== '' ? (
             <span className="shrink-0 font-semibold text-danger">
               {board.battingLabel ? `${board.battingLabel} batting · ` : ''}
-              {formatCricketOvers(overs) || overs} ov
+              {overs} ov
               {board.rrLabel && board.rrLabel !== '—' ? ` · RR ${board.rrLabel}` : ''}
             </span>
           ) : null}

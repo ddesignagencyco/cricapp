@@ -16,7 +16,8 @@ export class SiteSettingsController {
   @Get()
   @ApiOperation({
     summary: 'Public site settings',
-    description: 'Contact details, office location and social links for the public site.',
+    description:
+      'Contact details, office location, social links and the advertisement delivery config for the public site.',
   })
   @ApiResponse({ status: 200, type: SiteSettingsResponseDto })
   getPublic(): Promise<SiteSettingsResponseDto> {
@@ -32,7 +33,7 @@ export class SiteSettingsAdminController {
   constructor(private readonly siteSettingsService: SiteSettingsService) {}
 
   @Put()
-  @ApiOperation({ summary: 'Update site settings (admin)' })
+  @ApiOperation({ summary: 'Update site settings (admin)', description: 'Fields left out of the body are not modified.' })
   @ApiResponse({ status: 200, type: SiteSettingsResponseDto })
   update(@Body() dto: UpdateSiteSettingsDto): Promise<SiteSettingsResponseDto> {
     return this.siteSettingsService.update(dto);

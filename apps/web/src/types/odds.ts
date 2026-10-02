@@ -37,9 +37,31 @@ export interface OddsMarketComparison {
   selections: OddsSelectionPrice[];
 }
 
+/**
+ * Which prediction run `homeWinProb` / `awayWinProb` came from.
+ *
+ * `'live'` is the in-play number and `'pre_match'` the forecast made before the first
+ * ball. The API returns the live run in preference to the pre-match one when both exist,
+ * so a live match next to live prices is not showing a stale forecast — but it does mean
+ * the two must be labelled, or the reader cannot tell which number they are looking at.
+ */
+export type ModelPredictionStage = 'live' | 'pre_match';
+
 export interface ModelVsMarket {
+  /**
+   * The stage behind `homeWinProb` / `awayWinProb`.
+   *
+   * Optional: an API build without it returns the number with no stage, and the panel
+   * then stays unlabelled rather than claiming one.
+   */
+  stage?: ModelPredictionStage | null;
   homeWinProb: number | null;
   awayWinProb: number | null;
+  /** Both stages, so a client can show the other one instead of only the preferred. */
+  preMatchHomeWinProb?: number | null;
+  preMatchAwayWinProb?: number | null;
+  liveHomeWinProb?: number | null;
+  liveAwayWinProb?: number | null;
   marketHomeImplied: number | null;
   marketAwayImplied: number | null;
   note: string;

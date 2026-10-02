@@ -19,10 +19,19 @@ export class ListMatchesQuery extends PaginationQuery {
   status?: string;
 
   @ApiPropertyOptional({
-    description: 'Filter by tournament/competition name (case-insensitive).',
+    description: 'Filter by tournament/competition name (case-insensitive substring).',
   })
   @IsOptional()
   @IsString()
   @MaxLength(100)
   tournament?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Filter by the provider tournament id (e.g. sr:tournament:10020626). Exact. Preferred over `tournament`, which matches a substring and so can return more than one competition.',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  tournamentId?: string;
 }

@@ -5,7 +5,7 @@ import MatchOddsView from '../odds/MatchOddsView';
 import { matchSides } from '../../lib/predictions';
 import type { ToolDef } from '../../lib/toolsCatalog';
 import { fetchMatchById } from '../../services/matches';
-import { ToolPage, ToolPanel, toolInputClass } from './ToolShared';
+import { ToolPage, ToolPanel, ResultBox, toolInputClass } from './ToolShared';
 
 const EXAMPLE_MATCH_ID = 'sr:match:67132180';
 
@@ -37,9 +37,11 @@ export default function ToolOddsMatch({ tool }: { tool: ToolDef }) {
     setActiveId(trimmed);
   };
 
+  const oddsResult = activeId ? [homeLabel, awayLabel].filter(Boolean).join(' vs ') : '—';
+
   return (
     <ToolPage tool={tool}>
-      <ToolPanel>
+      <ToolPanel aside={<ResultBox label="Odds match" value={oddsResult} />}>
         <form
           className="flex flex-col gap-3 sm:flex-row sm:items-end"
           onSubmit={(event) => {

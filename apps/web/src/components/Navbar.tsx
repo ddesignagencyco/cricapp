@@ -17,6 +17,7 @@ import {
   LogOut,
   Moon,
   Newspaper,
+  PenLine,
   Radio,
   Search,
   Shield,
@@ -55,10 +56,11 @@ const exploreItems: NavItem[] = [
   { to: '/teams', label: 'Teams', icon: Shield },
   { to: '/players', label: 'Players', icon: UserRound },
   { to: '/psl', label: 'PSL', icon: Trophy },
-  { to: '/tools', label: 'Tools', icon: Wrench },
   { to: '/tours', label: 'Tours', icon: Globe },
   { to: '/tournaments', label: 'Tournaments', icon: Award },
+  { to: '/tools', label: 'Tools', icon: Wrench },
   { to: '/news', label: 'News', icon: Newspaper },
+  { to: '/authors', label: 'Authors', icon: PenLine },
   { to: '/gallery', label: 'Gallery', icon: Images },
 ];
 
@@ -168,7 +170,7 @@ export default function Navbar() {
         Skip to content
       </a>
       <nav className="mx-auto flex h-full max-w-7xl items-center justify-between gap-3 px-4 sm:px-6">
-        <Logo size="lg" />
+        <Logo size="lg" priority />
 
         <div className="hidden items-center gap-1 lg:flex">
           {navItems.map((item) => (
@@ -511,7 +513,9 @@ function ProfileMenuLink({
       role="menuitem"
       aria-current={active ? 'page' : undefined}
       className={`flex items-center gap-3 rounded-md px-2.5 py-2 transition-colors ${
-        active ? 'bg-accent/10 text-accent' : 'text-mtext hover:bg-[var(--color-row-hover)]'
+        active
+          ? 'text-accent after:absolute after:inset-x-2.5 after:-bottom-0.5 after:h-0.5 after:rounded-full after:bg-accent'
+          : 'text-mtext hover:bg-[var(--color-row-hover)]'
       }`}
     >
       <span
@@ -545,7 +549,9 @@ function MobileNavLink({ item, active }: { item: NavItem; active: boolean }) {
       href={item.to}
       aria-current={active ? 'page' : undefined}
       className={`flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-semibold transition-colors ${
-        active ? 'bg-accent/10 text-accent' : 'text-mtext hover:bg-[var(--color-row-hover)]'
+        active
+          ? 'text-accent after:absolute after:inset-x-2.5 after:-bottom-0.5 after:h-0.5 after:rounded-full after:bg-accent'
+          : 'text-mtext hover:bg-[var(--color-row-hover)]'
       }`}
     >
       <span

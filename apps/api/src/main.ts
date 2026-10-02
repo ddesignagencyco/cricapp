@@ -60,7 +60,8 @@ async function bootstrap() {
     .addTag('newsletter', 'Newsletter subscription management')
     .addTag('contact', 'Contact-us submissions')
     .addTag('gallery', 'Images, shorts and videos')
-    .addTag('site-settings', 'Public contact and social settings')
+    .addTag('site-settings', 'Public contact, social and advertisement settings')
+    .addTag('adsense', 'AdSense ad units, earnings reports and policy issues (admin)')
     .addCookieAuth('cricapp_access_token', {
       type: 'apiKey',
       in: 'cookie',

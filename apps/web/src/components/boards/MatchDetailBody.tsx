@@ -1,657 +1,500 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { Calendar, ClipboardList, Clock, FileText, MapPin, Newspaper, Radio, Scale, Sparkles, Swords, Trophy, Users } from 'lucide-react';
-import LiveIndicator from '../LiveIndicator';
-import { StatusBadge } from '../Badge';
-import Tabs from '../Tabs';
-import EmptyState from '../EmptyState';
-import HeadToHeadWidget from '../HeadToHeadWidget';
-import TeamLogo from '../TeamLogo';
-import FavoriteButton from '../FavoriteButton';
-import ShareButton from '../ShareButton';
+/**
+ * The match centre's composition root.
+ *
+ * ## What changed, and why
+ *
+ * The page used to be one component that both fetched and rendered. Each panel
+ * re-derived the score from whichever field it knew about, which is how the hero,
+ * the overview and the scorecard came to show three different numbers for the same
+ * innings — most visibly on a Test, where `teams.home.score` is a two-innings
+ * aggregate while `displayScore` is a single innings.
+ *
+ * Now:
+ *
+ * - `buildMatchViewModel` produces **one** normalised value for the whole page, and
+ *   every panel below reads it. There is nothing left to disagree about.
+ * - All fetching goes through TanStack Query with **match-scoped keys**, so switching
+ *   tabs refetches nothing and another match's cached data cannot surface here.
+ * - The server render seeds the match and its odds, so the client repeats neither.
+ */
+
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Radio, Swords } from 'lucide-react';
+import MatchPageHeader, { MatchScoreboard } from './match/MatchPageHeader';
+import MatchTabNavigation, {
+  MATCH_TABS,
+  MatchTabPanel,
+  defaultMatchTab,
+  type MatchTab,
+} from './match/MatchTabNavigation';
+import MatchOverview from './match/MatchOverview';
+import MatchInfo from './match/MatchInfo';
+import OtherMatches from './match/OtherMatches';
+import RelatedMatchNews from './match/RelatedMatchNews';
+import { MatchScorecardTab, MatchSquadsTab } from './match/MatchScorecardTab';
+import MatchTimeline from '../MatchTimeline';
 import CommentsSection from '../CommentsSection';
-import DummyAd from '../advertisements/DummyAd';
-import MatchTimeline, { matchSummary } from '../MatchTimeline';
-import {
-  LiveStrip,
-  MatchNewsPanel,
-  OversFromTimeline,
-  ScorecardPanel,
-  SquadsPanel,
-} from './MatchCentrePanels';
-import { formatScheduled, getInitials } from '../../utils/helpers';
-import { formatCricketOvers } from '../../lib/cricketMath';
-import { buildMatchScoreboard, describeMatchResult } from '../../lib/matchScoreboard';
-import { matchStatusLabel } from '../../lib/predictions';
-import { fetchMatchTimeline, matchSideIds } from '../../services/matches';
-import { fetchHeadToHead } from '../../services/headToHead';
-import { fetchTeams } from '../../services/teams';
-import { mergeMatchLivePayload, useMatchStream } from '../../hooks/useMatchStream';
-import MatchPredictionTab from '../predictions/MatchPredictionTab';
-import MatchOddsTab from '../odds/MatchOddsTab';
+import EmptyState from '../EmptyState';
+import AdSlot from '../advertisements/AdSlot';
 import { Skeleton } from '../skeletons/Skeletons';
-import type { HeadToHead, Team } from '../../types';
-import type { MatchOddsResponse } from '../../types/odds';
-import { decodeEntityId, useLinkedNews } from './RelatedNewsPanel';
-import { newsHref } from '../../utils/newsConstraints';
-
-const detailTabs = [
-  { key: 'live', label: 'Live', icon: Users },
-  { key: 'scorecard', label: 'Scorecard', icon: ClipboardList },
-  { key: 'commentary', label: 'Commentary', icon: Radio },
-  { key: 'squads', label: 'Squads', icon: FileText },
-  { key: 'predictions', label: 'Predictions', icon: Sparkles },
-  { key: 'odds', label: 'Odds', icon: Scale },
-  { key: 'h2h', label: 'Head to Head', icon: Swords },
-  { key: 'news', label: 'News', icon: Newspaper },
-  { key: 'info', label: 'Match Info', icon: MapPin },
-];
-
-const completedTabs = [
-  { key: 'result', label: 'Result', icon: Trophy },
-  { key: 'scorecard', label: 'Scorecard', icon: ClipboardList },
-  { key: 'commentary', label: 'Commentary', icon: Radio },
-  { key: 'squads', label: 'Squads', icon: FileText },
-  { key: 'odds', label: 'Odds', icon: Scale },
-  { key: 'h2h', label: 'Head to Head', icon: Swords },
-  { key: 'news', label: 'News', icon: Newspaper },
-  { key: 'info', label: 'Match Info', icon: MapPin },
-];
+import { buildMatchViewModel } from '../../lib/matchViewModel';
+import { extractInningsScorecards } from '../../lib/matchCentreData';
+import { readProviderInningsCards, readSquads, type FallOfWicketEntry } from '../../lib/matchScorecardData';
+import { playerOfTheMatch, topBatter, topBowler, topBatters, topBowlers } from '../../lib/matchPerformers';
+import { mergeMatchLivePayload, useMatchStream } from '../../hooks/useMatchStream';
+import {
+  useMatchHeadToHeadQuery,
+  useMatchNewsQuery,
+  useMatchOddsQuery,
+  useMatchTimelineQuery,
+  useSeriesMatchesQuery,
+} from '../../queries/useMatchCentreQueries';
+import { entityNewsHref } from '../EntityLinks';
+import HeadToHeadWidget from '../HeadToHeadWidget';
+import MatchOddsTab from '../odds/MatchOddsTab';
+import type { MatchOddsFetchResult } from '../../types/odds';
+import type { Match } from '../../types';
 
 interface Props {
-  match: any;
-  initialOdds?: MatchOddsResponse | null;
-  initialOddsForbidden?: boolean;
+  match: Match;
+  /**
+   * The timeline **without** its ball events: the competitor ids, period scores,
+   * tournament, venue and the full per-player scorecard. 67 KB on a four-innings Test,
+   * against 1.6 MB for the events.
+   */
+  matchContext: Record<string, unknown> | null;
+  /**
+   * The fall of wickets, per innings, computed on the server from the events so the
+   * browser never has to download them to show a wicket's score.
+   */
+  fallOfWickets?: Record<number, FallOfWicketEntry[]>;
+  /** Whether the provider has any ball-by-ball events, i.e. whether Commentary exists. */
+  hasCommentary?: boolean;
+  initialOdds?: MatchOddsFetchResult | null;
 }
 
-function looksLikeTeamId(value: string): boolean {
-  return value.startsWith('sr:competitor:') || /^[0-9a-f-]{20,}$/i.test(value);
-}
+const TAB_PARAM = 'tab';
 
-function resolveTeamId(raw: string, teams: Team[]): string {
-  if (!raw) return '';
-  if (raw.startsWith('sr:competitor:')) return raw;
-  const needle = raw.toLowerCase();
-  const t = teams.find(
-    (x) =>
-      (x.abbr || '').toLowerCase() === needle ||
-      (x.code || '').toLowerCase() === needle ||
-      (x.id || '').toLowerCase() === needle ||
-      (x.name || '').toLowerCase() === needle
-  );
-  if (t?.id) return t.id;
-  return looksLikeTeamId(raw) ? raw : '';
-}
-
-function usefulScore(value: unknown): string {
-  const text = String(value ?? '').trim();
-  if (!text || text === '—' || text === '0/0' || text === '0') return '';
-  return text;
-}
-
-function usefulResultText(value: unknown): string {
-  const text = usefulScore(value);
-  if (!text) return '';
-  const compact = text.toLowerCase().replace(/[_-]+/g, ' ').replace(/[.\s]+$/g, '').trim();
-  if (compact === 'ended' || compact === 'match ended' || compact === 'completed' || compact === 'finished') {
-    return '';
-  }
-  return text;
-}
-
-function displaySide(match: any, index: 0 | 1) {
-  const teams = match.teams;
-  const isObj = teams && typeof teams === 'object' && !Array.isArray(teams);
-  const side = isObj ? (index === 0 ? teams.home : teams.away) : null;
-  const extra = index === 0 ? match.home : match.away;
-  const rawCode = side?.code || side?.abbr || extra?.code || (Array.isArray(teams) ? teams[index] : '') || '';
-  const rawName = side?.name || extra?.name || match.teamNames?.[index] || '';
-  const name = String(rawName || '').replace(/^sr:competitor:/, '') || (index === 0 ? 'Team A' : 'Team B');
-  const codeStr = String(rawCode || '').replace(/^sr:competitor:/, '');
-  const badCode = !codeStr || /^sr:/.test(codeStr) || codeStr.length > 5;
-  return {
-    name,
-    code: badCode ? getInitials(name) : codeStr.toUpperCase(),
-    raw: String(rawCode || rawName || ''),
-    score: usefulScore(side?.score || extra?.score),
-    overs: String(side?.overs || extra?.overs || '').trim(),
-  };
-}
+/**
+ * The tab set.
+ *
+ * ## Why every tab is always present
+ *
+ * This used to hide a tab whose feature had no data, so the same match page showed
+ * five tabs on one fixture and eight on another, and the tabs physically moved as you
+ * moved between them. A tab set that changes shape is disorienting, and a reader who
+ * has learned "the scorecard is third from the left" can no longer rely on it.
+ *
+ * So all seven tabs are always rendered in the same order, and a tab with nothing to
+ * show says so in its own empty state. The tab is a place in the page; whether there
+ * is anything there is a separate question, answered inside it.
+ */
+const ALL_TAB_KEYS = [
+  MATCH_TABS.overview.key,
+  MATCH_TABS.scorecard.key,
+  MATCH_TABS.commentary.key,
+  MATCH_TABS.squads.key,
+  MATCH_TABS.stats.key,
+  MATCH_TABS.odds.key,
+  MATCH_TABS.info.key,
+] as const;
 
 export default function MatchDetailBody({
   match: initialMatch,
-  initialOdds = null,
-  initialOddsForbidden = false,
+  matchContext,
+  fallOfWickets: initialFallOfWickets,
+  hasCommentary = false,
+  initialOdds,
 }: Props) {
-  const [match, setMatch] = useState(initialMatch);
-  const [tab, setTab] = useState(
-    initialMatch?.status === 'completed' || initialMatch?.status === 'cancelled' ? 'result' : 'live'
-  );
-  const [timeline, setTimeline] = useState<Record<string, unknown> | null>(null);
-  const [timelineLoading, setTimelineLoading] = useState(false);
-  const [timelineReady, setTimelineReady] = useState(false);
-  const [headToHead, setHeadToHead] = useState<HeadToHead | null>(null);
-  const [h2hLoading, setH2hLoading] = useState(false);
-  const [h2hReady, setH2hReady] = useState(false);
-  const matchId = decodeEntityId(initialMatch?.matchId || initialMatch?.id);
-  const { articles: relatedNews, loading: newsLoading } = useLinkedNews({ matchId });
-  const liveUpdate = useMatchStream(matchId, initialMatch?.status === 'live');
-  const wantsTimeline = tab === 'commentary' || tab === 'timeline' || tab === 'scorecard' || tab === 'squads';
-  const wantsH2H = tab === 'h2h';
+  const searchParams = useSearchParams();
+  const matchId = decodeMatchId(String(initialMatch?.matchId ?? initialMatch?.id ?? ''));
+
+  /**
+   * The live match row.
+   *
+   * Seeded from the server render and then patched from the socket. The socket event
+   * is filtered by match id inside `useMatchStream`, so an update for another match
+   * can never reach this page.
+   */
+  const [liveMatch, setLiveMatch] = useState<Match>(initialMatch);
+  const isLive = String(liveMatch?.status ?? '') === 'live';
+  const liveUpdate = useMatchStream(matchId, isLive);
 
   useEffect(() => {
-    setMatch(initialMatch);
-  }, [initialMatch]);
-
-  useEffect(() => {
-    setTimeline(null);
-    setTimelineReady(false);
-    setHeadToHead(null);
-    setH2hReady(false);
-  }, [matchId]);
-
-  useEffect(() => {
-    if (!liveUpdate || liveUpdate.type === 'ping') return;
-    const payload =
-      liveUpdate.data && typeof liveUpdate.data === 'object'
-        ? (liveUpdate.data as Record<string, unknown>)
-        : {};
-    setMatch((prev: any) => mergeMatchLivePayload(prev, payload));
+    if (!liveUpdate) return;
+    setLiveMatch((prev) => mergeMatchLivePayload(prev as Record<string, unknown>, (liveUpdate.data ?? {}) as Record<string, unknown>) as Match);
   }, [liveUpdate]);
 
+  // A navigation to a different match reuses this component instance, so the local
+  // state is reset when the id changes rather than showing the previous match's row.
+  const lastMatchId = useRef(matchId);
   useEffect(() => {
-    if (!wantsTimeline || !matchId || timelineReady) return;
-    let cancelled = false;
-    setTimelineLoading(true);
-    fetchMatchTimeline(matchId)
-      .then((res) => {
-        if (!cancelled) setTimeline(res?.payload || null);
-      })
-      .catch(() => {
-        if (!cancelled) setTimeline(null);
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setTimelineReady(true);
-          setTimelineLoading(false);
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [wantsTimeline, matchId, timelineReady]);
+    if (lastMatchId.current === matchId) return;
+    lastMatchId.current = matchId;
+    setLiveMatch(initialMatch);
+  }, [matchId, initialMatch]);
 
-  useEffect(() => {
-    if (!wantsH2H || h2hReady) return;
-    const sides = matchSideIds(initialMatch);
-    const homeRaw = sides.home || initialMatch?.teams?.home?.code || initialMatch?.home?.code || (Array.isArray(initialMatch?.teams) ? initialMatch.teams[0] : '') || '';
-    const awayRaw = sides.away || initialMatch?.teams?.away?.code || initialMatch?.away?.code || (Array.isArray(initialMatch?.teams) ? initialMatch.teams[1] : '') || '';
-    let cancelled = false;
-    const load = async () => {
-      setH2hLoading(true);
-      try {
-        let teamAId = homeRaw.startsWith('sr:competitor:') ? homeRaw : '';
-        let teamBId = awayRaw.startsWith('sr:competitor:') ? awayRaw : '';
-        if (!teamAId || !teamBId) {
-          const teams = await fetchTeams({ limit: 100 }).catch(() => [] as Team[]);
-          if (cancelled) return;
-          teamAId = resolveTeamId(homeRaw, teams);
-          teamBId = resolveTeamId(awayRaw, teams);
-        }
-        if (!teamAId || !teamBId) {
-          if (!cancelled) setHeadToHead(null);
-          return;
-        }
-        const data = await fetchHeadToHead(teamAId, teamBId);
-        if (!cancelled) setHeadToHead(data);
-      } catch {
-        if (!cancelled) setHeadToHead(null);
-      } finally {
-        if (!cancelled) {
-          setH2hReady(true);
-          setH2hLoading(false);
-        }
+  /* --- The match context: every panel's input, derived once ------------- */
+
+  /**
+   * One memo produces everything the panels need from the match context.
+   *
+   * These were four separate memos, each independently re-parsing the same payload.
+   * On a Test that meant the scorecard, the squads, the fall of wickets and the event
+   * detection all walked the innings and the player rows on every change of the live
+   * match row — which the socket patches several times a second while a match is on.
+   */
+  const derived = useMemo(() => {
+    const matchRecord = liveMatch as unknown as Record<string, unknown>;
+    const cards = extractInningsScorecards(matchRecord, matchContext);
+    return {
+      view: buildMatchViewModel({ match: matchRecord, timeline: matchContext }),
+      scorecards: cards,
+      providerCards: readProviderInningsCards(matchContext),
+      squads: readSquads(matchContext),
+    };
+  }, [liveMatch, matchContext]);
+
+  const { view, scorecards, squads } = derived;
+
+  /**
+   * The fall of wickets, rebuilt from the server's flat object.
+   *
+   * `useMemo` on the prop identity alone would recompute on every parent render, so
+   * the JSON string is the dependency and the Map is cached against it.
+   */
+  const fallOfWicketsKey = JSON.stringify(initialFallOfWickets ?? null);
+  const fallOfWickets = useMemo(() => {
+    const out = new Map<number, FallOfWicketEntry[]>();
+    for (const [number, entries] of Object.entries(initialFallOfWickets ?? {})) {
+      const n = Number(number);
+      if (Number.isFinite(n) && Array.isArray(entries) && entries.length > 0) {
+        out.set(n, entries);
       }
-    };
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, [wantsH2H, h2hReady, initialMatch]);
+    }
+    return out;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fallOfWicketsKey]);
 
-  const isLive = match?.status === 'live';
-  const isUpcoming = match?.status === 'upcoming';
-  const isCompleted = match?.status === 'completed';
-  const isCancelled = match?.status === 'cancelled';
-  const showPredictions = isLive || isUpcoming;
-  const activeTabs = isCompleted || isCancelled ? completedTabs : detailTabs;
+  /* --- Tab-specific data, all match-scoped and all lazy ------------------- */
 
+  const hasScorecard = scorecards.some((card) => card.batting.length > 0 || card.bowling.length > 0);
+
+  const homeTeamId = view.home.id ?? '';
+  const awayTeamId = view.away.id ?? '';
+  const canHeadToHead = Boolean(homeTeamId && awayTeamId);
+
+  const available = ALL_TAB_KEYS;
+  const tabs: MatchTab[] = useMemo(
+    () => ALL_TAB_KEYS.map((key) => MATCH_TABS[key]),
+    [],
+  );
+
+  const defaultTab = defaultMatchTab(view.phase, available);
+  const requestedTab = searchParams.get(TAB_PARAM);
+  const fallbackTab = requestedTab && available.includes(requestedTab) ? requestedTab : defaultTab;
+
+  /**
+   * The active tab, held in state.
+   *
+   * ## Why this is not `router.replace`
+   *
+   * The tab used to be written to the URL with `router.replace`. In the App Router a
+   * search-param change re-runs the **server** components for the route, so every tab
+   * click re-fetched the match, the timeline and the odds on the server, streamed a
+   * fresh RSC payload and re-rendered the page. On a four-innings Test — where the
+   * server also walks 1,879 ball events to build the fall of wickets — a tab switch
+   * felt like a full page load, and the page visibly stuttered on every click.
+   *
+   * Instead the tab is local state and the URL is updated with `history.replaceState`,
+   * which changes the address bar without involving Next at all. Switching tabs is now
+   * a pure client re-render: no request, no server render, and no remount of the
+   * scoreboard, the overview or the sidebar.
+   *
+   * A deep link still works — the initial tab is read from the URL — and Back/Forward
+   * still move between tabs, because `popstate` is watched below.
+   */
+  const [tab, setTab] = useState(fallbackTab);
+
+  /**
+   * The ball-by-ball events, fetched only once Commentary is actually open.
+   *
+   * This is the 1.6 MB. It is not needed for the scoreboard, the scorecard, the
+   * squads, the fall of wickets or anything in the sidebar, so a reader who never
+   * opens the tab never downloads it. The query is match-scoped, so it is cached after
+   * the first open and Back/Forward into Commentary is instant.
+   */
+  const wantsCommentary = tab === MATCH_TABS.commentary.key && hasCommentary;
+  const timelineQuery = useMatchTimelineQuery(matchId, { enabled: wantsCommentary });
+  const commentaryPayload = timelineQuery.data?.payload ?? null;
+
+  const h2h = useMatchHeadToHeadQuery(matchId, homeTeamId, awayTeamId, { enabled: canHeadToHead });
+  const newsQuery = useMatchNewsQuery(matchId, { limit: 12 });
+  const seriesQuery = useSeriesMatchesQuery(
+    { id: view.tournamentId, name: view.tournament },
+    { limit: 24 },
+  );
+  const oddsQuery = useMatchOddsQuery(
+    matchId,
+    initialOdds?.status === 'ok' ? initialOdds.data : null,
+    initialOdds?.status === 'forbidden',
+  );
+
+  /* --- Performers, comparison, fall of wickets ---------------------------- */
+
+  /**
+   * Maps a scorecard's team label back to a side.
+   *
+   * The scorecard is keyed by innings number, and the view model already knows which
+   * side batted which innings, so the two are joined on the number rather than on a
+   * team name.
+   */
+  const resolveSide = useCallback(
+    (teamName: string) => {
+      const trimmed = teamName.trim().toLowerCase();
+      if (!trimmed) return null;
+      if (trimmed === view.home.name.trim().toLowerCase()) return 'home' as const;
+      if (trimmed === view.away.name.trim().toLowerCase()) return 'away' as const;
+      return view.innings.find(
+        (inn) =>
+          (inn.side === 'home' ? view.home.name : view.away.name).trim().toLowerCase() === trimmed,
+      )?.side ?? null;
+    },
+    [view],
+  );
+
+  const batters = useMemo(
+    () => topBatters(scorecards, 3, resolveSide),
+    [scorecards, resolveSide],
+  );
+  const bowlers = useMemo(
+    () => topBowlers(scorecards, 3, resolveSide),
+    [scorecards, resolveSide],
+  );
+  const bestBatter = useMemo(() => topBatter(scorecards, resolveSide), [scorecards, resolveSide]);
+  const bestBowler = useMemo(() => topBowler(scorecards, resolveSide), [scorecards, resolveSide]);
+  const pom = useMemo(
+    () => playerOfTheMatch(liveMatch as unknown as Record<string, unknown>),
+    [liveMatch],
+  );
+
+  /**
+   * Writes the chosen tab into the address bar without navigating.
+   *
+   * `replaceState` rather than `pushState`: a tab is another view of the same page, so
+   * it should not become a history entry that Back has to walk through.
+   */
+  const selectTab = useCallback(
+    (next: string) => {
+      if (!available.includes(next) || next === tab) return;
+      setTab(next);
+      const params = new URLSearchParams(window.location.search);
+      params.set(TAB_PARAM, next);
+      const query = params.toString();
+      // replaceState, not pushState: a tab is another view of the same page, so it
+      // should not become a history entry that Back has to walk through.
+      window.history.replaceState(
+        window.history.state,
+        '',
+        `${window.location.pathname}${query ? `?${query}` : ''}`,
+      );
+    },
+    [available, tab],
+  );
+
+  // Back/Forward across tabs. Without a navigation there is no popstate-driven
+  // search-param change for React to observe, so it is read straight off the URL.
   useEffect(() => {
-    if (!showPredictions && tab === 'predictions') setTab(isCompleted || isCancelled ? 'result' : 'live');
-    if (tab === 'stats') setTab('scorecard');
-  }, [showPredictions, tab, isCompleted, isCancelled]);
+    const onPopState = () => {
+      const next = new URLSearchParams(window.location.search).get(TAB_PARAM);
+      if (next && available.includes(next)) setTab(next);
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, [available]);
 
-  if (!match) {
-    return (
-      <div className="mx-auto max-w-3xl px-4 py-16">
-        <EmptyState title="Match not found" message="We couldn't find that match. It may have been moved or removed." />
-      </div>
-    );
-  }
+  // A different match resets to its own default tab instead of inheriting the last one.
+  useEffect(() => {
+    setTab(fallbackTab);
+    // Only the match id should trigger this: `fallbackTab` also changes with the URL,
+    // and re-running on it would undo the tab the reader just chose.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [matchId]);
 
-  const home = displaySide(match, 0);
-  const away = displaySide(match, 1);
-  const homeCode = home.code;
-  const awayCode = away.code;
-  const homeName = home.name;
-  const awayName = away.name;
+  /* --- Render ---------------------------------------------------------------- */
 
-  const inn = match.currentInnings;
-  const phaseRaw = String(match.matchStatus || '');
-  const phase = matchStatusLabel(phaseRaw);
-  const timelineSummary = matchSummary(timeline);
-  const displayScore = usefulScore(match.displayScore) || usefulScore(timelineSummary.displayScore);
-  const board = buildMatchScoreboard({
-    home: {
-      code: home.code,
-      name: home.name,
-      raw: home.raw,
-      score: home.score || timelineSummary.homeScore,
-      overs: home.overs,
-    },
-    away: {
-      code: away.code,
-      name: away.name,
-      raw: away.raw,
-      score: away.score || timelineSummary.awayScore,
-      overs: away.overs,
-    },
-    battingTeam: String(inn?.battingTeam || ''),
-    matchStatus: phaseRaw,
-    innRuns: Number(inn?.runs),
-    innWkts: Number(inn?.wickets),
-    innOvers: Number(inn?.overs),
-    innRr: Number(inn?.runRate),
-    displayScore,
-    live: !isUpcoming,
-  });
-  const {
-    homeScore,
-    awayScore,
-    homeOvers,
-    awayOvers,
-    scoreLine,
-    oversLabel,
-    rrLabel,
-    battingLabel,
-  } = board;
-  const usefulOvers = Boolean(oversLabel);
-  const usefulRr = Boolean(rrLabel && rrLabel !== '—');
-  const hasInnings = Boolean(scoreLine) || usefulOvers;
-  const resultText =
-    usefulResultText(match.result) ||
-    usefulResultText(timelineSummary.result) ||
-    describeMatchResult(match);
-  const finalScoreLine = [homeScore && `${homeCode} ${homeScore}`, awayScore && `${awayCode} ${awayScore}`]
-    .filter(Boolean)
-    .join('  ·  ') || displayScore;
-
-  const { date, time } = formatScheduled(match.scheduled);
-  const breadcrumbName = `${homeName} vs ${awayName}`;
 
   return (
-    <div className="match-detail-page mx-auto max-w-7xl space-y-4 px-4 py-6 sm:space-y-5 sm:px-6 sm:py-8">
-      <nav className="match-detail-breadcrumb text-stext" aria-label="Breadcrumb">
-        <Link href="/matches" className="font-semibold text-accent transition-colors hover:text-mtext">
-          Matches
-        </Link>
-        <span className="text-stext" aria-hidden="true">
-          /
-        </span>
-        <span className="truncate font-medium text-mtext max-w-[12rem] sm:max-w-none">{breadcrumbName}</span>
-      </nav>
+    <div className="mc-page mx-auto w-full max-w-[1280px] px-4 pb-10 pt-4 sm:px-6 sm:pt-5">
+      <div className="mb-4">
+        <AdSlot placement="match-detail-leaderboard" />
+      </div>
 
-      <header
-        className={`match-detail-hero p-4 sm:p-8 ${isLive ? 'match-detail-hero--live' : ''}`}
-      >
+      <MatchPageHeader view={view} matchId={matchId} />
 
-        {/* Top Badges & Actions */}
-        <div className="relative flex flex-wrap items-center justify-between gap-3 border-b border-lborder/60 pb-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-accent/10 px-3 py-1 text-xs font-black tracking-wider text-accent border border-accent/20">
-              {match.tournament || 'Match Fixture'}
-            </span>
-            {match.format && (
-              <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-bold tracking-wider text-stext border border-lborder/60">
-                {match.format}
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            {isLive ? (
-              <LiveIndicator />
-            ) : (
-              <StatusBadge status={match.status} />
-            )}
-            <FavoriteButton targetType="match" targetId={String(match.matchId || match.id || '')} compact />
-            <ShareButton
-              type="match"
-              id={String(match.matchId || match.id || '')}
-              fallbackTitle={`${homeName} vs ${awayName}`}
-              compact
+      <div className="mt-4">
+        <MatchScoreboard view={view} matchId={matchId} />
+      </div>
+
+      <div className="mt-4">
+        <MatchTabNavigation tabs={tabs} active={tab} onChange={selectTab} />
+      </div>
+
+      <div className="mt-4 grid min-w-0 grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,7fr)_minmax(0,3fr)] lg:gap-5">
+        <div id="mc-main" className="min-w-0 space-y-4">
+          <MatchTabPanel tabKey={MATCH_TABS.overview.key} active={tab}>
+            <MatchOverview
+              view={view}
+              batters={batters}
+              bowlers={bowlers}
+              topBatter={bestBatter}
+              topBowler={bestBowler}
+              playerOfTheMatch={pom}
+              fallOfWickets={fallOfWickets}
+              onViewScorecard={
+                hasScorecard ? () => selectTab(MATCH_TABS.scorecard.key) : undefined
+              }
+              scorecardHref={hasScorecard ? null : null}
             />
-          </div>
-        </div>
+          </MatchTabPanel>
 
-        {/* Big Stadium Scoreboard Matchup */}
-        <div className="relative mt-5 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 sm:gap-8">
-          <TeamSide
-            code={homeCode}
-            name={homeName}
-            score={homeScore}
-            overs={homeOvers}
-            align="left"
-          />
+          <MatchTabPanel tabKey={MATCH_TABS.scorecard.key} active={tab}>
+            <MatchScorecardTab cards={scorecards} view={view} />
+          </MatchTabPanel>
 
-          <div className="flex shrink-0 flex-col items-center justify-center">
-            <div className="match-detail-vs sm:h-12 sm:w-12">
-              <span className="font-mono text-[10px] font-black italic tracking-wider text-stext sm:text-xs">VS</span>
-            </div>
-            {match.round && (
-              <span className="mt-1 hidden text-xs font-semibold uppercase tracking-widest text-muted-foreground sm:block">
-                {match.round}
-              </span>
-            )}
-          </div>
-
-          <TeamSide
-            code={awayCode}
-            name={awayName}
-            score={awayScore}
-            overs={awayOvers}
-            align="right"
-          />
-        </div>
-
-        {(isCompleted || isCancelled) && resultText ? (
-          <p className="match-detail-result-banner" role="status">
-            {resultText}
-          </p>
-        ) : null}
-
-        {hasInnings && scoreLine && (
-          <div className="match-detail-stat-band relative mt-5 grid grid-cols-2 text-xs sm:grid-cols-5">
-            <InningsStat label="Batting" value={battingLabel || '—'} />
-            <InningsStat label="Score" value={scoreLine} />
-            <InningsStat label="Overs" value={usefulOvers ? `${oversLabel} ov` : '—'} />
-            <InningsStat label="RR" value={usefulRr ? rrLabel : '—'} />
-            <InningsStat label="Innings" value={phase || '—'} className="col-span-2 sm:col-span-1" />
-            {match.lastEvent?.type && match.lastEvent.type !== 'none' ? (
-              <p className="col-span-2 text-[11px] font-semibold text-stext sm:col-span-5">
-                Last ball: {match.lastEvent.type} +{match.lastEvent.runs ?? 0}
-              </p>
-            ) : null}
-          </div>
-        )}
-
-        {/* Matchday Meta Footer */}
-        {(date || time || match.venue) && (
-          <div className="relative mt-5 flex flex-wrap items-center gap-2 border-t border-lborder/60 pt-4">
-            {date && (
-              <span className="match-detail-meta-pill">
-                <Calendar size={13} className="shrink-0 text-accent" aria-hidden="true" />
-                {date}
-              </span>
-            )}
-            {time && (
-              <span className="match-detail-meta-pill">
-                <Clock size={13} className="shrink-0 text-accent" aria-hidden="true" />
-                {time}
-              </span>
-            )}
-            {match.venue && (
-              <span className="match-detail-meta-pill max-w-full">
-                <MapPin size={13} className="shrink-0 text-accent" aria-hidden="true" />
-                <span className="truncate">{match.venue}</span>
-              </span>
-            )}
-          </div>
-        )}
-      </header>
-
-      <div className="py-3 sm:py-4">
-        <DummyAd size="leaderboard" placement="match-detail-after-overview" />
-      </div>
-
-      <div className="match-detail-tabs-sticky">
-        <Tabs tabs={activeTabs} active={tab} onChange={setTab} />
-      </div>
-
-      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-8">
-        <div className="min-w-0 fade-in space-y-6 pt-1 lg:pt-3">
-          {tab === 'live' &&
-            (isLive && hasInnings ? (
-              <div className="match-detail-panel match-detail-panel-pad bg-secondary">
-                <h3 className="mb-4 text-lg font-bold text-mtext">Live Score</h3>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                  <InfoStat label="Score" value={`${battingLabel} ${scoreLine || match.displayScore || '—'}`} big />
-                  <InfoStat label="Overs" value={usefulOvers ? oversLabel : '—'} />
-                  <InfoStat label="Run Rate" value={usefulRr ? rrLabel : '—'} />
-                </div>
-                {match.lastEvent?.type && match.lastEvent.type !== 'none' && (
-                  <p className="mt-4 text-xs text-stext">
-                    Last ball: over {formatCricketOvers(match.lastEvent.over) || match.lastEvent.over}, {match.lastEvent.runs} run
-                    {match.lastEvent.runs === 1 ? '' : 's'} · {match.lastEvent.type}
-                  </p>
+          <MatchTabPanel tabKey={MATCH_TABS.commentary.key} active={tab}>
+            <div className="mc-section">
+              <div className="mc-section__head">
+                <h2 className="mc-section__title inline-flex items-center gap-1.5">
+                  <Radio size={14} strokeWidth={2.4} aria-hidden="true" className="text-accent" />
+                  Ball-by-ball
+                </h2>
+              </div>
+              <div className="mc-section__body">
+                {commentaryPayload ? (
+                  /*
+                   * `showOverSummaries={false}`: the per-over card restates the running
+                   * score, the two batters at the crease and the bowler after every
+                   * over. On this page that repeats the scoreboard three times per over
+                   * and pushes the deliveries apart. The deliveries themselves — the
+                   * thing this tab is for — are untouched.
+                   */
+                  <MatchTimeline
+                    payload={commentaryPayload}
+                    upcoming={view.isUpcoming}
+                    showOverSummaries={false}
+                  />
+                ) : hasCommentary ? (
+                  <CommentarySkeleton loading={timelineQuery.isLoading} />
+                ) : (
+                  <EmptyState
+                    icon={Radio}
+                    title="No ball-by-ball for this fixture"
+                    message="The provider has not published delivery-by-delivery commentary for this match."
+                  />
                 )}
-                <LiveStrip match={match} />
-                <OversFromTimeline timeline={timeline} inning={/second_innings|2nd/i.test(phaseRaw) ? 2 : 1} />
               </div>
-            ) : isUpcoming ? (
-              <EmptyState
-                title="This match hasn't started yet"
-                message={`${homeName} vs ${awayName}${date ? ` on ${date}` : ''}${time ? ` at ${time}` : ''}.`}
-              />
-            ) : (
-              <EmptyState
-                title="No Live Data"
-                message={match.status || (isCompleted || isCancelled ? 'This match has finished or was cancelled.' : 'No live data available.')}
-              />
-            ))}
+            </div>
+          </MatchTabPanel>
 
-          {tab === 'predictions' && showPredictions && (
-            <MatchPredictionTab match={match} />
-          )}
-
-          {tab === 'odds' && !isCancelled && (
-            <MatchOddsTab
-              match={match}
-              initialOdds={initialOdds}
-              initialOddsForbidden={initialOddsForbidden}
+          <MatchTabPanel tabKey={MATCH_TABS.squads.key} active={tab}>
+            <MatchSquadsTab
+              home={squads.home}
+              away={squads.away}
+              homeName={view.home.name}
+              awayName={view.away.name}
+              isUpcoming={view.isUpcoming}
             />
-          )}
+          </MatchTabPanel>
 
-          {(tab === 'commentary' || tab === 'timeline') && (
-            timelineLoading || !timelineReady ? (
-              <TabPanelLoader />
-            ) : (
-              <div className="match-detail-panel match-detail-panel-pad">
-                <h3 className="mb-4 text-sm font-bold uppercase tracking-widest text-stext">Ball-by-ball</h3>
-                <MatchTimeline payload={timeline} upcoming={isUpcoming} />
+          <MatchTabPanel tabKey={MATCH_TABS.stats.key} active={tab}>
+            {h2h.isLoading ? (
+              <div className="mc-section p-4" aria-busy="true">
+                <Skeleton count={6} height={20} />
               </div>
-            )
-          )}
-
-          {tab === 'h2h' && (
-            h2hLoading || !h2hReady ? (
-              <TabPanelLoader />
+            ) : canHeadToHead ? (
+              <HeadToHeadWidget data={h2h.data ?? null} />
             ) : (
-              <HeadToHeadWidget data={headToHead} />
-            )
-          )}
-
-          {tab === 'scorecard' && (
-            timelineLoading || !timelineReady ? <TabPanelLoader /> : <ScorecardPanel match={match} timeline={timeline} />
-          )}
-
-          {tab === 'squads' && (
-            timelineLoading || !timelineReady ? (
-              <TabPanelLoader />
-            ) : (
-              <SquadsPanel match={match} homeName={homeName} awayName={awayName} timeline={timeline} />
-            )
-          )}
-
-          {tab === 'news' && <MatchNewsPanel articles={relatedNews} loading={newsLoading} />}
-
-          {tab === 'info' && (
-            <div className="match-detail-panel match-detail-panel-pad">
-              <h3 className="mb-4 text-sm font-bold uppercase tracking-widest text-stext">Match Details</h3>
-              <InfoRow label="Tournament" value={match.tournament || '—'} />
-              <InfoRow label="Status" value={`${match.status || '—'}`} cap />
-              <InfoRow label="Home" value={homeName} />
-              <InfoRow label="Away" value={awayName} />
-              {date && <InfoRow label="Date" value={date} />}
-              {time && <InfoRow label="Time" value={time} />}
-              <InfoRow label="Venue" value={match.venue || 'TBA'} />
-              {match.matchStatus && <InfoRow label="Official status" value={String(match.matchStatus)} />}
-            </div>
-          )}
-
-          {tab === 'result' && (isCompleted || isCancelled) && (
-            <div className="match-detail-panel match-detail-panel-pad">
-              <h3 className="mb-4 text-sm font-bold uppercase tracking-widest text-stext">Match Result</h3>
-              {resultText ? (
-                <p className="mb-4 text-base font-semibold text-mtext">{resultText}</p>
-              ) : null}
-              {homeScore || awayScore || finalScoreLine ? (
-                <div className="space-y-3 rounded-xl bg-elevated p-4 ring-1 ring-lborder">
-                  <p className="text-xs font-bold uppercase tracking-widest text-stext">Final score</p>
-                  <div className="space-y-2">
-                    <p className="flex items-baseline justify-between gap-3">
-                      <span className="truncate text-sm font-semibold text-mtext">{homeName}</span>
-                      <span className="font-mono text-xl font-black tabular-nums text-mtext">{homeScore || '—'}</span>
-                    </p>
-                    <p className="flex items-baseline justify-between gap-3">
-                      <span className="truncate text-sm font-semibold text-mtext">{awayName}</span>
-                      <span className="font-mono text-xl font-black tabular-nums text-mtext">{awayScore || '—'}</span>
-                    </p>
-                  </div>
-                  {timelineSummary.scores.length > 0 ? (
-                    <p className="font-mono text-xs text-stext">{timelineSummary.scores.join(' · ')}</p>
-                  ) : null}
-                  {!homeScore && !awayScore && finalScoreLine ? (
-                    <p className="font-mono text-lg font-black tabular-nums text-mtext">{finalScoreLine}</p>
-                  ) : null}
+              <div className="mc-section">
+                <div className="mc-section__head">
+                  <h2 className="mc-section__title">Head to Head</h2>
                 </div>
-              ) : (
-                <p className="text-sm text-stext">No final score stored for this match yet.</p>
-              )}
+                <div className="mc-section__body">
+                  <EmptyState
+                    icon={Swords}
+                    title="Head to head unavailable"
+                    message="This fixture's two sides are not identified by the provider, so their previous meetings cannot be looked up."
+                  />
+                </div>
+              </div>
+            )}
+          </MatchTabPanel>
+
+          <MatchTabPanel tabKey={MATCH_TABS.odds.key} active={tab}>
+            <MatchOddsTab
+              match={liveMatch}
+              initialOdds={oddsQuery.data?.status === 'ok' ? oddsQuery.data.data : null}
+              initialOddsForbidden={oddsQuery.data?.status === 'forbidden'}
+            />
+          </MatchTabPanel>
+
+          <MatchTabPanel tabKey={MATCH_TABS.info.key} active={tab}>
+            <MatchInfo view={view} />
+          </MatchTabPanel>
+
+          {tab === MATCH_TABS.overview.key ? (
+            <div className="pt-1">
+              <AdSlot placement="match-detail-after-overview" />
             </div>
-          )}
+          ) : null}
         </div>
 
-        <aside className="min-w-0 space-y-5 lg:mt-3 lg:space-y-6">
-          <div className="flex justify-center lg:justify-start">
-            <DummyAd size="medium-rectangle" placement="match-detail-sidebar" />
+        <aside className="min-w-0 space-y-4 lg:sticky lg:top-4 lg:self-start">
+          <OtherMatches
+            matches={seriesQuery.data ?? []}
+            currentMatchId={matchId}
+            currentTournament={view.tournament}
+            currentTournamentId={view.tournamentId}
+            loading={seriesQuery.isLoading}
+            viewAllHref="/matches"
+          />
+          <RelatedMatchNews
+            articles={newsQuery.data ?? []}
+            loading={newsQuery.isLoading}
+            viewAllHref={entityNewsHref('match', matchId)}
+            limit={4}
+          />
+          <div className="flex justify-center">
+            <AdSlot placement="match-detail-sidebar" />
           </div>
-          {relatedNews.length > 0 && (
-            <div className="match-detail-aside-card">
-              <h3 className="mb-3 text-xs font-bold uppercase tracking-widest text-stext">Related news</h3>
-              <ul className="space-y-2">
-                {relatedNews.map((article) => (
-                  <li key={article.id}>
-                    <Link href={newsHref(article)} className="block text-sm font-semibold text-mtext hover:text-accent">
-                      {article.title}
-                    </Link>
-                    <p className="text-xs text-stext">{article.date}</p>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
         </aside>
       </div>
 
       <div className="mt-8">
-        <CommentsSection targetType="match" targetId={matchId || String(match.matchId || match.id || '')} />
+        <CommentsSection targetType="match" targetId={matchId} />
       </div>
     </div>
   );
 }
 
-function TabPanelLoader() {
+function CommentarySkeleton({ loading = true }: { loading?: boolean }) {
   return (
-    <div className="match-detail-panel match-detail-panel-pad" aria-busy="true">
-      <Skeleton height={18} width={160} />
-      <div className="mt-5 space-y-3">
-        <Skeleton height={40} />
-        <Skeleton height={40} />
-        <Skeleton height={40} />
-      </div>
+    <div className="space-y-3" aria-busy={loading}>
+      <p className="text-xs text-stext">
+        {loading ? 'Loading the ball-by-ball…' : 'Commentary is unavailable for this fixture.'}
+      </p>
+      {loading ? [0, 1, 2, 3, 4, 5].map((i) => <Skeleton key={i} height={38} />) : null}
     </div>
   );
 }
 
-function InningsStat({
-  label,
-  value,
-  className = '',
-}: {
-  label: string;
-  value: string;
-  className?: string;
-}) {
-  return (
-    <div className={`min-w-0 ${className}`.trim()}>
-      <p className="text-[10px] font-bold uppercase tracking-wider text-stext">{label}</p>
-      <p className="mt-0.5 truncate font-mono text-sm font-bold tabular-nums text-mtext">{value}</p>
-    </div>
-  );
-}
-
-function TeamSide({ code, name, score, overs, align }: { code: string; name: string; score: string; overs: string | number; align: string }) {
-  const right = align === 'right';
-  return (
-    <div className={`flex min-w-0 items-center gap-2 sm:gap-4 ${right ? 'flex-row-reverse text-right' : 'text-left'}`}>
-      <TeamLogo code={code} name={name} size="md" className="h-10 w-10 shrink-0 sm:h-16 sm:w-16" link={false} />
-      <div className="min-w-0">
-        <p className="truncate text-xs font-black tracking-tight text-mtext sm:text-lg">{name}</p>
-        {score ? (
-          <div className="mt-0.5">
-            <p className="font-mono text-xl font-black tabular-nums leading-none tracking-tighter text-accent sm:text-4xl">
-              {score}
-            </p>
-            {overs ? (
-              <p className="mt-1 font-mono text-[10px] font-bold tabular-nums text-stext sm:text-sm">{overs} ov</p>
-            ) : null}
-          </div>
-        ) : (
-          <p className="mt-0.5 text-sm text-stext">—</p>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function InfoStat({ label, value, big = false }: { label: string; value: string; big?: boolean }) {
-  return (
-    <div className="match-detail-panel match-detail-panel-pad !p-4 sm:!p-5">
-      <p className="text-xs font-bold uppercase tracking-widest text-stext">{label}</p>
-      <p className={`mt-1 font-mono font-black tabular-nums tracking-tighter text-accent ${big ? 'text-4xl' : 'text-3xl'}`}>{value}</p>
-    </div>
-  );
-}
-
-function InfoRow({ label, value, cap = false }: { label: string; value: string; cap?: boolean }) {
-  return (
-    <div className="flex items-start justify-between gap-4 border-b border-lborder/60 px-1 py-2.5 last:border-0">
-      <span className="text-xs uppercase tracking-wider text-stext">{label}</span>
-      <span className={`text-right text-sm font-semibold ${cap ? 'capitalize text-mtext' : 'text-mtext'}`}>
-        {value}
-      </span>
-    </div>
-  );
+function decodeMatchId(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
 }

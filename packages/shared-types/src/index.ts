@@ -16,10 +16,15 @@ export interface LastEvent {
 }
 
 export interface TeamSideScore {
+  /** Provider competitor id, e.g. "sr:competitor:951737". Used for /teams/:id links. */
+  id?: string;
   code: string;
   name: string;
   score: string;
+  /** Display-only overs, as the provider renders it (e.g. "10.1"). */
   overs: string;
+  /** Numeric overs for arithmetic (e.g. 10.1). Null when unknown. */
+  oversBalls?: number | null;
 }
 
 export interface TeamScores {
@@ -41,6 +46,8 @@ export interface CanonicalMatch {
   teamNames: string[];
   teamScores?: TeamScores | null;
   tournament: string | null;
+  /** Provider tournament id, e.g. "sr:tournament:1234". Used for /tournaments/:id links. */
+  tournamentId?: string | null;
   venue: string | null;
   scheduled: string | null;
   currentInnings: CurrentInnings | null;

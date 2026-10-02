@@ -31,6 +31,21 @@ export function formatMarginPercent(margin: number | null): string {
   return `~${(margin * 100).toFixed(1)}%`;
 }
 
+/**
+ * What share of the money bet comes back, as a whole percentage.
+ *
+ * The margin was originally printed as "Added by bookmakers 6.0%", which asks the
+ * reader to do arithmetic in their head. Payout is the same number the other way up and
+ * is the phrase the comparison sites use, so 6% margin reads as "Payout 94%".
+ */
+export function formatPayoutPercent(margin: number | null): string {
+  if (margin === null || !Number.isFinite(margin)) return '';
+  // A margin outside 0–1 is a bad upstream number, not a real payout. Clamping keeps a
+  // broken value from rendering as "Payout -320%" in the middle of the table.
+  const payout = Math.min(1, Math.max(0, 1 - margin));
+  return `${Math.round(payout * 100)}%`;
+}
+
 export function formatOddsUtc(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '—';

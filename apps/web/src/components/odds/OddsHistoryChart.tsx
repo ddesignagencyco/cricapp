@@ -9,13 +9,15 @@ const SERIES_COLORS = ['var(--color-brand)', 'var(--color-success)', 'var(--colo
 interface Props {
   points: OddsHistoryPoint[];
   selectionLabel: string;
+  /** Slug → readable bookmaker name, so the legend never shows `demo-book-a`. */
+  sourceNames?: Record<string, string>;
 }
 
-export default function OddsHistoryChart({ points, selectionLabel }: Props) {
-  const { series, minT, maxT, minY, maxY } = useMemo(() => buildSeries(points), [points]);
+export default function OddsHistoryChart({ points, selectionLabel, sourceNames }: Props) {
+  const { series, minT, maxT, minY, maxY } = useMemo(() => buildSeries(points, sourceNames), [points, sourceNames]);
 
   if (series.length === 0 || series.every((s) => s.points.length === 0)) {
-    return <p className="py-8 text-center text-sm text-stext">No history yet for this selection.</p>;
+    return <p className="py-8 text-center text-sm text-stext">No price history yet.</p>;
   }
 
   const width = 860;
@@ -33,9 +35,9 @@ export default function OddsHistoryChart({ points, selectionLabel }: Props) {
           <LineChart size={16} className="text-stext" aria-hidden />
           Price history — {selectionLabel}
         </h3>
-        <p className="text-[11px] text-stext">Decimal odds · Time (UTC)</p>
+        <p className="text-[11px] text-stext">How this price has moved</p>
       </div>
-      <svg viewBox={`0 0 ${width} ${height}`} className="h-52 w-full" role="img" aria-label="Odds history chart">
+      <svg viewBox={`0 0 ${width} ${height}`} className="h-52 w-full" role="img" aria-label="Price history chart">
         {[0, 0.5, 1].map((frac) => {
           const yVal = minY + spanY * (1 - frac);
           const y = toY(yVal);
@@ -64,7 +66,7 @@ export default function OddsHistoryChart({ points, selectionLabel }: Props) {
           );
         })}
         <text x={width / 2} y={height - 8} textAnchor="middle" className="fill-stext text-[10px]">
-          Time (UTC)
+          Time
         </text>
         <text
           x={12}
@@ -73,7 +75,7 @@ export default function OddsHistoryChart({ points, selectionLabel }: Props) {
           transform={`rotate(-90 12 ${height / 2})`}
           className="fill-stext text-[10px]"
         >
-          Decimal odds
+          Price
         </text>
       </svg>
       <ul className="mt-2 flex flex-wrap gap-3 text-xs font-medium text-stext">
@@ -88,12 +90,12 @@ export default function OddsHistoryChart({ points, selectionLabel }: Props) {
           </li>
         ))}
       </ul>
-      <p className="mt-2 text-[11px] text-stext">Movement is informational only, not betting advice.</p>
+      <p className="mt-2 text-[11px] text-stext">Past prices do not predict the next price.</p>
     </div>
   );
 }
 
-function buildSeries(points: OddsHistoryPoint[]) {
+function buildSeries(points: OddsHistoryPoint[], sourceNames?: Record<string, string>) {
   const bySource = new Map<string, { t: number; y: number }[]>();
   for (const p of points) {
     const t = new Date(p.capturedAt).getTime();
@@ -104,7 +106,7 @@ function buildSeries(points: OddsHistoryPoint[]) {
   }
   const series = [...bySource.entries()].map(([slug, pts]) => ({
     slug,
-    label: slug,
+    label: sourceNames?.[slug] || readableSlug(slug),
     points: pts.sort((a, b) => a.t - b.t),
   }));
   const all = series.flatMap((s) => s.points);
@@ -113,4 +115,10 @@ function buildSeries(points: OddsHistoryPoint[]) {
   const minY = Math.min(...all.map((p) => p.y));
   const maxY = Math.max(...all.map((p) => p.y));
   return { series, minT, maxT, minY, maxY };
+}
+
+/** `demo-book-a` → `Demo book a`, used only when the API gave us no display name. */
+function readableSlug(slug: string): string {
+  const words = String(slug).replace(/[-_]+/g, ' ').trim();
+  return words ? words.charAt(0).toUpperCase() + words.slice(1) : 'Bookmaker';
 }

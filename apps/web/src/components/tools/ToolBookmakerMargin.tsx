@@ -55,9 +55,13 @@ export default function ToolBookmakerMargin({ tool }: { tool: ToolDef }) {
       <ToolPanel
         aside={
           <>
-            <ResultBox label="Bookmaker margin" value={margin !== null && margin !== undefined ? formatPct(margin) : '—'} />
+            <ResultBox
+              label="Extra added on"
+              value={margin !== null && margin !== undefined ? formatPct(margin) : '—'}
+              hint="The extra amount the bookmakers build into these prices. Lower is better for you."
+            />
             {apiError ? (
-              <p className="text-xs text-stext">Could not reach the server — showing a local estimate.</p>
+              <p className="text-xs text-stext">We could not check this online — showing a quick estimate.</p>
             ) : null}
           </>
         }

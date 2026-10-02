@@ -27,6 +27,7 @@ function sideTotal(periodScores, side) {
   let wickets = null;
   let recorded = false;
   let overs = '';
+  let oversBalls = null;
 
   for (const inning of periodScores) {
     const value = Number(inning[`${side}_score`]);
@@ -39,13 +40,17 @@ function sideTotal(periodScores, side) {
       if (hasRuns && value > 0) runs += value;
       recorded = true;
       if (hasWickets) wickets = w;
-      if (inning.display_overs != null) overs = String(inning.display_overs);
+      if (inning.display_overs != null) {
+        overs = String(inning.display_overs);
+        const numeric = Number(inning.display_overs);
+        if (!Number.isNaN(numeric)) oversBalls = numeric;
+      }
     }
   }
 
-  if (!recorded) return { score: '', overs: '' };
+  if (!recorded) return { score: '', overs: '', oversBalls: null };
   const score = wickets !== null ? `${runs}/${wickets}` : String(runs);
-  return { score, overs };
+  return { score, overs, oversBalls };
 }
 
 function buildTeamScores(statusBlock, competitors) {
@@ -57,16 +62,20 @@ function buildTeamScores(statusBlock, competitors) {
 
   return {
     home: {
+      id: homeComp?.id ?? '',
       code: homeComp?.abbreviation ?? '',
       name: homeComp?.name ?? '',
       score: homeTotals.score,
       overs: homeTotals.overs,
+      oversBalls: homeTotals.oversBalls,
     },
     away: {
+      id: awayComp?.id ?? '',
       code: awayComp?.abbreviation ?? '',
       name: awayComp?.name ?? '',
       score: awayTotals.score,
       overs: awayTotals.overs,
+      oversBalls: awayTotals.oversBalls,
     },
   };
 }
@@ -146,7 +155,9 @@ function normalizeSportradar(raw) {
       runs,
       wickets,
       overs: typeof overs === 'number' ? overs : parseFloat(overs) || 0,
-      runRate: batting?.run_rate ?? statusBlock.run_rate ?? computeRunRate(runs, overs),
+      // Derived from the same runs/overs written above. Upstream run_rate is a
+      // separate field that lags, so it could contradict these two.
+      runRate: computeRunRate(runs, overs),
     };
   } else if (statusBlock.period_scores?.length) {
     const period = statusBlock.period_scores[statusBlock.period_scores.length - 1];
@@ -175,7 +186,8 @@ function normalizeSportradar(raw) {
       runs: runs ?? 0,
       wickets: wickets ?? 0,
       overs: typeof overs === 'number' ? overs : parseFloat(overs) || 0,
-      runRate: statusBlock.run_rate ?? computeRunRate(runs ?? 0, overs),
+      // Same derivation as the innings branch above: one source of truth.
+      runRate: computeRunRate(runs ?? 0, overs),
     };
   }
 
@@ -236,6 +248,7 @@ function normalizeSportradar(raw) {
     teamNames,
     teamScores,
     tournament: event.tournament?.name ?? null,
+    tournamentId: event.tournament?.id ?? null,
     venue: event.venue?.name ?? raw.venue?.name ?? null,
     scheduled: event.scheduled ?? null,
     currentInnings,
