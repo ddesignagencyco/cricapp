@@ -15,8 +15,8 @@ import {
 
 export async function saveMatch(match) {
   await query(
-    `INSERT INTO matches (match_id, status, teams, team_names, team_scores, tournament, venue, scheduled, current_innings, last_event, display_score, match_status, result_text, winner_id, toss_won_by, toss_decision, current_inning, period_scores, display_overs, created_at, updated_at)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,NOW(),NOW())
+    `INSERT INTO matches (match_id, status, teams, team_names, team_scores, tournament, tournament_id, venue, scheduled, current_innings, last_event, display_score, match_status, result_text, winner_id, toss_won_by, toss_decision, current_inning, period_scores, display_overs, created_at, updated_at)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,NOW(),NOW())
      ON CONFLICT (match_id) DO UPDATE SET
        status = CASE
          WHEN matches.status IN ('live', 'completed', 'cancelled')
@@ -27,6 +27,7 @@ export async function saveMatch(match) {
        team_names = EXCLUDED.team_names,
        team_scores = COALESCE(EXCLUDED.team_scores, matches.team_scores),
        tournament = COALESCE(EXCLUDED.tournament, matches.tournament),
+      tournament_id = COALESCE(EXCLUDED.tournament_id, matches.tournament_id),
        venue = COALESCE(EXCLUDED.venue, matches.venue),
        scheduled = COALESCE(EXCLUDED.scheduled, matches.scheduled),
        current_innings = COALESCE(EXCLUDED.current_innings, matches.current_innings),
@@ -48,6 +49,7 @@ export async function saveMatch(match) {
       JSON.stringify(match.teamNames),
       JSON.stringify(match.teamScores ?? null),
       match.tournament,
+      match.tournamentId ?? null,
       match.venue,
       match.scheduled,
       JSON.stringify(match.currentInnings),

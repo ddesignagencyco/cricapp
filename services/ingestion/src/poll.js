@@ -65,11 +65,34 @@ async function clearLiveTimelineState(matchId) {
 
 /** Periodic full timeline fetch during live play (when deltas are off or as backup). */
 async function maybeSnapshotLiveTimeline(matchId) {
-  if (TIMELINE_SNAPSHOT_EVERY <= 0) return;
+  if (TIMELINE_SNAPSHOT_EVERY <= 0) {
+    await logSnapshotNotRefreshed(matchId, 'disabled');
+    return;
+  }
   const n = Number(await redis.incr(SNAPSHOT_KEY(matchId)));
   if (n % TIMELINE_SNAPSHOT_EVERY !== 0) return;
-  const raw = await fetchMatchTimeline(matchId);
-  await saveMatchTimeline(matchId, raw);
+  try {
+    const raw = await fetchMatchTimeline(matchId);
+    await saveMatchTimeline(matchId, raw);
+  } catch (err) {
+    await logSnapshotNotRefreshed(matchId, 'fetch_failed', err);
+  }
+}
+
+/**
+ * A skipped or failed live timeline snapshot must be visible. Without this the
+ * only symptom is a silently stale commentary payload.
+ */
+async function logSnapshotNotRefreshed(matchId, reason, err) {
+  console.warn('[ingest] timeline stale, not refreshed', {
+    matchId,
+    reason,
+    snapshotEvery: TIMELINE_SNAPSHOT_EVERY,
+    error: err?.message,
+  });
+  await redis
+    .incr(`metrics:counter:timeline_stale_not_refreshed_total{reason="${reason}",source="ingestion"}`)
+    .catch(() => {});
 }
 
 async function processLiveMatch(id) {

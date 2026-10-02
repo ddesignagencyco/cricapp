@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { RedisService } from '../redis/redis.service.js';
@@ -23,6 +28,7 @@ import {
 import { sportEventStatusFromPayload } from '../common/sport-event-status.util.js';
 import { isLiveTimelineBehindMatch } from './timeline-stale.util.js';
 import { dedupeTimelineEvents } from './timeline-events.util.js';
+import { incrCounter, type StaleNotRefreshedReason } from '../common/metrics.util.js';
 
 export type MatchSummary = Pick<
   CanonicalMatch,
@@ -32,6 +38,7 @@ export type MatchSummary = Pick<
   | 'teamNames'
   | 'teamScores'
   | 'tournament'
+  | 'tournamentId'
   | 'venue'
   | 'scheduled'
   | 'currentInnings'
@@ -49,6 +56,8 @@ export type MatchSummary = Pick<
 
 @Injectable()
 export class MatchesService {
+  private readonly logger = new Logger(MatchesService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
@@ -68,16 +77,20 @@ export class MatchesService {
     }
     return {
       home: {
+        id: scores?.home?.id || '',
         code: scores?.home?.code || abbrs[0] || '',
         name: scores?.home?.name || names[0] || '',
         score: scores?.home?.score || '',
         overs: scores?.home?.overs || '',
+        oversBalls: scores?.home?.oversBalls ?? null,
       },
       away: {
+        id: scores?.away?.id || '',
         code: scores?.away?.code || abbrs[1] || '',
         name: scores?.away?.name || names[1] || '',
         score: scores?.away?.score || '',
         overs: scores?.away?.overs || '',
+        oversBalls: scores?.away?.oversBalls ?? null,
       },
     };
   }
@@ -90,6 +103,7 @@ export class MatchesService {
       teamNames: this.asStringArray(row.teamNames),
       teamScores: overrides?.teamScores ?? (row.teamScores as TeamScores | null) ?? null,
       tournament: row.tournament,
+      tournamentId: overrides?.tournamentId ?? row.tournamentId ?? null,
       venue: row.venue,
       scheduled: row.scheduled,
       currentInnings: row.currentInnings as unknown as CurrentInnings | null,
@@ -136,6 +150,7 @@ export class MatchesService {
             currentInning: statusView.currentInning ?? undefined,
             periodScores: statusView.periodScores ?? undefined,
             displayOvers: statusView.displayOvers ?? undefined,
+            displayScore: statusView.displayScore ?? undefined,
           }
         : {}),
     };
@@ -162,7 +177,10 @@ export class MatchesService {
     const [rows, total] = await Promise.all([
       this.prisma.match.findMany({
         where,
-        orderBy: [{ scheduled: 'asc' }],
+        orderBy: [
+          { scheduled: 'asc' },
+          { matchId: 'asc' },
+        ],
         take: limit,
         skip,
       }),
@@ -307,6 +325,27 @@ export class MatchesService {
     return { matchId, payload };
   }
 
+  private logStaleNotRefreshed(
+    matchId: string,
+    reason: StaleNotRefreshedReason,
+    ageMs: number,
+    matchRow: Match,
+    storedPayload: Record<string, unknown>,
+  ): void {
+    const stored = sportEventStatusFromPayload(storedPayload);
+    this.logger.warn('timeline stale, not refreshed', {
+      matchId,
+      reason,
+      ageMs,
+      status: matchRow.status,
+      matchOvers: matchRow.displayOvers,
+      matchScore: matchRow.displayScore,
+      storedOvers: stored?.displayOvers ?? null,
+      storedScore: stored?.displayScore ?? null,
+    });
+    incrCounter(this.redis.cached, 'timeline_stale_not_refreshed_total', { reason });
+  }
+
   async getTimeline(matchId: string): Promise<{ matchId: string; payload: Record<string, unknown> }> {
     const [row, matchRow] = await Promise.all([
       this.prisma.matchTimeline.findUnique({ where: { matchId } }),
@@ -325,16 +364,23 @@ export class MatchesService {
         storedPayload,
       );
       const ageMs = row ? Date.now() - row.updatedAt.getTime() : Number.POSITIVE_INFINITY;
-      if (
-        stale &&
-        ageMs >= MatchesService.LIVE_TIMELINE_REFRESH_MIN_AGE_MS &&
-        this.sportradar.isConfigured
-      ) {
-        try {
-          const fresh = await this.sportradar.fetchMatchTimeline(matchId);
-          return this.upsertTimelinePayload(matchId, fresh);
-        } catch (err) {
-          if (err instanceof ServiceUnavailableException) throw err;
+      if (stale) {
+        let reason: 'not_configured' | 'too_recent' | null = null;
+        if (!this.sportradar.isConfigured) {
+          reason = 'not_configured';
+        } else if (ageMs < MatchesService.LIVE_TIMELINE_REFRESH_MIN_AGE_MS) {
+          reason = 'too_recent';
+        } else {
+          try {
+            const fresh = await this.sportradar.fetchMatchTimeline(matchId);
+            return this.upsertTimelinePayload(matchId, fresh);
+          } catch (err) {
+            if (err instanceof ServiceUnavailableException) throw err;
+            this.logStaleNotRefreshed(matchId, 'fetch_failed', ageMs, matchRow, storedPayload);
+          }
+        }
+        if (reason) {
+          this.logStaleNotRefreshed(matchId, reason, ageMs, matchRow, storedPayload);
         }
       }
       return { matchId: row!.matchId, payload: storedPayload };
