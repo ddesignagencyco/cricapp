@@ -24,6 +24,7 @@ import { isHiddenSelection, marketLabel, partitionMarkets, selectionLabel } from
 import { fetchMatchOdds, fetchOddsHistory } from '../../services/odds';
 import type {
   MatchOddsResponse,
+  ModelPredictionStage,
   OddsHistoryPoint,
   OddsPriceFormat,
   OddsSelectionPrice,
@@ -510,6 +511,21 @@ function PriceCell({
 }
 
 /**
+ * What the number beside the prices actually is.
+ *
+ * On a live match the API prefers the live run over the pre-match one, which is correct —
+ * a forecast made before the first ball is not a prediction of the situation on screen.
+ * It also means the number silently changes meaning depending on the match state, so it
+ * has to say which one it is. Returns null when the API states no stage, and the heading
+ * then stays plain rather than guessing.
+ */
+function stageLabel(stage: ModelPredictionStage | null | undefined): string | null {
+  if (stage === 'live') return 'Live';
+  if (stage === 'pre_match') return 'Pre-match';
+  return null;
+}
+
+/**
  * One row per side, with our number and the market's side by side.
  *
  * This used to be four boxes — "We think — India", "Prices suggest — India", and the
@@ -525,11 +541,22 @@ function ModelVsMarketPanel({
   homeLabel: string;
   awayLabel: string;
 }) {
+  const stage = data.stage ?? null;
+  const label = stageLabel(stage);
   return (
     <section className="rounded-2xl bg-card p-5 ring-1 ring-lborder">
-      <h3 className="text-sm font-bold uppercase tracking-wider text-stext">Our prediction</h3>
+      <div className="flex flex-wrap items-center gap-2">
+        <h3 className="text-sm font-bold uppercase tracking-wider text-stext">Our prediction</h3>
+        {label ? (
+          <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-mtext ring-1 ring-lborder">
+            {label}
+          </span>
+        ) : null}
+      </div>
       <p className="mt-1 text-xs leading-relaxed text-stext">
-        Our own estimate, next to what the prices say. It is a rough guess for interest only.
+        {stage === 'live'
+          ? 'Our estimate for this match as it stands right now, next to what the prices say. A rough guess for interest only.'
+          : 'Our own estimate, next to what the prices say. It is a rough guess for interest only.'}
       </p>
       <div className="mt-4 space-y-3">
         <ModelRow

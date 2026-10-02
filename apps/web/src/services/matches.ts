@@ -11,6 +11,14 @@ export interface MatchesListParams {
   q?: string;
   status?: string;
   tournament?: string;
+  /**
+   * Exact provider tournament id, e.g. `sr:tournament:10020626`.
+   *
+   * Preferred over `tournament`, which the API matches as a substring: asking for
+   * "Global T20 Canada" also returns "Global T20 Canada 2024", so a competition's rail
+   * could list another competition's fixtures.
+   */
+  tournamentId?: string;
   page?: number;
   limit?: number;
 }

@@ -148,21 +148,29 @@ export function useMatchNewsQuery(
  * One cached list request serves the whole "Other Matches" rail. No card in it ever
  * issues its own detail request, which is what used to turn a sidebar of six matches
  * into six extra round trips.
+ *
+ * Takes the competition's id when there is one and falls back to its name. The id is the
+ * exact filter; the name is a substring match on the API's side, so "Global T20 Canada"
+ * also matches "Global T20 Canada 2024" and the rail fills with another competition's
+ * fixtures. A match whose `tournament_id` has not been written yet — which is every row
+ * stored before that column existed — still works, just on the name.
  */
 export function useSeriesMatchesQuery(
-  tournament: string | null,
+  tournament: { id?: string | null; name?: string | null } | string | null,
   options: { enabled?: boolean; limit?: number } = {},
 ) {
   const limit = options.limit ?? 24;
-  const enabled = (options.enabled ?? true) && Boolean(tournament);
+  const id = typeof tournament === 'string' ? null : (tournament?.id ?? null);
+  const name = typeof tournament === 'string' ? tournament : (tournament?.name ?? null);
+  const filter = id ? { tournamentId: id } : name ? { tournament: name } : null;
+  const enabled = (options.enabled ?? true) && filter !== null;
   return useQuery<Match[], Error>({
-    queryKey: matchKeys.list({ tournament: tournament ?? undefined, limit }),
+    queryKey: matchKeys.list({ ...filter, limit }),
     queryFn: ({ signal }) =>
       runAbortable(signal, (requestSignal) =>
-        fetchMatches(
-          { tournament: tournament ?? undefined, limit } as MatchesListParams,
-          requestSignal,
-        ).catch(() => [] as Match[]),
+        fetchMatches({ ...filter, limit } as MatchesListParams, requestSignal).catch(
+          () => [] as Match[],
+        ),
       ),
     enabled,
     retry: false,

@@ -371,13 +371,14 @@ export function extractSquads(
     const bat = battingIsHome ? homeNames : awayNames;
     const bowl = battingIsHome ? awayNames : homeNames;
     // A name the lineup did not have, found on the scorecard, still gets an entry so the
-    // side is complete. It carries no id, because the scorecard row did not give us one,
-    // so it stays plain text rather than linking to a guess.
+    // side is complete. It carries the scorecard row's id when there was one — that row
+    // is a real provider player, so dropping the id here threw away the only link this
+    // player had. With no id it stays plain text rather than linking to a guess.
     card.batting.forEach((row) => {
-      if (row.name && !bat.has(row.name)) bat.set(row.name, { name: row.name, id: '' });
+      if (row.name && !bat.has(row.name)) bat.set(row.name, { name: row.name, id: row.id || '' });
     });
     card.bowling.forEach((row) => {
-      if (row.name && !bowl.has(row.name)) bowl.set(row.name, { name: row.name, id: '' });
+      if (row.name && !bowl.has(row.name)) bowl.set(row.name, { name: row.name, id: row.id || '' });
     });
   }
   return { home: [...homeNames.values()], away: [...awayNames.values()] };

@@ -18,6 +18,7 @@ import {
   readSquads,
 } from '../lib/matchScorecardData';
 import { extractInningsScorecards, extractSquads } from '../lib/matchCentreData';
+import { teamHref, tournamentHref } from '../components/EntityLinks';
 import { aggregateBatters, aggregateBowlers, topBatter, topBowler, playerOfTheMatch } from '../lib/matchPerformers';
 
 type Fixture = {
@@ -787,5 +788,89 @@ describe('the shared squad extractor still falls back to the scorecard', () => {
     const squads = extractSquads(testMatch, testTimeline);
     expect(squads.home.length).toBeGreaterThan(0);
     expect(squads.away.length).toBeGreaterThan(0);
+  });
+});
+
+/* ─── Entity ids stated on the match row ─────────────────────── */
+
+describe('a match row that states its own ids, with no timeline', () => {
+  // The API states `teams.*.id` and `tournamentId` on the match itself. Read from the
+  // timeline alone these were null here, and `EntityLinks` refuses to build a link from a
+  // name — so an upcoming fixture, which has no stored timeline at all, rendered every
+  // team and tournament name as plain text while the ids sat unused in the response.
+  const row = {
+    matchId: 'sr:match:72868722',
+    status: 'upcoming',
+    matchStatus: 'not_started',
+    tournament: 'Global T20 Canada',
+    tournamentId: 'sr:tournament:10020626',
+    teams: {
+      home: {
+        id: 'sr:competitor:10020614',
+        code: 'MIS',
+        name: 'Mississauga Bangla Tigers',
+        score: '',
+        overs: '',
+      },
+      away: {
+        id: 'sr:competitor:10020628',
+        code: 'SUR',
+        name: 'Surrey Jaguars',
+        score: '',
+        overs: '',
+      },
+    },
+    teamNames: ['Mississauga Bangla Tigers', 'Surrey Jaguars'],
+    teamScores: null,
+    currentInnings: null,
+    displayScore: null,
+    displayOvers: null,
+    periodScores: null,
+    result: null,
+    scheduled: '2026-07-31T15:00:00+00:00',
+  } as unknown as Record<string, unknown>;
+
+  const model = buildMatchViewModel({ match: row, timeline: null });
+
+  it('takes the tournament id from the row, so the breadcrumb can link it', () => {
+    expect(model.tournamentId).toBe('sr:tournament:10020626');
+  });
+
+  it('takes both team ids from the row, so the names can link', () => {
+    expect(model.home.id).toBe('sr:competitor:10020614');
+    expect(model.away.id).toBe('sr:competitor:10020628');
+  });
+
+  it('produces hrefs that pass the entity-link guard rather than refusing them', () => {
+    expect(teamHref(model.home.id)).toBe('/teams/sr:competitor:10020614');
+    expect(teamHref(model.away.id)).toBe('/teams/sr:competitor:10020628');
+    expect(tournamentHref(model.tournamentId)).toBe('/tournaments/sr:tournament:10020626');
+  });
+
+  it('still prefers the timeline competitor id when both state one', () => {
+    const withTimeline = buildMatchViewModel({
+      match: row,
+      timeline: {
+        sport_event: {
+          competitors: [
+            { qualifier: 'home', id: 'sr:competitor:999', name: 'Home', abbreviation: 'HOM' },
+            { qualifier: 'away', id: 'sr:competitor:888', name: 'Away', abbreviation: 'AWY' },
+          ],
+        },
+      } as never,
+    });
+    expect(withTimeline.home.id).toBe('sr:competitor:999');
+    expect(withTimeline.away.id).toBe('sr:competitor:888');
+  });
+
+  it('leaves an id null rather than guessing one from a name', () => {
+    const bare = buildMatchViewModel({
+      match: { ...row, teams: ['MIS', 'SUR'] },
+      timeline: null,
+    });
+    expect(bare.home.id).toBeNull();
+    expect(bare.away.id).toBeNull();
+    expect(bare.tournamentId).toBe('sr:tournament:10020626');
+    expect(teamHref(bare.home.id)).toBeNull();
   });
 });

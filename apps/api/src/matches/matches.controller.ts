@@ -24,7 +24,7 @@ export class MatchesController {
 
   @Get()
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
-  @ApiOperation({ summary: 'List matches (paginated)', description: 'All matches (live, upcoming, completed, cancelled) with status/tournament filters and pagination.' })
+  @ApiOperation({ summary: 'List matches (paginated)', description: 'All matches (live, upcoming, completed, cancelled) with status/tournament filters and pagination. Ordered live first, then soonest upcoming, then most recent finished.' })
   @ApiResponse({ status: 200, description: 'Paginated match summaries.' })
   async list(@Query() query: ListMatchesQuery) {
     return this.matchesService.list(query);

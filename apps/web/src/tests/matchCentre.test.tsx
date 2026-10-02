@@ -631,3 +631,68 @@ describe('a full rail render', () => {
     expect(container.querySelector('.mc-other-match')).not.toBeNull();
   });
 });
+
+describe('the "Other Matches" competition guard', () => {
+  const row = (matchId: string, tournament: string) =>
+    ({
+      matchId,
+      status: 'completed',
+      teams: {
+        home: { code: 'A', name: 'Alpha', score: '10/0', overs: '1' },
+        away: { code: 'B', name: 'Beta', score: '0/0', overs: '0' },
+      },
+      teamNames: ['Alpha', 'Beta'],
+      tournament,
+      scheduled: '2026-01-01T00:00:00Z',
+    }) as unknown as Match;
+
+  const names = () =>
+    Array.from(document.querySelectorAll('.mc-other-match')).map((el) => el.textContent ?? '');
+
+  it('cannot separate two competitions whose names are prefixes of each other', async () => {
+    // The guard compares names loosely in both directions so that a competition called
+    // "Global T20" on one row and "Global T20 Canada" on another still reads as the same
+    // one. That leniency is also why it cannot tell "Global T20 Canada" apart from
+    // "Global T20 Canada 2024" — which is the whole reason the rail is now fetched by id.
+    renderWithProviders(
+      <OtherMatches
+        matches={[row('a', 'Global T20 Canada'), row('b', 'Global T20 Canada 2024')]}
+        currentMatchId="current"
+        currentTournament="Global T20 Canada"
+        viewAllHref="/matches"
+      />,
+    );
+    await waitFor(() => expect(screen.getByText('Other Matches')).toBeInTheDocument());
+    expect(names()).toHaveLength(2);
+  });
+
+  it('does not re-check names when the list was already filtered by id', async () => {
+    // The API returned exactly one competition, so anything it sent belongs in the rail.
+    // Re-comparing names here could only drop a row that is genuinely part of it.
+    renderWithProviders(
+      <OtherMatches
+        matches={[row('a', 'Global T20 Canada'), row('b', 'Global T20 Canada 2024')]}
+        currentMatchId="current"
+        currentTournament="Global T20 Canada"
+        currentTournamentId="sr:tournament:10020626"
+        viewAllHref="/matches"
+      />,
+    );
+    await waitFor(() => expect(screen.getByText('Other Matches')).toBeInTheDocument());
+    expect(names()).toHaveLength(2);
+  });
+
+  it('still drops the match being viewed', async () => {
+    renderWithProviders(
+      <OtherMatches
+        matches={[row('a', 'Series'), row('current', 'Series')]}
+        currentMatchId="current"
+        currentTournament="Series"
+        currentTournamentId="sr:tournament:1"
+        viewAllHref="/matches"
+      />,
+    );
+    await waitFor(() => expect(screen.getByText('Other Matches')).toBeInTheDocument());
+    expect(names()).toHaveLength(1);
+  });
+});

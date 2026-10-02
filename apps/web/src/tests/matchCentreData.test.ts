@@ -4,7 +4,9 @@ function ball(opts: {
   inning?: number;
   over: number;
   striker?: string;
+  strikerId?: string;
   bowler?: string;
+  bowlerId?: string;
   runs?: number;
   extras?: number;
   extraType?: string;
@@ -20,10 +22,16 @@ function ball(opts: {
     inning: opts.inning ?? 1,
     over_number: opts.over,
     batting_params: opts.striker
-      ? { striker: { name: opts.striker }, runs_scored: opts.runs ?? 0 }
+      ? {
+          striker: { name: opts.striker, ...(opts.strikerId ? { id: opts.strikerId } : {}) },
+          runs_scored: opts.runs ?? 0,
+        }
       : undefined,
     bowling_params: {
-      bowler: { name: opts.bowler ?? 'Bowler' },
+      bowler: {
+        name: opts.bowler ?? 'Bowler',
+        ...(opts.bowlerId ? { id: opts.bowlerId } : {}),
+      },
       extra_runs_conceded: opts.extras ?? 0,
       ...(opts.extraType ? { extra_runs_type: opts.extraType } : {}),
     },
@@ -366,5 +374,30 @@ describe('extractSquads', () => {
 
   it('returns empty sides rather than throwing when there is nothing to read', () => {
     expect(extractSquads({}, null)).toEqual({ home: [], away: [] });
+  });
+
+  it('keeps the scorecard id for a player the lineup did not name', () => {
+    // The last-resort fill builds its entries from the scorecard, and that row is a real
+    // provider player with an id. Writing `id: ''` here threw away the only link the
+    // player had, so on a match with no lineup the whole XI rendered as plain text.
+    const bare = { teams: { home: { name: 'Lahore' }, away: { name: 'Islamabad' } } };
+    const timeline = {
+      timeline: [
+        ball({ over: 1, striker: 'Ali', strikerId: 'sr:player:1', bowler: 'Babar', bowlerId: 'sr:player:2', runs: 1 }),
+      ],
+    };
+    const squads = extractSquads(bare, timeline);
+    const all = [...squads.home, ...squads.away];
+    expect(all.find((row) => row.name === 'Ali')?.id).toBe('sr:player:1');
+    expect(all.find((row) => row.name === 'Babar')?.id).toBe('sr:player:2');
+  });
+
+  it('still leaves the id empty when the scorecard row had none', () => {
+    const bare = { teams: { home: { name: 'Lahore' }, away: { name: 'Islamabad' } } };
+    const timeline = { timeline: [ball({ over: 1, striker: 'Ali', bowler: 'Babar', runs: 1 })] };
+    const squads = extractSquads(bare, timeline);
+    const all = [...squads.home, ...squads.away];
+    expect(all.find((row) => row.name === 'Ali')?.id).toBe('');
+    expect(all.find((row) => row.name === 'Babar')?.id).toBe('');
   });
 });

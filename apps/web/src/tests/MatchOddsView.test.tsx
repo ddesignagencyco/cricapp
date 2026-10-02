@@ -430,6 +430,31 @@ describe('MatchOddsView model comparison panel', () => {
     await renderView({ initial: response({ modelVsMarket: model }) as never });
     expect(screen.queryByText('A rough guess for interest only.')).not.toBeInTheDocument();
   });
+
+  // The API prefers the live run over the pre-match one, so the number changes meaning
+  // depending on the match state. Unlabelled it reads as one figure and is not.
+  it('says the number is the live estimate, not the pre-match forecast', async () => {
+    await renderView({
+      initial: response({ modelVsMarket: { ...model, stage: 'live' } }) as never,
+    });
+    expect(screen.getByText('Live')).toBeInTheDocument();
+    expect(screen.getByText(/as it stands right now/i)).toBeInTheDocument();
+  });
+
+  it('says the number is the pre-match forecast', async () => {
+    await renderView({
+      initial: response({ modelVsMarket: { ...model, stage: 'pre_match' } }) as never,
+    });
+    expect(screen.getByText('Pre-match')).toBeInTheDocument();
+    expect(screen.queryByText(/as it stands right now/i)).not.toBeInTheDocument();
+  });
+
+  it('stays unlabelled when the api states no stage, rather than claiming one', async () => {
+    await renderView({ initial: response({ modelVsMarket: model }) as never });
+    expect(screen.queryByText('Live')).not.toBeInTheDocument();
+    expect(screen.queryByText('Pre-match')).not.toBeInTheDocument();
+    expect(screen.getByText('Our prediction')).toBeInTheDocument();
+  });
 });
 
 describe('MatchOddsView live polling', () => {

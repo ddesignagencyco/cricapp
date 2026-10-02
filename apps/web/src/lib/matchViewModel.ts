@@ -180,10 +180,10 @@ function meaningfulResult(value: unknown): string | null {
 /**
  * Home and away, by the provider's own qualifier.
  *
- * The match row's `teams` object has no ids, so when the timeline is available its
- * `sport_event.competitors[]` supplies the stable ids and the authoritative
- * home/away ordering. Without a timeline the row's ordering is used, which is the
- * same order the API wrote.
+ * When the timeline is available its `sport_event.competitors[]` supplies the ids and
+ * the authoritative home/away ordering. Without one, the ordering falls back to the row's,
+ * which is the same order the API wrote. A match that has neither is a fixture the
+ * provider has not given us competitors for, so it has no id to link and says so.
  */
 function readSides(
   match: Record<string, unknown>,
@@ -209,8 +209,10 @@ function readSides(
     const name =
       text(rec.name) || text(provider?.name) || text(teamNames[index]) || arrayEntry;
     const code = text(rec.code) || text(provider?.code) || (arrayEntry && arrayEntry.length <= 5 ? arrayEntry : '');
-    // A provider id is only ever taken from the timeline, which is the one place
-    // the API states it. The match row's fields are codes and names.
+    // A provider id is taken from the timeline when it carries one, and otherwise from the
+    // match row's own `teams.*.id`, which the API states for both sides. A side with
+    // neither is left null on purpose: `EntityLinks` refuses to build a link from a name,
+    // so an unresolved team stays plain text rather than becoming a dead link.
     const id = text(provider?.id) || text(rec.teamId) || text(rec.id) || null;
     const safeCode =
       code && code.length <= 5 && !/^sr:/i.test(code)
@@ -447,7 +449,11 @@ export function buildMatchViewModel({
     multiInnings: oversLimit === null || oversLimit <= 0 || innings.length > 2,
 
     tournament: text(row.tournament ?? tournamentRec?.name) || null,
-    tournamentId: text(tournamentRec?.id) || null,
+    // The name falls back to the match row; the id has to as well. Read from the timeline
+    // alone it was null on any match without a stored payload — every upcoming fixture —
+    // so the breadcrumb and Match Info rendered a plain name with no link even though
+    // `GET /matches/:id` states the id on the row itself.
+    tournamentId: text(tournamentRec?.id ?? row.tournamentId) || null,
     seasonName: text(seasonRec?.name) || null,
     matchNumber: num(roundRec?.competition_sport_event_number) ?? num(row.matchNumber),
 

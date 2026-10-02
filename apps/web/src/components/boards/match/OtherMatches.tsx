@@ -30,6 +30,7 @@ export default function OtherMatches({
   matches,
   currentMatchId,
   currentTournament,
+  currentTournamentId,
   loading,
   viewAllHref,
 }: {
@@ -37,21 +38,29 @@ export default function OtherMatches({
   currentMatchId: string;
   /** Only fixtures from this competition belong in the rail. */
   currentTournament?: string | null;
+  /**
+   * Set when the rail was fetched by competition id. The name guard is then redundant:
+   * the API already returned exactly one competition.
+   */
+  currentTournamentId?: string | null;
   loading?: boolean;
   viewAllHref: string;
 }) {
   const rows = dedupe(matches)
     .filter((match) => String(match.matchId ?? match.id ?? '') !== currentMatchId)
     /*
-     * A second, client-side guard on the competition.
+     * The competition guard.
      *
-     * The list is fetched with `?tournament=`, but the rail shares its cache key with
-     * any other list request for the same shape, and the API's `contains` filter is a
-     * substring match. Without this, a row from a different competition could be
-     * rendered under a heading that says this one — which is worse than showing
-     * nothing, because the heading is the reader's only clue.
+     * When the list is fetched by id the API has already matched exactly one competition
+     * and there is nothing left to check here — so this only applies to the name-based
+     * fetch, kept for a match whose `tournament_id` was never written. The rail shares its
+     * cache key with any other list request for the same shape, and the name filter is a
+     * substring match, so without a guard a row from a different competition could be
+     * rendered under a heading that says this one — which is worse than showing nothing,
+     * because the heading is the reader's only clue.
      */
     .filter((match) => {
+      if (currentTournamentId) return true;
       const wanted = String(currentTournament ?? '').trim().toLowerCase();
       if (!wanted) return true;
       const got = String(match.tournament ?? '').trim().toLowerCase();

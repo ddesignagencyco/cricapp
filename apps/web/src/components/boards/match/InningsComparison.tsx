@@ -7,26 +7,16 @@ import { ordinalInnings, rate } from './matchFormat';
 import type { MatchViewModel } from '../../../lib/matchViewModel';
 
 /**
- * Every innings in the match, with a proportional bar.
+ * Every innings in the match, as a plain table.
  *
- * ## What the bar is scaled against
- *
- * Each bar is sized against the **largest innings in this match**, and the bar
- * carries a title attribute saying so.
- *
- * The obvious alternative — each innings as a percentage of the other side's — is
- * wrong for anything that is not a one-innings-per-side match. In a Test the two
- * sides never bat the same innings: India made 150 and 487, Australia 104 and 238.
- * Pairing innings 1 against innings 2 to draw "78% vs 22%" compares a first innings
- * with a second innings, which is not a comparison any reader would make or mean.
- *
- * So the bar ranks the innings within the match and the score is always printed
- * beside it. The bar never stands in for a number.
+ * There used to be a proportional bar beside each score, sized against the largest
+ * innings in the match. It was defensible — ranking innings within one match is the only
+ * comparison that means anything for a Test, where the two sides never bat the same
+ * innings — but it was a decoration that carried no number, and it sat in the Score
+ * column pushing the score off-centre. The score is the reason the row exists.
  */
 export default function InningsComparison({ view }: { view: MatchViewModel }) {
   if (view.innings.length === 0) return null;
-
-  const maxRuns = view.innings.reduce((max, inn) => Math.max(max, inn.runs ?? 0), 0);
 
   return (
     <MatchSectionCard icon={BarChart3} title="Innings Comparison">
@@ -34,8 +24,7 @@ export default function InningsComparison({ view }: { view: MatchViewModel }) {
         <div className="table-scroll">
           <table className="w-full min-w-[440px] table-fixed text-sm">
             <caption className="sr-only">
-              Each innings in this match, with runs, wickets, overs and run rate. Bars are
-              sized against the highest innings total in the match.
+              Each innings in this match, with runs, wickets, overs and run rate.
             </caption>
             <colgroup>
               <col className="w-[34%]" />
@@ -56,7 +45,6 @@ export default function InningsComparison({ view }: { view: MatchViewModel }) {
                 const isHome = inn.side === 'home';
                 const team = isHome ? view.home : view.away;
                 const label = team.name || (isHome ? 'Home' : 'Away');
-                const percent = maxRuns > 0 ? Math.round(((inn.runs ?? 0) / maxRuns) * 100) : 0;
                 return (
                   <tr key={inn.number} className="mc-table__row">
                     <th scope="row" className="mc-compare__team">
@@ -77,16 +65,7 @@ export default function InningsComparison({ view }: { view: MatchViewModel }) {
                         </span>
                       </span>
                     </th>
-                    <td className="mc-compare__bar-cell">
-                      <span
-                        className="mc-bar"
-                        style={{ width: `${Math.max(percent, inn.runs ? 8 : 0)}%` }}
-                        role="img"
-                        aria-label={`${label} made ${inn.runs ?? 0} runs in the ${ordinalInnings(inn.number)} innings`}
-                        title={`${inn.runs ?? 0} runs — ${percent}% of the highest innings in this match`}
-                      />
-                      <span className="tabular-nums text-mtext">{inn.score || '—'}</span>
-                    </td>
+                    <td className="tabular-nums text-mtext">{inn.score || '—'}</td>
                     <td className="mc-compare__num tabular-nums">{inn.oversLabel || '—'}</td>
                     <td className="mc-compare__num tabular-nums">{rate(inn.runRate)}</td>
                   </tr>

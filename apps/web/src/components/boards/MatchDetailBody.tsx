@@ -233,7 +233,10 @@ export default function MatchDetailBody({
 
   const h2h = useMatchHeadToHeadQuery(matchId, homeTeamId, awayTeamId, { enabled: canHeadToHead });
   const newsQuery = useMatchNewsQuery(matchId, { limit: 12 });
-  const seriesQuery = useSeriesMatchesQuery(view.tournament, { limit: 24 });
+  const seriesQuery = useSeriesMatchesQuery(
+    { id: view.tournamentId, name: view.tournament },
+    { limit: 24 },
+  );
   const oddsQuery = useMatchOddsQuery(
     matchId,
     initialOdds?.status === 'ok' ? initialOdds.data : null,
@@ -454,6 +457,7 @@ export default function MatchDetailBody({
             matches={seriesQuery.data ?? []}
             currentMatchId={matchId}
             currentTournament={view.tournament}
+            currentTournamentId={view.tournamentId}
             loading={seriesQuery.isLoading}
             viewAllHref="/matches"
           />
