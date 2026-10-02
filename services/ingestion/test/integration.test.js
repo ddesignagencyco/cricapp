@@ -264,8 +264,8 @@ describe('ingestion integration', () => {
 
   it('refreshes overdue upcoming matches through the summary normalizer without changing their timelines', async () => {
     await query(
-      `INSERT INTO matches (match_id, status, scheduled, teams, team_names)
-       VALUES ($1, 'upcoming', '1900-01-01T10:00:00+00:00', '[]'::jsonb, '[]'::jsonb)
+      `INSERT INTO matches (match_id, status, scheduled, teams, team_names, last_event)
+       VALUES ($1, 'upcoming', '1900-01-01T10:00:00+00:00', '[]'::jsonb, '[]'::jsonb, '{"type":"none","runs":0,"over":0}'::jsonb)
        ON CONFLICT (match_id) DO UPDATE
        SET status = 'upcoming', scheduled = EXCLUDED.scheduled`,
       [STALE_MATCH_ID],
@@ -301,8 +301,8 @@ describe('ingestion integration', () => {
     assert.deepEqual(timelineResult.rows[0].payload, existingTimeline);
 
     await query(
-      `INSERT INTO matches (match_id, status, scheduled, teams, team_names)
-       VALUES ($1, 'upcoming', '1900-01-01T10:00:00+00:00', '[]'::jsonb, '[]'::jsonb)`,
+      `INSERT INTO matches (match_id, status, scheduled, teams, team_names, last_event)
+       VALUES ($1, 'upcoming', '1900-01-01T10:00:00+00:00', '[]'::jsonb, '[]'::jsonb, '{"type":"none","runs":0,"over":0}'::jsonb)`,
       [POSTPONED_MATCH_ID],
     );
     const postponed = await refreshStaleUpcomingMatch(POSTPONED_MATCH_ID);
