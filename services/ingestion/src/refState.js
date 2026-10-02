@@ -25,6 +25,7 @@ export const REF_CADENCE = Object.freeze({
   teamResults: 6 * 3600e3,
   seasonResults: 6 * 3600e3,
   daily: 6 * 3600e3,
+  staleUpcoming: 15 * 60e3,
   // One-shot syncs (retry if the key expired, otherwise skip forever).
   timeline: 365 * 24 * 3600e3,
   /** Live matches: refresh stored ball-by-ball while status=live (poll is primary). */

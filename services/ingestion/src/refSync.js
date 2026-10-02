@@ -20,7 +20,7 @@ import {
   fetchMatchLineups,
   fetchMatchSummary,
 } from './sportradar.js';
-import { normalizeLineups } from './normalize.js';
+import { normalizeLineups, normalizeMatch } from './normalize.js';
 import {
   normalizeDailySchedule,
   normalizeDailyResults,
@@ -39,6 +39,8 @@ import {
   saveTours,
   saveTournaments,
   backfillTours,
+  saveMatch,
+  publishMatchState,
   saveSportEventRecords,
   saveMatchTimeline,
   saveMatchLineup,
@@ -52,6 +54,7 @@ import {
   listActiveSeasonIds,
   listActiveTournamentIds,
   listEventIdsWithoutTimeline,
+  staleUpcomingIds,
   listLiveMatchIds,
   listEventIdsWithoutMatchSummary,
   listHeadToHeadPairs,
@@ -68,7 +71,7 @@ import {
 } from './store.js';
 import { createLogger } from './logger.js';
 import { shouldSync, markSynced, clearSyncStamp, REF_CADENCE } from './refState.js';
-import { PSL } from './schemas.js';
+import { PSL, PROVIDERS } from './schemas.js';
 import { getCallStats } from './sportradar.js';
 import redis, { redisKeys } from './redis.js';
 
@@ -411,6 +414,32 @@ export async function syncMatchSummary(matchId) {
   return { matchId };
 }
 
+export async function refreshStaleUpcomingMatch(matchId) {
+  const summary = await fetchMatchSummary(matchId);
+  const match = normalizeMatch(PROVIDERS.SPORTRADAR, summary);
+  await saveMatchSummary(matchId, summary);
+  await saveMatch(match);
+  await publishMatchState(match);
+  return match;
+}
+
+const STALE_FIXTURE_BATCH_SIZE = 200;
+
+export async function syncStaleUpcomingMatches() {
+  const ids = await staleUpcomingIds(STALE_FIXTURE_BATCH_SIZE);
+  let synced = 0;
+  for (const id of ids) {
+    try {
+      await refreshStaleUpcomingMatch(id);
+      synced += 1;
+    } catch (err) {
+      warn(`stale upcoming refresh failed for ${id}: ${err.message}`);
+    }
+  }
+  log.info(`stale upcoming refresh: synced ${synced}/${ids.length} match(es)`);
+  return synced;
+}
+
 export async function syncMatchLineups(matchId) {
   const raw = await fetchMatchLineups(matchId);
   await saveMatchLineup(matchId, raw);
@@ -666,6 +695,28 @@ export async function startReferenceSync(options) {
       inFlight = false;
     }
   };
+
+  let staleUpcomingInFlight = false;
+  const runStaleUpcoming = async () => {
+    if (staleUpcomingInFlight) return;
+    staleUpcomingInFlight = true;
+    try {
+      await syncStaleUpcomingMatches();
+    } finally {
+      staleUpcomingInFlight = false;
+    }
+  };
+  if (REF_CADENCE.staleUpcoming > 0) {
+    setInterval(() => {
+      runStaleUpcoming().catch((err) =>
+        warn(`stale upcoming periodic sync failed: ${err.message}`),
+      );
+    }, REF_CADENCE.staleUpcoming);
+    log.info('stale upcoming sync scheduled', { intervalMs: REF_CADENCE.staleUpcoming });
+  }
+  runStaleUpcoming().catch((err) =>
+    warn(`stale upcoming startup sync failed: ${err.message}`),
+  );
 
   if (REFERENCE_SYNC_INTERVAL_MS > 0) {
     setInterval(() => {

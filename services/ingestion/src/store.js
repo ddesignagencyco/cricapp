@@ -782,6 +782,21 @@ export async function listLiveMatchIds({ limit = 10 } = {}) {
   return r.rows.map((x) => x.match_id).filter(Boolean);
 }
 
+/** Upcoming fixtures whose scheduled start time has passed and need refreshing. */
+export async function staleUpcomingIds(limit = 200) {
+  const { rows } = await query(
+    `SELECT match_id
+     FROM matches
+     WHERE status = 'upcoming'
+       AND scheduled IS NOT NULL
+       AND left(scheduled, 19) < left($1, 19)
+     ORDER BY scheduled ASC
+     LIMIT $2`,
+    [new Date().toISOString().slice(0, 19) + '+00:00', limit],
+  );
+  return rows.map((row) => row.match_id).filter(Boolean);
+}
+
 /**
  * Match ids we know about (schedule/results/tournament) but lack full summary JSON.
  */
