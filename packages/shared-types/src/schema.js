@@ -19,10 +19,12 @@
 
 /**
  * @typedef {Object} TeamSideScore
+ * @property {string} [id]
  * @property {string} code
  * @property {string} name
  * @property {string} score
  * @property {string} overs
+ * @property {number | null} [oversBalls]
  */
 
 /**
@@ -39,6 +41,7 @@
  * @property {string[]} teamNames
  * @property {TeamScores | null} [teamScores]
  * @property {string | null} tournament
+ * @property {string | null} [tournamentId]
  * @property {string | null} venue
  * @property {string | null} scheduled
  * @property {CurrentInnings | null} currentInnings
