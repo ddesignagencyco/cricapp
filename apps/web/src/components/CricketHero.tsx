@@ -1,15 +1,31 @@
-'use client';
-
 import Link from 'next/link';
+import Image from 'next/image';
 import { ChevronRight, Eye, Trophy, Users, Newspaper, Calendar, TrendingUp } from 'lucide-react';
 
 interface CricketHeroProps {
   match?: any;
 }
 
+/**
+ * Static hero — deliberately a Server Component. The copy never depends on the
+ * `match` prop, so making it client would only block LCP hydration. The
+ * photographic background is the LCP element: it renders via `next/image` with
+ * `priority` (preload + high fetch priority + AVIF/WebP + responsive sizing)
+ * instead of a 1.9 MB CSS background.
+ */
 export default function CricketHero({ match: _match }: CricketHeroProps) {
   return (
     <section className="hero-grad-home relative flex min-h-[300px] items-center overflow-hidden sm:min-h-[360px]">
+      <Image
+        src="/banner.png"
+        alt=""
+        aria-hidden="true"
+        fill
+        preload
+        sizes="100vw"
+        quality={85}
+        className="absolute inset-0 h-full w-full object-cover"
+      />
       <div className="hero-scrim pointer-events-none absolute inset-0" />
 
       <div className="relative mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-12">

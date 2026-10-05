@@ -1,15 +1,24 @@
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import MatchCard from '../../components/MatchCard';
-import LiveNowSection from '../../components/LiveNowSection';
+// Above-fold islands that hydrate independently: SSR HTML is unchanged, but
+// their JS (socket client, Intl/scoreboard work, observers) loads and hydrates
+// after the critical path instead of competing with the LCP hero paint.
+const MatchTickerBar = dynamic(() => import('../../components/MatchTickerBar'));
+const LiveNowSection = dynamic(() => import('../../components/LiveNowSection'));
 import SectionHeader from '../../components/SectionHeader';
-import HomeGalleryStrip from '../../components/gallery/HomeGalleryStrip';
-import MatchTickerBar from '../../components/MatchTickerBar';
 import CricketHero from '../../components/CricketHero';
 import PslSpotlight from '../../components/PslSpotlight';
 import RecentResultCard from '../../components/RecentResultCard';
+// Client-fetched below-fold strip: renders null until its query resolves, so
+// splitting it into its own chunk changes no content, only when its JS loads.
+const HomeGalleryStrip = dynamic(() => import('../../components/gallery/HomeGalleryStrip'));
 import TopPerformers from '../../components/TopPerformers';
-import Newsletter from '../../components/Newsletter';
+// Below-fold form (plus react-hot-toast) splits into its own chunk while still
+// server-rendering, so content and SEO are unchanged.
+const Newsletter = dynamic(() => import('../../components/Newsletter'));
 import AdSlot from '../../components/advertisements/AdSlot';
+import AdMultiplex from '../../components/advertisements/AdMultiplex';
 import RemoteImage from '../../components/RemoteImage';
 import NewsCopy from '../../components/NewsCopy';
 import Badge, { StatusBadge } from '../../components/Badge';
@@ -41,10 +50,13 @@ export default async function HomePage() {
       fetchLiveMatches(),
       fetchMatches({ status: 'upcoming', limit: 20 }),
       fetchMatches({ status: 'completed', limit: 20 }),
-      fetchNews(),
+      // The page renders 1 featured + 4 compact stories; the old default of 50
+      // only inflated the API payload and server time.
+      fetchNews({ limit: 6 }),
       fetchPslStandings(),
       fetchPslLeaders(),
-      fetchStreams({ limit: 8 }),
+      // The page renders 3 stream cards.
+      fetchStreams({ limit: 3 }),
     ] as const);
   const liveMatches = results[0].status === 'fulfilled' ? results[0].value : [];
   const upcomingMatches = results[1].status === 'fulfilled' ? results[1].value : [];
@@ -268,6 +280,12 @@ export default async function HomePage() {
           </div>
         </section>
       )}
+
+      {/* Multiplex sits between the news block and the gallery strip so it never
+          stacks directly against the footer banner (§10). */}
+      <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
+        <AdMultiplex placement="home-multiplex" />
+      </section>
 
       <HomeGalleryStrip />
 

@@ -24,6 +24,9 @@ const THIN_EVENT_TYPES = new Set([
 let sharedSocket: Socket | null = null;
 let sharedRefCount = 0;
 
+/** Coalescing window for socket bursts (see `useMatchStream`). */
+const SOCKET_UPDATE_WINDOW_MS = 1000;
+
 function socketUrl(): string {
   return CLIENT_BASE.replace(/\/$/, '');
 }
@@ -225,6 +228,19 @@ export function useMatchStream(matchId?: string | null, enabled = true): LiveUpd
 
     const socket = acquireMatchesSocket();
     let cancelled = false;
+    // Live payloads are cumulative snapshots, so a burst (several balls in one
+    // over, or two matches updating together) can safely coalesce: the latest
+    // snapshot supersedes the earlier ones. Without this every broadcast caused
+    // a full-list merge plus per-card scoreboard math — the long-task/TBT
+    // driver during live matches. The worst case added latency is one window.
+    let pending: LiveUpdate | null = null;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const flush = () => {
+      timer = null;
+      const next = pending;
+      pending = null;
+      if (next && !cancelled) setUpdate(next);
+    };
 
     const apply = (incoming: LiveUpdate) => {
       const id = incoming.matchId?.trim();
@@ -233,12 +249,27 @@ export function useMatchStream(matchId?: string | null, enabled = true): LiveUpd
       const snapshot = unwrapSnapshot(incoming.data);
       if (!snapshot) return;
       if (cancelled) return;
-      setUpdate({
+      // Leading edge applies immediately so a fresh mount never waits;
+      // anything arriving inside the window replaces the pending payload.
+      if (!timer && !pending) {
+        setUpdate({
+          type: 'match_update',
+          matchId: id,
+          data: snapshot,
+          ts: incoming.ts ?? Date.now(),
+        });
+        timer = setTimeout(() => {
+          timer = null;
+          flush();
+        }, SOCKET_UPDATE_WINDOW_MS);
+        return;
+      }
+      pending = {
         type: 'match_update',
         matchId: id,
         data: snapshot,
         ts: incoming.ts ?? Date.now(),
-      });
+      };
     };
 
     const onLive = (payload: LiveUpdate) => apply(payload);
@@ -260,6 +291,11 @@ export function useMatchStream(matchId?: string | null, enabled = true): LiveUpd
 
     return () => {
       cancelled = true;
+      if (timer) {
+        clearTimeout(timer);
+        timer = null;
+      }
+      pending = null;
       socket.off('live:update', onLive);
       socket.off('match:update', onMatch);
       socket.off('connect', subscribe);

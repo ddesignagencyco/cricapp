@@ -47,17 +47,17 @@ export default function ScorecardHighlights({
             */}
             <div className="mc-table-wrap">
               <div className="table-scroll">
-                <table className="w-full min-w-[300px] table-fixed text-sm">
+                <table className="w-full min-w-[460px] text-sm">
                   <caption className="sr-only">
                     Leading batters with runs, balls, fours, sixes and strike rate.
                   </caption>
                   <colgroup>
-                    <col className="w-[40%]" />
-                    <col className="w-[12%]" />
-                    <col className="w-[12%]" />
-                    <col className="w-[12%]" />
-                    <col className="w-[12%]" />
-                    <col className="w-[12%]" />
+                    <col />
+                    <col className="w-[3.75rem]" />
+                    <col className="w-[3.75rem]" />
+                    <col className="w-[3rem]" />
+                    <col className="w-[3rem]" />
+                    <col className="w-[4.25rem]" />
                   </colgroup>
                   <thead>
                     <tr className="mc-table__head">
@@ -98,17 +98,17 @@ export default function ScorecardHighlights({
             <p className="mc-table__title">Leading bowlers</p>
             <div className="mc-table-wrap">
               <div className="table-scroll">
-                <table className="w-full min-w-[300px] table-fixed text-sm">
+                <table className="w-full min-w-[460px] text-sm">
                   <caption className="sr-only">
                     Leading bowlers with overs, maidens, runs, wickets and economy.
                   </caption>
                   <colgroup>
-                    <col className="w-[40%]" />
-                    <col className="w-[12%]" />
-                    <col className="w-[12%]" />
-                    <col className="w-[12%]" />
-                    <col className="w-[12%]" />
-                    <col className="w-[12%]" />
+                    <col />
+                    <col className="w-[3.75rem]" />
+                    <col className="w-[3.75rem]" />
+                    <col className="w-[3.75rem]" />
+                    <col className="w-[3.75rem]" />
+                    <col className="w-[4.25rem]" />
                   </colgroup>
                   <thead>
                     <tr className="mc-table__head">

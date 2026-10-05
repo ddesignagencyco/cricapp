@@ -149,7 +149,7 @@ export default function Badge({ children, tone = 'neutral', className = '', styl
   return (
     <span
       {...rest}
-      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold capitalize leading-none ${classes}`}
+      className={`inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-semibold capitalize leading-none ${classes}`}
       style={{
         background: current.bg,
         color: current.fg,

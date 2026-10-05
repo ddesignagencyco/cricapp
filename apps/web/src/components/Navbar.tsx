@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type ComponentType, type ReactNode } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -32,7 +33,6 @@ import {
   X,
 } from 'lucide-react';
 import Logo from './Logo';
-import SearchBar from './SearchBar';
 import RemoteImage from './RemoteImage';
 import { useTheme } from './ThemeProvider';
 import { useAuth } from './AuthProvider';
@@ -65,6 +65,9 @@ const exploreItems: NavItem[] = [
 ];
 
 const navItems = [...liveItems, ...exploreItems];
+
+// Search (services/search + results UI) loads on first open, never upfront.
+const SearchBar = dynamic(() => import('./SearchBar'), { ssr: false });
 
 function avatarHue(name: string) {
   let h = 0;

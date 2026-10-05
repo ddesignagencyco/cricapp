@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { ArrowLeft, ArrowRight, Calendar, Clock, Newspaper, Radio, Tag } from 'lucide-react';
 import Badge from '../Badge';
 import AdSlot from '../advertisements/AdSlot';
+import AdBanner from '../advertisements/AdBanner';
+import AdMultiplex from '../advertisements/AdMultiplex';
 import RemoteImage from '../RemoteImage';
 import ShareButton from '../ShareButton';
 import FavoriteButton from '../FavoriteButton';
@@ -173,6 +175,11 @@ export default function NewsDetailBody({ item, related = [], authorHref, related
             )}
           </div>
 
+          {/* Article top banner: hero → ad → body copy (ad strategy §9). */}
+          <div className="mt-8 flex justify-center">
+            <AdBanner placement="news-detail-top" />
+          </div>
+
           <div className="mt-10">
             <div
               className={`${proseClass} news-copy`}
@@ -297,11 +304,10 @@ export default function NewsDetailBody({ item, related = [], authorHref, related
         </aside>
       </div>
 
-      {related.length > 0 ? (
-        <div className="mt-10">
-          <AdSlot placement="news-detail-after-related" />
-        </div>
-      ) : null}
+      {/* Multiplex after the article/related block, before comments (§9). */}
+      <div className="mt-10">
+        <AdMultiplex placement="news-detail-after-related" />
+      </div>
 
       <div className="mt-12">
         <CommentsSection targetType="news" targetId={item.id} />

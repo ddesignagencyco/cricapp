@@ -183,7 +183,7 @@
   --color-info-soft: #E8EDFF;
   --color-live: #BE123C;
 
-  --color-badge-primary-fg: #3B68FC;
+  --color-badge-primary-fg: #2A4FE0;
   --color-badge-primary-bg: #E8EDFF;
   --color-badge-success-fg: #047857;
   --color-badge-success-bg: #E7F6F0;
@@ -359,6 +359,27 @@ header.site-chrome .site-nav-icon[aria-expanded='true'] {
   color: #ffffff;
 }
 
+/*
+ * In light mode the bar sits on solid brand blue, where 70%-white inactive
+ * text is 3.1:1 and fails. Inactive items go full white (5.1:1) and the active
+ * item keeps its distinction with a translucent pill instead of a colour the
+ * background swallows. Dark mode keeps the softer 72% treatment (7:1, pass).
+ */
+.light .mobile-bottom-nav {
+  --color-stext: #ffffff;
+}
+
+.light .mobile-bottom-nav button {
+  color: #ffffff;
+}
+
+.light .mobile-bottom-nav a[aria-current='page'] {
+  /* Dark pill, not light: white text on a lightened brand blue falls to ~4.3:1
+     and fails, while white on a darkened brand blue clears ~6.4:1. */
+  background-color: rgb(0 0 0 / 0.18);
+  border-radius: 0.5rem;
+}
+
 .site-side-atmosphere {
   pointer-events: none;
   position: fixed;
@@ -519,6 +540,15 @@ html.light,
   background-position: center top;
   background-size: cover;
   background-attachment: fixed;
+}
+
+/* `fixed` forces a full repaint on every scroll frame. Touch devices never
+   benefit from the effect, so they get a static background instead. */
+@media (pointer: coarse) {
+  html.light,
+  .light body {
+    background-attachment: scroll;
+  }
 }
 
 @media print {
@@ -2029,11 +2059,26 @@ textarea#comment-body:focus-visible {
 
 .mc-cell-name {
   text-align: left;
-  width: 40%;
   max-width: 12rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/*
+ * The name cell holds an inline link (`PlayerLink`), which will not truncate on
+ * its own in an auto-layout table — the cell just grows to fit the longest name
+ * and pushes the figures off screen. Making the link a block with ellipsis keeps
+ * long names inside the cell while the table scrolls horizontally on a phone.
+ */
+.mc-cell-name > a:first-child,
+.mc-cell-name > span:first-child {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
 }
 
 /*
@@ -2609,21 +2654,14 @@ button:disabled,
 }
 
 .hero-grad-home {
-  background-image:
-    /* linear-gradient(rgba(4, 10, 20, 0.55), rgba(4, 10, 20, 0.55)), */
-    url('/banner.png');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+  /* The photographic layer is an <Image priority> inside CricketHero (the LCP
+     element) — never a CSS background, so the optimizer serves AVIF/WebP at
+     the rendered width and the browser can preload it. */
+  background-color: #0b1526;
 }
 
 .light .hero-grad-home {
-  background-image:
-    /* linear-gradient(rgba(4, 10, 20, 0.55), rgba(4, 10, 20, 0.55)), */
-    url('/banner.png');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+  background-color: #0b1526;
 }
 
 /* PSL hero. Uses its own artwork (banner.jpg) so the league page is not a

@@ -3,13 +3,11 @@
 import { usePathname } from 'next/navigation';
 import { Suspense, type ReactNode } from 'react';
 import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
 import ScrollTopButton from '../components/ScrollTopButton';
 import MobileBottomNav from './MobileBottomNav';
 import AssistantLauncher from './assistant/AssistantLauncher';
 import AdSlot from './advertisements/AdSlot';
 import { shouldHideDummyAds } from '../lib/advertisements/placements';
-import type { SiteSettings } from '../services/siteSettings';
 
 function isNewsArticlePath(pathname: string) {
   return /^\/(ur\/)?news\/.+/.test(pathname) || pathname.startsWith('/cricket-news/');
@@ -38,10 +36,11 @@ function showGlobalTopAd(pathname: string) {
 
 export default function ClientLayout({
   children,
-  settings,
+  footer,
 }: {
   children: ReactNode;
-  settings?: SiteSettings | null;
+  /** Server-rendered footer slot (stays out of the client bundle). */
+  footer?: ReactNode;
 }) {
   const pathname = usePathname();
   const isAdmin = pathname.startsWith('/admin');
@@ -61,7 +60,7 @@ export default function ClientLayout({
       <main id="main-content" className="min-h-screen min-w-0 flex-1 pb-16 lg:pb-0">
         {children}
       </main>
-      <Footer settings={settings} />
+      {footer}
       <MobileBottomNav />
       <ScrollTopButton />
       <Suspense fallback={null}>

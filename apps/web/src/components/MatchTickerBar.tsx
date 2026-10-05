@@ -7,7 +7,7 @@ import Badge, { normalizeStatus } from './Badge';
 import LiveIndicator from './LiveIndicator';
 import EntityAvatar from './EntityAvatar';
 import { getInitials } from '../utils/helpers';
-import { deriveMatchState } from '../hooks/useMatchState';
+import { deriveMatchState } from '../lib/deriveMatchState';
 import { mergeLiveUpdate, useMatchStream } from '../hooks/useMatchStream';
 import { describeMatchResult, scoreboardFromMatch } from '../lib/matchScoreboard';
 
@@ -57,6 +57,13 @@ export default function MatchTickerBar({ matches: initialMatches }: MatchTickerB
       el.removeEventListener('scroll', updateScrollState);
       ro.disconnect();
     };
+    // Subscribe once: re-subscribing on every live socket update tore down and
+    // recreated the scroll listener + observer per ball. Content-driven changes
+    // are handled by the effect below and by the ResizeObserver itself.
+  }, []);
+
+  useEffect(() => {
+    updateScrollState();
   }, [matches]);
 
   const scroll = (dir: 'left' | 'right') => {

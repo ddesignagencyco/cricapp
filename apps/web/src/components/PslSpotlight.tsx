@@ -1,5 +1,3 @@
-'use client';
-
 import Link from 'next/link';
 import Image from 'next/image';
 import { Calendar, MapPin, Users, ChevronRight, TrendingUp } from 'lucide-react';
@@ -33,8 +31,8 @@ export default function PslSpotlight({ standings = [] }: PslSpotlightProps) {
               width={2103}
               height={748}
               sizes="100vw"
+              quality={90}
               className="h-auto w-full object-contain"
-              priority
             />
           </div>
 
