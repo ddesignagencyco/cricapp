@@ -36,7 +36,8 @@ export function sharePageMetadata(input: {
    */
   ogTitle?: string;
   ogDescription?: string;
-  ogType?: 'website' | 'article';
+  /** `video.other` covers a short clip; stories are the one page that is not prose. */
+  ogType?: 'website' | 'article' | 'video.other';
   /**
    * Emit an absolute canonical URL. On by default, because a page reachable at both
    * `/x` and `/x?tab=scorecard` should declare one of them as canonical.

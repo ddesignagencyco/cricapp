@@ -70,6 +70,27 @@ export function formatDate(iso: string | undefined): string {
   });
 }
 
+/**
+ * Publish date for anything that stores a real timestamp.
+ *
+ * `formatDate` appends a time to its input because it was written for the
+ * date-only strings the fixtures and schedules use. A `created_at` from the API
+ * already carries one, so appending again yields an invalid date and the label
+ * silently disappears. This takes either shape.
+ */
+export function formatPublishedDate(iso?: string | null): string {
+  if (!iso) return '';
+  const value = iso.trim();
+  if (!value) return '';
+  const date = new Date(value.length <= 10 ? `${value}T00:00:00` : value);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+
 export function formatTime(t: string | undefined): string {
   if (!t) return '';
   const [h, m]: number[] = t.split(':').map(Number);
@@ -184,4 +205,17 @@ export function getPslLogo(codeOrId: string): string | null {
   if (!codeOrId) return null;
   const key = codeOrId.toLowerCase();
   return pslLogos[key] || null;
+}
+
+/**
+ * Media length in seconds → `0:07` / `1:05`. Cloudinary reports video duration as
+ * a float, so it is rounded rather than truncated to avoid `0:29` for a 29.6s clip.
+ * `—` when the source does not know its own length.
+ */
+export function formatMediaDuration(seconds?: number | null): string {
+  if (seconds === undefined || seconds === null) return '—';
+  const total = Math.round(Number(seconds));
+  if (!Number.isFinite(total) || total <= 0) return '—';
+  const minutes = Math.floor(total / 60);
+  return `${minutes}:${String(total % 60).padStart(2, '0')}`;
 }

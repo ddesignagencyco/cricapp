@@ -6,6 +6,7 @@ import { fetchNews } from '../services/news';
 import { newsHref } from '../utils/newsConstraints';
 import { fetchTournaments } from '../services/tournaments';
 import { fetchPublicAuthors } from '../services/authors';
+import { fetchStories, type StoriesPageResult } from '../services/stories';
 
 const baseUrl = 'https://pakcriczone.com';
 
@@ -19,6 +20,7 @@ const staticRoutes = [
   '/players',
   '/news',
   '/gallery',
+  '/stories',
   '/streams',
   '/tours',
   '/tournaments',
@@ -29,15 +31,22 @@ const staticRoutes = [
   '/terms',
 ];
 
+/** Deep-linked stories are only discoverable from a crawl if they are listed. */
+const STORY_LIMIT = 100;
+
+/** Keeps the fallback the same shape as the real result, so no cast is needed below. */
+const NO_STORIES: StoriesPageResult = { items: [], total: 0, totalPages: 1 };
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date().toISOString();
-  const [matches, teams, players, news, tournaments, authors] = await Promise.all([
+  const [matches, teams, players, news, tournaments, authors, stories] = await Promise.all([
     fetchMatches().catch(() => []),
     fetchTeams().catch(() => []),
     fetchPlayers().catch(() => []),
     fetchNews().catch(() => []),
     fetchTournaments().catch(() => []),
     fetchPublicAuthors().catch(() => []),
+    fetchStories({ page: 1, limit: STORY_LIMIT }).catch(() => NO_STORIES),
   ]);
 
   const entries = staticRoutes.map((route) => ({
@@ -89,5 +98,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.5,
   }));
 
-  return [...entries, ...matchEntries, ...teamEntries, ...playerEntries, ...newsEntries, ...tournamentEntries, ...authorEntries];
+  const storyEntries = stories.items.map((story) => ({
+    url: `${baseUrl}${story.shareUrl}`,
+    lastModified: story.publishedAt || now,
+    changeFrequency: 'weekly' as MetadataRoute.Sitemap[number]['changeFrequency'],
+    priority: 0.6,
+  }));
+
+  return [
+    ...entries,
+    ...matchEntries,
+    ...teamEntries,
+    ...playerEntries,
+    ...newsEntries,
+    ...tournamentEntries,
+    ...authorEntries,
+    ...storyEntries,
+  ];
 }
