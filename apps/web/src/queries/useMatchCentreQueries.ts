@@ -28,11 +28,20 @@ import type { HeadToHead, Match, NewsArticle } from '../types';
 import type { MatchOddsFetchResult, MatchOddsResponse } from '../types/odds';
 import type { MatchTimeline } from '../services/matches';
 
+/**
+ * How often a live match page re-checks its own score.
+ *
+ * The socket delivers updates within about a second, so this is only a backstop
+ * for when it is unavailable — slow enough to be negligible, fast enough that a
+ * frozen header corrects itself well before a reader would notice.
+ */
+export const LIVE_MATCH_REFETCH_MS = 30_000;
+
 /** The match row itself. */
 export function useMatchDetailQuery(
   matchId: string,
   initialMatch?: Match | null,
-  options: { enabled?: boolean } = {},
+  options: { enabled?: boolean; live?: boolean } = {},
 ) {
   const enabled = (options.enabled ?? true) && Boolean(matchId);
   return useQuery<Match | null, Error>({
@@ -43,6 +52,20 @@ export function useMatchDetailQuery(
     // so a genuine 404 is not retried on every render.
     initialData: initialMatch ?? undefined,
     enabled,
+    /**
+     * Safety net for the live score.
+     *
+     * The socket is the primary, instant path, but it is not the only thing keeping
+     * this page honest: a socket that is blocked, still connecting, or dropped left the
+     * header frozen on its server snapshot indefinitely, because `initialData` plus a
+     * non-zero stale time means the query never revalidates on its own. That made the
+     * same match show a different score here than on the live list until a manual
+     * refresh. While the match is live, poll slowly so the page self-heals.
+     *
+     * `refetchIntervalInBackground` stays off so a backgrounded tab is not polled.
+     */
+    refetchInterval: options.live ? LIVE_MATCH_REFETCH_MS : false,
+    refetchIntervalInBackground: false,
   });
 }
 
@@ -52,8 +75,16 @@ export function useMatchDetailQuery(
  * Not seeded, because the server render passes the raw payload separately to avoid
  * deserialising 1,600 events twice. It is fetched on demand by the panels that read
  * it and then cached for the rest of the visit, so switching tabs is free.
+ *
+ * `live` does **not** enable the query — it must never start the 1.6 MB download by
+ * itself. It only makes an already-fetched timeline refetch on the live cadence, so
+ * the commentary and the header (which reconciles against this same payload) cannot
+ * drift apart while a match is running.
  */
-export function useMatchTimelineQuery(matchId: string, options: { enabled?: boolean } = {}) {
+export function useMatchTimelineQuery(
+  matchId: string,
+  options: { enabled?: boolean; live?: boolean } = {},
+) {
   const enabled = (options.enabled ?? true) && Boolean(matchId);
   return useQuery<MatchTimeline | null, Error>({
     queryKey: matchKeys.timeline(matchId),
@@ -63,6 +94,13 @@ export function useMatchTimelineQuery(matchId: string, options: { enabled?: bool
     // A 404 means the provider has no timeline for this fixture. That is an answer,
     // not a failure, so it is cached and the empty state renders immediately.
     retry: false,
+    refetchInterval: (query) => {
+      // `query.state.data` is the gate: polling only ever re-reads a timeline that has
+      // already been fetched, so an unopened Commentary tab still costs nothing.
+      if (!options.live || query.state.data === null || query.state.data === undefined) return false;
+      return LIVE_MATCH_REFETCH_MS;
+    },
+    refetchIntervalInBackground: false,
   });
 }
 

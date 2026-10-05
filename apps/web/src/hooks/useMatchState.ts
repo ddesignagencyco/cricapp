@@ -24,11 +24,28 @@ export function useMatchState(
   enabled = true,
   timeline?: Record<string, unknown> | null,
 ): MatchState {
-  const isLive = String(match?.status ?? '').trim().toLowerCase() === 'live';
-  const liveUpdate = useMatchStream(matchId ?? undefined, enabled && isLive);
-  const merged = useMemo(
-    () => (liveUpdate ? mergeMatchLivePayload(match ?? null, liveUpdate as never) : match),
-    [match, liveUpdate],
-  );
+  // The socket is not gated on the current status. A page reached mid-match can be
+  // server-rendered with any status string (an innings break, a provider variant, a
+  // snapshot taken before the match started), and gating on `isLive` meant a live
+  // match could sit on a stale snapshot with the subscription switched off. Updates
+  // for other matches are discarded by id inside `useMatchStream`, so staying
+  // subscribed is safe and is what keeps every surface showing the same score.
+  const liveUpdate = useMatchStream(matchId ?? undefined, enabled);
+  /**
+   * `liveUpdate.data`, never `liveUpdate` itself.
+   *
+   * This merged the whole socket *envelope* — `{ type, matchId, data, ts }` — so
+   * `mergeMatchLivePayload` walked those four keys instead of the snapshot's, and the
+   * score fields (`currentInnings`, `displayScore`) it needs were never copied across.
+   * The result was a match whose only change was a stray `data` key, i.e. a live score
+   * that silently never moved. The list surfaces do not hit this because
+   * `mergeLiveUpdate` reads `update.data` itself.
+   */
+  const merged = useMemo(() => {
+    if (!liveUpdate) return match;
+    const payload = liveUpdate.data;
+    if (!payload || typeof payload !== 'object') return match;
+    return mergeMatchLivePayload(match ?? null, payload as Record<string, unknown>);
+  }, [match, liveUpdate]);
   return useMemo(() => deriveMatchState(merged, timeline), [merged, timeline]);
 }

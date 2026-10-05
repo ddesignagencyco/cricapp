@@ -29,11 +29,52 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+/**
+ * The inner payload, whatever wrapper the endpoint used.
+ *
+ * ## Why this exists
+ *
+ * Every other reader of a timeline payload (`matchInnings.ts` → `unwrapTimelinePayload`,
+ * `statusBlockOf`, `MatchTimeline.tsx`) copes with the three nestings the provider and
+ * the API use: a bare object, `{ payload: { … } }`, and `{ sport_event_timeline: { … } }`.
+ *
+ * This module read `payload.sport_event_status` and `payload.timeline` **directly**. When
+ * the payload arrived wrapped — which is exactly what `GET /matches/:id/timeline`
+ * returns — both lookups missed, `timelineInningsState` returned `null`, and the
+ * timeline silently contributed nothing to the score. `deriveMatchState` then fell back
+ * to the match row, which is written by a different path and lags: the header sat at
+ * `58/1 (4.2 ov)` while the commentary directly beneath it, parsed by a module that
+ * *does* unwrap, showed `63/1 (5.3)`.
+ *
+ * Same match, same page, two answers — purely because two readers disagreed about the
+ * envelope. Unwrapping here makes the timeline count again, which is what lets it win
+ * the "furthest along in balls" comparison it was written for.
+ */
+function innerPayload(
+  payload: Record<string, unknown> | null | undefined,
+): Record<string, unknown> | null {
+  if (!isRecord(payload)) return null;
+  const direct = payload.sport_event_status ?? payload.timeline ?? payload.sport_event_timeline;
+  if (direct !== undefined) return payload;
+
+  const nested = payload.payload;
+  if (isRecord(nested)) return innerPayload(nested);
+
+  const wrapper = payload.sport_event_timeline;
+  if (isRecord(wrapper)) return innerPayload(wrapper);
+
+  return payload;
+}
+
 /** The `sport_event_status` block, which carries the payload's own running totals. */
 function statusOf(payload: Record<string, unknown> | null | undefined): Record<string, unknown> | null {
-  if (!isRecord(payload)) return null;
-  const status = payload.sport_event_status;
-  return isRecord(status) ? status : null;
+  const inner = innerPayload(payload);
+  if (!inner) return null;
+  const direct = inner.sport_event_status;
+  if (isRecord(direct)) return direct;
+  const wrapper = inner.sport_event_timeline;
+  if (isRecord(wrapper) && isRecord(wrapper.sport_event_status)) return wrapper.sport_event_status;
+  return null;
 }
 
 function parseScoreRuns(score: unknown): number | null {
@@ -51,9 +92,21 @@ function toNumber(value: unknown): number | null {
 
 /** The last ball event in the payload, in payload order. */
 export function lastTimelineBall(payload: Record<string, unknown> | null | undefined): Record<string, unknown> | null {
-  if (!isRecord(payload)) return null;
-  const timeline = payload.timeline;
-  if (!Array.isArray(timeline) || timeline.length === 0) return null;
+  const inner = innerPayload(payload);
+  if (!inner) return null;
+  // Same three shapes as the status block: bare, `sport_event_timeline.timeline`, or the
+  // event list sitting directly on the payload.
+  const direct = inner.timeline;
+  const wrapper = inner.sport_event_timeline;
+  const nested = isRecord(wrapper) ? wrapper.timeline : undefined;
+  const timeline = Array.isArray(direct)
+    ? direct
+    : Array.isArray(nested)
+      ? nested
+      : Array.isArray(inner.sport_event_timeline)
+        ? inner.sport_event_timeline
+        : null;
+  if (!timeline || timeline.length === 0) return null;
   for (let i = timeline.length - 1; i >= 0; i -= 1) {
     const event = timeline[i];
     if (isRecord(event) && event.type === 'ball') return event;

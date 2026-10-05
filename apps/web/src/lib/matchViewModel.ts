@@ -23,7 +23,7 @@
  */
 
 import { deriveMatchState } from '../hooks/useMatchState';
-import { oversToBalls, requiredRunRate } from './cricketMath';
+import { formatCricketOvers, oversToBalls, requiredRunRate } from './cricketMath';
 import {
   buildMatchInnings,
   latestInningsFor,
@@ -581,10 +581,16 @@ function describeSituation(view: MatchViewModel, periodCount: number): string {
   const current = view.currentInnings;
   if (view.target !== null && view.runsRemaining !== null) {
     const balls = view.ballsRemaining;
-    const overText =
-      balls === null
-        ? ''
-        : ` with ${Math.floor(balls / 6)}.${balls % 6 === 0 ? '' : balls % 6} overs left`;
+    /**
+     * `formatCricketOvers`, not an inline template.
+     *
+     * The template was `15.${balls % 6 === 0 ? '' : balls % 6}`, so a whole number of
+     * overs left rendered as ` with 15. overs left` — a dangling full stop and a missing
+     * ball count. The shared formatter drops the separator for a whole over, which is
+     * the same rule the score line and the ball-by-ball use.
+     */
+    const oversLeft = balls === null ? '' : formatCricketOvers(balls / 6);
+    const overText = oversLeft ? ` with ${oversLeft} overs left` : '';
     return `Chasing ${view.target}. Needs ${view.runsRemaining} more run${view.runsRemaining === 1 ? '' : 's'}${overText}.`;
   }
   if (current && current.runs !== null) {

@@ -1751,7 +1751,10 @@ textarea#comment-body:focus-visible {
 .mc-tabs-sticky {
   position: sticky;
   top: 0;
-  z-index: 30;
+  /* Must stay BELOW the mobile browse sheet (scrim z-[25] / panel z-[30]) and the
+     sticky header (z-40). At z-index 30 this bar tied the panel and, being later
+     in the DOM, painted straight over the open menu. */
+  z-index: 20;
   margin-top: 16px;
 }
 

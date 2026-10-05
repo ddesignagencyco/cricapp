@@ -162,6 +162,31 @@ function pickScoreSource(input: {
     };
   }
 
+  /**
+   * The timeline is ahead in balls but its runs could not be read.
+   *
+   * Falling through to the match row used to throw the timeline away wholesale, which is
+   * how the header ended up showing `58/1 (4.2)` from the row while the commentary
+   * beneath it — parsed from the same payload by a module that *can* read it — showed
+   * `63/1 (5.3)`. The row is by definition the older writer here (it is behind in
+   * balls), so its runs cannot be the current total.
+   *
+   * A partial timeline is still strictly better than a knowingly stale row: take the
+   * overs it does know, and keep the row's runs only as the last resort. `score` is
+   * rebuilt from both so it can never contradict the line above it.
+   */
+  if (timelineWins) {
+    return {
+      ...fromInnings,
+      overs: fromTimeline.overs,
+      wickets: fromInnings.wickets ?? fromTimeline.wickets,
+      score:
+        fromInnings.runs !== null
+          ? `${fromInnings.runs}/${fromInnings.wickets ?? 0}`
+          : (fromTimeline.score ?? null),
+    };
+  }
+
   // `currentInnings` and the match row describe the same innings. Whichever is further
   // along in balls is the current one; the other is a stale write.
   if (isFurtherAlong(fromInnings.overs, fromRow.overs) && fromInnings.runs !== null) {

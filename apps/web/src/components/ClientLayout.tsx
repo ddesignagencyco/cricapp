@@ -1,6 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { Suspense, type ReactNode } from 'react';
 import Navbar from '../components/Navbar';
 import ScrollTopButton from '../components/ScrollTopButton';
@@ -8,6 +9,10 @@ import MobileBottomNav from './MobileBottomNav';
 import AssistantLauncher from './assistant/AssistantLauncher';
 import AdSlot from './advertisements/AdSlot';
 import { shouldHideDummyAds } from '../lib/advertisements/placements';
+
+// First-visit newsletter invite. `ssr: false` + lazy loading keeps it out of
+// the critical bundle, and it renders nothing for returning visitors.
+const NewsletterModal = dynamic(() => import('./NewsletterModal'), { ssr: false });
 
 function isNewsArticlePath(pathname: string) {
   return /^\/(ur\/)?news\/.+/.test(pathname) || pathname.startsWith('/cricket-news/');
@@ -66,6 +71,7 @@ export default function ClientLayout({
       <Suspense fallback={null}>
         <AssistantLauncher />
       </Suspense>
+      <NewsletterModal />
     </>
   );
 }
