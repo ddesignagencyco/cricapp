@@ -1,5 +1,5 @@
-import { PROVIDERS } from './schemas.js';
-import { buildTeamFromCompetitor, managerDisplayName } from './teamMeta.js';
+﻿import { PROVIDERS } from './schemas.js';
+import { buildTeamFromCompetitor, canonicalTeamAbbr, managerDisplayName } from './teamMeta.js';
 import { buildPlayerFromLineupEntry, parseFullName } from './playerMeta.js';
 import { battingSideFromToken } from './matchSide.js';
 
@@ -63,7 +63,7 @@ function buildTeamScores(statusBlock, competitors) {
   return {
     home: {
       id: homeComp?.id ?? '',
-      code: homeComp?.abbreviation ?? '',
+      code: canonicalTeamAbbr(homeComp?.abbreviation, homeComp?.name) ?? '',
       name: homeComp?.name ?? '',
       score: homeTotals.score,
       overs: homeTotals.overs,
@@ -71,7 +71,7 @@ function buildTeamScores(statusBlock, competitors) {
     },
     away: {
       id: awayComp?.id ?? '',
-      code: awayComp?.abbreviation ?? '',
+      code: canonicalTeamAbbr(awayComp?.abbreviation, awayComp?.name) ?? '',
       name: awayComp?.name ?? '',
       score: awayTotals.score,
       overs: awayTotals.overs,
@@ -128,7 +128,7 @@ function normalizeSportradar(raw) {
   const statusBlock = raw.sport_event_status ?? {};
   const competitors = event.competitors ?? [];
 
-  const teams = competitors.map((c) => c.abbreviation ?? c.name?.slice(0, 3)?.toUpperCase() ?? 'TBD');
+  const teams = competitors.map((c) => canonicalTeamAbbr(c.abbreviation, c.name) ?? c.name?.slice(0, 3)?.toUpperCase() ?? 'TBD');
   const teamNames = competitors.map((c) => c.name ?? c.abbreviation ?? 'TBD');
 
   const innings = raw.statistics?.innings ?? [];
@@ -151,7 +151,7 @@ function normalizeSportradar(raw) {
     const overs =  statusBlock.display_overs ?? currentInning.overs_completed ?? 0;
 
     currentInnings = {
-      battingTeam: battingComp?.abbreviation ?? battingTeamId ?? teams[0],
+      battingTeam: canonicalTeamAbbr(battingComp?.abbreviation, battingComp?.name) ?? battingTeamId ?? teams[0],
       runs,
       wickets,
       overs: typeof overs === 'number' ? overs : parseFloat(overs) || 0,
@@ -182,7 +182,7 @@ function normalizeSportradar(raw) {
     const overs = period.display_overs ?? statusBlock.display_overs ?? 0;
 
     currentInnings = {
-      battingTeam: battingComp?.abbreviation ?? battingComp?.id ?? teams[0],
+      battingTeam: canonicalTeamAbbr(battingComp?.abbreviation, battingComp?.name) ?? battingComp?.id ?? teams[0],
       runs: runs ?? 0,
       wickets: wickets ?? 0,
       overs: typeof overs === 'number' ? overs : parseFloat(overs) || 0,
@@ -373,7 +373,7 @@ export function normalizeLineups(raw) {
     const manager = lineup?.manager;
     const team = {
       ...buildTeamFromCompetitor(comp, sportEvent),
-      abbr: comp.abbreviation ?? abbrOf(comp.name) ?? 'TBD',
+      abbr: canonicalTeamAbbr(comp.abbreviation, comp.name) ?? abbrOf(comp.name) ?? 'TBD',
       manager: managerDisplayName(manager),
     };
     teams.push(team);

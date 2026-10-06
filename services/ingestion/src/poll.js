@@ -8,6 +8,7 @@ import {
   publishMatchState,
   publishEvents,
   pruneStaleLiveMatchRedisSet,
+  TIMELINE_REVISION_KEY,
 } from './store.js';
 import { getCallStats } from './sportradar.js';
 import redis, { redisKeys } from './redis.js';
@@ -60,7 +61,7 @@ async function captureLiveTimelineDelta(matchId) {
  * row is the completed match's final stored timeline.
  */
 async function clearLiveTimelineState(matchId) {
-  await redis.del(BUF_KEY(matchId), SEQ_KEY(matchId), SNAPSHOT_KEY(matchId));
+  await redis.del(BUF_KEY(matchId), SEQ_KEY(matchId), SNAPSHOT_KEY(matchId), TIMELINE_REVISION_KEY(matchId));
 }
 
 /** Periodic full timeline fetch during live play (when deltas are off or as backup). */

@@ -62,6 +62,10 @@ export interface CanonicalMatch {
   currentInning?: number | null;
   periodScores?: unknown[] | null;
   displayOvers?: number | null;
+  /** Monotonic per-match revision derived from the timeline (max ball sequence). */
+  revision?: number | null;
+  /** ISO-8601 time the canonical snapshot this revision was computed at. */
+  updatedAt?: string | null;
 }
 
 export interface MatchEvent {
@@ -133,6 +137,14 @@ export {
 } from "./odds.math.js";
 
 export { redisKeys, REDIS_TTL } from "./redis.js";
+
+export {
+  timelineEntriesOf,
+  timelineRevision,
+  timelineEventsSince,
+  timelineIsSequenced,
+  reconcileTimelineStatus,
+} from "./revision.js";
 
 export type {
   AssistantIntent,

@@ -3,9 +3,11 @@ import {
   Get,
   Param,
   Query,
+  Res,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import {
   ApiOperation,
   ApiParam,
@@ -38,12 +40,25 @@ export class MatchesController {
   }
 
   @Get(':matchId/timeline')
-  @ApiOperation({ summary: 'Match timeline', description: 'Ball-by-ball timeline for a match.' })
+  @ApiOperation({ summary: 'Match timeline', description: 'Ball-by-ball timeline for a match. Pass `?since=<revision>` to receive only newer events.' })
   @ApiParam({ name: 'matchId', description: 'Provider match id (e.g. sr:match:66650320).' })
   @ApiResponse({ status: 200, description: 'The match timeline payload.', type: MatchTimelineDto })
   @ApiResponse({ status: 404, description: 'Timeline not found.' })
-  async timeline(@Param('matchId') matchId: string) {
-    return this.matchesService.getTimeline(matchId);
+  async timeline(
+    @Param('matchId') matchId: string,
+    @Query('since') since?: string,
+    @Res({ passthrough: true }) res?: Response,
+  ) {
+    const sinceNum =
+      since != null && since.trim() !== '' && !Number.isNaN(Number(since))
+        ? Number(since)
+        : null;
+    const body = await this.matchesService.getTimeline(matchId, sinceNum);
+    if (body.noNewEvents) {
+      res!.status(204);
+      return undefined;
+    }
+    return body;
   }
 
   @Get(':matchId')
