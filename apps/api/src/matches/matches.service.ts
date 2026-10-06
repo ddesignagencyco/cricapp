@@ -11,6 +11,9 @@ import { SportradarService } from '../sportradar/sportradar.service.js';
 import {
   MATCH_STATUS,
   redisKeys,
+  timelineRevision,
+  timelineEventsSince,
+  reconcileTimelineStatus,
   type CanonicalMatch,
   type CurrentInnings,
   type LastEvent,
@@ -21,6 +24,7 @@ import {
   createPaginatedResponse,
   getPaginationOffset,
 } from '../common/pagination/pagination.util.js';
+
 import {
   resultTextFromPayload,
   teamScoresFromSportEventPayload,
@@ -52,6 +56,8 @@ export type MatchSummary = Pick<
   | 'currentInning'
   | 'periodScores'
   | 'displayOvers'
+  | 'revision'
+  | 'updatedAt'
 >;
 
 /**
@@ -188,6 +194,38 @@ export class MatchesService {
     };
   }
 
+  /** Revision + updatedAt for one match, derived from the stored timeline row. */
+  private async revisionMeta(matchId: string): Promise<{ revision: number | null; updatedAt: string | null }> {
+    const row = await this.prisma.matchTimeline.findUnique({ where: { matchId } });
+    if (!row) return { revision: null, updatedAt: null };
+    let revision: number | null = null;
+    try {
+      revision = timelineRevision(row.payload as Record<string, unknown>);
+    } catch {
+      revision = null;
+    }
+    return { revision, updatedAt: row.updatedAt ? row.updatedAt.toISOString() : null };
+  }
+
+  private async revisionMetaFor(matchIds: string[]): Promise<Map<string, { revision: number | null; updatedAt: string | null }>> {
+    if (matchIds.length === 0) return new Map();
+    const rows = await this.prisma.matchTimeline.findMany({
+      where: { matchId: { in: matchIds } },
+      select: { matchId: true, payload: true, updatedAt: true },
+    });
+    const map = new Map();
+    for (const r of rows) {
+      let revision: number | null = null;
+      try {
+        revision = timelineRevision(r.payload as Record<string, unknown>);
+      } catch {
+        revision = null;
+      }
+      map.set(r.matchId, { revision, updatedAt: r.updatedAt ? r.updatedAt.toISOString() : null });
+    }
+    return map;
+  }
+
   private toSummary(row: Match, overrides?: Partial<MatchSummary>): MatchSummary {
     return {
       matchId: row.matchId,
@@ -210,6 +248,8 @@ export class MatchesService {
       currentInning: overrides?.currentInning ?? row.currentInning ?? null,
       periodScores: (overrides?.periodScores ?? row.periodScores) as unknown[] | null,
       displayOvers: overrides?.displayOvers ?? row.displayOvers ?? null,
+      revision: overrides?.revision ?? null,
+      updatedAt: overrides?.updatedAt ?? null,
     };
   }
 
@@ -413,6 +453,14 @@ export class MatchesService {
         return summary;
       }),
     );
+    const revisionMap = await this.revisionMetaFor(rows.map((r) => r.matchId));
+    for (const s of summaries) {
+      const meta = revisionMap.get(s.matchId);
+      if (meta) {
+        s.revision = meta.revision;
+        s.updatedAt = meta.updatedAt;
+      }
+    }
 
     const authoritativeIds = new Set(rows.map((row) => row.matchId));
     const staleIds = liveIds.filter((id) => !authoritativeIds.has(id));
@@ -438,7 +486,8 @@ export class MatchesService {
 
     if (row) {
       const patch = await this.enrichFromStoredSummary(row);
-      const summary = this.toSummary(row, patch);
+      const meta = await this.revisionMeta(matchId);
+      const summary = this.toSummary(row, { ...patch, revision: meta.revision, updatedAt: meta.updatedAt });
       const mergedScores = patch.teamScores ?? summary.teamScores;
       const mergedTeams = mergedScores
         ? this.buildTeamsField(row, mergedScores)
@@ -449,12 +498,21 @@ export class MatchesService {
           teams: mergedTeams,
           teamScores: mergedScores,
           result: summary.result,
+          revision: meta.revision ?? (typeof cached.revision === 'number' ? cached.revision : null),
+          updatedAt: meta.updatedAt ?? cached.updatedAt ?? null,
         };
       }
       return { ...summary, teams: mergedTeams, teamScores: mergedScores };
     }
 
-    if (cached) return cached as MatchSummary;
+    if (cached) {
+      const meta = await this.revisionMeta(matchId);
+      return {
+        ...(cached as MatchSummary),
+        revision: meta.revision ?? cached.revision ?? null,
+        updatedAt: meta.updatedAt ?? cached.updatedAt ?? null,
+      };
+    }
 
     throw new NotFoundException(`Match ${matchId} not found`);
   }
@@ -465,7 +523,7 @@ export class MatchesService {
     matchId: string,
     fresh: Record<string, unknown>,
   ): Promise<{ matchId: string; payload: Record<string, unknown> }> {
-    const payload = dedupeTimelineEvents(fresh);
+    const payload = reconcileTimelineStatus(dedupeTimelineEvents(fresh));
     await this.prisma.matchTimeline.upsert({
       where: { matchId },
       create: {
@@ -477,6 +535,53 @@ export class MatchesService {
       },
     });
     return { matchId, payload };
+  }
+
+  buildTimelineResponse(
+    matchId: string,
+    row: { matchId: string; payload: unknown; updatedAt: Date } | null,
+    storedPayload: Record<string, unknown> | undefined,
+    since: number | null,
+  ): { matchId: string; revision: number | null; updatedAt: string | null; complete: boolean; noNewEvents?: boolean; payload: Record<string, unknown> } | null {
+    if (!storedPayload) return null;
+    const reconciled = reconcileTimelineStatus(storedPayload);
+    const revision = timelineRevision(reconciled);
+
+    // Client already has everything up to `since` — nothing new to send.
+    if (since != null && revision != null && since >= revision) {
+      return {
+        matchId,
+        revision,
+        updatedAt: row?.updatedAt ? row.updatedAt.toISOString() : null,
+        complete: false,
+        noNewEvents: true,
+        payload: { sport_event_timeline: { timeline: [] } },
+      };
+    }
+
+    if (since != null && since > 0) {
+      const newEvents = timelineEventsSince(reconciled, since);
+      const wrapper = reconciled.sport_event_timeline as Record<string, unknown> | undefined;
+      const delta: Record<string, unknown> =
+        wrapper && typeof wrapper === 'object'
+          ? { ...reconciled, sport_event_timeline: { ...wrapper, timeline: newEvents } }
+          : { ...reconciled, timeline: newEvents };
+      return {
+        matchId,
+        revision,
+        updatedAt: row?.updatedAt ? row.updatedAt.toISOString() : null,
+        complete: false,
+        payload: delta,
+      };
+    }
+
+    return {
+      matchId,
+      revision,
+      updatedAt: row?.updatedAt ? row.updatedAt.toISOString() : null,
+      complete: true,
+      payload: reconciled,
+    };
   }
 
   private logStaleNotRefreshed(
@@ -500,7 +605,17 @@ export class MatchesService {
     incrCounter(this.redis.cached, 'timeline_stale_not_refreshed_total', { reason });
   }
 
-  async getTimeline(matchId: string): Promise<{ matchId: string; payload: Record<string, unknown> }> {
+  async getTimeline(
+    matchId: string,
+    since?: number | null,
+  ): Promise<{
+    matchId: string;
+    revision: number | null;
+    updatedAt: string | null;
+    complete: boolean;
+    noNewEvents?: boolean;
+    payload: Record<string, unknown>;
+  }> {
     const [row, matchRow] = await Promise.all([
       this.prisma.matchTimeline.findUnique({ where: { matchId } }),
       this.prisma.match.findUnique({ where: { matchId } }),
@@ -527,7 +642,8 @@ export class MatchesService {
         } else {
           try {
             const fresh = await this.sportradar.fetchMatchTimeline(matchId);
-            return this.upsertTimelinePayload(matchId, fresh);
+            await this.upsertTimelinePayload(matchId, fresh);
+            return this.buildTimelineResponse(matchId, null, dedupeTimelineEvents(fresh), since ?? null)!;
           } catch (err) {
             if (err instanceof ServiceUnavailableException) throw err;
             this.logStaleNotRefreshed(matchId, 'fetch_failed', ageMs, matchRow, storedPayload);
@@ -537,11 +653,11 @@ export class MatchesService {
           this.logStaleNotRefreshed(matchId, reason, ageMs, matchRow, storedPayload);
         }
       }
-      return { matchId: row!.matchId, payload: storedPayload };
+      return this.buildTimelineResponse(matchId, row, storedPayload, since ?? null)!;
     }
 
     if (storedPayload) {
-      return { matchId: row!.matchId, payload: storedPayload };
+      return this.buildTimelineResponse(matchId, row, storedPayload, since ?? null)!;
     }
 
     if (!this.sportradar.isConfigured) {
@@ -552,7 +668,8 @@ export class MatchesService {
       // Live match without a stored row: fetch and persist while it is live.
       try {
         const fresh = await this.sportradar.fetchMatchTimeline(matchId);
-        return this.upsertTimelinePayload(matchId, fresh);
+        await this.upsertTimelinePayload(matchId, fresh);
+        return this.buildTimelineResponse(matchId, null, dedupeTimelineEvents(fresh), since ?? null)!;
       } catch (err) {
         if (err instanceof ServiceUnavailableException) throw err;
         throw new NotFoundException(`Timeline for match ${matchId} not found`);
@@ -565,7 +682,7 @@ export class MatchesService {
     // one-shot history row and freezes it thereafter.
     try {
       const fresh = await this.sportradar.fetchMatchTimeline(matchId);
-      return { matchId, payload: dedupeTimelineEvents(fresh) };
+      return this.buildTimelineResponse(matchId, null, dedupeTimelineEvents(fresh), since ?? null)!;
     } catch (err) {
       if (err instanceof ServiceUnavailableException) throw err;
       throw new NotFoundException(`Timeline for match ${matchId} not found`);
