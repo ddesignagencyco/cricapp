@@ -24,6 +24,7 @@ import { fetchMatchOdds } from '../services/odds';
 import { fetchNews } from '../services/news';
 import { matchKeys } from './keys';
 import { runAbortable } from './queryUtils';
+import { mergeTimelineDelta } from '../lib/matchTimelineState';
 import type { HeadToHead, Match, NewsArticle } from '../types';
 import type { MatchOddsFetchResult, MatchOddsResponse } from '../types/odds';
 import type { MatchTimeline } from '../services/matches';
@@ -80,16 +81,36 @@ export function useMatchDetailQuery(
  * itself. It only makes an already-fetched timeline refetch on the live cadence, so
  * the commentary and the header (which reconciles against this same payload) cannot
  * drift apart while a match is running.
+ *
+ * **Refetches ask for a delta, not the whole timeline.** Once a revision is cached the
+ * query sends it as `?since=`, so a live poll transfers the handful of new balls rather
+ * than the entire match — on a second innings that is a few KB instead of ~1.6 MB. The
+ * first request always goes out without `since`, because there is nothing cached to be
+ * relative to.
  */
 export function useMatchTimelineQuery(
   matchId: string,
-  options: { enabled?: boolean; live?: boolean } = {},
+  options: { enabled?: boolean; live?: boolean; delta?: boolean } = {},
 ) {
   const enabled = (options.enabled ?? true) && Boolean(matchId);
-  return useQuery<MatchTimeline | null, Error>({
+  const useDelta = options.delta ?? true;
+  return useQuery<MatchTimeline | null | undefined, Error>({
     queryKey: matchKeys.timeline(matchId),
-    queryFn: ({ signal }) =>
-      runAbortable(signal, (requestSignal) => fetchMatchTimeline(matchId, requestSignal)),
+    queryFn: ({ signal, client }) =>
+      runAbortable(signal, async (requestSignal) => {
+        const queryKey = matchKeys.timeline(matchId);
+        const cached = client.getQueryData<MatchTimeline | null | undefined>(queryKey) ?? null;
+        const since =
+          useDelta && typeof cached?.revision === 'number' && cached.revision > 0
+            ? cached.revision
+            : null;
+        const next = await fetchMatchTimeline(matchId, requestSignal, since);
+        // 204: `since` is already current, so there is nothing new. Keeping the cached
+        // timeline is not an optimisation here — returning `null` would blank the
+        // commentary tab on every poll that landed between balls.
+        if (next === undefined) return cached;
+        return mergeTimelineDelta(cached, next);
+      }),
     enabled,
     // A 404 means the provider has no timeline for this fixture. That is an answer,
     // not a failure, so it is cached and the empty state renders immediately.

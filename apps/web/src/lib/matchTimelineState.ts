@@ -153,3 +153,76 @@ export function timelineInningsState(payload: Record<string, unknown> | null | u
     time: typeof last?.time === 'string' ? last.time : null,
   };
 }
+
+/**
+ * Splice a `?since=` delta onto the timeline already held.
+ *
+ * The API answers a delta with the *whole envelope* — `sport_event_status`, squads,
+ * competitors and every other block — but with `sport_event_timeline.timeline`
+ * truncated to only the events after `since`. So the merge is asymmetric on purpose:
+ * the event list is appended to what we already had, while every other block is taken
+ * from the delta because it is a fresh full snapshot rather than a fragment.
+ *
+ * Events are keyed by `id` where they carry one. The provider rewrites the tail of the
+ * timeline on every sync, so a ball that was already delivered can come back inside the
+ * delta; concatenating blindly would render it twice in the commentary list.
+ */
+export function mergeTimelineDelta<T extends { payload: Record<string, unknown>; complete?: boolean }>(
+  base: T | null | undefined,
+  delta: T,
+): T {
+  if (!base || delta.complete !== false) return delta;
+
+  const baseTimeline = timelineEventsOf(base.payload);
+  const deltaTimeline = timelineEventsOf(delta.payload);
+  if (!baseTimeline) return delta;
+  if (!deltaTimeline || deltaTimeline.length === 0) return { ...base, ...delta, payload: base.payload };
+
+  const seen = new Set<string>();
+  const merged: unknown[] = [];
+  for (const event of [...baseTimeline, ...deltaTimeline]) {
+    const key = isRecord(event) && typeof event.id === 'number' ? `id:${event.id}` : null;
+    if (key) {
+      if (seen.has(key)) continue;
+      seen.add(key);
+    }
+    merged.push(event);
+  }
+
+  return { ...base, ...delta, payload: replaceTimelineEvents(delta.payload, merged) };
+}
+
+/** The event list, whichever of the two wrappers this payload uses. */
+function timelineEventsOf(payload: Record<string, unknown> | null | undefined): unknown[] | null {
+  const inner = innerPayload(payload);
+  if (!inner) return null;
+  const direct = inner.timeline;
+  if (Array.isArray(direct)) return direct;
+  const wrapper = inner.sport_event_timeline;
+  if (isRecord(wrapper) && Array.isArray(wrapper.timeline)) return wrapper.timeline;
+  if (Array.isArray(inner.sport_event_timeline)) return inner.sport_event_timeline;
+  return null;
+}
+
+/**
+ * Write `events` back at whichever depth the list was found, leaving the rest of the
+ * payload — and its shape — untouched.
+ *
+ * Recurses into the `{ payload: { … } }` envelope, which is exactly what
+ * `GET /matches/:id/timeline` returns, so the same helper serves both the stored row
+ * and the API response without either knowing which one it got.
+ */
+function replaceTimelineEvents(
+  payload: Record<string, unknown>,
+  events: unknown[],
+): Record<string, unknown> {
+  const nested = payload.payload;
+  if (isRecord(nested)) {
+    return { ...payload, payload: replaceTimelineEvents(nested, events) };
+  }
+  const wrapper = payload.sport_event_timeline;
+  if (isRecord(wrapper)) {
+    return { ...payload, sport_event_timeline: { ...wrapper, timeline: events } };
+  }
+  return { ...payload, timeline: events };
+}

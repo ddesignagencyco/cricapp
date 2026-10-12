@@ -169,6 +169,18 @@ export interface MatchTeams {
 export interface Match {
   id?: string;
   matchId?: string;
+  /**
+   * Monotonic per-match revision carried by the API's canonical snapshot
+   * (`timelineRevision()` — the max ball sequence in the stored timeline).
+   *
+   * This is the only exact ordering signal available on the wire. Comparing two
+   * snapshots by their overs is a heuristic; comparing revisions is not. Both
+   * `/matches/live` and `/matches/:id` derive it from the same `match_timelines`
+   * row, so the list and the detail page cannot disagree about freshness.
+   */
+  revision?: number | null;
+  /** ISO-8601 time the revision above was computed at. */
+  updatedAt?: string | null;
   tournamentId?: string | null;
   tournamentName?: string;
   tournament?: string;

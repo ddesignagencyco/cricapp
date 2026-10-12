@@ -10,6 +10,16 @@ export interface LiveUpdate {
   matchId?: string;
   data?: unknown;
   ts?: number;
+  /**
+   * Monotonic revision of the snapshot this frame carries.
+   *
+   * The API computes it from the max ball sequence in the stored timeline and sends it
+   * at the top level of every `live:update`, `match:update` and subscribe replay. It is
+   * the only exact ordering signal on the wire, so it is carried all the way through to
+   * the merge instead of being dropped — comparing overs to decide what is stale is a
+   * heuristic that this makes unnecessary.
+   */
+  revision?: number | null;
 }
 
 const THIN_EVENT_TYPES = new Set([
@@ -63,6 +73,27 @@ function isThinEvent(data: unknown): boolean {
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+/**
+ * Whether `incoming` is provably older than what we already applied, by revision alone.
+ *
+ * Returns `null` when either side has no revision — a match the provider has not
+ * sequenced yet, or a snapshot from a path that never set one. Callers must fall back to
+ * the overs heuristic in that case rather than treating "unknown" as "current".
+ *
+ * Equal revisions are **not** stale: the API can rewrite the same position with a richer
+ * overs figure, and a poll confirming the same ball may legitimately carry fresher runs.
+ */
+function isStaleByRevision(
+  prev: unknown,
+  incoming: unknown,
+): boolean | null {
+  const prevRevision = isPlainObject(prev) ? prev.revision : undefined;
+  const nextRevision = isPlainObject(incoming) ? incoming.revision : undefined;
+  if (typeof prevRevision !== 'number' || typeof nextRevision !== 'number') return null;
+  if (!Number.isFinite(prevRevision) || !Number.isFinite(nextRevision)) return null;
+  return nextRevision < prevRevision;
 }
 
 function mergeTeamScores(prev: unknown, incoming: unknown): unknown {
@@ -252,7 +283,14 @@ export function mergeMatchLivePayload<T extends Record<string, unknown>>(
   prev: T,
   payload: Record<string, unknown>
 ): T {
-  const behind = isBehindCurrentState(prev, payload);
+  /**
+   * Revision decides staleness when both sides carry one — it is derived from the max
+   * ball sequence, so it cannot be fooled by a coarser overs figure the way
+   * `isBehindCurrentState` can. Where a revision is missing the overs heuristic still
+   * runs, so nothing regresses for matches the provider has not sequenced.
+   */
+  const staleByRevision = isStaleByRevision(prev, payload);
+  const behind = staleByRevision ?? isBehindCurrentState(prev, payload);
   const next: Record<string, unknown> = { ...prev };
   for (const [key, value] of Object.entries(payload)) {
     if (value === undefined || value === null) continue;
@@ -335,7 +373,32 @@ export function mergeLiveUpdate<T extends { matchId?: string; id?: string; statu
   if (isThinEvent(payload)) return matches;
 
   const idx = matches.findIndex((m) => normalizeMatchId(m.matchId || m.id) === normalizeMatchId(update.matchId));
-  const nextRow = mergeMatchLivePayload({ matchId: update.matchId } as T, payload);
+
+  /**
+   * Drop a frame the row is already ahead of, before any merging happens.
+   *
+   * The socket drops and redelivers under load, so a late duplicate carrying an older
+   * revision must not be applied at all — not merely have its progress fields ignored.
+   * `mergeMatchLivePayload` already shields the score from going backwards; this stops
+   * the stale frame from overwriting the row's `revision` and `updatedAt` on its way
+   * there, which would leave the row advertising itself as older than it is.
+   */
+  const incomingRevision = typeof update.revision === 'number' ? update.revision : payload.revision;
+  if (idx !== -1 && isStaleByRevision(matches[idx], { revision: incomingRevision }) === true) {
+    return matches;
+  }
+
+  /**
+   * The row records the revision it was last updated from, so the next frame can be
+   * ordered against it. The API sends it at the top level of the frame as well as inside
+   * the snapshot, so fold it in when only the outer field carried it.
+   */
+  const mergeable: Record<string, unknown> =
+    payload.revision === undefined && typeof incomingRevision === 'number'
+      ? { ...payload, revision: incomingRevision }
+      : payload;
+
+  const nextRow = mergeMatchLivePayload({ matchId: update.matchId } as T, mergeable);
 
   if (idx === -1) {
     if (nextRow.status === 'live') {
@@ -345,7 +408,7 @@ export function mergeLiveUpdate<T extends { matchId?: string; id?: string; statu
   }
 
   const next = [...matches];
-  next[idx] = mergeMatchLivePayload(next[idx] as T & Record<string, unknown>, payload);
+  next[idx] = mergeMatchLivePayload(next[idx] as T & Record<string, unknown>, mergeable);
   return next;
 }
 
@@ -379,27 +442,35 @@ export function useMatchStream(matchId?: string | null, enabled = true): LiveUpd
       const snapshot = unwrapSnapshot(incoming.data);
       if (!snapshot) return;
       if (cancelled) return;
+      /**
+       * The revision lives at the top level of the frame, but the canonical snapshot
+       * carries it inside the payload too. Prefer the explicit field and fall back to
+       * the snapshot so a frame from either path orders correctly.
+       */
+      const revision =
+        typeof incoming.revision === 'number'
+          ? incoming.revision
+          : typeof snapshot.revision === 'number'
+            ? snapshot.revision
+            : null;
+      const build = (): LiveUpdate => ({
+        type: 'match_update',
+        matchId: id,
+        data: snapshot,
+        ts: incoming.ts ?? Date.now(),
+        ...(revision !== null ? { revision } : {}),
+      });
       // Leading edge applies immediately so a fresh mount never waits;
       // anything arriving inside the window replaces the pending payload.
       if (!timer && !pending) {
-        setUpdate({
-          type: 'match_update',
-          matchId: id,
-          data: snapshot,
-          ts: incoming.ts ?? Date.now(),
-        });
+        setUpdate(build());
         timer = setTimeout(() => {
           timer = null;
           flush();
         }, SOCKET_UPDATE_WINDOW_MS);
         return;
       }
-      pending = {
-        type: 'match_update',
-        matchId: id,
-        data: snapshot,
-        ts: incoming.ts ?? Date.now(),
-      };
+      pending = build();
     };
 
     const onLive = (payload: LiveUpdate) => apply(payload);

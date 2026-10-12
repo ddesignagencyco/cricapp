@@ -1,4 +1,8 @@
-import { timelineInningsState, lastTimelineBall } from '../lib/matchTimelineState';
+import {
+  timelineInningsState,
+  lastTimelineBall,
+  mergeTimelineDelta,
+} from '../lib/matchTimelineState';
 import { deriveMatchState } from '../lib/deriveMatchState';
 
 /**
@@ -118,5 +122,110 @@ describe('the match row may not outvote a timeline that is ahead', () => {
     const state = deriveMatchState(staleRow, SHAPES[2][1]);
     const scoreRuns = Number(String(state.score).split('/')[0]);
     expect(scoreRuns).toBe(state.runs);
+  });
+});
+
+/**
+ * `GET /matches/:id/timeline?since=<rev>` answers with the whole envelope but only the
+ * events newer than `rev`, flagged `complete: false`. Splicing those has to leave a
+ * payload indistinguishable from a full one, or the commentary list restarts from one ball
+ * on every poll.
+ */
+describe('mergeTimelineDelta', () => {
+  const ball = (id: number, overs: string) => ({ id, type: 'ball', display_overs: overs });
+
+  function eventsOf(timeline: { payload: Record<string, unknown> }): unknown[] {
+    const inner = timeline.payload as { sport_event_timeline: { timeline: unknown[] } };
+    return inner.sport_event_timeline.timeline;
+  }
+
+  const base = {
+    matchId: 'm1',
+    revision: 100,
+    updatedAt: '2026-10-05T12:00:00.000Z',
+    complete: true,
+    payload: {
+      coverage: { type: 'sport_event' },
+      sport_event_status: { display_score: '50/1', display_overs: '5.0' },
+      sport_event_timeline: { timeline: [ball(1, '1.0'), ball(2, '2.0')] },
+    },
+  };
+
+  it('appends the delta onto the cached events instead of replacing them', () => {
+    const delta = {
+      matchId: 'm1',
+      revision: 103,
+      complete: false,
+      payload: {
+        coverage: { type: 'sport_event' },
+        sport_event_status: { display_score: '53/1', display_overs: '3.0' },
+        sport_event_timeline: { timeline: [ball(3, '3.0')] },
+      },
+    };
+    const merged = mergeTimelineDelta(base, delta);
+    expect(eventsOf(merged)).toHaveLength(3);
+    expect(merged.revision).toBe(103);
+    // Non-event blocks come from the delta: it is a fresh full snapshot of everything else.
+    expect(merged.payload).toMatchObject({
+      sport_event_status: { display_score: '53/1', display_overs: '3.0' },
+      coverage: { type: 'sport_event' },
+    });
+  });
+
+  it('leaves the merged payload readable by the state readers', () => {
+    const delta = {
+      matchId: 'm1',
+      revision: 104,
+      complete: false,
+      payload: {
+        sport_event_status: { display_score: '53/1', display_overs: '3.0' },
+        sport_event_timeline: {
+          timeline: [ball(3, '3.0'), ball(4, '3.6')],
+        },
+      },
+    };
+    const merged = mergeTimelineDelta(base, delta);
+    expect(lastTimelineBall(merged.payload)?.display_overs).toBe('3.6');
+    expect(timelineInningsState(merged.payload)?.overs).toBe(3.6);
+  });
+
+  it('drops a redelivered event rather than rendering it twice', () => {
+    // The provider rewrites the tail of the timeline on each sync, so an event already
+    // held can reappear inside the delta.
+    const delta = {
+      matchId: 'm1',
+      revision: 103,
+      complete: false,
+      payload: { sport_event_timeline: { timeline: [ball(2, '2.0'), ball(3, '3.0')] } },
+    };
+    const merged = mergeTimelineDelta(base, delta);
+    expect(eventsOf(merged)).toHaveLength(3);
+  });
+
+  it('keeps the cached events when the delta carries none', () => {
+    const delta = {
+      matchId: 'm1',
+      revision: 100,
+      complete: false,
+      payload: { sport_event_timeline: { timeline: [] } },
+    };
+    const merged = mergeTimelineDelta(base, delta);
+    expect(eventsOf(merged)).toHaveLength(2);
+  });
+
+  it('replaces the cached value outright for a complete payload', () => {
+    const full = { ...base, revision: 200 };
+    const merged = mergeTimelineDelta(base, full);
+    expect(merged).toBe(full);
+  });
+
+  it('takes the first full payload when nothing is cached yet', () => {
+    const delta = {
+      matchId: 'm1',
+      revision: 101,
+      complete: false,
+      payload: { sport_event_timeline: { timeline: [ball(1, '1.0')] } },
+    };
+    expect(mergeTimelineDelta(null, delta)).toBe(delta);
   });
 });
