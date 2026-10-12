@@ -1,4 +1,4 @@
-/** ISO-style codes Sportradar uses on cricket competitors (incl. common aliases). */
+﻿/** ISO-style codes Sportradar uses on cricket competitors (incl. common aliases). */
 const CODE_TO_COUNTRY = Object.freeze({
   IND: 'India',
   PAK: 'Pakistan',
@@ -32,6 +32,20 @@ export function countryNameFromCode(code) {
   if (!code || typeof code !== 'string') return null;
   const key = code.trim().toUpperCase();
   return CODE_TO_COUNTRY[key] ?? null;
+}
+
+/**
+ * The provider's competitor abbreviation is not always the code the product
+ * renders. West Indies Women ships as "WIN" while every UI badge reads "WI";
+ * normalise here so all stored rows agree. Anything unrecognised passes
+ * through untouched rather than breaking on the next provider rename.
+ */
+export function canonicalTeamAbbr(abbr, name) {
+  const a = (abbr ?? '').trim();
+  if (!a) return abbr ?? null;
+  const resolvedName = typeof name === 'string' ? name : '';
+  if (a.toUpperCase() === 'WIN' && /west indies/i.test(resolvedName)) return 'WI';
+  return a;
 }
 
 function sportEventRoot(sportEvent) {
@@ -98,7 +112,7 @@ export function buildTeamFromCompetitor(comp, sportEvent) {
   return {
     id: comp.id,
     name: comp.name ?? comp.abbreviation ?? 'Unknown',
-    abbr: comp.abbreviation ?? null,
+    abbr: canonicalTeamAbbr(comp.abbreviation, comp.name),
     country: resolveTeamCountry(comp, sportEvent),
     logoUrl: resolveTeamLogo(comp),
     manager: null,
@@ -111,7 +125,7 @@ export function buildTeamFromProfile({ teamId, manager, teamInfo }) {
   return {
     id: teamId ?? team.id,
     name: team.name ?? 'Unknown',
-    abbr: team.abbreviation ?? null,
+    abbr: canonicalTeamAbbr(team.abbreviation, team.name),
     country:
       team.country ??
       countryNameFromCode(team.country_code) ??
@@ -126,7 +140,7 @@ export function buildTeamFromTournamentTeam(team) {
   return {
     id: team.id,
     name: team.name ?? 'Unknown',
-    abbr: team.abbreviation ?? null,
+    abbr: canonicalTeamAbbr(team.abbreviation, team.name),
     country: resolveTeamCountry(team, {}),
     logoUrl: resolveTeamLogo(team),
     manager: null,

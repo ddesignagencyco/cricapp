@@ -15,3 +15,4 @@ export {
   formatOddsFromDecimal,
   parseOddsToDecimal,
 } from "./odds.math.js";
+export * from "./revision.js";

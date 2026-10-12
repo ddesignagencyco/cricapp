@@ -73,6 +73,26 @@ export class LiveGateway
 
     await this.liveService.subscribeToMatch(matchId);
     await client.join(this.matchRoom(matchId));
+
+    // Replay the current canonical snapshot immediately so a page connecting
+    // mid-over is not frozen until the next ball broadcast.
+    const snapshot = await this.liveService.currentSnapshot(matchId);
+    if (snapshot) {
+      const revision =
+        typeof snapshot === 'object' &&
+        snapshot !== null &&
+        'revision' in snapshot &&
+        typeof (snapshot as { revision?: unknown }).revision === 'number'
+          ? (snapshot as { revision: number }).revision
+          : null;
+      client.emit('match:update', {
+        type: 'match_update',
+        matchId,
+        data: snapshot,
+        ts: Date.now(),
+        revision,
+      });
+    }
     return { ok: true, matchId };
   }
 

@@ -8,6 +8,8 @@ export interface LiveUpdate {
   matchId: string;
   data?: unknown;
   ts: number;
+  /** Monotonic per-match revision carried through from the ingested snapshot. */
+  revision?: number | null;
 }
 
 const MATCH_CHANNEL_PATTERN = 'match:*';
@@ -68,7 +70,20 @@ export class LiveService implements OnModuleInit, OnModuleDestroy {
         ? (data as { matchId: string }).matchId
         : '';
     const matchId = fromPayload || channel.replace(/^match:/, '');
-    this.updates.next({ type: 'match_update', matchId, data, ts: Date.now() });
+    const revision =
+      typeof data === 'object' &&
+      data !== null &&
+      'revision' in data &&
+      typeof (data as { revision?: unknown }).revision === 'number'
+        ? (data as { revision: number }).revision
+        : null;
+    this.updates.next({
+      type: 'match_update',
+      matchId,
+      data,
+      ts: Date.now(),
+      revision,
+    });
   }
 
   private async refreshLiveSubscriptions(): Promise<void> {
@@ -88,6 +103,15 @@ export class LiveService implements OnModuleInit, OnModuleDestroy {
 
   stream() {
     return this.updates.asObservable();
+  }
+
+  /** Current canonical snapshot for a match, or null when none is cached. */
+  async currentSnapshot(matchId: string): Promise<unknown | null> {
+    try {
+      return await this.redis.get<unknown>(redisKeys.matchState(matchId));
+    } catch {
+      return null;
+    }
   }
 
   async subscribeToMatch(matchId: string): Promise<void> {

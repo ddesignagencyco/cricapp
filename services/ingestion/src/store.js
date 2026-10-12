@@ -7,6 +7,11 @@ import {
 } from './teamMeta.js';
 import { normalizeLineups, normalizeMatch } from './normalize.js';
 import { dedupeTimelineEvents } from './reference.js';
+import {
+  timelineRevision,
+  timelineEntriesOf,
+  reconcileTimelineStatus,
+} from '@cricapp/shared-types';
 import { PROVIDERS } from './schemas.js';
 import {
   buildPlayerFromProfile,
@@ -73,16 +78,23 @@ export async function saveMatch(match) {
  */
 export async function publishMatchState(match, { broadcast = false } = {}) {
   const key = redisKeys.matchState(match.matchId);
-  await redis.set(key, JSON.stringify(match), 'EX', REDIS_TTL.MATCH_STATE);
+  // Attach the monotonic revision so every consumer of the snapshot (REST
+  // replay, socket broadcast) can order it without comparing ball counts.
+  const revision = await currentMatchTimelineRevision(match.matchId).catch(() => null);
+  const enriched = {
+    ...match,
+    revision,
+    updatedAt: new Date().toISOString(),
+  };
+  await redis.set(key, JSON.stringify(enriched), 'EX', REDIS_TTL.MATCH_STATE);
 
   if (match.status === 'live') {
     await redis.sadd(redisKeys.liveMatches(), match.matchId);
   } else {
     await redis.srem(redisKeys.liveMatches(), match.matchId);
   }
-
   if (broadcast) {
-    await redis.publish(redisKeys.matchChannel(match.matchId), JSON.stringify(match));
+    await redis.publish(redisKeys.matchChannel(match.matchId), JSON.stringify(enriched));
   }
 }
 
@@ -593,10 +605,39 @@ export async function saveScopedProviderPayload({ kind, scopeKey, eventId, paylo
   return 1;
 }
 
+const TIMELINE_REVISION_KEY = (matchId) => `live:timeline:revision:${matchId}`;
+
 export async function saveMatchTimeline(matchId, payload) {
-  await query(upsertMatchTimeline, [matchId, JSON.stringify(dedupeTimelineEvents(payload))]);
+  const deduped = dedupeTimelineEvents(payload);
+  const reconciled = reconcileTimelineStatus(deduped);
+  await query(upsertMatchTimeline, [matchId, JSON.stringify(reconciled)]);
+  const revision = timelineRevision(reconciled);
+  if (revision != null) {
+    await redis
+      .set(TIMELINE_REVISION_KEY(matchId), String(revision), 'EX', REDIS_TTL.MATCH_STATE)
+      .catch(() => {});
+  }
   return 1;
 }
+
+/** Current stored revision for a match, or null when no timeline is stored. */
+export async function currentMatchTimelineRevision(matchId) {
+  try {
+    const cached = await redis.get(TIMELINE_REVISION_KEY(matchId));
+    if (cached != null) return Number(cached);
+  } catch {
+    // fall through to the DB
+  }
+  const r = await query(`SELECT payload FROM match_timelines WHERE match_id = $1`, [matchId]);
+  if (!r.rows[0]) return null;
+  try {
+    return timelineRevision(JSON.parse(r.rows[0].payload));
+  } catch {
+    return null;
+  }
+}
+
+export { TIMELINE_REVISION_KEY };
 
 const upsertHeadToHead = `
   INSERT INTO head_to_head (team_a_id, team_b_id, payload, created_at, updated_at)
