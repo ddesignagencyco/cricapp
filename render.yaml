@@ -1,0 +1,147 @@
+services:
+  - type: keyvalue
+    name: cricapp-redis
+    region: singapore
+    plan: 256mb
+    maxmemoryPolicy: allkeys-lru
+    persistenceMode: "off"
+    ipAllowList: []
+
+  - type: web
+    name: cricapp-api
+    runtime: docker
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: .
+    plan: standard
+    region: singapore
+    healthCheckPath: /api
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: API_PORT
+        value: "3001"
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: cricapp-redis
+          property: connectionString
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+      - key: API_KEY
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: PUBLIC_WEB_URL
+        sync: false
+      - key: AUTH_COOKIE_NAME
+        value: cricapp_token
+      - key: AUTH_COOKIE_SECURE
+        value: "true"
+      - key: AUTH_COOKIE_SAME_SITE
+        value: lax
+      - key: AUTH_COOKIE_MAX_AGE_MS
+        value: "604800000"
+      - key: JWT_EXPIRY
+        value: 7d
+      - key: SUPERADMIN_EMAIL
+        sync: false
+      - key: SUPERADMIN_USERNAME
+        sync: false
+      - key: SUPERADMIN_PASSWORD
+        sync: false
+      - key: EMAIL_PROVIDER
+        value: resend
+      - key: EMAIL_FROM
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: FIREBASE_PROJECT_ID
+        sync: false
+      - key: FIREBASE_CLIENT_EMAIL
+        sync: false
+      - key: FIREBASE_PRIVATE_KEY
+        sync: false
+
+  - type: worker
+    name: cricapp-workers
+    runtime: docker
+    dockerfilePath: ./Dockerfile.workers
+    dockerContext: .
+    plan: starter
+    region: singapore
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: cricapp-redis
+          property: connectionString
+      - key: DATABASE_URL
+        sync: false
+      - key: SPORTRADAR_API_KEY
+        sync: false
+      - key: SPORTRADAR_API_BASE_URL
+        value: https://api.sportradar.com
+      - key: SPORTRADAR_QPS
+        value: "1"
+      - key: POLL_INTERVAL_LIVE_MS
+        value: "15000"
+      - key: POLL_INTERVAL_IDLE_MS
+        value: "60000"
+      - key: LIVE_TIMELINE_DELTAS
+        value: "true"
+      - key: PSL_SEASONS
+        sync: false
+      - key: PSL_SYNC_INTERVAL_MS
+        sync: false
+      - key: REFERENCE_SYNC_INTERVAL_MS
+        value: "3600000"
+      - key: REFERENCE_SYNC_PAST_DAYS
+        value: "2"
+      - key: REFERENCE_SYNC_FUTURE_DAYS
+        value: "30"
+      - key: REF_SYNC_START_DELAY_MS
+        value: "300000"
+      - key: REF_SYNC_MATCH_LIMIT
+        value: "20"
+      - key: REF_SYNC_SUMMARY_LIMIT
+        value: "20"
+      - key: REF_SYNC_SEASON_LIMIT
+        value: "10"
+      - key: REF_SYNC_TEAMS_LIMIT
+        value: "10"
+      - key: REF_SYNC_LINEUP_LIMIT
+        value: "20"
+      - key: REF_SYNC_HEAD_TO_HEAD_LIMIT
+        value: "50"
+      - key: PREMATCH_INTERVAL_MS
+        value: "900000"
+      - key: PREMATCH_HORIZON_HOURS
+        value: "720"
+      - key: LIVE_THROTTLE_MS
+        value: "15000"
+      - key: LIVE_REFRESH_MS
+        value: "5000"
+      - key: CALIBRATION_INTERVAL_MS
+        value: "3600000"
+      - key: CALIBRATION_MIN_SAMPLES
+        value: "8"
+      - key: PREMATCH_CALIBRATION_LOCKED
+        value: "false"
+      - key: WORKER_RESTART_DELAY_MS
+        value: "5000"
+      - key: WORKER_MAX_RESTARTS
+        value: "10"

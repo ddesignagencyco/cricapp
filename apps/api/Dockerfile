@@ -1,5 +1,4 @@
 FROM node:20-bullseye-slim AS base
-RUN apt-get update -y && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
 
 # ---------- install ----------
 FROM base AS deps
