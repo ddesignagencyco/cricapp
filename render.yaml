@@ -2,7 +2,7 @@ services:
   - type: keyvalue
     name: cricapp-redis
     region: singapore
-    plan: 256mb
+    plan: free
     maxmemoryPolicy: allkeys-lru
     persistenceMode: "off"
     ipAllowList: []
@@ -12,7 +12,7 @@ services:
     runtime: docker
     dockerfilePath: ./apps/api/Dockerfile
     dockerContext: .
-    plan: standard
+    plan: free
     region: singapore
     healthCheckPath: /api
     autoDeployTrigger: commit
@@ -78,7 +78,7 @@ services:
     runtime: docker
     dockerfilePath: ./Dockerfile.workers
     dockerContext: .
-    plan: starter
+    plan: free
     region: singapore
     autoDeployTrigger: commit
     envVars:
