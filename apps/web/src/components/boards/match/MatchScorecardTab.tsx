@@ -140,12 +140,12 @@ function ScoreTable({
 }) {
   return (
     <div className="mc-table-wrap table-scroll">
-      <table className="w-full min-w-[360px] table-fixed text-sm">
+      <table className="w-full min-w-[540px] text-sm">
         <caption className="sr-only">{caption}</caption>
         <colgroup>
-          <col className="w-[40%]" />
+          <col />
           {headers.slice(1).map((header) => (
-            <col key={header} className="w-[12%]" />
+            <col key={header} className="w-[4rem]" />
           ))}
         </colgroup>
         <thead>

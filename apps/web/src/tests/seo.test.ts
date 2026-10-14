@@ -8,6 +8,7 @@ jest.mock('../services/players', () => ({ fetchPlayers: jest.fn() }));
 jest.mock('../services/tournaments', () => ({ fetchTournaments: jest.fn() }));
 jest.mock('../services/news', () => ({ fetchNews: jest.fn() }));
 jest.mock('../services/authors', () => ({ fetchPublicAuthors: jest.fn() }));
+jest.mock('../services/stories', () => ({ fetchStories: jest.fn() }));
 
 import { fetchMatches } from '../services/matches';
 import { fetchTeams } from '../services/teams';
@@ -15,6 +16,7 @@ import { fetchPlayers } from '../services/players';
 import { fetchTournaments } from '../services/tournaments';
 import { fetchNews } from '../services/news';
 import { fetchPublicAuthors } from '../services/authors';
+import { fetchStories } from '../services/stories';
 
 const matches = fetchMatches as jest.MockedFunction<typeof fetchMatches>;
 const teams = fetchTeams as jest.MockedFunction<typeof fetchTeams>;
@@ -22,8 +24,11 @@ const players = fetchPlayers as jest.MockedFunction<typeof fetchPlayers>;
 const tournaments = fetchTournaments as jest.MockedFunction<typeof fetchTournaments>;
 const news = fetchNews as jest.MockedFunction<typeof fetchNews>;
 const authors = fetchPublicAuthors as jest.MockedFunction<typeof fetchPublicAuthors>;
+const stories = fetchStories as jest.MockedFunction<typeof fetchStories>;
 
 const BASE = 'https://pakcriczone.com';
+
+const noStories = { items: [], total: 0, totalPages: 1 };
 
 beforeEach(() => {
   jest.resetAllMocks();
@@ -33,6 +38,7 @@ beforeEach(() => {
   tournaments.mockResolvedValue([]);
   news.mockResolvedValue([]);
   authors.mockResolvedValue([]);
+  stories.mockResolvedValue(noStories);
 });
 
 describe('robots', () => {
@@ -89,6 +95,7 @@ describe('sitemap', () => {
     expect(urls).toContain(BASE);
     expect(urls).toContain(`${BASE}/matches`);
     expect(urls).toContain(`${BASE}/news`);
+    expect(urls).toContain(`${BASE}/stories`);
     expect(urls).toContain(`${BASE}/privacy`);
   });
 
@@ -123,6 +130,25 @@ describe('sitemap', () => {
     const urls = (await sitemap()).map((e) => e.url);
     expect(urls).toContain(`${BASE}/cricket-news/pakistan-wins`);
     expect(urls).toContain(`${BASE}/ur/news/pakistan-jata`);
+  });
+
+  it('appends one entry per published story so deep links are crawlable', async () => {
+    stories.mockResolvedValue({
+      items: [
+        { id: 's1', shareUrl: '/stories/s1', publishedAt: '2026-10-01T00:00:00.000Z' },
+        { id: 's2', shareUrl: '/stories/s2', publishedAt: null },
+      ],
+      total: 2,
+      totalPages: 1,
+    } as never);
+
+    const entries = await sitemap();
+    const urls = entries.map((e) => e.url);
+    expect(urls).toContain(`${BASE}/stories/s1`);
+    expect(urls).toContain(`${BASE}/stories/s2`);
+    // An undated story still has to produce a parseable lastModified.
+    const undated = entries.find((e) => e.url === `${BASE}/stories/s2`);
+    expect(Number.isNaN(Date.parse(String(undated?.lastModified)))).toBe(false);
   });
 
   it('never emits a relative url', async () => {

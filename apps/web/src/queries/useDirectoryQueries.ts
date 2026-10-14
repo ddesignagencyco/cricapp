@@ -24,6 +24,7 @@ import {
   type TournamentsQueryParams,
 } from './keys';
 import { QUERY_STALE_TIME } from './constants';
+import { LIVE_MATCH_REFETCH_MS } from './useMatchCentreQueries';
 import { runAbortable } from './queryUtils';
 import type { Match } from '../types/index';
 
@@ -106,11 +107,24 @@ export function useMatchesQuery(params: MatchesQueryParams, enabled = true) {
   });
 }
 
+/**
+ * The live match list.
+ *
+ * Polls on the same `LIVE_MATCH_REFETCH_MS` cadence as the single-match query in
+ * `useMatchCentreQueries`. Both are backstops for the socket, and the point of
+ * using one shared constant is that a card and the match page it links to must
+ * never sit on visibly different scores: when the socket is unavailable the two
+ * re-check together instead of one lagging the other until a manual refresh.
+ *
+ * `refetchIntervalInBackground` is off so a backgrounded tab is not polled.
+ */
 export function useLiveMatchesQuery(enabled = true) {
   return useQuery({
     queryKey: matchKeys.live(),
     queryFn: ({ signal }) => runAbortable(signal, (requestSignal) => fetchLiveMatches(requestSignal)),
     enabled,
+    refetchInterval: LIVE_MATCH_REFETCH_MS,
+    refetchIntervalInBackground: false,
   });
 }
 

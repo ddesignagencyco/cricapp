@@ -1,5 +1,3 @@
-'use client';
-
 import Link from 'next/link';
 import { StatusBadge } from './Badge';
 import RemoteImage from './RemoteImage';

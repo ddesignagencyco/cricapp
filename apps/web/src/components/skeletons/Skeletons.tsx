@@ -378,6 +378,24 @@ export function GalleryPageSkeleton() {
   );
 }
 
+/** Matches the Cric Stories listing: a portrait 9:16 grid under a text header. */
+export function StoriesPageSkeleton() {
+  return (
+    <Page className="space-y-8">
+      <div>
+        <Skeleton width={64} height={14} />
+        <Skeleton width={200} height={30} className="mt-2" />
+        <Skeleton width="60%" height={12} className="mt-2" />
+      </div>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        {Array.from({ length: 10 }).map((_, i) => (
+          <Skeleton key={i} height={i % 2 === 0 ? 300 : 260} borderRadius={8} className="!block" />
+        ))}
+      </div>
+    </Page>
+  );
+}
+
 export function NewsPageSkeleton() {
   return (
     <Page>

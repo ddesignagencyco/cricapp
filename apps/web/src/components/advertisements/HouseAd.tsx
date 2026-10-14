@@ -1,11 +1,10 @@
 import type { ReactNode } from 'react';
 import Badge from '../Badge';
+import ResponsiveLeaderboard from './ResponsiveLeaderboard';
 import {
-  LEADERBOARD_SLOT_META,
   dummyAdAlt,
   resolveDummyAdCreative,
   type DummyAdSize,
-  type LeaderboardVariant,
 } from '../../lib/advertisements/placements';
 
 export type HouseAdProps = {
@@ -78,39 +77,6 @@ function SlotFrame({ width, height, children, fill = false }: {
   );
 }
 
-const LEADERBOARD_BREAKPOINTS: { variant: LeaderboardVariant; className: string }[] = [
-  { variant: 'wide', className: 'hidden w-full min-[1200px]:block' },
-  { variant: 'desktop', className: 'hidden w-full min-[800px]:max-[1199px]:block' },
-  { variant: 'tablet', className: 'hidden w-full min-[500px]:max-[799px]:block' },
-  { variant: 'mobile', className: 'block w-full min-[500px]:hidden' },
-];
-
-function ResponsiveLeaderboard({ placement }: { placement: string }) {
-  return (
-    <aside
-      data-ad-placement={placement}
-      aria-label="Advertisement"
-      className="relative flex w-full min-w-0 max-w-full flex-col"
-    >
-      <AdBadge />
-      <div className="w-full">
-        {LEADERBOARD_BREAKPOINTS.map(({ variant, className }) => {
-          const creative = resolveDummyAdCreative('leaderboard', placement, variant);
-          const meta = LEADERBOARD_SLOT_META[variant];
-          return (
-            <div key={variant} className={className}>
-              <SlotFrame width={meta.width} height={meta.height} fill>
-                <CreativeMedia src={creative.src} width={meta.width} height={meta.height}
-                               alt={dummyAdAlt(creative.advertiser, creative.line)} />
-              </SlotFrame>
-            </div>
-          );
-        })}
-      </div>
-    </aside>
-  );
-}
-
 export default function HouseAd({ size, placement, className = '', inFeed = false }: HouseAdProps) {
   if (size === 'leaderboard' && !inFeed) {
     return (
@@ -119,7 +85,6 @@ export default function HouseAd({ size, placement, className = '', inFeed = fals
       </div>
     );
   }
-
   const creative = resolveDummyAdCreative(size, placement, size === 'leaderboard' ? 'desktop' : undefined);
   const alt = dummyAdAlt(creative.advertiser, creative.line);
   const hideOnMobile = size === 'half-page';

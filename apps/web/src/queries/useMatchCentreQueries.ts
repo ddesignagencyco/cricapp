@@ -24,15 +24,25 @@ import { fetchMatchOdds } from '../services/odds';
 import { fetchNews } from '../services/news';
 import { matchKeys } from './keys';
 import { runAbortable } from './queryUtils';
+import { mergeTimelineDelta } from '../lib/matchTimelineState';
 import type { HeadToHead, Match, NewsArticle } from '../types';
 import type { MatchOddsFetchResult, MatchOddsResponse } from '../types/odds';
 import type { MatchTimeline } from '../services/matches';
+
+/**
+ * How often a live match page re-checks its own score.
+ *
+ * The socket delivers updates within about a second, so this is only a backstop
+ * for when it is unavailable — slow enough to be negligible, fast enough that a
+ * frozen header corrects itself well before a reader would notice.
+ */
+export const LIVE_MATCH_REFETCH_MS = 30_000;
 
 /** The match row itself. */
 export function useMatchDetailQuery(
   matchId: string,
   initialMatch?: Match | null,
-  options: { enabled?: boolean } = {},
+  options: { enabled?: boolean; live?: boolean } = {},
 ) {
   const enabled = (options.enabled ?? true) && Boolean(matchId);
   return useQuery<Match | null, Error>({
@@ -43,6 +53,20 @@ export function useMatchDetailQuery(
     // so a genuine 404 is not retried on every render.
     initialData: initialMatch ?? undefined,
     enabled,
+    /**
+     * Safety net for the live score.
+     *
+     * The socket is the primary, instant path, but it is not the only thing keeping
+     * this page honest: a socket that is blocked, still connecting, or dropped left the
+     * header frozen on its server snapshot indefinitely, because `initialData` plus a
+     * non-zero stale time means the query never revalidates on its own. That made the
+     * same match show a different score here than on the live list until a manual
+     * refresh. While the match is live, poll slowly so the page self-heals.
+     *
+     * `refetchIntervalInBackground` stays off so a backgrounded tab is not polled.
+     */
+    refetchInterval: options.live ? LIVE_MATCH_REFETCH_MS : false,
+    refetchIntervalInBackground: false,
   });
 }
 
@@ -52,17 +76,52 @@ export function useMatchDetailQuery(
  * Not seeded, because the server render passes the raw payload separately to avoid
  * deserialising 1,600 events twice. It is fetched on demand by the panels that read
  * it and then cached for the rest of the visit, so switching tabs is free.
+ *
+ * `live` does **not** enable the query — it must never start the 1.6 MB download by
+ * itself. It only makes an already-fetched timeline refetch on the live cadence, so
+ * the commentary and the header (which reconciles against this same payload) cannot
+ * drift apart while a match is running.
+ *
+ * **Refetches ask for a delta, not the whole timeline.** Once a revision is cached the
+ * query sends it as `?since=`, so a live poll transfers the handful of new balls rather
+ * than the entire match — on a second innings that is a few KB instead of ~1.6 MB. The
+ * first request always goes out without `since`, because there is nothing cached to be
+ * relative to.
  */
-export function useMatchTimelineQuery(matchId: string, options: { enabled?: boolean } = {}) {
+export function useMatchTimelineQuery(
+  matchId: string,
+  options: { enabled?: boolean; live?: boolean; delta?: boolean } = {},
+) {
   const enabled = (options.enabled ?? true) && Boolean(matchId);
-  return useQuery<MatchTimeline | null, Error>({
+  const useDelta = options.delta ?? true;
+  return useQuery<MatchTimeline | null | undefined, Error>({
     queryKey: matchKeys.timeline(matchId),
-    queryFn: ({ signal }) =>
-      runAbortable(signal, (requestSignal) => fetchMatchTimeline(matchId, requestSignal)),
+    queryFn: ({ signal, client }) =>
+      runAbortable(signal, async (requestSignal) => {
+        const queryKey = matchKeys.timeline(matchId);
+        const cached = client.getQueryData<MatchTimeline | null | undefined>(queryKey) ?? null;
+        const since =
+          useDelta && typeof cached?.revision === 'number' && cached.revision > 0
+            ? cached.revision
+            : null;
+        const next = await fetchMatchTimeline(matchId, requestSignal, since);
+        // 204: `since` is already current, so there is nothing new. Keeping the cached
+        // timeline is not an optimisation here — returning `null` would blank the
+        // commentary tab on every poll that landed between balls.
+        if (next === undefined) return cached;
+        return mergeTimelineDelta(cached, next);
+      }),
     enabled,
     // A 404 means the provider has no timeline for this fixture. That is an answer,
     // not a failure, so it is cached and the empty state renders immediately.
     retry: false,
+    refetchInterval: (query) => {
+      // `query.state.data` is the gate: polling only ever re-reads a timeline that has
+      // already been fetched, so an unopened Commentary tab still costs nothing.
+      if (!options.live || query.state.data === null || query.state.data === undefined) return false;
+      return LIVE_MATCH_REFETCH_MS;
+    },
+    refetchIntervalInBackground: false,
   });
 }
 

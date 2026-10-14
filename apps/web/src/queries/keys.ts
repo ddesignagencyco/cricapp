@@ -7,6 +7,12 @@ export interface GalleryQueryParams {
   limit?: number;
 }
 
+export interface StoriesQueryParams {
+  [key: string]: string | number | boolean | undefined;
+  page?: number;
+  limit?: number;
+}
+
 export interface MatchesQueryParams {
   [key: string]: string | number | boolean | undefined;
   q?: string;
@@ -99,6 +105,20 @@ export const galleryKeys = {
   lists: galleryLists,
   list: (params: GalleryQueryParams | Record<string, unknown>) =>
     [...galleryLists(), normalizeParams(params as Record<string, unknown>)] as const,
+};
+
+const storyLists = () => ['stories', 'list'] as const;
+
+export const storiesKeys = {
+  all: ['stories'] as const,
+  lists: storyLists,
+  list: (params: StoriesQueryParams | Record<string, unknown>) =>
+    [...storyLists(), normalizeParams(params as Record<string, unknown>)] as const,
+  /**
+   * Every story key carries the id, for the same reason the match keys do: a
+   * detail cache without one can serve one story's payload on another's page.
+   */
+  detail: (id: string) => ['stories', 'detail', id] as const,
 };
 
 const matchLists = () => ['matches', 'list'] as const;

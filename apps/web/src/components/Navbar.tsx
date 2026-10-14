@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type ComponentType, type ReactNode } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -32,7 +33,6 @@ import {
   X,
 } from 'lucide-react';
 import Logo from './Logo';
-import SearchBar from './SearchBar';
 import RemoteImage from './RemoteImage';
 import { useTheme } from './ThemeProvider';
 import { useAuth } from './AuthProvider';
@@ -65,6 +65,9 @@ const exploreItems: NavItem[] = [
 ];
 
 const navItems = [...liveItems, ...exploreItems];
+
+// Search (services/search + results UI) loads on first open, never upfront.
+const SearchBar = dynamic(() => import('./SearchBar'), { ssr: false });
 
 function avatarHue(name: string) {
   let h = 0;
@@ -548,9 +551,13 @@ function MobileNavLink({ item, active }: { item: NavItem; active: boolean }) {
     <Link
       href={item.to}
       aria-current={active ? 'page' : undefined}
-      className={`flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-semibold transition-colors ${
+      // `relative` is required: the active underline is an `after:` pseudo-element,
+      // and without a positioned ancestor it resolves against the nearest positioned
+      // ancestor (the menu panel), so it stretched a full-width blue rule across the
+      // sheet instead of sitting under this one row.
+      className={`relative flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-semibold transition-colors ${
         active
-          ? 'text-accent after:absolute after:inset-x-2.5 after:-bottom-0.5 after:h-0.5 after:rounded-full after:bg-accent'
+          ? 'bg-accent/10 text-accent after:absolute after:inset-x-3 after:bottom-1 after:h-0.5 after:rounded-full after:bg-accent'
           : 'text-mtext hover:bg-[var(--color-row-hover)]'
       }`}
     >

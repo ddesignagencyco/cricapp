@@ -3,13 +3,20 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Activity, Home, Menu, Newspaper, Sparkles } from 'lucide-react';
+import { Activity, Calendar, Home, Menu, Newspaper } from 'lucide-react';
 
+/**
+ * The four primary destinations, plus the Browse sheet.
+ *
+ * Deliberately Home / Matches / Schedule / News — everything else (Predictions,
+ * Streams, Teams, Players, PSL, Tours, Tournaments, Tools) lives in the Browse
+ * sheet opened from the last item.
+ */
 const items = [
   { to: '/', label: 'Home', icon: Home, match: (path: string) => path === '/' },
-  { to: '/matches', label: 'Live', icon: Activity, match: (path: string) => path.startsWith('/matches') },
-  { to: '/predictions', label: 'Predict', icon: Sparkles, match: (path: string) => path.startsWith('/predictions') },
-  { to: '/news', label: 'News', icon: Newspaper, match: (path: string) => path.startsWith('/news') || path.startsWith('/cricket-news') },
+  { to: '/matches', label: 'Matches', icon: Activity, match: (path: string) => path.startsWith('/matches') },
+  { to: '/schedules', label: 'Schedule', icon: Calendar, match: (path: string) => path.startsWith('/schedules') || path.startsWith('/schedule') },
+  { to: '/news', label: 'News', icon: Newspaper, match: (path: string) => path.startsWith('/news') || path.startsWith('/cricket-news') || path.startsWith('/ur/news') },
 ] as const;
 
 export default function MobileBottomNav() {

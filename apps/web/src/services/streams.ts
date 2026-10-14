@@ -12,6 +12,21 @@ export interface StreamInput {
   scheduledAt?: string;
 }
 
+/**
+ * True only for a stream that is broadcasting right now.
+ *
+ * Normalised the same way `normalizeStatus` does, so `live` and `Live` both
+ * count. Note that normalising turns a separator into an underscore, so
+ * `live-now` becomes `live_now` and is deliberately *not* treated as live —
+ * guessing loosely here would show a finished broadcast as a live one.
+ *
+ * A caller that wants live streams should still filter with this: the upstream
+ * `status` param is a filter, not a guarantee.
+ */
+export function isLiveStream(stream: { status?: string | null }): boolean {
+  return (stream.status || '').trim().toLowerCase().replace(/[\s-]+/g, '_') === 'live';
+}
+
 function mapStreamItem(item: Record<string, unknown>): Stream {
   return {
     id: item.id as string,

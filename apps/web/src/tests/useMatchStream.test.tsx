@@ -207,6 +207,76 @@ describe('mergeLiveUpdate', () => {
     mergeLiveUpdate(rows, { type: 'live:update', matchId: 'm1', data: { venue: 'New' } });
     expect(JSON.stringify(rows)).toBe(snapshot);
   });
+
+  describe('revision ordering', () => {
+    it('drops a frame whose revision is older than the row it would patch', () => {
+      const rows: Array<Record<string, unknown>> = [
+        { matchId: 'm1', status: 'live', revision: 500 },
+      ];
+      const out = mergeLiveUpdate(rows, {
+        type: 'live:update',
+        matchId: 'm1',
+        revision: 400,
+        data: { displayScore: '10/0', venue: 'Stale' },
+      });
+      // Same array back: nothing was merged, so nothing rewound.
+      expect(out).toBe(rows);
+      expect(out[0].revision).toBe(500);
+      expect(out[0].venue).toBeUndefined();
+      expect(out[0].displayScore).toBeUndefined();
+    });
+
+    it('applies a frame whose revision is newer', () => {
+      const rows: Array<Record<string, unknown>> = [
+        { matchId: 'm1', status: 'live', revision: 500 },
+      ];
+      const out = mergeLiveUpdate(rows, {
+        type: 'live:update',
+        matchId: 'm1',
+        revision: 501,
+        data: { displayScore: '12/1' },
+      });
+      expect(out[0]).toMatchObject({ revision: 501, displayScore: '12/1' });
+    });
+
+    it('reads the revision off the snapshot when the frame omits it', () => {
+      const rows: Array<Record<string, unknown>> = [
+        { matchId: 'm1', status: 'live', revision: 500 },
+      ];
+      const out = mergeLiveUpdate(rows, {
+        type: 'live:update',
+        matchId: 'm1',
+        data: { revision: 400, displayScore: '10/0' },
+      });
+      expect(out).toBe(rows);
+    });
+
+    it('does not treat an equal revision as stale', () => {
+      // The provider can rewrite the same position with a fresher runs/wickets write,
+      // so equal revisions must still merge.
+      const rows: Array<Record<string, unknown>> = [
+        { matchId: 'm1', status: 'live', revision: 500, displayScore: '10/0' },
+      ];
+      const out = mergeLiveUpdate(rows, {
+        type: 'live:update',
+        matchId: 'm1',
+        revision: 500,
+        data: { displayScore: '10/0', venue: 'Gaddafi' },
+      });
+      expect(out[0]).toMatchObject({ venue: 'Gaddafi' });
+    });
+
+    it('falls back to the overs heuristic when either side has no revision', () => {
+      const rows = [{ matchId: 'm1', status: 'live', currentInnings: { overs: '10.2', runs: 80 } }];
+      const out = mergeLiveUpdate(rows, {
+        type: 'live:update',
+        matchId: 'm1',
+        data: { currentInnings: { overs: '9.4', runs: 70 } },
+      });
+      // Behind in balls with no totals to prove freshness: the progress fields are kept.
+      expect(out[0].currentInnings).toMatchObject({ overs: '10.2', runs: 80 });
+    });
+  });
 });
 
 describe('useMatchStream', () => {
@@ -278,6 +348,31 @@ describe('useMatchStream', () => {
       });
     });
     expect(result.current?.data).toEqual({ status: 'live' });
+  });
+
+  it('carries the revision through instead of dropping it', () => {
+    const { result } = renderHook(() => useMatchStream('m1'));
+    act(() => {
+      socket.fire('live:update', {
+        type: 'live:update',
+        matchId: 'm1',
+        revision: 777,
+        data: { status: 'live' },
+      });
+    });
+    expect(result.current?.revision).toBe(777);
+  });
+
+  it('falls back to the snapshot revision when the frame omits it', () => {
+    const { result } = renderHook(() => useMatchStream('m1'));
+    act(() => {
+      socket.fire('live:update', {
+        type: 'live:update',
+        matchId: 'm1',
+        data: { status: 'live', revision: 778 },
+      });
+    });
+    expect(result.current?.revision).toBe(778);
   });
 
   it('does not connect when disabled', () => {

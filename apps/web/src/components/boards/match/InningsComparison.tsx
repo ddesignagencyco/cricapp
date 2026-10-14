@@ -22,15 +22,15 @@ export default function InningsComparison({ view }: { view: MatchViewModel }) {
     <MatchSectionCard icon={BarChart3} title="Innings Comparison">
       <div className="mc-table-wrap">
         <div className="table-scroll">
-          <table className="w-full min-w-[440px] table-fixed text-sm">
+          <table className="w-full min-w-[440px] text-sm">
             <caption className="sr-only">
               Each innings in this match, with runs, wickets, overs and run rate.
             </caption>
             <colgroup>
-              <col className="w-[34%]" />
-              <col className="w-[30%]" />
-              <col className="w-[18%]" />
-              <col className="w-[18%]" />
+              <col />
+              <col className="w-[9rem]" />
+              <col className="w-[5rem]" />
+              <col className="w-[5rem]" />
             </colgroup>
             <thead>
               <tr className="mc-table__head">

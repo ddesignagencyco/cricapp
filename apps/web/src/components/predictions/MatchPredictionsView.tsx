@@ -73,7 +73,9 @@ export default function MatchPredictionsView({
   const [loading, setLoading] = useState(!seeded);
   const [showAllRuns, setShowAllRuns] = useState(false);
   const live = match.status === 'live';
-  const liveUpdate = useMatchStream(matchId, live);
+  // Always subscribed (not gated on `live`) for the same reason as the match centre:
+  // a status that is not exactly `live` must not switch the score updates off.
+  const liveUpdate = useMatchStream(matchId);
   const sides = matchSides(match);
 
   useEffect(() => {

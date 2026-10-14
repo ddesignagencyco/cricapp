@@ -1,24 +1,36 @@
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import MatchCard from '../../components/MatchCard';
-import LiveNowSection from '../../components/LiveNowSection';
+// Above-fold islands that hydrate independently: SSR HTML is unchanged, but
+// their JS (socket client, Intl/scoreboard work, observers) loads and hydrates
+// after the critical path instead of competing with the LCP hero paint.
+const MatchTickerBar = dynamic(() => import('../../components/MatchTickerBar'));
+const LiveNowSection = dynamic(() => import('../../components/LiveNowSection'));
 import SectionHeader from '../../components/SectionHeader';
-import HomeGalleryStrip from '../../components/gallery/HomeGalleryStrip';
-import MatchTickerBar from '../../components/MatchTickerBar';
 import CricketHero from '../../components/CricketHero';
 import PslSpotlight from '../../components/PslSpotlight';
 import RecentResultCard from '../../components/RecentResultCard';
+// Client-fetched below-fold strip: renders null until its query resolves, so
+// splitting it into its own chunk changes no content, only when its JS loads.
+const HomeGalleryStrip = dynamic(() => import('../../components/gallery/HomeGalleryStrip'));
+// Same treatment as the gallery strip: a client-fetched, below-fold rail that
+// renders nothing until its query resolves.
+const HomeStoriesRail = dynamic(() => import('../../components/stories/HomeStoriesRail'));
 import TopPerformers from '../../components/TopPerformers';
-import Newsletter from '../../components/Newsletter';
+// Below-fold form (plus react-hot-toast) splits into its own chunk while still
+// server-rendering, so content and SEO are unchanged.
+const Newsletter = dynamic(() => import('../../components/Newsletter'));
 import AdSlot from '../../components/advertisements/AdSlot';
+import AdMultiplex from '../../components/advertisements/AdMultiplex';
 import RemoteImage from '../../components/RemoteImage';
 import NewsCopy from '../../components/NewsCopy';
-import Badge, { StatusBadge } from '../../components/Badge';
+import { StatusBadge } from '../../components/Badge';
 
 import { fetchLiveMatches, fetchMatches } from '../../services/matches';
 import { fetchNews } from '../../services/news';
 import { newsHref } from '../../utils/newsConstraints';
 import { fetchPslLeaders, fetchPslStandings } from '../../services/psl';
-import { fetchStreams } from '../../services/streams';
+import { fetchStreams, isLiveStream } from '../../services/streams';
 
 export const revalidate = 60;
 
@@ -41,10 +53,13 @@ export default async function HomePage() {
       fetchLiveMatches(),
       fetchMatches({ status: 'upcoming', limit: 20 }),
       fetchMatches({ status: 'completed', limit: 20 }),
-      fetchNews(),
+      // The page renders 1 featured + 4 compact stories; the old default of 50
+      // only inflated the API payload and server time.
+      fetchNews({ limit: 6 }),
       fetchPslStandings(),
       fetchPslLeaders(),
-      fetchStreams({ limit: 8 }),
+      // The page renders 3 stream cards, and only the ones actually broadcasting.
+      fetchStreams({ status: 'live', limit: 3 }),
     ] as const);
   const liveMatches = results[0].status === 'fulfilled' ? results[0].value : [];
   const upcomingMatches = results[1].status === 'fulfilled' ? results[1].value : [];
@@ -90,6 +105,11 @@ export default async function HomePage() {
   const nextUpcoming = (upcomingMatches || [])[0] || null;
   const pslStandings = [...(standings || [])].sort((a: any, b: any) => (a.rank ?? 999) - (b.rank ?? 999));
 
+  // The API is asked for live streams, but the filter is repeated here so a
+  // finished broadcast can never slip into a section that promises a live one —
+  // the section simply disappears instead.
+  const liveStreams = (streams || []).filter(isLiveStream);
+
   const heroMatch = nextUpcoming || live[0] || completed[0] || null;
 
   return (
@@ -109,18 +129,16 @@ export default async function HomePage() {
       <div className="flex flex-col gap-12 pt-12 pb-12">
       <LiveNowSection matches={live} />
 
-      {streams.length > 0 && (
+      {liveStreams.length > 0 && (
         <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
-          <SectionHeader title="Watch Now" subtitle="Live streams and featured videos" icon="video" to="/gallery?tab=videos" actionLabel="All videos" />
+          <SectionHeader title="Watch Now" subtitle="Live right now" icon="video" to="/streams" actionLabel="All streams" />
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {streams.slice(0, 3).map((stream) => (
+            {liveStreams.slice(0, 3).map((stream) => (
               <Link key={stream.id} href="/streams" className="card-diamond card-interactive group overflow-hidden rounded-md border border-lborder bg-card">
                 <div className="flex items-center border-b border-lborder px-3 py-2">
-                  {stream.status === 'ended' ? (
-                    <Badge>Ended</Badge>
-                  ) : (
-                    <StatusBadge status={stream.status || 'upcoming'} />
-                  )}
+                  {/* The list is already live-only; the badge still reads the row's
+                      own status so it can never contradict the filter. */}
+                  <StatusBadge status={stream.status || 'live'} />
                 </div>
                 <div className="relative aspect-video bg-[var(--color-skeleton)]">
                   {stream.image ? (
@@ -156,6 +174,11 @@ export default async function HomePage() {
           )}
         </div>
       </section>
+
+      {/* Cric Stories. Sits directly after the live and upcoming match blocks so
+          the fixtures and the short-form rail read as one run of "watch this",
+          ahead of the standings and news sections. */}
+      <HomeStoriesRail />
 
       <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
         <AdSlot placement="home-mid" />
@@ -268,6 +291,12 @@ export default async function HomePage() {
           </div>
         </section>
       )}
+
+      {/* Multiplex sits between the news block and the gallery strip so it never
+          stacks directly against the footer banner (§10). */}
+      <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
+        <AdMultiplex placement="home-multiplex" />
+      </section>
 
       <HomeGalleryStrip />
 

@@ -1,5 +1,3 @@
-'use client';
-
 import Link from 'next/link';
 import { Download, Mail, MapPin, Phone } from 'lucide-react';
 import Logo from './Logo';

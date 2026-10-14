@@ -73,8 +73,8 @@ export const EMPTY_AD_CONFIG: AdConfig = {
 /**
  * Where each placement lives on the site. Purely a UI concern — the API stores a
  * flat `placements` map and has no idea what a "page" is. Grouping exists so the
- * admin screen can show seven switch clusters instead of one wall of 26 identical
- * rows, and so the label can name the route the admin has to visit to see the slot.
+ * admin screen can show switch clusters instead of one wall of identical rows,
+ * and so the label can name the route the admin has to visit to see the slot.
  */
 export const AD_PLACEMENT_GROUPS = [
   { id: 'site', label: 'Site-wide', hint: 'Every page' },
@@ -129,14 +129,17 @@ export type AdPlacement = {
 export const AD_PLACEMENTS: readonly AdPlacement[] = [
   { key: 'global-top', label: 'Global top banner', size: 'leaderboard', group: 'site', perRoute: true },
   { key: 'layout-sidebar', label: 'Layout sidebar', size: 'medium-rectangle', group: 'site' },
+  { key: 'search-bottom', label: 'Search — bottom', size: 'leaderboard', group: 'site' },
 
   { key: 'home-top-mobile', label: 'Mobile top', size: 'leaderboard', group: 'home' },
   { key: 'home-mid', label: 'Mid page', size: 'leaderboard', group: 'home' },
   { key: 'home-footer', label: 'Footer', size: 'leaderboard', group: 'home' },
+  { key: 'home-multiplex', label: 'Multiplex (bottom)', size: 'leaderboard', group: 'home' },
   { key: 'home-sidebar', label: 'Sidebar', size: 'medium-rectangle', group: 'home', inFeed: true },
 
   { key: 'news-list-infeed', label: 'List — in feed', size: 'large-rectangle', group: 'news', inFeed: true },
   { key: 'news-list-bottom', label: 'List — bottom', size: 'leaderboard', group: 'news' },
+  { key: 'news-detail-top', label: 'Detail — top (after hero)', size: 'leaderboard', group: 'news' },
   { key: 'news-detail-inarticle', label: 'Detail — in article', size: 'large-rectangle', group: 'news' },
   { key: 'news-detail-sidebar', label: 'Detail — sidebar', size: 'medium-rectangle', group: 'news' },
   { key: 'news-detail-after-related', label: 'Detail — after related', size: 'leaderboard', group: 'news' },
@@ -238,11 +241,20 @@ export function adPlacementEnabled(placement: string, config: AdConfig): boolean
  * The single gate. Applied inside `AdSlot` rather than at each of the ~26 call
  * sites, so a new placement cannot forget one of the three checks.
  */
-export function shouldRenderAd(config: AdConfig, placement: string, pathname: string): boolean {
+export function shouldRenderAd(
+  config: AdConfig,
+  placement: string,
+  pathname: string,
+  explicitSlotId?: string | null,
+): boolean {
   if (!config || config.mode === 'off') return false;
   if (isGamblingRoute(pathname) && !config.gamblingAds) return false;
   if (!adPlacementEnabled(placement, config)) return false;
-  if (config.mode === 'adsense' && !resolveAdSlotId(placement, adPlacementSize(placement), config)) return false;
+  // An explicit `slot` prop (e.g. a dedicated Multiplex unit) satisfies the id
+  // requirement on its own; only the stored-config path needs a resolved id.
+  if (config.mode === 'adsense' && !explicitSlotId && !resolveAdSlotId(placement, adPlacementSize(placement), config)) {
+    return false;
+  }
   return true;
 }
 

@@ -1,6 +1,7 @@
 import './globals.css';
 import './site-header.css';
 import './assistant.css';
+import dynamic from 'next/dynamic';
 import { Inter, JetBrains_Mono, Noto_Nastaliq_Urdu } from 'next/font/google';
 import ScrollToTop from '../components/ScrollToTop';
 import JsonLd from './json-ld';
@@ -8,9 +9,16 @@ import ThemeProvider from '../components/ThemeProvider';
 import AuthProvider from '../components/AuthProvider';
 import QueryProvider from '../components/QueryProvider';
 import ClientLayout from '../components/ClientLayout';
+import Footer from '../components/Footer';
 import AdProvider from '../components/advertisements/AdProvider';
-import { Toaster } from 'react-hot-toast';
 import { loadSiteSettings } from '../services/siteSettings';
+
+// Toast runtime (react-hot-toast + goober) is only needed for user actions
+// after hydration, so it splits into its own chunk. SSR output is unchanged
+// (an empty container either way).
+const Toaster = dynamic(() =>
+  import('react-hot-toast').then((module) => module.Toaster),
+);
 
 const inter = Inter({
   subsets: ['latin'],
@@ -28,6 +36,11 @@ const nastaliq = Noto_Nastaliq_Urdu({
   subsets: ['arabic', 'latin'],
   variable: '--font-urdu',
   display: 'swap',
+  // Only Urdu-script pages need this 240 KiB family. Without `preload: false`
+  // next/font injects a preload for every subset on every page; with it the
+  // browser fetches the webfont on demand (unicode-range) when Urdu glyphs
+  // actually render, and Latin-only pages download nothing.
+  preload: false,
 });
 
 export const metadata = {
@@ -62,9 +75,19 @@ export const viewport = {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const settings = await loadSiteSettings();
+  // The API origin serves scores/news and the live socket. Preconnecting saves
+  // ~150ms on the first API round-trip (Lighthouse `uses-rel-preconnect`).
+  let apiOrigin: string | null = null;
+  try {
+    const raw = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || '';
+    apiOrigin = raw ? new URL(raw).origin : null;
+  } catch {
+    apiOrigin = null;
+  }
   return (
     <html lang="en" suppressHydrationWarning className={`${inter.variable} ${jetbrainsMono.variable} ${nastaliq.variable}`}>
       <head>
+        {apiOrigin ? <link rel="preconnect" href={apiOrigin} /> : null}
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var t=localStorage.getItem('pak-criczone-theme')||(window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');document.documentElement.classList.toggle('light',t==='light');document.documentElement.style.colorScheme=t;}catch(e){}})();`,
@@ -86,7 +109,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <AuthProvider>
             <QueryProvider>
               <AdProvider config={settings.ads}>
-                <ClientLayout settings={settings}>{children}</ClientLayout>
+                <ClientLayout footer={<Footer settings={settings} />}>{children}</ClientLayout>
               </AdProvider>
               <Toaster
                 position="top-right"

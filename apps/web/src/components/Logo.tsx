@@ -67,7 +67,8 @@ export default function Logo({ to = '/', size = 'md', priority = false }: LogoPr
           sizes={sizes}
           className="absolute max-w-none object-contain"
           style={FOOTER_IMAGE_STYLE}
-          priority={priority}
+          preload={priority}
+          quality={85}
         />
       </Link>
     );
@@ -86,7 +87,8 @@ export default function Logo({ to = '/', size = 'md', priority = false }: LogoPr
         height={1024}
         sizes={sizes}
         className={`${imageClass[size] || imageClass.md} max-w-full object-contain`}
-        priority={priority}
+        preload={priority}
+        quality={85}
       />
     </Link>
   );

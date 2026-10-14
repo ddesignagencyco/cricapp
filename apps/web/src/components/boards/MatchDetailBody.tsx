@@ -46,6 +46,7 @@ import { readProviderInningsCards, readSquads, type FallOfWicketEntry } from '..
 import { playerOfTheMatch, topBatter, topBowler, topBatters, topBowlers } from '../../lib/matchPerformers';
 import { mergeMatchLivePayload, useMatchStream } from '../../hooks/useMatchStream';
 import {
+  useMatchDetailQuery,
   useMatchHeadToHeadQuery,
   useMatchNewsQuery,
   useMatchOddsQuery,
@@ -121,12 +122,43 @@ export default function MatchDetailBody({
    */
   const [liveMatch, setLiveMatch] = useState<Match>(initialMatch);
   const isLive = String(liveMatch?.status ?? '') === 'live';
-  const liveUpdate = useMatchStream(matchId, isLive);
+  /**
+   * The socket is always on for this page, exactly like the homepage ticker and live
+   * list (`useMatchStream(undefined, true)`).
+   *
+   * It used to be gated on `isLive`, which silently disabled it whenever the status
+   * was not exactly the string `live` — an innings break, a provider status variant,
+   * or a stale snapshot — and with no other update path the header then froze until
+   * a manual refresh. `useMatchStream` already discards updates for other matches by
+   * id, so keeping the subscription open costs nothing and removes the failure mode.
+   */
+  const liveUpdate = useMatchStream(matchId);
 
   useEffect(() => {
     if (!liveUpdate) return;
     setLiveMatch((prev) => mergeMatchLivePayload(prev as Record<string, unknown>, (liveUpdate.data ?? {}) as Record<string, unknown>) as Match);
   }, [liveUpdate]);
+
+  /**
+   * The polling backstop.
+   *
+   * The socket above is the fast path, but it was the *only* path: when it was not
+   * connected (blocked, still handshaking, or dropped) this page had nothing to fall
+   * back on and the header stayed on its server snapshot until a manual refresh —
+   * so the same live match read 13 overs on the homepage and 12.3 here.
+   *
+   * `useMatchDetailQuery` polls only while `isLive` (30s), and its result is merged
+   * through the same `mergeMatchLivePayload` reconciler the socket uses, so a polled
+   * row cannot regress the score the way a raw overwrite could.
+   */
+  const polledMatch = useMatchDetailQuery(matchId, initialMatch, { live: true });
+  useEffect(() => {
+    const fresh = polledMatch.data;
+    if (!fresh || fresh === initialMatch) return;
+    setLiveMatch((prev) =>
+      mergeMatchLivePayload(prev as Record<string, unknown>, fresh as Record<string, unknown>) as Match,
+    );
+  }, [polledMatch.data, initialMatch]);
 
   // A navigation to a different match reuses this component instance, so the local
   // state is reset when the id changes rather than showing the previous match's row.
@@ -137,7 +169,31 @@ export default function MatchDetailBody({
     setLiveMatch(initialMatch);
   }, [matchId, initialMatch]);
 
-  /* --- The match context: every panel's input, derived once ------------- */
+/* --- The timeline + match context: every panel's input, derived once ----- */
+
+  /**
+   * The freshest timeline this page knows about.
+   *
+   * ## Why this is state and not the query directly
+   *
+   * The header must reconcile against the *same* timeline the commentary list renders,
+   * and there used to be two copies of it at two different ages: the slim payload
+   * captured once by the server render (`matchContext`, never refreshed) and the full
+   * payload fetched when the Commentary tab is opened. `deriveMatchState` lets
+   * whichever source is further along in balls win, so the frozen copy could outvote
+   * the live one — which is how the header read 12.1/12.3 while the ball-by-ball
+   * directly beneath it already showed 12.2.
+   *
+   * Reading `timelineQuery.data.payload` straight into the memo below is not possible:
+   * `view` decides the default tab, the tab decides whether the timeline is fetched,
+   * and the timeline feeds `view` — a genuine cycle. State breaks it without changing
+   * the order anything is fetched in, so the 1.6 MB is still only downloaded when a
+   * reader opens Commentary.
+   */
+  const [freshTimeline, setFreshTimeline] = useState<Record<string, unknown> | null>(matchContext);
+  useEffect(() => {
+    if (matchContext) setFreshTimeline(matchContext);
+  }, [matchContext]);
 
   /**
    * One memo produces everything the panels need from the match context.
@@ -149,20 +205,21 @@ export default function MatchDetailBody({
    */
   const derived = useMemo(() => {
     const matchRecord = liveMatch as unknown as Record<string, unknown>;
-    const cards = extractInningsScorecards(matchRecord, matchContext);
+    const timeline = freshTimeline;
+    const cards = extractInningsScorecards(matchRecord, timeline);
     return {
-      view: buildMatchViewModel({ match: matchRecord, timeline: matchContext }),
+      view: buildMatchViewModel({ match: matchRecord, timeline }),
       scorecards: cards,
-      providerCards: readProviderInningsCards(matchContext),
-      squads: readSquads(matchContext),
+      providerCards: readProviderInningsCards(timeline),
+      squads: readSquads(timeline),
     };
-  }, [liveMatch, matchContext]);
+  }, [liveMatch, freshTimeline]);
 
   const { view, scorecards, squads } = derived;
 
+  /* --- Fall of wickets, rebuilt from the server's flat object -------------- */
+
   /**
-   * The fall of wickets, rebuilt from the server's flat object.
-   *
    * `useMemo` on the prop identity alone would recompute on every parent render, so
    * the JSON string is the dependency and the Map is cached against it.
    */
@@ -214,22 +271,33 @@ export default function MatchDetailBody({
    * a pure client re-render: no request, no server render, and no remount of the
    * scoreboard, the overview or the sidebar.
    *
-   * A deep link still works — the initial tab is read from the URL — and Back/Forward
-   * still move between tabs, because `popstate` is watched below.
+* A deep link still works — the initial tab is read from the URL — and Back/Forward
+* still move between tabs, because `popstate` is watched below.
    */
   const [tab, setTab] = useState(fallbackTab);
 
   /**
    * The ball-by-ball events, fetched only once Commentary is actually open.
    *
-   * This is the 1.6 MB. It is not needed for the scoreboard, the scorecard, the
-   * squads, the fall of wickets or anything in the sidebar, so a reader who never
-   * opens the tab never downloads it. The query is match-scoped, so it is cached after
-   * the first open and Back/Forward into Commentary is instant.
+   * This is the 1.6 MB. It is not needed for the scoreboard, the scorecard, the squads,
+   * the fall of wickets or anything in the sidebar, so a reader who never opens the tab
+   * never downloads it. The query is match-scoped, so it is cached after the first open
+   * and Back/Forward into Commentary is instant.
+   *
+   * `live` does not enable the query — it only makes an already-fetched timeline
+   * refetch on the live cadence, so the commentary and the header cannot drift apart
+   * while a match is running. The result is pushed into `freshTimeline` above so both
+   * are describing the same moment.
    */
   const wantsCommentary = tab === MATCH_TABS.commentary.key && hasCommentary;
-  const timelineQuery = useMatchTimelineQuery(matchId, { enabled: wantsCommentary });
+  const timelineQuery = useMatchTimelineQuery(matchId, {
+    enabled: wantsCommentary,
+    live: isLive,
+  });
   const commentaryPayload = timelineQuery.data?.payload ?? null;
+  useEffect(() => {
+    if (commentaryPayload) setFreshTimeline(commentaryPayload);
+  }, [commentaryPayload]);
 
   const h2h = useMatchHeadToHeadQuery(matchId, homeTeamId, awayTeamId, { enabled: canHeadToHead });
   const newsQuery = useMatchNewsQuery(matchId, { limit: 12 });

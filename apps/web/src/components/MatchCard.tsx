@@ -1,5 +1,3 @@
-'use client';
-
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { Calendar, Clock, MapPin } from 'lucide-react';
@@ -7,7 +5,7 @@ import { StatusBadge, BlinkingDot } from './Badge';
 import RemoteImage from './RemoteImage';
 import EntityAvatar from './EntityAvatar';
 import { formatScheduled, getInitials, getPslLogo } from '../utils/helpers';
-import { deriveMatchState } from '../hooks/useMatchState';
+import { deriveMatchState } from '../lib/deriveMatchState';
 import { describeMatchResult, scoreboardFromMatch } from '../lib/matchScoreboard';
 import { cardInteractive } from './ui/interaction';
 

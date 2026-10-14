@@ -30,7 +30,7 @@ export default function LiveIndicator({ label = 'Live', className = '' }: LiveIn
   const classes = className.replace(/\buppercase\b/g, '').replace(/\s+/g, ' ').trim();
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-semibold capitalize leading-none ${classes}`}
+      className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-semibold capitalize leading-none ${classes}`}
       style={{
         background: 'var(--color-danger-soft)',
         color: 'var(--color-live)',

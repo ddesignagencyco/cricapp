@@ -118,13 +118,18 @@ export default function PredictionMatchCard({ match, predictions }: Props) {
       className="prediction-card flex h-full flex-col rounded-md border border-lborder bg-card p-4 sm:p-5"
     >
       <div className="mb-4 flex items-center justify-between gap-2">
-        <p className="truncate text-[11px] font-bold uppercase tracking-[0.14em] text-stext">
+        <p
+          className="min-w-0 flex-1 truncate text-[11px] font-bold uppercase tracking-[0.14em] text-stext"
+          title={String(match.tournament || 'Match')}
+        >
           {String(match.tournament || 'Match')}
         </p>
         {live ? (
-          <LiveIndicator label={run ? stageLabel(run.stage) : 'Live'} />
+          <LiveIndicator label={run ? stageLabel(run.stage) : 'Live'} className="shrink-0 whitespace-nowrap" />
         ) : (
-          <Badge tone="primary">{run ? stageLabel(run.stage) : 'Upcoming'}</Badge>
+          <Badge tone="primary" className="shrink-0 whitespace-nowrap">
+            {run ? stageLabel(run.stage) : 'Upcoming'}
+          </Badge>
         )}
       </div>
 

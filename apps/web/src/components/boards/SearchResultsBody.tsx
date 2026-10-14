@@ -9,6 +9,7 @@ import toast from 'react-hot-toast';
 import { searchAll, searchRowId } from '../../services/search';
 import type { Match, SearchResults } from '../../types/index';
 import EmptyState from '../EmptyState';
+import AdBanner from '../advertisements/AdBanner';
 import { PlayerSearchAvatar, TeamSearchAvatar, TypeSearchAvatar } from '../SearchAvatars';
 import { SearchResultsSkeleton } from '../skeletons/Skeletons';
 
@@ -230,6 +231,10 @@ export default function SearchResultsBody() {
                 ))}
               </SearchSection>
             )}
+          </div>
+          {/* Utility page: exactly one reserved bottom banner, only with results. */}
+          <div className="mt-10 flex justify-center">
+            <AdBanner placement="search-bottom" />
           </div>
         </>
       )}

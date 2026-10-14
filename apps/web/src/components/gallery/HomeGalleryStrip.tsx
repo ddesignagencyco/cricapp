@@ -12,7 +12,10 @@ export default function HomeGalleryStrip() {
 
   return (
     <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
-      <SectionHeader title="Gallery" subtitle="Images, shorts and videos" icon="images" to="/gallery" actionLabel="Open gallery" />
+      {/* No subtitle: this strip asks the API for images only, so the old
+          "Images, shorts and videos" line described the full gallery page, not
+          what is actually rendered here. */}
+      <SectionHeader title="Gallery" to="/gallery" actionLabel="Open gallery" />
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-6">
         {items.map((item) => (
           <Link key={item.id} href="/gallery?tab=images" className="card-diamond card-interactive group overflow-hidden rounded-md border border-lborder bg-card">
