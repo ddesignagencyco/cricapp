@@ -54,6 +54,7 @@ const env = {
   ...process.env,
   NODE_ENV: 'test',
   DATABASE_URL: testUrl.toString(),
+  DIRECT_URL: testUrl.toString(),
 };
 
 // The matches table is owned by ingestion and intentionally predates Prisma.
