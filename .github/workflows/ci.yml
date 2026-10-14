@@ -35,7 +35,7 @@ jobs:
           - 6379:6379
 
     env:
-DATABASE_URL: postgresql://cricapp:cricapp_test_password@localhost:5432/cricapp
+      DATABASE_URL: postgresql://cricapp:cricapp_test_password@localhost:5432/cricapp
       DIRECT_URL: postgresql://cricapp:cricapp_test_password@localhost:5432/cricapp
       TEST_DATABASE_URL: postgresql://cricapp:cricapp_test_password@localhost:5432/cricapp_test
       REDIS_URL: redis://localhost:6379
