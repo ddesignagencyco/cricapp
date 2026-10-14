@@ -1,0 +1,6 @@
+{
+  "imports": {
+    "pg": "npm:pg@8.23.0",
+    "@cricapp/shared-types": "../../../packages/shared-types/src/index.js"
+  }
+}
