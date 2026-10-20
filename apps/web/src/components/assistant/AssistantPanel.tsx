@@ -29,13 +29,29 @@ function formatMessageTime(at: number): string {
   return new Date(at).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 }
 
+function BotAvatar({ size = 28 }: { size?: number }) {
+  return (
+    <span
+      className="pcz-chat-avatar grid shrink-0 place-items-center rounded-full text-brand-fg"
+      style={{ width: size, height: size }}
+      aria-hidden
+    >
+      <Bot size={Math.round(size * 0.55)} strokeWidth={2.2} />
+    </span>
+  );
+}
+
+/** "Typing" bubble while an answer is on its way, as chat agents show it. */
 function AssistantBusyBubble() {
   return (
-    <div className="flex w-fit max-w-[88%] flex-col items-start">
-      <p className="inline-flex items-center gap-2 rounded-[1.15rem] bg-secondary px-3.5 py-2 text-xs font-semibold text-stext">
-        <Loader2 size={14} className="animate-spin" aria-hidden />
-        Reading stored stats…
-      </p>
+    <div className="flex items-end gap-2">
+      <BotAvatar />
+      <div className="pcz-chat-bubble-bot flex items-center gap-1 rounded-2xl rounded-bl-md px-4 py-3" role="status">
+        <span className="sr-only">Reading stored stats…</span>
+        <span className="pcz-chat-typing" />
+        <span className="pcz-chat-typing" />
+        <span className="pcz-chat-typing" />
+      </div>
     </div>
   );
 }
@@ -188,172 +204,203 @@ export default function AssistantPanel({
       ? lastReply.reply.followUpPrompts.map((question) => ({ label: question, question }))
       : context.starters;
   const followUps = starters.slice(0, 3);
+  const isEmpty = items.length === 0;
+
+  const chips = (list: AssistantStarter[]) => (
+    <div className="flex flex-wrap gap-2 pl-9">
+      {list.map((starter) => (
+        <button
+          key={starter.question}
+          type="button"
+          onClick={() => void send(starter.question, starter.intent ? { intent: starter.intent } : undefined)}
+          className="pcz-chat-chip max-w-full rounded-full px-3.5 py-1.5 text-left text-[13px] font-medium leading-snug transition-colors"
+        >
+          {starter.question}
+        </button>
+      ))}
+    </div>
+  );
 
   return (
-    <div className="fixed inset-0 z-[80]">
-      <button type="button" className="absolute inset-0 bg-black/45" aria-label="Close assistant" onClick={onClose} />
+    <div className="pcz-chat fixed inset-0 z-[80] sm:pointer-events-none">
+      {/* Phones dim the page behind a full-screen chat; on wider screens the widget
+          floats over the page without dimming it, like a site's support chat. */}
+      <button
+        type="button"
+        className="absolute inset-0 bg-black/45 sm:hidden"
+        aria-label="Close assistant"
+        onClick={onClose}
+      />
       <div
         ref={trapRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="assistant-title"
         tabIndex={-1}
-        className="absolute inset-x-0 bottom-0 flex h-[min(92dvh,calc(100dvh-env(safe-area-inset-top,0px)))] max-h-[min(92dvh,calc(100dvh-env(safe-area-inset-top,0px)))] flex-col overflow-hidden overscroll-contain rounded-t-[1.75rem] border border-lborder bg-card shadow-2xl sm:inset-auto sm:bottom-24 sm:right-4 sm:h-[min(40rem,calc(100vh-7.5rem))] sm:w-[min(24rem,calc(100vw-2rem))] sm:max-h-none sm:rounded-[1.75rem]"
+        className="pcz-chat-window absolute inset-0 flex flex-col overflow-hidden overscroll-contain bg-card sm:pointer-events-auto sm:inset-auto sm:bottom-24 sm:right-5 sm:h-[min(42rem,calc(100vh-8rem))] sm:w-[25rem] sm:rounded-2xl sm:border sm:border-lborder"
       >
-        <header className="pcz-assistant-head flex shrink-0 items-center justify-between gap-3 px-5 py-3 text-brand-fg">
-          <div className="flex items-center gap-3">
-            <span className="pcz-assistant-head__badge grid h-9 w-9 place-items-center rounded-full text-brand">
-              <Bot size={20} strokeWidth={2.15} aria-hidden />
-            </span>
-            <div>
-              <h2 id="assistant-title" className="text-[15px] font-semibold tracking-tight">
-                PCZ Assistant
-              </h2>
-              <p className="flex items-center gap-1.5 text-[12px] text-brand-fg/85">
-                <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-300" aria-hidden />
-                Answers from stored stats only
-              </p>
+        <header className="pcz-assistant-head shrink-0 px-4 pb-4 pt-[max(1rem,env(safe-area-inset-top))] text-brand-fg">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="relative shrink-0">
+                <span className="pcz-assistant-head__badge grid h-11 w-11 place-items-center rounded-full text-brand">
+                  <Bot size={22} strokeWidth={2.15} aria-hidden />
+                </span>
+                <span className="pcz-chat-online absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-emerald-400" aria-hidden />
+              </span>
+              <div className="min-w-0">
+                <h2 id="assistant-title" className="truncate text-[15px] font-semibold tracking-tight">
+                  PCZ Assistant
+                </h2>
+                <p className="truncate text-xs text-brand-fg/85">Online · Typically replies instantly</p>
+              </div>
             </div>
-          </div>
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={clearThread}
-              disabled={items.length === 0}
-              className="grid h-8 w-8 place-items-center rounded-full text-brand-fg/85 hover:bg-white/15 hover:text-brand-fg disabled:opacity-35 disabled:hover:bg-transparent"
-              aria-label="Clear conversation"
-            >
-              <Eraser size={16} />
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="grid h-8 w-8 place-items-center rounded-full text-brand-fg/85 hover:bg-white/15 hover:text-brand-fg"
-              aria-label="Close"
-            >
-              <X size={18} />
-            </button>
+            <div className="flex shrink-0 items-center gap-0.5">
+              <button
+                type="button"
+                onClick={clearThread}
+                disabled={isEmpty}
+                className="grid h-9 w-9 place-items-center rounded-full text-brand-fg/85 transition-colors hover:bg-white/15 hover:text-brand-fg disabled:opacity-35 disabled:hover:bg-transparent"
+                aria-label="Clear conversation"
+                title="New conversation"
+              >
+                <Eraser size={17} />
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="grid h-9 w-9 place-items-center rounded-full text-brand-fg/85 transition-colors hover:bg-white/15 hover:text-brand-fg"
+                aria-label="Close"
+                title="Close"
+              >
+                <X size={19} />
+              </button>
+            </div>
           </div>
         </header>
 
         <div
           ref={listRef}
           onScroll={handleListScroll}
-          className="native-scrollbar min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain bg-card px-4 py-4"
+          className="pcz-chat-body native-scrollbar min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-4 py-5"
         >
-          {items.length === 0 ? (
-            <div className="space-y-3">
-              <p className="w-fit max-w-[88%] rounded-[1.15rem] bg-secondary px-3.5 py-2 text-sm leading-relaxed text-mtext">
-                Ask in your own words, or tap one of the questions below.
-              </p>
-              <ul className="space-y-1.5 text-xs leading-relaxed text-stext">
-                <li>These are the phrasings I understand best:</li>
-                <li>
-                  <span className="text-mtext">&ldquo;A vs B head to head&rdquo;</span> — two named teams
-                </li>
-                <li>
-                  <span className="text-mtext">&ldquo;Compare players X vs Y&rdquo;</span> — two named players
-                </li>
-                <li>
-                  <span className="text-mtext">&ldquo;How has X been in PSL 2026?&rdquo;</span> — recent form
-                </li>
-                <li>
-                  <span className="text-mtext">&ldquo;Can X make the PSL 2026 playoffs?&rdquo;</span> — qualification
-                </li>
-                <li>I only answer from stored results, head-to-heads, standings and leaderboards. Anything not in our data, I say so rather than guess.</li>
-              </ul>
+          {/* The agent opens the conversation, as support chats do. */}
+          <div className="space-y-3">
+            <div className="flex items-end gap-2">
+              <BotAvatar />
+              <div className="pcz-chat-bubble-bot max-w-[85%] rounded-2xl rounded-bl-md px-4 py-3 text-sm leading-relaxed text-mtext">
+                <p className="font-semibold">Hi there 👋</p>
+                <p className="mt-1 text-stext">
+                  I&apos;m the PCZ Assistant. Ask in your own words, or tap one of the questions below.
+                </p>
+              </div>
             </div>
-          ) : null}
+            {isEmpty && context.starters.length > 0 ? chips(context.starters.slice(0, 4)) : null}
+            {isEmpty ? (
+              <details className="pcz-chat-tips ml-9 text-xs leading-relaxed text-stext">
+                <summary className="cursor-pointer select-none font-semibold text-accent">How to ask</summary>
+                <ul className="mt-2 space-y-1.5">
+                  <li>These are the phrasings I understand best:</li>
+                  <li>
+                    <span className="text-mtext">&ldquo;A vs B head to head&rdquo;</span> — two named teams
+                  </li>
+                  <li>
+                    <span className="text-mtext">&ldquo;Compare players X vs Y&rdquo;</span> — two named players
+                  </li>
+                  <li>
+                    <span className="text-mtext">&ldquo;How has X been in PSL 2026?&rdquo;</span> — recent form
+                  </li>
+                  <li>
+                    <span className="text-mtext">&ldquo;Can X make the PSL 2026 playoffs?&rdquo;</span> — qualification
+                  </li>
+                  <li>I only answer from stored results, head-to-heads, standings and leaderboards. Anything not in our data, I say so rather than guess.</li>
+                </ul>
+              </details>
+            ) : null}
+          </div>
 
           {items.map((item) =>
             item.role === 'user' ? (
               <div key={item.id} className="ml-auto flex w-fit max-w-[80%] flex-col items-end">
-                <p className="pcz-assistant-bubble-user rounded-[1.15rem] px-3.5 py-2 text-sm font-medium leading-snug">
+                <p className="pcz-assistant-bubble-user rounded-2xl rounded-br-md px-4 py-2.5 text-sm font-medium leading-snug">
                   {item.text}
                 </p>
-                <time className="mt-1 text-right text-[11px] text-stext" dateTime={new Date(item.at).toISOString()}>
+                <time className="mt-1 text-[11px] text-stext" dateTime={new Date(item.at).toISOString()}>
                   {formatMessageTime(item.at)}
                 </time>
               </div>
             ) : (
-              <div key={item.id} className="flex w-fit max-w-[88%] flex-col items-start space-y-2">
-                <div className="flex w-full items-start gap-2">
-                  <p
-                    className={`w-fit max-w-full whitespace-pre-wrap rounded-[1.15rem] px-3.5 py-2 text-sm leading-relaxed ${
-                      item.error ? 'bg-danger-soft text-danger' : 'bg-secondary text-mtext'
+              <div key={item.id} className="flex items-start gap-2">
+                <span className="mt-auto pb-5">
+                  <BotAvatar />
+                </span>
+                <div className="min-w-0 max-w-[88%] space-y-2">
+                  <div
+                    className={`rounded-2xl rounded-bl-md px-4 py-3 text-sm leading-relaxed ${
+                      item.error ? 'bg-danger-soft text-danger' : 'pcz-chat-bubble-bot text-mtext'
                     }`}
                   >
-                    {item.text}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => void copyAnswer(item)}
-                    className="mt-0.5 shrink-0 rounded p-1 text-stext transition-colors hover:bg-secondary hover:text-mtext"
-                    aria-label="Copy answer"
-                  >
-                    {copiedId === item.id ? <Check size={14} aria-hidden /> : <Copy size={14} aria-hidden />}
-                  </button>
-                </div>
-                {item.reply ? (
-                  <div className="w-full overflow-hidden rounded-[1.15rem] bg-card ring-1 ring-lborder">
-                    {item.reply.llmNarrative ? (
-                      <p className="px-3 pt-2 text-[10px] font-bold uppercase tracking-wider text-stext">
-                        Narrative from stored facts
-                      </p>
+                    <p className="whitespace-pre-wrap">{item.text}</p>
+                    {item.reply ? (
+                      // Hidden by CSS when every section inside renders nothing — it used
+                      // to leave an empty outlined bar under the answer.
+                      <div className="pcz-answer-card mt-3 overflow-hidden rounded-xl bg-card ring-1 ring-lborder">
+                        {item.reply.llmNarrative ? (
+                          <p className="px-3 pt-2 text-[10px] font-bold uppercase tracking-wider text-stext">
+                            Narrative from stored facts
+                          </p>
+                        ) : null}
+                        <div className="p-1">
+                          <AnswerBoard reply={item.reply} />
+                        </div>
+                        <div className="space-y-1 px-3 pb-2">
+                          <UnavailableBanner items={item.reply.unavailable} answerText={item.text} />
+                          <VerifiedDetails reply={item.reply} />
+                          <SourceChips sources={item.reply.sources} />
+                        </div>
+                      </div>
                     ) : null}
-                    <div className="p-1">
-                      <AnswerBoard reply={item.reply} />
-                    </div>
-                    <div className="space-y-1 px-3 pb-2">
-                      <UnavailableBanner items={item.reply.unavailable} answerText={item.text} />
-                      <VerifiedDetails reply={item.reply} />
-                      <SourceChips sources={item.reply.sources} />
-                    </div>
                   </div>
-                ) : null}
-                <time className="text-left text-[11px] text-stext" dateTime={new Date(item.at).toISOString()}>
-                  {formatMessageTime(item.at)}
-                </time>
+                  <div className="flex items-center gap-2 pl-1 text-[11px] text-stext">
+                    <span>PCZ Assistant</span>
+                    <span aria-hidden>·</span>
+                    <time dateTime={new Date(item.at).toISOString()}>{formatMessageTime(item.at)}</time>
+                    {item.reply ? (
+                      <button
+                        type="button"
+                        onClick={() => void copyAnswer(item)}
+                        className="ml-1 inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 font-semibold transition-colors hover:bg-secondary hover:text-mtext"
+                        aria-label="Copy answer"
+                      >
+                        {copiedId === item.id ? <Check size={12} aria-hidden /> : <Copy size={12} aria-hidden />}
+                        {copiedId === item.id ? 'Copied' : 'Copy'}
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
               </div>
             ),
           )}
 
           {busy ? <AssistantBusyBubble /> : null}
+
+          {/* Follow-up suggestions sit under the latest answer, like quick replies.
+              Chips show the full question, never a shortened label: the user learns the
+              phrasing the assistant understands. They wrap instead of truncating. */}
+          {!isEmpty && followUps.length > 0 && !busy ? chips(followUps) : null}
         </div>
 
         {!atBottom && !busy ? (
           <button
             type="button"
             onClick={() => scrollToBottom()}
-            className="mx-auto -mt-1 mb-1 shrink-0 rounded-full bg-elevated px-3 py-1 text-[11px] font-bold text-stext shadow-sm ring-1 ring-lborder hover:text-mtext"
+            className="mx-auto -mt-11 mb-3 shrink-0 rounded-full bg-elevated px-3 py-1.5 text-[11px] font-bold text-stext shadow-md ring-1 ring-lborder hover:text-mtext"
           >
             Jump to latest
           </button>
         ) : null}
 
-        <div className="shrink-0 bg-card px-5 pb-[max(0.85rem,env(safe-area-inset-bottom))] pt-2">
-          {/*
-            Chips show the full question, never a shortened label. The point of a
-            suggested question is that the user learns the phrasing the assistant
-            understands, and "Explain the live %" teaches nothing about that. They
-            wrap onto multiple lines instead of truncating or scrolling sideways,
-            because a chip you have to scroll to finish reading is not a prompt.
-          */}
-          {followUps.length > 0 && !busy ? (
-            <div className="mb-3 flex flex-wrap gap-2">
-              {followUps.map((starter) => (
-                <button
-                  key={starter.question}
-                  type="button"
-                  onClick={() => void send(starter.question, starter.intent ? { intent: starter.intent } : undefined)}
-                  className="max-w-full rounded-[9999px] border border-lborder bg-card px-4 py-2 text-left text-xs font-medium leading-snug text-mtext transition-colors hover:bg-secondary"
-                >
-                  {starter.question}
-                </button>
-              ))}
-            </div>
-          ) : null}
-
+        <div className="shrink-0 border-t border-lborder bg-card px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
           <form
             className="relative"
             onSubmit={(event) => {
@@ -370,18 +417,18 @@ export default function AssistantPanel({
               onChange={(event) => setInput(event.target.value.slice(0, 2000))}
               placeholder="Ask about matches, players, standings..."
               disabled={busy}
-              className="h-12 w-full rounded-full border border-input-border bg-input py-2 pl-4 pr-12 text-sm text-mtext outline-none placeholder:text-stext focus:border-focus-ring"
+              className="h-12 w-full rounded-full border border-input-border bg-input py-2 pl-5 pr-14 text-sm text-mtext outline-none transition-shadow placeholder:text-stext focus:border-focus-ring focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--color-brand)_18%,transparent)]"
             />
             <button
               type="submit"
               disabled={busy || !input.trim()}
-              className="absolute right-1.5 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center text-brand disabled:cursor-default disabled:opacity-40"
+              className="pcz-chat-send absolute right-1.5 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full text-brand-fg transition-opacity disabled:cursor-default disabled:opacity-40"
               aria-label="Send"
             >
-              {busy ? <Loader2 size={16} className="animate-spin" /> : <Send size={18} />}
+              {busy ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} className="-ml-0.5" />}
             </button>
           </form>
-          <p className="mt-1.5 text-center text-[11px] text-stext">Scores may be delayed.</p>
+          <p className="mt-2 text-center text-[11px] text-stext">Answers from stored stats · Scores may be delayed</p>
         </div>
       </div>
     </div>
