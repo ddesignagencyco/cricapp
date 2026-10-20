@@ -443,7 +443,10 @@ const upsertSportEventRecord = `
 function mapMatchStatus(status, matchStatus) {
   const s = `${status ?? ''} ${matchStatus ?? ''}`.toLowerCase();
   if (s.includes('cancel') || s.includes('postpon')) return 'cancelled';
-  if (s.includes('live') || s.includes('progress') || s.includes('inning')) return 'live';
+  // Same rule as normalize.js: an interrupted or suspended match is still in play.
+  if (s.includes('live') || s.includes('progress') || s.includes('inning') || s.includes('interrupt') || s.includes('suspend')) {
+    return 'live';
+  }
   if (
     s.includes('closed') ||
     s.includes('complete') ||

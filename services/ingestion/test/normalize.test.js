@@ -336,3 +336,23 @@ describe("normalizeMatch — one consistent live line", () => {
     assert.equal(match.displayScore, "250/10 & 60/3");
   });
 });
+
+describe("normalizeMatch — stoppages stay live", () => {
+  for (const status of ["interrupted", "suspended"]) {
+    it(`maps a ${status} match to live, not upcoming`, () => {
+      const match = normalizeMatch(PROVIDERS.SPORTRADAR, {
+        sport_event: { id: "sr:match:rain", competitors: [] },
+        sport_event_status: { status, match_status: "rain_delay" },
+      });
+      assert.equal(match.status, MATCH_STATUS.LIVE);
+    });
+  }
+
+  it("still maps a delayed start to upcoming", () => {
+    const match = normalizeMatch(PROVIDERS.SPORTRADAR, {
+      sport_event: { id: "sr:match:late", competitors: [] },
+      sport_event_status: { status: "delayed", match_status: "not_started" },
+    });
+    assert.equal(match.status, MATCH_STATUS.UPCOMING);
+  });
+});

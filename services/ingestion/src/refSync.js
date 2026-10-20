@@ -423,9 +423,18 @@ export async function refreshStaleUpcomingMatch(matchId) {
   return match;
 }
 
-const STALE_FIXTURE_BATCH_SIZE = 200;
+/**
+ * Fixtures re-checked per run. Each costs one summary call from the same 1-QPS budget
+ * the live poller uses; 200 per run every 15 minutes starved live scoring for minutes.
+ */
+const STALE_FIXTURE_BATCH_SIZE = Number(process.env.STALE_FIXTURE_BATCH_SIZE || 10);
 
 export async function syncStaleUpcomingMatches() {
+  // Never while a match is in play: live scores own the call budget.
+  if (PAUSE_REF_WHEN_LIVE && (await liveMatchCount()) > 0) {
+    log.info('stale upcoming refresh paused while live matches are active');
+    return 0;
+  }
   const ids = await staleUpcomingIds(STALE_FIXTURE_BATCH_SIZE);
   let synced = 0;
   for (const id of ids) {

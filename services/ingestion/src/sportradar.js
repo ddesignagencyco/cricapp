@@ -87,7 +87,10 @@ async function fetchJson(path, options = {}, attempt = 0) {
       .slice(0, 200);
     stats.lastError = `${res.status}: ${url} ${bodySnippet}`;
 
-    if (res.status === 401 || res.status === 403 || res.status === 400) {
+    // Only a rejected key pauses the whole client. A 400 is a bad request for one id
+    // (a stale fixture, a malformed path); pausing every call for it froze live scoring
+    // for five minutes over a single bad match id.
+    if (res.status === 401 || res.status === 403) {
       authPausedUntil = Date.now() + AUTH_PAUSE_MS;
       console.error(
         `[sportradar] ${res.status} auth/permission failure for ${API_KEY ? API_KEY.slice(0, 6) + '...' : '(no key)'}: ${url} ${bodySnippet ? 'body=' + bodySnippet : ''} — pausing Sportradar calls for ${Math.round(AUTH_PAUSE_MS / 60000)}min. Verify the key in the Sportradar console (account active, IP allow-listed, access level "t2" subscribed).`,

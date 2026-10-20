@@ -379,7 +379,9 @@ function fillTeamScoresFromStatisticsInnings(inningsList, competitors, teamScore
 
 function isMatchDecided(statusBlock, currentInnings, teamScores) {
   const ms = `${statusBlock.match_status ?? ''} ${statusBlock.status ?? ''}`.toLowerCase();
-  if (/won|tied|draw|abandon|all.?out|closed|ended|complete|result/.test(ms)) {
+  // Each word must start a token: a bare `ended` also matched "susp-ended", so a
+  // rain-suspended match was marked completed mid-game.
+  if (/(?<![a-z])(won|tied|draw|abandon|all.?out|closed|ended|complete|result)/.test(ms)) {
     return true;
   }
   const w = currentInnings?.wickets ?? 0;
@@ -398,7 +400,17 @@ function mapSportradarStatus(status, matchStatus) {
   if (s.includes('cancel') || s.includes('postpon')) {
     return 'cancelled';
   }
-  if (s.includes('live') || s.includes('inprogress') || s.includes('in progress') || s.includes('innings')) {
+  // Rain or bad light stops play without ending the match: Sportradar reports it as
+  // interrupted / suspended. Mapping that to "upcoming" dropped the match out of the
+  // live set mid-game and froze its score until the daily sync hours later.
+  if (
+    s.includes('live') ||
+    s.includes('inprogress') ||
+    s.includes('in progress') ||
+    s.includes('innings') ||
+    s.includes('interrupt') ||
+    s.includes('suspend')
+  ) {
     return 'live';
   }
   if (
