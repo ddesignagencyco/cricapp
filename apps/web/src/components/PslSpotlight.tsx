@@ -126,8 +126,8 @@ export default function PslSpotlight({ standings = [] }: PslSpotlightProps) {
             </table>
           </div>
         </div>
-          <div className="h-full">
-            <AdSlot placement="home-sidebar" className="h-full" />
+          <div className="lg:sticky lg:top-24 lg:self-start">
+            <AdSlot placement="home-sidebar" />
           </div>
         </div>
       </div>

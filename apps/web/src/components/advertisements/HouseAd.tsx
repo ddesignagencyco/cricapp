@@ -89,18 +89,22 @@ export default function HouseAd({ size, placement, className = '', inFeed = fals
   const alt = dummyAdAlt(creative.advertiser, creative.line);
   const hideOnMobile = size === 'half-page';
 
+  // In a grid the slot takes the cell, but the creative keeps its exact standard
+  // size, centred — stretching it to the card's box would make a size no real
+  // AdSense unit can serve.
   if (inFeed) {
     return (
       <aside
         data-ad-placement={placement}
+        data-ad-size={`${creative.width}x${creative.height}`}
         aria-label="Advertisement"
-        className={`relative flex h-full min-h-[148px] flex-col overflow-hidden rounded-md border border-lborder bg-secondary ${className}`.trim()}
+        className={`relative flex h-full min-w-0 items-center justify-center ${className}`.trim()}
       >
-        <AdBadge />
-        <div className="relative min-h-0 flex-1">
-          <div className="absolute inset-0">
+        <div className="relative w-full" style={{ maxWidth: creative.width }}>
+          <AdBadge />
+          <SlotFrame width={creative.width} height={creative.height}>
             <CreativeMedia src={creative.src} width={creative.width} height={creative.height} alt={alt} />
-          </div>
+          </SlotFrame>
         </div>
       </aside>
     );
@@ -109,6 +113,7 @@ export default function HouseAd({ size, placement, className = '', inFeed = fals
   return (
     <aside
       data-ad-placement={placement}
+      data-ad-size={`${creative.width}x${creative.height}`}
       aria-label="Advertisement"
       className={`relative mx-auto flex w-full min-w-0 max-w-full flex-col ${hideOnMobile ? 'hidden lg:flex' : ''} ${className}`.trim()}
       style={{ maxWidth: creative.width }}

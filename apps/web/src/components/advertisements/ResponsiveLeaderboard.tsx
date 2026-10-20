@@ -1,6 +1,6 @@
 'use client';
 
-import { useSyncExternalStore } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Badge from '../Badge';
 import {
   LEADERBOARD_SLOT_META,
@@ -10,54 +10,58 @@ import {
 } from '../../lib/advertisements/placements';
 
 /**
- * Renders exactly one leaderboard variant for the current viewport instead of
- * all four behind `display:none` toggles. Hidden `<img>` elements still
- * download, so the old four-variant markup issued up to 4 requests per slot
- * (12 on the homepage) for a single visible creative.
+ * Renders exactly one standard IAB/AdSense leaderboard size for the space the
+ * slot actually has: 970×90, 728×90, 468×60 or 320×100.
  *
- * Breakpoints mirror the previous CSS (`min-[1200px]`, `min-[800px]`,
- * `min-[500px]`). The server renders `mobile`; after hydration the store
- * settles on the real variant. Each variant's frame keeps its own aspect ratio,
- * so the swap never shifts surrounding content beyond the slot's own box.
+ * The variant is picked from the *container* width, not the viewport, because a
+ * leaderboard inside a 7/10 main column has far less room than the viewport
+ * suggests. The creative is always drawn at its exact pixel size and centred —
+ * it is never stretched to the column width, which would produce a non-standard
+ * box no real ad unit could fill.
+ *
+ * The server renders `mobile`; once mounted, a ResizeObserver settles on the
+ * largest size that fits and follows the container from then on.
  */
-const QUERIES: { variant: LeaderboardVariant; query: string }[] = [
-  { variant: 'wide', query: '(min-width: 1200px)' },
-  { variant: 'desktop', query: '(min-width: 800px)' },
-  { variant: 'tablet', query: '(min-width: 500px)' },
-];
+const VARIANTS_LARGEST_FIRST: LeaderboardVariant[] = ['wide', 'desktop', 'tablet', 'mobile'];
 
-function pickVariant(): LeaderboardVariant {
-  if (typeof window === 'undefined' || typeof window.matchMedia === 'undefined') return 'mobile';
-  for (const { variant, query } of QUERIES) {
-    if (window.matchMedia(query).matches) return variant;
-  }
-  return 'mobile';
-}
-
-function subscribe(onChange: () => void): () => void {
-  if (typeof window === 'undefined' || typeof window.matchMedia === 'undefined') return () => {};
-  const lists = QUERIES.map(({ query }) => window.matchMedia(query));
-  lists.forEach((list) => list.addEventListener('change', onChange));
-  return () => lists.forEach((list) => list.removeEventListener('change', onChange));
+export function fitLeaderboardVariant(containerWidth: number): LeaderboardVariant {
+  return (
+    VARIANTS_LARGEST_FIRST.find((variant) => LEADERBOARD_SLOT_META[variant].width <= containerWidth) ??
+    'mobile'
+  );
 }
 
 export default function ResponsiveLeaderboard({ placement }: { placement: string }) {
-  const variant = useSyncExternalStore(subscribe, pickVariant, () => 'mobile' as LeaderboardVariant);
+  const hostRef = useRef<HTMLDivElement>(null);
+  const [variant, setVariant] = useState<LeaderboardVariant>('mobile');
+
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host || typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(([entry]) => {
+      setVariant(fitLeaderboardVariant(entry.contentRect.width));
+    });
+    observer.observe(host);
+    return () => observer.disconnect();
+  }, []);
+
   const creative = resolveDummyAdCreative('leaderboard', placement, variant);
   const meta = LEADERBOARD_SLOT_META[variant];
 
   return (
-    <aside
-      data-ad-placement={placement}
-      aria-label="Advertisement"
-      className="relative flex w-full min-w-0 max-w-full flex-col"
-    >
-      <span aria-hidden="true" data-ad-badge="" className="absolute right-2 top-2 z-10">
-        <Badge tone="neutral" className="shadow-sm">
-          Ad
-        </Badge>
-      </span>
-      <div className="w-full">
+    <div ref={hostRef} className="flex w-full min-w-0 max-w-full justify-center">
+      <aside
+        data-ad-placement={placement}
+        data-ad-size={`${meta.width}x${meta.height}`}
+        aria-label="Advertisement"
+        className="relative flex min-w-0 max-w-full flex-col"
+        style={{ width: meta.width }}
+      >
+        <span aria-hidden="true" data-ad-badge="" className="absolute right-2 top-2 z-10">
+          <Badge tone="neutral" className="shadow-sm">
+            Ad
+          </Badge>
+        </span>
         <div
           className="relative overflow-hidden rounded-md border border-lborder bg-secondary"
           style={{ width: '100%', aspectRatio: `${meta.width} / ${meta.height}` }}
@@ -78,7 +82,7 @@ export default function ResponsiveLeaderboard({ placement }: { placement: string
             />
           </div>
         </div>
-      </div>
-    </aside>
+      </aside>
+    </div>
   );
 }

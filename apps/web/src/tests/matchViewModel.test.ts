@@ -456,6 +456,30 @@ describe('a live match', () => {
     expect(model.headline.away?.score).toBe('134/2');
     expect(model.currentInnings?.oversLabel).toBe('20.4');
   });
+
+  it('follows the live row once it moves past the timeline captured at page load', () => {
+    // The page keeps its server-rendered timeline while the socket/poll advance the row.
+    const advanced = {
+      ...live,
+      currentInnings: { battingTeam: 'NZ', runs: 141, wickets: 3, overs: 21.2, runRate: 6.6 },
+      displayScore: '141/3',
+      displayOvers: 21.2,
+    };
+    const moved = buildMatchViewModel({ match: advanced, timeline: liveTimeline });
+    expect(moved.headline.away?.score).toBe('141/3');
+    expect(moved.currentInnings?.oversLabel).toBe('21.2');
+    expect(moved.situation).toContain('60 more runs');
+  });
+
+  it('still prefers the timeline when it is the one further along', () => {
+    const behind = {
+      ...live,
+      currentInnings: { battingTeam: 'NZ', runs: 130, wickets: 2, overs: 20.1, runRate: 6.47 },
+    };
+    const model2 = buildMatchViewModel({ match: behind, timeline: liveTimeline });
+    expect(model2.headline.away?.score).toBe('134/2');
+    expect(model2.currentInnings?.oversLabel).toBe('20.4');
+  });
 });
 
 describe('an innings break', () => {

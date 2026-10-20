@@ -1,8 +1,8 @@
 'use client';
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useMemo } from 'react';
-import { mergeLiveUpdate, useMatchStream } from '../../hooks/useMatchStream';
+import { useEffect, useMemo, useState } from 'react';
+import { mergeLiveRows, mergeLiveUpdate, useMatchStream } from '../../hooks/useMatchStream';
 import DirectoryPageHeader from '../DirectoryPageHeader';
 import PageToolbar from '../PageToolbar';
 import Badge from '../Badge';
@@ -60,11 +60,24 @@ export default function PredictionsHub({
   // score for the whole time a match is running. The homepage and the matches page
   // both patch in SSE updates; the predictions page did not, which is why live cards
   // here were the only place a live score could look frozen or missing.
+  //
+  // Frames are accumulated in state. Merging only the latest frame onto the server
+  // rows reverted every other card to its 30s-old score whenever one match updated.
   const liveUpdate = useMatchStream(undefined, tab === 'live');
-  const liveCards = useMemo(
-    () => live.map((card) => ({ ...card, match: mergeLiveUpdate([card.match], liveUpdate)[0] ?? card.match })),
-    [live, liveUpdate],
-  );
+  const [liveMatches, setLiveMatches] = useState<Match[]>(() => live.map((card) => card.match));
+  useEffect(() => {
+    setLiveMatches((prev) => mergeLiveRows(prev, live.map((card) => card.match)));
+  }, [live]);
+  useEffect(() => {
+    if (liveUpdate) setLiveMatches((prev) => mergeLiveUpdate(prev, liveUpdate));
+  }, [liveUpdate]);
+  const liveCards = useMemo(() => {
+    const byId = new Map(liveMatches.map((match) => [String(match.matchId ?? match.id ?? ''), match]));
+    return live.map((card) => ({
+      ...card,
+      match: byId.get(String(card.match.matchId ?? card.match.id ?? '')) ?? card.match,
+    }));
+  }, [live, liveMatches]);
 
   const visible = tab === 'live' ? liveCards : upcoming;
   const tabTotal = tab === 'live' ? live.length : upcomingTotal;

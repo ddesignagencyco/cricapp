@@ -227,8 +227,11 @@ export default function ScheduleBoard({
             {visibleEvents.map((record, index) => (
               <div key={record.eventId} className="contents">
                 <ScheduleCard record={record} />
-                {visibleEvents.length >= 4 && index === 3 ? (
-                  <AdSlot placement="schedule-infeed" />
+                {/* After six cards: a full row at both 2- and 3-column widths. */}
+                {visibleEvents.length > 6 && index === 5 ? (
+                  <div className="col-span-full py-1">
+                    <AdSlot placement="schedule-infeed" />
+                  </div>
                 ) : null}
               </div>
             ))}

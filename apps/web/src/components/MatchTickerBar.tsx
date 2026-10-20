@@ -8,7 +8,8 @@ import LiveIndicator from './LiveIndicator';
 import EntityAvatar from './EntityAvatar';
 import { getInitials } from '../utils/helpers';
 import { deriveMatchState } from '../lib/deriveMatchState';
-import { mergeLiveUpdate, useMatchStream } from '../hooks/useMatchStream';
+import { mergeLiveRows, mergeLiveUpdate, mergeMatchLivePayload, useMatchStream } from '../hooks/useMatchStream';
+import { useLiveMatchesQuery } from '../queries/useDirectoryQueries';
 import { describeMatchResult, scoreboardFromMatch } from '../lib/matchScoreboard';
 
 interface MatchTickerBarProps {
@@ -35,14 +36,30 @@ export default function MatchTickerBar({ matches: initialMatches }: MatchTickerB
     setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 1);
   };
 
+  // A new server render re-lists the strip but must not rewind socket-fresh scores.
   useEffect(() => {
-    setMatches(initialMatches || []);
+    setMatches((prev) => mergeLiveRows(prev, initialMatches || []));
   }, [initialMatches]);
 
   useEffect(() => {
     if (!liveUpdate) return;
     setMatches((prev) => mergeLiveUpdate(prev, liveUpdate));
   }, [liveUpdate]);
+
+  // The same 30s backstop Live Now uses (one shared query, so no extra request):
+  // without it a missed socket frame left the ticker a ball behind until the next one.
+  const liveQuery = useLiveMatchesQuery();
+  useEffect(() => {
+    const rows = liveQuery.data;
+    if (!rows?.length) return;
+    const byId = new Map(rows.map((row) => [String(row.matchId ?? row.id ?? ''), row]));
+    setMatches((prev) =>
+      prev.map((match) => {
+        const fresh = byId.get(String(match?.matchId ?? match?.id ?? ''));
+        return fresh ? mergeMatchLivePayload(match, fresh as unknown as Record<string, unknown>) : match;
+      }),
+    );
+  }, [liveQuery.data]);
 
   useEffect(() => {
     const el = scrollRef.current;

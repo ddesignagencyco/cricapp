@@ -135,7 +135,7 @@ export const AD_PLACEMENTS: readonly AdPlacement[] = [
   { key: 'home-mid', label: 'Mid page', size: 'leaderboard', group: 'home' },
   { key: 'home-footer', label: 'Footer', size: 'leaderboard', group: 'home' },
   { key: 'home-multiplex', label: 'Multiplex (bottom)', size: 'leaderboard', group: 'home' },
-  { key: 'home-sidebar', label: 'Sidebar', size: 'medium-rectangle', group: 'home', inFeed: true },
+  { key: 'home-sidebar', label: 'Sidebar', size: 'medium-rectangle', group: 'home' },
 
   { key: 'news-list-infeed', label: 'List — in feed', size: 'large-rectangle', group: 'news', inFeed: true },
   { key: 'news-list-bottom', label: 'List — bottom', size: 'leaderboard', group: 'news' },
@@ -144,11 +144,11 @@ export const AD_PLACEMENTS: readonly AdPlacement[] = [
   { key: 'news-detail-sidebar', label: 'Detail — sidebar', size: 'medium-rectangle', group: 'news' },
   { key: 'news-detail-after-related', label: 'Detail — after related', size: 'leaderboard', group: 'news' },
 
-  { key: 'matches-infeed', label: 'Matches list — in feed', size: 'medium-rectangle', group: 'matches', inFeed: true },
+  { key: 'matches-infeed', label: 'Matches list — between rows', size: 'leaderboard', group: 'matches' },
   { key: 'match-detail-leaderboard', label: 'Match detail — leaderboard', size: 'leaderboard', group: 'matches' },
   { key: 'match-detail-after-overview', label: 'Match detail — after overview', size: 'leaderboard', group: 'matches' },
   { key: 'match-detail-sidebar', label: 'Match detail — sidebar', size: 'medium-rectangle', group: 'matches' },
-  { key: 'schedule-infeed', label: 'Schedule — in feed', size: 'large-rectangle', group: 'matches', inFeed: true },
+  { key: 'schedule-infeed', label: 'Schedule — between rows', size: 'leaderboard', group: 'matches' },
 
   { key: 'players-after-intro', label: 'Players list — after intro', size: 'leaderboard', group: 'directory' },
   { key: 'player-detail-after-intro', label: 'Player detail — after intro', size: 'leaderboard', group: 'directory' },

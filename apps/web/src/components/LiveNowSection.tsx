@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { Match } from '../types';
-import { mergeLiveUpdate, useMatchStream } from '../hooks/useMatchStream';
+import { mergeLiveRows, mergeLiveUpdate, useMatchStream } from '../hooks/useMatchStream';
 import { useLiveMatchesQuery } from '../queries/useDirectoryQueries';
 import MatchCard from './MatchCard';
 import SectionHeader from './SectionHeader';
@@ -28,26 +28,11 @@ export default function LiveNowSection({ matches }: { matches: Match[] }) {
   const liveUpdate = useMatchStream(undefined, true);
   const liveQuery = useLiveMatchesQuery();
   // Keeps `applyRows` stable so the effects below do not re-run on every render.
+  // Rows go through the same reconciler as socket frames, so an older snapshot is
+  // ignored per row rather than overwriting it, and newly started matches appear.
   const applyRows = useRef((rows: Match[] | undefined) => {
     if (!rows?.length) return;
-    setList((prev) => {
-      if (!prev.length) return rows;
-      const byId = new Map(rows.map((row) => [String(row.matchId ?? row.id ?? ''), row]));
-      let touched = false;
-      const next = prev.map((row) => {
-        const incoming = byId.get(String(row.matchId ?? row.id ?? ''));
-        if (!incoming) return row;
-        if (
-          JSON.stringify(incoming.currentInnings ?? null) ===
-          JSON.stringify(row.currentInnings ?? null)
-        ) {
-          return row;
-        }
-        touched = true;
-        return { ...row, ...incoming };
-      });
-      return touched ? next : prev;
-    });
+    setList((prev) => mergeLiveRows(prev, rows));
   }).current;
 
   // The server render seeds the list; later snapshots top it up rather than replace it.

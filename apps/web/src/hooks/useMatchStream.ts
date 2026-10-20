@@ -20,6 +20,11 @@ export interface LiveUpdate {
    * heuristic that this makes unnecessary.
    */
   revision?: number | null;
+  /**
+   * Frames for several matches that landed inside one coalescing window. Only a list
+   * subscription (no `matchId`) can produce one; `mergeLiveUpdate` applies each frame.
+   */
+  batch?: LiveUpdate[];
 }
 
 const THIN_EVENT_TYPES = new Set([
@@ -367,6 +372,9 @@ export function mergeLiveUpdate<T extends { matchId?: string; id?: string; statu
   matches: T[],
   update: LiveUpdate | null
 ): T[] {
+  if (update?.batch?.length) {
+    return update.batch.reduce((rows, frame) => mergeLiveUpdate(rows, frame), matches);
+  }
   if (!update || update.type === 'ping' || !update.matchId) return matches;
   const payload =
     update.data && typeof update.data === 'object' ? (update.data as Record<string, unknown>) : {};
@@ -412,6 +420,26 @@ export function mergeLiveUpdate<T extends { matchId?: string; id?: string; statu
   return next;
 }
 
+/**
+ * Folds a fresh list snapshot (a poll, or a new server render) into the rows already
+ * on screen.
+ *
+ * The snapshot decides *which* matches are listed and in what order, but each row it
+ * shares with the screen goes through `mergeMatchLivePayload`, so a poll that is behind
+ * the socket cannot walk a card's score back. Replacing the rows wholesale did exactly
+ * that: every 30s poll rewound socket-fresh cards by a ball or more until the next frame.
+ */
+export function mergeLiveRows<T extends { matchId?: string; id?: string }>(prev: T[], rows: T[]): T[] {
+  if (!prev.length) return rows;
+  const byId = new Map(prev.map((row) => [normalizeMatchId(row.matchId || row.id), row]));
+  return rows.map((row) => {
+    const current = byId.get(normalizeMatchId(row.matchId || row.id));
+    return current
+      ? mergeMatchLivePayload(current as T & Record<string, unknown>, row as Record<string, unknown>)
+      : row;
+  });
+}
+
 export function useMatchStream(matchId?: string | null, enabled = true): LiveUpdate | null {
   const [update, setUpdate] = useState<LiveUpdate | null>(null);
 
@@ -421,18 +449,23 @@ export function useMatchStream(matchId?: string | null, enabled = true): LiveUpd
 
     const socket = acquireMatchesSocket();
     let cancelled = false;
-    // Live payloads are cumulative snapshots, so a burst (several balls in one
-    // over, or two matches updating together) can safely coalesce: the latest
-    // snapshot supersedes the earlier ones. Without this every broadcast caused
-    // a full-list merge plus per-card scoreboard math — the long-task/TBT
-    // driver during live matches. The worst case added latency is one window.
-    let pending: LiveUpdate | null = null;
+    // Live payloads are cumulative snapshots, so a burst of balls for one match can
+    // safely coalesce: its latest snapshot supersedes the earlier ones. Without this
+    // every broadcast caused a full-list merge plus per-card scoreboard math — the
+    // long-task/TBT driver during live matches. The worst case added latency is one
+    // window.
+    //
+    // Pending frames are kept *per match*. A single slot let match B's frame replace
+    // match A's inside the same window, so on list pages A's card silently skipped
+    // that update and sat a ball or more behind its match page until A scored again.
+    let pending = new Map<string, LiveUpdate>();
     let timer: ReturnType<typeof setTimeout> | null = null;
     const flush = () => {
       timer = null;
-      const next = pending;
-      pending = null;
-      if (next && !cancelled) setUpdate(next);
+      const frames = [...pending.values()];
+      pending = new Map();
+      if (!frames.length || cancelled) return;
+      setUpdate(frames.length === 1 ? frames[0] : { type: 'batch', ts: Date.now(), batch: frames });
     };
 
     const apply = (incoming: LiveUpdate) => {
@@ -460,17 +493,14 @@ export function useMatchStream(matchId?: string | null, enabled = true): LiveUpd
         ts: incoming.ts ?? Date.now(),
         ...(revision !== null ? { revision } : {}),
       });
-      // Leading edge applies immediately so a fresh mount never waits;
-      // anything arriving inside the window replaces the pending payload.
-      if (!timer && !pending) {
+      // Leading edge applies immediately so a fresh mount never waits; anything
+      // arriving inside the window replaces that match's pending payload only.
+      if (!timer && pending.size === 0) {
         setUpdate(build());
-        timer = setTimeout(() => {
-          timer = null;
-          flush();
-        }, SOCKET_UPDATE_WINDOW_MS);
+        timer = setTimeout(flush, SOCKET_UPDATE_WINDOW_MS);
         return;
       }
-      pending = build();
+      pending.set(id, build());
     };
 
     const onLive = (payload: LiveUpdate) => apply(payload);
@@ -496,7 +526,7 @@ export function useMatchStream(matchId?: string | null, enabled = true): LiveUpd
         clearTimeout(timer);
         timer = null;
       }
-      pending = null;
+      pending.clear();
       socket.off('live:update', onLive);
       socket.off('match:update', onMatch);
       socket.off('connect', subscribe);

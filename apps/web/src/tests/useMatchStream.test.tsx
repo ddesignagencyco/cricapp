@@ -1,5 +1,5 @@
 import { renderHook, act } from '@testing-library/react';
-import { useMatchStream, mergeLiveUpdate, mergeMatchLivePayload } from '../hooks/useMatchStream';
+import { useMatchStream, mergeLiveRows, mergeLiveUpdate, mergeMatchLivePayload } from '../hooks/useMatchStream';
 
 jest.mock('socket.io-client', () => ({
   io: jest.fn(),
@@ -397,5 +397,68 @@ describe('useMatchStream', () => {
     second.unmount();
     // First subscriber still holds a ref, so the socket must stay connected.
     expect(socket.disconnect).not.toHaveBeenCalled();
+  });
+});
+
+describe('list subscription coalescing', () => {
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => jest.useRealTimers());
+
+  const frame = (matchId: string, runs: number, revision: number) => ({
+    type: 'live:update',
+    matchId,
+    revision,
+    data: { status: 'live', currentInnings: { runs, wickets: 1, overs: 5.1, battingTeam: 'PAK' } },
+  });
+
+  it('keeps one pending frame per match instead of letting another match replace it', () => {
+    const { result } = renderHook(() => useMatchStream(undefined, true));
+    const rows = [
+      { matchId: 'a', status: 'live', currentInnings: { runs: 10, wickets: 1, overs: 5, battingTeam: 'PAK' }, revision: 1 },
+      { matchId: 'b', status: 'live', currentInnings: { runs: 20, wickets: 1, overs: 5, battingTeam: 'PAK' }, revision: 1 },
+    ];
+
+    act(() => socket.fire('live:update', frame('a', 11, 2))); // leading edge
+    act(() => {
+      socket.fire('live:update', frame('a', 14, 3));
+      socket.fire('live:update', frame('b', 24, 3));
+    });
+    act(() => {
+      jest.advanceTimersByTime(1000);
+    });
+
+    // Both matches' latest frames survive the window.
+    const merged = mergeLiveUpdate(rows, result.current);
+    expect((merged[0].currentInnings as { runs: number }).runs).toBe(14);
+    expect((merged[1].currentInnings as { runs: number }).runs).toBe(24);
+  });
+});
+
+describe('mergeLiveRows', () => {
+  const row = (matchId: string, runs: number, overs: number, revision: number) => ({
+    matchId,
+    status: 'live',
+    revision,
+    currentInnings: { runs, wickets: 2, overs, battingTeam: 'PAK' },
+  });
+
+  it('does not let a lagging poll rewind a socket-fresh row', () => {
+    const next = mergeLiveRows([row('a', 40, 8.2, 5)], [row('a', 33, 7.6, 4)]);
+    expect(next[0].currentInnings).toMatchObject({ runs: 40, overs: 8.2 });
+  });
+
+  it('applies a newer poll', () => {
+    const next = mergeLiveRows([row('a', 33, 7.6, 4)], [row('a', 40, 8.2, 5)]);
+    expect(next[0].currentInnings).toMatchObject({ runs: 40, overs: 8.2 });
+  });
+
+  it('lets the poll decide which matches are listed', () => {
+    const next = mergeLiveRows([row('a', 33, 7.6, 4), row('old', 1, 1, 1)], [row('a', 33, 7.6, 4), row('new', 5, 1, 1)]);
+    expect(next.map((r) => r.matchId)).toEqual(['a', 'new']);
+  });
+
+  it('seeds from the poll when nothing is on screen yet', () => {
+    const rows = [row('a', 33, 7.6, 4)];
+    expect(mergeLiveRows([], rows)).toBe(rows);
   });
 });
