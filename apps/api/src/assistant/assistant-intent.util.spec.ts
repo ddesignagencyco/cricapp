@@ -105,3 +105,23 @@ describe('assistant-intent.util', () => {
     expect(r.outOfScopeReason).toBeTruthy();
   });
 });
+
+describe('team pair filler words', () => {
+  it('drops "score" and similar words around team names', () => {
+    expect(parseTeamPairFromQuestion('Pakistan vs England score')).toEqual({
+      teamAQuery: 'Pakistan',
+      teamBQuery: 'England',
+    });
+    expect(parseTeamPairFromQuestion('live score India vs Australia today?')).toEqual({
+      teamAQuery: 'India',
+      teamBQuery: 'Australia',
+    });
+  });
+
+  it('keeps real team names intact', () => {
+    expect(parseTeamPairFromQuestion('Karachi Kings vs Lahore Qalandars head to head')).toEqual({
+      teamAQuery: 'Karachi Kings',
+      teamBQuery: 'Lahore Qalandars',
+    });
+  });
+});

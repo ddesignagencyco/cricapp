@@ -36,6 +36,9 @@ import {
 } from './assistant-player-resolve.util.js';
 import {
   pickTeamIdFromCandidates,
+  tiedTopTeamIds,
+  WOMEN_TEAM_RE,
+  withoutWomenMarker,
   teamNameSearchVariants,
 } from './assistant-team-resolve.util.js';
 
@@ -758,8 +761,10 @@ export class AssistantQueryService {
 
   private async resolveTeamId(query: string | undefined): Promise<string | null> {
     if (!query?.trim()) return null;
-    const q = query.trim();
-    if (q.startsWith('sr:competitor:') || q.startsWith('sr:team:')) return q;
+    if (query.trim().startsWith('sr:competitor:') || query.trim().startsWith('sr:team:')) return query.trim();
+    // "Pakistan women" is the team named "Pakistan" whose matches are women's games.
+    const wantsWomen = WOMEN_TEAM_RE.test(query);
+    const q = withoutWomenMarker(query) || query.trim();
 
     const candidates: Array<{ id: string; name: string; abbr: string; country?: string | null }> =
       [];
@@ -778,9 +783,53 @@ export class AssistantQueryService {
         }
       }
       const picked = pickTeamIdFromCandidates(q, candidates);
-      if (picked) return picked;
+      if (picked && !wantsWomen) return picked;
     }
-    return pickTeamIdFromCandidates(q, candidates);
+    const tied = tiedTopTeamIds(q, candidates);
+    if (tied.length) return this.breakTeamNameTie(tied, wantsWomen);
+    const picked = pickTeamIdFromCandidates(q, candidates);
+    if (picked && wantsWomen) return (await this.breakTeamNameTie([picked], true)) ?? picked;
+    return picked;
+  }
+
+  /**
+   * Teams that share a name — the men's and women's national sides are both stored as
+   * "Pakistan" / "PAK" — are told apart by the competitions their stored matches were
+   * in. A tie used to resolve to nothing, so "Pakistan" alone never matched a team.
+   */
+  private async breakTeamNameTie(ids: string[], wantsWomen: boolean): Promise<string | null> {
+    const ranked: Array<{ id: string; score: number }> = [];
+    for (const id of ids) {
+      // The id followed by a non-digit, so ...142704 never counts ...1427041's games.
+      const pattern = `${id}([^0-9]|$)`;
+      const rows = await this.prisma.$queryRaw<Array<{ n: number; w: number }>>`
+        SELECT
+          (SELECT count(*) FROM matches
+            WHERE (coalesce(team_scores::text, '') || coalesce(teams::text, '')) ~ ${pattern})::int
+          + (SELECT count(DISTINCT event_id) FROM sport_event_records
+              WHERE kind IN ('match_summary', 'daily_results', 'daily_schedule', 'team_results', 'team_schedule')
+                AND payload::text ~ ${pattern})::int AS n,
+          (SELECT count(*) FROM matches
+            WHERE (coalesce(team_scores::text, '') || coalesce(teams::text, '')) ~ ${pattern}
+              AND tournament ILIKE '%women%')::int
+          + (SELECT count(DISTINCT event_id) FROM sport_event_records
+              WHERE kind IN ('match_summary', 'daily_results', 'daily_schedule', 'team_results', 'team_schedule')
+                AND payload::text ~ ${pattern}
+                AND payload::text ILIKE '%women%')::int AS w`;
+      const n = Number(rows[0]?.n ?? 0);
+      const w = Number(rows[0]?.w ?? 0);
+      ranked.push({ id, score: wantsWomen ? w : n - w });
+    }
+    ranked.sort((a, b) => b.score - a.score);
+    if (ranked.length && ranked[0]!.score > 0 && !(ranked.length >= 2 && ranked[0]!.score === ranked[1]!.score)) {
+      return ranked[0]!.id;
+    }
+    // No stored games to tell them apart. National men's sides were registered with the
+    // provider first, so their competitor ids are lower (Pakistan men 142704, women
+    // 247875). Only a plain question takes that guess; "women" never does.
+    if (wantsWomen) return null;
+    const byId = [...ids].sort((a, b) => numericTail(a) - numericTail(b));
+    return byId[0] ?? null;
   }
 
   private async resolvePlayerId(query: string | undefined): Promise<string | null> {
@@ -1014,4 +1063,10 @@ export class AssistantQueryService {
         return 'th';
     }
   }
+}
+
+/** The numeric part of a provider id ("sr:competitor:142704" → 142704). */
+function numericTail(id: string): number {
+  const n = Number(/(\d+)$/.exec(id)?.[1]);
+  return Number.isFinite(n) ? n : Number.MAX_SAFE_INTEGER;
 }
