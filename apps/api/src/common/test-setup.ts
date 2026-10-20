@@ -90,6 +90,18 @@ export async function teardownTestApp(ctx: TestContext): Promise<void> {
  * Useful for cleaning state between test suites.
  */
 export async function cleanDatabase(prisma: PrismaService): Promise<void> {
+  // Never truncate a database that is not a test database. `npm test` points
+  // DATABASE_URL at an isolated `*_test` database (scripts/run-tests.mjs), but running
+  // `npx jest` directly skips that and reads `.env` — which once wiped the local
+  // development database (users, news, teams, matches, settings) in one call.
+  const rows = await prisma.$queryRawUnsafe<Array<{ db: string }>>('SELECT current_database() AS db');
+  const database = rows[0]?.db ?? '';
+  if (!/test/i.test(database)) {
+    throw new Error(
+      `Refusing to truncate database "${database}": it is not a test database. ` +
+        'Run the API tests with `npm test` (it uses an isolated *_test database), not `npx jest`.',
+    );
+  }
   const tables = [
     'prediction_narratives',
     'prediction_results',
