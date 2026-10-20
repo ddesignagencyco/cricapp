@@ -24,6 +24,13 @@ import {
  */
 const VARIANTS_LARGEST_FIRST: LeaderboardVariant[] = ['wide', 'desktop', 'tablet', 'mobile'];
 
+/**
+ * Banners that open a page. Lazy-loading them deferred the request until layout,
+ * which made the first screen's largest image the last to arrive (Lighthouse:
+ * "LCP image was lazily loaded").
+ */
+const ABOVE_THE_FOLD = /^(global-top|home-top-mobile|match-detail-leaderboard|news-detail-top|.+-after-intro)$/;
+
 export function fitLeaderboardVariant(containerWidth: number): LeaderboardVariant {
   return (
     VARIANTS_LARGEST_FIRST.find((variant) => LEADERBOARD_SLOT_META[variant].width <= containerWidth) ??
@@ -73,7 +80,7 @@ export default function ResponsiveLeaderboard({ placement }: { placement: string
               alt={dummyAdAlt(creative.advertiser, creative.line)}
               width={meta.width}
               height={meta.height}
-              loading="lazy"
+              loading={ABOVE_THE_FOLD.test(placement) ? 'eager' : 'lazy'}
               decoding="async"
               draggable={false}
               referrerPolicy="no-referrer"

@@ -596,6 +596,7 @@ function OutcomeBadge({ event }: { event: TimelineEvent }) {
     return (
       <span
         className="h-9 w-9 shrink-0 rounded-lg bg-elevated ring-1 ring-lborder/70"
+        role="img"
         aria-label="Dot ball"
         title="Dot ball"
       />

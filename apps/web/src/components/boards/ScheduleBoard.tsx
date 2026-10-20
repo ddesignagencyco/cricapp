@@ -15,7 +15,9 @@ import RemoteImage from '../RemoteImage';
 import EntityAvatar from '../EntityAvatar';
 import { APP_TIME_ZONE, getPslLogo, toKarachiISODate } from '../../utils/helpers';
 import { isSportRadarId, str } from '../../utils/extract';
-import type { SportEventRecord } from '../../types/index';
+import type { Match, SportEventRecord } from '../../types/index';
+import { useLiveMatchMap } from '../../hooks/useLiveMatchMap';
+import { scoreboardFromMatch } from '../../lib/matchScoreboard';
 import type { PageMeta } from '../../services/api/client';
 import { MatchCardGridSkeleton } from '../skeletons/Skeletons';
 
@@ -122,6 +124,10 @@ export default function ScheduleBoard({
       ? events
       : events.filter((record) => tournamentNameFromRecord(record) === tournamentFilter);
 
+  // Live scores only when something on this day is in play.
+  const hasLive = isToday && events.some((record) => record.status === 'live');
+  const liveById = useLiveMatchMap(hasLive);
+
   return (
     <div className="space-y-5">
       <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -226,7 +232,7 @@ export default function ScheduleBoard({
           <div className="fade-in grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {visibleEvents.map((record, index) => (
               <div key={record.eventId} className="contents">
-                <ScheduleCard record={record} />
+                <ScheduleCard record={record} live={liveById.get(record.eventId)} />
                 {/* After six cards: a full row at both 2- and 3-column widths. */}
                 {visibleEvents.length > 6 && index === 5 ? (
                   <div className="col-span-full py-1">
@@ -339,6 +345,14 @@ function venueLabel(ev: Record<string, unknown>): string {
   );
 }
 
+/** Two letters, like every other avatar on the site: "PA" for Pakistan, "NZ" for New Zealand. */
+function initialsFor(name: string): string {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return '';
+  const letters = words.length > 1 ? words[0][0] + words[1][0] : words[0].slice(0, 2);
+  return letters.toUpperCase();
+}
+
 function TeamRow({
   code,
   name,
@@ -350,7 +364,7 @@ function TeamRow({
 }) {
   const pslLogo = getPslLogo(code);
   const label =
-    (name || code || '??').replace(/^(\w)\w*\s?(\w)?.*$/, '$1$2').toUpperCase() ||
+    initialsFor(name || code || '') ||
     (code || '??').slice(0, 2).toUpperCase();
 
   return (
@@ -405,7 +419,7 @@ function sideTotal(
   return wickets !== null ? `${runs}/${wickets}` : String(runs);
 }
 
-function ScheduleCard({ record }: { record: SportEventRecord }) {
+function ScheduleCard({ record, live }: { record: SportEventRecord; live?: Match }) {
   const { ev, st } = payloadEvent(record);
   const comps = (ev.competitors || []) as Array<Record<string, unknown>>;
   const home = comps.find((c) => c.qualifier === 'home') || comps[0];
@@ -427,8 +441,12 @@ function ScheduleCard({ record }: { record: SportEventRecord }) {
   const result = str(st.match_result_text) || str(st.result);
   const location = venueLabel(ev);
   const { date: eventDate, time } = formatScheduled(record.scheduled || str(ev.scheduled));
-  const homeScore = sideTotal(scores, 'home');
-  const awayScore = sideTotal(scores, 'away');
+  // A stored fixture carries no live score, so a live match reads it from the same
+  // reconciled live row the ticker and the match page use.
+  const board = live ? scoreboardFromMatch(live) : null;
+  const withOvers = (score: string, overs: string) => (score && overs ? `${score} (${overs})` : score);
+  const homeScore = (board && withOvers(board.homeScore, board.homeOvers)) || sideTotal(scores, 'home');
+  const awayScore = (board && withOvers(board.awayScore, board.awayOvers)) || sideTotal(scores, 'away');
   const outcome = result || displayScore;
   const href = record.eventId ? `/matches/${record.eventId}` : undefined;
 
