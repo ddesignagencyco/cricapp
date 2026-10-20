@@ -333,7 +333,13 @@ function periodSideTotal(
   return wickets !== null ? `${runs}/${wickets}` : String(runs);
 }
 
-export function matchSummary(payload: Record<string, unknown> | null | undefined): {
+/** The innings in progress as the page's header shows it (socket/poll-fresh). */
+export type LiveInningsLine = { number: number; score: string; oversLabel: string };
+
+export function matchSummary(
+  payload: Record<string, unknown> | null | undefined,
+  liveInnings?: LiveInningsLine | null,
+): {
   result?: string;
   displayScore?: string;
   homeScore: string;
@@ -353,8 +359,11 @@ export function matchSummary(payload: Record<string, unknown> | null | undefined
       const rec = asRecord(item);
       if (!rec) return '';
       const innings = num(rec.number);
-      const score = str(rec.display_score);
-      const overs = str(rec.display_overs);
+      // The timeline is refreshed far less often than the live score, so the innings
+      // in progress is printed from the same reconciled line as the header above it.
+      const live = liveInnings && innings === liveInnings.number && liveInnings.score ? liveInnings : null;
+      const score = live ? live.score : str(rec.display_score);
+      const overs = live ? live.oversLabel : str(rec.display_overs);
       if (!score) return '';
       return `Inn ${innings ?? ''} ${score}${overs ? ` (${overs} ov)` : ''}`.replace('Inn  ', 'Inn ');
     })
@@ -777,9 +786,12 @@ export default function MatchTimeline({
   payload,
   upcoming,
   showOverSummaries = true,
+  liveInnings = null,
 }: {
   payload: Record<string, unknown> | null;
   upcoming?: boolean;
+  /** Overrides the timeline's line for the innings in progress. */
+  liveInnings?: LiveInningsLine | null;
   /**
    * Whether to render the per-over summary card — the row headed "End of over · N"
    * with the score, the two batters at the crease and the bowler's figures.
@@ -798,7 +810,7 @@ export default function MatchTimeline({
   const events = parseTimelineEvents(payload);
   const counts = countCommentary(events);
   const thisOver = extractBalls(payload);
-  const summary = matchSummary(payload);
+  const summary = matchSummary(payload, liveInnings);
 
   const overs = useMemo(() => buildOverSummaries(events), [events]);
   /** Over number -> the two batters and the bowler at that point, from the ball events. */

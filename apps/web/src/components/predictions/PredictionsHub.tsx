@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
-import { mergeLiveRows, mergeLiveUpdate, useMatchStream } from '../../hooks/useMatchStream';
+import { mergeLiveRows, mergeLiveUpdate, useMatchStream, withLatestLive } from '../../hooks/useMatchStream';
 import DirectoryPageHeader from '../DirectoryPageHeader';
 import PageToolbar from '../PageToolbar';
 import Badge from '../Badge';
@@ -64,7 +64,7 @@ export default function PredictionsHub({
   // Frames are accumulated in state. Merging only the latest frame onto the server
   // rows reverted every other card to its 30s-old score whenever one match updated.
   const liveUpdate = useMatchStream(undefined, tab === 'live');
-  const [liveMatches, setLiveMatches] = useState<Match[]>(() => live.map((card) => card.match));
+  const [liveMatches, setLiveMatches] = useState<Match[]>(() => live.map((card) => withLatestLive(card.match)));
   useEffect(() => {
     setLiveMatches((prev) => mergeLiveRows(prev, live.map((card) => card.match)));
   }, [live]);

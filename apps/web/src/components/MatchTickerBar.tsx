@@ -8,7 +8,7 @@ import LiveIndicator from './LiveIndicator';
 import EntityAvatar from './EntityAvatar';
 import { getInitials } from '../utils/helpers';
 import { deriveMatchState } from '../lib/deriveMatchState';
-import { mergeLiveRows, mergeLiveUpdate, mergeMatchLivePayload, useMatchStream } from '../hooks/useMatchStream';
+import { mergeLiveRows, mergeLiveUpdate, mergeMatchLivePayload, rememberLiveSnapshot, useMatchStream, withLatestLive } from '../hooks/useMatchStream';
 import { useLiveMatchesQuery } from '../queries/useDirectoryQueries';
 import { describeMatchResult, scoreboardFromMatch } from '../lib/matchScoreboard';
 
@@ -18,7 +18,8 @@ interface MatchTickerBarProps {
 
 export default function MatchTickerBar({ matches: initialMatches }: MatchTickerBarProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [matches, setMatches] = useState(initialMatches || []);
+  // Seeded from the newest score this tab has seen, not just the (cached) server render.
+  const [matches, setMatches] = useState(() => (initialMatches || []).map(withLatestLive));
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
   const liveUpdate = useMatchStream(undefined, true);
@@ -52,6 +53,7 @@ export default function MatchTickerBar({ matches: initialMatches }: MatchTickerB
   useEffect(() => {
     const rows = liveQuery.data;
     if (!rows?.length) return;
+    rows.forEach(rememberLiveSnapshot);
     const byId = new Map(rows.map((row) => [String(row.matchId ?? row.id ?? ''), row]));
     setMatches((prev) =>
       prev.map((match) => {

@@ -232,70 +232,125 @@ const PROGRESS_KEYS = new Set([
   'currentInnings',
   'lastEvent',
   'matchStatus',
+  // Per-side totals describe the same instant, so a stale frame must not rewrite them
+  // either, nor stamp the row with its older revision / timestamp.
+  'teams',
+  'teamScores',
+  'periodScores',
+  'revision',
+  'updatedAt',
 ]);
 
-/** True when `incoming` is behind what we already applied. */
-function isBehindCurrentState(
-  prev: Record<string, unknown>,
-  incoming: Record<string, unknown>,
-): boolean {
+type Progress = 'ahead' | 'behind' | 'same' | 'unknown';
+
+/**
+ * Where `incoming` sits relative to `prev` in the innings in progress, read from the
+ * cricket itself: balls first, then runs and wickets.
+ *
+ * This is the primary ordering. `revision` cannot be: on this API it is derived from
+ * the stored *timeline*, which ingestion refreshes only every few poll cycles, so two
+ * snapshots a whole over apart routinely carry the same revision — and an equal
+ * revision used to count as "current". That let a cached 136 overwrite a live 151.
+ */
+function compareProgress(prev: Record<string, unknown>, incoming: Record<string, unknown>): Progress {
   const prevInn = isPlainObject(prev.currentInnings) ? prev.currentInnings : null;
   const nextInn = isPlainObject(incoming.currentInnings) ? incoming.currentInnings : null;
-  // Different innings (a wicket fell, or the chase began) legitimately resets progress.
+  // A different batting side (the chase began) cannot be compared ball for ball.
   const prevBat = String(prevInn?.battingTeam ?? '').trim().toLowerCase();
   const nextBat = String(nextInn?.battingTeam ?? '').trim().toLowerCase();
-  if (prevBat && nextBat && prevBat !== nextBat) return false;
-  if (Number(prevInn?.wickets) >= 10) return false;
+  if (prevBat && nextBat && prevBat !== nextBat) return 'unknown';
+  if (Number(prevInn?.wickets) >= 10) return 'unknown';
 
   const prevBalls = cricketOversToBalls(prevInn?.overs ?? prev.displayOvers);
   const nextBalls = cricketOversToBalls(nextInn?.overs ?? incoming.displayOvers);
-  if (prevBalls === null || nextBalls === null) return false;
+  if (prevBalls === null || nextBalls === null) return 'unknown';
+  // Back to the first two overs from ten or more overs on: a new innings (super over, or
+  // a provider that keeps the batting label), not a stale frame — those are a few overs
+  // old, never a reset to the start.
+  if (nextBalls <= 12 && prevBalls - nextBalls >= 60) return 'unknown';
 
-  // Strictly behind by a ball or more. Equal is allowed: a poll that confirms the same
-  // position may legitimately refresh runs/wickets written a moment later.
-  if (nextBalls >= prevBalls) return false;
-
-  /**
-   * Behind in balls, but the totals moved forward — so this frame is *newer*, just
-   * written with a coarser overs figure (the tag broadcasts whole overs after a richer
-   * decimal). It must be applied, otherwise a genuine boundary is dropped and the score
-   * stalls for a whole over.
-   */
   const totalOf = (inn: Record<string, unknown> | null, score: unknown) => {
     const runs = Number(inn?.runs);
-    if (Number.isFinite(runs)) return runs;
-    const parsed = Number(String(score ?? '').match(/^\s*(\d+)/)?.[1]);
+    if (inn && inn.runs !== undefined && inn.runs !== null && Number.isFinite(runs)) return runs;
+    const parsed = Number(String(score ?? '').match(/(\d+)\s*\/\s*\d+\s*$/)?.[1]);
     return Number.isFinite(parsed) ? parsed : null;
   };
-  // A reset is only genuine when the previous innings was actually finished. Gating on
-  // "the total dropped a lot" is not enough: a stale frame can drop 20+ runs, and
-  // treating that as a new innings is exactly how a live 91/2 got rewound to 69/2.
-  if (prevBalls >= 120 || Number(prevInn?.wickets) >= 10) return false;
-
   const prevTotal = totalOf(prevInn, prev.displayScore);
   const nextTotal = totalOf(nextInn, incoming.displayScore);
-  if (prevTotal !== null && nextTotal !== null && nextTotal > prevTotal) return false;
-
-  // Wickets only increase within an innings, so a fall also proves freshness.
   const prevWkts = Number(prevInn?.wickets);
   const nextWkts = Number(nextInn?.wickets);
-  if (Number.isFinite(prevWkts) && Number.isFinite(nextWkts) && nextWkts > prevWkts) return false;
+  const moreRuns = prevTotal !== null && nextTotal !== null && nextTotal > prevTotal;
+  const fewerRuns = prevTotal !== null && nextTotal !== null && nextTotal < prevTotal;
+  // Wickets only increase within an innings, so a fall also proves freshness.
+  const moreWickets = Number.isFinite(prevWkts) && Number.isFinite(nextWkts) && nextWkts > prevWkts;
 
-  return true;
+  if (nextBalls > prevBalls) return 'ahead';
+  if (nextBalls < prevBalls) {
+    // Behind in balls but the totals moved forward: a newer frame written with a
+    // coarser overs figure (whole overs after a richer decimal). It must apply.
+    return moreRuns || moreWickets ? 'ahead' : 'behind';
+  }
+  // Same ball. Extras (wides, no-balls) add runs without a ball, so the higher total
+  // is the later write.
+  if (moreRuns || moreWickets) return 'ahead';
+  if (fewerRuns) return 'behind';
+  return 'same';
+}
+
+/**
+ * True when `incoming` is older than what is already applied. The cricket decides;
+ * `revision` only breaks a tie the balls cannot (same ball and totals, or no innings
+ * data at all, e.g. a status-only frame).
+ */
+function isBehindCurrentState(prev: Record<string, unknown>, incoming: Record<string, unknown>): boolean {
+  const progress = compareProgress(prev, incoming);
+  if (progress === 'behind') return true;
+  if (progress === 'ahead') return false;
+  return isStaleByRevision(prev, incoming) === true;
+}
+
+/* ─── Latest known live state, shared by every surface in this tab ─── */
+
+/**
+ * The freshest snapshot this tab has seen for each live match.
+ *
+ * Every surface keeps its own copy of the rows, and a surface that mounts — a client
+ * navigation back to the homepage, the match page opening from a card — starts from
+ * whatever it was handed: a server render up to a minute old, or a cached query. With
+ * nothing on screen yet there was nothing for the stale guard to protect, so the card
+ * printed the old score (136) until the next frame brought it back (151). Seeding from
+ * this map instead means a newly mounted surface starts at the newest score any other
+ * surface already showed.
+ */
+const latestLive = new Map<string, Record<string, unknown>>();
+
+/** Records a snapshot; only ever moves a match forward. */
+export function rememberLiveSnapshot(row: unknown): void {
+  if (!isPlainObject(row)) return;
+  const id = normalizeMatchId(String(row.matchId ?? row.id ?? ''));
+  if (!id) return;
+  const known = latestLive.get(id);
+  latestLive.set(id, known ? mergeMatchLivePayload(known, row) : { ...row });
+}
+
+/** `row`, brought forward to the newest snapshot this tab has seen for it. */
+export function withLatestLive<T>(row: T): T {
+  if (!isPlainObject(row)) return row;
+  const known = latestLive.get(normalizeMatchId(String(row.matchId ?? row.id ?? '')));
+  return known ? (mergeMatchLivePayload(row as Record<string, unknown>, known) as T) : row;
+}
+
+/** Test hook: forget every remembered snapshot. */
+export function clearLiveSnapshots(): void {
+  latestLive.clear();
 }
 
 export function mergeMatchLivePayload<T extends Record<string, unknown>>(
   prev: T,
   payload: Record<string, unknown>
 ): T {
-  /**
-   * Revision decides staleness when both sides carry one — it is derived from the max
-   * ball sequence, so it cannot be fooled by a coarser overs figure the way
-   * `isBehindCurrentState` can. Where a revision is missing the overs heuristic still
-   * runs, so nothing regresses for matches the provider has not sequenced.
-   */
-  const staleByRevision = isStaleByRevision(prev, payload);
-  const behind = staleByRevision ?? isBehindCurrentState(prev, payload);
+  // Balls, runs and wickets decide; revision only breaks a tie (see `compareProgress`).
+  const behind = isBehindCurrentState(prev, payload);
   const next: Record<string, unknown> = { ...prev };
   for (const [key, value] of Object.entries(payload)) {
     if (value === undefined || value === null) continue;
@@ -392,9 +447,6 @@ export function mergeLiveUpdate<T extends { matchId?: string; id?: string; statu
    * there, which would leave the row advertising itself as older than it is.
    */
   const incomingRevision = typeof update.revision === 'number' ? update.revision : payload.revision;
-  if (idx !== -1 && isStaleByRevision(matches[idx], { revision: incomingRevision }) === true) {
-    return matches;
-  }
 
   /**
    * The row records the revision it was last updated from, so the next frame can be
@@ -405,6 +457,11 @@ export function mergeLiveUpdate<T extends { matchId?: string; id?: string; statu
     payload.revision === undefined && typeof incomingRevision === 'number'
       ? { ...payload, revision: incomingRevision }
       : payload;
+
+  // Same ordering rule as the merge itself: the cricket first, revision as tie-break.
+  if (idx !== -1 && isBehindCurrentState(matches[idx] as Record<string, unknown>, mergeable)) {
+    return matches;
+  }
 
   const nextRow = mergeMatchLivePayload({ matchId: update.matchId } as T, mergeable);
 
@@ -430,13 +487,14 @@ export function mergeLiveUpdate<T extends { matchId?: string; id?: string; statu
  * that: every 30s poll rewound socket-fresh cards by a ball or more until the next frame.
  */
 export function mergeLiveRows<T extends { matchId?: string; id?: string }>(prev: T[], rows: T[]): T[] {
-  if (!prev.length) return rows;
+  rows.forEach(rememberLiveSnapshot);
   const byId = new Map(prev.map((row) => [normalizeMatchId(row.matchId || row.id), row]));
   return rows.map((row) => {
     const current = byId.get(normalizeMatchId(row.matchId || row.id));
+    // A row new to this surface starts from the newest score the tab already knows.
     return current
       ? mergeMatchLivePayload(current as T & Record<string, unknown>, row as Record<string, unknown>)
-      : row;
+      : withLatestLive(row);
   });
 }
 
@@ -486,6 +544,7 @@ export function useMatchStream(matchId?: string | null, enabled = true): LiveUpd
           : typeof snapshot.revision === 'number'
             ? snapshot.revision
             : null;
+      rememberLiveSnapshot({ ...snapshot, matchId: id, ...(revision !== null ? { revision } : {}) });
       const build = (): LiveUpdate => ({
         type: 'match_update',
         matchId: id,

@@ -1,5 +1,5 @@
 import { renderHook, act } from '@testing-library/react';
-import { useMatchStream, mergeLiveRows, mergeLiveUpdate, mergeMatchLivePayload } from '../hooks/useMatchStream';
+import { useMatchStream, mergeLiveRows, mergeLiveUpdate, mergeMatchLivePayload, clearLiveSnapshots, rememberLiveSnapshot, withLatestLive } from '../hooks/useMatchStream';
 
 jest.mock('socket.io-client', () => ({
   io: jest.fn(),
@@ -41,6 +41,7 @@ function makeSocket() {
 let socket: ReturnType<typeof makeSocket>;
 
 beforeEach(() => {
+  clearLiveSnapshots();
   socket = makeSocket();
   ioMock.mockReturnValue(socket);
 });
@@ -459,6 +460,65 @@ describe('mergeLiveRows', () => {
 
   it('seeds from the poll when nothing is on screen yet', () => {
     const rows = [row('a', 33, 7.6, 4)];
-    expect(mergeLiveRows([], rows)).toBe(rows);
+    expect(mergeLiveRows([], rows)).toEqual(rows);
+  });
+});
+
+describe('ordering by the cricket, not by revision alone', () => {
+  const inn = (runs: number, overs: number, wickets = 6) => ({ battingTeam: 'AUS', runs, wickets, overs });
+
+  it('rejects an older score that carries the same revision (the 151 → 136 bounce)', () => {
+    // Revision is derived from the stored timeline and lags, so a cached snapshot two
+    // overs old can share it with the live one.
+    const prev = { matchId: 'm1', status: 'live', revision: 900, currentInnings: inn(151, 19.2), displayScore: '151/6' };
+    const stale = { matchId: 'm1', status: 'live', revision: 900, currentInnings: inn(136, 17.4), displayScore: '136/6' };
+    const out = mergeMatchLivePayload(prev, stale);
+    expect(out.currentInnings).toMatchObject({ runs: 151, overs: 19.2 });
+    expect(out.displayScore).toBe('151/6');
+  });
+
+  it('accepts a newer score even when its revision is lower (different writer)', () => {
+    const prev = { matchId: 'm1', status: 'live', revision: 950, currentInnings: inn(136, 17.4) };
+    const fresh = { matchId: 'm1', status: 'live', revision: 900, currentInnings: inn(151, 19.2) };
+    expect(mergeMatchLivePayload(prev, fresh).currentInnings).toMatchObject({ runs: 151, overs: 19.2 });
+    expect(mergeMatchLivePayload(prev, fresh).revision).toBe(900);
+  });
+
+  it('takes the higher total on the same ball (extras add runs without a ball)', () => {
+    const prev = { matchId: 'm1', status: 'live', currentInnings: inn(140, 18) };
+    expect(mergeMatchLivePayload(prev, { currentInnings: inn(141, 18) }).currentInnings).toMatchObject({ runs: 141 });
+    expect(mergeMatchLivePayload({ ...prev, currentInnings: inn(141, 18) }, { currentInnings: inn(140, 18) }).currentInnings).toMatchObject({ runs: 141 });
+  });
+
+  it('does not let a stale frame rewrite the per-side totals', () => {
+    const prev = { matchId: 'm1', status: 'live', currentInnings: inn(151, 19.2), teamScores: { home: { score: '151/6', overs: '19.2' } } };
+    const stale = { currentInnings: inn(136, 17.4), teamScores: { home: { score: '136/6', overs: '17.4' } } };
+    expect(mergeMatchLivePayload(prev, stale).teamScores).toMatchObject({ home: { score: '151/6' } });
+  });
+});
+
+describe('latest live snapshot shared across surfaces', () => {
+  const row = (runs: number, overs: number) => ({ matchId: 'sr:match:1', status: 'live', currentInnings: { battingTeam: 'AUS', runs, wickets: 6, overs } });
+
+  it('brings a stale server row forward to the newest score the tab has seen', () => {
+    rememberLiveSnapshot(row(151, 19.2));
+    expect(withLatestLive(row(136, 17.4)).currentInnings).toMatchObject({ runs: 151, overs: 19.2 });
+  });
+
+  it('never moves the remembered snapshot backwards', () => {
+    rememberLiveSnapshot(row(151, 19.2));
+    rememberLiveSnapshot(row(136, 17.4));
+    expect(withLatestLive(row(100, 15)).currentInnings).toMatchObject({ runs: 151 });
+  });
+
+  it('keeps a row that is already ahead of what was remembered', () => {
+    rememberLiveSnapshot(row(140, 18));
+    expect(withLatestLive(row(151, 19.2)).currentInnings).toMatchObject({ runs: 151 });
+  });
+
+  it('seeds a newly listed row from the remembered snapshot', () => {
+    rememberLiveSnapshot(row(151, 19.2));
+    const [seeded] = mergeLiveRows([], [row(136, 17.4)]);
+    expect(seeded.currentInnings).toMatchObject({ runs: 151 });
   });
 });

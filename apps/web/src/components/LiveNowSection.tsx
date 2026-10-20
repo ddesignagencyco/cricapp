@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { Match } from '../types';
-import { mergeLiveRows, mergeLiveUpdate, useMatchStream } from '../hooks/useMatchStream';
+import { mergeLiveRows, mergeLiveUpdate, useMatchStream, withLatestLive } from '../hooks/useMatchStream';
 import { useLiveMatchesQuery } from '../queries/useDirectoryQueries';
 import MatchCard from './MatchCard';
 import SectionHeader from './SectionHeader';
@@ -24,7 +24,8 @@ import SectionHeader from './SectionHeader';
  *    payload cannot undo newer socket state.
  */
 export default function LiveNowSection({ matches }: { matches: Match[] }) {
-  const [list, setList] = useState<Match[]>(matches);
+  // Seeded from the newest score this tab has seen, not just the (cached) server render.
+  const [list, setList] = useState<Match[]>(() => matches.map(withLatestLive));
   const liveUpdate = useMatchStream(undefined, true);
   const liveQuery = useLiveMatchesQuery();
   // Keeps `applyRows` stable so the effects below do not re-run on every render.

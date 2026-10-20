@@ -22,6 +22,8 @@ jest.mock('../hooks/useMatchStream', () => ({
   useMatchStream: () => null,
   mergeMatchLivePayload: (match: unknown) => match,
   mergeLiveRows: (_prev: unknown[], rows: unknown[]) => rows,
+  withLatestLive: (row: unknown) => row,
+  rememberLiveSnapshot: () => {},
 }));
 
 // The ticker watches its own width to fade the edges; jsdom has no ResizeObserver.

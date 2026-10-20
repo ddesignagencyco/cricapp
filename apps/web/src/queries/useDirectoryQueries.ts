@@ -123,6 +123,9 @@ export function useLiveMatchesQuery(enabled = true) {
     queryKey: matchKeys.live(),
     queryFn: ({ signal }) => runAbortable(signal, (requestSignal) => fetchLiveMatches(requestSignal)),
     enabled,
+    // Live scores go stale within a ball, so a remount (client navigation back to a
+    // page) refetches at once instead of serving the cache for up to five minutes.
+    staleTime: 0,
     refetchInterval: LIVE_MATCH_REFETCH_MS,
     refetchIntervalInBackground: false,
   });
