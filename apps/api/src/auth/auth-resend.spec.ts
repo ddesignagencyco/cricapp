@@ -152,9 +152,9 @@ describe('AuthModule forgot-password with Resend (live)', () => {
       .send({ email: TEST_EMAIL })
       .expect(200);
 
-    expect(MockMailerService.lastMail?.subject).toContain('CricApp');
-    expect(MockMailerService.lastMail?.html).toContain('Pakistan cricket, live scores, PSL and news');
-    expect(MockMailerService.lastMail?.html).toContain('Verify Email Address');
+    expect(MockMailerService.lastMail?.subject).toContain('PakCricZone');
+    expect(MockMailerService.lastMail?.html).toContain('Confirm your email');
+    expect(MockMailerService.lastMail?.html).toContain('Verify email address');
     expect(MockMailerService.lastMail?.html).not.toContain('Reset Code');
   });
 });

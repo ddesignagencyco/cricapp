@@ -10,6 +10,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { MailerService } from '../mailer/mailer.service.js';
+import { BRAND, emailButton, emailLinkFallback, emailNote, renderEmail } from '../mailer/email-layout.js';
 import type { SignupDto, LoginDto, ForgotPasswordDto, ResetPasswordDto, VerifyEmailDto, ResendVerificationDto } from './dto/auth.dto.js';
 import { ConfigService } from '@nestjs/config';
 import crypto from 'crypto';
@@ -149,81 +150,34 @@ export class AuthService {
     const expiryDate = expiresAt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
     const safeUsername = this.escapeHtml(username);
 
-    const html = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Reset Your CricApp Password</title>
-</head>
-<body style="margin:0;padding:0;background:#f4f7f6;font-family:'Segoe UI',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f4f7f6;padding:40px 0;">
-    <tr>
-      <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
-          <!-- Header -->
-          <tr>
-            <td style="background:linear-gradient(135deg,#1a5f2a 0%,#2e8b47 100%);padding:40px 30px;text-align:center;">
-              <h1 style="margin:0;color:#ffffff;font-size:28px;font-weight:700;letter-spacing:1px;">🏏 CricApp</h1>
-              <p style="margin:8px 0 0 0;color:#c8e6c9;font-size:14px;">Cricket News, Live Scores & Analytics</p>
-            </td>
-          </tr>
+    const appUrl = this.config.get<string>('APP_URL', 'http://localhost:3000');
+    const html = renderEmail({
+      appUrl,
+      title: 'Reset your PakCricZone password',
+      preheader: `Use this secure link to choose a new password. It expires at ${expiryTime}.`,
+      reason: 'You received this email because a password reset was requested for your PakCricZone account.',
+      bodyHtml: `
+        <h1 style="margin:0 0 6px;font-size:24px;line-height:1.3;color:${BRAND.ink};">Reset your password</h1>
+        <p style="margin:0 0 4px;">Hi <strong style="color:${BRAND.ink};">${safeUsername}</strong>,</p>
+        <p style="margin:0;">We received a request to reset the password for your PakCricZone account. Click the button below to choose a new one.</p>
+        ${emailButton(resetLink, 'Reset password')}
+        ${emailNote(`This secure link expires at <strong>${expiryTime}</strong> on <strong>${expiryDate}</strong> and can only be used once.`)}
+        ${emailNote("<strong>Didn't request this?</strong> You can safely ignore this email. Your password stays the same and your account is secure.", 'warning')}
+        ${emailLinkFallback(resetLink)}`,
+    });
 
-          <!-- Body -->
-          <tr>
-            <td style="padding:40px 30px;">
-              <h2 style="margin:0 0 16px 0;color:#1a1a1a;font-size:22px;font-weight:600;">Password Reset Request</h2>
-              <p style="margin:0 0 24px 0;color:#555;font-size:15px;line-height:1.6;">Hi <strong>${safeUsername}</strong>, we received a request to reset your CricApp password.</p>
-
-              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0;">
-                <tr>
-                  <td style="text-align:center;">
-                    <a href="${resetLink}" style="display:inline-block;background:linear-gradient(135deg,#1a5f2a 0%,#2e8b47 100%);color:#ffffff;text-decoration:none;padding:14px 36px;border-radius:6px;font-size:15px;font-weight:600;letter-spacing:0.5px;">Reset Password</a>
-                  </td>
-                </tr>
-              </table>
-              <p style="margin:0 0 24px 0;color:#555;font-size:15px;line-height:1.6;">This secure link expires at <strong>${expiryTime}</strong> on <strong>${expiryDate}</strong> and can only be used once.</p>
-
-              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0;">
-                <tr>
-                  <td style="background:#fff8e1;border-left:4px solid #ffa000;border-radius:0 4px 4px 0;padding:16px;">
-                    <p style="margin:0;color:#795548;font-size:13px;line-height:1.5;"><strong>Didn't request this?</strong> If you didn't ask for a password reset, you can safely ignore this email. Your account remains secure.</p>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-
-          <!-- Footer -->
-          <tr>
-            <td style="background:#1a3c1d;padding:30px;text-align:center;border-top:3px solid #2e8b47;">
-              <p style="margin:0 0 8px 0;color:#a5d6a7;font-size:14px;font-weight:600;">🏏 CricApp — Your Cricket Companion</p>
-              <p style="margin:0 0 12px 0;color:#81c784;font-size:12px;">Live Scores • Match Analytics • Player Stats • News & Updates</p>
-              <p style="margin:0;color:#66bb6a;font-size:11px;">© ${new Date().getFullYear()} CricApp. All rights reserved.</p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>`;
-
-    const text = `CricApp Password Reset
+    const text = `Reset your PakCricZone password
 
 Hi ${username},
 
-Reset your password using this secure link:
+We received a request to reset your password. Use this secure link:
 ${resetLink}
 
 This link expires at ${expiryTime} on ${expiryDate} and can only be used once.
 
-Didn't request this? Ignore this email — your account is safe.
+Didn't request this? Ignore this email. Your password stays the same.
 
----
-CricApp — Your Cricket Companion
-Live Scores • Match Analytics • Player Stats • News & Updates
-© ${new Date().getFullYear()} CricApp`;
+PakCricZone — Every run. Every ball. Live.`;
 
     return { html, text };
   }
@@ -253,7 +207,7 @@ Live Scores • Match Analytics • Player Stats • News & Updates
 
     await this.mailer.sendMail({
       to: user.email,
-      subject: 'Reset your CricApp password',
+      subject: 'Reset your PakCricZone password',
       html,
       text,
     });
@@ -354,37 +308,29 @@ Live Scores • Match Analytics • Player Stats • News & Updates
     verifyLink: string;
   }): { html: string; text: string } {
     const safeUsername = this.escapeHtml(username);
-    const html = `<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Verify your CricApp email</title></head>
-<body style="margin:0;padding:0;background:#f4f7f6;font-family:'Segoe UI',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 16px;background:#f4f7f6;">
-    <tr><td align="center">
-      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.08);">
-        <tr><td style="background:linear-gradient(135deg,#1a5f2a,#2e8b47);padding:36px 30px;text-align:center;">
-          <h1 style="margin:0;color:#fff;font-size:28px;">🏏 CricApp</h1>
-          <p style="margin:8px 0 0;color:#c8e6c9;font-size:14px;">Pakistan cricket, live scores, PSL and news</p>
-        </td></tr>
-        <tr><td style="padding:40px 30px;">
-          <h2 style="margin:0 0 16px;color:#1a1a1a;font-size:22px;">Welcome to CricApp</h2>
-          <p style="color:#555;font-size:15px;line-height:1.6;">Hi <strong>${safeUsername}</strong>, verify your email to activate your account and start following live matches, teams, players and cricket news.</p>
-          <p style="margin:28px 0;text-align:center;"><a href="${verifyLink}" style="display:inline-block;background:#2e8b47;color:#fff;text-decoration:none;padding:14px 36px;border-radius:6px;font-weight:600;">Verify Email Address</a></p>
-          <p style="color:#777;font-size:13px;line-height:1.5;">This link expires in 24 hours and can only be used once. If you did not create a CricApp account, ignore this email.</p>
-        </td></tr>
-        <tr><td style="background:#1a3c1d;padding:24px;text-align:center;color:#a5d6a7;font-size:12px;">CricApp — Your Cricket Companion</td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`;
-    const text = `Welcome to CricApp, ${username}!
+    const appUrl = this.config.get<string>('APP_URL', 'http://localhost:3000');
+    const html = renderEmail({
+      appUrl,
+      title: 'Verify your PakCricZone email',
+      preheader: 'One click to activate your account and start following live cricket.',
+      reason: 'You received this email because someone signed up for PakCricZone with this address.',
+      bodyHtml: `
+        <h1 style="margin:0 0 6px;font-size:24px;line-height:1.3;color:${BRAND.ink};">Confirm your email</h1>
+        <p style="margin:0 0 4px;">Hi <strong style="color:${BRAND.ink};">${safeUsername}</strong>,</p>
+        <p style="margin:0;">Welcome to PakCricZone! Confirm your email address to activate your account and start following live matches, your favourite teams and players, and the latest cricket news.</p>
+        ${emailButton(verifyLink, 'Verify email address')}
+        ${emailNote('This link expires in <strong>24 hours</strong> and can only be used once. If you did not create a PakCricZone account, you can safely ignore this email.')}
+        ${emailLinkFallback(verifyLink)}`,
+    });
+    const text = `Welcome to PakCricZone, ${username}!
 
-Verify your email to activate your account:
+Confirm your email address to activate your account:
 ${verifyLink}
 
 This link expires in 24 hours and can only be used once.
+If you did not create a PakCricZone account, ignore this email.
 
-CricApp — Your Cricket Companion`;
+PakCricZone — Every run. Every ball. Live.`;
     return { html, text };
   }
 
@@ -415,7 +361,7 @@ CricApp — Your Cricket Companion`;
 
     await this.mailer.sendMail({
       to: email,
-      subject: 'Verify your CricApp email',
+      subject: 'Verify your PakCricZone email',
       html,
       text,
     });
