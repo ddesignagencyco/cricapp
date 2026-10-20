@@ -174,3 +174,51 @@ describe('scoreLive', () => {
     assert.ok(out.homeWinProb < 0.5);
   });
 });
+
+describe('live model fixes', () => {
+  const base = {
+    format: 't20',
+    homeAbbr: 'AUS',
+    homeName: 'Australia',
+    awayAbbr: 'NZL',
+    awayName: 'New Zealand',
+    parScore: 160,
+  };
+
+  it('first innings: losing wickets lowers the batting side’s chance at the same score', () => {
+    const fresh = scoreLive({ ...base, currentInning: 1, currentInnings: { battingTeam: 'AUS', runs: 60, wickets: 0, overs: 10, runRate: 6 } });
+    const collapsed = scoreLive({ ...base, currentInning: 1, currentInnings: { battingTeam: 'AUS', runs: 60, wickets: 9, overs: 10, runRate: 6 } });
+    assert.ok(collapsed.homeWinProb < fresh.homeWinProb - 0.05, `${collapsed.homeWinProb} vs ${fresh.homeWinProb}`);
+  });
+
+  it('first innings with all wickets in hand projects as before (factor 1)', () => {
+    const r = scoreLive({ ...base, currentInning: 1, currentInnings: { battingTeam: 'AUS', runs: 80, wickets: 0, overs: 10, runRate: 8 } });
+    assert.equal(r.explanation.projectedTotal, 160);
+  });
+
+  it('does not reset the pre-match prior to full weight at the start of the chase', () => {
+    const prior = { homeWinProb: 0.8 };
+    const startOfChase = scoreLive(
+      { ...base, currentInning: 2, target: 161, currentInnings: { battingTeam: 'NZL', runs: 0, wickets: 0, overs: 0, runRate: 0 } },
+      null,
+      { prior },
+    );
+    assert.ok(startOfChase.explanation.priorWeight < 0.2, `prior weight ${startOfChase.explanation.priorWeight}`);
+  });
+
+  it('reports momentum from the home side: away batting well is negative', () => {
+    const r = scoreLive({ ...base, currentInning: 1, currentInnings: { battingTeam: 'NZL', runs: 100, wickets: 0, overs: 10, runRate: 10 } });
+    assert.ok(r.momentum < 0, `momentum ${r.momentum}`);
+    assert.equal(r.homeWinProb < 0.5, true);
+  });
+
+  it('has no momentum before a ball is bowled', () => {
+    const r = scoreLive({ ...base, currentInning: 1, currentInnings: { battingTeam: 'AUS', runs: 0, wickets: 0, overs: 0, runRate: 0 } });
+    assert.equal(r.momentum, 0);
+  });
+
+  it('never produces NaN from a non-numeric run rate', () => {
+    const r = scoreLive({ ...base, currentInning: 1, currentInnings: { battingTeam: 'AUS', runs: 40, wickets: 1, overs: 5, runRate: 'n/a' } });
+    assert.ok(Number.isFinite(r.homeWinProb));
+  });
+});

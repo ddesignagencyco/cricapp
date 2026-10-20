@@ -28,6 +28,7 @@ const {
 } = await import('../../../services/prediction/src/calibrate.js');
 const { snapshotPerformance } = await import('../../../services/prediction/src/performance.js');
 const { refreshRatings } = await import('../../../services/prediction/src/ratings.js');
+const { workerIsActive } = await import('../../../services/prediction/src/schedulerLock.js');
 const { PREDICTION_MODELS, PREDICTION_STAGE } = await import('../../../packages/shared-types/src/index.js');
 
 const PREMATCH_HORIZON_HOURS = Number(Deno.env.get('PREMATCH_HORIZON_HOURS') ?? 720);
@@ -260,7 +261,10 @@ Deno.serve(async (req) => {
 
   const started = Date.now();
   try {
-    const payload = await withClient((query) => {
+    const payload = await withClient(async (query) => {
+      // The long-running worker holds an advisory lock while it is up. When it does,
+      // this cron run steps aside so the two never write the same rows.
+      if (await workerIsActive(query)) return { task, skipped: 'worker_active' };
       if (task === 'live') return liveCycle(query);
       if (task === 'calibrate') return calibrateCycle(query);
       if (task === 'prematch') return prematchCycle(query);
