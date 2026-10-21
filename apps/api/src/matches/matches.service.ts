@@ -660,7 +660,9 @@ export class MatchesService {
       return this.buildTimelineResponse(matchId, row, storedPayload, since ?? null)!;
     }
 
-    if (!this.sportradar.isConfigured) {
+    // Nothing stored and not even shaped like a provider match id: answer 404 without
+    // spending an upstream request (Sportradar 404s are also mapped to 404 below).
+    if (!this.sportradar.isConfigured || (!matchRow && !/^sr:match:\d+$/.test(matchId))) {
       throw new NotFoundException(`Timeline for match ${matchId} not found`);
     }
 

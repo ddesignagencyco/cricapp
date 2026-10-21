@@ -11,6 +11,7 @@ import {
   ValidationPipe,
   Request,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiOperation, ApiResponse, ApiCookieAuth, ApiParam } from '@nestjs/swagger';
 import { CommentsService } from './comments.service.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
@@ -42,6 +43,7 @@ export class CommentsController {
 
   @Post('comments')
   @UseGuards(JwtAuthGuard)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiCookieAuth()
   @ApiOperation({ summary: 'Create a comment' })
   @ApiResponse({ status: 201, type: CommentDto })

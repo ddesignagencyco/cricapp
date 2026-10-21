@@ -32,6 +32,7 @@ describe('PlayersModule (integration)', () => {
         nationality: 'England',
         role: 'batsman',
         battingStyle: 'Right-hand bat',
+        birth: '1990-12-30',
       },
     });
     await ctx.prisma.player.create({
@@ -49,6 +50,9 @@ describe('PlayersModule (integration)', () => {
     const res = await ctx.agent.get('/players').expect(200);
     expect(res.body.data).toHaveLength(2);
     expect(res.body.meta.totalRecords).toBe(2);
+    // The admin players table shows nationality and date of birth from the list.
+    const root = res.body.data.find((p: { id: string }) => p.id === 'sr:player:1');
+    expect(root).toMatchObject({ nationality: 'England', birth: '1990-12-30' });
   });
 
   it('GET /players?q=Joe — filters by name substring', async () => {

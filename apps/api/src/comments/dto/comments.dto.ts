@@ -1,4 +1,4 @@
-import { IsString, IsIn, IsOptional, MinLength } from 'class-validator';
+import { IsString, IsIn, IsOptional, MaxLength, MinLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginationQuery } from '../../common/dto/pagination.query.js';
 
@@ -12,9 +12,11 @@ export class CreateCommentDto {
   @IsString()
   targetId: string;
 
-  @ApiProperty({ example: 'Great innings by Babar!' })
+  /** Same 1000-character cap the web form enforces. */
+  @ApiProperty({ example: 'Great innings by Babar!', maxLength: 1000 })
   @IsString()
   @MinLength(1)
+  @MaxLength(1000)
   body: string;
 }
 

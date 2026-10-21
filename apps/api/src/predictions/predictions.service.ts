@@ -1,7 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PREDICTION_MODELS } from '@cricapp/shared-types';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { RedisService } from '../redis/redis.service.js';
 import { PredictionNarrativeService } from './prediction-narrative.service.js';
 
 export interface PredictionRunView {
@@ -213,11 +214,29 @@ function computePerformanceStats(rows: EvaluationRow[], binCount = 10): Performa
   };
 }
 
+interface EvaluationQueryRow {
+  matchId: string;
+  tournament: string | null;
+  matchStatus: string | null;
+  homeWinProb: number;
+  confidence: number;
+  homeTeamId: string | null;
+  awayTeamId: string | null;
+  format: string | null;
+}
+
 @Injectable()
 export class PredictionsService {
+  private readonly logger = new Logger(PredictionsService.name);
+  /** TTL for the public performance summary; 0 disables caching. */
+  private readonly performanceCacheTtlSeconds = Number(
+    process.env.PREDICTION_PERFORMANCE_CACHE_TTL_SECONDS ?? 300,
+  );
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly narratives: PredictionNarrativeService,
+    private readonly redis: RedisService,
   ) {}
 
   private async presentRun(
@@ -379,53 +398,71 @@ export class PredictionsService {
     };
   }
 
+  /**
+   * Latest qualifying run per completed match, scored against the stored result.
+   * Two set-based queries instead of two queries per completed match: the old loop made
+   * ~2k round trips (one an unindexed sport_event_records lookup) and took 5-15s.
+   */
   private async evaluationRows(modelVersion?: string, stage = 'pre_match'): Promise<EvaluationRow[]> {
-    const completed = await this.prisma.match.findMany({
-      where: { status: 'completed' },
-      select: { matchId: true, tournament: true, matchStatus: true },
-    });
+    const modelFilter = modelVersion ? Prisma.sql`AND pr.model_version = ${modelVersion}` : Prisma.empty;
+    // Live runs taken after the match was decided would inflate accuracy, so the latest
+    // run *before* that point is scored instead.
+    const liveFilter =
+      stage === 'live'
+        ? Prisma.sql`AND EXISTS (
+            SELECT 1 FROM prediction_results r
+            WHERE r.run_id = pr.id
+              AND NOT COALESCE(r.explanation -> 'reasons' @> '["match_decided"]'::jsonb, false)
+          )`
+        : Prisma.empty;
+    const latestRuns = await this.prisma.$queryRaw<EvaluationQueryRow[]>`
+      WITH latest AS (
+        SELECT DISTINCT ON (pr.match_id) pr.id, pr.match_id, m.tournament, m.match_status
+        FROM prediction_runs pr
+        JOIN matches m ON m.match_id = pr.match_id AND m.status = 'completed'
+        WHERE pr.stage = ${stage} ${modelFilter} ${liveFilter}
+        ORDER BY pr.match_id, pr.created_at DESC
+      )
+      SELECT latest.match_id AS "matchId",
+             latest.tournament,
+             latest.match_status AS "matchStatus",
+             res.home_win_prob AS "homeWinProb",
+             res.confidence,
+             f.snapshot ->> 'homeTeamId' AS "homeTeamId",
+             f.snapshot ->> 'awayTeamId' AS "awayTeamId",
+             f.snapshot ->> 'format' AS format
+      FROM latest
+      JOIN prediction_results res ON res.run_id = latest.id
+      LEFT JOIN prediction_features f ON f.run_id = latest.id
+      ORDER BY latest.match_id
+    `;
+    if (latestRuns.length === 0) return [];
+
+    const matchIds = latestRuns.map((row) => row.matchId);
+    const events = await this.prisma.$queryRaw<{ eventId: string; payload: unknown }[]>`
+      SELECT DISTINCT ON (event_id) event_id AS "eventId", payload
+      FROM sport_event_records
+      WHERE event_id = ANY(${matchIds}::text[])
+      ORDER BY event_id, updated_at DESC
+    `;
+    const payloadByMatch = new Map(events.map((event) => [event.eventId, event.payload]));
 
     const rows: EvaluationRow[] = [];
-
-    for (const match of completed) {
-      const latest = await this.prisma.predictionRun.findFirst({
-        where: {
-          matchId: match.matchId,
-          stage,
-          ...(modelVersion ? { modelVersion } : {}),
-          ...(stage === 'live'
-            ? {
-                result: {
-                  is: {
-                    NOT: { explanation: { path: ['reasons'], array_contains: 'match_decided' } },
-                  },
-                },
-              }
-            : {}),
-        },
-        orderBy: { createdAt: 'desc' },
-        include: { result: true, features: true },
-      });
-      if (!latest?.result) continue;
-
-      const snapshot = (latest.features?.snapshot ?? {}) as Record<string, unknown>;
-      const homeTeamId = String(snapshot.homeTeamId ?? '');
-      const awayTeamId = String(snapshot.awayTeamId ?? '');
-      const event = await this.prisma.sportEventRecord.findFirst({
-        where: { eventId: match.matchId },
-        orderBy: { updatedAt: 'desc' },
-      });
-      const actualWinnerId = extractWinnerId(event?.payload, [homeTeamId, awayTeamId].filter(Boolean));
+    for (const run of latestRuns) {
+      const homeTeamId = run.homeTeamId ?? '';
+      const awayTeamId = run.awayTeamId ?? '';
+      const actualWinnerId = extractWinnerId(
+        payloadByMatch.get(run.matchId),
+        [homeTeamId, awayTeamId].filter(Boolean),
+      );
       if (!actualWinnerId || !homeTeamId || !awayTeamId) continue;
       rows.push({
         homeTeamId,
         awayTeamId,
-        homeWinProb: latest.result.homeWinProb,
-        confidence: latest.result.confidence,
+        homeWinProb: run.homeWinProb,
+        confidence: run.confidence,
         actualWinnerId,
-        format: snapshot.format
-          ? String(snapshot.format)
-          : detectFormat(match.tournament, match.matchStatus),
+        format: run.format ? run.format : detectFormat(run.tournament, run.matchStatus),
       });
     }
     return rows;
@@ -436,8 +473,18 @@ export class PredictionsService {
     const selectedModel =
       query.modelVersion ??
       (stage === 'live' ? PREDICTION_MODELS.LIVE : PREDICTION_MODELS.PREMATCH);
+    const binCount = Number(query.bins) || 10;
+    const cacheKey = `predictions:performance:${stage}:${selectedModel}:${binCount}`;
+    const cached = await this.performanceCacheGet<Awaited<ReturnType<PredictionsService['computePerformance']>>>(cacheKey);
+    if (cached) return cached;
+    const payload = await this.computePerformance(selectedModel, stage, binCount);
+    await this.performanceCacheSet(cacheKey, payload);
+    return payload;
+  }
+
+  private async computePerformance(selectedModel: string, stage: string, binCount: number) {
     const usable = await this.evaluationRows(selectedModel, stage);
-    const stats = computePerformanceStats(usable, Number(query.bins) || 10);
+    const stats = computePerformanceStats(usable, binCount);
     const publishMinSamples = Number(process.env.PREDICTION_PUBLISH_MIN_SAMPLES || 200);
     const claimReady = stats.sampleSize >= publishMinSamples;
     return {
@@ -450,6 +497,25 @@ export class PredictionsService {
         ? 'Sample is large enough to quote accuracy carefully by format.'
         : `Do not market a headline accuracy % until sampleSize >= ${publishMinSamples} settled matches.`,
     };
+  }
+
+  private async performanceCacheGet<T>(key: string): Promise<T | null> {
+    if (this.performanceCacheTtlSeconds <= 0) return null;
+    try {
+      return await this.redis.get<T>(key);
+    } catch (err) {
+      this.logger.warn(`performance cache read failed: ${(err as Error).message}`);
+      return null;
+    }
+  }
+
+  private async performanceCacheSet(key: string, payload: unknown): Promise<void> {
+    if (this.performanceCacheTtlSeconds <= 0) return;
+    try {
+      await this.redis.cached.set(key, JSON.stringify(payload), 'EX', this.performanceCacheTtlSeconds);
+    } catch (err) {
+      this.logger.warn(`performance cache write failed: ${(err as Error).message}`);
+    }
   }
 
   async listPerformanceHistory(query: { modelVersion?: string; stage?: string; limit?: number }) {

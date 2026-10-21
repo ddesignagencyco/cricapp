@@ -12,6 +12,7 @@ import {
   ValidationPipe,
   Request,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiOperation, ApiResponse, ApiCookieAuth, ApiParam } from '@nestjs/swagger';
 import { StreamsService } from './streams.service.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
@@ -59,6 +60,7 @@ export class StreamsController {
 
   @Post(':id/comments')
   @UseGuards(JwtAuthGuard)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiCookieAuth()
   @ApiOperation({ summary: 'Post a comment while watching a stream' })
   async createComment(

@@ -65,6 +65,7 @@ export class PlayersService {
           shortName: true,
           role: true,
           nationality: true,
+          birth: true,
           team: { select: { id: true, name: true, abbr: true } },
         },
       }),
