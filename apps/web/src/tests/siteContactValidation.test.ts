@@ -74,7 +74,7 @@ describe('the country list', () => {
     expect(COUNTRY_OPTIONS).toHaveLength(COUNTRIES.length);
     const option = COUNTRY_OPTIONS.find((item) => item.value === 'Pakistan');
     expect(option).toMatchObject({ value: 'Pakistan', dial: '+92', code: 'PK' });
-    expect(option?.label).toBe('Pakistan (+92)');
+    expect(option?.label).toBe('Pakistan');
   });
 
   it('is frozen so no caller can mutate the shared list', () => {

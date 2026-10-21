@@ -10,6 +10,7 @@ import RemoteImage from '../RemoteImage';
 import EntityAvatar from '../EntityAvatar';
 import { AdminLoader, AdminTableSkeleton, type AdminLoadingVariant } from '../skeletons/Skeletons';
 import useFocusTrap from '../../hooks/useFocusTrap';
+import SiteSelect, { selectChangeEvent } from '../ui/SiteSelect';
 import SearchField from '../SearchField';
 
 export function AdminEntityLink({
@@ -379,27 +380,43 @@ export function AdminSearchField({
   );
 }
 
-export const AdminSelect = forwardRef<HTMLSelectElement, React.SelectHTMLAttributes<HTMLSelectElement>>(
-  ({ style, children, className, ...props }, ref) => (
-    <span className={`relative inline-flex w-full ${className || ''}`} style={style}>
-      <select
-        ref={ref}
-        className="admin-control w-full appearance-none"
-        style={{ ...inputBase, padding: '0.5rem 2rem 0.5rem 0.75rem' }}
-        {...props}
+/**
+ * Admin dropdown. Same props as a native <select> (value, onChange(event),
+ * <option>/<optgroup> children) so every call site keeps working, but it renders the
+ * site's react-select (SiteSelect) instead of the browser's native list.
+ */
+export function AdminSelect({
+  value,
+  onChange,
+  children,
+  id,
+  name,
+  disabled,
+  className,
+  style,
+  'aria-label': ariaLabel,
+  'aria-describedby': ariaDescribedBy,
+  'aria-invalid': ariaInvalid,
+}: React.SelectHTMLAttributes<HTMLSelectElement>) {
+  return (
+    <span className={`block w-full min-w-0 ${className || ''}`} style={style}>
+      <SiteSelect
+        variant="admin"
+        id={id}
+        name={name}
+        value={value as string | number | undefined}
+        onValueChange={(next) => onChange?.(selectChangeEvent(next, name))}
+        disabled={disabled}
+        invalid={ariaInvalid === true || ariaInvalid === 'true'}
+        aria-label={ariaLabel}
+        aria-describedby={ariaDescribedBy}
       >
         {children}
-      </select>
-      <ChevronDown
-        size={14}
-        aria-hidden
-        className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2"
-        style={{ color: 'var(--admin-text-muted)' }}
-      />
+      </SiteSelect>
     </span>
-  )
-);
-AdminSelect.displayName = 'AdminSelect';
+  );
+}
+
 
 export function RequiredStar() {
   return (
