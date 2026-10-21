@@ -2,14 +2,20 @@
 // Models mirror the existing `matches` table (created by services/ingestion
 // data/init.sql) and add team / player data persisted by ingestion.
 
+// Prisma 7: the client is generated into src/ (ESM, `.js` import specifiers for
+// the API's nodenext build) and talks to Postgres through @prisma/adapter-pg.
 generator client {
-  provider = "prisma-client-js"
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  runtime             = "nodejs"
+  moduleFormat        = "esm"
+  importFileExtension = "js"
 }
 
+// Connection URLs live in prisma.config.ts (CLI: DIRECT_URL, for migrations)
+// and in PrismaService (runtime: DATABASE_URL, the pooled connection).
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "postgresql"
 }
 
 model Match {

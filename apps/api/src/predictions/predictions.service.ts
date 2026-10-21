@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PREDICTION_MODELS } from '@cricapp/shared-types';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { RedisService } from '../redis/redis.service.js';
 import { PredictionNarrativeService } from './prediction-narrative.service.js';

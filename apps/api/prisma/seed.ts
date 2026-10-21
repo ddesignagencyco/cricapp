@@ -12,10 +12,15 @@
  * Extend it by adding a block per model, guarded by a count/check so re-runs
  * are harmless.
  */
-import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
 import bcrypt from 'bcrypt';
+import { PrismaClient } from '../src/generated/prisma/client.js';
+import { pgConnectionFromUrl } from '../src/prisma/pg-connection.js';
 
-const prisma = new PrismaClient();
+// Prisma 7 needs the driver adapter here too. Runs compiled (dist/prisma/seed.js):
+// the generated client cannot be loaded by Node's TypeScript stripping.
+const { pool, schema } = pgConnectionFromUrl(process.env.DATABASE_URL ?? '');
+const prisma = new PrismaClient({ adapter: new PrismaPg(pool, schema ? { schema } : undefined) });
 
 async function seedTeamsAndPlayers(): Promise<void> {
   // Reference data is provided by ingestion; nothing to do unless the tables

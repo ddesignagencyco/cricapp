@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { RedisService } from '../redis/redis.service.js';
 import { redisKeys } from '@cricapp/shared-types';
-import type { PslStanding, PslFixture } from '@prisma/client';
+import type { PslStanding, PslFixture } from '../generated/prisma/client.js';
 import {
   getPaginationOffset,
   createPaginatedResponse,

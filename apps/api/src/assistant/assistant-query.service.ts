@@ -29,7 +29,7 @@ import {
   type RecentMatchCandidate,
   sortRecentMatchCandidates,
 } from './player-recent-form.util.js';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '../generated/prisma/client.js';
 import {
   pickPlayerIdFromCandidates,
   playerNameSearchVariants,
