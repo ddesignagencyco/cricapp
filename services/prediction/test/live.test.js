@@ -222,3 +222,31 @@ describe('live model fixes', () => {
     assert.ok(Number.isFinite(r.homeWinProb));
   });
 });
+
+describe('scoreLive — early-innings run rate', () => {
+  // ODI first innings, away side batting, as stored for AFG v BAN on 21 Oct 2026.
+  const snap = (runs, overs, wickets = 0) => ({
+    format: 'odi',
+    allottedBalls: 300,
+    parScore: 270,
+    currentInning: 1,
+    battingTeam: 'away',
+    teamScores: { home: { score: '' }, away: { score: `${runs}/${wickets}` } },
+    matchStatus: 'first_innings_away_team',
+    currentInnings: { runs, wickets, overs, runRate: overs > 0 ? runs / (oversToBalls(overs) / 6) : 0 },
+  });
+
+  it('one ball for two does not swing the match', () => {
+    const start = scoreLive(snap(0, 0), null, { prior: { homeWinProb: 0.743 } });
+    const oneBall = scoreLive(snap(2, 0.1), start, { prior: { homeWinProb: 0.743 } });
+    // Previously 65% -> 32% on this ball (projected total ~600).
+    assert.ok(Math.abs(oneBall.homeWinProb - start.homeWinProb) < 0.05, `${start.homeWinProb} -> ${oneBall.homeWinProb}`);
+    assert.ok(oneBall.explanation.projectedTotal < 300, `projected ${oneBall.explanation.projectedTotal}`);
+  });
+
+  it('a sustained scoring rate still moves the projection', () => {
+    const fast = scoreLive(snap(120, 15), null);
+    const slow = scoreLive(snap(45, 15), null);
+    assert.ok(fast.explanation.projectedTotal > slow.explanation.projectedTotal + 100);
+  });
+});

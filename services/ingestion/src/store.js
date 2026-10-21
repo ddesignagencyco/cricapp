@@ -1,4 +1,5 @@
 import { query } from './db.js';
+import { resolveWinnerId } from '@cricapp/shared-types';
 import redis, { redisKeys, REDIS_TTL } from './redis.js';
 import {
   buildTeamFromCompetitor,
@@ -499,7 +500,8 @@ function recordToMatch(record) {
     matchStatus:
       statusBlock.match_status ?? statusBlock.result ?? record.status ?? null,
     matchResult: statusBlock.match_result_text ?? null,
-    winnerId: statusBlock.winner_id ?? null,
+    // Sportradar often omits winner_id; fall back to the winner named in the result text.
+    winnerId: resolveWinnerId(raw),
     tossWonBy: statusBlock.toss_won_by ?? null,
     tossDecision: statusBlock.toss_decision ?? null,
     currentInning:

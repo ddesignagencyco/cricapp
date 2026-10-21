@@ -1,4 +1,5 @@
 ﻿import { PROVIDERS } from './schemas.js';
+import { resolveWinnerId } from '@cricapp/shared-types';
 import { buildTeamFromCompetitor, canonicalTeamAbbr, managerDisplayName } from './teamMeta.js';
 import { buildPlayerFromLineupEntry, parseFullName } from './playerMeta.js';
 import { battingSideFromToken } from './matchSide.js';
@@ -337,7 +338,8 @@ function normalizeSportradar(raw) {
     displayScore,
     matchStatus: statusBlock.match_status ?? rawStatus,
     matchResult,
-    winnerId: statusBlock.winner_id ?? null,
+    // Sportradar often omits winner_id; fall back to the winner named in the result text.
+    winnerId: resolveWinnerId(raw),
     tossWonBy: statusBlock.toss_won_by ?? null,
     tossDecision: statusBlock.toss_decision ?? null,
     currentInning:
