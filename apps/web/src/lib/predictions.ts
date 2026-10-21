@@ -570,3 +570,49 @@ export function timeAgo(iso?: string | null): string {
   if (hr < 24) return `${hr} hr ago`;
   return `${Math.floor(hr / 24)}d ago`;
 }
+
+/* ─── Grading a stored prediction against the result ─── */
+
+export type PredictionVerdict =
+  | { kind: 'correct' | 'wrong'; favourite: 'home' | 'away'; pct: number; winner: 'home' | 'away' }
+  | { kind: 'no-call'; winner: 'home' | 'away' | null }
+  | { kind: 'no-winner' };
+
+/** Which side won: winnerId first, else the side named at the start of the result line. */
+export function winningSide(match: Match | Record<string, unknown> | null | undefined): 'home' | 'away' | null {
+  const record = (match || {}) as Record<string, unknown>;
+  const scores = (record.teamScores || {}) as { home?: { id?: string; name?: string }; away?: { id?: string; name?: string } };
+  const winnerId = typeof record.winnerId === 'string' ? record.winnerId : '';
+  if (winnerId) {
+    if (winnerId === scores.home?.id) return 'home';
+    if (winnerId === scores.away?.id) return 'away';
+  }
+  const text = String(record.result || record.resultText || '').toLowerCase();
+  if (!/\bwon\b/.test(text)) return null;
+  const sides = matchSides(match);
+  const starts = (name: string) => Boolean(name) && text.startsWith(name.toLowerCase());
+  // Longest name first so "Pakistan Women" never reads as "Pakistan".
+  const ordered = [
+    { side: 'home' as const, name: sides.homeName },
+    { side: 'away' as const, name: sides.awayName },
+  ].sort((a, b) => b.name.length - a.name.length);
+  return ordered.find((o) => starts(o.name))?.side ?? null;
+}
+
+/**
+ * Grades the pre-match call once a match is over. Shown openly whether it was right
+ * or wrong (SRS 8.3: do not silently remove incorrect predictions). An even split
+ * is "no call": the model had nothing to go on, which is not a correct guess.
+ */
+export function gradePrediction(
+  run: { homeWinProb: number; awayWinProb: number } | null | undefined,
+  match: Match | Record<string, unknown> | null | undefined,
+): PredictionVerdict | null {
+  if (!run) return null;
+  const winner = winningSide(match);
+  if (Math.abs(run.homeWinProb - run.awayWinProb) < 0.02) return { kind: 'no-call', winner };
+  if (!winner) return { kind: 'no-winner' };
+  const favourite = run.homeWinProb > run.awayWinProb ? 'home' : 'away';
+  const pct = Math.round(Math.max(run.homeWinProb, run.awayWinProb) * 100);
+  return { kind: favourite === winner ? 'correct' : 'wrong', favourite, pct, winner };
+}

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, type ComponentType, type ReactNode } from 'react';
 import Link from 'next/link';
-import { Calendar, FileText, MapPin, MessageCircle, Target, TrendingUp, Users, Zap } from 'lucide-react';
+import { Calendar, CheckCircle2, FileText, MapPin, MessageCircle, MinusCircle, Target, Trophy, TrendingUp, Users, XCircle, Zap } from 'lucide-react';
 import EmptyState from '../EmptyState';
 import Badge, { StatusBadge } from '../Badge';
 import TeamLogo from '../TeamLogo';
@@ -32,8 +32,11 @@ import {
   usefulPartnership,
   usefulScoreRange,
   type PredictionSituation,
+  gradePrediction,
+  type PredictionVerdict,
 } from '../../lib/predictions';
 import { mergeMatchLivePayload, useMatchStream } from '../../hooks/useMatchStream';
+import { describeMatchResult, scoreboardFromMatch } from '../../lib/matchScoreboard';
 import {
   fetchMatchPredictions,
   fetchPredictionChart,
@@ -153,6 +156,12 @@ export default function MatchPredictionsView({
   const { date, time } = formatScheduled(match.scheduled);
   const when = [date ? formatDate(date) : '', time].filter(Boolean).join(' · ');
   const format = typeof match.format === 'string' ? match.format.trim() : '';
+  // A finished match shows its result and grades the call made before play,
+  // instead of "batting" / "what might happen next" from the last stored run.
+  const finished = match.status === 'completed';
+  const resultLine = finished ? describeMatchResult(match) : '';
+  const finalBoard = finished ? scoreboardFromMatch(match) : null;
+  const verdict = finished ? gradePrediction(preMatch ?? featured, match) : null;
   const homeTone = probTone(featured.homeWinProb, featured.awayWinProb);
   const awayTone = probTone(featured.awayWinProb, featured.homeWinProb);
 
@@ -208,7 +217,21 @@ export default function MatchPredictionsView({
           <WinSplitBar homeWinProb={featured.homeWinProb} awayWinProb={featured.awayWinProb} />
         </div>
 
-        {(situation.scoreLine || situation.needLine || situation.snapshotNote) && (
+        {finished ? (
+          <div className="detail-panel mt-6 px-4 py-4 text-center">
+            {finalBoard ? (
+              <p className="font-mono text-base font-black tabular-nums tracking-tight text-mtext sm:text-xl">
+                {sides.homeCode} {finalBoard.homeScore || '—'}
+                {finalBoard.homeOvers ? <span className="text-stext"> ({finalBoard.homeOvers})</span> : null}
+                <span className="mx-2 text-stext">·</span>
+                {sides.awayCode} {finalBoard.awayScore || '—'}
+                {finalBoard.awayOvers ? <span className="text-stext"> ({finalBoard.awayOvers})</span> : null}
+              </p>
+            ) : null}
+            {resultLine ? <p className="mt-1 text-sm font-bold text-accent">{resultLine}</p> : null}
+            {verdict ? <VerdictLine verdict={verdict} sides={sides} /> : null}
+          </div>
+        ) : (situation.scoreLine || situation.needLine || situation.snapshotNote) && (
           <div className="detail-panel mt-6 px-4 py-4 text-center">
             {situation.scoreLine ? (
               <p className="font-mono text-xl font-black tabular-nums tracking-tight text-mtext sm:text-2xl">
@@ -265,20 +288,22 @@ export default function MatchPredictionsView({
             />
           </Panel>
 
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-            <SituationPanel
-              situation={situation}
-              sides={sides}
-              momentum={featured.momentum}
-            />
-            <OutlookPanel
-              range={range}
-              situation={situation}
-              pressureIndex={featured.pressureIndex}
-              wicketRisk={featured.wicketRisk}
-              partnership={partnership}
-            />
-          </div>
+          {finished ? null : (
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+              <SituationPanel
+                situation={situation}
+                sides={sides}
+                momentum={featured.momentum}
+              />
+              <OutlookPanel
+                range={range}
+                situation={situation}
+                pressureIndex={featured.pressureIndex}
+                wicketRisk={featured.wicketRisk}
+                partnership={partnership}
+              />
+            </div>
+          )}
 
           {whyChanged ? (
             <Panel>
@@ -376,6 +401,34 @@ export default function MatchPredictionsView({
         </aside>
       </div>
     </div>
+  );
+}
+
+/** How the call made before play turned out, shown whether it was right or wrong. */
+function VerdictLine({ verdict, sides }: { verdict: PredictionVerdict; sides: ReturnType<typeof matchSides> }) {
+  const name = (side: 'home' | 'away') => (side === 'home' ? sides.homeName : sides.awayName);
+  let icon = <MinusCircle size={15} aria-hidden="true" />;
+  let tone = 'text-stext';
+  let text: string;
+  if (verdict.kind === 'correct') {
+    icon = <CheckCircle2 size={15} aria-hidden="true" />;
+    tone = 'text-success';
+    text = `Our pre-match favourite won: ${name(verdict.favourite)} at ${verdict.pct}%.`;
+  } else if (verdict.kind === 'wrong') {
+    icon = <XCircle size={15} aria-hidden="true" />;
+    tone = 'text-danger';
+    text = `Our pre-match favourite lost: ${name(verdict.favourite)} at ${verdict.pct}%, ${name(verdict.winner)} won.`;
+  } else if (verdict.kind === 'no-call') {
+    text = 'No pre-match favourite: there was not enough history on these teams to call it.';
+  } else {
+    icon = <Trophy size={15} aria-hidden="true" />;
+    text = 'No winner in this match, so there is no call to grade.';
+  }
+  return (
+    <p className={`mt-2 inline-flex items-center justify-center gap-1.5 text-xs font-semibold ${tone}`}>
+      {icon}
+      {text}
+    </p>
   );
 }
 
