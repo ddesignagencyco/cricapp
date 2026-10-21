@@ -109,8 +109,8 @@ export default function AssistantPanel({
     };
   }, [open]);
 
-/** Only auto-scroll while the reader is already at the bottom, so a new answer
- *  never yanks the view away from something they scrolled back to read. */
+  /** Only auto-scroll while the reader is already at the bottom, so a new answer
+   *  never yanks the view away from something they scrolled back to read. */
   const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
     const node = listRef.current;
     if (!node) return;
@@ -249,7 +249,7 @@ export default function AssistantPanel({
                 <span className="pcz-chat-online absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-emerald-400" aria-hidden />
               </span>
               <div className="min-w-0">
-                <h2 id="assistant-title" className="truncate text-[15px] font-semibold tracking-tight">
+                <h2 id="assistant-title" className="text-white truncate text-[15px] font-semibold tracking-tight">
                   PCZ Assistant
                 </h2>
                 <p className="truncate text-xs text-brand-fg/85">Online · Typically replies instantly</p>
@@ -336,9 +336,8 @@ export default function AssistantPanel({
                 </span>
                 <div className="min-w-0 max-w-[88%] space-y-2">
                   <div
-                    className={`rounded-2xl rounded-bl-md px-4 py-3 text-sm leading-relaxed ${
-                      item.error ? 'bg-danger-soft text-danger' : 'pcz-chat-bubble-bot text-mtext'
-                    }`}
+                    className={`rounded-2xl rounded-bl-md px-4 py-3 text-sm leading-relaxed ${item.error ? 'bg-danger-soft text-danger' : 'pcz-chat-bubble-bot text-mtext'
+                      }`}
                   >
                     <p className="whitespace-pre-wrap">{item.text}</p>
                     {item.reply ? (
