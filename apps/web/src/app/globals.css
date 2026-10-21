@@ -247,6 +247,11 @@ table thead th {
 table tbody td {
   font-size: 0.875rem;
   color: var(--color-text-secondary);
+  /* Matches the header rule above. That rule is unlayered, so it beats Tailwind's
+     text-right/text-center on a <th>; a cell keeping its own utility then sat
+     right or centre under a left-aligned header. Tables that align a column on
+     purpose (scorecard .num cells) use class rules, which still win here. */
+  text-align: left;
 }
 
 table tbody tr {
@@ -2144,7 +2149,7 @@ textarea#comment-body:focus-visible {
 }
 
 .mc-compare__num {
-  text-align: right;
+  text-align: left;
   color: var(--color-text-secondary);
   white-space: nowrap;
 }
@@ -3875,4 +3880,107 @@ nav[aria-label='Breadcrumb'] a {
   display: inline-flex;
   align-items: center;
   min-height: 24px;
+}
+
+/* Sideways-scrolling rows and tables (tabs, filter chips, wide tables): fade the edge
+   that has more content, so a row cut off on a phone reads as "swipe for more".
+
+   Pure CSS — a scroll-driven animation moves the fade with the scroll position: a
+   right fade at the start, both mid-way, a left fade at the end, none when the content
+   fits (an element that does not overflow has no active scroll timeline). No script
+   touches the DOM, so nothing can disturb hydration. Browsers without scroll-driven
+   animations simply show no fade. Opt out with data-scroll-hint-off (rails that
+   already have arrow buttons). */
+@property --scroll-fade-l {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+@property --scroll-fade-r {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+@keyframes scroll-hint-fade {
+  0% { --scroll-fade-l: 0px; --scroll-fade-r: 64px; }
+  10% { --scroll-fade-l: 64px; }
+  90% { --scroll-fade-r: 64px; }
+  100% { --scroll-fade-l: 64px; --scroll-fade-r: 0px; }
+}
+@supports (animation-timeline: scroll()) {
+  :is(.overflow-x-auto, .overflow-x-scroll, .overflow-auto, .table-scroll, :has(> table), [role='tablist'], .mc-tabs__list):not([data-scroll-hint-off]) {
+    -webkit-mask-image: linear-gradient(to right, rgb(0 0 0 / 0.06), #000 var(--scroll-fade-l), #000 calc(100% - var(--scroll-fade-r)), rgb(0 0 0 / 0.06));
+    mask-image: linear-gradient(to right, rgb(0 0 0 / 0.06), #000 var(--scroll-fade-l), #000 calc(100% - var(--scroll-fade-r)), rgb(0 0 0 / 0.06));
+    animation: scroll-hint-fade linear both;
+    animation-timeline: scroll(self inline);
+  }
+  /* RTL (Urdu pages) scrolls from the right, so the fades swap sides. */
+  :is(.overflow-x-auto, .overflow-x-scroll, .overflow-auto, .table-scroll, :has(> table), [role='tablist'], .mc-tabs__list):not([data-scroll-hint-off]):dir(rtl) {
+    -webkit-mask-image: linear-gradient(to left, rgb(0 0 0 / 0.06), #000 var(--scroll-fade-l), #000 calc(100% - var(--scroll-fade-r)), rgb(0 0 0 / 0.06));
+    mask-image: linear-gradient(to left, rgb(0 0 0 / 0.06), #000 var(--scroll-fade-l), #000 calc(100% - var(--scroll-fade-r)), rgb(0 0 0 / 0.06));
+  }
+}
+
+/* Match-page tabs on phones: seven tabs, three visible, and the third often ends right
+   at the edge — so a fade alone did not say "more". A small chevron badge sits on the
+   right edge while there are tabs to the right and fades out at the last one. Driven
+   by the tab list's scroll position through a named timeline the wrapper can see. */
+@supports (animation-timeline: scroll()) {
+  @media (max-width: 639px) {
+    .mc-tabs {
+      position: relative;
+      timeline-scope: --mc-tabs;
+    }
+    .mc-tabs__list {
+      scroll-timeline: --mc-tabs x;
+    }
+    .mc-tabs::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      right: 6px;
+      width: 26px;
+      height: 26px;
+      margin-top: -13px;
+      border-radius: 999px;
+      pointer-events: none;
+      background: var(--color-accent, #3b68fc)
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m9 18 6-6-6-6'/%3E%3C/svg%3E")
+        center / 14px no-repeat;
+      box-shadow: 0 2px 6px rgb(59 104 252 / 0.35);
+      opacity: 0;
+      animation: mc-tabs-more linear both;
+      animation-timeline: --mc-tabs;
+    }
+  }
+}
+@keyframes mc-tabs-more {
+  0%, 92% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Admin tables on phones: every column is shown (none hidden below sm), and cells keep
+   to one line, so a wide table takes its natural width and scrolls sideways inside
+   .table-scroll instead of squeezing every column into a few characters. Cells that
+   already truncate (titles, names) keep their own max widths. */
+@media (max-width: 767px) {
+  .admin-shell .table-scroll > table th,
+  .admin-shell .table-scroll > table td {
+    white-space: nowrap;
+  }
+}
+
+/* Admin phone field (react-phone-number-input): country flag picker beside the
+   standard admin input, with the same border, focus ring and error state. */
+.admin-phone-input {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.admin-phone-input .PhoneInputInput {
+  flex: 1;
+  min-width: 0;
+}
+.admin-phone-input.is-invalid .PhoneInputInput {
+  border-color: var(--admin-danger);
 }

@@ -92,10 +92,10 @@ export default function MatchesPage() {
                 <tr style={{ borderBottom: '1px solid var(--admin-border)', background: 'var(--admin-table-header)' }}>
                   <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Home</th>
                   <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Away</th>
-                  <th className="hidden px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider lg:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>Tournament</th>
-                  <th className="hidden px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider sm:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>Venue</th>
+                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Tournament</th>
+                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Venue</th>
                   <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Date</th>
-                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-right" style={{ color: 'var(--admin-text-secondary)' }}>Status</th>
+                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -121,18 +121,18 @@ export default function MatchesPage() {
                         {awayLabel}
                         {awayScore ? <ScoreLine value={awayScore} /> : null}
                       </td>
-                      <td className="hidden max-w-[12rem] truncate px-4 py-2.5 lg:table-cell" style={{ color: 'var(--admin-text-secondary)' }} title={m.tournament || undefined}>
+                      <td className="max-w-[12rem] truncate px-4 py-2.5" style={{ color: 'var(--admin-text-secondary)' }} title={m.tournament || undefined}>
                         {m.tournamentId ? (
                           <AdminEntityLink href={`/tournaments/${m.tournamentId}`}>{m.tournament || 'Tournament'}</AdminEntityLink>
                         ) : (
                           m.tournament || '—'
                         )}
                       </td>
-                      <td className="hidden max-w-[120px] truncate px-4 py-2.5 sm:table-cell" style={{ color: 'var(--admin-text-muted)' }} title={m.venue || undefined}>{m.venue || '—'}</td>
+                      <td className="max-w-[120px] truncate px-4 py-2.5" style={{ color: 'var(--admin-text-muted)' }} title={m.venue || undefined}>{m.venue || '—'}</td>
                       <td className="whitespace-nowrap px-4 py-2.5 font-mono" style={{ color: 'var(--admin-text-muted)' }}>
                         {m.scheduled ? new Date(m.scheduled).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}
                       </td>
-                      <td className="px-4 py-2.5 text-right"><StatusBadge status={m.status} /></td>
+                      <td className="px-4 py-2.5"><StatusBadge status={m.status} /></td>
                     </tr>
                   );
                 })}

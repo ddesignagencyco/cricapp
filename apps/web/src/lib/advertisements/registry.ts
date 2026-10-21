@@ -151,11 +151,17 @@ export const AD_PLACEMENTS: readonly AdPlacement[] = [
   { key: 'schedule-infeed', label: 'Schedule — between rows', size: 'leaderboard', group: 'matches' },
 
   { key: 'players-after-intro', label: 'Players list — after intro', size: 'leaderboard', group: 'directory' },
+  { key: 'players-infeed', label: 'Players list — between rows', size: 'leaderboard', group: 'directory' },
   { key: 'player-detail-after-intro', label: 'Player detail — after intro', size: 'leaderboard', group: 'directory' },
   { key: 'teams-after-intro', label: 'Teams list — after intro', size: 'leaderboard', group: 'directory' },
+  { key: 'teams-infeed', label: 'Teams list — between rows', size: 'leaderboard', group: 'directory' },
   { key: 'team-detail-after-intro', label: 'Team detail — after intro', size: 'leaderboard', group: 'directory' },
   { key: 'author-after-intro', label: 'Author — after intro', size: 'leaderboard', group: 'directory' },
 
+  { key: 'tournaments-after-intro', label: 'Tournaments list — after intro', size: 'leaderboard', group: 'competitions' },
+  { key: 'tournaments-infeed', label: 'Tournaments list — between rows', size: 'leaderboard', group: 'competitions' },
+  { key: 'tours-after-intro', label: 'Tours list — after intro', size: 'leaderboard', group: 'competitions' },
+  { key: 'tours-infeed', label: 'Tours list — between rows', size: 'leaderboard', group: 'competitions' },
   { key: 'tournament-detail-after-intro', label: 'Tournament — after intro', size: 'leaderboard', group: 'competitions' },
   { key: 'tournament-detail-sidebar', label: 'Tournament — sidebar', size: 'medium-rectangle', group: 'competitions' },
   { key: 'psl-after-intro', label: 'PSL — after intro', size: 'leaderboard', group: 'competitions' },

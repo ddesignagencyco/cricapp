@@ -10,7 +10,7 @@ interface CricketHeroProps {
  * Static hero — deliberately a Server Component. The copy never depends on the
  * `match` prop, so making it client would only block LCP hydration. The
  * photographic background is the LCP element: it renders via `next/image` with
- * `priority` (preload + high fetch priority + AVIF/WebP + responsive sizing)
+ * eager loading + `fetchPriority="high"` (+ AVIF/WebP + responsive sizing)
  * instead of a 1.9 MB CSS background.
  */
 export default function CricketHero({ match: _match }: CricketHeroProps) {
@@ -21,7 +21,10 @@ export default function CricketHero({ match: _match }: CricketHeroProps) {
         alt=""
         aria-hidden="true"
         fill
-        preload
+        // Next 16: eager + high fetch priority is the recommended LCP setup; `preload`
+        // alone left the request at default priority, behind scripts and fonts.
+        loading="eager"
+        fetchPriority="high"
         sizes="100vw"
         quality={85}
         className="absolute inset-0 h-full w-full object-cover"

@@ -18,7 +18,6 @@ export interface NewsArticleAdmin {
   authorId?: string | null;
   source: string | null;
   categoryId: string | null;
-  tags: string[] | null;
   language?: string;
   metaTitle?: string | null;
   metaDescription?: string | null;
@@ -68,7 +67,6 @@ export interface NewsAdminListParams {
   [key: string]: string | number | boolean | undefined | null;
   q?: string;
   category?: string;
-  tag?: string;
   page?: number;
   limit?: number;
   playerId?: string;

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowLeft, ArrowRight, Calendar, Clock, Newspaper, Radio, Tag } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Calendar, Clock, Newspaper, Radio } from 'lucide-react';
 import Badge from '../Badge';
 import AdSlot from '../advertisements/AdSlot';
 import AdBanner from '../advertisements/AdBanner';
@@ -105,9 +105,6 @@ export default function NewsDetailBody({ item, related = [], authorHref, related
               {categoryName && (
                 <Badge tone={categoryTone[categoryName] || 'neutral'}>{categoryName}</Badge>
               )}
-              {Array.isArray(item.tags) && item.tags.slice(0, 3).map((t: string) => (
-                <Badge key={t} tone="neutral">{t}</Badge>
-              ))}
             </div>
             <NewsCopy
               as="h1"
@@ -222,21 +219,6 @@ export default function NewsDetailBody({ item, related = [], authorHref, related
                     </Link>
                   ))}
                 </div>
-              </div>
-            )}
-
-            {Array.isArray(item.tags) && item.tags.length > 0 && (
-              <div className="mt-6 flex flex-wrap items-center gap-2">
-                <Tag size={14} className="text-stext" />
-                {item.tags.map((t: string) => (
-                  <Link
-                    key={t}
-                    href={newsListPath(isUrduLanguage(item.language) ? 'ur' : 'en', { tag: t })}
-                    className="inline-flex items-center gap-1 rounded-full bg-secondary px-3 py-1 text-xs font-medium text-mtext ring-1 ring-lborder transition-colors hover:bg-accent/10 hover:text-accent"
-                  >
-                    #{t}
-                  </Link>
-                ))}
               </div>
             )}
 

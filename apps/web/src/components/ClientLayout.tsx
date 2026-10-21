@@ -41,6 +41,7 @@ function showGlobalTopAd(pathname: string) {
   if (pathname === '/players' || pathname === '/teams') return false;
   if (pathname === '/psl' || pathname.startsWith('/psl/')) return false;
   if (pathname.startsWith('/tournaments/')) return false;
+  if (pathname === '/tournaments' || pathname === '/tours') return false;
   return true;
 }
 

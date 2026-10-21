@@ -114,11 +114,7 @@ export default async function HomePage() {
 
   return (
     <div className="min-h-screen">
-      {/* Below sm the ticker is one full-width card behind a swipe, which reads as
-          dead space on a phone — so that slot carries a banner instead. */}
-      <div className="hidden sm:block">
-        <MatchTickerBar matches={tickerMatches} />
-      </div>
+      <MatchTickerBar matches={tickerMatches} />
       <div className="border-b border-lborder sm:hidden">
         <div className="mx-auto w-full max-w-7xl px-4 py-3">
           <AdSlot placement="home-top-mobile" />
@@ -239,13 +235,11 @@ export default async function HomePage() {
                   )}
                   <div className="absolute left-4 top-4">
                     <span className="inline-block rounded-full bg-[var(--color-brand)] px-3 py-1 text-[10px] font-medium tracking-wide text-white">
-                      {typeof newsList[0].tag === 'string' && newsList[0].tag
-                        ? newsList[0].tag
-                        : typeof newsList[0].category === 'string'
-                          ? newsList[0].category
-                          : typeof newsList[0].category === 'object' && newsList[0].category && 'name' in newsList[0].category
-                            ? String((newsList[0].category as any).name)
-                            : 'News'}
+                      {typeof newsList[0].category === 'string'
+                        ? newsList[0].category
+                        : typeof newsList[0].category === 'object' && newsList[0].category && 'name' in newsList[0].category
+                          ? String((newsList[0].category as any).name)
+                          : 'News'}
                     </span>
                   </div>
                 </div>
@@ -274,13 +268,11 @@ export default async function HomePage() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <span className="inline-block rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-bold tracking-wide text-accent">
-                      {typeof item.tag === 'string' && item.tag
-                        ? item.tag
-                        : typeof item.category === 'string'
-                          ? item.category
-                          : typeof item.category === 'object' && item.category && 'name' in item.category
-                            ? String((item.category as any).name)
-                            : 'News'}
+                      {typeof item.category === 'string'
+                        ? item.category
+                        : typeof item.category === 'object' && item.category && 'name' in item.category
+                          ? String((item.category as any).name)
+                          : 'News'}
                     </span>
                     <NewsCopy as="h4" language={item.language} text={item.title} className="mt-1 line-clamp-2 text-sm font-bold leading-snug text-mtext group-hover:text-accent">{item.title}</NewsCopy>
                     <p className="mt-1 text-[11px] text-stext">{item.date} • {item.readTime}</p>

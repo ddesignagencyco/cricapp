@@ -102,9 +102,9 @@ export default function CommentsPage() {
                 <tr style={{ background: 'var(--admin-table-header)', borderBottom: '1px solid var(--admin-border)' }}>
                   <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Reason</th>
                   <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Comment</th>
-                  <th className="hidden px-4 py-3 text-xs font-bold uppercase tracking-wider sm:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>Author</th>
-                  <th className="hidden px-4 py-3 text-xs font-bold uppercase tracking-wider lg:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>Target</th>
-                  <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-right" style={{ color: 'var(--admin-text-secondary)' }}>Actions</th>
+                  <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Author</th>
+                  <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Target</th>
+                  <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -128,7 +128,7 @@ export default function CommentsPage() {
                           {report.comment?.body || 'Comment missing'}
                         </p>
                       </td>
-                      <td className="hidden max-w-[11rem] px-4 py-3 align-top sm:table-cell">
+                      <td className="max-w-[11rem] px-4 py-3 align-top">
                         <div className="flex min-w-0 items-center gap-2.5">
                           <span className="shrink-0"><AdminAvatar name={author} src={report.comment?.user?.avatarUrl} size={28} /></span>
                           <div className="min-w-0">
@@ -137,7 +137,7 @@ export default function CommentsPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="hidden px-4 py-3 align-top lg:table-cell">
+                      <td className="px-4 py-3 align-top">
                         <p className="text-xs font-semibold capitalize" style={{ color: 'var(--admin-text-secondary)' }}>
                           {report.comment?.targetType || '—'}
                         </p>
@@ -150,7 +150,7 @@ export default function CommentsPage() {
                         )}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 align-top">
-                        <div className="flex justify-end gap-2">
+                        <div className="flex justify-start gap-2">
                           <button
                             type="button"
                             disabled={busy}

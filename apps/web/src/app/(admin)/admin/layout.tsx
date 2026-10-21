@@ -29,6 +29,9 @@ import {
   Mail,
   Sparkles,
   Megaphone,
+  Globe,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react';
 import { useAuth } from '../../../components/AuthProvider';
 import { useTheme } from '../../../components/ThemeProvider';
@@ -50,6 +53,7 @@ const adminNav = [
   { to: '/admin/predictions', label: 'Predictions', icon: Sparkles },
   { to: '/admin/matches', label: 'Matches', icon: Trophy },
   { to: '/admin/tournaments', label: 'Tournaments', icon: Newspaper },
+  { to: '/admin/tours', label: 'Tours', icon: Globe },
   { to: '/admin/odds', label: 'Odds', icon: Scale },
   { to: '/admin/users', label: 'Users', icon: UserCircle },
   { to: '/admin/newsletter', label: 'Newsletter', icon: Mail },
@@ -58,12 +62,37 @@ const adminNav = [
   { to: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 
+const SIDEBAR_KEY = 'pcz.admin.sidebarCollapsed';
+
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const { isAuthenticated, isAdmin, loading, user, logout } = useAuth();
   const { theme, toggle, mounted } = useTheme();
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
+  // Desktop only: an icon rail instead of the full sidebar. Starts expanded so the
+  // server and first client render match, then restores the saved choice.
+  const [collapsed, setCollapsed] = useState(false);
+
+  useEffect(() => {
+    try {
+      if (window.localStorage.getItem(SIDEBAR_KEY) === '1') setCollapsed(true);
+    } catch {
+      // Storage blocked: stay expanded.
+    }
+  }, []);
+
+  const toggleCollapsed = () => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      try {
+        window.localStorage.setItem(SIDEBAR_KEY, next ? '1' : '0');
+      } catch {
+        // Not remembered, but the toggle still works for this visit.
+      }
+      return next;
+    });
+  };
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
@@ -103,13 +132,16 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   };
   const userName = user?.displayName || user?.username || 'Admin';
 
-  const sidebar = (
-    <div className="flex h-full min-h-0 w-full shrink-0 flex-col lg:w-[240px]" style={{ width: 'min(240px, 84vw)', background: 'var(--admin-sidebar)' }}>
-      <div className="flex h-14 shrink-0 items-center justify-center px-2" style={{ borderBottom: '1px solid var(--admin-sidebar-border)' }}>
-        <Logo to="/admin" size="lg" />
+  const renderSidebar = (rail: boolean) => (
+    <div
+      className={`flex h-full min-h-0 w-full shrink-0 flex-col transition-[width] duration-200 ${rail ? 'lg:w-[72px]' : 'lg:w-[240px]'}`}
+      style={{ width: rail ? '72px' : 'min(240px, 84vw)', background: 'var(--admin-sidebar)' }}
+    >
+      <div className="flex h-14 shrink-0 items-center justify-center overflow-hidden px-2" style={{ borderBottom: '1px solid var(--admin-sidebar-border)' }}>
+        <Logo to="/admin" size={rail ? 'sm' : 'lg'} />
       </div>
 
-      <nav className="flex-1 overflow-y-auto no-scrollbar px-3 py-3 space-y-0.5" aria-label="Admin sections">
+      <nav className={`flex-1 overflow-y-auto no-scrollbar py-3 space-y-0.5 ${rail ? 'px-2' : 'px-3'}`} aria-label="Admin sections">
         {adminNav.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.to);
@@ -118,28 +150,32 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
               key={item.to}
               href={item.to}
               aria-current={active ? 'page' : undefined}
-              className="admin-nav-link flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-semibold transition-colors duration-150"
+              title={rail ? item.label : undefined}
+              aria-label={rail ? item.label : undefined}
+              className={`admin-nav-link flex items-center gap-3 rounded-md py-2.5 text-sm font-semibold transition-colors duration-150 ${rail ? 'justify-center px-0' : 'px-3'}`}
               style={{
                 background: active ? 'var(--admin-sidebar-active)' : 'transparent',
                 color: active ? 'var(--admin-sidebar-active-fg)' : 'var(--admin-sidebar-muted)',
               }}
             >
-              <Icon size={18} aria-hidden="true" />
-              <span>{item.label}</span>
+              <Icon size={18} aria-hidden="true" className="shrink-0" />
+              {rail ? null : <span>{item.label}</span>}
             </Link>
           );
         })}
       </nav>
 
-      <div className="px-3 py-3" style={{ borderTop: '1px solid var(--admin-sidebar-border)' }}>
+      <div className={`py-3 ${rail ? 'px-2' : 'px-3'}`} style={{ borderTop: '1px solid var(--admin-sidebar-border)' }}>
         <button
           type="button"
           onClick={() => { logout(); router.push('/'); }}
-          className="admin-nav-link mt-1 flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-semibold transition-colors duration-150"
+          title={rail ? 'Logout' : undefined}
+          aria-label={rail ? 'Logout' : undefined}
+          className={`admin-nav-link mt-1 flex w-full items-center gap-3 rounded-md py-2.5 text-sm font-semibold transition-colors duration-150 ${rail ? 'justify-center px-0' : 'px-3'}`}
           style={{ color: 'var(--admin-sidebar-muted)' }}
         >
-          <LogOut size={18} aria-hidden="true" />
-          Logout
+          <LogOut size={18} aria-hidden="true" className="shrink-0" />
+          {rail ? null : 'Logout'}
         </button>
       </div>
     </div>
@@ -154,8 +190,8 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         Skip to content
       </a>
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex flex-col fixed inset-y-0 left-0 z-30" style={{ background: 'var(--admin-sidebar)', borderRight: '1px solid var(--admin-border)' }}>
-        {sidebar}
+      <aside id="admin-desktop-nav" className="hidden lg:flex flex-col fixed inset-y-0 left-0 z-30" style={{ background: 'var(--admin-sidebar)', borderRight: '1px solid var(--admin-border)' }}>
+        {renderSidebar(collapsed)}
       </aside>
 
       {/* Mobile overlay */}
@@ -181,18 +217,29 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             aria-label="Close navigation">
             <X size={18} aria-hidden="true" />
           </button>
-          {sidebar}
+          {renderSidebar(false)}
         </div>
       </div>
 
       {/* Main content */}
-      <div className="flex min-w-0 flex-1 flex-col lg:pl-[240px]">
+      <div className={`flex min-w-0 flex-1 flex-col transition-[padding] duration-200 ${collapsed ? 'lg:pl-[72px]' : 'lg:pl-[240px]'}`}>
         {/* Top bar */}
         <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-2 px-3 sm:gap-4 sm:px-6" style={{ background: 'var(--admin-topbar)', borderBottom: '1px solid var(--admin-border)' }}>
           <button type="button" onClick={() => setMobileOpen(true)}
             className="admin-icon-btn grid h-9 w-9 shrink-0 place-items-center rounded-md lg:hidden"
             aria-label="Open navigation" aria-expanded={mobileOpen} aria-controls="admin-mobile-nav">
             <Menu size={18} aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            onClick={toggleCollapsed}
+            className="admin-icon-btn hidden h-9 w-9 shrink-0 place-items-center rounded-md lg:grid"
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            aria-expanded={!collapsed}
+            aria-controls="admin-desktop-nav"
+          >
+            {collapsed ? <PanelLeftOpen size={18} aria-hidden="true" /> : <PanelLeftClose size={18} aria-hidden="true" />}
           </button>
 
           <div className="min-w-0 flex-1" />

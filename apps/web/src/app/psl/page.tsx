@@ -43,7 +43,7 @@ export default async function PSLPage({ searchParams }: { searchParams: Promise<
     return (
       <div className="min-h-screen">
         <section className="relative overflow-hidden">
-          <Image src="/banner.jpg" alt="" aria-hidden="true" fill preload sizes="100vw" quality={70} className="object-cover" />
+          <Image src="/banner.jpg" alt="" aria-hidden="true" fill loading="eager" fetchPriority="high" sizes="100vw" quality={75} className="object-cover" />
           <div className="hero-scrim pointer-events-none absolute inset-0" />
           <div className="hero-content relative mx-auto max-w-7xl px-4 py-14 sm:px-6">
             <div className="max-w-2xl">
@@ -95,7 +95,7 @@ export default async function PSLPage({ searchParams }: { searchParams: Promise<
     return (
       <div className="min-h-screen">
         <section className="relative overflow-hidden">
-          <Image src="/banner.jpg" alt="" aria-hidden="true" fill preload sizes="100vw" quality={70} className="object-cover" />
+          <Image src="/banner.jpg" alt="" aria-hidden="true" fill loading="eager" fetchPriority="high" sizes="100vw" quality={75} className="object-cover" />
           <div className="hero-scrim pointer-events-none absolute inset-0" />
           <div className="hero-content relative mx-auto max-w-7xl px-4 py-14 sm:px-6">
             <div className="max-w-2xl">
@@ -130,7 +130,7 @@ export default async function PSLPage({ searchParams }: { searchParams: Promise<
     <div className="min-h-screen">
       {/* Hero */}
       <section className="relative overflow-hidden">
-        <Image src="/banner.jpg" alt="" aria-hidden="true" fill preload sizes="100vw" quality={70} className="object-cover" />
+        <Image src="/banner.jpg" alt="" aria-hidden="true" fill loading="eager" fetchPriority="high" sizes="100vw" quality={75} className="object-cover" />
           <div className="hero-scrim pointer-events-none absolute inset-0" />
         <div className="hero-content relative mx-auto max-w-7xl px-4 py-14 sm:px-6">
           <div className="max-w-2xl">

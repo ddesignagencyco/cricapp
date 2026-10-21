@@ -36,9 +36,9 @@ import {
   type AdminUser,
   type IngestionHealth,
 } from '../../../services/admin';
-import { asPercent, stageLabel } from '../../../lib/predictions';
-import { fetchAdminPredictionModels, fetchAdminPredictionRuns } from '../../../services/predictions';
-import type { AdminPredictionModelVersion, AdminPredictionRunDetail } from '../../../types/predictions';
+import { stageLabel } from '../../../lib/predictions';
+import { fetchAdminPredictionModels } from '../../../services/predictions';
+import type { AdminPredictionModelVersion } from '../../../types/predictions';
 import { sideScoreLine } from '../../../lib/matchScoreboard';
 import NewsCopy from '../../../components/NewsCopy';
 
@@ -59,7 +59,6 @@ export default function AdminDashboard() {
   const [health, setHealth] = useState<IngestionHealth | null>(null);
   const [recentArticles, setRecentArticles] = useState<any[]>([]);
   const [predictionModels, setPredictionModels] = useState<AdminPredictionModelVersion[]>([]);
-  const [predictionRuns, setPredictionRuns] = useState<AdminPredictionRunDetail[]>([]);
 
   useEffect(() => {
     Promise.allSettled([
@@ -70,8 +69,7 @@ export default function AdminDashboard() {
       fetchIngestionHealth(),
       fetchAdminUsers({ page: 1, limit: 40 }),
       fetchAdminPredictionModels(),
-      fetchAdminPredictionRuns({ page: 1, limit: 5 }),
-    ]).then(([newsRes, matchRes, upcomingRes, analyticsRes, healthRes, usersRes, modelsRes, runsRes]) => {
+    ]).then(([newsRes, matchRes, upcomingRes, analyticsRes, healthRes, usersRes, modelsRes]) => {
       if (newsRes.status === 'fulfilled') {
         setRecentArticles(newsRes.value.items || []);
       }
@@ -97,9 +95,6 @@ export default function AdminDashboard() {
       }
       if (modelsRes.status === 'fulfilled') {
         setPredictionModels(modelsRes.value || []);
-      }
-      if (runsRes.status === 'fulfilled') {
-        setPredictionRuns(runsRes.value.items || []);
       }
       setLoading(false);
     });
@@ -372,77 +367,14 @@ export default function AdminDashboard() {
             </div>
           ))}
         </SectionCard>
-        <SectionCard title="Community Activity" icon={<MessageSquare size={14} />} href="/admin/comments">
-          {analytics ? (
-            <div className="grid h-full grid-cols-2 divide-x" style={{ borderColor: 'var(--admin-border)' }}>
-              <div className="px-4 py-5">
-                <p className="text-xl font-bold tabular-nums" style={{ color: 'var(--admin-text)' }}>{analytics.comments}</p>
-                <p className="mt-1 text-xs font-semibold" style={{ color: 'var(--admin-text-muted)' }}>Comments</p>
-              </div>
-              <div className="px-4 py-5">
-                <p className="text-xl font-bold tabular-nums" style={{ color: analytics.pendingReports ? 'var(--admin-warning)' : 'var(--admin-text)' }}>{analytics.pendingReports}</p>
-                <p className="mt-1 text-xs font-semibold" style={{ color: 'var(--admin-text-muted)' }}>Reports</p>
-              </div>
-            </div>
-          ) : (
-            <p className="px-4 py-6 text-center text-sm" style={{ color: 'var(--admin-text-muted)' }}>Analytics unavailable.</p>
-          )}
-        </SectionCard>
-      </div>
-
-      <div className="grid grid-cols-1 items-stretch gap-5 lg:grid-cols-2">
-        <SectionCard title="Recent prediction runs" icon={<Sparkles size={14} />} href="/admin/predictions">
-          <div className="table-scroll">
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr style={{ borderBottom: '1px solid var(--admin-border)', background: 'var(--admin-table-header)' }}>
-                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Match</th>
-                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Stage</th>
-                  <th className="hidden px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider sm:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>Home / Away</th>
-                  <th className="px-4 py-2.5 text-right text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>When</th>
-                </tr>
-              </thead>
-              <tbody>
-                {predictionRuns.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="px-4 py-8 text-center" style={{ color: 'var(--admin-text-muted)' }}>No prediction runs yet</td>
-                  </tr>
-                ) : predictionRuns.map((run) => {
-                  const matchId = String(run.matchId || '');
-                  return (
-                    <tr
-                      key={run.runId}
-                      className="admin-row-hover" style={{ borderBottom: '1px solid var(--admin-border)' }}
-                    >
-                      <td className="max-w-[14rem] truncate px-4 py-2.5" style={{ color: 'var(--admin-text)' }}>
-                        {matchId ? (
-                          <AdminEntityLink href={`/predictions/${matchId}`}>{run.matchName || 'Open match'}</AdminEntityLink>
-                        ) : (
-                          '—'
-                        )}
-                      </td>
-                      <td className="px-4 py-2.5" style={{ color: 'var(--admin-text-secondary)' }}>{stageLabel(run.stage)}</td>
-                      <td className="hidden px-4 py-2.5 font-mono sm:table-cell" style={{ color: 'var(--admin-text)' }}>
-                        {asPercent(run.homeWinProb)} / {asPercent(run.awayWinProb)}
-                      </td>
-                      <td className="px-4 py-2.5 text-right font-mono" style={{ color: 'var(--admin-text-muted)' }}>
-                        {run.createdAt ? new Date(run.createdAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '—'}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </SectionCard>
         <SectionCard title="Latest Users" icon={<Users size={14} />} href="/admin/users">
           <div className="table-scroll">
             <table className="w-full text-left text-xs">
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--admin-border)', background: 'var(--admin-table-header)' }}>
                   <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>User</th>
-                  <th className="hidden px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider sm:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>Email</th>
-                  <th className="px-4 py-2.5 text-right text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Role</th>
+                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Email</th>
+                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Role</th>
                 </tr>
               </thead>
               <tbody>
@@ -463,8 +395,8 @@ export default function AdminDashboard() {
                           <span className="block min-w-0 max-w-[9rem] truncate text-[13px] font-semibold sm:max-w-none" style={{ color: 'var(--admin-text)' }} title={name}>{name}</span>
                         </div>
                       </td>
-                      <td className="hidden max-w-[14rem] truncate px-4 py-2.5 sm:table-cell" style={{ color: 'var(--admin-text-secondary)' }} title={u.email}>{u.email}</td>
-                      <td className="px-4 py-2.5 text-right">
+                      <td className="max-w-[11rem] truncate px-4 py-2.5" style={{ color: 'var(--admin-text-secondary)' }} title={u.email}>{u.email}</td>
+                      <td className="px-4 py-2.5">
                         <Badge tone={u.isSuperAdmin || u.isAdmin ? 'primary' : 'neutral'}>
                           {u.isSuperAdmin ? 'Superadmin' : u.isAdmin ? 'Admin' : 'Member'}
                         </Badge>
@@ -477,6 +409,23 @@ export default function AdminDashboard() {
           </div>
         </SectionCard>
       </div>
+
+      <SectionCard title="Community Activity" icon={<MessageSquare size={14} />} href="/admin/comments">
+        {analytics ? (
+          <div className="grid h-full grid-cols-2 divide-x" style={{ borderColor: 'var(--admin-border)' }}>
+            <div className="px-4 py-5">
+              <p className="text-xl font-bold tabular-nums" style={{ color: 'var(--admin-text)' }}>{analytics.comments}</p>
+              <p className="mt-1 text-xs font-semibold" style={{ color: 'var(--admin-text-muted)' }}>Comments</p>
+            </div>
+            <div className="px-4 py-5">
+              <p className="text-xl font-bold tabular-nums" style={{ color: analytics.pendingReports ? 'var(--admin-warning)' : 'var(--admin-text)' }}>{analytics.pendingReports}</p>
+              <p className="mt-1 text-xs font-semibold" style={{ color: 'var(--admin-text-muted)' }}>Reports</p>
+            </div>
+          </div>
+        ) : (
+          <p className="px-4 py-6 text-center text-sm" style={{ color: 'var(--admin-text-muted)' }}>Analytics unavailable.</p>
+        )}
+      </SectionCard>
     </div>
   );
 }
@@ -532,9 +481,9 @@ function MatchPreviewTable({
               <tr style={{ borderBottom: '1px solid var(--admin-border)', background: 'var(--admin-table-header)' }}>
                 <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Home</th>
                 <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Away</th>
-                <th className="hidden px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider md:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>Tournament</th>
+                <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Tournament</th>
                 <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Date</th>
-                <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-right" style={{ color: 'var(--admin-text-secondary)' }}>Status</th>
+                <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Status</th>
               </tr>
             </thead>
             <tbody>
@@ -563,7 +512,7 @@ function MatchPreviewTable({
                       {t.awayName}
                       {awayScore ? <ScoreLine value={awayScore} /> : null}
                     </td>
-                    <td className="hidden max-w-[14rem] px-4 py-2.5 md:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>
+                    <td className="max-w-[14rem] px-4 py-2.5" style={{ color: 'var(--admin-text-secondary)' }}>
                       <span className="line-clamp-2" title={m.tournament || undefined}>
                         {m.tournamentId ? (
                           <AdminEntityLink href={`/tournaments/${m.tournamentId}`}>{m.tournament || 'Tournament'}</AdminEntityLink>
@@ -575,7 +524,7 @@ function MatchPreviewTable({
                     <td className="whitespace-nowrap px-4 py-2.5 font-mono" style={{ color: 'var(--admin-text-muted)' }}>
                       {m.scheduled ? new Date(m.scheduled).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}
                     </td>
-                    <td className="px-4 py-2.5 text-right"><StatusBadge status={m.status} /></td>
+                    <td className="px-4 py-2.5"><StatusBadge status={m.status} /></td>
                   </tr>
                 );
               })}

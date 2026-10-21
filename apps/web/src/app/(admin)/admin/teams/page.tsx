@@ -6,7 +6,6 @@ import { useDebouncedValue } from '../../../../hooks/useDebouncedValue';
 import { useTeamsQuery } from '../../../../queries/useDirectoryQueries';
 import Pagination from '../../../../components/admin/AdminPagination';
 import { AdminAvatar, AdminPageHeader, LoadingState, EmptyState, AdminSearchField, AdminEntityLink } from '../../../../components/admin/AdminShared';
-import { cap } from '../../../../utils/helpers';
 
 export default function TeamsPage() {
   const [page, setPage] = useState(1);
@@ -40,26 +39,33 @@ export default function TeamsPage() {
       ) : (
         <div className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
           <div className="table-scroll">
-            <table className="w-full text-left text-xs">
+            {/* Every column shows at every width; on a phone the table scrolls sideways
+                inside .table-scroll (hiding columns below sm left nothing to scroll to). */}
+            <table className="w-full min-w-[640px] text-left text-xs">
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--admin-border)', background: 'var(--admin-table-header)' }}>
-                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Team</th>
-                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Code</th>
-                  <th className="hidden px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider sm:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>City</th>
-                  <th className="hidden px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider md:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>Country</th>
+                  <th className="whitespace-nowrap px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Team</th>
+                  <th className="whitespace-nowrap px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Abbreviation</th>
+                  <th className="whitespace-nowrap px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Country</th>
+                  <th className="whitespace-nowrap px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Manager</th>
+                  <th className="whitespace-nowrap px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Total players</th>
                 </tr>
               </thead>
               <tbody>
                 {teams.map((t) => {
-                  const code = t.shortName || t.code || '';
-                  const badgeLabel = t.name || code || '?';
+                  // Fields as the API sends them (Prisma Team): abbr, country, manager, logoUrl.
+                  const abbr = typeof t.abbr === 'string' ? t.abbr : '';
+                  const manager = typeof t.manager === 'string' ? t.manager : '';
+                  const logo = typeof t.logoUrl === 'string' ? t.logoUrl : t.logo;
+                  const playerCount = typeof t.playerCount === 'number' ? t.playerCount : null;
+                  const badgeLabel = t.name || abbr || '?';
                   return (
                     <tr key={t.id} style={{ borderBottom: '1px solid var(--admin-border)' }}
                       onMouseEnter={(e) => e.currentTarget.style.background = 'var(--admin-table-row-hover)'}
                       onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
                       <td className="px-4 py-2.5" style={{ color: 'var(--admin-text)' }}>
                         <div className="flex min-w-0 items-center gap-2.5">
-                          <span className="shrink-0"><AdminAvatar name={badgeLabel} src={t.logo} size={28} /></span>
+                          <span className="shrink-0"><AdminAvatar name={badgeLabel} src={logo} size={28} /></span>
                           <span className="block min-w-0 max-w-[10rem] truncate sm:max-w-[14rem]" title={t.name}>
                             {t.id ? (
                               <AdminEntityLink href={`/teams/${t.id}`}>{t.name}</AdminEntityLink>
@@ -69,9 +75,10 @@ export default function TeamsPage() {
                           </span>
                         </div>
                       </td>
-                      <td className="max-w-[4.5rem] truncate px-4 py-2.5 font-mono" style={{ color: 'var(--admin-text-secondary)' }} title={code}>{code || '—'}</td>
-                      <td className="hidden max-w-[8rem] truncate px-4 py-2.5 sm:table-cell" style={{ color: 'var(--admin-text-secondary)' }} title={cap(t.city)}>{cap(t.city)}</td>
-                      <td className="hidden max-w-[8rem] truncate px-4 py-2.5 md:table-cell" style={{ color: 'var(--admin-text-secondary)' }} title={cap(t.country)}>{cap(t.country)}</td>
+                      <td className="whitespace-nowrap px-4 py-2.5 font-mono" style={{ color: 'var(--admin-text-secondary)' }}>{abbr || '—'}</td>
+                      <td className="max-w-[10rem] truncate whitespace-nowrap px-4 py-2.5" style={{ color: 'var(--admin-text-secondary)' }} title={t.country || undefined}>{t.country || '—'}</td>
+                      <td className="max-w-[10rem] truncate whitespace-nowrap px-4 py-2.5" style={{ color: 'var(--admin-text-secondary)' }} title={manager || undefined}>{manager || '—'}</td>
+                      <td className="whitespace-nowrap px-4 py-2.5 font-mono tabular-nums" style={{ color: 'var(--admin-text)' }}>{playerCount ?? '—'}</td>
                     </tr>
                   );
                 })}

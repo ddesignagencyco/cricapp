@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import SearchField from '../SearchField';
 import DirectoryPageHeader from '../DirectoryPageHeader';
@@ -141,8 +141,17 @@ export default function PlayerDirectory() {
       ) : filtered.length > 0 ? (
         <>
           <div className="fade-in grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {filtered.map((p: Player) => (
-              <PlayerCard key={p.id} player={p} />
+            {filtered.map((p: Player, index) => (
+              <Fragment key={p.id}>
+                <PlayerCard player={p} />
+                {/* A banner after the 6th and 18th cards: a full row at both 2- and 3-column
+                    widths, and only between rows (never after the last card). */}
+                {(index === 5 || index === 17) && index < filtered.length - 1 ? (
+                  <div className="col-span-full py-1">
+                    <AdSlot placement="players-infeed" />
+                  </div>
+                ) : null}
+              </Fragment>
             ))}
           </div>
 

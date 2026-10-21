@@ -220,10 +220,10 @@ export default function CategoryManager() {
                 <thead>
                   <tr style={{ borderBottom: '1px solid var(--admin-border)', background: 'var(--admin-table-header)' }}>
                     <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Category</th>
-                    <th className="hidden px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider sm:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>Slug</th>
+                    <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Slug</th>
                     <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-center" style={{ color: 'var(--admin-text-secondary)' }}>News</th>
                     <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-center" style={{ color: 'var(--admin-text-secondary)' }}>Status</th>
-                    <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-right" style={{ color: 'var(--admin-text-secondary)' }}>Actions</th>
+                    <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -262,7 +262,7 @@ export default function CategoryManager() {
                             )}
                           </div>
                         </td>
-                        <td className="hidden max-w-[9rem] px-4 py-3 font-mono sm:table-cell" style={{ color: 'var(--admin-text-muted)' }}>
+                        <td className="max-w-[9rem] px-4 py-3 font-mono" style={{ color: 'var(--admin-text-muted)' }}>
                           <span className="flex min-w-0 items-center gap-1" title={c.slug || c.name.toLowerCase().replace(/\s+/g, '-')}><Hash size={10} className="shrink-0" /><span className="truncate">{c.slug || c.name.toLowerCase().replace(/\s+/g, '-')}</span></span>
                         </td>
                         <td className="whitespace-nowrap px-4 py-3 text-center">
@@ -281,8 +281,8 @@ export default function CategoryManager() {
                             </>
                           )}
                         </td>
-                        <td className="whitespace-nowrap px-4 py-3 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
+                        <td className="whitespace-nowrap px-4 py-3">
+                          <div className="flex items-center justify-start gap-1.5">
                             {editingId === c.id ? (
                               <>
                                 <AdminIconButton

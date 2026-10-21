@@ -19,9 +19,17 @@ import {
  * it is never stretched to the column width, which would produce a non-standard
  * box no real ad unit could fill.
  *
- * The server renders `mobile`; once mounted, a ResizeObserver settles on the
- * largest size that fits and follows the container from then on.
+ * The box size comes from CSS container queries, so the server-rendered HTML already
+ * has the right size and nothing below it moves when the page hydrates (it used to
+ * render 320×100 and then shrink to 970×90: a 10px layout shift on every page). The
+ * ResizeObserver only picks which creative to show; the breakpoints below mirror
+ * `fitLeaderboardVariant` and LEADERBOARD_SLOT_META.
  */
+const BOX_CLASSES =
+  'w-[320px] @[468px]:w-[468px] @[728px]:w-[728px] @[970px]:w-[970px]';
+const FRAME_CLASSES =
+  'aspect-[320/100] @[468px]:aspect-[468/60] @[728px]:aspect-[728/90] @[970px]:aspect-[970/90]';
+
 const VARIANTS_LARGEST_FIRST: LeaderboardVariant[] = ['wide', 'desktop', 'tablet', 'mobile'];
 
 /**
@@ -56,13 +64,12 @@ export default function ResponsiveLeaderboard({ placement }: { placement: string
   const meta = LEADERBOARD_SLOT_META[variant];
 
   return (
-    <div ref={hostRef} className="flex w-full min-w-0 max-w-full justify-center">
+    <div ref={hostRef} className="@container flex w-full min-w-0 max-w-full justify-center">
       <aside
         data-ad-placement={placement}
         data-ad-size={`${meta.width}x${meta.height}`}
         aria-label="Advertisement"
-        className="relative flex min-w-0 max-w-full flex-col"
-        style={{ width: meta.width }}
+        className={`relative flex min-w-0 max-w-full flex-col ${BOX_CLASSES}`}
       >
         <span aria-hidden="true" data-ad-badge="" className="absolute right-2 top-2 z-10">
           <Badge tone="neutral" className="shadow-sm">
@@ -70,8 +77,7 @@ export default function ResponsiveLeaderboard({ placement }: { placement: string
           </Badge>
         </span>
         <div
-          className="relative overflow-hidden rounded-md border border-lborder bg-secondary"
-          style={{ width: '100%', aspectRatio: `${meta.width} / ${meta.height}` }}
+          className={`relative w-full overflow-hidden rounded-md border border-lborder bg-secondary ${FRAME_CLASSES}`}
         >
           <div className="absolute inset-0">
             {/* eslint-disable-next-line @next/next/no-img-element -- external placeholder creatives */}
