@@ -31,6 +31,8 @@ function PlayerPick({
   const [q, setQ] = useState('');
   const [hits, setHits] = useState<Player[]>([]);
   const [searching, setSearching] = useState(false);
+  // The query the current `hits` answer, so "no players" only shows for a finished search.
+  const [answered, setAnswered] = useState('');
   const requestRef = useRef(0);
 
   useEffect(() => {
@@ -50,10 +52,12 @@ function PlayerPick({
         .then((rows) => {
           if (requestRef.current !== requestId) return;
           setHits(rows);
+          setAnswered(query);
         })
         .catch(() => {
           if (requestRef.current !== requestId) return;
           setHits([]);
+          setAnswered(query);
         })
         .finally(() => {
           if (requestRef.current === requestId) setSearching(false);
@@ -64,6 +68,7 @@ function PlayerPick({
   }, [q]);
 
   const showList = q.trim().length >= 2 && !searching && hits.length > 0;
+  const showEmpty = q.trim().length >= 2 && !searching && hits.length === 0 && answered === q.trim();
 
   return (
     <div>
@@ -98,6 +103,9 @@ function PlayerPick({
       />
       {q.trim().length >= 2 && searching ? (
         <p className="mt-1.5 text-[11px] font-semibold text-stext">Searching…</p>
+      ) : null}
+      {showEmpty ? (
+        <p className="mt-1.5 text-[11px] font-semibold text-stext">No players found for “{q.trim()}”.</p>
       ) : null}
       {showList ? (
         <ul className="mt-1 overflow-hidden rounded-md border border-lborder bg-elevated">

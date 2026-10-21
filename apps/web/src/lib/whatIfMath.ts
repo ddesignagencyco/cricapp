@@ -1,7 +1,24 @@
 import { cricketOvers } from './cricketMath';
 
+/** Wickets are clamped to 0–10; anything else is not a cricket innings. */
+function clampWickets(wickets: number): number {
+  if (!Number.isFinite(wickets) || wickets < 0) return 0;
+  return Math.min(10, Math.floor(wickets));
+}
+
+/**
+ * Share of the assumed rate a side keeps with `wickets` down. The 0.28 floor is the
+ * last pair batting; a side ten down is all out and scores nothing more.
+ */
 function wicketFactor(wickets: number): number {
-  return Math.max(0.28, 1 - Math.max(0, wickets) * 0.07);
+  const w = clampWickets(wickets);
+  if (w >= 10) return 0;
+  return Math.max(0.28, 1 - w * 0.07);
+}
+
+/** Expected wickets in the simulator are a modelling input, so the floor always applies. */
+function expectedWicketFactor(wickets: number): number {
+  return Math.max(0.28, 1 - clampWickets(wickets) * 0.07);
 }
 
 function erf(x: number): number {
@@ -27,16 +44,19 @@ export function projectedInnings(args: {
   oversLeft: number;
   wickets: number;
   assumedRpo: number;
-}): { remaining: number; projected: number; low: number; high: number } | null {
+}): { remaining: number; projected: number; low: number; high: number; allOut: boolean } | null {
   const left = cricketOvers(args.oversLeft);
   if (left === null && args.oversLeft !== 0) return null;
   const oversLeft = left ?? 0;
+  const allOut = clampWickets(args.wickets) >= 10;
   const remaining = args.assumedRpo * oversLeft * wicketFactor(args.wickets);
   const projected = args.currentRuns + remaining;
-  const sd = 6 * Math.sqrt(Math.max(oversLeft, 0.25));
+  // An all-out innings is finished: the total is known, so there is no band.
+  const sd = allOut ? 0 : 6 * Math.sqrt(Math.max(oversLeft, 0.25));
   return {
     remaining,
     projected,
+    allOut,
     low: Math.max(args.currentRuns, projected - 1.5 * sd),
     high: projected + 1.5 * sd,
   };
@@ -52,7 +72,7 @@ export function chaseChance(projected: number, target: number, oversLeft: number
 export function expectedInningsTotal(overs: number, rpo: number, wickets: number): number | null {
   const decimal = cricketOvers(overs);
   if (decimal === null) return null;
-  return rpo * decimal * wicketFactor(wickets);
+  return rpo * decimal * expectedWicketFactor(wickets);
 }
 
 export function winFromExpected(scoreA: number, scoreB: number): { a: number; b: number; tie: number } {

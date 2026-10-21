@@ -21,9 +21,10 @@ import {
   ToolCheckbox,
   ToolPage,
   ToolPanel,
+  ToolError,
   ResultBox,
-  num,
 } from './ToolShared';
+import { firstError, readNumber, readOvers } from './toolInputs';
 import ToolDls from './ToolDls';
 import ToolFantasy from './ToolFantasy';
 import ToolBookmakerMargin from './ToolBookmakerMargin';
@@ -86,34 +87,72 @@ function SimpleCalculator({ tool }: { tool: ToolDef }) {
   const [allOutAgainst, setAllOutAgainst] = useState(false);
   const [scheduled, setScheduled] = useState('50');
 
-  const result = useMemo(() => {
+  const reset = () => {
+    setA('');
+    setB('');
+    setC('');
+    setD('');
+    setDays(5);
+    setAllOutFor(false);
+    setAllOutAgainst(false);
+    setScheduled('50');
+  };
+
+  const { result, error } = useMemo(() => {
+    const raw = { a, b, c, d };
+    const quota = tool.kind === 'nrr' ? readOvers(scheduled, 'Scheduled overs') : null;
+    const quotaMax = quota?.value ? quota.value : undefined;
+    const inputs = fieldsFor(tool.kind).map((field) => {
+      // Messages name the field without its "(e.g. 12.4)" example.
+      const name = field.label.replace(/\s*\(.*\)$/, '');
+      const input =
+        field.type === 'overs'
+          ? readOvers(raw[field.key], name, { max: quotaMax })
+          : readNumber(raw[field.key], name, { integer: true });
+      return { ...field, input };
+    });
+    const invalid = firstError(quota, ...inputs.map((field) => field.input));
+    if (invalid) return { result: '—', error: invalid };
+    // NRR with an all-out side uses the scheduled quota, so that side's overs may stay blank.
+    const optional = (key: string) =>
+      tool.kind === 'nrr' && ((key === 'b' && allOutFor) || (key === 'd' && allOutAgainst));
+    if (inputs.some((field) => field.input.value === null && !optional(field.key))) {
+      return { result: '—', error: null };
+    }
+    const v = (key: 'a' | 'b' | 'c' | 'd') => inputs.find((field) => field.key === key)?.input.value ?? 0;
     switch (tool.kind) {
       case 'nrr':
-        return formatRate(
-          netRunRate(num(a), num(b), num(c), num(d), {
-            allOutFor,
-            allOutAgainst,
-            scheduledOvers: num(scheduled),
-          })
-        );
+        return {
+          error: null,
+          result: formatRate(
+            netRunRate(v('a'), v('b'), v('c'), v('d'), {
+              allOutFor,
+              allOutAgainst,
+              scheduledOvers: quota?.value ?? 0,
+            })
+          ),
+        };
       case 'rrr':
-        return formatRate(requiredRunRate(num(a), num(b)));
+        return { error: null, result: formatRate(requiredRunRate(v('a'), v('b'))) };
       case 'crr':
-        return formatRate(currentRunRate(num(a), num(b)));
+        return { error: null, result: formatRate(currentRunRate(v('a'), v('b'))) };
       case 'sr':
-        return formatRate(battingStrikeRate(num(a), num(b)));
+        return { error: null, result: formatRate(battingStrikeRate(v('a'), v('b'))) };
       case 'bat-avg':
-        return formatRate(battingAverage(num(a), num(b)));
+        return { error: null, result: formatRate(battingAverage(v('a'), v('b'))) };
       case 'bowl-avg':
-        return formatRate(bowlingAverage(num(a), num(b)));
+        return { error: null, result: formatRate(bowlingAverage(v('a'), v('b'))) };
       case 'econ':
-        return formatRate(bowlingEconomy(num(a), num(b)));
+        return { error: null, result: formatRate(bowlingEconomy(v('a'), v('b'))) };
       case 'follow-on': {
-        const check = followOnLead(num(a), num(b), days);
-        return `Lead ${check.lead}. Need ${check.needed}. ${check.enforced ? 'Follow-on available.' : 'Not yet.'}`;
+        const check = followOnLead(v('a'), v('b'), days);
+        return {
+          error: null,
+          result: `Lead ${check.lead}. Need ${check.needed}. ${check.enforced ? 'Follow-on available.' : 'Not yet.'}`,
+        };
       }
       default:
-        return '';
+        return { result: '', error: null };
     }
   }, [tool.kind, a, b, c, d, days, allOutFor, allOutAgainst, scheduled]);
 
@@ -121,7 +160,7 @@ function SimpleCalculator({ tool }: { tool: ToolDef }) {
 
   return (
     <ToolPage tool={tool}>
-      <ToolPanel aside={<ResultBox value={result} />}>
+      <ToolPanel onReset={reset} aside={<ResultBox value={result} />}>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {fields.map((field) => (
             <Field
@@ -148,54 +187,60 @@ function SimpleCalculator({ tool }: { tool: ToolDef }) {
             <option value="1">1 day — 75</option>
           </SelectField>
         )}
+        <ToolError message={error} />
       </ToolPanel>
     </ToolPage>
   );
 }
 
-function fieldsFor(kind: ToolDef['kind']): Array<{ key: 'a' | 'b' | 'c' | 'd'; label: string }> {
+function fieldsFor(kind: ToolDef['kind']): Array<{
+  key: 'a' | 'b' | 'c' | 'd';
+  label: string;
+  /** overs: cricket notation (12.4); count: a non-negative whole number. */
+  type: 'overs' | 'count';
+}> {
   switch (kind) {
     case 'nrr':
       return [
-        { key: 'a', label: 'Runs for' },
-        { key: 'b', label: 'Overs faced (e.g. 48.3)' },
-        { key: 'c', label: 'Runs against' },
-        { key: 'd', label: 'Overs bowled' },
+        { key: 'a', label: 'Runs for', type: 'count' },
+        { key: 'b', label: 'Overs faced (e.g. 48.3)', type: 'overs' },
+        { key: 'c', label: 'Runs against', type: 'count' },
+        { key: 'd', label: 'Overs bowled', type: 'overs' },
       ];
     case 'rrr':
       return [
-        { key: 'a', label: 'Runs needed' },
-        { key: 'b', label: 'Balls left' },
+        { key: 'a', label: 'Runs needed', type: 'count' },
+        { key: 'b', label: 'Balls left', type: 'count' },
       ];
     case 'crr':
       return [
-        { key: 'a', label: 'Runs scored' },
-        { key: 'b', label: 'Overs faced (e.g. 12.4)' },
+        { key: 'a', label: 'Runs scored', type: 'count' },
+        { key: 'b', label: 'Overs faced (e.g. 12.4)', type: 'overs' },
       ];
     case 'sr':
       return [
-        { key: 'a', label: 'Runs' },
-        { key: 'b', label: 'Balls' },
+        { key: 'a', label: 'Runs', type: 'count' },
+        { key: 'b', label: 'Balls', type: 'count' },
       ];
     case 'bat-avg':
       return [
-        { key: 'a', label: 'Runs' },
-        { key: 'b', label: 'Dismissals' },
+        { key: 'a', label: 'Runs', type: 'count' },
+        { key: 'b', label: 'Dismissals', type: 'count' },
       ];
     case 'bowl-avg':
       return [
-        { key: 'a', label: 'Runs conceded' },
-        { key: 'b', label: 'Wickets' },
+        { key: 'a', label: 'Runs conceded', type: 'count' },
+        { key: 'b', label: 'Wickets', type: 'count' },
       ];
     case 'econ':
       return [
-        { key: 'a', label: 'Runs conceded' },
-        { key: 'b', label: 'Overs bowled (e.g. 8.3)' },
+        { key: 'a', label: 'Runs conceded', type: 'count' },
+        { key: 'b', label: 'Overs bowled (e.g. 8.3)', type: 'overs' },
       ];
     case 'follow-on':
       return [
-        { key: 'a', label: 'First-innings total' },
-        { key: 'b', label: 'Opponent score' },
+        { key: 'a', label: 'First-innings total', type: 'count' },
+        { key: 'b', label: 'Opponent score', type: 'count' },
       ];
     default:
       return [];
