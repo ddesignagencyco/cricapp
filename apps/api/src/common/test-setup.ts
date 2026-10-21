@@ -115,6 +115,7 @@ export async function cleanDatabase(prisma: PrismaService): Promise<void> {
     'odds_sources',
     'gallery_media',
     'contact_submissions',
+    'newsletter_sends',
     'newsletter_subscribers',
     'editorial_pages',
     'notification_logs',

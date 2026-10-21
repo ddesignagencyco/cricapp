@@ -40,6 +40,10 @@ export type EmailLayoutInput = {
   reason: string;
   /** Unsubscribe link for marketing mail (newsletters). Omit for account emails. */
   unsubscribeUrl?: string;
+  /** Manage-preferences link shown beside unsubscribe in newsletters. */
+  preferencesUrl?: string;
+  /** Small label at the top right of the header, e.g. "Daily digest · 21 Oct". */
+  edition?: string;
 };
 
 /** A full-width primary button, rendered as a table so Outlook keeps the padding. */
@@ -67,8 +71,7 @@ export function emailLinkFallback(href: string): string {
 }
 
 export function renderEmail(input: EmailLayoutInput): string {
-  const { appUrl, title, preheader, bodyHtml, reason, unsubscribeUrl } = input;
-  const logo = `${appUrl}/brand/logo.png`;
+  const { appUrl, title, preheader, bodyHtml, reason, unsubscribeUrl, preferencesUrl } = input;
   const year = new Date().getFullYear();
   const link = (path: string, label: string) =>
     `<a href="${appUrl}${path}" style="color:${BRAND.muted};text-decoration:none;font-weight:600;">${label}</a>`;
@@ -90,14 +93,13 @@ export function renderEmail(input: EmailLayoutInput): string {
 
       <!-- Header -->
       <tr><td bgcolor="${BRAND.blue}" style="background:${BRAND.blue};background-image:linear-gradient(135deg,${BRAND.blue},${BRAND.blueDark});border-radius:16px 16px 0 0;padding:22px 28px;">
+        <!-- Name only for now; the logo image is added once the site has a public URL. -->
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-          <td valign="middle" style="width:56px;">
-            <img src="${logo}" width="52" height="auto" alt="${BRAND.name}" style="display:block;border:0;outline:none;max-width:52px;background:#FFFFFF;border-radius:10px;padding:4px;">
+          <td valign="middle" style="font-family:Segoe UI,Arial,sans-serif;">
+            <div style="font-size:22px;font-weight:800;letter-spacing:0.4px;color:#FFFFFF;">🏏 ${BRAND.name}</div>
+            <div style="font-size:12px;color:#DCE5FF;margin-top:3px;">Every run. Every ball. Live.</div>
           </td>
-          <td valign="middle" style="padding-left:12px;font-family:Segoe UI,Arial,sans-serif;">
-            <div style="font-size:20px;font-weight:800;letter-spacing:0.3px;color:#FFFFFF;">${BRAND.name}</div>
-            <div style="font-size:12px;color:#DCE5FF;margin-top:2px;">Every run. Every ball. Live.</div>
-          </td>
+          ${input.edition ? `<td valign="middle" align="right" style="font-family:Segoe UI,Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#DCE5FF;">${escapeHtml(input.edition)}</td>` : ''}
         </tr></table>
       </td></tr>
 
@@ -117,7 +119,7 @@ export function renderEmail(input: EmailLayoutInput): string {
 
       <tr><td style="padding:20px 24px 0;text-align:center;font-family:Segoe UI,Arial,sans-serif;font-size:12px;line-height:1.6;color:${BRAND.muted};">
         ${escapeHtml(reason)}
-        ${unsubscribeUrl ? `<br><a href="${unsubscribeUrl}" style="color:${BRAND.muted};text-decoration:underline;">Unsubscribe</a>` : ''}
+        ${unsubscribeUrl ? `<br><a href="${unsubscribeUrl}" style="color:${BRAND.muted};text-decoration:underline;">Unsubscribe</a>` : ''}${preferencesUrl ? `&nbsp;·&nbsp;<a href="${preferencesUrl}" style="color:${BRAND.muted};text-decoration:underline;">Email preferences</a>` : ''}
         <br>© ${year} ${BRAND.name}. All rights reserved.
       </td></tr>
 

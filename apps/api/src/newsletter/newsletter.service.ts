@@ -24,6 +24,10 @@ export class NewsletterService {
     private readonly config: ConfigService,
   ) {}
 
+  private get apiUrl(): string {
+    return this.config.get<string>('API_PUBLIC_URL', 'http://localhost:3001').replace(/\/$/, '');
+  }
+
   async subscribe(dto: SubscribeNewsletterDto) {
     const email = dto.email.trim().toLowerCase();
     const [existing, user] = await Promise.all([
@@ -74,6 +78,10 @@ export class NewsletterService {
         subject: 'Welcome to the PakCricZone newsletter',
         html: welcome.html,
         text: welcome.text,
+        headers: {
+          'List-Unsubscribe': `<${this.apiUrl}/api/newsletter/unsubscribe/one-click?token=${subscriber.unsubscribeToken}>`,
+          'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+        },
       })
       .catch((error: unknown) => {
         this.logger.error(

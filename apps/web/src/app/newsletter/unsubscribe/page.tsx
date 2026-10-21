@@ -1,15 +1,16 @@
 import NewsletterUnsubscribeBody from '../../../components/boards/NewsletterUnsubscribeBody';
 
 export const metadata = {
-  title: 'Unsubscribe',
-  description: 'Unsubscribe from the PAK CRICZONE newsletter.',
+  title: 'Email preferences',
+  description: 'Manage or unsubscribe from PAK CRICZONE newsletter emails.',
+  robots: { index: false, follow: false },
 };
 
 export default async function NewsletterUnsubscribePage({
   searchParams,
 }: {
-  searchParams: Promise<{ token?: string }>;
+  searchParams: Promise<{ token?: string; manage?: string }>;
 }) {
-  const { token } = await searchParams;
-  return <NewsletterUnsubscribeBody token={token || ''} />;
+  const { token, manage } = await searchParams;
+  return <NewsletterUnsubscribeBody token={token || ''} manage={manage === '1'} />;
 }

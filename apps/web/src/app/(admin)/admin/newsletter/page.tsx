@@ -12,6 +12,7 @@ import {
   StatusBadge,
 } from '../../../../components/admin/AdminShared';
 import { fetchNewsletterSubscribers, type NewsletterSubscriber } from '../../../../services/newsletter';
+import NewsletterCampaigns from '../../../../components/admin/NewsletterCampaigns';
 
 export default function AdminNewsletterPage() {
   const [items, setItems] = useState<NewsletterSubscriber[]>([]);
@@ -36,7 +37,11 @@ export default function AdminNewsletterPage() {
 
   return (
     <div className="space-y-5">
-      <AdminPageHeader title="Newsletter" subtitle="Email subscribers from the public signup form." />
+      <AdminPageHeader title="Newsletter" subtitle="Send newsletters and manage subscribers from the public signup form." />
+
+      <NewsletterCampaigns />
+
+      <h2 className="pt-2 text-base font-bold" style={{ color: 'var(--admin-text)' }}>Subscribers</h2>
 
       <div
         className="flex flex-wrap items-center gap-2 rounded-lg p-3"
