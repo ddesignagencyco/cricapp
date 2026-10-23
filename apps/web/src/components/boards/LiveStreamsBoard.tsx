@@ -25,6 +25,9 @@ function buildEmbedUrl(stream: Stream): string | null {
   return toPlayerEmbedUrl(raw, { autoplay: false, hostname });
 }
 
+/** Live streams pick up new comments on this cadence while the tab is visible. */
+const STREAM_COMMENTS_REFRESH_MS = 30_000;
+
 const TABS = [
   { key: 'live', label: 'Live' },
   { key: 'upcoming', label: 'Upcoming' },
@@ -133,7 +136,13 @@ export default function LiveStreamsBoard() {
               </div>
               <h2 className="mt-2 text-lg font-bold leading-snug text-mtext">{featured.title}</h2>
             </div>
-            <CommentsSection targetType="stream" targetId={featured.id} />
+            {/* key: a fresh thread (page 1, empty composer) whenever another stream is picked. */}
+            <CommentsSection
+              key={featured.id}
+              targetType="stream"
+              targetId={featured.id}
+              refreshIntervalMs={featured.status === 'live' ? STREAM_COMMENTS_REFRESH_MS : undefined}
+            />
           </div>
           <div className="space-y-4">
             <div className="surface-card rounded-md p-4">

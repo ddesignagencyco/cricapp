@@ -8,6 +8,8 @@ export interface SendMailOptions {
   subject: string;
   html: string;
   text?: string;
+  /** Extra headers, e.g. List-Unsubscribe for newsletters. */
+  headers?: Record<string, string>;
 }
 
 @Injectable()
@@ -65,6 +67,7 @@ export class MailerService {
         subject: options.subject,
         text: options.text,
         html: options.html,
+        headers: options.headers,
       });
       this.logger.log(
         `[EMAIL] sent to ${options.to} | ${options.subject} | messageId=${info.messageId}`,
@@ -101,6 +104,7 @@ export class MailerService {
         subject: options.subject,
         html: options.html,
         text: options.text,
+        ...(options.headers ? { headers: options.headers } : {}),
       }),
     });
 
@@ -128,6 +132,7 @@ export class MailerService {
           { type: 'text/plain', value: options.text || '' },
           { type: 'text/html', value: options.html },
         ],
+        ...(options.headers ? { headers: options.headers } : {}),
       }),
     });
 

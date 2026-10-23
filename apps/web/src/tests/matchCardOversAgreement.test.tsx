@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import MatchCard from '../components/MatchCard';
 import MatchTickerBar from '../components/MatchTickerBar';
+import { renderWithProviders } from '../test/harness';
 import { deriveMatchState } from '../hooks/useMatchState';
 import { formatCricketOvers } from '../lib/cricketMath';
 
@@ -20,6 +21,9 @@ import { formatCricketOvers } from '../lib/cricketMath';
 jest.mock('../hooks/useMatchStream', () => ({
   useMatchStream: () => null,
   mergeMatchLivePayload: (match: unknown) => match,
+  mergeLiveRows: (_prev: unknown[], rows: unknown[]) => rows,
+  withLatestLive: (row: unknown) => row,
+  rememberLiveSnapshot: () => {},
 }));
 
 // The ticker watches its own width to fade the edges; jsdom has no ResizeObserver.
@@ -95,7 +99,7 @@ describe('the card and the match page cannot disagree', () => {
   });
 
   it('shows the same overs on the ticker as the card', () => {
-    const { unmount } = render(<MatchTickerBar matches={[liveMatch()]} />);
+    const { unmount } = renderWithProviders(<MatchTickerBar matches={[liveMatch()]} />);
     const ticker = renderedOvers();
     unmount();
 

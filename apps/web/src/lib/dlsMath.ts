@@ -71,3 +71,36 @@ export function parScore(team1Score: number, r1: number, r2Used: number, format:
   }
   return Math.floor(team1Score + (G * (r2Used - r1)) / 100);
 }
+
+/**
+ * The calculator's wiring, kept pure so it can be tested. Overs are decimal overs
+ * (cricket 10.3 is 10.5 here) and are expected to be validated already.
+ *
+ * R1 is what Team 1 used of a full innings. R2 is what Team 2 has: the resources of
+ * its allocated overs with no wickets down. Team 2's par uses what it has spent of
+ * that allocation, so a 20-over chase is measured against 20 overs, not 50.
+ */
+export function dlsEstimate(args: {
+  format: DlsFormat;
+  team1Score: number;
+  team1Overs: number;
+  team1Wickets: number;
+  team1AllOut?: boolean;
+  team2Overs?: number | null;
+  team2Faced?: number | null;
+  team2Wickets?: number;
+}): { r1: number; r2: number; target: number | null; par: number | null } {
+  const scheduled = formatOvers(args.format);
+  const alloc2 = Math.min(args.team2Overs ?? scheduled, scheduled);
+  const r1 = resourcesUsed(args.team1Overs, args.team1Wickets, scheduled, Boolean(args.team1AllOut));
+  const r2 = resourceRemaining(alloc2, 0, scheduled, false);
+  const target = revisedTarget(args.team1Score, r1, r2, args.format);
+  let par: number | null = null;
+  if (args.team2Faced !== null && args.team2Faced !== undefined && target !== null) {
+    const wickets2 = args.team2Wickets ?? 0;
+    const left = Math.max(0, alloc2 - args.team2Faced);
+    const used2 = r2 - resourceRemaining(left, wickets2, scheduled, wickets2 >= 10);
+    par = parScore(args.team1Score, r1, used2, args.format);
+  }
+  return { r1, r2, target, par };
+}

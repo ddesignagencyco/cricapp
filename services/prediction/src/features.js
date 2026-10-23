@@ -1,4 +1,4 @@
-import { redisKeys, PSL } from '@cricapp/shared-types';
+import { redisKeys, PSL, resolveWinnerId } from '@cricapp/shared-types';
 import { allottedBallsForFormat, detectFormat } from './format.js';
 import { resolveParScore } from './pars.js';
 
@@ -11,11 +11,10 @@ export {
 export function extractWinnerId(payload, teamIds = []) {
   const event = payload?.sport_event ?? payload ?? {};
   const status = payload?.sport_event_status ?? event.sport_event_status ?? {};
-  const winner =
-    status.winner_id ??
-    payload?.winner_id ??
-    event.winner_id ??
-    null;
+  // winner_id when sent, else the winner named in the result text. Sportradar
+  // omits winner_id on ~60% of results; without this, form, head-to-head,
+  // ratings and the accuracy page all treated those matches as undecided.
+  const winner = resolveWinnerId(payload);
   if (winner) return winner;
   const resultText = `${status.match_result_text ?? status.result ?? ''}`.toLowerCase();
   for (const id of teamIds) {
@@ -209,17 +208,32 @@ async function resolveTeams(query, match, eventPayload) {
   };
 }
 
-async function loadTeamResults(query, teamId) {
+async function loadTeamResults(query, teamId, { before = null } = {}) {
   if (!teamId) return [];
   const r = await query(
     `SELECT event_id, status, scheduled, payload
      FROM sport_event_records
      WHERE kind = 'team_results' AND scope_key = $1
+       AND ($2::timestamptz IS NULL OR scheduled::timestamptz < $2::timestamptz)
      ORDER BY scheduled DESC NULLS LAST
      LIMIT 8`,
-    [teamId],
+    [teamId, before],
   );
-  return r.rows;
+  if (r.rows.length > 0) return r.rows;
+  // The team_results feed is fetched per team and is missing for many sides that
+  // still have finished matches in our own table; fall back to those so form is
+  // not silently 0.5. Same row shape: extractWinnerId reads payload.winner_id.
+  const own = await query(
+    `SELECT match_id AS event_id, status, scheduled, jsonb_build_object('winner_id', winner_id) AS payload
+     FROM matches
+     WHERE status = 'completed' AND winner_id IS NOT NULL
+       AND (team_scores->'home'->>'id' = $1 OR team_scores->'away'->>'id' = $1)
+       AND ($2::timestamptz IS NULL OR scheduled::timestamptz < $2::timestamptz)
+     ORDER BY scheduled DESC NULLS LAST
+     LIMIT 8`,
+    [teamId, before],
+  );
+  return own.rows;
 }
 
 async function loadHeadToHead(query, a, b) {
@@ -646,8 +660,10 @@ export async function extractPrematchFeatures(matchId, { query, redis }) {
     situation,
     venueRows,
   ] = await Promise.all([
-    loadTeamResults(query, teams.homeTeamId),
-    loadTeamResults(query, teams.awayTeamId),
+    // Only results from before this match: a re-run after the start must not
+    // count the match's own result as form.
+    loadTeamResults(query, teams.homeTeamId, { before: match.scheduled ?? null }),
+    loadTeamResults(query, teams.awayTeamId, { before: match.scheduled ?? null }),
     loadHeadToHead(query, teams.homeTeamId, teams.awayTeamId),
     loadStandings(query, teams.homeTeamId, teams.awayTeamId),
     loadSquadPlayers(query, teams.homeTeamId),

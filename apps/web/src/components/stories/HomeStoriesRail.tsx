@@ -104,6 +104,7 @@ export default function HomeStoriesRail() {
           */}
           <div
             ref={scrollRef}
+            data-scroll-hint-off
             className={`no-scrollbar flex snap-x snap-mandatory items-start gap-2.5 overflow-x-auto scroll-smooth pb-1 sm:gap-3 ${
               overflows ? '' : 'justify-center'
             }`}

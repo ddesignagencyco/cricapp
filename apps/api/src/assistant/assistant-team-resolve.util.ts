@@ -48,15 +48,19 @@ export function scoreTeamCandidate(
   const name = team.name.toLowerCase();
   const country = (team.country ?? '').toLowerCase();
 
+  // What the user actually typed outranks a match through an alias. Otherwise "Pakistan"
+  // (alias PAK) scored "Pakistan Legends" (abbr PAK) at 100, above the team literally
+  // named "Pakistan" at 98, and the assistant answered for the wrong side.
+  if (abbr === q) return 100;
+  if (name === q) return 100;
+
   for (const variant of teamNameSearchVariants(query)) {
     const v = variant.toLowerCase();
-    if (abbr === v) return 100;
-    if (name === v) return 98;
+    if (v === q) continue;
+    if (name === v) return 96;
+    if (abbr === v) return 94;
     if (country === v) return 92;
   }
-
-  if (abbr === q) return 100;
-  if (name === q) return 98;
 
   if (q.length >= 4 && name.startsWith(q)) return 75;
   if (q.length >= 4 && name.includes(q)) return 55;
@@ -87,6 +91,30 @@ export function pickTeamIdFromCandidates(
   if (scored.length >= 2 && scored[0]!.score === scored[1]!.score) return null;
   if (scored[0]!.score < 20) return null;
   return scored[0]!.id;
+}
+
+/**
+ * The ids sharing the best score when that score is a tie, e.g. the men's and women's
+ * national sides, which are both stored as "Pakistan" / "PAK". `pickTeamIdFromCandidates`
+ * returns null for a tie; this tells the caller which teams to break it between.
+ */
+export function tiedTopTeamIds(
+  query: string,
+  candidates: Array<{ id: string; name: string; abbr: string; country?: string | null }>,
+): string[] {
+  const scored = candidates
+    .map((c) => ({ id: c.id, score: scoreTeamCandidate(query, c) }))
+    .filter((x) => x.score >= 20)
+    .sort((a, b) => b.score - a.score);
+  if (scored.length < 2 || scored[0]!.score !== scored[1]!.score) return [];
+  return scored.filter((x) => x.score === scored[0]!.score).map((x) => x.id);
+}
+
+/** "Pakistan women", "England Women's", "India (W)". */
+export const WOMEN_TEAM_RE = /\bwom[ae]n(?:'s)?(?![a-z])|\(w\)/i;
+
+export function withoutWomenMarker(query: string): string {
+  return query.replace(new RegExp(WOMEN_TEAM_RE.source, 'gi'), ' ').replace(/\s+/g, ' ').trim();
 }
 
 const TEAM_NAME_HINT =

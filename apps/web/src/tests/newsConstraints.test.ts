@@ -124,8 +124,8 @@ describe('newsListPath', () => {
     expect(newsListPath('en', { category: 'all' })).toBe('/news');
   });
 
-  it('omits a blank category or tag', () => {
-    expect(newsListPath('en', { category: '  ', tag: '' })).toBe('/news');
+  it('omits a blank category', () => {
+    expect(newsListPath('en', { category: '  ' })).toBe('/news');
   });
 
   it('omits page 1 but keeps later pages', () => {
@@ -133,9 +133,9 @@ describe('newsListPath', () => {
     expect(newsListPath('en', { page: 3 })).toBe('/news?page=3');
   });
 
-  it('combines category, tag and page', () => {
-    expect(newsListPath('en', { category: 'cricket', tag: 'psl', page: 2 })).toBe(
-      '/news?category=cricket&tag=psl&page=2',
+  it('combines category and page', () => {
+    expect(newsListPath('en', { category: 'cricket', page: 2 })).toBe(
+      '/news?category=cricket&page=2',
     );
   });
 

@@ -246,14 +246,9 @@ describe('mapNewsItem', () => {
     expect(mapNewsItem({ id: 'n', category: { name: 'Cricket', slug: 'cricket' } }).type).toBe('cricket');
   });
 
-  it('normalises tags to strings and promotes the first to tag', () => {
-    const item = mapNewsItem({ id: 'n', tags: ['psl', 5, ''] });
-    expect(item.tags).toEqual(['psl', '5']);
-    expect(item.tag).toBe('psl');
-  });
-
-  it('uses an empty tag list when tags are not an array', () => {
-    expect(mapNewsItem({ id: 'n', tags: 'psl' }).tags).toEqual([]);
+  it('does not invent a tag field (news has no tags)', () => {
+    expect(mapNewsItem({ id: 'n' })).not.toHaveProperty('tag');
+    expect(mapNewsItem({ id: 'n' })).not.toHaveProperty('tags');
   });
 
   it('keeps the source the API returned', () => {

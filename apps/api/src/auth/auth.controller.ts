@@ -100,7 +100,7 @@ export class AuthController {
   @Public()
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 3, ttl: 60000 } })
-  @ApiOperation({ summary: 'Request a password reset email' })
+  @ApiOperation({ summary: 'Request a password reset email (link + 6-digit code)' })
   @ApiResponse({ status: 200, description: 'Reset email sent if account exists.', type: MessageResponseDto })
   async forgotPassword(@Body() dto: ForgotPasswordDto): Promise<MessageResponseDto> {
     return this.authService.forgotPassword(dto);
@@ -110,9 +110,9 @@ export class AuthController {
   @Public()
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 5, ttl: 60000 } })
-  @ApiOperation({ summary: 'Reset password using the token from the email link' })
+  @ApiOperation({ summary: 'Reset password with the email link pair (tokenId + token) or email + 6-digit code' })
   @ApiResponse({ status: 200, description: 'Password reset successfully.', type: MessageResponseDto })
-  @ApiResponse({ status: 400, description: 'Invalid or expired token.' })
+  @ApiResponse({ status: 400, description: 'Invalid or expired token or code.' })
   async resetPassword(@Body() dto: ResetPasswordDto): Promise<MessageResponseDto> {
     return this.authService.resetPassword(dto);
   }
@@ -120,9 +120,10 @@ export class AuthController {
   @Post('verify-email')
   @Public()
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Verify email address using token from email' })
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @ApiOperation({ summary: 'Verify email with the link pair (tokenId + token) or email + 6-digit code' })
   @ApiResponse({ status: 200, description: 'Email verified successfully.', type: MessageResponseDto })
-  @ApiResponse({ status: 400, description: 'Invalid or expired token.' })
+  @ApiResponse({ status: 400, description: 'Invalid or expired token or code.' })
   async verifyEmail(@Body() dto: VerifyEmailDto): Promise<MessageResponseDto> {
     return this.authService.verifyEmail(dto);
   }
@@ -131,7 +132,7 @@ export class AuthController {
   @Public()
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 3, ttl: 60000 } })
-  @ApiOperation({ summary: 'Resend email verification link' })
+  @ApiOperation({ summary: 'Resend the verification email (link + 6-digit code)' })
   @ApiResponse({ status: 200, description: 'Verification email sent if account exists.', type: MessageResponseDto })
   async resendVerification(@Body() dto: ResendVerificationDto): Promise<MessageResponseDto> {
     return this.authService.resendVerification(dto);

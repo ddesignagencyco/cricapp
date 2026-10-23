@@ -164,6 +164,44 @@ export interface AdminPredictionCalibration {
   latestFit: AdminCalibrationFit | null;
 }
 
+/** `GET /admin/predictions/model-weights` — latest learned weight set per model/stage/format. */
+export interface AdminPredictionModelWeight {
+  id: string;
+  modelVersion: string;
+  stage: string;
+  format: string;
+  weights: Record<string, number>;
+  intercept: number;
+  sampleSize: number;
+  brierScore: number | null;
+  accuracy: number | null;
+  source: string;
+  createdAt: string;
+}
+
+/**
+ * One stored accuracy snapshot — a row of `GET /predictions/performance/history`, and
+ * the body returned by `POST /admin/predictions/performance/snapshot`.
+ */
+export interface PredictionPerformanceSnapshot {
+  id: string;
+  modelVersion: string;
+  stage: string;
+  sampleSize: number;
+  accuracy: number | null;
+  brierScore: number | null;
+  expectedCalibrationError: number | null;
+  byFormat: FormatAccuracy[];
+  byConfidenceBand: ConfidenceBandAccuracy[];
+  source: string;
+  createdAt: string;
+}
+
+export interface PredictionPerformanceHistory {
+  data: PredictionPerformanceSnapshot[];
+  meta: { limit: number };
+}
+
 export interface AdminPredictionRunDetail extends PredictionRun {
   matchId?: string;
   matchName?: string;

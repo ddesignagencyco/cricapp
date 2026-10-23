@@ -50,11 +50,6 @@ function asIdList(value: unknown): string[] {
 
 export function mapNewsItem(item: Record<string, unknown>): NewsArticle {
   const catObj = (item.category as Record<string, unknown>) || {};
-  const rawTags = item.tags;
-  const tags: string[] = Array.isArray(rawTags)
-    ? rawTags.map((t) => (typeof t === 'string' ? t : String(t))).filter(Boolean)
-    : [];
-
   const categoryName =
     (catObj.name as string) ||
     (typeof item.category === 'string' ? item.category : '') ||
@@ -76,8 +71,6 @@ export function mapNewsItem(item: Record<string, unknown>): NewsArticle {
     category: categoryName,
     type: (catObj.slug as string) || '',
     date: dateFormatted,
-    tag: tags[0] || '',
-    tags: tags,
     author: authorRef?.name || (item.author as string) || 'Editorial Team',
     authorId: (item.authorId as string) || authorRef?.id || '',
     // The byline the API stored. The display name above prefers the linked author
@@ -103,7 +96,6 @@ export function mapNewsItem(item: Record<string, unknown>): NewsArticle {
 
 export interface NewsListParams {
   category?: string;
-  tag?: string;
   q?: string;
   language?: string;
   page?: number;
@@ -116,10 +108,10 @@ export interface NewsListParams {
 }
 
 export async function fetchNews(
-  { category, tag, q, language, playerId, teamId, matchId, seriesId, authorId, limit = 50 }: NewsListParams = {},
+  { category, q, language, playerId, teamId, matchId, seriesId, authorId, limit = 50 }: NewsListParams = {},
   signal?: AbortSignal
 ): Promise<NewsArticle[]> {
-  const params = { category, tag, q, language, playerId, teamId, matchId, seriesId, authorId, limit };
+  const params = { category, q, language, playerId, teamId, matchId, seriesId, authorId, limit };
   const res = signal
     ? await apiGet('/news', params, { signal })
     : await apiGet('/news', params);
@@ -127,9 +119,9 @@ export async function fetchNews(
 }
 
 export async function fetchNewsPage(
-  { category, tag, q, language, playerId, teamId, matchId, seriesId, authorId, page = 1, limit = 12 }: NewsListParams = {}
+  { category, q, language, playerId, teamId, matchId, seriesId, authorId, page = 1, limit = 12 }: NewsListParams = {}
 ): Promise<{ items: NewsArticle[]; total: number; totalPages: number }> {
-  const res = await apiGet('/news', { category, tag, q, language, playerId, teamId, matchId, seriesId, authorId, page, limit });
+  const res = await apiGet('/news', { category, q, language, playerId, teamId, matchId, seriesId, authorId, page, limit });
   const { items, meta } = extractPage<Record<string, unknown>>(res);
   return {
     items: items.map(mapNewsItem),

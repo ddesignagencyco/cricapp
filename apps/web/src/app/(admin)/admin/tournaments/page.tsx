@@ -82,8 +82,8 @@ export default function TournamentsPage() {
                 <tr style={{ borderBottom: '1px solid var(--admin-border)', background: 'var(--admin-table-header)' }}>
                   <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Tournament</th>
                   <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Format</th>
-                  <th className="hidden px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider md:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>Season</th>
-                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-right" style={{ color: 'var(--admin-text-secondary)' }}>Status</th>
+                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Season</th>
+                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -127,8 +127,8 @@ export default function TournamentsPage() {
                           {gender && <AdminChip label={gender} />}
                         </div>
                       </td>
-                      <td className="hidden max-w-[12rem] truncate px-4 py-2.5 md:table-cell" style={{ color: 'var(--admin-text-secondary)' }} title={season || undefined}>{season || '—'}</td>
-                      <td className="whitespace-nowrap px-4 py-2.5 text-right">
+                      <td className="max-w-[12rem] truncate px-4 py-2.5" style={{ color: 'var(--admin-text-secondary)' }} title={season || undefined}>{season || '—'}</td>
+                      <td className="whitespace-nowrap px-4 py-2.5">
                         <StatusBadge status={status} />
                       </td>
                     </tr>

@@ -253,3 +253,106 @@ describe("normalizeLineups", () => {
     assert.equal(coleman.role, "player");
   });
 });
+
+describe("normalizeMatch — one consistent live line", () => {
+  // Shape of a real PAK v ENG summary: the scorecard had moved to 60 runs at 14.3 while
+  // sport_event_status still said 59/3 at 14.2. Mixing the two gave "60 at 14.2".
+  const liveSummary = (overrides = {}) => ({
+    sport_event: {
+      id: "sr:match:75329886",
+      competitors: [
+        { id: "sr:competitor:142704", name: "Pakistan", abbreviation: "PAK", qualifier: "home" },
+        { id: "sr:competitor:107205", name: "England", abbreviation: "ENG", qualifier: "away" },
+      ],
+    },
+    sport_event_status: {
+      status: "live",
+      match_status: "first_innings_home_team",
+      current_inning: 1,
+      display_score: "59/3",
+      display_overs: 14.2,
+      period_scores: [{ type: "inning", number: 1, home_score: 59, home_wickets: 3, away_score: 0, display_score: "59/3" }],
+      ...overrides.status,
+    },
+    statistics: {
+      innings: [
+        {
+          number: 1,
+          batting_team: "sr:competitor:142704",
+          bowling_team: "sr:competitor:107205",
+          overs_completed: 14,
+          teams: [
+            {
+              id: "sr:competitor:107205",
+              statistics: {
+                bowling: {
+                  players: (overrides.bowlers ?? ["2", "4.3", "5", "3"]).map((o) => ({ statistics: { overs_bowled: Number(o) } })),
+                },
+              },
+            },
+            { id: "sr:competitor:142704", statistics: { batting: { runs: 60, wickets_lost: 3 } } },
+          ],
+        },
+      ],
+    },
+  });
+
+  it("takes overs from the bowlers' figures, in the same block as the runs", () => {
+    const match = normalizeMatch(PROVIDERS.SPORTRADAR, liveSummary());
+    assert.deepEqual(
+      { runs: match.currentInnings.runs, wickets: match.currentInnings.wickets, overs: match.currentInnings.overs },
+      { runs: 60, wickets: 3, overs: 14.3 },
+    );
+    assert.equal(match.currentInnings.runRate, computeRunRate(60, 14.3));
+  });
+
+  it("keeps displayScore, displayOvers and the team line on that same instant", () => {
+    const match = normalizeMatch(PROVIDERS.SPORTRADAR, liveSummary());
+    assert.equal(match.displayScore, "60/3");
+    assert.equal(match.displayOvers, 14.3);
+    assert.equal(match.teamScores.home.score, "60/3");
+    assert.equal(match.teamScores.home.overs, "14.3");
+  });
+
+  it("carries six balls into the next over when summing", () => {
+    const match = normalizeMatch(PROVIDERS.SPORTRADAR, liveSummary({ bowlers: ["2.4", "3.2"] }));
+    assert.equal(match.currentInnings.overs, 6);
+  });
+
+  it("uses the status block's own pair whole when bowlers are missing and it disagrees", () => {
+    const match = normalizeMatch(PROVIDERS.SPORTRADAR, liveSummary({ bowlers: [] }));
+    assert.deepEqual(
+      { runs: match.currentInnings.runs, wickets: match.currentInnings.wickets, overs: match.currentInnings.overs },
+      { runs: 59, wickets: 3, overs: 14.2 },
+    );
+    assert.equal(match.displayScore, "59/3");
+  });
+
+  it("only rewrites the current-innings pair in a multi-innings display score", () => {
+    const match = normalizeMatch(
+      PROVIDERS.SPORTRADAR,
+      liveSummary({ status: { display_score: "250/10 & 59/3" } }),
+    );
+    assert.equal(match.displayScore, "250/10 & 60/3");
+  });
+});
+
+describe("normalizeMatch — stoppages stay live", () => {
+  for (const status of ["interrupted", "suspended"]) {
+    it(`maps a ${status} match to live, not upcoming`, () => {
+      const match = normalizeMatch(PROVIDERS.SPORTRADAR, {
+        sport_event: { id: "sr:match:rain", competitors: [] },
+        sport_event_status: { status, match_status: "rain_delay" },
+      });
+      assert.equal(match.status, MATCH_STATUS.LIVE);
+    });
+  }
+
+  it("still maps a delayed start to upcoming", () => {
+    const match = normalizeMatch(PROVIDERS.SPORTRADAR, {
+      sport_event: { id: "sr:match:late", competitors: [] },
+      sport_event_status: { status: "delayed", match_status: "not_started" },
+    });
+    assert.equal(match.status, MATCH_STATUS.UPCOMING);
+  });
+});

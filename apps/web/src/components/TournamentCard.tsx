@@ -33,9 +33,9 @@ export default function TournamentCard({ tournament }: { tournament: TournamentA
         </EntityAvatar>
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 items-center gap-2">
-            <h3 className="truncate text-sm font-semibold text-mtext transition-colors group-hover:text-accent">
+            <h2 className="truncate text-sm font-semibold text-mtext transition-colors group-hover:text-accent">
               {name}
-            </h3>
+            </h2>
             <span className="shrink-0 rounded border border-lborder bg-secondary px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-stext">
               {format}
             </span>

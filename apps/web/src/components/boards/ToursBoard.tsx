@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { Fragment, useMemo } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { X } from 'lucide-react';
 import SearchField from '../SearchField';
@@ -14,6 +14,8 @@ import Pagination from '../Pagination';
 import { DirectoryGridSkeleton } from '../skeletons/Skeletons';
 import { filterChipClass, filterChipCountClass } from '../ui/filterChip';
 import DirectoryPageHeader from '../DirectoryPageHeader';
+import AdSlot from '../advertisements/AdSlot';
+import { chunkForAds } from '../../lib/advertisements/chunkForAds';
 import TourCard from '../TourCard';
 import { parsePositiveInt, tourKeys } from '../../queries/keys';
 import { usePrefetchNextPage, useToursQuery } from '../../queries/useDirectoryQueries';
@@ -121,6 +123,8 @@ export default function ToursBoard() {
         countLabel="tours"
       />
 
+      <AdSlot placement="tours-after-intro" />
+
       <div className="space-y-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <SearchField
@@ -183,11 +187,22 @@ export default function ToursBoard() {
         <ErrorState message="Tours are temporarily unavailable." onRetry={() => void query.refetch()} />
       ) : filtered.length > 0 ? (
         <>
-          <div className="fade-in grid auto-rows-fr grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {filtered.map((tour: Tour) => (
-              <TourCard key={tour.id} tour={tour} />
-            ))}
-          </div>
+          {/* Banners after the 6th and 18th cards, between grids so the equal-height
+              rows (auto-rows-fr) never stretch to fit an ad. */}
+          {chunkForAds(filtered).map((chunk, i, all) => (
+            <Fragment key={i}>
+              <div className={`fade-in grid auto-rows-fr grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3${i > 0 ? ' mt-3' : ''}`}>
+                {chunk.map((tour: Tour) => (
+                  <TourCard key={tour.id} tour={tour} />
+                ))}
+              </div>
+              {i < all.length - 1 ? (
+                <div className="py-4">
+                  <AdSlot placement="tours-infeed" />
+                </div>
+              ) : null}
+            </Fragment>
+          ))}
           <div className="pt-4">
             <Pagination
               page={page}

@@ -277,7 +277,7 @@ function ScoreSide({ view, side }: { view: MatchViewModel; side: 'home' | 'away'
           className="h-12 w-12 sm:h-14 sm:w-14"
         />
         <div className="min-w-0">
-          <p className="flex min-w-0 items-center gap-1.5">
+          <p className="flex min-w-0 flex-wrap items-center gap-1.5">
             <TeamLink
               teamId={team.id}
               name={team.name}

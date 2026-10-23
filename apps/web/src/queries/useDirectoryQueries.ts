@@ -70,6 +70,7 @@ export function useToursQuery(params: ToursQueryParams) {
   const requestParams = asListParams<ToursListParams>({
     page: Number(normalized.page || 1),
     limit: Number(normalized.limit || 20),
+    q: typeof normalized.q === 'string' && normalized.q ? normalized.q : undefined,
   });
   return useQuery<ToursPageResult, Error>({
     queryKey: tourKeys.list(normalized),
@@ -123,6 +124,9 @@ export function useLiveMatchesQuery(enabled = true) {
     queryKey: matchKeys.live(),
     queryFn: ({ signal }) => runAbortable(signal, (requestSignal) => fetchLiveMatches(requestSignal)),
     enabled,
+    // Live scores go stale within a ball, so a remount (client navigation back to a
+    // page) refetches at once instead of serving the cache for up to five minutes.
+    staleTime: 0,
     refetchInterval: LIVE_MATCH_REFETCH_MS,
     refetchIntervalInBackground: false,
   });

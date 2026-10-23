@@ -1,4 +1,5 @@
 import { query } from './db.js';
+import { resolveWinnerId } from '@cricapp/shared-types';
 import redis, { redisKeys, REDIS_TTL } from './redis.js';
 import {
   buildTeamFromCompetitor,
@@ -443,7 +444,10 @@ const upsertSportEventRecord = `
 function mapMatchStatus(status, matchStatus) {
   const s = `${status ?? ''} ${matchStatus ?? ''}`.toLowerCase();
   if (s.includes('cancel') || s.includes('postpon')) return 'cancelled';
-  if (s.includes('live') || s.includes('progress') || s.includes('inning')) return 'live';
+  // Same rule as normalize.js: an interrupted or suspended match is still in play.
+  if (s.includes('live') || s.includes('progress') || s.includes('inning') || s.includes('interrupt') || s.includes('suspend')) {
+    return 'live';
+  }
   if (
     s.includes('closed') ||
     s.includes('complete') ||
@@ -496,7 +500,8 @@ function recordToMatch(record) {
     matchStatus:
       statusBlock.match_status ?? statusBlock.result ?? record.status ?? null,
     matchResult: statusBlock.match_result_text ?? null,
-    winnerId: statusBlock.winner_id ?? null,
+    // Sportradar often omits winner_id; fall back to the winner named in the result text.
+    winnerId: resolveWinnerId(raw),
     tossWonBy: statusBlock.toss_won_by ?? null,
     tossDecision: statusBlock.toss_decision ?? null,
     currentInning:
@@ -907,21 +912,29 @@ const MATCH_COMPETITORS = `
  */
 export async function materializeTeamEvents() {
   const r = await query(
+    // One match is stored under several source kinds (daily results, tournament
+    // results, team results...) that all map to the same target row. Postgres refuses
+    // an upsert that touches a row twice in one statement, so keep only the most
+    // recently updated copy per (target kind, team, match).
     `INSERT INTO sport_event_records (kind, scope_key, event_id, status, scheduled, payload, created_at, updated_at)
-     SELECT
-       CASE WHEN ser.kind = 'daily_schedule' THEN 'team_schedule' ELSE 'team_results' END,
-       comp->>'id',
-       ser.event_id,
-       ser.status,
-       ser.scheduled,
-       ser.payload,
-       NOW(),
-       NOW()
-     FROM sport_event_records ser
-     CROSS JOIN LATERAL jsonb_array_elements(${MATCH_COMPETITORS}) comp
-     WHERE ser.kind IN ('daily_schedule','daily_results','tournament_results','team_schedule','team_results')
-       AND ser.event_id IS NOT NULL
-       AND (comp->>'id') IS NOT NULL
+     SELECT DISTINCT ON (target_kind, team_id, event_id)
+       target_kind, team_id, event_id, status, scheduled, payload, NOW(), NOW()
+     FROM (
+       SELECT
+         CASE WHEN ser.kind IN ('daily_schedule', 'team_schedule') THEN 'team_schedule' ELSE 'team_results' END AS target_kind,
+         comp->>'id' AS team_id,
+         ser.event_id,
+         ser.status,
+         ser.scheduled,
+         ser.payload,
+         ser.updated_at
+       FROM sport_event_records ser
+       CROSS JOIN LATERAL jsonb_array_elements(${MATCH_COMPETITORS}) comp
+       WHERE ser.kind IN ('daily_schedule','daily_results','tournament_results','team_schedule','team_results')
+         AND ser.event_id IS NOT NULL
+         AND (comp->>'id') IS NOT NULL
+     ) src
+     ORDER BY target_kind, team_id, event_id, updated_at DESC
      ON CONFLICT (kind, scope_key, event_id) DO UPDATE SET
        status = EXCLUDED.status,
        scheduled = EXCLUDED.scheduled,

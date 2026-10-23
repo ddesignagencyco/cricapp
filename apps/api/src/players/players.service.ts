@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import {
   getPaginationOffset,
@@ -65,6 +65,7 @@ export class PlayersService {
           shortName: true,
           role: true,
           nationality: true,
+          birth: true,
           team: { select: { id: true, name: true, abbr: true } },
         },
       }),

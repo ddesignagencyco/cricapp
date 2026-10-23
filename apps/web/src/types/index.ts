@@ -226,8 +226,6 @@ export interface NewsArticle {
   category: string;
   type: string;
   date: string;
-  tag?: string;
-  tags?: string[];
   author: string;
   /** The byline as stored, kept even when an author profile supplies the display name. */
   authorByline?: string;
@@ -403,6 +401,8 @@ export interface Tour {
   name: string;
   category?: string | { id?: string; name?: string; country_code?: string };
   sport?: string | { id?: string; name?: string };
+  /** Tournaments filed under this tour's category (GET /tours). */
+  tournamentCount?: number;
   [key: string]: unknown;
 }
 

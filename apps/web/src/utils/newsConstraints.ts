@@ -35,14 +35,12 @@ export function otherNewsLanguage(language?: string | null): NewsLanguage {
 
 export function newsListPath(
   language: NewsLanguage = 'en',
-  query?: { category?: string; tag?: string; page?: number | string },
+  query?: { category?: string; page?: number | string },
 ): string {
   const params = new URLSearchParams();
   const category = query?.category?.trim();
-  const tag = query?.tag?.trim();
   const page = Number(query?.page) || 1;
   if (category && category !== 'all') params.set('category', category);
-  if (tag) params.set('tag', tag);
   if (page > 1) params.set('page', String(page));
   const base = language === 'ur' ? '/ur/news' : '/news';
   const qs = params.toString();

@@ -38,6 +38,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  Object.defineProperty(window, 'scrollY', { value: 0, configurable: true });
   act(() => {
     jest.runOnlyPendingTimers();
   });
@@ -45,10 +46,17 @@ afterEach(() => {
   delete (window as unknown as { Notification?: unknown }).Notification;
 });
 
-/** Mounts the modal and advances past the first-visit delay. */
+/** The visitor scrolls past half a screen. */
+function scrollPage(y = 2000) {
+  Object.defineProperty(window, 'scrollY', { value: y, configurable: true });
+  window.dispatchEvent(new Event('scroll'));
+}
+
+/** Mounts the modal, scrolls, and advances past the first-visit delay. */
 function renderAndReveal() {
   const result = render(<NewsletterModal />);
   act(() => {
+    scrollPage();
     jest.advanceTimersByTime(NEWSLETTER_MODAL_DELAY_MS + 10);
   });
   return result;
@@ -57,10 +65,21 @@ function renderAndReveal() {
 describe('first-visit gating', () => {
   it('stays hidden until the delay elapses', () => {
     render(<NewsletterModal />);
+    act(() => scrollPage());
     expect(screen.queryByRole('dialog')).toBeNull();
     act(() => {
       jest.advanceTimersByTime(NEWSLETTER_MODAL_DELAY_MS + 10);
     });
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+  });
+
+  it('waits for the visitor to scroll, not just for the clock', () => {
+    render(<NewsletterModal />);
+    act(() => {
+      jest.advanceTimersByTime(NEWSLETTER_MODAL_DELAY_MS * 3);
+    });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    act(() => scrollPage());
     expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
 

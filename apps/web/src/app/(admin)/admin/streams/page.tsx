@@ -402,9 +402,9 @@ export default function AdminStreamsPage() {
               <thead>
                 <tr style={{ background: 'var(--admin-table-header)', borderBottom: '1px solid var(--admin-border)' }}>
                   <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Stream</th>
-                  <th className="hidden px-4 py-3 text-xs font-bold uppercase tracking-wider sm:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>Provider</th>
+                  <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Provider</th>
                   <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Status</th>
-                  <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-right" style={{ color: 'var(--admin-text-secondary)' }}>Actions</th>
+                  <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -437,12 +437,12 @@ export default function AdminStreamsPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="hidden max-w-[10rem] truncate px-4 py-3 sm:table-cell" style={{ color: 'var(--admin-text-secondary)' }} title={stream.host || undefined}>{stream.host || '—'}</td>
+                    <td className="max-w-[10rem] truncate px-4 py-3" style={{ color: 'var(--admin-text-secondary)' }} title={stream.host || undefined}>{stream.host || '—'}</td>
                     <td className="whitespace-nowrap px-4 py-3">
                       {stream.status === 'ended' ? <Badge>Ended</Badge> : <StatusBadge status={stream.status} />}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3">
-                      <div className="flex justify-end gap-1.5">
+                      <div className="flex justify-start gap-1.5">
                         <AdminIconButton label="Edit stream" tone="accent" onClick={() => startEdit(stream)}>
                           <Pencil size={16} />
                         </AdminIconButton>

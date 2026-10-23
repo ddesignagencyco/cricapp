@@ -12,7 +12,7 @@ module.exports = {
     node: true,
     jest: true,
   },
-  ignorePatterns: ['.eslintrc.cjs', 'dist', 'node_modules', 'prisma/seed.ts'],
+  ignorePatterns: ['.eslintrc.cjs', 'dist', 'node_modules', 'prisma/seed.ts', 'src/generated', 'prisma.config.ts', 'test/*.cjs'],
   rules: {
     '@typescript-eslint/no-explicit-any': 'off',
     '@typescript-eslint/explicit-function-return-type': 'warn',

@@ -1,10 +1,11 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { formatOvers, parScore, resourcesUsed, resourceRemaining, revisedTarget, type DlsFormat } from '../../lib/dlsMath';
+import { dlsEstimate, formatOvers, type DlsFormat } from '../../lib/dlsMath';
 import { cricketOvers } from '../../lib/cricketMath';
 import type { ToolDef } from '../../lib/toolsCatalog';
-import { Field, SelectField, ToolCheckbox, ToolPage, ToolPanel, ResultBox, num } from './ToolShared';
+import { Field, SelectField, ToolCheckbox, ToolError, ToolPage, ToolPanel, ResultBox } from './ToolShared';
+import { firstError, readNumber, readOvers, readWickets } from './toolInputs';
 
 export default function ToolDls({ tool }: { tool: ToolDef }) {
   const [format, setFormat] = useState<DlsFormat>('odi');
@@ -16,18 +17,44 @@ export default function ToolDls({ tool }: { tool: ToolDef }) {
   const [t2Faced, setT2Faced] = useState('');
   const [t2Wkts, setT2Wkts] = useState('');
 
+  const reset = () => {
+    setT1Score('');
+    setT1Overs('');
+    setT1Wkts('');
+    setT1AllOut(false);
+    setT2Overs('');
+    setT2Faced('');
+    setT2Wkts('');
+  };
+
   const scheduled = formatOvers(format);
-  const result = useMemo(() => {
-    const faced1 = cricketOvers(num(t1Overs));
-    const alloc2 = cricketOvers(num(t2Overs) || scheduled);
-    if (faced1 === null || alloc2 === null) return null;
-    const r1 = resourcesUsed(faced1, num(t1Wkts), scheduled, t1AllOut);
-    const r2 = 100 - resourceRemaining(alloc2, 0, scheduled, false);
-    const target = revisedTarget(num(t1Score), r1, r2, format);
-    const faced2 = t2Faced ? cricketOvers(num(t2Faced)) : null;
-    const used2 = faced2 !== null ? resourcesUsed(faced2, num(t2Wkts), scheduled, false) : null;
-    const par = used2 !== null && target !== null ? parScore(num(t1Score), r1, used2, format) : null;
-    return { r1, r2, target, par };
+  const { result, error } = useMemo(() => {
+    const score1 = readNumber(t1Score, 'Team 1 score', { integer: true });
+    const overs1 = readOvers(t1Overs, 'Team 1 overs faced', { max: scheduled });
+    const wkts1 = readWickets(t1Wkts, 'Team 1 wickets');
+    const overs2 = readOvers(t2Overs, 'Team 2 overs available', { max: scheduled });
+    const alloc2 = overs2.value ?? scheduled;
+    const faced2 = readOvers(t2Faced, 'Team 2 overs faced', { max: alloc2 });
+    const wkts2 = readWickets(t2Wkts, 'Team 2 wickets');
+    const invalid =
+      firstError(score1, overs1, wkts1, overs2, faced2, wkts2) ??
+      (overs1.value === 0 ? 'Team 1 overs faced must be more than 0.' : null) ??
+      (overs2.value === 0 ? 'Team 2 overs available must be more than 0.' : null);
+    if (invalid) return { result: null, error: invalid };
+    if (score1.value === null || overs1.value === null) return { result: null, error: null };
+    return {
+      error: null,
+      result: dlsEstimate({
+        format,
+        team1Score: score1.value,
+        team1Overs: cricketOvers(overs1.value) ?? 0,
+        team1Wickets: wkts1.value ?? 0,
+        team1AllOut: t1AllOut,
+        team2Overs: cricketOvers(alloc2),
+        team2Faced: faced2.value === null ? null : (cricketOvers(faced2.value) ?? 0),
+        team2Wickets: wkts2.value ?? 0,
+      }),
+    };
   }, [format, t1Score, t1Overs, t1Wkts, t1AllOut, t2Overs, t2Faced, t2Wkts, scheduled]);
 
   return (
@@ -36,6 +63,7 @@ export default function ToolDls({ tool }: { tool: ToolDef }) {
       note="This follows the standard published formula for rain-affected matches. The official ICC table is licensed, so please treat this as a helpful estimate rather than the exact official figure."
     >
       <ToolPanel
+        onReset={reset}
         aside={
           <>
             {/* The inputs travel with the share so the recipient sees how the
@@ -67,6 +95,7 @@ export default function ToolDls({ tool }: { tool: ToolDef }) {
           <Field label="Team 2 wickets now" value={t2Wkts} onChange={setT2Wkts} />
         </div>
         <ToolCheckbox label="Team 1 all out" checked={t1AllOut} onChange={setT1AllOut} />
+        <ToolError message={error} />
       </ToolPanel>
     </ToolPage>
   );

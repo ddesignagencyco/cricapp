@@ -48,7 +48,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: npm
 
       - name: Install
@@ -58,10 +58,10 @@ jobs:
         run: npm run prisma:generate --workspace @cricapp/api
 
       - name: Seed base matches table
-        run: npx prisma db execute --file services/ingestion/data/init.sql --schema apps/api/prisma/schema.prisma
+        run: npx prisma db execute --config apps/api/prisma.config.ts --file services/ingestion/data/init.sql
 
       - name: Sync Prisma schema
-        run: npx prisma db push --schema apps/api/prisma/schema.prisma --accept-data-loss --skip-generate
+        run: npx prisma db push --config apps/api/prisma.config.ts --accept-data-loss
 
       - name: Lint
         run: npm run lint

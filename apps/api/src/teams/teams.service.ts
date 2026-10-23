@@ -22,6 +22,8 @@ export interface TeamSummary {
   ageGroup?: 'senior' | 'u19' | 'u23' | 'masters' | null;
   category?: string | null;
   kindLabel?: string | null;
+  /** GET /teams list only: players linked to this team in the players table. */
+  playerCount?: number;
 }
 
 export interface PlayerSummaryDto {
@@ -79,6 +81,7 @@ export class TeamsService {
         take: limit,
         skip,
         orderBy: [{ name: 'asc' }],
+        include: { _count: { select: { players: true } } },
       }),
       this.prisma.team.count({ where }),
     ]);
@@ -91,7 +94,7 @@ export class TeamsService {
     const profileById = new Map(profiles.map((p) => [p.teamId, p]));
 
     return createPaginatedResponse(
-      rows.map((t) => this.toSummary(t, profileById.get(t.id))),
+      rows.map((t) => ({ ...this.toSummary(t, profileById.get(t.id)), playerCount: t._count.players })),
       total,
       page,
       limit,

@@ -19,7 +19,9 @@ export default function Tabs({ tabs, active, onChange, className = '', size = 'm
     <div
       className={
         isTags
-          ? `flex flex-wrap gap-1.5 ${className}`
+          ? // Phones: one swipeable row — a dozen tournament chips used to wrap onto six lines
+            // and push the matches off the first screen. Wider screens wrap as before.
+            `no-scrollbar flex gap-1.5 overflow-x-auto pb-0.5 sm:flex-wrap sm:overflow-visible sm:pb-0 ${className}`
           : `tabs-segment w-full max-w-full sm:w-auto ${className}`
       }
       role="tablist"
@@ -34,7 +36,7 @@ export default function Tabs({ tabs, active, onChange, className = '', size = 'm
             role="tab"
             aria-selected={isActive}
             onClick={() => onChange(tab.key)}
-            className={`tab-pill flex items-center gap-1.5 ${pad} ${
+            className={`tab-pill flex items-center gap-1.5 ${pad} ${isTags ? 'shrink-0 whitespace-nowrap' : ''} ${
               isTags
                 ? `rounded-lg border ${
                     isActive

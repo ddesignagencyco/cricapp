@@ -1,8 +1,16 @@
 import PredictionsHub from '../../components/predictions/PredictionsHub';
 import { fetchLiveMatches, fetchMatchesPage } from '../../services/matches';
-import { fetchBulkPredictions, fetchPredictionPerformance } from '../../services/predictions';
+import {
+  fetchBulkPredictions,
+  fetchPredictionPerformance,
+  fetchPredictionPerformanceHistory,
+} from '../../services/predictions';
 import type { Match } from '../../types';
-import type { MatchPredictions, PredictionPerformance } from '../../types/predictions';
+import type {
+  MatchPredictions,
+  PredictionPerformance,
+  PredictionPerformanceSnapshot,
+} from '../../types/predictions';
 
 export const revalidate = 30;
 
@@ -39,7 +47,7 @@ export default async function PredictionsPage({
   const upcomingPage = Math.max(1, Number(pageRaw) || 1);
   const tabFromUrl = tabRaw === 'live' || tabRaw === 'upcoming' ? tabRaw : null;
 
-  const [liveMatches, upcomingResult, performance] = await Promise.all([
+  const [liveMatches, upcomingResult, performance, performanceHistory] = await Promise.all([
     fetchLiveMatches().catch(() => []),
     fetchMatchesPage({ status: 'upcoming', limit: UPCOMING_LIMIT, page: upcomingPage }).catch(() => ({
       items: [] as Match[],
@@ -47,6 +55,9 @@ export default async function PredictionsPage({
       totalPages: 0,
     })),
     fetchPredictionPerformance().catch(() => null as PredictionPerformance | null),
+    fetchPredictionPerformanceHistory({ stage: 'pre_match', limit: 30 }, { revalidate: 300 }).catch(
+      () => [] as PredictionPerformanceSnapshot[]
+    ),
   ]);
 
   const tab = tabFromUrl
@@ -60,6 +71,7 @@ export default async function PredictionsPage({
   return (
     <PredictionsHub
       performance={performance}
+      performanceHistory={performanceHistory}
       live={live}
       upcoming={upcoming}
       upcomingPage={upcomingPage}

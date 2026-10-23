@@ -110,6 +110,7 @@ export default function TeamHeadToHead({ team, teamMatches }: Props) {
         </div>
         {opponents.length > 0 && (
           <Select
+            instanceId="team-h2h-opponent"
             value={opponents.find((o) => o.id === selectedId) || null}
             onChange={(option) => setSelectedId(option?.id || '')}
             options={opponents}

@@ -31,7 +31,19 @@ describe('TeamsModule (integration)', () => {
     const res = await ctx.agent.get('/teams').expect(200);
     expect(res.body.data).toHaveLength(1);
     expect(res.body.data[0].abbr).toBe('ENG');
+    expect(res.body.data[0].playerCount).toBe(0);
     expect(res.body.meta.totalRecords).toBe(1);
+  });
+
+  it("GET /teams — counts each team's linked players", async () => {
+    await ctx.prisma.player.createMany({
+      data: [
+        { id: 'sr:player:1', fullName: 'Joe Root', teamId: 'sr:team:1' },
+        { id: 'sr:player:2', fullName: 'Ben Stokes', teamId: 'sr:team:1' },
+      ],
+    });
+    const res = await ctx.agent.get('/teams').expect(200);
+    expect(res.body.data[0].playerCount).toBe(2);
   });
 
   it('GET /teams/:idOrAbbr — returns team by id', async () => {

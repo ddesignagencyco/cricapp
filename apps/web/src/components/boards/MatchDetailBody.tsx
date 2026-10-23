@@ -44,7 +44,7 @@ import { buildMatchViewModel } from '../../lib/matchViewModel';
 import { extractInningsScorecards } from '../../lib/matchCentreData';
 import { readProviderInningsCards, readSquads, type FallOfWicketEntry } from '../../lib/matchScorecardData';
 import { playerOfTheMatch, topBatter, topBowler, topBatters, topBowlers } from '../../lib/matchPerformers';
-import { mergeMatchLivePayload, useMatchStream } from '../../hooks/useMatchStream';
+import { mergeMatchLivePayload, rememberLiveSnapshot, useMatchStream, withLatestLive } from '../../hooks/useMatchStream';
 import {
   useMatchDetailQuery,
   useMatchHeadToHeadQuery,
@@ -120,7 +120,9 @@ export default function MatchDetailBody({
    * is filtered by match id inside `useMatchStream`, so an update for another match
    * can never reach this page.
    */
-  const [liveMatch, setLiveMatch] = useState<Match>(initialMatch);
+  // Opening the page from a card must not step back: start at the newest score the
+  // tab has already shown for this match, not the server render alone.
+  const [liveMatch, setLiveMatch] = useState<Match>(() => withLatestLive(initialMatch));
   const isLive = String(liveMatch?.status ?? '') === 'live';
   /**
    * The socket is always on for this page, exactly like the homepage ticker and live
@@ -155,6 +157,7 @@ export default function MatchDetailBody({
   useEffect(() => {
     const fresh = polledMatch.data;
     if (!fresh || fresh === initialMatch) return;
+    rememberLiveSnapshot(fresh);
     setLiveMatch((prev) =>
       mergeMatchLivePayload(prev as Record<string, unknown>, fresh as Record<string, unknown>) as Match,
     );
@@ -166,7 +169,7 @@ export default function MatchDetailBody({
   useEffect(() => {
     if (lastMatchId.current === matchId) return;
     lastMatchId.current = matchId;
-    setLiveMatch(initialMatch);
+    setLiveMatch(withLatestLive(initialMatch));
   }, [matchId, initialMatch]);
 
 /* --- The timeline + match context: every panel's input, derived once ----- */
@@ -454,6 +457,15 @@ export default function MatchDetailBody({
                     payload={commentaryPayload}
                     upcoming={view.isUpcoming}
                     showOverSummaries={false}
+                    liveInnings={
+                      view.isLive && view.currentInnings
+                        ? {
+                            number: view.currentInnings.number,
+                            score: view.currentInnings.score,
+                            oversLabel: view.currentInnings.oversLabel,
+                          }
+                        : null
+                    }
                   />
                 ) : hasCommentary ? (
                   <CommentarySkeleton loading={timelineQuery.isLoading} />

@@ -67,6 +67,9 @@ export function useMatchDetailQuery(
      */
     refetchInterval: options.live ? LIVE_MATCH_REFETCH_MS : false,
     refetchIntervalInBackground: false,
+    // While live, the server-rendered seed is refreshed on mount rather than trusted
+    // for the default five minutes (the render itself may be a cached one).
+    ...(options.live ? { staleTime: 0 } : {}),
   });
 }
 

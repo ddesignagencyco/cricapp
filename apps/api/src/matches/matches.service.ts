@@ -4,7 +4,7 @@ import {
   NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { RedisService } from '../redis/redis.service.js';
 import { SportradarService } from '../sportradar/sportradar.service.js';
@@ -19,7 +19,7 @@ import {
   type LastEvent,
   type TeamScores,
 } from '@cricapp/shared-types';
-import type { Match } from '@prisma/client';
+import type { Match } from '../generated/prisma/client.js';
 import {
   createPaginatedResponse,
   getPaginationOffset,
@@ -660,7 +660,9 @@ export class MatchesService {
       return this.buildTimelineResponse(matchId, row, storedPayload, since ?? null)!;
     }
 
-    if (!this.sportradar.isConfigured) {
+    // Nothing stored and not even shaped like a provider match id: answer 404 without
+    // spending an upstream request (Sportradar 404s are also mapped to 404 below).
+    if (!this.sportradar.isConfigured || (!matchRow && !/^sr:match:\d+$/.test(matchId))) {
       throw new NotFoundException(`Timeline for match ${matchId} not found`);
     }
 

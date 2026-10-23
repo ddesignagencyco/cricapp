@@ -497,10 +497,18 @@ export function buildMatchInnings({
     if (inProgress) {
       // Overlay the live block, keeping the two sources consistent: take the
       // source that is further along in BALLS, then read every field from it.
+      //
+      // The comparison is against the live row (`currentInnings`), which the socket and
+      // the poll keep current. It used to be against `period.displayOvers`, which is
+      // usually empty — so the timeline's status block won by default, and because that
+      // timeline is the one captured when the page loaded, the header froze on it while
+      // the cards (and this page's own live row) moved on. Ties go to the live row: it
+      // is the more recent writer.
       const ballsFromStatus = oversToBalls(liveOversFromStatus ?? NaN);
-      const ballsFromPeriod = oversToBalls(period.displayOvers ?? NaN);
+      const ballsFromRow =
+        liveRuns !== null ? oversToBalls(liveOvers ?? period.displayOvers ?? NaN) : null;
       const statusWins =
-        ballsFromStatus !== null && (ballsFromPeriod === null || ballsFromStatus > ballsFromPeriod);
+        ballsFromStatus !== null && (ballsFromRow === null || ballsFromStatus > ballsFromRow);
       const sourceRuns = statusWins ? runsFromScore(liveScore ?? '') : liveRuns;
       const sourceWickets = statusWins ? wicketsFromScore(liveScore ?? '') : liveWickets;
       const sourceOvers = statusWins ? liveOversFromStatus : liveOvers ?? period.displayOvers;

@@ -6,7 +6,7 @@ import SearchField from '../SearchField';
 import type { Match } from '../../types/index';
 import { fetchMatchesPage } from '../../services/matches';
 import { useDebouncedUrlQuery } from '../../hooks/useDebouncedUrlQuery';
-import { mergeLiveUpdate, useMatchStream } from '../../hooks/useMatchStream';
+import { mergeLiveRows, mergeLiveUpdate, useMatchStream } from '../../hooks/useMatchStream';
 import MatchCard from '../MatchCard';
 import Tabs from '../Tabs';
 import EmptyState from '../EmptyState';
@@ -51,8 +51,9 @@ export default function MatchBoard() {
   const [streamMatches, setStreamMatches] = useState<Match[]>([]);
   const liveUpdate = useMatchStream(undefined, tab === 'live');
 
+  // Each poll decides which matches are live, but never rewinds a socket-fresh card.
   useEffect(() => {
-    if (liveEndpoint) setStreamMatches(matches);
+    if (liveEndpoint) setStreamMatches((previous) => mergeLiveRows(previous, matches));
   }, [liveEndpoint, matches]);
 
   useEffect(() => {
@@ -173,8 +174,11 @@ export default function MatchBoard() {
             {visibleMatches.map((m, index) => (
               <Fragment key={`${m.matchId || m.id || 'match'}-${index}`}>
                 <MatchCard match={m} />
-                {visibleMatches.length >= 4 && index === 3 ? (
-                  <AdSlot placement="matches-infeed" />
+                {/* After six cards: a full row at both 2- and 3-column widths. */}
+                {visibleMatches.length > 6 && index === 5 ? (
+                  <div className="col-span-full py-1">
+                    <AdSlot placement="matches-infeed" />
+                  </div>
                 ) : null}
               </Fragment>
             ))}

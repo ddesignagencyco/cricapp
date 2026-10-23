@@ -2,6 +2,7 @@
 
 import Script from 'next/script';
 import { createContext, useContext, useMemo, type ReactNode } from 'react';
+import { preconnect } from 'react-dom';
 import { EMPTY_AD_CONFIG, type AdConfig } from '../../lib/advertisements/registry';
 import { resolvePublisherId } from '../../lib/advertisements/adsConfig';
 import AutoAds from './AutoAds';
@@ -36,6 +37,14 @@ export default function AdProvider({
   children: ReactNode;
 }) {
   const value = useMemo(() => config ?? EMPTY_AD_CONFIG, [config]);
+
+  // House creatives come from picsum (which redirects to its CDN). The top banner is
+  // often the largest thing on a phone screen, so open both connections up front
+  // instead of when the image is reached.
+  if (value.mode === 'house') {
+    preconnect('https://picsum.photos');
+    preconnect('https://fastly.picsum.photos');
+  }
 
   const clientId = value.mode === 'adsense' ? resolvePublisherId(value.clientId) : null;
 

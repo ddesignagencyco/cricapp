@@ -9,8 +9,17 @@ import { ApiError } from '../services/api/client';
 
 export const NEWSLETTER_MODAL_STORAGE_KEY = 'pcz-newsletter-modal';
 export const NOTIFICATION_PROMPT_STORAGE_KEY = 'pcz-notification-prompt';
-/** Delay after page load before a first-time visitor is invited. */
-export const NEWSLETTER_MODAL_DELAY_MS = 4000;
+/**
+ * Minimum time on the page before a first-time visitor is invited. The visitor must
+ * also have scrolled (see `hasEngaged`): a popup over content someone has only just
+ * opened is an intrusive interstitial on mobile, which Google demotes in search.
+ */
+export const NEWSLETTER_MODAL_DELAY_MS = 20000;
+
+/** Scrolled at least half a screen — reading, not bouncing. */
+function hasEngaged(): boolean {
+  return window.scrollY >= window.innerHeight * 0.5;
+}
 /** A dismissal snoozes the popup; a subscription silences it forever. */
 export const NEWSLETTER_MODAL_SNOOZE_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -104,8 +113,26 @@ export default function NewsletterModal() {
     if (!shouldShowNewsletterModal(readStoredState(), Date.now())) return;
     // Decided before the delay so the offer is known when the modal appears.
     setOfferAlerts(shouldOfferNotificationOptIn());
-    const timer = window.setTimeout(() => setOpen(true), NEWSLETTER_MODAL_DELAY_MS);
-    return () => window.clearTimeout(timer);
+    let delayDone = false;
+    let engaged = hasEngaged();
+    const maybeOpen = () => {
+      if (delayDone && engaged) setOpen(true);
+    };
+    const onScroll = () => {
+      if (engaged || !hasEngaged()) return;
+      engaged = true;
+      window.removeEventListener('scroll', onScroll);
+      maybeOpen();
+    };
+    if (!engaged) window.addEventListener('scroll', onScroll, { passive: true });
+    const timer = window.setTimeout(() => {
+      delayDone = true;
+      maybeOpen();
+    }, NEWSLETTER_MODAL_DELAY_MS);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener('scroll', onScroll);
+    };
   }, []);
 
   useEffect(() => {
