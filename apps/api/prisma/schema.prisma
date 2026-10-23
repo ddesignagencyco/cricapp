@@ -561,6 +561,9 @@ model PasswordResetToken {
   id        String   @id @default(uuid())
   userId    String   @map("user_id")
   tokenHash String   @map("token_hash")
+  // bcrypt hash of the 6-digit code sent alongside the link (apps type it in).
+  codeHash  String?  @map("code_hash")
+  codeAttempts Int   @default(0) @map("code_attempts")
   expiresAt DateTime @map("expires_at")
   usedAt    DateTime? @map("used_at")
   createdAt DateTime @default(now()) @map("created_at")
@@ -574,6 +577,9 @@ model EmailVerificationToken {
   id        String   @id @default(uuid())
   userId    String   @unique @map("user_id")
   tokenHash String   @map("token_hash")
+  // bcrypt hash of the 6-digit code sent alongside the link (apps type it in).
+  codeHash  String?  @map("code_hash")
+  codeAttempts Int   @default(0) @map("code_attempts")
   expiresAt DateTime @map("expires_at")
   usedAt    DateTime? @map("used_at")
   createdAt DateTime @default(now()) @map("created_at")

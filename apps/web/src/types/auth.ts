@@ -14,16 +14,12 @@ export interface ForgotPasswordInput {
   email: string;
 }
 
-export interface ResetPasswordInput {
-  tokenId: string;
-  token: string;
-  password: string;
-}
+/** The link pair from the email (`tid` + `token`), or the 6-digit code typed with the email. */
+export type EmailProof = { tokenId: string; token: string } | { email: string; code: string };
 
-export interface VerifyEmailInput {
-  tokenId: string;
-  token: string;
-}
+export type ResetPasswordInput = EmailProof & { password: string };
+
+export type VerifyEmailInput = EmailProof;
 
 export interface ResendVerificationInput {
   email: string;

@@ -65,6 +65,14 @@ export function emailNote(html: string, tone: 'info' | 'warning' = 'info'): stri
 </table>`;
 }
 
+/** A one-time code shown big and spaced so it is easy to read off and type into the app. */
+export function emailCode(code: string, label: string): string {
+  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:8px auto 4px;">
+  <tr><td align="center" style="font-family:Segoe UI,Arial,sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${BRAND.muted};padding-bottom:8px;">${escapeHtml(label)}</td></tr>
+  <tr><td align="center" bgcolor="${BRAND.page}" style="background:${BRAND.page};border:1px dashed ${BRAND.border};border-radius:10px;padding:14px 26px;font-family:Consolas,Menlo,Courier New,monospace;font-size:30px;font-weight:700;letter-spacing:8px;color:${BRAND.ink};">${escapeHtml(code)}</td></tr>
+</table>`;
+}
+
 /** The fallback link under a button, for clients that block buttons. */
 export function emailLinkFallback(href: string): string {
   return `<p style="margin:0;font-family:Segoe UI,Arial,sans-serif;font-size:12px;line-height:1.5;color:${BRAND.muted};">Button not working? Copy this link into your browser:<br><a href="${href}" style="color:${BRAND.blue};word-break:break-all;">${escapeHtml(href)}</a></p>`;

@@ -8,6 +8,7 @@ import { RedisService } from '../redis/redis.service.js';
 import { ConfigService } from '@nestjs/config';
 import { MailerService } from '../mailer/mailer.service.js';
 import type { SendMailOptions } from '../mailer/mailer.service.js';
+import { ThrottlerStorage } from '@nestjs/throttler';
 
 class MockRedisService {
   async get<T = unknown>(): Promise<T | null> { return null; }
@@ -70,6 +71,11 @@ describe('AuthModule forgot-password with Resend (live)', () => {
       .useClass(MockRedisService)
       .overrideProvider(MailerService)
       .useClass(MockMailerService)
+      // These tests exercise the per-code attempt limit, not the per-IP rate limit.
+      .overrideProvider(ThrottlerStorage)
+      .useValue({
+        increment: async () => ({ totalHits: 1, timeToExpire: 60, isBlocked: false, timeToBlockExpire: 0 }),
+      })
       .compile();
 
     app = moduleFixture.createNestApplication();
@@ -156,5 +162,96 @@ describe('AuthModule forgot-password with Resend (live)', () => {
     expect(MockMailerService.lastMail?.html).toContain('Confirm your email');
     expect(MockMailerService.lastMail?.html).toContain('Verify email address');
     expect(MockMailerService.lastMail?.html).not.toContain('Reset Code');
+  });
+
+  /** The 6-digit code from the plain-text part of the last email sent. */
+  function mailedCode(): string {
+    const match = MockMailerService.lastMail?.text?.match(/Enter this code instead: (\d{6})/);
+    expect(match).toBeTruthy();
+    return match![1];
+  }
+
+  it('emails a reset code that resets the password once', async () => {
+    const user = await prisma.user.create({
+      data: { email: TEST_EMAIL, username: 'codereset', passwordHash: 'not-used' },
+    });
+    await agent.post('/auth/forgot-password').send({ email: TEST_EMAIL }).expect(200);
+    const code = mailedCode();
+    expect(MockMailerService.lastMail?.html).toContain(code);
+
+    const tokenRow = await prisma.passwordResetToken.findFirstOrThrow({ where: { userId: user.id } });
+    expect(tokenRow.codeHash).toBeTruthy();
+    expect(tokenRow.codeHash).not.toContain(code);
+
+    await agent.post('/auth/reset-password')
+      .send({ email: TEST_EMAIL, code, password: 'newpassword123' })
+      .expect(200);
+    const bcrypt = await import('bcrypt');
+    const updated = await prisma.user.findUniqueOrThrow({ where: { id: user.id } });
+    expect(await bcrypt.compare('newpassword123', updated.passwordHash)).toBe(true);
+
+    // Single use: the same code cannot reset again.
+    await agent.post('/auth/reset-password')
+      .send({ email: TEST_EMAIL, code, password: 'another123' })
+      .expect(400);
+  });
+
+  it('stops accepting a reset code after five wrong guesses', async () => {
+    await prisma.user.create({
+      data: { email: TEST_EMAIL, username: 'codelock', passwordHash: 'not-used' },
+    });
+    await agent.post('/auth/forgot-password').send({ email: TEST_EMAIL }).expect(200);
+    const code = mailedCode();
+    const wrong = code === '000000' ? '111111' : '000000';
+
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      await agent.post('/auth/reset-password')
+        .send({ email: TEST_EMAIL, code: wrong, password: 'newpassword123' })
+        .expect(400);
+    }
+    const res = await agent.post('/auth/reset-password')
+      .send({ email: TEST_EMAIL, code, password: 'newpassword123' })
+      .expect(400);
+    expect(res.body.message).toContain('Invalid or expired code');
+  });
+
+  it('retires the previous reset code when a new one is requested', async () => {
+    await prisma.user.create({
+      data: { email: TEST_EMAIL, username: 'coderetire', passwordHash: 'not-used' },
+    });
+    await agent.post('/auth/forgot-password').send({ email: TEST_EMAIL }).expect(200);
+    const first = mailedCode();
+    await agent.post('/auth/forgot-password').send({ email: TEST_EMAIL }).expect(200);
+    const second = mailedCode();
+
+    if (first !== second) {
+      await agent.post('/auth/reset-password')
+        .send({ email: TEST_EMAIL, code: first, password: 'newpassword123' })
+        .expect(400);
+    }
+    await agent.post('/auth/reset-password')
+      .send({ email: TEST_EMAIL, code: second, password: 'newpassword123' })
+      .expect(200);
+  });
+
+  it('verifies an email with the mailed code', async () => {
+    const user = await prisma.user.create({
+      data: { email: TEST_EMAIL, username: 'codeverify', passwordHash: 'not-used' },
+    });
+    await agent.post('/auth/resend-verification').send({ email: TEST_EMAIL }).expect(200);
+    const code = mailedCode();
+    expect(MockMailerService.lastMail?.html).toContain('Verification code');
+
+    const wrong = code === '000000' ? '111111' : '000000';
+    const bad = await agent.post('/auth/verify-email').send({ email: TEST_EMAIL, code: wrong }).expect(400);
+    expect(bad.body.message).toContain('Invalid or expired verification code');
+
+    const res = await agent.post('/auth/verify-email').send({ email: TEST_EMAIL, code }).expect(200);
+    expect(res.body.message).toContain('verified successfully');
+    const updated = await prisma.user.findUniqueOrThrow({ where: { id: user.id } });
+    expect(updated.emailVerified).toBe(true);
+
+    const again = await agent.post('/auth/verify-email').send({ email: TEST_EMAIL, code }).expect(200);
+    expect(again.body.message).toContain('already verified');
   });
 });

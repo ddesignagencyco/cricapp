@@ -3,10 +3,11 @@ import userEvent from '@testing-library/user-event';
 import AuthForm from '../components/auth/AuthForm';
 
 const replace = jest.fn();
+const push = jest.fn();
 let searchParams = new URLSearchParams('');
 
 jest.mock('next/navigation', () => ({
-  useRouter: () => ({ replace, push: jest.fn(), refresh: jest.fn() }),
+  useRouter: () => ({ replace, push, refresh: jest.fn() }),
   useSearchParams: () => searchParams,
 }));
 
@@ -63,7 +64,7 @@ beforeEach(() => {
 });
 
 async function submit() {
-  await userEvent.click(screen.getByRole('button', { name: /sign in to account|create free account|send reset link|reset password/i }));
+  await userEvent.click(screen.getByRole('button', { name: /sign in to account|create free account|send reset link|reset password|verify email/i }));
 }
 
 describe('AuthForm login validation', () => {
@@ -315,12 +316,12 @@ describe('AuthForm register', () => {
     await waitFor(() => expect(doRegister).toHaveBeenCalledWith(expect.objectContaining({ username: 'fanal' })));
   });
 
-  it('sends the user to login after a successful signup', async () => {
+  it('sends the user to enter their verification code after a successful signup', async () => {
     doRegister.mockResolvedValue({ message: 'Account created' } as never);
     await fillRegister({ name: 'Ali Raza' });
     await userEvent.click(screen.getByRole('button', { name: /create free account/i }));
 
-    await waitFor(() => expect(replace).toHaveBeenCalledWith('/login'));
+    await waitFor(() => expect(replace).toHaveBeenCalledWith('/verify-email?email=a%40b.com'));
   });
 
   it('links to both the terms and the privacy policy', () => {
@@ -346,17 +347,62 @@ describe('AuthForm forgot password', () => {
     await waitFor(() => expect(doForgot).toHaveBeenCalledWith({ email: 'a@b.com' }));
     expect(await screen.findByText('Reset link sent')).toBeInTheDocument();
   });
+
+  it('moves on to the code entry page for that address', async () => {
+    doForgot.mockResolvedValue({ message: 'Reset link sent' } as never);
+    render(<AuthForm mode="forgot" />);
+    await userEvent.type(screen.getByLabelText(/email/i), 'a@b.com');
+    await submit();
+
+    await waitFor(() => expect(push).toHaveBeenCalledWith('/reset-password?email=a%40b.com'));
+  });
 });
 
 describe('AuthForm reset password', () => {
-  it('refuses to render a form without a token and points at the forgot page', () => {
-    render(<AuthForm mode="reset" />);
-    expect(screen.getByText(/only works from the link in your email/i)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /request a new reset link/i })).toHaveAttribute(
-      'href',
-      '/forgot-password',
+  it('asks for email and code when opened without a link', () => {
+    render(<AuthForm mode="reset" initialEmail="a@b.com" />);
+    expect(screen.getByLabelText(/email/i)).toHaveValue('a@b.com');
+    expect(screen.getByLabelText(/6-digit code/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/new password/i)).toBeInTheDocument();
+  });
+
+  it('does not ask for a code when opened from the link', () => {
+    render(<AuthForm mode="reset" token="t" tokenId="ti" />);
+    expect(screen.queryByLabelText(/6-digit code/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/email/i)).not.toBeInTheDocument();
+  });
+
+  it('requires a 6-digit code before calling the api', async () => {
+    render(<AuthForm mode="reset" initialEmail="a@b.com" />);
+    await userEvent.type(screen.getByLabelText(/6-digit code/i), '12a3');
+    await userEvent.type(screen.getByLabelText(/new password/i), 'secret1');
+    await userEvent.type(screen.getByLabelText(/confirm password/i), 'secret1');
+    await submit();
+
+    expect(await screen.findByText('Enter the 6-digit code from your email.')).toBeInTheDocument();
+    expect(doReset).not.toHaveBeenCalled();
+  });
+
+  it('resets with email and code and returns to login', async () => {
+    doReset.mockResolvedValue({ message: 'Password updated' } as never);
+    render(<AuthForm mode="reset" initialEmail="a@b.com" />);
+    await userEvent.type(screen.getByLabelText(/6-digit code/i), '482913');
+    await userEvent.type(screen.getByLabelText(/new password/i), 'secret1');
+    await userEvent.type(screen.getByLabelText(/confirm password/i), 'secret1');
+    await submit();
+
+    await waitFor(() =>
+      expect(doReset).toHaveBeenCalledWith({ email: 'a@b.com', code: '482913', password: 'secret1' }),
     );
-    expect(screen.queryByLabelText(/^password/i)).not.toBeInTheDocument();
+    await waitFor(() => expect(replace).toHaveBeenCalledWith('/login'));
+  });
+
+  it('sends a new reset code to the typed address', async () => {
+    doForgot.mockResolvedValue({ message: 'If an account exists, a reset email has been sent.' } as never);
+    render(<AuthForm mode="reset" initialEmail="a@b.com" />);
+    await userEvent.click(screen.getByRole('button', { name: /send a new code/i }));
+
+    await waitFor(() => expect(doForgot).toHaveBeenCalledWith({ email: 'a@b.com' }));
   });
 
   it('labels the field "New password"', () => {
@@ -428,10 +474,34 @@ describe('AuthForm verify email', () => {
     expect(screen.getByRole('button', { name: /resend email/i })).toBeInTheDocument();
   });
 
-  it('rejects a link with no token instead of calling the api', async () => {
-    render(<AuthForm mode="verify" />);
-    expect(await screen.findByText(/missing or incomplete/i)).toBeInTheDocument();
+  it('shows the code form instead of calling the api when there is no link', () => {
+    render(<AuthForm mode="verify" initialEmail="a@b.com" />);
+    expect(screen.getByLabelText(/6-digit code/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/email/i)).toHaveValue('a@b.com');
     expect(doVerify).not.toHaveBeenCalled();
+  });
+
+  it('verifies with email and code', async () => {
+    doVerify.mockResolvedValue({ message: 'Email verified successfully.' } as never);
+    render(<AuthForm mode="verify" initialEmail="a@b.com" />);
+    await userEvent.type(screen.getByLabelText(/6-digit code/i), '482913');
+    await submit();
+
+    await waitFor(() => expect(doVerify).toHaveBeenCalledWith({ email: 'a@b.com', code: '482913' }));
+    expect(await screen.findByText('Email verified successfully.')).toBeInTheDocument();
+    expect(screen.queryByLabelText(/6-digit code/i)).not.toBeInTheDocument();
+  });
+
+  it('keeps only digits in the code field', async () => {
+    render(<AuthForm mode="verify" />);
+    await userEvent.type(screen.getByLabelText(/6-digit code/i), '48-29 13x9');
+    expect(screen.getByLabelText(/6-digit code/i)).toHaveValue('482913');
+  });
+
+  it('offers the code form when a link fails', async () => {
+    doVerify.mockRejectedValue(new Error('expired'));
+    render(<AuthForm mode="verify" token={uniqueToken()} tokenId="tid" />);
+    expect(await screen.findByRole('link', { name: /enter the 6-digit code/i })).toHaveAttribute('href', '/verify-email');
   });
 
   it('sends the verification request once even across remounts', async () => {
