@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Avatar, TeamBadge } from '../../components/cricket/Badges';
-import { useAuth } from '../../state/auth';
+import { displayName, useAuth } from '../../state/auth';
 import { AppText } from '../../components/ui/AppText';
 import { Icon, type IconName } from '../../components/ui/Icon';
 import { Body, Screen, TabHeader } from '../../components/ui/Layout';
@@ -73,7 +73,7 @@ export default function MoreScreen() {
         <Card onPress={() => (user ? nav.navigate('Settings') : nav.navigate('SignIn'))} style={{ marginHorizontal: space.lg, marginTop: space.sm }}>
           <View style={styles.rowC}>
             {user ? (
-              <Avatar name={user.name} size={46} />
+              <Avatar name={displayName(user)} size={46} />
             ) : (
               <View style={[styles.avatar, { backgroundColor: colors.elevated }]}>
                 <Icon name="user" size={22} color={colors.textSecondary} />
@@ -81,7 +81,7 @@ export default function MoreScreen() {
             )}
             <View style={{ flex: 1, marginLeft: 12 }}>
               <AppText variant="headline" weight="700" style={user ? { textTransform: 'capitalize' } : undefined}>
-                {user ? user.name : 'Sign in'}
+                {user ? displayName(user) : 'Sign in'}
               </AppText>
               <AppText variant="caption" color="textSecondary">
                 {user ? user.email : 'Sync favourites and alerts across devices'}

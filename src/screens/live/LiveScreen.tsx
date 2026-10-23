@@ -115,6 +115,7 @@ function rankSeries(seriesId: string, list: Match[], favourites: string[]) {
 }
 
 export function MatchesView({ initialDay = 0 }: { initialDay?: number }) {
+  const { colors } = useTheme();
   const { data, loading, refresh, refreshing } = useQuery('matches', repo.matches, { live: true });
   const favourites = usePrefs().favouritesOf('team');
   const [day, setDay] = useState(initialDay);
@@ -137,7 +138,9 @@ export function MatchesView({ initialDay = 0 }: { initialDay?: number }) {
 
   return (
     <View style={{ flex: 1 }}>
-      <DateStrip value={day} onChange={setDay} liveDays={liveDays} matchDays={matchDays} />
+      <View style={[styles.stripBar, { backgroundColor: colors.surface, borderBottomColor: colors.hairline }]}>
+        <DateStrip value={day} onChange={setDay} liveDays={liveDays} matchDays={matchDays} />
+      </View>
       {loading ? (
         <SkeletonList count={3} height={160} />
       ) : !live.length && !sections.length ? (
@@ -174,6 +177,7 @@ export default function LiveScreen() {
   return (
     <Screen>
       <TabHeader
+        flush
         title="Matches"
         right={
           <>
@@ -234,7 +238,8 @@ export function ScheduleScreen() {
 }
 
 const styles = StyleSheet.create({
-  strip: { paddingHorizontal: space.md, gap: 6, paddingBottom: space.sm },
+  strip: { paddingHorizontal: space.md, gap: 6, paddingVertical: space.sm },
+  stripBar: { borderBottomWidth: StyleSheet.hairlineWidth * 2 },
   day: { height: 64, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
   dayDot: { width: 5, height: 5, borderRadius: 3, marginTop: 4 },
   liveHead: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.lg, marginTop: space.lg, marginBottom: space.md },

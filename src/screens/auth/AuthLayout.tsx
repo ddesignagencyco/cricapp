@@ -1,20 +1,20 @@
 import React, { type ReactNode } from 'react';
-import { Image, KeyboardAvoidingView, ScrollView, StatusBar, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { KeyboardAvoidingView, ScrollView, StatusBar, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText } from '../../components/ui/AppText';
+import { PhotoHero } from '../../components/ui/PhotoHero';
 import { BrandMark } from '../../components/ui/Layout';
-import { Fade, IconButton } from '../../components/ui/Primitives';
-import { Waves } from '../../components/ui/Waves';
+import { IconButton } from '../../components/ui/Primitives';
 import { useNavigation } from '../../navigation/Stack';
 import { useTheme } from '../../theme/ThemeProvider';
 import { radius, space } from '../../theme/tokens';
 
-const PHOTO = require('../../assets/images/onboard_hubs.jpg');
-const RATIO = 1080 / 1620;
+/** Floodlit stadium (Unsplash licence), 1440 × 900. */
+const PHOTO = require('../../assets/images/auth_stadium.jpg');
 
 /**
- * Shared shell for sign-in, sign-up and recovery: a photo header with the
- * logo, a static wave edge, and the form on the panel. The form scrolls
+ * Shared shell for sign-in, sign-up and recovery: a stadium photo with the
+ * PCZ mark and a straight edge, then the form on the page. The form scrolls
  * and lifts above the keyboard on small screens.
  */
 export function AuthLayout({
@@ -28,38 +28,36 @@ export function AuthLayout({
   subtitle?: string;
   children: ReactNode;
   footer?: ReactNode;
-  /** Shorter photo for steps with longer forms. */
+  /** Shorter hero for steps with longer forms. */
   compactHeader?: boolean;
 }) {
   const { colors } = useTheme();
   const nav = useNavigation();
   const insets = useSafeAreaInsets();
-  const { width, height } = useWindowDimensions();
-  const headerH = Math.max(180, Math.min(height * (compactHeader ? 0.24 : 0.3), 300)) + insets.top;
-  const imgW = Math.max(width, headerH * RATIO);
-  const imgH = imgW / RATIO;
+  const { height } = useWindowDimensions();
+  const heroH = Math.round(Math.max(190, Math.min(height * (compactHeader ? 0.24 : 0.3), 290)) + insets.top);
+  const logoH = compactHeader ? 40 : 52;
 
   return (
     <View style={[styles.fill, { backgroundColor: colors.background }]}>
       <StatusBar barStyle="light-content" />
       <KeyboardAvoidingView style={styles.fill} behavior="padding">
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false} bounces={false}>
-          <View style={{ height: headerH, overflow: 'hidden', backgroundColor: '#0B1631' }}>
-            <Image
-              source={PHOTO}
-              resizeMode="cover"
-              style={{ position: 'absolute', width: imgW, height: imgH, left: (width - imgW) / 2, top: (headerH - imgH) / 2 }}
-            />
-            <Fade color="#03060C" height={140} opacity={0.7} style={{ position: 'absolute', top: 0 }} />
+          <PhotoHero source={PHOTO} ratio={1440 / 900} height={heroH} dim={0.3}>
             <View style={[styles.top, { paddingTop: insets.top + 4 }]}>
               <IconButton icon="arrowLeft" label="Back" color="#FFFFFF" onPress={nav.goBack} />
-              <View style={{ flex: 1 }} />
-              <View style={styles.logoPill}>
-                <BrandMark height={22} />
-              </View>
             </View>
-            <Waves color={colors.background} accent={colors.brand} height={70} />
-          </View>
+            <View style={[styles.brand, { paddingTop: insets.top }]}>
+              <View style={styles.logoCard}>
+                <BrandMark height={logoH} />
+              </View>
+              {!compactHeader ? (
+                <AppText variant="label" weight="600" color="#DCE5FF" style={{ marginTop: space.md }}>
+                  Pakistan’s home of cricket
+                </AppText>
+              ) : null}
+            </View>
+          </PhotoHero>
           <View style={[styles.panel, { paddingBottom: insets.bottom + space.xl }]}>
             <AppText variant="display" accessibilityRole="header">
               {title}
@@ -81,7 +79,17 @@ export function AuthLayout({
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
-  top: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.sm },
-  logoPill: { backgroundColor: 'rgba(255,255,255,0.94)', borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 5, marginRight: space.sm },
-  panel: { flex: 1, paddingHorizontal: space.xl, paddingTop: space.sm },
+  top: { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', paddingHorizontal: space.sm, zIndex: 1 },
+  brand: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  logoCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: radius.xl,
+    paddingHorizontal: space.xl,
+    paddingVertical: space.md,
+    shadowColor: '#000',
+    shadowOpacity: 0.25,
+    shadowRadius: 18,
+    elevation: 10,
+  },
+  panel: { flex: 1, paddingHorizontal: space.xl, paddingTop: space.md },
 });

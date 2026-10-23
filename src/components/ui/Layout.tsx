@@ -36,11 +36,12 @@ export function BrandMark({ height = 28 }: { height?: number }) {
 }
 
 /** Root header for tab screens: logo, large title, actions. */
-export function TabHeader({ title, right }: { title?: string; right?: ReactNode }) {
+/** `flush`: no divider, for screens that continue the bar (e.g. a date strip below). */
+export function TabHeader({ title, right, flush }: { title?: string; right?: ReactNode; flush?: boolean }) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   return (
-    <View style={[styles.tabHeader, { paddingTop: insets.top + 6, backgroundColor: colors.background }]}>
+    <View style={[styles.tabHeader, { paddingTop: insets.top + 6, backgroundColor: colors.surface, borderBottomColor: colors.hairline }, flush && { borderBottomWidth: 0 }]}>
       <BrandMark />
       {title ? (
         <AppText variant="title" style={{ marginLeft: space.md, flex: 1 }} accessibilityRole="header">
@@ -75,7 +76,10 @@ export function Header({
     <View
       style={[
         styles.header,
-        { paddingTop: insets.top, backgroundColor: transparent ? 'transparent' : colors.background },
+        { paddingTop: insets.top },
+        transparent
+          ? { backgroundColor: 'transparent', borderBottomWidth: 0 }
+          : { backgroundColor: colors.surface, borderBottomColor: colors.hairline },
       ]}
     >
       <IconButton icon="arrowLeft" label="Back" onPress={onBack ?? nav.goBack} />
@@ -141,6 +145,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: space.lg,
     paddingBottom: space.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth * 2,
   },
   header: {
     flexDirection: 'row',
@@ -148,6 +153,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.xs,
     minHeight: 56,
     paddingBottom: 4,
+    borderBottomWidth: StyleSheet.hairlineWidth * 2,
   },
   actions: { flexDirection: 'row', alignItems: 'center' },
 });

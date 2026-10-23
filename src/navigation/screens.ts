@@ -23,7 +23,7 @@ import { AlertsScreen, OddsScreen, SettingsScreen } from '../screens/settings/Se
 import FavouritesScreen from '../screens/favourites/FavouritesScreen';
 import { GalleryScreen, MediaViewerScreen } from '../screens/gallery/GalleryScreen';
 import CommentsScreen from '../screens/comments/CommentsScreen';
-import { ForgotPasswordScreen, ResetPasswordScreen, SignInScreen, SignUpScreen, VerifyCodeScreen } from '../screens/auth/AuthScreens';
+import { ForgotPasswordScreen, ResetPasswordScreen, SignInScreen, SignUpScreen, VerifyEmailScreen } from '../screens/auth/AuthScreens';
 
 export const screens: { [K in RouteName]: ComponentType } = {
   Onboarding: OnboardingScreen,
@@ -55,6 +55,6 @@ export const screens: { [K in RouteName]: ComponentType } = {
   SignIn: SignInScreen,
   SignUp: SignUpScreen,
   ForgotPassword: ForgotPasswordScreen,
-  VerifyCode: VerifyCodeScreen,
+  VerifyEmail: VerifyEmailScreen,
   ResetPassword: ResetPasswordScreen,
 };

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Linking, StyleSheet, Switch, View } from 'react-native';
 import { Avatar, TeamBadge } from '../../components/cricket/Badges';
-import { useAuth } from '../../state/auth';
+import { displayName, useAuth } from '../../state/auth';
 import { AppText } from '../../components/ui/AppText';
 import { Segmented } from '../../components/ui/Controls';
 import { Icon, type IconName } from '../../components/ui/Icon';
@@ -73,10 +73,10 @@ export function SettingsScreen() {
           <Glow color={colors.brand} size={240} opacity={0.22} style={{ right: -110, top: -120 }} />
           {user ? (
             <View style={styles.rowC}>
-              <Avatar name={user.name} size={48} />
+              <Avatar name={displayName(user)} size={48} />
               <View style={{ flex: 1, marginLeft: 12 }}>
                 <AppText variant="headline" weight="700" style={{ textTransform: 'capitalize' }}>
-                  {user.name}
+                  {displayName(user)}
                 </AppText>
                 <AppText variant="caption" color="textSecondary">
                   {user.email}

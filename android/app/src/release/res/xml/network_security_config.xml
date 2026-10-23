@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Release test build: the API runs on a PC on the local network over plain
+  HTTP (see RELEASE_API_URL in src/config.ts). Everything else stays HTTPS.
+  Remove this file once the API is served over HTTPS.
+-->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">192.168.18.23</domain>
+    </domain-config>
+</network-security-config>

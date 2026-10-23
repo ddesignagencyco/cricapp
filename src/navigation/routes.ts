@@ -33,7 +33,9 @@ export interface Routes {
   SignIn: undefined;
   SignUp: undefined;
   ForgotPassword: undefined;
-  VerifyCode: { email: string; purpose: 'signup' | 'reset'; name?: string };
+  /** 6-digit code from the verification email. `password` (kept in memory only) signs straight in afterwards. */
+  VerifyEmail: { email: string; password?: string; sent?: boolean };
+  /** Code from the reset email plus the new password, sent together. */
   ResetPassword: { email: string };
 }
 
