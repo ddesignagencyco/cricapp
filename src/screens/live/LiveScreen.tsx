@@ -3,13 +3,16 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { MatchHeroCard, MatchRow } from '../../components/cricket/MatchCards';
 import { AppText } from '../../components/ui/AppText';
 import { SkeletonList } from '../../components/ui/Controls';
-import { Icon } from '../../components/ui/Icon';
+import { Icon, type IconName } from '../../components/ui/Icon';
+import { TabPager } from '../../components/ui/TabPager';
 import { Body, Header, Screen, TabHeader } from '../../components/ui/Layout';
-import { Card, EmptyState, Hairline, IconButton, LiveIndicator, SectionHeader } from '../../components/ui/Primitives';
+import { LoadMore, nearEnd } from '../../components/ui/LoadMore';
+import { EmptyState, ErrorState, IconButton, LiveIndicator, SectionHeader } from '../../components/ui/Primitives';
 import { Touch } from '../../components/ui/Touch';
 import { seriesOf, team } from '../../data/refs';
 import { repo } from '../../data/repo';
 import type { Match } from '../../data/types';
+import { usePaged } from '../../data/usePaged';
 import { useQuery } from '../../data/useQuery';
 import { useNavigation } from '../../navigation/Stack';
 import { usePrefs } from '../../state/prefs';
@@ -92,14 +95,11 @@ function CompetitionSection({ seriesId, matches }: { seriesId: string; matches: 
         </View>
         <Icon name="chevronRight" size={16} color={colors.textMuted} />
       </Touch>
-      <Card padded={false} style={{ marginHorizontal: space.lg }}>
-        {matches.map((m, i) => (
-          <View key={m.id}>
-            {i > 0 ? <Hairline /> : null}
-            <MatchRow match={m} showSeries={false} />
-          </View>
+      <View style={{ gap: space.md, paddingHorizontal: space.lg }}>
+        {matches.map(m => (
+          <MatchRow key={m.id} match={m} showSeries={false} dated={false} />
         ))}
-      </Card>
+      </View>
     </View>
   );
 }
@@ -114,39 +114,53 @@ function rankSeries(seriesId: string, list: Match[], favourites: string[]) {
   return 3;
 }
 
+/** Every day on the strip counts as a match day: fixtures load per day, on demand. */
+const ALL_DAYS = new Set(Array.from({ length: 22 }, (_, i) => i - 10));
+
 export function MatchesView({ initialDay = 0 }: { initialDay?: number }) {
   const { colors } = useTheme();
-  const { data, loading, refresh, refreshing } = useQuery('matches', repo.matches, { live: true });
   const favourites = usePrefs().favouritesOf('team');
   const [day, setDay] = useState(initialDay);
+  const date = useMemo(() => new Date(dayStart(new Date()) + day * 86_400_000 + 12 * 3_600_000), [day]);
+  const liveQ = useQuery('matches:live', repo.liveMatches, { live: true });
+  // One day at a time, a page at a time.
+  const list = usePaged(`day:${date.toDateString()}`, p => repo.matchesOn(date, p));
 
-  const { live, sections, liveDays, matchDays } = useMemo(() => {
-    const all = data ?? [];
-    const liveNow = all.filter(m => m.status === 'live');
-    const liveSet = new Set<number>(liveNow.length ? [0] : []);
-    const daySet = new Set(all.map(m => offsetOf(m.startTime)));
-    // Today shows what's in play now; other days show what started that day.
-    const onDay = all.filter(m => (day === 0 ? m.status !== 'live' && offsetOf(m.startTime) === 0 : offsetOf(m.startTime) === day));
-    const groups = new Map<string, Match[]>();
-    onDay
-      .sort((a, b) => +new Date(a.startTime) - +new Date(b.startTime))
-      .forEach(m => groups.set(m.seriesId, [...(groups.get(m.seriesId) ?? []), m]));
-    const ordered = [...groups.entries()].sort((a, b) => rankSeries(a[0], a[1], favourites) - rankSeries(b[0], b[1], favourites));
+  const { live, sections, liveDays } = useMemo(() => {
+    const liveNow = liveQ.data ?? [];
     const mine = (m: Match) => (favourites.includes(m.teamA) || favourites.includes(m.teamB) ? 0 : 1);
-    return { live: day === 0 ? [...liveNow].sort((a, b) => mine(a) - mine(b)) : [], sections: ordered, liveDays: liveSet, matchDays: daySet };
-  }, [data, day, favourites]);
+    const shownLive = day === 0 ? [...liveNow].sort((a, b) => mine(a) - mine(b)) : [];
+    const liveIds = new Set(shownLive.map(m => m.id));
+    const groups = new Map<string, Match[]>();
+    list.items.filter(m => !liveIds.has(m.id)).forEach(m => groups.set(m.seriesId, [...(groups.get(m.seriesId) ?? []), m]));
+    const ordered = [...groups.entries()].sort((a, b) => rankSeries(a[0], a[1], favourites) - rankSeries(b[0], b[1], favourites));
+    return { live: shownLive, sections: ordered, liveDays: new Set<number>(liveNow.length ? [0] : []) };
+  }, [liveQ.data, list.items, day, favourites]);
+
+  const refresh = () => {
+    liveQ.refresh();
+    list.refresh();
+  };
 
   return (
     <View style={{ flex: 1 }}>
       <View style={[styles.stripBar, { backgroundColor: colors.surface, borderBottomColor: colors.hairline }]}>
-        <DateStrip value={day} onChange={setDay} liveDays={liveDays} matchDays={matchDays} />
+        <DateStrip value={day} onChange={setDay} liveDays={liveDays} matchDays={ALL_DAYS} />
       </View>
-      {loading ? (
+      {list.loading && !live.length ? (
         <SkeletonList count={3} height={160} />
+      ) : list.error && !list.items.length && !live.length ? (
+        <ErrorState error={list.error} onRetry={refresh} />
       ) : !live.length && !sections.length ? (
         <EmptyState icon="calendar" title="No matches on this day" body="Pick another date, or follow teams to get notified when fixtures are announced." />
       ) : (
-        <Body onRefresh={refresh} refreshing={refreshing} bottomInset={false}>
+        <Body
+          onRefresh={refresh}
+          refreshing={list.refreshing}
+          bottomInset={false}
+          scrollEventThrottle={250}
+          onScroll={e => nearEnd(e) && list.loadMore()}
+        >
           {live.length ? (
             <>
               <View style={styles.liveHead}>
@@ -162,15 +176,69 @@ export function MatchesView({ initialDay = 0 }: { initialDay?: number }) {
               </View>
             </>
           ) : null}
-          {sections.length && live.length ? <SectionHeader title={day === 0 ? 'Later today' : ''} style={{ marginTop: space.xxl, marginBottom: 0 }} /> : null}
+          {sections.length && live.length ? <SectionHeader title="All matches today" style={{ marginTop: space.xxl, marginBottom: 0 }} /> : null}
           {sections.map(([sid, ms]) => (
             <CompetitionSection key={sid} seriesId={sid} matches={ms} />
           ))}
+          {list.error && !list.items.length ? (
+            <ErrorState error={list.error} onRetry={list.refresh} />
+          ) : (
+            <LoadMore hasMore={list.hasMore} loading={list.loadingMore || list.loading} onPress={list.loadMore} count={list.items.length} />
+          )}
         </Body>
       )}
     </View>
   );
 }
+
+/** Matches in play now, refreshed with every live tick. */
+function LiveNow() {
+  const q = useQuery('matches:live', repo.liveMatches, { live: true });
+  if (!q.data && q.error) return <ErrorState error={q.error} onRetry={q.refresh} />;
+  if (!q.data) return <SkeletonList count={2} height={180} />;
+  if (!q.data.length) {
+    return <EmptyState icon="radio" title="No live matches" body="Matches appear here the moment play starts. Check Upcoming for what’s next." />;
+  }
+  return (
+    <Body onRefresh={q.refresh} refreshing={q.refreshing} bottomInset={false} contentStyle={{ gap: space.md, paddingHorizontal: space.lg, paddingTop: space.lg }}>
+      {q.data.map(m => (
+        <MatchHeroCard key={m.id} match={m} />
+      ))}
+    </Body>
+  );
+}
+
+const EMPTY: Record<'upcoming' | 'completed' | 'cancelled', { icon: IconName; title: string; body: string }> = {
+  upcoming: { icon: 'calendar', title: 'No fixtures announced', body: 'Upcoming matches appear here as soon as they are scheduled.' },
+  completed: { icon: 'trophy', title: 'No results yet', body: 'Finished matches and their results appear here.' },
+  cancelled: { icon: 'cloudRain', title: 'No cancelled matches', body: 'Matches called off or abandoned are listed here.' },
+};
+
+/** One status, a page at a time (same as the website's match board tabs). */
+function StatusList({ status }: { status: 'upcoming' | 'completed' | 'cancelled' }) {
+  const list = usePaged(`matches:${status}`, p => repo.statusPage(status, p));
+  if (list.loading) return <SkeletonList count={4} height={120} />;
+  if (list.error && !list.items.length) return <ErrorState error={list.error} onRetry={list.refresh} />;
+  if (!list.items.length) return <EmptyState {...EMPTY[status]} />;
+  return (
+    <Body onRefresh={list.refresh} refreshing={list.refreshing} bottomInset={false} scrollEventThrottle={250} onScroll={e => nearEnd(e) && list.loadMore()}>
+      <View style={{ gap: space.md, paddingHorizontal: space.lg }}>
+        {list.items.map(m => (
+          <MatchRow key={m.id} match={m} />
+        ))}
+      </View>
+      <LoadMore hasMore={list.hasMore} loading={list.loadingMore} onPress={list.loadMore} count={list.items.length} />
+    </Body>
+  );
+}
+
+const SECTIONS = [
+  { key: 'live', label: 'Live' },
+  { key: 'upcoming', label: 'Upcoming' },
+  { key: 'completed', label: 'Results' },
+  { key: 'cancelled', label: 'Cancelled' },
+  { key: 'calendar', label: 'By date' },
+];
 
 export default function LiveScreen() {
   const nav = useNavigation();
@@ -179,31 +247,32 @@ export default function LiveScreen() {
       <TabHeader
         flush
         title="Matches"
-        right={
-          <>
-            <IconButton icon="calendar" label="Full schedule" onPress={() => nav.navigate('Schedule')} />
-            <IconButton icon="search" label="Search" onPress={() => nav.navigate('Search')} />
-          </>
+        right={<IconButton icon="search" label="Search" onPress={() => nav.navigate('Search')} />}
+      />
+      <TabPager
+        tabs={SECTIONS}
+        initialKey="live"
+        renderPage={key =>
+          key === 'live' ? <LiveNow /> : key === 'calendar' ? <MatchesView /> : <StatusList status={key as 'upcoming' | 'completed' | 'cancelled'} />
         }
       />
-      <MatchesView />
     </Screen>
   );
 }
 
-/** Schedule as a single chronological list, sectioned by day. */
+/** Upcoming fixtures as one chronological list, sectioned by day and loaded a page at a time. */
 export function ScheduleScreen() {
-  const { data } = useQuery('matches', repo.matches, { live: true });
+  const list = usePaged('schedule:upcoming', repo.upcomingPage);
   const days = useMemo(() => {
     const map = new Map<number, Match[]>();
-    [...(data ?? [])]
+    [...list.items]
       .sort((a, b) => +new Date(a.startTime) - +new Date(b.startTime))
       .forEach(m => {
         const o = offsetOf(m.startTime);
         map.set(o, [...(map.get(o) ?? []), m]);
       });
     return [...map.entries()];
-  }, [data]);
+  }, [list.items]);
   const label = (o: number) => {
     if (o === 0) return 'Today';
     if (o === 1) return 'Tomorrow';
@@ -213,24 +282,26 @@ export function ScheduleScreen() {
   };
   return (
     <Screen>
-      <Header title="Schedule & results" />
-      {!data ? (
+      <Header title="Upcoming fixtures" />
+      {list.loading ? (
         <SkeletonList count={4} height={120} />
+      ) : list.error && !list.items.length ? (
+        <ErrorState error={list.error} onRetry={list.refresh} />
+      ) : !list.items.length ? (
+        <EmptyState icon="calendar" title="No fixtures announced" body="Upcoming matches appear here as soon as they are scheduled." />
       ) : (
-        <Body>
+        <Body onRefresh={list.refresh} refreshing={list.refreshing} scrollEventThrottle={250} onScroll={e => nearEnd(e) && list.loadMore()}>
           {days.map(([o, ms]) => (
             <View key={o}>
               <SectionHeader title={label(o)} style={{ marginTop: space.xl }} />
-              <Card padded={false} style={{ marginHorizontal: space.lg }}>
-                {ms.map((m, i) => (
-                  <View key={m.id}>
-                    {i > 0 ? <Hairline /> : null}
-                    <MatchRow match={m} />
-                  </View>
+              <View style={{ gap: space.md, paddingHorizontal: space.lg }}>
+                {ms.map(m => (
+                  <MatchRow key={m.id} match={m} dated={false} />
                 ))}
-              </Card>
+              </View>
             </View>
           ))}
+          <LoadMore hasMore={list.hasMore} loading={list.loadingMore} onPress={list.loadMore} count={list.items.length} />
         </Body>
       )}
     </Screen>

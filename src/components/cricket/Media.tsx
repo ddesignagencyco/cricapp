@@ -11,18 +11,10 @@ import { Fade, Glow } from '../ui/Primitives';
 import { Touch } from '../ui/Touch';
 import { badgeFill, readableOn } from '../../utils/color';
 
-export const PHOTOS: Record<Photo, number> = {
-  stadium: require('../../assets/images/stadium.jpg'),
-  pitch: require('../../assets/images/pitch.jpg'),
-};
-
 /** Graphite with a faint brand glow for generated covers: calm, consistent, not loud. */
 export const COVER_GLOW = '#4F74F0';
 export const COVER_SHADE = '#353B48';
 export const COVER_BASE = '#1B1F27';
-
-/** Width / height of the bundled photos. */
-const PHOTO_RATIO = 1408 / 768;
 
 /** Photo when there is one, otherwise a brand-blue composition. `teamIds` is kept for team artwork from the CMS. */
 export function CoverArt({
@@ -42,15 +34,7 @@ export function CoverArt({
   return (
     <View style={[StyleSheet.absoluteFill, { backgroundColor: photo ? '#0B1120' : COVER_BASE, overflow: 'hidden' }, style]}>
       {photo ? (
-        <Image
-          source={PHOTOS[photo]}
-          style={
-            frame
-              ? { position: 'absolute', height: frame.height, width: frame.height * PHOTO_RATIO, left: (frame.width - frame.height * PHOTO_RATIO) / 2 }
-              : StyleSheet.absoluteFill
-          }
-          resizeMode="cover"
-        />
+        <Image source={{ uri: photo }} style={frame ? { position: 'absolute', top: 0, left: 0, width: frame.width, height: frame.height } : StyleSheet.absoluteFill} resizeMode="cover" />
       ) : (
         <>
           <Glow color={COVER_GLOW} size={520} opacity={0.45} style={{ left: -260, top: -220 }} />

@@ -18,14 +18,11 @@ import { NewsRow } from './NewsCards';
 export function MatchList({ matches, empty = 'No matches scheduled' }: { matches: Match[]; empty?: string }) {
   if (!matches.length) return <EmptyState icon="calendar" title={empty} />;
   return (
-    <Card padded={false} style={{ marginHorizontal: space.lg }}>
-      {matches.map((m, i) => (
-        <View key={m.id}>
-          {i > 0 ? <Hairline /> : null}
-          <MatchRow match={m} />
-        </View>
+    <View style={{ gap: space.md, paddingHorizontal: space.lg }}>
+      {matches.map(m => (
+        <MatchRow key={m.id} match={m} />
       ))}
-    </Card>
+    </View>
   );
 }
 

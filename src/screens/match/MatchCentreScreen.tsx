@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Share, StyleSheet, View } from 'react-native';
 import { Avatar, BallChip, BallStrip, TeamBadge } from '../../components/cricket/Badges';
 import { LineChart, Manhattan, WinProbBar } from '../../components/cricket/Charts';
+import { resultColor } from '../../components/cricket/MatchCards';
 import { NewsRow } from '../../components/cricket/NewsCards';
 import { CommentItem, Composer, ReactionBar } from '../../components/cricket/Comments';
 import { FavouriteButton } from '../../components/ui/FavouriteButton';
@@ -10,10 +11,10 @@ import { AppText } from '../../components/ui/AppText';
 import { ChipRow, Segmented, SkeletonList } from '../../components/ui/Controls';
 import { Icon } from '../../components/ui/Icon';
 import { Body, Header, Screen } from '../../components/ui/Layout';
-import { Card, EmptyState, Glow, Hairline, IconButton, LiveIndicator, SectionHeader, Tag } from '../../components/ui/Primitives';
+import { Card, EmptyState, ErrorState, Glow, Hairline, IconButton, LiveIndicator, SectionHeader, Tag } from '../../components/ui/Primitives';
 import { TabPager } from '../../components/ui/TabPager';
 import { Touch } from '../../components/ui/Touch';
-import { player, playerName, seriesOf, team, venue } from '../../data/refs';
+import { player, playerName, seriesOf, team, venue, venueLabel } from '../../data/refs';
 import { repo } from '../../data/repo';
 import type { Ball, Innings, Match, Prediction } from '../../data/types';
 import { useQuery } from '../../data/useQuery';
@@ -57,12 +58,12 @@ function ScoreHeader({ match }: { match: Match }) {
                     {score(last)}
                   </AppText>
                   <AppText variant="caption" color="textMuted" tabular>
-                    {overs(last.balls)} ov
+                    {last.balls ? `${overs(last.balls)} ov` : ''}
                   </AppText>
                 </View>
               ) : (
                 <AppText variant="label" color="textMuted" style={{ marginTop: 12 }}>
-                  {match.status === 'upcoming' ? '' : 'Yet to bat'}
+                  {match.status === 'live' || match.status === 'break' ? 'Yet to bat' : ''}
                 </AppText>
               )}
             </Touch>
@@ -75,11 +76,11 @@ function ScoreHeader({ match }: { match: Match }) {
         <AppText
           variant="label"
           weight="600"
-          color={match.status === 'completed' ? 'textSecondary' : 'accent'}
+          color={match.status === 'upcoming' ? colors.accent : resultColor(match, colors)}
           numberOfLines={2}
           style={{ flex: 1, marginLeft: match.status === 'live' ? 8 : 0 }}
         >
-          {match.status === 'upcoming' ? `${dayLabel(match.startTime)} · ${time(match.startTime)} · ${venue(match.venueId)?.city}` : match.statusText}
+          {match.status === 'upcoming' ? `${[dayLabel(match.startTime), time(match.startTime), venueLabel(match.venueId)].filter(Boolean).join(' · ')}` : match.statusText}
         </AppText>
       </View>
         {match.live ? (
@@ -87,7 +88,7 @@ function ScoreHeader({ match }: { match: Match }) {
             {[
               ['CRR', match.live.crr.toFixed(2)],
               ...(match.live.rrr ? [['RRR', match.live.rrr.toFixed(2)]] : []),
-              ['P’SHIP', `${match.live.partnership.runs} (${match.live.partnership.balls})`],
+              ...(match.live.partnership ? [['P’SHIP', `${match.live.partnership.runs} (${match.live.partnership.balls})`]] : []),
             ].map(([k, v]) => (
               <AppText key={k} variant="caption" color="textMuted" tabular>
                 {k}{' '}
@@ -174,18 +175,25 @@ function LiveTab({ match }: { match: Match }) {
   if (!current) return <SkeletonList count={3} />;
 
   const atCrease = current.batting.filter(b => !b.dismissal).slice(-2);
-  const bowler = current.bowling.filter(b => b.current);
-  const thisOver = (comm.data?.balls ?? [])
-    .filter(b => b.over.split('.')[0] === String(Math.floor(((match.innings.find(i => i.teamId === current.teamId)?.balls ?? 1) - 1) / 6)))
-    .map(b => b.outcome)
-    .reverse();
+  // The over in progress: the newest balls sharing the latest ball's innings and over (balls are newest first).
+  const balls = comm.data?.balls ?? [];
+  const latest = balls[0];
+  const overOf = (b: { over: string }) => b.over.split('.')[0];
+  const overBalls: typeof balls = [];
+  for (const b of balls) {
+    if (!latest || b.inning !== latest.inning || overOf(b) !== overOf(latest)) break;
+    overBalls.push(b);
+  }
+  const thisOver = overBalls.map(b => b.outcome).reverse();
+  // The scorecard doesn't flag the current bowler; the latest ball names him.
+  const bowler = current.bowling.filter(b => b.current || (latest && player(b.playerId)?.name === latest.bowler)).slice(0, 1);
 
   return (
     <Body bottomInset contentStyle={{ paddingTop: space.lg }}>
       {match.live ? (
         <View style={styles.statGrid}>
           {match.live.projected ? <StatBox label="PROJECTED" value={`${match.live.projected}`} sub="at current rate" /> : null}
-          {match.target ? <StatBox label="TARGET" value={`${match.target}`} sub={`RRR ${match.live.rrr?.toFixed(2)}`} /> : null}
+          {match.target ? <StatBox label="TARGET" value={`${match.target}`} sub={match.live.rrr ? `RRR ${match.live.rrr.toFixed(2)}` : undefined} /> : null}
         </View>
       ) : null}
 
@@ -456,17 +464,21 @@ function SquadsTab({ match }: { match: Match }) {
   const nav = useNavigation();
   const { colors } = useTheme();
   const [side, setSide] = useState(match.teamA);
-  const { data } = useQuery(`team:${side}`, () => repo.team(side));
+  const { data, error, refresh } = useQuery(`squad:${side}`, () => repo.squad(side));
   return (
     <Body bottomInset contentStyle={{ paddingTop: space.lg }}>
       <View style={{ paddingHorizontal: space.lg, marginBottom: space.md }}>
         <Segmented value={side} onChange={setSide} options={[match.teamA, match.teamB].map(id => ({ key: id, label: team(id).name }))} />
       </View>
-      {!data ? (
+      {!data && error ? (
+        <ErrorState error={error} onRetry={refresh} />
+      ) : !data ? (
         <SkeletonList count={4} height={56} />
+      ) : !data.length ? (
+        <EmptyState icon="users" title="Squad not announced" body={`${team(side).name}'s squad appears here once it is named.`} />
       ) : (
         <Card padded={false} style={{ marginHorizontal: space.lg }}>
-          {data.squad.map((p, i) => (
+          {data.map((p, i) => (
             <View key={p.id}>
               {i > 0 ? <Hairline inset={68} /> : null}
               <Touch onPress={() => nav.navigate('Player', { id: p.id })} style={styles.playerRow}>
@@ -477,7 +489,7 @@ function SquadsTab({ match }: { match: Match }) {
                     {p.role === 'Wicketkeeper' ? <AppText variant="caption" color="textMuted"> (wk)</AppText> : null}
                   </AppText>
                   <AppText variant="caption" color="textMuted">
-                    {p.role} · {p.batting}
+                    {[p.role, p.batting].filter(Boolean).join(" · ")}
                   </AppText>
                 </View>
                 <Icon name="chevronRight" size={16} color={colors.textMuted} />
@@ -600,14 +612,10 @@ function CommentsTab({ match }: { match: Match }) {
   if (!data) return <SkeletonList count={4} height={80} />;
   return (
     <Body bottomInset contentStyle={{ paddingTop: space.lg }}>
-      {data.reactions ? (
-        <>
-          <AppText variant="overline" color="textMuted" style={{ paddingHorizontal: space.lg, marginBottom: space.sm }}>
-            REACT TO THE MATCH
-          </AppText>
-          <ReactionBar counts={data.reactions} />
-        </>
-      ) : null}
+      <AppText variant="overline" color="textMuted" style={{ paddingHorizontal: space.lg, marginBottom: space.sm }}>
+        REACT TO THE MATCH
+      </AppText>
+      <ReactionBar counts={data.reactions ?? {}} thread={thread} />
       <View style={{ marginTop: space.xl }}>
         <Composer onPress={open} placeholder="Join the conversation…" />
       </View>
@@ -621,7 +629,7 @@ function CommentsTab({ match }: { match: Match }) {
       </Card>
       <Touch onPress={open} style={styles.linkRow}>
         <AppText variant="label" weight="600" color="accent">
-          Open all {data.total} comments
+          {data.total ? `Open all ${data.total} comments` : 'Be the first to comment'}
         </AppText>
       </Touch>
     </Body>
@@ -653,11 +661,11 @@ function InfoTab({ match }: { match: Match }) {
     ['Series', s?.name ?? ''],
     ['Match', `${match.title} · ${match.format}`],
     ['Date', `${shortDate(match.startTime)} · ${time(match.startTime)}`],
-    ['Venue', v ? `${v.name}, ${v.city}` : ''],
+    ['Venue', venueLabel(match.venueId)],
     ...(match.toss ? ([['Toss', match.toss]] as [string, string][]) : []),
     ...(match.umpires ? ([['Umpires', match.umpires.join(', ')]] as [string, string][]) : []),
     ...(match.referee ? ([['Referee', match.referee]] as [string, string][]) : []),
-  ];
+  ].filter(([, val]) => val) as [string, string][];
   return (
     <Body bottomInset contentStyle={{ paddingTop: space.lg }}>
       <Card padded={false} style={{ marginHorizontal: space.lg }}>
@@ -675,7 +683,7 @@ function InfoTab({ match }: { match: Match }) {
           </View>
         ))}
       </Card>
-      {v ? (
+      {v && v.avgFirstInnings > 0 ? (
         <>
           <SectionHeader title="Venue guide" style={{ marginTop: space.xl }} />
           <View style={styles.statGrid}>
@@ -711,7 +719,7 @@ function PreviewTab({ match, prediction }: { match: Match; prediction?: Predicti
             <WinProbBar teamA={match.teamA} teamB={match.teamB} p={prediction.winA} />
           </View>
           <AppText variant="caption" color="textSecondary" style={{ marginTop: 14 }}>
-            Projected {team(prediction.projected.teamId).short} first innings{' '}
+            Projected first-innings score{' '}
             <AppText variant="caption" weight="700" color="text" tabular>
               {prediction.projected.low}–{prediction.projected.high}
             </AppText>
@@ -720,7 +728,7 @@ function PreviewTab({ match, prediction }: { match: Match; prediction?: Predicti
       ) : null}
       <View style={[styles.statGrid, { marginTop: space.md }]}>
         <StatBox label="STARTS" value={time(match.startTime)} sub={dayLabel(match.startTime)} />
-        <StatBox label="VENUE" value={v?.city ?? ''} sub={v?.name} />
+        {v ? <StatBox label="VENUE" value={v.city || v.name} sub={v.city ? v.name : undefined} /> : null}
       </View>
     </Body>
   );
@@ -743,14 +751,16 @@ export default function MatchCentreScreen() {
   const { data: match } = useQuery(`match:${id}`, () => repo.match(id), { live: true });
 
   const tabs = useMemo(
-    () => TABS.map(t => (t.key === 'live' ? { ...t, label: match?.status === 'upcoming' ? 'Preview' : match?.status === 'completed' ? 'Summary' : 'Live' } : t)),
+    () =>
+      // Match chat is for matches in play only.
+      TABS.filter(t => t.key !== 'comments' || match?.status === 'live' || match?.status === 'break').map(t => (t.key === 'live' ? { ...t, label: match?.status === 'upcoming' ? 'Preview' : match?.status === 'completed' ? 'Summary' : 'Live' } : t)),
     [match?.status],
   );
 
   if (!match) {
     return (
       <Screen>
-        <Header />
+        <Header title="Match" />
         <SkeletonList count={4} height={120} />
       </Screen>
     );

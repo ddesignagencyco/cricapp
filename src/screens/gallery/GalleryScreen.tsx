@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { FlatList, Image, ScrollView, StatusBar, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { CoverArt, PHOTOS } from '../../components/cricket/Media';
+import { CoverArt } from '../../components/cricket/Media';
+import { ClipPlayer } from '../../components/media/Players';
 import { AppText } from '../../components/ui/AppText';
 import { SkeletonList } from '../../components/ui/Controls';
 import { Icon } from '../../components/ui/Icon';
 import { Body, Header, Screen } from '../../components/ui/Layout';
-import { Fade, SectionHeader } from '../../components/ui/Primitives';
+import { EmptyState, ErrorState, Fade, SectionHeader } from '../../components/ui/Primitives';
 import { Touch } from '../../components/ui/Touch';
-import { shorts, videos } from '../../data/mock/media';
 import { repo } from '../../data/repo';
 import { useQuery } from '../../data/useQuery';
 import { useNavigation, useParams } from '../../navigation/Stack';
@@ -16,103 +16,123 @@ import { useTheme } from '../../theme/ThemeProvider';
 import { radius, space } from '../../theme/tokens';
 import { ago } from '../../utils/format';
 
-const compact = (n: number) => (n >= 1000 ? `${(n / 1000).toFixed(n >= 100000 ? 0 : 1)}K` : String(n));
-
-/** All media in one place: shorts, photo galleries and videos, as sections. */
+/** All media in one place: reels up top, a photo wall, then videos. */
 export function GalleryScreen() {
   const nav = useNavigation();
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
-  const { data } = useQuery('media', repo.media);
-  const tileW = (width - space.lg * 2 - space.md) / 2;
+  const { data, error, refresh, refreshing } = useQuery('media', repo.media);
+  // Photo wall: one feature tile, then a three-up grid with hairline gaps.
+  const gap = 4;
+  // Floor so three cells plus two gaps never exceed the row (sub-pixel overflow wraps to two).
+  const cell = Math.floor((width - space.lg * 2 - gap * 2) / 3);
+  const gallery = data?.galleries[0];
+  const photos = gallery?.slides ?? [];
 
   return (
     <Screen>
-      <Header title="Gallery" subtitle="Shorts, photos and videos" />
-      {!data ? (
+      <Header title="Gallery" />
+      {!data && error ? (
+        <ErrorState error={error} onRetry={refresh} />
+      ) : !data ? (
         <SkeletonList count={3} height={200} />
+      ) : !data.shorts.length && !photos.length && !data.videos.length ? (
+        <EmptyState icon="image" title="Nothing here yet" body="Shorts, photos and videos appear here as soon as they are published." />
       ) : (
-        <Body>
-          <SectionHeader title="Shorts" overline="SWIPE-UP HIGHLIGHTS" style={{ marginTop: space.sm }} />
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: space.lg, gap: space.md }}>
-            {data.shorts.map(s => (
-              <Touch key={s.id} scale onPress={() => nav.navigate('Shorts', { id: s.id })} style={styles.short}>
-                <CoverArt photo={s.photo ?? s.slides[0].photo} teamIds={s.teamIds} />
-                <View style={styles.shade} pointerEvents="none">
-                  <Fade color="#03060C" height={150} flip opacity={0.9} />
-                </View>
-                {s.live ? (
-                  <View style={[styles.liveTag, { backgroundColor: colors.live }]}>
-                    <AppText variant="micro" color="#FFFFFF">
-                      LIVE
-                    </AppText>
-                  </View>
-                ) : null}
-                <View style={styles.shortText}>
-                  <AppText variant="headline" weight="700" color="#FFFFFF" numberOfLines={2}>
-                    {s.slides[0].headline}
-                  </AppText>
-                  <AppText variant="caption" color="rgba(255,255,255,0.85)" numberOfLines={1}>
-                    {s.title}
-                  </AppText>
-                  <View style={[styles.rowC, { marginTop: 6 }]}>
-                    <Icon name="play" size={12} color="#FFFFFF" />
-                    <AppText variant="micro" color="#FFFFFF" style={{ marginLeft: 4 }}>
-                      {compact(s.views)}
-                    </AppText>
-                  </View>
-                </View>
-              </Touch>
-            ))}
-          </ScrollView>
+        <Body onRefresh={refresh} refreshing={refreshing}>
+          {data.shorts.length ? (
+            <>
+              <SectionHeader title="Shorts" action={`${data.shorts.length}`} />
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: space.lg, gap: space.md }}>
+                {data.shorts.map(s => (
+                  <Touch key={s.id} scale onPress={() => nav.navigate('Shorts', { id: s.id })} style={styles.short} accessibilityLabel={`Short: ${s.title}`}>
+                    <CoverArt photo={s.photo ?? s.slides[0].photo} teamIds={s.teamIds} />
+                    <View style={styles.shade} pointerEvents="none">
+                      <Fade color="#03060C" height={120} flip opacity={0.9} />
+                    </View>
+                    <View style={styles.reelPlay}>
+                      <Icon name="play" size={14} color="#FFFFFF" />
+                    </View>
+                    <View style={styles.shortText}>
+                      <AppText variant="label" weight="700" color="#FFFFFF" numberOfLines={2}>
+                        {s.title}
+                      </AppText>
+                      <AppText variant="micro" color="rgba(255,255,255,0.8)" style={{ marginTop: 4 }}>
+                        {ago(s.publishedAt).toUpperCase()}
+                      </AppText>
+                    </View>
+                  </Touch>
+                ))}
+              </ScrollView>
+            </>
+          ) : null}
 
-          <SectionHeader title="Photo galleries" style={{ marginTop: space.xxl }} />
-          <View style={styles.grid}>
-            {data.galleries.map(g => (
-              <Touch key={g.id} scale onPress={() => nav.navigate('MediaViewer', { id: g.id })} style={[styles.galleryTile, { width: tileW }]}>
-                <View style={[styles.galleryImg, { backgroundColor: colors.elevated }]}>
-                  <CoverArt photo={g.photo} teamIds={g.teamIds} />
-                  <View style={styles.count}>
-                    <Icon name="image" size={12} color="#FFFFFF" />
-                    <AppText variant="micro" color="#FFFFFF" style={{ marginLeft: 4 }}>
-                      {g.slides.length}
-                    </AppText>
+          {gallery && photos.length ? (
+            <>
+              <SectionHeader title="Photos" action={`${photos.length}`} style={{ marginTop: data.shorts.length ? space.xxl : 0 }} />
+              <View style={{ paddingHorizontal: space.lg }}>
+                <Touch onPress={() => nav.navigate('MediaViewer', { id: gallery.id, index: 0 })} style={[styles.feature, { backgroundColor: colors.elevated }]} accessibilityLabel={photos[0].headline || 'Photo'}>
+                  {photos[0].photo ? <Image source={{ uri: photos[0].photo }} style={StyleSheet.absoluteFill} resizeMode="cover" /> : null}
+                  <View style={styles.shade} pointerEvents="none">
+                    <Fade color="#03060C" height={110} flip opacity={0.85} />
                   </View>
+                  {photos[0].headline ? (
+                    <View style={styles.featureText}>
+                      <AppText variant="headline" weight="700" color="#FFFFFF" numberOfLines={1}>
+                        {photos[0].headline}
+                      </AppText>
+                      {photos[0].caption ? (
+                        <AppText variant="caption" color="rgba(255,255,255,0.85)" numberOfLines={1}>
+                          {photos[0].caption}
+                        </AppText>
+                      ) : null}
+                    </View>
+                  ) : null}
+                </Touch>
+                <View style={[styles.wall, { gap, marginTop: gap }]}>
+                  {photos.slice(1).map((p, i) => (
+                    <Touch
+                      key={i}
+                      onPress={() => nav.navigate('MediaViewer', { id: gallery.id, index: i + 1 })}
+                      style={{ width: cell, height: cell, borderRadius: radius.xs, overflow: 'hidden', backgroundColor: colors.elevated }}
+                      accessibilityLabel={p.headline || 'Photo'}
+                    >
+                      {p.photo ? <Image source={{ uri: p.photo }} style={StyleSheet.absoluteFill} resizeMode="cover" /> : null}
+                    </Touch>
+                  ))}
                 </View>
-                <AppText variant="label" weight="700" numberOfLines={2} style={{ marginTop: 8 }}>
-                  {g.title}
-                </AppText>
-                <AppText variant="caption" weight="600" color="accent">
-                  {ago(g.publishedAt)}
-                </AppText>
-              </Touch>
-            ))}
-          </View>
+              </View>
+            </>
+          ) : null}
 
-          <SectionHeader title="Videos" style={{ marginTop: space.xxl }} />
-          <View style={{ gap: space.lg, paddingHorizontal: space.lg }}>
-            {data.videos.map(v => (
-              <Touch key={v.id} scale onPress={() => nav.navigate('MediaViewer', { id: v.id })} style={{ borderRadius: radius.lg }}>
-                <View style={[styles.video, { backgroundColor: colors.elevated }]}>
-                  <CoverArt photo={v.photo} teamIds={v.teamIds} dim={0.15} />
-                  <View style={styles.play}>
-                    <Icon name="play" size={22} color="#0E1525" />
-                  </View>
-                  <View style={styles.duration}>
-                    <AppText variant="micro" color="#FFFFFF" tabular>
-                      {v.duration}
+          {data.videos.length ? (
+            <>
+              <SectionHeader title="Videos" style={{ marginTop: space.xxl }} />
+              <View style={{ gap: space.lg, paddingHorizontal: space.lg }}>
+                {data.videos.map(v => (
+                  <Touch key={v.id} scale onPress={() => v.url && nav.navigate('Watch', { url: v.url, title: v.title })} style={{ borderRadius: radius.lg }}>
+                    <View style={[styles.video, { backgroundColor: colors.elevated }]}>
+                      <CoverArt photo={v.photo} teamIds={v.teamIds} dim={0.15} />
+                      <View style={styles.play}>
+                        <Icon name="play" size={22} color="#0E1525" />
+                      </View>
+                      <View style={styles.duration}>
+                        <AppText variant="micro" color="#FFFFFF" tabular>
+                          {v.duration}
+                        </AppText>
+                      </View>
+                    </View>
+                    <AppText variant="headline" numberOfLines={2} style={{ marginTop: 10 }}>
+                      {v.title}
                     </AppText>
-                  </View>
-                </View>
-                <AppText variant="headline" numberOfLines={2} style={{ marginTop: 10 }}>
-                  {v.title}
-                </AppText>
-                <AppText variant="caption" color="textMuted" style={{ marginTop: 2 }}>
-                  {v.category} · {compact(v.views)} views · {ago(v.publishedAt)}
-                </AppText>
-              </Touch>
-            ))}
-          </View>
+                    <AppText variant="caption" color="textMuted" style={{ marginTop: 2 }}>
+                      {ago(v.publishedAt)}
+                    </AppText>
+                  </Touch>
+                ))}
+              </View>
+            </>
+          ) : null}
         </Body>
       )}
     </Screen>
@@ -121,13 +141,14 @@ export function GalleryScreen() {
 
 /** Full-screen viewer: swipeable photos for a gallery, poster + player slot for a video. */
 export function MediaViewerScreen() {
-  const { id } = useParams('MediaViewer');
+  const { id, index: start = 0 } = useParams('MediaViewer');
   const nav = useNavigation();
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
-  const [index, setIndex] = useState(0);
-  const gallery = shorts.find(s => s.id === id);
-  const video = videos.find(v => v.id === id);
+  const [index, setIndex] = useState(start);
+  const { data } = useQuery('media', repo.media);
+  const gallery = data && [...data.galleries, ...data.shorts].find(s => s.id === id);
+  const video = data?.videos.find(v => v.id === id);
 
   const close = (
     <View style={[styles.viewerTop, { paddingTop: insets.top + 8 }]}>
@@ -155,11 +176,13 @@ export function MediaViewerScreen() {
           pagingEnabled
           showsHorizontalScrollIndicator={false}
           keyExtractor={(_, i) => String(i)}
+          initialScrollIndex={start}
+          getItemLayout={(_, i) => ({ length: width, offset: width * i, index: i })}
           onMomentumScrollEnd={e => setIndex(Math.round(e.nativeEvent.contentOffset.x / width))}
           renderItem={({ item }) => (
             <View style={{ width, height, justifyContent: 'center' }}>
               {item.photo ? (
-                <Image source={PHOTOS[item.photo]} style={{ width, height: width / (1408 / 768) }} resizeMode="contain" />
+                <Image source={{ uri: item.photo }} style={{ width, height: height * 0.72 }} resizeMode="contain" />
               ) : (
                 <View style={{ width, height: width * 0.75, overflow: 'hidden' }}>
                   <CoverArt teamIds={item.teamIds} />
@@ -178,21 +201,19 @@ export function MediaViewerScreen() {
         />
       ) : video ? (
         <View style={{ flex: 1, justifyContent: 'center' }}>
-          <View style={{ width, height: (width * 9) / 16, overflow: 'hidden' }}>
-            <CoverArt photo={video.photo} teamIds={video.teamIds} dim={0.3} />
-            <View style={[styles.play, { width: 64, height: 64, borderRadius: 32 }]}>
-              <Icon name="play" size={28} color="#0E1525" />
+          {video.url ? (
+            <ClipPlayer uri={video.url} style={{ width, height: (width * 9) / 16 }} />
+          ) : (
+            <View style={{ width, height: (width * 9) / 16, overflow: 'hidden' }}>
+              <CoverArt photo={video.photo} teamIds={video.teamIds} dim={0.3} />
             </View>
-          </View>
+          )}
           <View style={{ padding: space.lg }}>
             <AppText variant="title" color="#FFFFFF">
               {video.title}
             </AppText>
             <AppText variant="caption" color="#C9CFDD" style={{ marginTop: 6 }}>
-              {video.duration} · {compact(video.views)} views
-            </AppText>
-            <AppText variant="caption" color="#9AA3B8" style={{ marginTop: space.lg }}>
-              Playback starts once the video player and streaming source are connected.
+              {video.duration} · {ago(video.publishedAt)}
             </AppText>
           </View>
         </View>
@@ -204,7 +225,11 @@ export function MediaViewerScreen() {
 
 const styles = StyleSheet.create({
   rowC: { flexDirection: 'row', alignItems: 'center' },
-  short: { width: 150, height: 266, borderRadius: radius.lg, overflow: 'hidden' },
+  short: { width: 132, height: 234, borderRadius: radius.lg, overflow: 'hidden' },
+  reelPlay: { position: 'absolute', top: 10, right: 10, width: 28, height: 28, borderRadius: 14, backgroundColor: 'rgba(3,6,12,0.55)', alignItems: 'center', justifyContent: 'center', paddingLeft: 2 },
+  feature: { height: 220, borderRadius: radius.lg, overflow: 'hidden' },
+  featureText: { position: 'absolute', left: space.lg, right: space.lg, bottom: space.md },
+  wall: { flexDirection: 'row', flexWrap: 'wrap' },
   shade: { position: 'absolute', left: 0, right: 0, bottom: 0 },
   shortText: { position: 'absolute', left: 12, right: 12, bottom: 12 },
   liveTag: { position: 'absolute', top: 10, left: 10, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 5 },

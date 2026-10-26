@@ -71,12 +71,12 @@ export function PredictionCard({ match, prediction }: { match: Match; prediction
       <View style={[styles.rowC, { marginTop: 14 }]}>
         <Tag label={`${prediction.confidence.toUpperCase()} CONFIDENCE`} tone="brand" />
         <AppText variant="caption" color="textMuted" style={{ marginLeft: 10, flex: 1 }} numberOfLines={1}>
-          {settled ? match.result?.text : `Projected ${team(prediction.projected.teamId).short} ${prediction.projected.low}–${prediction.projected.high}`}
+          {settled ? match.result?.text : `1st innings ${prediction.projected.low}–${prediction.projected.high}`}
         </AppText>
         <Icon name="chevronRight" size={16} color={colors.textMuted} />
       </View>
-      <AppText variant="micro" color="accent" style={{ marginTop: 10 }}>
-        {prediction.modelVersion.toUpperCase()} · {ago(prediction.generatedAt).toUpperCase()}
+      <AppText variant="caption" color="textMuted" style={{ marginTop: 10 }}>
+        Updated {ago(prediction.generatedAt)}
       </AppText>
     </Touch>
   );

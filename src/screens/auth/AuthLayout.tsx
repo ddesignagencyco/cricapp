@@ -1,76 +1,63 @@
 import React, { type ReactNode } from 'react';
-import { KeyboardAvoidingView, ScrollView, StatusBar, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { KeyboardAvoidingView, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText } from '../../components/ui/AppText';
-import { PhotoHero } from '../../components/ui/PhotoHero';
 import { BrandMark } from '../../components/ui/Layout';
-import { IconButton } from '../../components/ui/Primitives';
+import { Glow, IconButton } from '../../components/ui/Primitives';
 import { useNavigation } from '../../navigation/Stack';
 import { useTheme } from '../../theme/ThemeProvider';
-import { radius, space } from '../../theme/tokens';
-
-/** Floodlit stadium (Unsplash licence), 1440 × 900. */
-const PHOTO = require('../../assets/images/auth_stadium.jpg');
+import { space } from '../../theme/tokens';
 
 /**
- * Shared shell for sign-in, sign-up and recovery: a stadium photo with the
- * PCZ mark and a straight edge, then the form on the page. The form scrolls
- * and lifts above the keyboard on small screens.
+ * Shared shell for sign-in, sign-up and recovery: a clean page with the
+ * back arrow, the PCZ mark centred, a left-aligned title and the form.
+ * A faint brand-blue bloom in the corner is the only decoration. The form
+ * scrolls and lifts above the keyboard on small screens.
  */
 export function AuthLayout({
   title,
   subtitle,
   children,
   footer,
-  compactHeader,
+  hideBack,
 }: {
   title: string;
-  subtitle?: string;
+  subtitle?: ReactNode;
   children: ReactNode;
   footer?: ReactNode;
-  /** Shorter hero for steps with longer forms. */
-  compactHeader?: boolean;
+  hideBack?: boolean;
 }) {
   const { colors } = useTheme();
   const nav = useNavigation();
   const insets = useSafeAreaInsets();
-  const { height } = useWindowDimensions();
-  const heroH = Math.round(Math.max(190, Math.min(height * (compactHeader ? 0.24 : 0.3), 290)) + insets.top);
-  const logoH = compactHeader ? 40 : 52;
 
   return (
     <View style={[styles.fill, { backgroundColor: colors.background }]}>
-      <StatusBar barStyle="light-content" />
+      <Glow color={colors.brand} size={360} opacity={colors.scheme === 'dark' ? 0.18 : 0.12} style={{ right: -170, top: -150 }} />
+      <Glow color={colors.brand} size={300} opacity={colors.scheme === 'dark' ? 0.12 : 0.08} style={{ left: -160, bottom: -140 }} />
       <KeyboardAvoidingView style={styles.fill} behavior="padding">
-        <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false} bounces={false}>
-          <PhotoHero source={PHOTO} ratio={1440 / 900} height={heroH} dim={0.3}>
-            <View style={[styles.top, { paddingTop: insets.top + 4 }]}>
-              <IconButton icon="arrowLeft" label="Back" color="#FFFFFF" onPress={nav.goBack} />
-            </View>
-            <View style={[styles.brand, { paddingTop: insets.top }]}>
-              <View style={styles.logoCard}>
-                <BrandMark height={logoH} />
-              </View>
-              {!compactHeader ? (
-                <AppText variant="label" weight="600" color="#DCE5FF" style={{ marginTop: space.md }}>
-                  Pakistan’s home of cricket
-                </AppText>
-              ) : null}
-            </View>
-          </PhotoHero>
-          <View style={[styles.panel, { paddingBottom: insets.bottom + space.xl }]}>
-            <AppText variant="display" accessibilityRole="header">
-              {title}
-            </AppText>
-            {subtitle ? (
-              <AppText variant="body" color="textSecondary" style={{ marginTop: 6 }}>
-                {subtitle}
-              </AppText>
-            ) : null}
-            <View style={{ marginTop: space.xl }}>{children}</View>
-            <View style={{ flex: 1 }} />
-            {footer ? <View style={{ marginTop: space.xl }}>{footer}</View> : null}
+        <ScrollView
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={[styles.scroll, { paddingTop: insets.top + space.xs, paddingBottom: insets.bottom + space.xl }]}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.topRow}>
+            {!hideBack && nav.canGoBack() ? <IconButton icon="arrowLeft" label="Back" onPress={nav.goBack} /> : <View style={styles.backSpace} />}
           </View>
+          <View style={styles.brand}>
+            <BrandMark height={40} />
+          </View>
+          <AppText variant="display" accessibilityRole="header" style={styles.title}>
+            {title}
+          </AppText>
+          {subtitle ? (
+            <AppText variant="body" color="textSecondary" style={{ marginTop: 6 }}>
+              {subtitle}
+            </AppText>
+          ) : null}
+          <View style={{ marginTop: space.xl }}>{children}</View>
+          <View style={{ flex: 1 }} />
+          {footer ? <View style={{ marginTop: space.xl }}>{footer}</View> : null}
         </ScrollView>
       </KeyboardAvoidingView>
     </View>
@@ -78,18 +65,10 @@ export function AuthLayout({
 }
 
 const styles = StyleSheet.create({
-  fill: { flex: 1 },
-  top: { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', paddingHorizontal: space.sm, zIndex: 1 },
-  brand: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  logoCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: radius.xl,
-    paddingHorizontal: space.xl,
-    paddingVertical: space.md,
-    shadowColor: '#000',
-    shadowOpacity: 0.25,
-    shadowRadius: 18,
-    elevation: 10,
-  },
-  panel: { flex: 1, paddingHorizontal: space.xl, paddingTop: space.md },
+  fill: { flex: 1, overflow: 'hidden' },
+  scroll: { flexGrow: 1, paddingHorizontal: space.xl },
+  topRow: { height: 48, flexDirection: 'row', alignItems: 'center', marginLeft: -12 },
+  backSpace: { width: 44, height: 44 },
+  brand: { alignItems: 'center', marginTop: space.xs, marginBottom: space.xxl },
+  title: { fontSize: 28, lineHeight: 34 },
 });

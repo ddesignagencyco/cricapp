@@ -11,7 +11,10 @@ import { Touch } from '../../components/ui/Touch';
 import { repo } from '../../data/repo';
 import type { Comment } from '../../data/types';
 import { useQuery } from '../../data/useQuery';
-import { useParams } from '../../navigation/Stack';
+import { useNavigation, useParams } from '../../navigation/Stack';
+import { errorMessage } from '../../api/client';
+import { Button } from '../../components/ui/Primitives';
+import { displayName, useAuth } from '../../state/auth';
 import { useTheme } from '../../theme/ThemeProvider';
 import { fontFamily, radius, space } from '../../theme/tokens';
 
@@ -22,7 +25,11 @@ export default function CommentsScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { data, refresh } = useQuery(`comments:${thread}`, () => repo.comments(thread));
-  const [sort, setSort] = useState<Sort>('top');
+  const nav = useNavigation();
+  const { user } = useAuth();
+  const [sort, setSort] = useState<Sort>('new');
+  const [error, setError] = useState<string>();
+  const [sending, setSending] = useState(false);
   const [text, setText] = useState('');
   const [replyTo, setReplyTo] = useState<Comment | null>(null);
   const input = useRef<React.ComponentRef<typeof TextInput>>(null);
@@ -36,11 +43,19 @@ export default function CommentsScreen() {
 
   const send = async () => {
     const body = text.trim();
-    if (!body) return;
-    setText('');
-    await repo.postComment(thread, body, replyTo?.id);
-    setReplyTo(null);
-    refresh();
+    if (!body || sending) return;
+    setSending(true);
+    setError(undefined);
+    try {
+      await repo.postComment(thread, body, replyTo?.id);
+      setText('');
+      setReplyTo(null);
+      refresh();
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -56,16 +71,14 @@ export default function CommentsScreen() {
             keyboardShouldPersistTaps="handled"
             ListHeaderComponent={
               <View style={{ paddingBottom: space.sm }}>
-                {data.reactions ? (
-                  <View style={{ marginBottom: space.lg }}>
-                    <ReactionBar counts={data.reactions} />
-                  </View>
-                ) : null}
+                <View style={{ marginBottom: space.lg, marginTop: space.md }}>
+                  <ReactionBar counts={data.reactions ?? {}} thread={thread} />
+                </View>
                 <View style={styles.sortRow}>
                   <AppText variant="label" weight="700" style={{ flex: 1 }}>
                     {data.total} comments
                   </AppText>
-                  {(['top', 'new'] as Sort[]).map(s => (
+                  {(['new'] as Sort[]).map(s => (
                     <Touch key={s} onPress={() => setSort(s)} accessibilityState={{ selected: sort === s }} style={styles.sortBtn}>
                       <AppText variant="label" weight={sort === s ? '700' : '500'} color={sort === s ? 'text' : 'textMuted'}>
                         {s === 'top' ? 'Top' : 'Newest'}
@@ -80,49 +93,73 @@ export default function CommentsScreen() {
               <CommentItem
                 comment={item}
                 onReply={c => {
+                  // Comments are flat in the API: a reply is a comment that mentions the author.
                   setReplyTo(c);
+                  setText(t => (t.startsWith('@') ? t : `@${c.author} ${t}`));
                   input.current?.focus();
                 }}
               />
             )}
+            ListEmptyComponent={
+              <AppText variant="bodySm" color="textMuted" align="center" style={{ padding: space.xl }}>
+                No comments yet. Start the conversation.
+              </AppText>
+            }
             contentContainerStyle={{ paddingBottom: space.xl }}
           />
         )}
         <View style={[styles.composer, { paddingBottom: insets.bottom + space.sm, backgroundColor: colors.background, borderTopColor: colors.hairline }]}>
-          {replyTo ? (
-            <View style={styles.replying}>
-              <AppText variant="caption" color="textMuted" style={{ flex: 1 }}>
-                Replying to <AppText variant="caption" weight="700">{replyTo.author}</AppText>
+          {!user ? (
+            <View style={styles.signedOut}>
+              <AppText variant="caption" color="textSecondary" style={{ flex: 1, marginRight: space.md }}>
+                Sign in to join the conversation.
               </AppText>
-              <Touch onPress={() => setReplyTo(null)} style={styles.cancel} accessibilityLabel="Cancel reply">
-                <Icon name="x" size={16} color={colors.textMuted} />
+              <Button label="Sign in" compact onPress={() => nav.navigate('SignIn')} />
+            </View>
+          ) : (
+            <>
+            {replyTo ? (
+              <View style={styles.replying}>
+                <AppText variant="caption" color="textMuted" style={{ flex: 1 }}>
+                  Replying to <AppText variant="caption" weight="700">{replyTo.author}</AppText>
+                </AppText>
+                <Touch onPress={() => setReplyTo(null)} style={styles.cancel} accessibilityLabel="Cancel reply">
+                  <Icon name="x" size={16} color={colors.textMuted} />
+                </Touch>
+              </View>
+            ) : null}
+            <View style={styles.inputRow}>
+              <TextInput
+                ref={input}
+                value={text}
+                onChangeText={setText}
+                placeholder="Add a comment…"
+                placeholderTextColor={colors.textMuted}
+                multiline
+                maxLength={500}
+                style={[styles.input, { color: colors.text, backgroundColor: colors.elevated, borderColor: colors.border, fontFamily: fontFamily['400'] }]}
+                accessibilityLabel="Comment"
+              />
+              <Touch
+                onPress={send}
+                disabled={!text.trim() || sending}
+                style={[styles.send, { backgroundColor: text.trim() ? colors.brand : colors.elevated }]}
+                accessibilityLabel="Post comment"
+              >
+                <Icon name="send" size={18} color={text.trim() ? colors.onBrand : colors.textMuted} />
               </Touch>
             </View>
-          ) : null}
-          <View style={styles.inputRow}>
-            <TextInput
-              ref={input}
-              value={text}
-              onChangeText={setText}
-              placeholder="Add a comment…"
-              placeholderTextColor={colors.textMuted}
-              multiline
-              maxLength={500}
-              style={[styles.input, { color: colors.text, backgroundColor: colors.elevated, borderColor: colors.border, fontFamily: fontFamily['400'] }]}
-              accessibilityLabel="Comment"
-            />
-            <Touch
-              onPress={send}
-              disabled={!text.trim()}
-              style={[styles.send, { backgroundColor: text.trim() ? colors.brand : colors.elevated }]}
-              accessibilityLabel="Post comment"
-            >
-              <Icon name="send" size={18} color={text.trim() ? colors.onBrand : colors.textMuted} />
-            </Touch>
-          </View>
-          <AppText variant="micro" color="textDisabled" style={{ marginTop: 6 }}>
-            POSTING AS GUEST · SIGN IN TO USE YOUR NAME
-          </AppText>
+            {error ? (
+              <AppText variant="caption" color="danger" style={{ marginTop: 6 }}>
+                {error}
+              </AppText>
+            ) : (
+              <AppText variant="micro" color="textDisabled" style={{ marginTop: 6 }}>
+                POSTING AS {displayName(user).toUpperCase()}
+              </AppText>
+            )}
+              </>
+          )}
         </View>
       </KeyboardAvoidingView>
     </Screen>
@@ -137,5 +174,6 @@ const styles = StyleSheet.create({
   cancel: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center', borderRadius: 16 },
   inputRow: { flexDirection: 'row', alignItems: 'flex-end' },
   input: { flex: 1, minHeight: 44, maxHeight: 120, borderRadius: 22, borderWidth: StyleSheet.hairlineWidth * 2, paddingHorizontal: 16, paddingVertical: 10, fontSize: 15 },
+  signedOut: { flexDirection: 'row', alignItems: 'center', paddingVertical: 4 },
   send: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', marginLeft: 8, overflow: 'hidden' },
 });

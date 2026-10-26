@@ -1,45 +1,21 @@
-import React, { useEffect, useState } from 'react';
-import { Linking, StyleSheet, Switch, View } from 'react-native';
-import { Avatar, TeamBadge } from '../../components/cricket/Badges';
-import { displayName, useAuth } from '../../state/auth';
+import React, { useState } from 'react';
+import { KeyboardAvoidingView, StyleSheet, View } from 'react-native';
+import { useQuery } from '../../data/useQuery';
+import { errorMessage } from '../../api/client';
+import { Field } from '../../components/ui/Form';
+import { repo } from '../../data/repo';
+import { Avatar } from '../../components/cricket/Badges';
+import { displayName, isEmail, useAuth } from '../../state/auth';
 import { AppText } from '../../components/ui/AppText';
 import { Segmented } from '../../components/ui/Controls';
 import { Icon, type IconName } from '../../components/ui/Icon';
 import { Body, Header, Screen } from '../../components/ui/Layout';
-import { Button, Card, Glow, Hairline, SectionHeader, Tag } from '../../components/ui/Primitives';
+import { Button, Card, EmptyState, Glow, Hairline, SectionHeader } from '../../components/ui/Primitives';
 import { Touch } from '../../components/ui/Touch';
-import { team } from '../../data/refs';
 import { useNavigation } from '../../navigation/Stack';
-import { usePrefs, type AlertPrefs } from '../../state/prefs';
+import { usePrefs } from '../../state/prefs';
 import { useTheme, type ThemePreference } from '../../theme/ThemeProvider';
 import { radius, space } from '../../theme/tokens';
-import { notificationStatus, requestNotifications, type PermissionState } from '../../utils/permissions';
-
-function ToggleRow({ icon, title, body, value, onChange }: { icon: IconName; title: string; body?: string; value: boolean; onChange: (v: boolean) => void }) {
-  const { colors } = useTheme();
-  return (
-    <Touch onPress={() => onChange(!value)} accessibilityRole="switch" accessibilityState={{ checked: value }} style={styles.toggle}>
-      <Icon name={icon} size={20} color={colors.textSecondary} />
-      <View style={{ flex: 1, marginLeft: 14, marginRight: 8 }}>
-        <AppText variant="body" weight="500">
-          {title}
-        </AppText>
-        {body ? (
-          <AppText variant="caption" color="textMuted">
-            {body}
-          </AppText>
-        ) : null}
-      </View>
-      <Switch
-        value={value}
-        onValueChange={onChange}
-        trackColor={{ false: colors.border, true: colors.brand }}
-        thumbColor="#FFFFFF"
-        importantForAccessibility="no"
-      />
-    </Touch>
-  );
-}
 
 function LinkRow({ icon, title, value, onPress }: { icon: IconName; title: string; value?: string; onPress?: () => void }) {
   const { colors } = useTheme();
@@ -59,11 +35,22 @@ function LinkRow({ icon, title, value, onPress }: { icon: IconName; title: strin
   );
 }
 
+const ABOUT: { slug: string; title: string; icon: IconName; cmsOnly?: boolean }[] = [
+  { slug: 'about', title: 'About PAK CRICZONE', icon: 'info' },
+  { slug: 'editorial-policy', title: 'Editorial policy', icon: 'bookOpen', cmsOnly: true },
+  { slug: 'corrections', title: 'Corrections', icon: 'squarePen', cmsOnly: true },
+  { slug: 'privacy', title: 'Privacy policy', icon: 'lock' },
+  { slug: 'terms', title: 'Terms of service', icon: 'shield' },
+];
+
 export function SettingsScreen() {
   const nav = useNavigation();
+  const published = useQuery('editorial:published', () =>
+    Promise.all(ABOUT.filter(p => p.cmsOnly).map(p => repo.editorialPage(p.slug).then(x => (x ? p.slug : null)).catch(() => null))),
+  );
+  const aboutPages = ABOUT.filter(p => !p.cmsOnly || published.data?.includes(p.slug));
   const { colors, preference, setPreference } = useTheme();
   const { newsLang, setNewsLang } = usePrefs();
-  const [dataSaver, setDataSaver] = useState(false);
   const { user, signOut } = useAuth();
   return (
     <Screen>
@@ -72,6 +59,7 @@ export function SettingsScreen() {
         <Card style={{ marginHorizontal: space.lg, marginTop: space.sm, overflow: 'hidden' }}>
           <Glow color={colors.brand} size={240} opacity={0.22} style={{ right: -110, top: -120 }} />
           {user ? (
+            <>
             <View style={styles.rowC}>
               <Avatar name={displayName(user)} size={48} />
               <View style={{ flex: 1, marginLeft: 12 }}>
@@ -82,15 +70,23 @@ export function SettingsScreen() {
                   {user.email}
                 </AppText>
               </View>
-              <Button label="Sign out" variant="secondary" compact onPress={signOut} />
             </View>
+            <View style={[styles.rowC, { marginTop: space.lg, gap: space.sm }]}>
+              <View style={{ flex: 1 }}>
+                <Button label="Edit profile" compact onPress={() => nav.navigate('EditProfile')} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Button label="Sign out" variant="secondary" compact onPress={signOut} />
+              </View>
+            </View>
+            </>
           ) : (
             <>
               <AppText variant="headline" weight="700">
                 Your account
               </AppText>
               <AppText variant="caption" color="textSecondary" style={{ marginTop: 4, marginBottom: 14 }}>
-                Sign in to keep favourites, alerts and comments on every device.
+                Sign in to comment, react and manage your profile.
               </AppText>
               <Button label="Sign in or create account" compact onPress={() => nav.navigate('SignIn')} />
             </>
@@ -125,32 +121,18 @@ export function SettingsScreen() {
               ]}
             />
           </View>
-          <Hairline />
-          <View style={[styles.toggle, { justifyContent: 'space-between' }]}>
-            <Icon name="languages" size={20} color={colors.textSecondary} />
-            <AppText variant="body" weight="500" style={{ flex: 1, marginLeft: 14 }}>
-              App language
-            </AppText>
-            <Tag label="URDU UI SOON" style={{ alignSelf: "center" }} />
-          </View>
-        </Card>
-
-        <SectionHeader title="Notifications & data" style={{ marginTop: space.xxl }} />
-        <Card padded={false} style={{ marginHorizontal: space.lg }}>
-          <LinkRow icon="bell" title="Alerts" onPress={() => nav.navigate('Alerts')} />
-          <Hairline inset={52} />
-          <LinkRow icon="heart" title="Favourites" onPress={() => nav.navigate('Favourites')} />
-          <Hairline inset={52} />
-          <ToggleRow icon="smartphone" title="Data saver" body="Lower-resolution images and slower refresh on mobile data" value={dataSaver} onChange={setDataSaver} />
         </Card>
 
         <SectionHeader title="About" style={{ marginTop: space.xxl }} />
         <Card padded={false} style={{ marginHorizontal: space.lg }}>
-          <LinkRow icon="bookOpen" title="Editorial & corrections policy" />
+          {aboutPages.map((p, i) => (
+            <View key={p.slug}>
+              {i > 0 ? <Hairline inset={52} /> : null}
+              <LinkRow icon={p.icon} title={p.title} onPress={() => nav.navigate('Editorial', { slug: p.slug, title: p.title })} />
+            </View>
+          ))}
           <Hairline inset={52} />
-          <LinkRow icon="shieldCheck" title="How our predictions work" onPress={() => nav.navigate('ModelPerformance')} />
-          <Hairline inset={52} />
-          <LinkRow icon="lock" title="Privacy policy" />
+          <LinkRow icon="send" title="Contact us" onPress={() => nav.navigate('Contact')} />
           <Hairline inset={52} />
           <LinkRow icon="info" title="Version" value="0.1.0" />
         </Card>
@@ -159,75 +141,108 @@ export function SettingsScreen() {
   );
 }
 
-const ALERTS: { key: keyof AlertPrefs; icon: IconName; title: string; body: string }[] = [
-  { key: 'matchStart', icon: 'play', title: 'Match start & toss', body: 'When a favourite team takes the field' },
-  { key: 'wickets', icon: 'circleDot', title: 'Wickets', body: 'Every wicket when your favourite teams play' },
-  { key: 'milestones', icon: 'award', title: 'Milestones', body: 'Fifties, hundreds and five-fors' },
-  { key: 'results', icon: 'trophy', title: 'Results', body: 'Final result and player of the match' },
-  { key: 'breakingNews', icon: 'flame', title: 'Breaking news', body: 'Squads, injuries and major stories' },
-  { key: 'predictionSwings', icon: 'trendingUpDown', title: 'Big prediction swings', body: 'When win probability moves 15+ points' },
+/** The newsletter types the API sends (cric_info newsletter-templates), in its own words. */
+const NEWSLETTERS: { icon: IconName; title: string; body: string }[] = [
+  { icon: 'newspaper', title: 'Daily digest', body: 'Top stories, results and fixtures every morning (only on days with real news).' },
+  { icon: 'calendar', title: 'Weekly roundup', body: 'The week in cricket, every Sunday.' },
+  { icon: 'sparkles', title: 'Match previews', body: 'Before Pakistan and PSL matches, with our win prediction.' },
+  { icon: 'trophy', title: 'PSL updates', body: 'Points table, top performers and fixtures during the PSL.' },
+  { icon: 'flame', title: 'Breaking news', body: 'Major verified stories, rarely.' },
 ];
 
+/** Newsletter sign-up. Which emails arrive is managed from the link in every newsletter (the API keys preferences to it). */
 export function AlertsScreen() {
-  const nav = useNavigation();
-  const { alerts, setAlert, favouritesOf } = usePrefs();
-  const teams = favouritesOf('team');
+  const { user } = useAuth();
   const { colors } = useTheme();
-  const [perm, setPerm] = useState<PermissionState>('unknown');
-  useEffect(() => {
-    notificationStatus().then(setPerm);
-  }, []);
+  const [email, setEmail] = useState(user?.email ?? '');
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState<string>();
+  const [error, setError] = useState<string>();
+
+  const subscribe = async () => {
+    const value = email.trim();
+    if (busy) return;
+    if (!isEmail(value)) return setError('Enter a valid email address');
+    setError(undefined);
+    setBusy(true);
+    try {
+      await repo.subscribeNewsletter(value);
+      setDone(value);
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <Screen>
-      <Header title="Alerts" />
-      <Body>
-        {/* Asked here, in context, rather than up front during the welcome. */}
-        {perm !== 'granted' ? (
-          <View style={[styles.permCard, { backgroundColor: colors.brand }]}>
-            <Icon name="bellRing" size={24} color="#FFFFFF" />
-            <View style={{ flex: 1, marginHorizontal: 12 }}>
-              <AppText variant="headline" weight="700" color="#FFFFFF">
-                Turn on notifications
-              </AppText>
-              <AppText variant="caption" color="#DCE4FF" style={{ marginTop: 2 }}>
-                {perm === 'blocked' ? 'Notifications are off for this app. Enable them in system settings.' : 'Get wickets, results and breaking news as they happen.'}
-              </AppText>
-            </View>
-            {perm === 'blocked' ? (
-              <Button label="Settings" compact variant="secondary" onPress={() => Linking.openSettings()} />
+      <Header title="Newsletter" />
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+        <Body keyboardShouldPersistTaps="handled">
+          <View style={{ paddingHorizontal: space.lg }}>
+            <AppText variant="title">Cricket in your inbox</AppText>
+            <AppText variant="body" color="textSecondary" style={{ marginTop: 6 }}>
+              Subscribe once and get these emails. Turn any of them off from the link at the bottom of every newsletter.
+            </AppText>
+          </View>
+
+          <View style={{ marginTop: space.lg }}>
+            {NEWSLETTERS.map((n, i) => (
+              <View key={n.title}>
+                {i > 0 ? <Hairline inset={space.lg + 40} /> : null}
+                <View style={styles.newsletterRow}>
+                  <View style={[styles.newsletterIcon, { backgroundColor: colors.brandSoft }]}>
+                    <Icon name={n.icon} size={18} color={colors.accent} />
+                  </View>
+                  <View style={{ flex: 1, marginLeft: space.md }}>
+                    <AppText variant="label" weight="700">
+                      {n.title}
+                    </AppText>
+                    <AppText variant="caption" color="textSecondary" style={{ marginTop: 2 }}>
+                      {n.body}
+                    </AppText>
+                  </View>
+                </View>
+              </View>
+            ))}
+          </View>
+
+          <View style={{ paddingHorizontal: space.lg, marginTop: space.xl }}>
+            {done ? (
+              <View style={[styles.done, { backgroundColor: colors.successSoft }]}>
+                <Icon name="check" size={18} color={colors.success} />
+                <AppText variant="label" color={colors.success} style={{ flex: 1, marginLeft: 10 }}>
+                  Subscribed. A welcome email is on its way to {done}.
+                </AppText>
+              </View>
             ) : (
-              <Button label="Allow" compact variant="secondary" onPress={async () => setPerm(await requestNotifications())} />
+              <>
+                <Field
+                  label="Email address"
+                  icon="mail"
+                  value={email}
+                  onChangeText={v => {
+                    setEmail(v);
+                    if (error) setError(undefined);
+                  }}
+                  error={error}
+                  placeholder="you@example.com"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoComplete="email"
+                  returnKeyType="send"
+                  onSubmitEditing={subscribe}
+                />
+                <Button label={busy ? 'Subscribing…' : 'Subscribe'} onPress={subscribe} />
+                <AppText variant="caption" color="textMuted" style={{ marginTop: space.md }}>
+                  We only use your email for these newsletters. Unsubscribe any time.
+                </AppText>
+              </>
             )}
           </View>
-        ) : null}
-        <Card padded={false} style={{ marginHorizontal: space.lg, marginTop: space.sm }}>
-          {ALERTS.map((a, i) => (
-            <View key={a.key}>
-              {i > 0 ? <Hairline inset={52} /> : null}
-              <ToggleRow icon={a.icon} title={a.title} body={a.body} value={alerts[a.key]} onChange={v => setAlert(a.key, v)} />
-            </View>
-          ))}
-        </Card>
-        <SectionHeader title="For your favourite teams" action="Manage" onAction={() => nav.navigate('Favourites')} style={{ marginTop: space.xxl }} />
-        {!teams.length ? (
-          <AppText variant="caption" color="textMuted" style={{ paddingHorizontal: space.lg }}>
-            Tap the heart on any team to get its alerts here.
-          </AppText>
-        ) : null}
-        <View style={styles.wrap}>
-          {teams.map(t => (
-            <View key={t} style={[styles.teamPill]}>
-              <TeamBadge id={t} size={28} />
-              <AppText variant="label" weight="600" style={{ marginLeft: 8 }}>
-                {team(t).name}
-              </AppText>
-            </View>
-          ))}
-        </View>
-        <AppText variant="caption" color="textMuted" style={{ paddingHorizontal: space.lg, marginTop: space.lg }}>
-          Push delivery is switched on once the notification service is connected to the backend.
-        </AppText>
-      </Body>
+        </Body>
+      </KeyboardAvoidingView>
     </Screen>
   );
 }
@@ -266,81 +281,19 @@ export function OddsScreen() {
       </Screen>
     );
   }
-  const rows = [
-    { src: 'Source A', pak: 2.55, sa: 1.52, at: '2m' },
-    { src: 'Source B', pak: 2.62, sa: 1.5, at: '1m' },
-    { src: 'Source C', pak: 2.48, sa: 1.55, at: '4m' },
-  ];
-  const best = Math.max(...rows.map(r => r.pak));
+  // The API stores licensed odds snapshots per match; none are stored yet, so show that plainly.
   return (
     <Screen>
-      <Header title="Odds intelligence" subtitle="PAK vs SA · 2nd T20I · Match winner" />
+      <Header title="Odds intelligence" />
       <Body>
-        <View style={[styles.sample, { backgroundColor: colors.warningSoft }]}>
-          <AppText variant="micro" color="warning">
-            SAMPLE LAYOUT — NOT LIVE PRICES. LICENSED FEEDS CONNECT IN PHASE 5.
-          </AppText>
+        <EmptyState
+          icon="scale"
+          title="No licensed prices yet"
+          body="Prices from licensed sources appear here, with the source and update time, once odds feeds are connected. Until then, the converter turns any price into a probability."
+        />
+        <View style={{ paddingHorizontal: space.lg }}>
+          <Button label="Open the odds converter" onPress={() => nav.navigate('Tool', { id: 'odds' })} />
         </View>
-        <Card padded={false} style={{ marginHorizontal: space.lg, marginTop: space.md }}>
-          <View style={[styles.oddsHead, { backgroundColor: colors.elevated }]}>
-            <AppText variant="micro" color="textMuted" style={{ flex: 1 }}>
-              SOURCE
-            </AppText>
-            <AppText variant="micro" color="textMuted" style={styles.oddsCol}>
-              PAK
-            </AppText>
-            <AppText variant="micro" color="textMuted" style={styles.oddsCol}>
-              SA
-            </AppText>
-          </View>
-          {rows.map((r, i) => (
-            <View key={r.src}>
-              {i > 0 ? <Hairline /> : null}
-              <View style={styles.oddsRow}>
-                <View style={{ flex: 1 }}>
-                  <AppText variant="label" weight="600">
-                    {r.src}
-                  </AppText>
-                  <AppText variant="caption" color="textMuted">
-                    Updated {r.at} ago
-                  </AppText>
-                </View>
-                <View style={[styles.oddsCol, r.pak === best && { backgroundColor: colors.successSoft, borderRadius: radius.xs }]}>
-                  <AppText variant="headline" weight="700" tabular align="center" color={r.pak === best ? 'success' : 'text'}>
-                    {r.pak.toFixed(2)}
-                  </AppText>
-                </View>
-                <AppText variant="headline" weight="700" tabular style={styles.oddsCol}>
-                  {r.sa.toFixed(2)}
-                </AppText>
-              </View>
-            </View>
-          ))}
-        </Card>
-        <SectionHeader title="Model vs market" style={{ marginTop: space.xxl }} />
-        <Card style={{ marginHorizontal: space.lg }}>
-          {[
-            { label: 'Market (no margin)', p: 0.38 },
-            { label: 'Our model', p: 0.35 },
-          ].map(x => (
-            <View key={x.label} style={{ marginBottom: 14 }}>
-              <View style={styles.rowC}>
-                <AppText variant="label" color="textSecondary" style={{ flex: 1 }}>
-                  {x.label}
-                </AppText>
-                <AppText variant="label" weight="700" tabular>
-                  PAK {Math.round(x.p * 100)}%
-                </AppText>
-              </View>
-              <View style={[styles.mvm, { backgroundColor: colors.elevated }]}>
-                <View style={{ width: `${x.p * 100}%`, height: 6, borderRadius: 3, backgroundColor: team('pak').color }} />
-              </View>
-            </View>
-          ))}
-          <AppText variant="caption" color="textMuted">
-            Analytical comparison only. Differences are not betting advice.
-          </AppText>
-        </Card>
       </Body>
     </Screen>
   );
@@ -353,11 +306,9 @@ const styles = StyleSheet.create({
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm, paddingHorizontal: space.lg },
   teamPill: { flexDirection: 'row', alignItems: 'center', paddingRight: 12 },
   followRow: { flexDirection: 'row', alignItems: 'center', paddingLeft: space.lg, paddingRight: space.sm, minHeight: 58 },
+  newsletterRow: { flexDirection: 'row', alignItems: 'flex-start', paddingHorizontal: space.lg, paddingVertical: space.md },
+  newsletterIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  done: { flexDirection: 'row', alignItems: 'center', padding: space.md, borderRadius: radius.md },
   star: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   gateIcon: { width: 64, height: 64, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  sample: { marginHorizontal: space.lg, marginTop: space.sm, padding: space.md, borderRadius: radius.sm },
-  oddsHead: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.lg, paddingVertical: 8 },
-  oddsRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.lg, minHeight: 60 },
-  oddsCol: { width: 72, textAlign: 'center', paddingVertical: 6 },
-  mvm: { height: 6, borderRadius: 3, marginTop: 6, overflow: 'hidden' },
 });

@@ -1,4 +1,4 @@
-import { API_URL, REQUEST_TIMEOUT_MS } from '../config';
+import { API_HEADERS, API_URL, REQUEST_TIMEOUT_MS } from '../config';
 
 const unreachable = __DEV__
   ? `Can't reach the API at ${API_URL}. Is the backend running?`
@@ -74,6 +74,7 @@ async function request<T>(
       method,
       credentials: 'include',
       headers: {
+        ...API_HEADERS,
         Accept: 'application/json',
         ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
       },

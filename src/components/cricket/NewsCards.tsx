@@ -11,11 +11,6 @@ import { Fade, Glow } from '../ui/Primitives';
 import { Touch } from '../ui/Touch';
 import { badgeFill, shade } from '../../utils/color';
 
-const PHOTOS = {
-  stadium: require('../../assets/images/stadium.jpg'),
-  pitch: require('../../assets/images/pitch.jpg'),
-};
-
 /**
  * Cover art for an article: its photo when it has one, otherwise a
  * generated cover from the associated teams' colours and codes.
@@ -26,7 +21,7 @@ export function ArticleArt({ article, height, rounded = radius.md }: { article: 
   if (article.image) {
     return (
       <View style={{ height, borderRadius: rounded, overflow: 'hidden', backgroundColor: colors.elevated }}>
-        <Image source={PHOTOS[article.image]} style={StyleSheet.absoluteFill} resizeMode="cover" />
+        <Image source={{ uri: article.image }} style={StyleSheet.absoluteFill} resizeMode="cover" />
       </View>
     );
   }

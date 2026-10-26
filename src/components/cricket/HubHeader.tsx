@@ -59,7 +59,7 @@ export function HubHeader({
 }
 
 const styles = StyleSheet.create({
-  wrap: { paddingHorizontal: space.lg, paddingTop: space.sm, paddingBottom: space.lg, overflow: 'hidden' },
+  wrap: { paddingHorizontal: space.lg, paddingTop: space.xl, paddingBottom: space.xl, overflow: 'hidden' },
   row: { flexDirection: 'row', alignItems: 'center' },
   fav: { borderRadius: 23, borderWidth: StyleSheet.hairlineWidth * 2, marginLeft: space.sm },
 });

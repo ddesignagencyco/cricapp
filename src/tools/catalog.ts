@@ -231,9 +231,3 @@ export const TOOLS: Tool[] = [
 ];
 
 /** Shown in the hub as "coming soon". */
-export const UPCOMING_TOOLS: { title: string; icon: IconName }[] = [
-  { title: 'DLS calculator', icon: 'cloudRain' },
-  { title: 'Match simulator', icon: 'play' },
-  { title: 'What-if simulator', icon: 'layers' },
-  { title: 'Fantasy points', icon: 'wandSparkles' },
-];

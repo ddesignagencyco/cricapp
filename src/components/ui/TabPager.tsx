@@ -25,20 +25,8 @@ interface Layout {
   w: number;
 }
 
-/** Scrollable tab strip with an indicator that tracks the swipe position. */
-function TabStrip({
-  tabs,
-  index,
-  scrollX,
-  pageWidth,
-  onSelect,
-}: {
-  tabs: PagerTab[];
-  index: number;
-  scrollX: Animated.Value;
-  pageWidth: number;
-  onSelect: (i: number) => void;
-}) {
+/** Scrollable row of section pills; the selected one is filled and kept in view. */
+function TabStrip({ tabs, index, onSelect }: { tabs: PagerTab[]; index: number; onSelect: (i: number) => void }) {
   const { colors } = useTheme();
   const [layouts, setLayouts] = useState<Layout[]>([]);
   const strip = useRef<React.ComponentRef<typeof ScrollView>>(null);
@@ -57,60 +45,26 @@ function TabStrip({
     if (l) strip.current?.scrollTo({ x: Math.max(0, l.x - 48), animated: true });
   }, [index, layouts]);
 
-  const ready = layouts.length === tabs.length && layouts.every(Boolean);
-  const inputRange = tabs.map((_, i) => i * pageWidth);
-  const BASE = 100;
-
   return (
-    <View style={[styles.stripWrap, { borderBottomColor: colors.hairline }]}>
-      <ScrollView
-        ref={strip}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.strip}
-      >
-        {tabs.map((t, i) => (
-          <Touch
-            key={t.key}
-            onLayout={onTabLayout(i)}
-            onPress={() => onSelect(i)}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: i === index }}
-            style={styles.tab}
-          >
-            <AppText variant="label" weight="600" color={i === index ? 'text' : 'textMuted'}>
-              {t.label}
-            </AppText>
-          </Touch>
-        ))}
-        {ready && tabs.length > 1 ? (
-          <Animated.View
-            pointerEvents="none"
-            style={[
-              styles.indicator,
-              {
-                width: BASE,
-                backgroundColor: colors.brand,
-                transform: [
-                  {
-                    translateX: scrollX.interpolate({
-                      inputRange,
-                      outputRange: layouts.map(l => l.x + l.w / 2 - BASE / 2),
-                      extrapolate: 'clamp',
-                    }),
-                  },
-                  {
-                    scaleX: scrollX.interpolate({
-                      inputRange,
-                      outputRange: layouts.map(l => (l.w - 24) / BASE),
-                      extrapolate: 'clamp',
-                    }),
-                  },
-                ],
-              },
-            ]}
-          />
-        ) : null}
+    <View style={[styles.stripWrap, { backgroundColor: colors.surface, borderBottomColor: colors.hairline }]}>
+      <ScrollView ref={strip} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.strip}>
+        {tabs.map((t, i) => {
+          const on = i === index;
+          return (
+            <Touch
+              key={t.key}
+              onLayout={onTabLayout(i)}
+              onPress={() => onSelect(i)}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: on }}
+              style={[styles.pill, { backgroundColor: on ? colors.brand : colors.elevated }]}
+            >
+              <AppText variant="label" weight={on ? '700' : '600'} color={on ? '#FFFFFF' : 'textSecondary'}>
+                {t.label}
+              </AppText>
+            </Touch>
+          );
+        })}
       </ScrollView>
     </View>
   );
@@ -158,7 +112,7 @@ export function TabPager({
   return (
     <View style={{ flex: 1 }}>
       {header}
-      <TabStrip tabs={tabs} index={index} scrollX={scrollX} pageWidth={width} onSelect={go} />
+      <TabStrip tabs={tabs} index={index} onSelect={go} />
       <Animated.FlatList
         ref={list as never}
         data={tabs}
@@ -184,7 +138,6 @@ export function TabPager({
 
 const styles = StyleSheet.create({
   stripWrap: { borderBottomWidth: StyleSheet.hairlineWidth * 2 },
-  strip: { paddingHorizontal: space.sm },
-  tab: { height: 46, paddingHorizontal: 12, justifyContent: 'center' },
-  indicator: { position: 'absolute', left: 0, bottom: 0, height: 3, borderTopLeftRadius: 3, borderTopRightRadius: 3 },
+  strip: { paddingHorizontal: space.lg, paddingVertical: 10, gap: space.sm },
+  pill: { height: 36, paddingHorizontal: 16, borderRadius: 18, justifyContent: 'center', overflow: 'hidden' },
 });

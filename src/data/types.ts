@@ -17,9 +17,11 @@ export interface Team {
   kind: 'international' | 'franchise' | 'domestic';
   flag?: string;
   slug: string;
+  logoUrl?: string;
 }
 
-export type Role = 'Batter' | 'Bowler' | 'All-rounder' | 'Wicketkeeper';
+/** 'Player' when the feed doesn't say which. */
+export type Role = 'Batter' | 'Bowler' | 'All-rounder' | 'Wicketkeeper' | 'Player';
 
 export interface Player {
   id: string;
@@ -32,7 +34,8 @@ export interface Player {
   born?: string;
   age?: number;
   slug: string;
-  /** Career snapshot by format. */
+  nationality?: string;
+  /** Career snapshot by format (empty until the API provides career stats). */
   stats: Partial<Record<Format, PlayerFormatStats>>;
   recent: number[];
 }
@@ -136,6 +139,8 @@ export interface Ball {
   text: string;
   bowler: string;
   batter: string;
+  /** Innings number (1-based), so overs from different innings never mix. */
+  inning?: number;
 }
 
 export interface OverSummary {
@@ -169,7 +174,8 @@ export interface Match {
   live?: {
     crr: number;
     rrr?: number;
-    partnership: { runs: number; balls: number };
+    /** Current stand, from the ball-by-ball feed (absent on list rows). */
+    partnership?: { runs: number; balls: number };
     lastWicket?: string;
     recent: BallOutcome[];
     projected?: number;
@@ -230,7 +236,8 @@ export interface Article {
   playerIds: string[];
   matchId?: string;
   seriesId?: string;
-  image?: 'stadium' | 'pitch';
+  /** Cover image URL (Cloudinary). */
+  image?: Photo;
 }
 
 export interface Factor {
@@ -259,6 +266,8 @@ export interface Prediction {
   momentum?: number;
   pressure?: number;
   inputs: string[];
+  /** Plain-language summary of the stored run, from the API. */
+  narrative?: string;
   outcome?: 'correct' | 'incorrect';
 }
 
@@ -286,7 +295,8 @@ export interface Comment {
   staff?: boolean;
 }
 
-export type Photo = 'stadium' | 'pitch';
+/** Remote image URL (Cloudinary). */
+export type Photo = string;
 
 /** One frame of a short or gallery story. */
 export interface Slide {
@@ -310,6 +320,8 @@ export interface Short {
   publishedAt: string;
   matchId?: string;
   live?: boolean;
+  /** Video file for a short (opens in the player app). */
+  videoUrl?: string;
 }
 
 /** Long-form video (highlights, press conferences). */
@@ -322,6 +334,7 @@ export interface Video {
   views: number;
   publishedAt: string;
   category: string;
+  url?: string;
 }
 
 /** Promotional hero banner on Home, managed from the CMS. */

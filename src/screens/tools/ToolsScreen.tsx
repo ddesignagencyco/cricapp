@@ -1,77 +1,68 @@
 import React from 'react';
-import { StyleSheet, View, useWindowDimensions } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { AppText } from '../../components/ui/AppText';
 import { Icon, type IconName } from '../../components/ui/Icon';
 import { Body, Header, Screen } from '../../components/ui/Layout';
-import { SectionHeader, Tag } from '../../components/ui/Primitives';
+import { Card, Hairline, SectionHeader } from '../../components/ui/Primitives';
 import { Touch } from '../../components/ui/Touch';
 import { useNavigation } from '../../navigation/Stack';
 import { useTheme } from '../../theme/ThemeProvider';
 import { radius, space } from '../../theme/tokens';
-import { TOOLS, UPCOMING_TOOLS } from '../../tools/catalog';
+import { TOOLS, type Tool } from '../../tools/catalog';
 
-function Tile({ title, short, icon, onPress, soon, width }: { title: string; short?: string; icon: IconName; onPress?: () => void; soon?: boolean; width: number }) {
+/** Calculators fans use while following a match; odds maths stays out of the general list. */
+const GROUPS: Tool['group'][] = ['Run rates', 'Batting & bowling', 'Match situations'];
+
+function Row({ icon, title, body, onPress }: { icon: IconName; title: string; body: string; onPress: () => void }) {
   const { colors } = useTheme();
   return (
-    <Touch
-      scale={!soon}
-      disabled={soon}
-      onPress={onPress}
-      style={[styles.tile, { width, backgroundColor: colors.surface, borderColor: colors.hairline, opacity: soon ? 0.6 : 1 }]}
-    >
-      <View style={styles.tileTop}>
-        <View style={[styles.icon, { backgroundColor: soon ? colors.elevated : colors.brandSoft }]}>
-          <Icon name={icon} size={18} color={soon ? colors.textMuted : colors.accent} />
-        </View>
-        {soon ? <Tag label="SOON" /> : short ? <AppText variant="micro" color="textMuted">{short}</AppText> : null}
+    <Touch onPress={onPress} style={styles.row} accessibilityLabel={title}>
+      <View style={[styles.icon, { backgroundColor: colors.brandSoft }]}>
+        <Icon name={icon} size={18} color={colors.accent} />
       </View>
-      <AppText variant="label" weight="700" style={{ marginTop: 14 }} numberOfLines={2}>
-        {title}
-      </AppText>
+      <View style={{ flex: 1, marginHorizontal: space.md }}>
+        <AppText variant="label" weight="700">
+          {title}
+        </AppText>
+        <AppText variant="caption" color="textSecondary" numberOfLines={1} style={{ marginTop: 2 }}>
+          {body}
+        </AppText>
+      </View>
+      <Icon name="chevronRight" size={16} color={colors.textMuted} />
     </Touch>
   );
 }
 
 export default function ToolsScreen() {
   const nav = useNavigation();
-  const { width } = useWindowDimensions();
-  const w = (width - space.lg * 2 - space.md) / 2;
-  const groups = [...new Set(TOOLS.map(t => t.group))];
   return (
     <Screen>
-      <Header title="Cricket tools" subtitle="Calculators, comparisons and simulators" />
+      <Header title="Cricket tools" />
       <Body>
-        <SectionHeader title="Compare" style={{ marginTop: space.sm }} />
-        <View style={styles.grid}>
-          <Tile title="Player comparison" icon="gitCompare" width={w} onPress={() => nav.navigate('Compare', { kind: 'players' })} />
-          <Tile title="Head-to-head" icon="swords" width={w} onPress={() => nav.navigate('Compare', { kind: 'teams' })} />
-          <Tile title="AI win predictor" icon="sparkles" width={w} onPress={() => nav.navigate('Tabs', { tab: 'predict' })} />
-          <Tile title="Model accuracy" icon="chartLine" width={w} onPress={() => nav.navigate('ModelPerformance')} />
-        </View>
-        {groups.map(g => (
-          <View key={g}>
-            <SectionHeader title={g} style={{ marginTop: space.xxl }} />
-            <View style={styles.grid}>
-              {TOOLS.filter(t => t.group === g).map(t => (
-                <Tile key={t.id} title={t.title} short={t.short} icon={t.icon} width={w} onPress={() => nav.navigate('Tool', { id: t.id })} />
+        <SectionHeader title="Compare" />
+        <Card padded={false} style={styles.card}>
+          <Row icon="swords" title="Head-to-head" body="How two teams have fared against each other" onPress={() => nav.navigate('Compare', { kind: 'teams' })} />
+        </Card>
+        {GROUPS.map(g => (
+          <View key={g} style={{ marginTop: space.xl }}>
+            <SectionHeader title={g} />
+            <Card padded={false} style={styles.card}>
+              {TOOLS.filter(t => t.group === g).map((t, i) => (
+                <View key={t.id}>
+                  {i > 0 ? <Hairline inset={space.lg + 40 + space.md} /> : null}
+                  <Row icon={t.icon} title={t.title} body={t.explain} onPress={() => nav.navigate('Tool', { id: t.id })} />
+                </View>
               ))}
-            </View>
+            </Card>
           </View>
         ))}
-        <SectionHeader title="Coming soon" style={{ marginTop: space.xxl }} />
-        <View style={styles.grid}>
-          {UPCOMING_TOOLS.map(t => (
-            <Tile key={t.title} title={t.title} icon={t.icon} width={w} soon />
-          ))}
-        </View>
       </Body>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.md, paddingHorizontal: space.lg },
-  tile: { borderRadius: radius.lg, borderWidth: StyleSheet.hairlineWidth * 2, padding: space.lg, minHeight: 118, overflow: 'hidden' },
-  tileTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  icon: { width: 36, height: 36, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  card: { marginHorizontal: space.lg },
+  row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.lg, paddingVertical: 14, minHeight: 64 },
+  icon: { width: 40, height: 40, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
 });

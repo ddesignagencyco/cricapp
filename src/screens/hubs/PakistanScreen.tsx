@@ -1,57 +1,27 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { HubHeader } from '../../components/cricket/HubHeader';
-import { Leaders, MatchList, NewsList, PlayerList } from '../../components/cricket/Lists';
+import { MatchList, NewsList, PlayerList } from '../../components/cricket/Lists';
 import { MatchHeroCard } from '../../components/cricket/MatchCards';
-import { PointsTable } from '../../components/cricket/Tables';
 import { AppText } from '../../components/ui/AppText';
 import { SkeletonList } from '../../components/ui/Controls';
-import { Icon } from '../../components/ui/Icon';
 import { Body, Header, Screen } from '../../components/ui/Layout';
-import { Card, SectionHeader } from '../../components/ui/Primitives';
+import { EmptyState, SectionHeader } from '../../components/ui/Primitives';
 import { TabPager } from '../../components/ui/TabPager';
-import { Touch } from '../../components/ui/Touch';
-import { allPlayers } from '../../data/refs';
-import { repo } from '../../data/repo';
+import { PAKISTAN_ID, repo } from '../../data/repo';
 import { useQuery } from '../../data/useQuery';
 import { useNavigation } from '../../navigation/Stack';
 import { useTheme } from '../../theme/ThemeProvider';
-import { radius, space } from '../../theme/tokens';
+import { space } from '../../theme/tokens';
 
-const pak = allPlayers.filter(p => p.teamId === 'pak');
-const top = (key: 'runs' | 'wickets', fmt: 'T20' | 'ODI' | 'Test') =>
-  pak
-    .map(p => ({ playerId: p.id, value: p.stats[fmt]?.[key] ?? 0 }))
-    .filter(r => r.value > 0)
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 5);
-
-function RankTile({ format, rank }: { format: string; rank: number }) {
-  const { colors } = useTheme();
-  const nav = useNavigation();
-  return (
-    <Touch scale onPress={() => nav.navigate('Rankings')} style={[styles.rank, { backgroundColor: colors.surface, borderColor: colors.hairline }]}>
-      <AppText variant="micro" color="textMuted">
-        {format}
-      </AppText>
-      <AppText variant="display" tabular style={{ marginTop: 2 }}>
-        #{rank}
-      </AppText>
-      <AppText variant="caption" color="textSecondary">
-        ICC ranking
-      </AppText>
-    </Touch>
-  );
-}
+const usePakistan = () => useQuery(`team:${PAKISTAN_ID}`, () => repo.team(PAKISTAN_ID), { live: true });
 
 function Overview() {
   const nav = useNavigation();
-  const { data } = useQuery('team:pak', () => repo.team('pak'), { live: true });
-  const rankings = useQuery('rankings', repo.rankings);
+  const { data } = usePakistan();
   if (!data) return <SkeletonList count={3} height={150} />;
   const live = data.fixtures.find(m => m.status === 'live');
   const next = data.fixtures.find(m => m.status === 'upcoming');
-  const rankOf = (f: 'T20' | 'ODI' | 'Test') => rankings.data?.teams[f].find(r => r.id === 'pak')?.rank ?? 0;
   return (
     <Body contentStyle={{ paddingTop: space.lg }}>
       {live || next ? (
@@ -59,11 +29,12 @@ function Overview() {
           <MatchHeroCard match={(live ?? next)!} />
         </View>
       ) : null}
-      <View style={styles.ranks}>
-        <RankTile format="T20I" rank={rankOf('T20')} />
-        <RankTile format="ODI" rank={rankOf('ODI')} />
-        <RankTile format="TEST" rank={rankOf('Test')} />
-      </View>
+      {!live && !next && data.results[0] ? (
+        <>
+          <SectionHeader title="Last result" style={{ marginTop: space.sm }} />
+          <MatchList matches={data.results.slice(0, 1)} />
+        </>
+      ) : null}
       <SectionHeader title="Latest" action="All news" onAction={() => nav.navigate('Tabs', { tab: 'news' })} style={{ marginTop: space.xxl }} />
       <NewsList articles={data.news.slice(0, 4)} />
     </Body>
@@ -71,7 +42,7 @@ function Overview() {
 }
 
 function Fixtures() {
-  const { data } = useQuery('team:pak', () => repo.team('pak'), { live: true });
+  const { data } = usePakistan();
   if (!data) return <SkeletonList count={3} />;
   return (
     <Body contentStyle={{ paddingTop: space.lg }}>
@@ -84,58 +55,24 @@ function Fixtures() {
 }
 
 function Squad() {
-  const groups = ['Batter', 'Wicketkeeper', 'All-rounder', 'Bowler'] as const;
+  const { data } = usePakistan();
+  const groups = ['Batter', 'Wicketkeeper', 'All-rounder', 'Bowler', 'Player'] as const;
+  if (!data) return <SkeletonList count={4} height={64} />;
+  if (!data.squad.length) return <EmptyState icon="users" title="No squad listed" body="The squad appears here once it is announced." />;
   return (
     <Body contentStyle={{ paddingTop: space.md }}>
-      {groups.map(g => (
+      {groups.filter(g => data.squad.some(p => p.role === g)).map(g => (
         <View key={g}>
           <SectionHeader title={g === 'All-rounder' ? 'All-rounders' : `${g}s`} style={{ marginTop: space.lg }} />
-          <PlayerList players={pak.filter(p => p.role === g)} meta={p => `${p.batting}${p.bowling ? ` · ${p.bowling}` : ''}`} />
+          <PlayerList players={data.squad.filter(p => p.role === g)} meta={p => [p.batting, p.bowling].filter(Boolean).join(' · ') || p.role} />
         </View>
       ))}
     </Body>
   );
 }
 
-function Stats() {
-  return (
-    <Body contentStyle={{ paddingTop: space.lg, gap: space.md }}>
-      <Leaders title="Most T20I runs" unit="RUNS" rows={top('runs', 'T20')} />
-      <Leaders title="Most T20I wickets" unit="WKTS" rows={top('wickets', 'T20')} />
-      <Leaders title="Most ODI runs" unit="RUNS" rows={top('runs', 'ODI')} />
-    </Body>
-  );
-}
-
-function Domestic() {
-  const { colors } = useTheme();
-  const { data } = useQuery('series:nt20', () => repo.series('nt20'));
-  if (!data) return <SkeletonList count={3} />;
-  return (
-    <Body contentStyle={{ paddingTop: space.lg }}>
-      <Card style={{ marginHorizontal: space.lg }}>
-        <View style={styles.rowC}>
-          <Icon name="landmark" size={18} color={colors.pakistan} />
-          <AppText variant="label" weight="700" style={{ marginLeft: 8 }}>
-            {data.series.name}
-          </AppText>
-        </View>
-        <AppText variant="caption" color="textSecondary" style={{ marginTop: 6 }}>
-          Domestic coverage expands as data feeds allow — Quaid-e-Azam Trophy and Pakistan Cup are next.
-        </AppText>
-      </Card>
-      <SectionHeader title="Table" style={{ marginTop: space.xl }} />
-      <Card padded={false} style={{ marginHorizontal: space.lg }}>
-        <PointsTable rows={data.standings} compact />
-      </Card>
-      <SectionHeader title="Matches" style={{ marginTop: space.xl }} />
-      <MatchList matches={data.matches} />
-    </Body>
-  );
-}
-
 function News() {
-  const { data } = useQuery('news:pakistan-hub', () => repo.newsFor({ teamId: 'pak' }));
+  const { data } = useQuery('news:pakistan-hub', () => repo.newsFor({ teamId: PAKISTAN_ID }));
   if (!data) return <SkeletonList count={4} height={90} />;
   return (
     <Body contentStyle={{ paddingTop: space.sm }}>
@@ -148,8 +85,6 @@ const TABS = [
   { key: 'overview', label: 'Overview' },
   { key: 'fixtures', label: 'Fixtures' },
   { key: 'squad', label: 'Squad' },
-  { key: 'stats', label: 'Stats' },
-  { key: 'domestic', label: 'Domestic' },
   { key: 'news', label: 'News' },
 ];
 
@@ -157,7 +92,7 @@ export default function PakistanScreen() {
   const { colors } = useTheme();
   return (
     <Screen>
-      <Header />
+      <Header title="Pakistan" />
       <TabPager
         tabs={TABS}
         header={
@@ -165,8 +100,8 @@ export default function PakistanScreen() {
             color={colors.pakistan}
             overline="HUB"
             title="Pakistan"
-            subtitle="Men's international · domestic · records"
-            favourite={{ kind: 'team', id: 'pak' }}
+            subtitle="Fixtures, squad and news"
+            favourite={{ kind: 'team', id: PAKISTAN_ID }}
             mark={
               <View style={[styles.mark, { backgroundColor: colors.pakistanSoft }]}>
                 <AppText style={{ fontSize: 30, lineHeight: 38 }}>🇵🇰</AppText>
@@ -182,10 +117,6 @@ export default function PakistanScreen() {
               return <Fixtures />;
             case 'squad':
               return <Squad />;
-            case 'stats':
-              return <Stats />;
-            case 'domestic':
-              return <Domestic />;
             default:
               return <News />;
           }
@@ -196,8 +127,5 @@ export default function PakistanScreen() {
 }
 
 const styles = StyleSheet.create({
-  rowC: { flexDirection: 'row', alignItems: 'center' },
   mark: { width: 64, height: 64, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  ranks: { flexDirection: 'row', gap: space.sm, paddingHorizontal: space.lg, marginTop: space.md },
-  rank: { flex: 1, borderRadius: radius.md, borderWidth: StyleSheet.hairlineWidth * 2, padding: space.md, overflow: 'hidden' },
 });

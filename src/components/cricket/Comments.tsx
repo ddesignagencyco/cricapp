@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { repo } from '../../data/repo';
 import type { Comment } from '../../data/types';
+import { useAuth } from '../../state/auth';
 import { useNavigation } from '../../navigation/Stack';
 import { useTheme } from '../../theme/ThemeProvider';
 import { radius, space } from '../../theme/tokens';
@@ -23,7 +25,6 @@ export function CommentItem({
   depth?: number;
 }) {
   const { colors } = useTheme();
-  const [liked, setLiked] = useState(false);
   const [open, setOpen] = useState(comment.replies.length <= 1);
   return (
     <View>
@@ -49,12 +50,6 @@ export function CommentItem({
             {comment.body}
           </AppText>
           <View style={[styles.rowC, { marginTop: 8, gap: 18 }]}>
-            <Touch onPress={() => setLiked(l => !l)} style={styles.action} accessibilityLabel={liked ? 'Unlike' : 'Like'}>
-              <Icon name={liked ? 'heartFill' : 'heart'} size={16} color={liked ? colors.live : colors.textMuted} />
-              <AppText variant="caption" weight="600" color={liked ? 'live' : 'textMuted'} tabular style={{ marginLeft: 5 }}>
-                {compact(comment.likes + (liked ? 1 : 0))}
-              </AppText>
-            </Touch>
             {onReply && depth === 0 ? (
               <Touch onPress={() => onReply(comment)} style={styles.action}>
                 <Icon name="messageCircle" size={16} color={colors.textMuted} />
@@ -99,18 +94,36 @@ export function Composer({ onPress, placeholder = 'Add a comment…' }: { onPres
   );
 }
 
-/** Reaction counts with tap-to-react (the website's reaction set). */
-export function ReactionBar({ counts }: { counts: Record<string, number> }) {
+const REACTIONS = ['🔥', '👏', '😮', '😢', '🏏'];
+
+/** Reaction counts with tap-to-react. Reacting needs an account (the API ties reactions to a user). */
+export function ReactionBar({ counts, thread }: { counts: Record<string, number>; thread: string }) {
   const { colors } = useTheme();
+  const nav = useNavigation();
+  const { user } = useAuth();
   const [mine, setMine] = useState<string | null>(null);
+  const list = [...new Set([...REACTIONS, ...Object.keys(counts)])];
+  const react = async (emoji: string) => {
+    if (!user) return nav.navigate('SignIn');
+    const prev = mine;
+    // Optimistic: one reaction at a time, like the website.
+    setMine(prev === emoji ? null : emoji);
+    try {
+      if (prev && prev !== emoji) await repo.react(thread, prev);
+      await repo.react(thread, emoji);
+    } catch {
+      setMine(prev);
+    }
+  };
   return (
-    <View style={[styles.rowC, { gap: space.sm, paddingHorizontal: space.lg }]}>
-      {Object.entries(counts).map(([emoji, n]) => {
+    <View style={[styles.rowC, { gap: space.sm, paddingHorizontal: space.lg, flexWrap: 'wrap' }]}>
+      {list.map(emoji => {
+        const n = counts[emoji] ?? 0;
         const on = mine === emoji;
         return (
           <Touch
             key={emoji}
-            onPress={() => setMine(on ? null : emoji)}
+            onPress={() => react(emoji)}
             accessibilityState={{ selected: on }}
             style={[styles.reaction, { backgroundColor: on ? colors.brandSoft : colors.surface, borderColor: on ? colors.brand : colors.hairline }]}
           >
@@ -151,7 +164,7 @@ export function CommentsPreview({ thread, title, list, total }: { thread: string
         <Hairline />
         <Touch onPress={open} style={styles.viewAll}>
           <AppText variant="label" weight="700" color="accent">
-            View all {total} comments
+            {total ? `View all ${total} comments` : 'Be the first to comment'}
           </AppText>
           <Icon name="chevronRight" size={16} color={colors.accent} />
         </Touch>

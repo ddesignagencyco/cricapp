@@ -8,8 +8,8 @@ import { FavouriteButton } from '../../components/ui/FavouriteButton';
 import { Body, Header, Screen } from '../../components/ui/Layout';
 import { Card, EmptyState, Hairline, SectionHeader } from '../../components/ui/Primitives';
 import { Touch } from '../../components/ui/Touch';
-import { articles } from '../../data/mock/news';
-import { matches } from '../../data/mock/matches';
+import { repo } from '../../data/repo';
+import { useQuery } from '../../data/useQuery';
 import { author, player, team } from '../../data/refs';
 import { useNavigation } from '../../navigation/Stack';
 import { usePrefs } from '../../state/prefs';
@@ -40,9 +40,16 @@ export default function FavouritesScreen() {
   const nav = useNavigation();
   const { favouritesOf, favourites } = usePrefs();
   const teams = favouritesOf('team');
+  // Names for teams saved before names were stored: fetch once, then the registry has them.
+  const missing = teams.filter(id => team(id).name === 'TBC');
+  useQuery(`fav:teams:${missing.join(',')}`, () => Promise.all(missing.map(id => repo.teamInfo(id).catch(() => null))));
   const players = favouritesOf('player');
-  const ms = favouritesOf('match').map(id => matches.find(m => m.id === id)).filter(Boolean);
-  const news = favouritesOf('article').map(id => articles.find(a => a.id === id)).filter(Boolean);
+  const matchIds = favouritesOf('match');
+  const articleIds = favouritesOf('article');
+  // Saved items are stored as ids; fetch them fresh (a removed item just drops out).
+  const ms = useQuery(`fav:matches:${matchIds.join(',')}`, () => Promise.all(matchIds.map(id => repo.match(id).catch(() => null)))).data?.filter(m => !!m) ?? [];
+  const news =
+    useQuery(`fav:articles:${articleIds.join(',')}`, () => Promise.all(articleIds.map(id => repo.article(id).then(r => r.article).catch(() => null)))).data?.filter(a => !!a) ?? [];
   const authors = favouritesOf('author');
 
   return (
@@ -91,14 +98,11 @@ export default function FavouritesScreen() {
           {ms.length ? (
             <>
               <SectionHeader title="Matches" style={{ marginTop: space.xl }} />
-              <Card padded={false} style={{ marginHorizontal: space.lg }}>
-                {ms.map((m, i) => (
-                  <View key={m!.id}>
-                    {i > 0 ? <Hairline /> : null}
-                    <MatchRow match={m!} />
-                  </View>
+              <View style={{ gap: space.md, paddingHorizontal: space.lg }}>
+                {ms.map(m => (
+                  <MatchRow key={m!.id} match={m!} />
                 ))}
-              </Card>
+              </View>
             </>
           ) : null}
           {news.length ? (

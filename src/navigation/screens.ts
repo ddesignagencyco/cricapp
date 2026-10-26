@@ -1,3 +1,7 @@
+import WatchScreen from '../screens/media/PlayerScreen';
+import { ContactScreen, EditorialScreen } from '../screens/editorial/EditorialScreens';
+import StreamsScreen from '../screens/streams/StreamsScreen';
+import TournamentsScreen from '../screens/entity/TournamentsScreen';
 import type { ComponentType } from 'react';
 import type { RouteName } from './routes';
 import TabsScreen from '../screens/TabsScreen';
@@ -7,7 +11,6 @@ import MatchCentreScreen from '../screens/match/MatchCentreScreen';
 import ArticleScreen from '../screens/news/ArticleScreen';
 import { NewsSectionScreen } from '../screens/news/NewsScreen';
 import PredictionScreen from '../screens/predict/PredictionScreen';
-import ModelPerformanceScreen from '../screens/predict/ModelPerformanceScreen';
 import PakistanScreen from '../screens/hubs/PakistanScreen';
 import PslScreen from '../screens/hubs/PslScreen';
 import TeamScreen from '../screens/entity/TeamScreen';
@@ -23,7 +26,7 @@ import { AlertsScreen, OddsScreen, SettingsScreen } from '../screens/settings/Se
 import FavouritesScreen from '../screens/favourites/FavouritesScreen';
 import { GalleryScreen, MediaViewerScreen } from '../screens/gallery/GalleryScreen';
 import CommentsScreen from '../screens/comments/CommentsScreen';
-import { ForgotPasswordScreen, ResetPasswordScreen, SignInScreen, SignUpScreen, VerifyEmailScreen } from '../screens/auth/AuthScreens';
+import { EditProfileScreen, ForgotPasswordScreen, ResetPasswordScreen, SignInScreen, SignUpScreen, VerifyEmailScreen } from '../screens/auth/AuthScreens';
 
 export const screens: { [K in RouteName]: ComponentType } = {
   Onboarding: OnboardingScreen,
@@ -36,7 +39,6 @@ export const screens: { [K in RouteName]: ComponentType } = {
   Pakistan: PakistanScreen,
   Psl: PslScreen,
   Prediction: PredictionScreen,
-  ModelPerformance: ModelPerformanceScreen,
   Rankings: RankingsScreen,
   Tools: ToolsScreen,
   Tool: ToolScreen,
@@ -57,4 +59,10 @@ export const screens: { [K in RouteName]: ComponentType } = {
   ForgotPassword: ForgotPasswordScreen,
   VerifyEmail: VerifyEmailScreen,
   ResetPassword: ResetPasswordScreen,
+  EditProfile: EditProfileScreen,
+  Streams: StreamsScreen,
+  Watch: WatchScreen,
+  Editorial: EditorialScreen,
+  Contact: ContactScreen,
+  Tournaments: TournamentsScreen,
 };

@@ -5,10 +5,10 @@ import { AppText } from '../../components/ui/AppText';
 import { ChipRow, Segmented, SkeletonList } from '../../components/ui/Controls';
 import { Icon } from '../../components/ui/Icon';
 import { Body, Header, Screen } from '../../components/ui/Layout';
-import { Card, Hairline } from '../../components/ui/Primitives';
+import { Card, EmptyState, Hairline } from '../../components/ui/Primitives';
 import { Touch } from '../../components/ui/Touch';
 import { player, team } from '../../data/refs';
-import { repo } from '../../data/repo';
+import { PAKISTAN_ID, repo } from '../../data/repo';
 import type { Ranking } from '../../data/types';
 import { useQuery } from '../../data/useQuery';
 import { useNavigation } from '../../navigation/Stack';
@@ -70,6 +70,8 @@ export default function RankingsScreen() {
       ) : null}
       {!data ? (
         <SkeletonList count={6} height={56} />
+      ) : !rows.length ? (
+        <EmptyState icon="listOrdered" title="Rankings aren’t available yet" body="ICC team and player rankings will appear here once our data feed includes them." />
       ) : (
         <Body>
           <Card padded={false} style={{ marginHorizontal: space.lg }}>
@@ -77,7 +79,7 @@ export default function RankingsScreen() {
               const isTeam = kind === 'teams';
               const name = isTeam ? team(r.id).name : player(r.id)?.name;
               const sub = isTeam ? (r.matches ? `${r.matches} matches` : '') : team(player(r.id)?.teamId ?? '').name;
-              const pakRow = isTeam ? r.id === 'pak' : player(r.id)?.teamId === 'pak';
+              const pakRow = isTeam ? r.id === PAKISTAN_ID : player(r.id)?.teamId === PAKISTAN_ID;
               return (
                 <View key={r.id}>
                   {i > 0 ? <Hairline inset={space.lg} /> : null}

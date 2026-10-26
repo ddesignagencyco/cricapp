@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Image, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { team as teamOf, player as playerOf } from '../../data/refs';
 import type { BallOutcome } from '../../data/types';
 import { useTheme } from '../../theme/ThemeProvider';
@@ -40,6 +40,15 @@ function Disc({ fill, label, size, ring, style, labelScale }: { fill: string; la
 export function TeamBadge({ id, size = 36, style, solid }: { id: string; size?: number; style?: StyleProp<ViewStyle>; solid?: boolean }) {
   const t = teamOf(id);
   const code = t.short.length > 3 ? t.short.slice(0, 3) : t.short;
+  const { colors } = useTheme();
+  // Crest when we have one (PSL franchises), otherwise the coloured disc with the team code.
+  if (t.logoUrl) {
+    return (
+      <View accessibilityLabel={t.name} style={[{ width: size, height: size, borderRadius: size / 2, backgroundColor: colors.surface, borderWidth: StyleSheet.hairlineWidth * 2, borderColor: colors.hairline, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }, style]}>
+        <Image source={{ uri: t.logoUrl }} style={{ width: size * 0.8, height: size * 0.8 }} resizeMode="contain" />
+      </View>
+    );
+  }
   return (
     <View accessibilityLabel={t.name}>
       <Disc fill={badgeFill(t.color)} label={code} size={size} ring={solid} style={style} labelScale={code.length > 2 ? 0.3 : 0.36} />

@@ -27,7 +27,7 @@ export default function ArticleScreen() {
   if (!data) {
     return (
       <Screen>
-        <Header />
+        <Header title="News" />
         <SkeletonList count={3} height={140} />
       </Screen>
     );
@@ -40,6 +40,7 @@ export default function ArticleScreen() {
   return (
     <Screen>
       <Header
+        title={a.category}
         right={
           <>
             <FavouriteButton kind="article" id={a.id} label={a.title} />

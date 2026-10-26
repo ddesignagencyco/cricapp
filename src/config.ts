@@ -1,19 +1,18 @@
-import { Platform } from 'react-native';
+/**
+ * Base URL of the CricApp NestJS API (cric_info/apps/api, port 3001),
+ * reached through a public HTTPS tunnel so the emulator and real phones
+ * (debug or release) all talk to the same backend. Switch this to the
+ * deployed API for launch.
+ */
+export const API_URL = 'https://bycpirzw4l.localto.net';
 
 /**
- * Base URL of the CricApp NestJS API (cric_info/apps/api, port 3001).
- *
- * - Android emulator reaches the host machine through 10.0.2.2.
- * - Physical phone on a debug build: run `adb reverse tcp:3001 tcp:3001`
- *   and use 'localhost', or rely on the LAN address below.
- * - Release (APK) builds have no Metro, so the address is baked in. For
- *   now it is this PC on the Wi-Fi network; switch to the deployed HTTPS
- *   API for launch (and drop the cleartext exception in
- *   android/app/src/main/res/xml/network_security_config.xml).
+ * Sent with every request. The free Localtonet tunnel answers first-time
+ * visitors with an HTML warning page unless this header is present.
  */
-const DEV_HOST = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
-const RELEASE_API_URL = 'http://192.168.18.23:3001';
+export const API_HEADERS: Record<string, string> = { 'localtonet-skip-warning': '1' };
 
-export const API_URL = __DEV__ ? `http://${DEV_HOST}:3001` : RELEASE_API_URL;
+/** The website, for pages the app links out to (policies, contact). */
+export const SITE_URL = 'https://pakcriczone.com';
 
 export const REQUEST_TIMEOUT_MS = 15000;

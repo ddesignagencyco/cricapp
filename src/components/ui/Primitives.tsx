@@ -342,6 +342,18 @@ export function ProgressBar({
   );
 }
 
+/** Shown when a screen's data failed to load: the reason and a retry. */
+export function ErrorState({ error, onRetry }: { error: Error; onRetry: () => void }) {
+  return (
+    <View>
+      <EmptyState icon="cloudRain" title="Couldn’t load this" body={error.message || 'Check your connection and try again.'} />
+      <View style={{ alignItems: 'center' }}>
+        <Button label="Try again" compact onPress={onRetry} />
+      </View>
+    </View>
+  );
+}
+
 export function EmptyState({ icon, title, body }: { icon: IconName; title: string; body?: string }) {
   const { colors } = useTheme();
   return (
@@ -372,7 +384,7 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth * 2,
     overflow: 'hidden',
   },
-  padded: { padding: space.lg },
+  padded: { padding: space.xl },
   tag: {
     flexDirection: 'row',
     alignItems: 'center',

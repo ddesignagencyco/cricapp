@@ -13,7 +13,6 @@ export interface Routes {
   Pakistan: undefined;
   Psl: undefined;
   Prediction: { id: string };
-  ModelPerformance: undefined;
   Rankings: undefined;
   Tools: undefined;
   Tool: { id: string };
@@ -24,7 +23,7 @@ export interface Routes {
   Favourites: undefined;
   Gallery: undefined;
   Comments: { thread: string; title: string };
-  MediaViewer: { id: string };
+  MediaViewer: { id: string; index?: number };
   Odds: undefined;
   Schedule: undefined;
   /** Full-screen reels viewer, opened at a given short. */
@@ -37,6 +36,15 @@ export interface Routes {
   VerifyEmail: { email: string; password?: string; sent?: boolean };
   /** Code from the reset email plus the new password, sent together. */
   ResetPassword: { email: string };
+  /** Name and username of the signed-in user (PATCH /auth/me). */
+  EditProfile: undefined;
+  Streams: undefined;
+  /** In-app player for a stream, video or watch page. */
+  Watch: { url: string; title: string; subtitle?: string };
+  /** A policy page: CMS content, or the website's built-in copy. */
+  Editorial: { slug: string; title: string };
+  Contact: undefined;
+  Tournaments: undefined;
 }
 
 export type RouteName = keyof Routes;

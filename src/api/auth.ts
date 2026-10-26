@@ -44,4 +44,5 @@ export const authApi = {
   verifyEmail: (email: string, code: string) => api.post<MessageResponse>('/auth/verify-email', { email, code }),
   resetPassword: (email: string, code: string, password: string) =>
     api.post<MessageResponse>('/auth/reset-password', { email, code, password }),
+  updateMe: (changes: { displayName?: string; username?: string }) => api.patch<UserProfile>('/auth/me', changes),
 };

@@ -1,21 +1,22 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Animated, Easing, FlatList, Pressable, Share, StatusBar, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, Animated, Easing, FlatList, Pressable, Share, StatusBar, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TeamBadge } from '../../components/cricket/Badges';
+import { BrandMark } from '../../components/ui/Layout';
 import { CoverArt, seenShorts } from '../../components/cricket/Media';
+import { ClipPlayer } from '../../components/media/Players';
 import { AppText } from '../../components/ui/AppText';
 import { Icon } from '../../components/ui/Icon';
 import { Fade } from '../../components/ui/Primitives';
 import { Touch } from '../../components/ui/Touch';
-import { shorts } from '../../data/mock/media';
+import { repo } from '../../data/repo';
+import { useQuery } from '../../data/useQuery';
 import type { Short } from '../../data/types';
 import { useNavigation, useParams } from '../../navigation/Stack';
 import { radius, space } from '../../theme/tokens';
 import { ago } from '../../utils/format';
 
 const SLIDE_MS = 5000;
-
-const compact = (n: number) => (n >= 1000 ? `${(n / 1000).toFixed(n >= 10000 ? 0 : 1)}K` : String(n));
 
 function Progress({ count, index, value }: { count: number; index: number; value: Animated.Value }) {
   return (
@@ -49,7 +50,6 @@ function ShortPage({
   const { width } = useWindowDimensions();
   const nav = useNavigation();
   const [slide, setSlide] = useState(0);
-  const [liked, setLiked] = useState(false);
   const progress = useRef(new Animated.Value(0)).current;
   const anim = useRef<Animated.CompositeAnimation | null>(null);
   const s = short.slides[slide];
@@ -79,9 +79,13 @@ function ShortPage({
       return;
     }
     seenShorts.add(short.id);
+    if (short.videoUrl) {
+      progress.setValue(1);
+      return;
+    }
     run(0);
     return () => anim.current?.stop();
-  }, [active, slide, run, progress, short.id]);
+  }, [active, slide, run, progress, short.id, short.videoUrl]);
 
   // Coming back to a short restarts it from the first frame.
   useEffect(() => {
@@ -104,7 +108,12 @@ function ShortPage({
 
   return (
     <View style={{ height, backgroundColor: '#03060C' }}>
-      <CoverArt photo={s.photo} teamIds={s.teamIds} dim={s.photo ? 0.25 : 0} frame={{ width, height }} />
+      {short.videoUrl && active ? (
+        // Reels-style: the clip fills the screen and loops while this short is on screen.
+        <ClipPlayer uri={short.videoUrl} poster={s.photo} loop controls={false} cover style={StyleSheet.absoluteFill} />
+      ) : (
+        <CoverArt photo={s.photo} teamIds={s.teamIds} dim={s.photo ? 0.25 : 0} frame={{ width, height }} />
+      )}
       <View style={styles.bottomShade} pointerEvents="none">
         <Fade color="#03060C" height={height * 0.55} flip opacity={0.95} />
       </View>
@@ -120,16 +129,17 @@ function ShortPage({
         </View>
       </View>
 
+
       <View style={[styles.top, { paddingTop: insets.top + 8 }]} pointerEvents="box-none">
         <Progress count={short.slides.length} index={slide} value={progress} />
         <View style={styles.headerRow} pointerEvents="box-none">
-          <TeamBadge id={short.teamIds[0]} size={32} />
+          {short.teamIds[0] ? <TeamBadge id={short.teamIds[0]} size={32} /> : <View style={styles.brand}><BrandMark height={16} /></View>}
           <View style={{ flex: 1, marginLeft: 10 }}>
             <AppText variant="label" weight="700" color="#FFFFFF">
               {short.title}
             </AppText>
             <AppText variant="caption" color="#C9CFDD">
-              {short.kind === 'gallery' ? 'Gallery' : 'Short'} · {ago(short.publishedAt)} · {compact(short.views)} views
+              {short.kind === 'gallery' ? `Gallery · ${short.slides.length} photos` : 'Short'} · {ago(short.publishedAt)}
             </AppText>
           </View>
           <Touch borderless onPress={onClose} style={styles.close} accessibilityLabel="Close">
@@ -148,7 +158,7 @@ function ShortPage({
               </AppText>
             </View>
           ) : null}
-          <AppText variant="hero" color="#FFFFFF" style={{ fontSize: 52, lineHeight: 58, letterSpacing: -1.5 }} tabular>
+          <AppText variant="hero" color="#FFFFFF" style={s.headline.length > 12 ? styles.headlineLong : styles.headline} tabular>
             {s.headline}
           </AppText>
           {s.stat ? (
@@ -162,12 +172,6 @@ function ShortPage({
           {short.matchId ? <View style={{ height: 52 }} /> : null}
         </View>
         <View style={styles.actions}>
-          <Touch borderless onPress={() => setLiked(l => !l)} style={styles.action} accessibilityLabel={liked ? 'Unlike' : 'Like'}>
-            <Icon name={liked ? 'heartFill' : 'heart'} size={28} color={liked ? '#FF4256' : '#FFFFFF'} />
-            <AppText variant="micro" color="#FFFFFF" style={{ marginTop: 4 }}>
-              {compact(Math.round(short.views / 9) + (liked ? 1 : 0))}
-            </AppText>
-          </Touch>
           <Touch
             borderless
             onPress={() => Share.share({ message: `${short.title} — PAK CRICZONE\nhttps://pakcriczone.com/shorts/${short.id}` })}
@@ -198,9 +202,22 @@ function ShortPage({
 
 export default function ShortsScreen() {
   const { id } = useParams('Shorts');
+  const { data } = useQuery('shorts', repo.shorts);
+  if (!data) {
+    return (
+      <View style={styles.loading}>
+        <StatusBar barStyle="light-content" />
+        <ActivityIndicator color="#FFFFFF" />
+      </View>
+    );
+  }
+  return <ShortsPager shorts={data} startId={id} />;
+}
+
+function ShortsPager({ shorts, startId }: { shorts: Short[]; startId: string }) {
   const nav = useNavigation();
   const { height } = useWindowDimensions();
-  const start = Math.max(0, shorts.findIndex(s => s.id === id));
+  const start = Math.max(0, shorts.findIndex(s => s.id === startId));
   const [active, setActive] = useState(start);
   const list = useRef<FlatList<Short>>(null);
 
@@ -209,7 +226,7 @@ export default function ShortsScreen() {
       if (i >= shorts.length - 1) nav.goBack();
       else list.current?.scrollToOffset({ offset: (i + 1) * height, animated: true });
     },
-    [height, nav],
+    [height, nav, shorts.length],
   );
 
   return (
@@ -234,6 +251,10 @@ export default function ShortsScreen() {
 }
 
 const styles = StyleSheet.create({
+  loading: { flex: 1, backgroundColor: '#03060C', alignItems: 'center', justifyContent: 'center' },
+  brand: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  headline: { fontSize: 52, lineHeight: 58, letterSpacing: -1.5 },
+  headlineLong: { fontSize: 34, lineHeight: 40, letterSpacing: -1 },
   topShade: { position: 'absolute', left: 0, right: 0, top: 0 },
   bottomShade: { position: 'absolute', left: 0, right: 0, bottom: 0 },
   top: { position: 'absolute', left: 0, right: 0, top: 0, paddingHorizontal: space.md },

@@ -35,16 +35,19 @@ export function BrandMark({ height = 28 }: { height?: number }) {
   );
 }
 
-/** Root header for tab screens: logo, large title, actions. */
-/** `flush`: no divider, for screens that continue the bar (e.g. a date strip below). */
+/**
+ * Root header for tab screens. Home shows the PCZ mark (no title); every
+ * other tab shows its own title. `flush`: no divider, for screens that
+ * continue the bar (e.g. a pill row below).
+ */
 export function TabHeader({ title, right, flush }: { title?: string; right?: ReactNode; flush?: boolean }) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   return (
-    <View style={[styles.tabHeader, { paddingTop: insets.top + 6, backgroundColor: colors.surface, borderBottomColor: colors.hairline }, flush && { borderBottomWidth: 0 }]}>
-      <BrandMark />
+    <View style={[styles.tabHeader, styles.raised, { paddingTop: insets.top + 6, backgroundColor: colors.surface, borderBottomColor: colors.hairline }, flush && styles.flush]}>
+      {title ? null : <BrandMark />}
       {title ? (
-        <AppText variant="title" style={{ marginLeft: space.md, flex: 1 }} accessibilityRole="header">
+        <AppText variant="title" style={{ flex: 1 }} accessibilityRole="header">
           {title}
         </AppText>
       ) : (
@@ -79,7 +82,7 @@ export function Header({
         { paddingTop: insets.top },
         transparent
           ? { backgroundColor: 'transparent', borderBottomWidth: 0 }
-          : { backgroundColor: colors.surface, borderBottomColor: colors.hairline },
+          : [styles.raised, { backgroundColor: colors.surface, borderBottomColor: colors.hairline }],
       ]}
     >
       <IconButton icon="arrowLeft" label="Back" onPress={onBack ?? nav.goBack} />
@@ -120,7 +123,8 @@ export function Body({
   return (
     <ScrollView
       showsVerticalScrollIndicator={false}
-      contentContainerStyle={[{ paddingBottom: (bottomInset ? insets.bottom : 0) + 32 }, contentStyle]}
+      // Every page starts a step below its header; screens can override with contentStyle.
+      contentContainerStyle={[{ paddingTop: space.md, paddingBottom: (bottomInset ? insets.bottom : 0) + 32 }, contentStyle]}
       refreshControl={
         onRefresh ? (
           <RefreshControl
@@ -152,8 +156,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: space.xs,
     minHeight: 56,
+    paddingRight: space.sm,
     paddingBottom: 4,
     borderBottomWidth: StyleSheet.hairlineWidth * 2,
   },
   actions: { flexDirection: 'row', alignItems: 'center' },
+  // A light lift so the bar reads as separate from the page it sits on.
+  raised: { elevation: 3, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, zIndex: 2 },
+  flush: { borderBottomWidth: 0, elevation: 0, shadowOpacity: 0 },
 });

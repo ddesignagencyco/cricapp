@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   KeyboardAvoidingView,
   StyleSheet,
   TextInput,
@@ -27,21 +28,22 @@ import { useNavigation } from '../../navigation/Stack';
 import { useTheme } from '../../theme/ThemeProvider';
 import { fontFamily, radius, space } from '../../theme/tokens';
 
-const TRENDING = [
-  'Babar Azam',
-  'PSL',
-  'Shaheen',
-  'South Africa',
-  'Lahore Qalandars',
-  'Rankings',
-];
+/** Starting points, not a popularity claim. */
+const SUGGESTIONS = ['Pakistan', 'PSL', 'Babar Azam', 'Shaheen', 'Lahore Qalandars', 'India'];
 
 export default function SearchScreen() {
   const nav = useNavigation();
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const [q, setQ] = useState('');
-  const { data } = useQuery(`search:${q}`, () => repo.search(q));
+  // Search once typing pauses, not on every keystroke.
+  const [term, setTerm] = useState('');
+  useEffect(() => {
+    const t = setTimeout(() => setTerm(q.trim()), 350);
+    return () => clearTimeout(t);
+  }, [q]);
+  const { data, error } = useQuery(`search:${term}`, () => repo.search(term));
+  const searching = !!q.trim() && (term !== q.trim() || (!data && !error));
   const total = data
     ? data.teams.length +
       data.players.length +
@@ -87,20 +89,22 @@ export default function SearchScreen() {
         <Body keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
           {!q ? (
             <>
-              <SectionHeader title="Trending" style={{ marginTop: space.lg }} />
+              <SectionHeader title="Try searching" style={{ marginTop: space.lg }} />
               <View style={styles.chips}>
-                {TRENDING.map(t => (
+                {SUGGESTIONS.map(t => (
                   <Chip
                     key={t}
                     label={t}
-                    icon="trendingUp"
-                    onPress={() =>
-                      t === 'Rankings' ? nav.navigate('Rankings') : setQ(t)
-                    }
+                    icon="search"
+                    onPress={() => setQ(t)}
                   />
                 ))}
               </View>
             </>
+          ) : searching ? (
+            <View style={{ paddingVertical: space.xxl, alignItems: 'center' }}>
+              <ActivityIndicator color={colors.accent} />
+            </View>
           ) : total === 0 ? (
             <EmptyState
               icon="search"

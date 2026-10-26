@@ -18,6 +18,7 @@ interface AuthValue {
   forgotPassword: (email: string) => Promise<string>;
   verifyEmail: (email: string, code: string) => Promise<string>;
   resetPassword: (email: string, code: string, password: string) => Promise<string>;
+  updateProfile: (changes: { displayName?: string; username?: string }) => Promise<void>;
 }
 
 const Ctx = createContext<AuthValue | null>(null);
@@ -58,6 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       forgotPassword: async email => (await authApi.forgotPassword(email)).message,
       verifyEmail: async (email, code) => (await authApi.verifyEmail(email, code)).message,
       resetPassword: async (email, code, password) => (await authApi.resetPassword(email, code, password)).message,
+      updateProfile: async changes => setUser(await authApi.updateMe(changes)),
     }),
     [user, checking],
   );

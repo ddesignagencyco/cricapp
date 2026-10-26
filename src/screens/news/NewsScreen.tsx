@@ -4,11 +4,12 @@ import { NewsHero, NewsRow, NewsTile } from '../../components/cricket/NewsCards'
 import { AppText } from '../../components/ui/AppText';
 import { SkeletonList } from '../../components/ui/Controls';
 import { Body, Header, Screen, TabHeader } from '../../components/ui/Layout';
-import { EmptyState, Hairline, IconButton, SectionHeader } from '../../components/ui/Primitives';
+import { EmptyState, ErrorState, Hairline, IconButton, SectionHeader } from '../../components/ui/Primitives';
 import { Touch } from '../../components/ui/Touch';
 import { repo } from '../../data/repo';
 import type { Article, NewsCategory } from '../../data/types';
-import { useQuery } from '../../data/useQuery';
+import { usePaged } from '../../data/usePaged';
+import { LoadMore, nearEnd } from '../../components/ui/LoadMore';
 import { useNavigation, useParams } from '../../navigation/Stack';
 import { usePrefs } from '../../state/prefs';
 import { useTheme } from '../../theme/ThemeProvider';
@@ -77,7 +78,8 @@ function LanguageToggle() {
 export default function NewsScreen() {
   const nav = useNavigation();
   const { newsLang } = usePrefs();
-  const { data, loading, refresh, refreshing } = useQuery(`news:${newsLang}:all`, () => repo.news({ lang: newsLang }));
+  const feed = usePaged(`news:${newsLang}`, p => repo.newsPage({ lang: newsLang }, p));
+  const data = feed.items;
 
   const used = new Set<string>();
   const take = (list: Article[], n: number) => {
@@ -97,12 +99,21 @@ export default function NewsScreen() {
           </>
         }
       />
-      {loading || !data ? (
+      {feed.loading ? (
         <SkeletonList count={4} height={100} />
+      ) : feed.error && !data.length ? (
+        <ErrorState error={feed.error} onRetry={feed.refresh} />
       ) : !data.length ? (
         <EmptyState icon="newspaper" title="No stories yet" />
       ) : (
-        <Body onRefresh={refresh} refreshing={refreshing} bottomInset={false} contentStyle={{ paddingTop: space.sm }}>
+        <Body
+          onRefresh={feed.refresh}
+          refreshing={feed.refreshing}
+          bottomInset={false}
+          contentStyle={{ paddingTop: space.sm }}
+          scrollEventThrottle={250}
+          onScroll={e => nearEnd(e) && feed.loadMore()}
+        >
           {(() => {
             const lead = take(data.filter(a => a.featured || a.breaking), 1)[0] ?? take(data, 1)[0];
             const latest = take(data, 3);
@@ -143,6 +154,17 @@ export default function NewsScreen() {
                       );
                     })
                   : null}
+                {(() => {
+                  // Everything not placed above, plus each page loaded as the reader scrolls.
+                  const rest = data.filter(a => !used.has(a.id));
+                  return rest.length ? (
+                    <>
+                      <SectionHeader title={newsLang === 'ur' ? 'مزید خبریں' : 'More stories'} style={{ marginTop: space.xxl }} />
+                      <Rows list={rest} />
+                    </>
+                  ) : null;
+                })()}
+                <LoadMore hasMore={feed.hasMore} loading={feed.loadingMore} onPress={feed.loadMore} count={data.length} />
               </>
             );
           })()}
@@ -155,17 +177,20 @@ export default function NewsScreen() {
 /** "See all" for one news section. */
 export function NewsSectionScreen() {
   const { title, categories } = useParams('NewsSection');
-  const { data } = useQuery(`news:section:${categories.join(',')}`, async () =>
-    (await repo.news({ lang: 'en' })).filter(a => categories.includes(a.category)),
-  );
+  const feed = usePaged(`news:section:${categories.join(',')}`, p => repo.newsPage({ lang: 'en', categories }, p));
   return (
     <Screen>
       <Header title={title} />
-      {!data ? (
+      {feed.loading ? (
         <SkeletonList count={5} height={90} />
+      ) : feed.error && !feed.items.length ? (
+        <ErrorState error={feed.error} onRetry={feed.refresh} />
+      ) : !feed.items.length ? (
+        <EmptyState icon="newspaper" title="No stories yet" />
       ) : (
-        <Body>
-          <Rows list={data} />
+        <Body onRefresh={feed.refresh} refreshing={feed.refreshing} scrollEventThrottle={250} onScroll={e => nearEnd(e) && feed.loadMore()}>
+          <Rows list={feed.items} />
+          <LoadMore hasMore={feed.hasMore} loading={feed.loadingMore} onPress={feed.loadMore} count={feed.items.length} />
         </Body>
       )}
     </Screen>

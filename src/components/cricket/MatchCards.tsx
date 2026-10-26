@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useNavigation } from '../../navigation/Stack';
-import { seriesOf, team as teamOf, venue } from '../../data/refs';
+import { seriesOf, team as teamOf, venueLabel } from '../../data/refs';
 import type { Match, Prediction } from '../../data/types';
 import { useTheme } from '../../theme/ThemeProvider';
 import { radius, space } from '../../theme/tokens';
@@ -28,7 +28,7 @@ function TeamScore({ match, teamId, big, ink }: { match: Match; teamId: string; 
   if (!inns.length) {
     return (
       <AppText variant={big ? 'score' : 'label'} color={ink?.muted ?? 'textMuted'}>
-        {match.status === 'upcoming' ? '' : 'Yet to bat'}
+        {match.status === 'live' || match.status === 'break' ? 'Yet to bat' : ''}
       </AppText>
     );
   }
@@ -46,7 +46,7 @@ function TeamScore({ match, teamId, big, ink }: { match: Match; teamId: string; 
       </AppText>
       {!test || batting ? (
         <AppText variant="caption" color={ink?.muted ?? 'textMuted'} tabular style={{ marginLeft: 6, minWidth: 34 }}>
-          {overs(last.balls)}
+          {last.balls ? overs(last.balls) : ''}
         </AppText>
       ) : null}
     </View>
@@ -144,7 +144,7 @@ export function MatchHeroCard({ match, prediction, width }: { match: Match; pred
         <TeamLine match={match} teamId={second} big ink={ink} />
       </View>
       <AppText variant="label" weight="600" color={vivid ? '#FFFFFF' : match.status === 'upcoming' ? 'accent' : 'textSecondary'} style={{ marginTop: 14 }} numberOfLines={1}>
-        {match.status === 'upcoming' ? `${dayLabel(match.startTime)} · ${time(match.startTime)} · ${venue(match.venueId)?.city}` : match.statusText}
+        {match.status === 'upcoming' ? `${[dayLabel(match.startTime), time(match.startTime), venueLabel(match.venueId)].filter(Boolean).join(' · ')}` : match.statusText}
       </AppText>
       {prediction && match.status !== 'completed' ? (
         <View style={[styles.heroFoot, { borderTopColor: line }]}>
@@ -167,7 +167,7 @@ export function MatchHeroCard({ match, prediction, width }: { match: Match; pred
         <View style={[styles.heroFoot, { borderTopColor: line }]}>
           <Stat label="CRR" value={match.live.crr.toFixed(2)} ink={ink} />
           {match.live.rrr ? <Stat label="RRR" value={match.live.rrr.toFixed(2)} ink={ink} /> : null}
-          <Stat label="P'SHIP" value={`${match.live.partnership.runs} (${match.live.partnership.balls})`} ink={ink} />
+          {match.live.partnership ? <Stat label="P'SHIP" value={`${match.live.partnership.runs} (${match.live.partnership.balls})`} ink={ink} /> : null}
         </View>
       ) : null}
     </Touch>
@@ -188,7 +188,16 @@ function Stat({ label, value, ink }: { label: string; value: string; ink?: Ink }
 }
 
 /** Compact list row for schedules and results. */
-export function MatchRow({ match, showSeries = true }: { match: Match; showSeries?: boolean }) {
+/** Result line colour: green for a decided match, amber when called off, muted when there is nothing to report. */
+export function resultColor(match: Match, colors: ReturnType<typeof useTheme>['colors']) {
+  if (match.status === 'live') return colors.accent;
+  if (/cancel|abandon|no result/i.test(match.statusText)) return colors.warning;
+  if (match.result?.winnerId || /won by|win by|won the/i.test(match.statusText)) return colors.success;
+  return colors.textSecondary;
+}
+
+/** `dated={false}` inside a single-day list: show the time only, not the day again. */
+export function MatchRow({ match, showSeries = true, dated = true }: { match: Match; showSeries?: boolean; dated?: boolean }) {
   const { colors } = useTheme();
   const nav = useNavigation();
   const [first, second] = order(match);
@@ -196,7 +205,7 @@ export function MatchRow({ match, showSeries = true }: { match: Match; showSerie
   return (
     <Touch
       onPress={() => nav.navigate('Match', { id: match.id })}
-      style={[styles.row, { backgroundColor: colors.surface }]}
+      style={[styles.row, { backgroundColor: colors.surface, borderColor: colors.hairline }]}
       accessibilityLabel={`${teamOf(first).name} versus ${teamOf(second).name}. ${match.statusText}`}
     >
       <View style={styles.rowTop}>
@@ -208,27 +217,24 @@ export function MatchRow({ match, showSeries = true }: { match: Match; showSerie
           <LiveIndicator />
         ) : match.status === 'upcoming' ? (
           <AppText variant="caption" weight="600" color="accent" tabular>
-            {dayLabel(match.startTime)} · {time(match.startTime)}
+            {dated ? `${dayLabel(match.startTime)} · ${time(match.startTime)}` : time(match.startTime)}
           </AppText>
-        ) : (
+        ) : dated ? (
           <AppText variant="caption" weight="600" color="accent">
             {dayLabel(match.startTime)}
           </AppText>
-        )}
+        ) : null}
       </View>
-      <View style={{ gap: 8, marginTop: 10 }}>
+      <View style={{ gap: 10, marginTop: 12 }}>
         <TeamLine match={match} teamId={first} />
         <TeamLine match={match} teamId={second} />
       </View>
-      <AppText
-        variant="caption"
-        weight="500"
-        color={match.status === 'live' ? 'accent' : 'textSecondary'}
-        numberOfLines={1}
-        style={{ marginTop: 10 }}
-      >
-        {match.status === 'upcoming' ? `${venue(match.venueId)?.name}, ${venue(match.venueId)?.city}` : match.statusText}
-      </AppText>
+      {/* The date is already in the row header: upcoming rows add only the venue. */}
+      {(match.status === 'upcoming' ? venueLabel(match.venueId) : match.statusText) ? (
+        <AppText variant="caption" weight={match.result ? '600' : '500'} color={resultColor(match, colors)} numberOfLines={1} style={{ marginTop: 12 }}>
+          {match.status === 'upcoming' ? venueLabel(match.venueId) : match.statusText}
+        </AppText>
+      ) : null}
     </Touch>
   );
 }
@@ -252,6 +258,7 @@ const styles = StyleSheet.create({
   teamLine: { flexDirection: 'row', alignItems: 'center' },
   scoreRow: { flexDirection: 'row', alignItems: 'baseline' },
   batDot: { width: 6, height: 6, borderRadius: 3, marginRight: 10 },
-  row: { paddingHorizontal: space.lg, paddingVertical: 14 },
+  // Each match is its own card: separate rounded tiles with a gap between them.
+  row: { paddingHorizontal: space.xl, paddingVertical: space.lg + 2, borderRadius: radius.lg, borderWidth: StyleSheet.hairlineWidth * 2, overflow: 'hidden' },
   rowTop: { flexDirection: 'row', alignItems: 'center' },
 });

@@ -85,7 +85,7 @@ export default function TeamScreen() {
 
   return (
     <Screen>
-      <Header />
+      <Header title="Team" />
       <TabPager
         tabs={TABS}
         header={
