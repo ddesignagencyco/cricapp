@@ -11,6 +11,8 @@ import React, {
 import { Animated, BackHandler, Easing, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
 import type { RouteName, Routes } from './routes';
+import { ScreenBoundary } from '../components/ui/ScreenBoundary';
+import { reduceMotion } from '../utils/motion';
 
 /**
  * A small animated stack navigator in plain JS: push / replace / back /
@@ -66,7 +68,7 @@ export function Stack({
   const push = useCallback((entry: Entry, after?: () => void) => {
     animating.current = true;
     setStack(s => [...s, entry]);
-    Animated.timing(entry.progress, { toValue: 1, ...IN }).start(() => {
+    Animated.timing(entry.progress, { toValue: 1, ...IN, duration: reduceMotion() ? 0 : IN.duration }).start(() => {
       animating.current = false;
       after?.();
     });
@@ -92,7 +94,7 @@ export function Stack({
         if (animating.current || current.length < 2) return;
         const top = current[current.length - 1];
         animating.current = true;
-        Animated.timing(top.progress, { toValue: 0, ...OUT }).start(() => {
+        Animated.timing(top.progress, { toValue: 0, ...OUT, duration: reduceMotion() ? 0 : OUT.duration }).start(() => {
           animating.current = false;
           setStack(s => s.filter(e => e.key !== top.key));
         });
@@ -144,7 +146,10 @@ export function Stack({
               style={[styles.screen, { backgroundColor: colors.background }, index > 0 && styles.raised, own, under]}
             >
               <RouteContext.Provider value={{ name: entry.name, params: entry.params, focused: isTop }}>
-                <Screen />
+                {/* A crash stays inside this screen; earlier screens remain usable. */}
+                <ScreenBoundary onBack={index > 0 ? navigation.goBack : undefined}>
+                  <Screen />
+                </ScreenBoundary>
               </RouteContext.Provider>
               {next ? (
                 <Animated.View

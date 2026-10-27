@@ -176,13 +176,13 @@ export function CommentsPreview({ thread, title, list, total }: { thread: string
 const styles = StyleSheet.create({
   rowC: { flexDirection: 'row', alignItems: 'center' },
   item: { flexDirection: 'row', paddingHorizontal: space.lg, paddingVertical: 14 },
-  action: { flexDirection: 'row', alignItems: 'center', minHeight: 32, paddingRight: 4 },
-  more: { flexDirection: 'row', alignItems: 'center', paddingBottom: 12, minHeight: 36 },
+  action: { flexDirection: 'row', alignItems: 'center', minHeight: 44, paddingRight: 4 },
+  more: { flexDirection: 'row', alignItems: 'center', paddingBottom: 12, minHeight: 44 },
   line: { width: 24, height: 1, marginRight: 8 },
   composerRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.lg, marginBottom: space.md },
   me: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
   fakeInput: { flex: 1, marginLeft: 12, height: 44, borderRadius: radius.pill, borderWidth: StyleSheet.hairlineWidth * 2, justifyContent: 'center', paddingHorizontal: 16 },
-  reaction: { flexDirection: 'row', alignItems: 'center', height: 40, paddingHorizontal: 12, borderRadius: radius.pill, borderWidth: StyleSheet.hairlineWidth * 2, overflow: 'hidden' },
+  reaction: { flexDirection: 'row', alignItems: 'center', height: 44, paddingHorizontal: 12, borderRadius: radius.pill, borderWidth: StyleSheet.hairlineWidth * 2, overflow: 'hidden' },
   card: { marginHorizontal: space.lg, borderRadius: radius.lg, borderWidth: StyleSheet.hairlineWidth * 2, overflow: 'hidden' },
   viewAll: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', minHeight: 50 },
 });

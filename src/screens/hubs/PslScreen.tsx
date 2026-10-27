@@ -91,7 +91,9 @@ function Teams() {
   const { data } = usePsl();
   const franchises = (data?.standings ?? []).map(s => team(s.teamId));
   const { width } = useWindowDimensions();
-  const w = (width - space.lg * 2 - space.md) / 2;
+  const w = Math.floor((width - space.lg * 2 - space.md) / 2);
+  if (!data) return <SkeletonList count={4} height={150} />;
+  if (!franchises.length) return <EmptyState icon="users" title="No teams listed" />;
   return (
     <Body contentStyle={{ paddingTop: space.lg }}>
       <View style={styles.grid}>

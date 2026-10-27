@@ -14,6 +14,7 @@ import { radius, space } from '../../theme/tokens';
 import { AppText } from './AppText';
 import { Icon, type IconName } from './Icon';
 import { Touch } from './Touch';
+import { reduceMotion } from '../../utils/motion';
 
 export function Hairline({ inset = 0, style }: { inset?: number; style?: StyleProp<ViewStyle> }) {
   const { colors } = useTheme();
@@ -60,6 +61,8 @@ export function LiveIndicator({ label = 'LIVE', size = 'sm' }: { label?: string;
   const { colors } = useTheme();
   const pulse = useRef(new Animated.Value(0)).current;
   useEffect(() => {
+    // A steady dot instead of a pulse when the system asks for less motion.
+    if (reduceMotion()) return;
     const loop = Animated.loop(
       Animated.timing(pulse, {
         toValue: 1,

@@ -8,7 +8,8 @@ import {
 import { AppText } from '../../components/ui/AppText';
 import { Icon } from '../../components/ui/Icon';
 import { Body, Header, Screen } from '../../components/ui/Layout';
-import { Card, Glow, Hairline } from '../../components/ui/Primitives';
+import { Glow } from '../../components/ui/Primitives';
+import { Touch } from '../../components/ui/Touch';
 import { useParams } from '../../navigation/Stack';
 import { useTheme } from '../../theme/ThemeProvider';
 import { fontFamily, radius, space } from '../../theme/tokens';
@@ -35,7 +36,18 @@ export default function ToolScreen() {
 
   return (
     <Screen>
-      <Header title={tool.title} />
+      <Header
+        title={tool.title}
+        right={
+          Object.values(text).some(Boolean) ? (
+            <Touch onPress={() => setText({})} style={styles.reset} accessibilityLabel="Clear all fields">
+              <AppText variant="label" weight="600" color="accent">
+                Clear
+              </AppText>
+            </Touch>
+          ) : undefined
+        }
+      />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
         <Body keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
           <View
@@ -100,51 +112,43 @@ export default function ToolScreen() {
             ) : null}
           </View>
 
-          <Card
-            padded={false}
-            style={{ marginHorizontal: space.lg, marginTop: space.lg }}
-          >
-            {tool.fields.map((f, i) => (
-              <View key={f.key}>
-                {i > 0 ? <Hairline inset={space.lg} /> : null}
-                <View style={styles.field}>
-                  <AppText
-                    variant="caption"
-                    weight="600"
-                    color={focused === f.key ? 'accent' : 'textMuted'}
-                  >
+          <View style={styles.grid}>
+            {tool.fields.map(f => {
+              const on = focused === f.key;
+              return (
+                <View
+                  key={f.key}
+                  style={[
+                    styles.field,
+                    tool.fields.length > 1 && styles.half,
+                    { backgroundColor: colors.surface, borderColor: on ? colors.brand : colors.hairline },
+                  ]}
+                >
+                  <AppText variant="caption" weight="600" color={on ? 'accent' : 'textMuted'} numberOfLines={2}>
                     {f.label}
-                    {f.kind === 'overs' ? '  (e.g. 16.3)' : ''}
                   </AppText>
                   <TextInput
                     value={text[f.key] ?? ''}
-                    onChangeText={v =>
-                      setText(s => ({
-                        ...s,
-                        [f.key]: v.replace(/[^0-9.]/g, ''),
-                      }))
-                    }
+                    onChangeText={v => setText(st => ({ ...st, [f.key]: v.replace(/[^0-9.]/g, '') }))}
                     onFocus={() => setFocused(f.key)}
                     onBlur={() => setFocused(null)}
-                    placeholder={f.placeholder}
+                    // 'e.g.' so a hint never reads as an entered value.
+                    placeholder={f.placeholder ? `e.g. ${f.placeholder}` : f.kind === 'overs' ? 'e.g. 16.3' : undefined}
                     placeholderTextColor={colors.textDisabled}
                     keyboardType="decimal-pad"
                     inputMode="decimal"
                     accessibilityLabel={f.label}
-                    style={[
-                      styles.input,
-                      { color: colors.text, fontFamily: fontFamily['600'] },
-                    ]}
+                    style={[styles.input, { color: colors.text, fontFamily: fontFamily['600'] }]}
                   />
                   {f.hint ? (
-                    <AppText variant="caption" color="textMuted">
+                    <AppText variant="micro" color="textMuted" numberOfLines={2}>
                       {f.hint}
                     </AppText>
                   ) : null}
                 </View>
-              </View>
-            ))}
-          </Card>
+              );
+            })}
+          </View>
 
           <View style={[styles.explain, { backgroundColor: colors.elevated }]}>
             <Icon name="info" size={16} color={colors.textSecondary} />
@@ -173,7 +177,10 @@ const styles = StyleSheet.create({
     minHeight: 140,
   },
   row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6 },
-  field: { paddingHorizontal: space.lg, paddingTop: 12, paddingBottom: 10 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm, marginHorizontal: space.lg, marginTop: space.lg },
+  field: { flexBasis: '100%', flexGrow: 1, paddingHorizontal: space.md, paddingTop: space.md, paddingBottom: space.sm, borderRadius: radius.md, borderWidth: 1.5 },
+  half: { flexBasis: '45%' },
+  reset: { minHeight: 44, minWidth: 44, paddingHorizontal: space.sm, alignItems: 'center', justifyContent: 'center' },
   input: {
     fontSize: 22,
     paddingVertical: 6,

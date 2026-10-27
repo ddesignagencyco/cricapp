@@ -1,105 +1,34 @@
-import React, { useMemo, useState } from 'react';
-import { Share, StyleSheet, View } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { KeyboardAvoidingView, Share, StyleSheet, View } from 'react-native';
 import { Avatar, BallChip, BallStrip, TeamBadge } from '../../components/cricket/Badges';
 import { LineChart, Manhattan, WinProbBar } from '../../components/cricket/Charts';
-import { resultColor } from '../../components/cricket/MatchCards';
+import { MatchHeroCard } from '../../components/cricket/MatchCards';
 import { NewsRow } from '../../components/cricket/NewsCards';
-import { CommentItem, Composer, ReactionBar } from '../../components/cricket/Comments';
+import { CommentsThread } from '../../components/cricket/CommentsThread';
 import { FavouriteButton } from '../../components/ui/FavouriteButton';
 import { BattingTable, BowlingTable, PointsTable } from '../../components/cricket/Tables';
 import { AppText } from '../../components/ui/AppText';
 import { ChipRow, Segmented, SkeletonList } from '../../components/ui/Controls';
 import { Icon } from '../../components/ui/Icon';
 import { Body, Header, Screen } from '../../components/ui/Layout';
-import { Card, EmptyState, ErrorState, Glow, Hairline, IconButton, LiveIndicator, SectionHeader, Tag } from '../../components/ui/Primitives';
+import { Card, EmptyState, ErrorState, Glow, Hairline, IconButton, SectionHeader } from '../../components/ui/Primitives';
 import { TabPager } from '../../components/ui/TabPager';
 import { Touch } from '../../components/ui/Touch';
 import { player, playerName, seriesOf, team, venue, venueLabel } from '../../data/refs';
 import { repo } from '../../data/repo';
+import { watchMatch } from '../../data/socket';
 import type { Ball, Innings, Match, Prediction } from '../../data/types';
 import { useQuery } from '../../data/useQuery';
 import { useNavigation, useParams } from '../../navigation/Stack';
 import { useTheme } from '../../theme/ThemeProvider';
 import { radius, space } from '../../theme/tokens';
-import { dayLabel, inningsFor, overs, score, shortDate, time } from '../../utils/format';
+import { dayLabel, overs, score, shortDate, time } from '../../utils/format';
 
 function ScoreHeader({ match }: { match: Match }) {
-  const { colors } = useTheme();
-  const nav = useNavigation();
-  const order = match.innings.length ? [match.innings[0].teamId, match.innings[0].teamId === match.teamA ? match.teamB : match.teamA] : [match.teamA, match.teamB];
+  // Same scoreboard as the match lists, kept live by the socket.
   return (
     <View style={styles.scoreHeader}>
-      <Glow color={team(order[0]).color} size={300} opacity={colors.scheme === 'dark' ? 0.16 : 0.1} style={{ left: -150, top: -170 }} />
-      <Glow color={team(order[1]).color} size={300} opacity={colors.scheme === 'dark' ? 0.14 : 0.1} style={{ right: -150, top: -150 }} />
-      <View style={styles.teamsRow}>
-        {order.map((id, side) => {
-          const inns = inningsFor(match, id);
-          const last = inns[inns.length - 1];
-          const batting = match.status === 'live' && match.battingTeamId === id;
-          const lost = match.status === 'completed' && match.result?.winnerId && match.result.winnerId !== id;
-          return (
-            <Touch
-              key={id}
-              onPress={() => nav.navigate('Team', { id })}
-              style={[styles.teamCol, side === 1 && { alignItems: 'flex-end' }]}
-              accessibilityLabel={team(id).name}
-            >
-              <View style={[styles.rowC, side === 1 && { flexDirection: 'row-reverse' }]}>
-                <TeamBadge id={id} size={32} />
-                <AppText variant="label" weight="700" style={{ marginHorizontal: 8 }} color={lost ? 'textSecondary' : 'text'}>
-                  {team(id).short}
-                </AppText>
-                {batting ? <View style={[styles.batDot, { backgroundColor: team(id).color }]} /> : null}
-              </View>
-              {last ? (
-                <View style={{ marginTop: 8, alignItems: side === 1 ? 'flex-end' : 'flex-start' }}>
-                  <AppText variant="scoreLg" tabular color={lost ? 'textSecondary' : 'text'}>
-                    {match.format === 'Test' && inns.length > 1 ? `${score(inns[0])} & ` : ''}
-                    {score(last)}
-                  </AppText>
-                  <AppText variant="caption" color="textMuted" tabular>
-                    {last.balls ? `${overs(last.balls)} ov` : ''}
-                  </AppText>
-                </View>
-              ) : (
-                <AppText variant="label" color="textMuted" style={{ marginTop: 12 }}>
-                  {match.status === 'live' || match.status === 'break' ? 'Yet to bat' : ''}
-                </AppText>
-              )}
-            </Touch>
-          );
-        })}
-      </View>
-      <View style={[styles.statusWrap, { borderTopColor: colors.hairline }]}>
-      <View style={styles.rowC}>
-        {match.status === 'live' ? <LiveIndicator /> : null}
-        <AppText
-          variant="label"
-          weight="600"
-          color={match.status === 'upcoming' ? colors.accent : resultColor(match, colors)}
-          numberOfLines={2}
-          style={{ flex: 1, marginLeft: match.status === 'live' ? 8 : 0 }}
-        >
-          {match.status === 'upcoming' ? `${[dayLabel(match.startTime), time(match.startTime), venueLabel(match.venueId)].filter(Boolean).join(' · ')}` : match.statusText}
-        </AppText>
-      </View>
-        {match.live ? (
-          <View style={[styles.rowC, { marginTop: 8, gap: 18 }]}>
-            {[
-              ['CRR', match.live.crr.toFixed(2)],
-              ...(match.live.rrr ? [['RRR', match.live.rrr.toFixed(2)]] : []),
-              ...(match.live.partnership ? [['P’SHIP', `${match.live.partnership.runs} (${match.live.partnership.balls})`]] : []),
-            ].map(([k, v]) => (
-              <AppText key={k} variant="caption" color="textMuted" tabular>
-                {k}{' '}
-                <AppText variant="caption" weight="700" color="text" tabular>
-                  {v}
-                </AppText>
-              </AppText>
-            ))}
-          </View>
-        ) : null}
-      </View>
+      <MatchHeroCard match={match} inline />
     </View>
   );
 }
@@ -150,13 +79,13 @@ function ProbabilityCard({ match, prediction }: { match: Match; prediction: Pred
             height={110}
             color={a.color}
             colorBelow={team(match.teamB).color}
-            xLabels={['0', '5', '10', '15', '20']}
+            xLabels={Array.from({ length: 5 }, (_, i) => String(Math.round((maxOver / 4) * i)))}
           />
         </View>
       ) : null}
       <View style={[styles.rowC, { marginTop: 14 }]}>
         <AppText variant="caption" color="textSecondary" style={{ flex: 1 }}>
-          See why the probability moved
+          Full prediction
         </AppText>
         <Icon name="chevronRight" size={16} color={colors.textMuted} />
       </View>
@@ -164,15 +93,86 @@ function ProbabilityCard({ match, prediction }: { match: Match; prediction: Pred
   );
 }
 
+const inPlay = (m: Match) => m.status === 'live' || m.status === 'break';
+const isFinished = (m: Match) => m.status === 'completed';
+
+/**
+ * Summary from the match record alone, like the website when the ball-by-ball
+ * timeline isn't available: innings totals, result, toss, venue and date.
+ */
+function SummaryFallback({ match }: { match: Match }) {
+  const nav = useNavigation();
+  const v = venue(match.venueId);
+  const rows: [string, string | undefined][] = [
+    ['Result', match.status === 'completed' ? match.statusText : undefined],
+    ['Toss', match.toss],
+    ['Venue', v ? [v.name, v.city].filter(Boolean).join(', ') : venueLabel(match.venueId) || undefined],
+    // Midnight UTC means the feed only knew the day.
+    ['Date', match.startTime ? (/T00:00(:00)?(\.000)?(Z|\+00:00)$/.test(match.startTime) ? shortDate(match.startTime) : `${shortDate(match.startTime)} · ${time(match.startTime)}`) : undefined],
+    ['Series', seriesOf(match.seriesId)?.name],
+  ];
+  return (
+    <Body bottomInset contentStyle={{ paddingTop: space.lg }}>
+      {match.innings.length ? (
+        <>
+          <SectionHeader title="Innings" />
+          <Card padded={false} style={{ marginHorizontal: space.lg }}>
+            {match.innings.map((inn, i) => (
+              <View key={i}>
+                {i > 0 ? <Hairline inset={space.lg} /> : null}
+                <Touch onPress={() => nav.navigate('Team', { id: inn.teamId })} style={styles.summaryRow}>
+                  <TeamBadge id={inn.teamId} size={28} />
+                  <AppText variant="label" weight="600" style={{ flex: 1, marginLeft: space.md }} numberOfLines={1}>
+                    {team(inn.teamId).name}
+                  </AppText>
+                  <AppText variant="score" tabular>
+                    {score(inn)}
+                  </AppText>
+                  <AppText variant="caption" color="textMuted" tabular style={{ marginLeft: 6, minWidth: 44, textAlign: 'right' }}>
+                    {inn.balls ? `${overs(inn.balls)} ov` : ''}
+                  </AppText>
+                </Touch>
+              </View>
+            ))}
+          </Card>
+        </>
+      ) : null}
+      <SectionHeader title="Match details" style={{ marginTop: space.xl }} />
+      <Card padded={false} style={{ marginHorizontal: space.lg }}>
+        {rows
+          .filter(([, val]) => val)
+          .map(([label, val], i) => (
+            <View key={label}>
+              {i > 0 ? <Hairline inset={space.lg} /> : null}
+              <View style={styles.summaryRow}>
+                <AppText variant="caption" color="textMuted" style={{ width: 72 }}>
+                  {label}
+                </AppText>
+                <AppText variant="label" weight="600" style={{ flex: 1 }}>
+                  {val}
+                </AppText>
+              </View>
+            </View>
+          ))}
+      </Card>
+      <AppText variant="caption" color="textMuted" align="center" style={{ marginTop: space.lg, paddingHorizontal: space.xl }}>
+        Ball-by-ball details for this match aren’t available right now.
+      </AppText>
+    </Body>
+  );
+}
+
 function LiveTab({ match }: { match: Match }) {
   const { colors } = useTheme();
-  const card = useQuery(`card:${match.id}`, () => repo.scorecard(match.id), { live: true });
-  const comm = useQuery(`comm:${match.id}`, () => repo.commentary(match.id), { live: true });
-  const pred = useQuery(`pred:${match.id}`, () => repo.prediction(match.id), { live: true });
+  const card = useQuery(`card:${match.id}`, () => repo.scorecard(match.id, isFinished(match)), { live: inPlay(match) });
+  const comm = useQuery(`comm:${match.id}`, () => repo.commentary(match.id, isFinished(match)), { live: inPlay(match) });
+  // Win probability belongs to live play only.
+  const isLive = match.status === 'live' || match.status === 'break';
+  const pred = useQuery(`pred:${match.id}:${isLive}`, () => (isLive ? repo.prediction(match.id) : Promise.resolve(undefined)), { live: true });
   const current = card.data?.find(i => i.teamId === match.battingTeamId) ?? card.data?.[card.data.length - 1];
 
-  if (match.status === 'upcoming') return <PreviewTab match={match} prediction={pred.data} />;
-  if (!current) return <SkeletonList count={3} />;
+  if (match.status === 'upcoming') return <PreviewTab match={match} />;
+  if (!current) return card.data ? <SummaryFallback match={match} /> : <SkeletonList count={3} />;
 
   const atCrease = current.batting.filter(b => !b.dismissal).slice(-2);
   // The over in progress: the newest balls sharing the latest ball's innings and over (balls are newest first).
@@ -229,7 +229,7 @@ function LiveTab({ match }: { match: Match }) {
         </View>
       ) : null}
 
-      {pred.data ? (
+      {isLive && pred.data ? (
         <View style={{ marginTop: space.xl }}>
           <ProbabilityCard match={match} prediction={pred.data} />
         </View>
@@ -310,10 +310,16 @@ function BallItem({ ball }: { ball: Ball }) {
 
 function ScorecardTab({ match }: { match: Match }) {
   const { colors } = useTheme();
-  const { data } = useQuery(`card:${match.id}`, () => repo.scorecard(match.id), { live: match.status === 'live' });
+  const { data } = useQuery(`card:${match.id}`, () => repo.scorecard(match.id, isFinished(match)), { live: inPlay(match) });
   const [sel, setSel] = useState<number | null>(null);
   if (!data) return <SkeletonList count={3} />;
-  if (!data.length) return <EmptyState icon="table2" title="Scorecard appears at the toss" />;
+  if (!data.length) {
+    return match.status === 'upcoming' ? (
+      <EmptyState icon="table2" title="Scorecard appears at the toss" />
+    ) : (
+      <EmptyState icon="table2" title="Full scorecard unavailable" body="Batting and bowling figures for this match couldn’t be loaded. The summary has the final scores." />
+    );
+  }
   const idx = sel ?? data.length - 1;
   const inn: Innings = data[idx];
   const total = match.innings[idx];
@@ -398,7 +404,7 @@ function ScorecardTab({ match }: { match: Match }) {
 type CommFilter = 'all' | 'wickets' | 'boundaries';
 
 function CommentaryTab({ match }: { match: Match }) {
-  const { data } = useQuery(`comm:${match.id}`, () => repo.commentary(match.id), { live: match.status === 'live' });
+  const { data } = useQuery(`comm:${match.id}`, () => repo.commentary(match.id, isFinished(match)), { live: inPlay(match) });
   const [filter, setFilter] = useState<CommFilter>('all');
   const balls = useMemo(
     () =>
@@ -408,7 +414,13 @@ function CommentaryTab({ match }: { match: Match }) {
     [data, filter],
   );
   if (!data) return <SkeletonList count={5} height={72} />;
-  if (!data.balls.length) return <EmptyState icon="messageCircle" title="No commentary yet" body="Ball-by-ball commentary starts with the first delivery." />;
+  if (!data.balls.length) {
+    return match.status === 'upcoming' ? (
+      <EmptyState icon="messageCircle" title="No commentary yet" body="Ball-by-ball commentary starts with the first delivery." />
+    ) : (
+      <EmptyState icon="messageCircle" title="Commentary unavailable" body="Ball-by-ball commentary for this match couldn’t be loaded right now." />
+    );
+  }
   return (
     <Body bottomInset contentStyle={{ paddingTop: space.md }}>
       <ChipRow
@@ -504,7 +516,7 @@ function SquadsTab({ match }: { match: Match }) {
 
 function StatsTab({ match }: { match: Match }) {
   const { colors } = useTheme();
-  const { data } = useQuery(`card:${match.id}`, () => repo.scorecard(match.id), { live: match.status === 'live' });
+  const { data } = useQuery(`card:${match.id}`, () => repo.scorecard(match.id, isFinished(match)), { live: inPlay(match) });
   if (!data) return <SkeletonList count={2} height={180} />;
   if (!data.length) return <EmptyState icon="chartColumn" title="Stats appear once play begins" />;
   const [a, b] = data;
@@ -604,35 +616,13 @@ function TableTab({ match }: { match: Match }) {
 }
 
 function CommentsTab({ match }: { match: Match }) {
-  const nav = useNavigation();
-  const thread = `match:${match.id}`;
-  const title = `${team(match.teamA).short} vs ${team(match.teamB).short} · ${match.title}`;
-  const { data } = useQuery(`comments:${thread}`, () => repo.comments(thread));
-  const open = () => nav.navigate('Comments', { thread, title });
-  if (!data) return <SkeletonList count={4} height={80} />;
+  // The conversation sits right here; the keyboard lifts the composer instead of covering it.
   return (
-    <Body bottomInset contentStyle={{ paddingTop: space.lg }}>
-      <AppText variant="overline" color="textMuted" style={{ paddingHorizontal: space.lg, marginBottom: space.sm }}>
-        REACT TO THE MATCH
-      </AppText>
-      <ReactionBar counts={data.reactions ?? {}} thread={thread} />
-      <View style={{ marginTop: space.xl }}>
-        <Composer onPress={open} placeholder="Join the conversation…" />
-      </View>
-      <Card padded={false} style={{ marginHorizontal: space.lg }}>
-        {data.list.map((c, i) => (
-          <View key={c.id}>
-            {i > 0 ? <Hairline inset={space.lg} /> : null}
-            <CommentItem comment={c} onReply={open} />
-          </View>
-        ))}
-      </Card>
-      <Touch onPress={open} style={styles.linkRow}>
-        <AppText variant="label" weight="600" color="accent">
-          {data.total ? `Open all ${data.total} comments` : 'Be the first to comment'}
-        </AppText>
-      </Touch>
-    </Body>
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+      <Body bottomInset keyboardShouldPersistTaps="handled" contentStyle={{ paddingTop: space.lg }}>
+        <CommentsThread thread={`match:${match.id}`} title="Match chat" />
+      </Body>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -702,31 +692,11 @@ function InfoTab({ match }: { match: Match }) {
   );
 }
 
-function PreviewTab({ match, prediction }: { match: Match; prediction?: Prediction }) {
-  const nav = useNavigation();
+function PreviewTab({ match }: { match: Match }) {
   const v = venue(match.venueId);
   return (
     <Body bottomInset contentStyle={{ paddingTop: space.lg }}>
-      {prediction ? (
-        <Card onPress={() => nav.navigate('Prediction', { id: match.id })} style={{ marginHorizontal: space.lg }}>
-          <View style={styles.rowC}>
-            <AppText variant="label" weight="700" style={{ flex: 1 }}>
-              Pre-match prediction
-            </AppText>
-            <Tag label={`${prediction.confidence.toUpperCase()} CONFIDENCE`} tone="brand" />
-          </View>
-          <View style={{ marginTop: 16 }}>
-            <WinProbBar teamA={match.teamA} teamB={match.teamB} p={prediction.winA} />
-          </View>
-          <AppText variant="caption" color="textSecondary" style={{ marginTop: 14 }}>
-            Projected first-innings score{' '}
-            <AppText variant="caption" weight="700" color="text" tabular>
-              {prediction.projected.low}–{prediction.projected.high}
-            </AppText>
-          </AppText>
-        </Card>
-      ) : null}
-      <View style={[styles.statGrid, { marginTop: space.md }]}>
+      <View style={styles.statGrid}>
         <StatBox label="STARTS" value={time(match.startTime)} sub={dayLabel(match.startTime)} />
         {v ? <StatBox label="VENUE" value={v.city || v.name} sub={v.city ? v.name : undefined} /> : null}
       </View>
@@ -749,6 +719,8 @@ const TABS = [
 export default function MatchCentreScreen() {
   const { id, tab } = useParams('Match');
   const { data: match } = useQuery(`match:${id}`, () => repo.match(id), { live: true });
+  // Join this match's room so its updates arrive even between list broadcasts.
+  useEffect(() => watchMatch(id), [id]);
 
   const tabs = useMemo(
     () =>
@@ -770,7 +742,7 @@ export default function MatchCentreScreen() {
     <Screen>
       <Header
         title={`${team(match.teamA).short} vs ${team(match.teamB).short}`}
-        subtitle={`${match.title} · ${s?.short}`}
+        subtitle={[match.title, s?.short].filter(Boolean).join(' · ')}
         right={
           <>
             <FavouriteButton kind="match" id={match.id} label={`${team(match.teamA).name} vs ${team(match.teamB).name}`} />
@@ -814,8 +786,9 @@ export default function MatchCentreScreen() {
 }
 
 const styles = StyleSheet.create({
+  summaryRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.lg, minHeight: 52, paddingVertical: space.sm },
   rowC: { flexDirection: 'row', alignItems: 'center' },
-  scoreHeader: { paddingHorizontal: space.lg, paddingTop: space.sm, overflow: 'hidden' },
+  scoreHeader: { paddingHorizontal: space.lg, paddingTop: space.md, paddingBottom: space.xs },
   teamsRow: { flexDirection: 'row', justifyContent: 'space-between' },
   teamCol: { flex: 1, borderRadius: radius.sm },
   batDot: { width: 6, height: 6, borderRadius: 3 },

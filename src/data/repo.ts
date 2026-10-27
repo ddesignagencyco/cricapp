@@ -4,6 +4,7 @@ import {
   matchExtras,
   toArticle,
   toCommentary,
+  formatOfType,
   toMatch,
   toPlayer,
   toScorecard,
@@ -17,7 +18,7 @@ import {
   type RawStanding,
   type RawTimeline,
 } from './adapt';
-import { allSeries, playerName, rememberSeries, rememberTeam, seriesOf, team } from './refs';
+import { allSeries, playerName, rememberSeries, rememberTeam, seriesOf, team, venueLabel } from './refs';
 import type {
   Article,
   Ball,
@@ -28,10 +29,12 @@ import type {
   Match,
   NewsCategory,
   OverSummary,
+  Player,
   Prediction,
   Ranking,
   Short,
   Standing,
+  Team,
   Video,
 } from './types';
 
@@ -78,15 +81,26 @@ async function matchList(status: 'live' | 'upcoming' | 'completed', limit = 60, 
   return rows.map(toMatch);
 }
 
-/** The timeline payload is large and the match centre needs it three times (header, scorecard, commentary); share one fetch for a few seconds. */
-const timelines = new Map<string, { at: number; p: Promise<RawTimeline | undefined> }>();
-function timeline(id: string) {
+/*
+ * The API answers a timeline it hasn't stored by calling Sportradar on every
+ * request, which runs into the provider's rate limit (429). So: a finished
+ * match's timeline is kept for the session, a live one for a few seconds,
+ * and after a failure the app waits a minute before asking again.
+ */
+const LIVE_TTL = 8_000;
+const FAIL_TTL = 60_000;
+const timelines = new Map<string, { at: number; ttl: number; p: Promise<RawTimeline | undefined> }>();
+function timeline(id: string, finished = false) {
   const hit = timelines.get(id);
-  if (hit && Date.now() - hit.at < 8000) return hit.p;
-  const p = maybe(api.get<RawTimeline>(`/matches/${seg(id)}/timeline`));
-  timelines.set(id, { at: Date.now(), p });
-  p.catch(() => timelines.delete(id));
-  return p;
+  if (hit && Date.now() - hit.at < hit.ttl) return hit.p;
+  const entry = { at: Date.now(), ttl: finished ? Infinity : LIVE_TTL, p: maybe(api.get<RawTimeline>(`/matches/${seg(id)}/timeline`)) };
+  timelines.set(id, entry);
+  entry.p.catch(() => {
+    entry.at = Date.now();
+    entry.ttl = FAIL_TTL;
+    entry.p = Promise.resolve(undefined);
+  });
+  return entry.p;
 }
 
 /** Sportradar schedule rows (daily schedule / results) → the list shape toMatch reads. */
@@ -101,7 +115,7 @@ interface RawScheduleRow {
   } & RawScheduleEvent;
 }
 interface RawScheduleEvent {
-  tournament?: { id: string; name: string };
+  tournament?: { id: string; name: string; type?: string };
   venue?: { name?: string };
   competitors?: { id: string; name: string; abbreviation?: string; qualifier?: string }[];
 }
@@ -121,6 +135,7 @@ function fromSchedule(row: RawScheduleRow, result?: RawScheduleRow): RawMatch {
     teams: { home: side('home'), away: side('away') },
     tournament: ev.tournament?.name,
     tournamentId: ev.tournament?.id,
+    tournamentType: ev.tournament?.type,
     venue: ev.venue?.name,
     scheduled: row.scheduled,
     periodScores: st?.period_scores,
@@ -178,6 +193,84 @@ interface RawPredictionRun {
   narrative?: string | null;
 }
 
+type RawMeeting = {
+  sport_event?: {
+    id?: string;
+    scheduled?: string;
+    start_time?: string;
+    competitors?: { id?: string; name?: string; abbreviation?: string }[];
+    tournament?: { name?: string };
+    season?: { name?: string };
+    sport_event_context?: { competition?: { name?: string } };
+    venue?: { name?: string; city_name?: string };
+  };
+  sport_event_status?: { winner_id?: string; match_result?: string; status?: string };
+};
+
+export interface Meeting {
+  id: string;
+  date: string;
+  teamA: string;
+  teamB: string;
+  winnerId?: string;
+  competition?: string;
+  venue?: string;
+  summary: string;
+  /** Exists in our archive, so the match centre can open it. */
+  inApp?: boolean;
+}
+
+export interface HeadToHead {
+  meetings: Meeting[];
+  upcoming: Match[];
+  aWins: number;
+  bWins: number;
+  noResult: number;
+}
+
+function toMeeting(r: RawMeeting): Meeting | undefined {
+  const ev = r.sport_event;
+  const [h, w] = ev?.competitors ?? [];
+  if (!ev?.id || !h?.id || !w?.id) return undefined;
+  [h, w].forEach(c => rememberTeam({ id: c.id!, name: c.name ?? '', short: c.abbreviation }));
+  const winner = r.sport_event_status?.winner_id;
+  return {
+    id: ev.id,
+    date: ev.scheduled ?? ev.start_time ?? '',
+    teamA: h.id,
+    teamB: w.id,
+    winnerId: winner,
+    competition: ev.sport_event_context?.competition?.name ?? ev.tournament?.name ?? ev.season?.name,
+    venue: [ev.venue?.name, ev.venue?.city_name].filter(Boolean).join(', ') || undefined,
+    summary: r.sport_event_status?.match_result ?? (winner ? `${team(winner).name} won` : 'No result'),
+  };
+}
+
+const seenStreams = new Set<string>();
+const HOUR = 3_600_000;
+/**
+ * Stream status as the reader should see it. The feed marks a stream live or
+ * upcoming and doesn't always close it, so "live" holds for 6 hours from the
+ * start and "upcoming" until its time (or 6 hours after it was added).
+ */
+function streamStatus(s: { status: string; scheduledAt: string | null; createdAt: string; startedAt?: string | null; endedAt?: string | null }) {
+  const now = Date.now();
+  if (s.endedAt) return 'ended';
+  if (s.status === 'live') return now - +new Date(s.startedAt ?? s.createdAt) < 6 * HOUR ? 'live' : 'ended';
+  if (s.status === 'upcoming') {
+    if (s.scheduledAt) return +new Date(s.scheduledAt) > now - HOUR ? 'upcoming' : 'ended';
+    return now - +new Date(s.createdAt) < 6 * HOUR ? 'upcoming' : 'ended';
+  }
+  return s.status;
+}
+
+/** One point per over, in order: the chart feed can repeat overs and arrive out of order. */
+function chartPoints(points?: { over?: number | null; homeWinProb?: number | null }[]) {
+  const byOver = new Map<number, number>();
+  for (const pt of points ?? []) if (pt.homeWinProb != null && pt.over != null) byOver.set(pt.over, pt.homeWinProb);
+  return [...byOver.entries()].sort((x, y) => x[0] - y[0]).map(([over, p]) => ({ over, p }));
+}
+
 function toPrediction(match: Match, run: RawPredictionRun, history?: { over?: number; homeWinProb?: number }[]): Prediction {
   const conf = String(run.calibrationBand ?? '').toLowerCase();
   return {
@@ -193,7 +286,7 @@ function toPrediction(match: Match, run: RawPredictionRun, history?: { over?: nu
       high: run.scoreRange?.high ?? 0,
       mid: run.scoreRange?.expected ?? Math.round(((run.scoreRange?.low ?? 0) + (run.scoreRange?.high ?? 0)) / 2),
     },
-    history: history?.filter(h => h.homeWinProb !== undefined).map(h => ({ over: h.over ?? 0, p: h.homeWinProb! })),
+    history: chartPoints(history),
     topBatters: (run.topBatters ?? []).filter(b => b.playerId).map(b => ({ playerId: b.playerId!, p: b.probability ?? 0 })),
     topBowlers: (run.topBowlers ?? []).filter(b => b.playerId).map(b => ({ playerId: b.playerId!, p: b.probability ?? 0 })),
     venue: [],
@@ -300,21 +393,15 @@ const toComment = (c: RawComment): Comment => ({
 
 export const repo = {
   async home() {
-    const [live, upcoming, results, stories, gallery, urdu, pslTable, streams] = await Promise.all([
+    const [live, upcoming, results, stories, gallery] = await Promise.all([
       matchList('live'),
       matchList('upcoming', 10),
       matchList('completed', 10),
       newsList({ language: 'en', limit: 8 }),
       list<RawGallery>('/gallery', { limit: 20 }).catch(() => [] as RawGallery[]),
-      newsList({ language: 'ur', limit: 6 }).catch(() => [] as Article[]),
-      list<RawStanding>('/psl/standings').then(r => r.map(toStanding)).catch(() => [] as Standing[]),
-      list<Stream>('/streams', { limit: 6 }).catch(() => [] as Stream[]),
     ]);
-    // One bulk call for both lists.
-    const preds = await predictionsFor([...live, ...upcoming.slice(0, 6)]);
-    const livePredictions = Object.fromEntries(live.filter(m => preds[m.id]).map(m => [m.id, preds[m.id]]));
-    const upcomingPredictions = Object.fromEntries(upcoming.filter(m => preds[m.id]).map(m => [m.id, preds[m.id]]));
-    const featuredId = Object.keys(upcomingPredictions)[0];
+    // Win probability is shown for live matches only.
+    const livePredictions = await predictionsFor(live);
     // Hero banners: the latest stories that have a cover image.
     const banners: Banner[] = stories
       .filter(a => a.image)
@@ -334,13 +421,19 @@ export const repo = {
       upcoming: upcoming.sort(byStart),
       results,
       stories,
-      featuredPrediction: featuredId ? upcomingPredictions[featuredId] : undefined,
       shorts: toShorts(gallery),
       banners,
-      urdu,
-      pslTable: pslTable.slice(0, 4),
-      streams,
     };
+  },
+
+  /** The lower Home sections, fetched after the first screen so it opens faster. */
+  async homeExtras() {
+    const [urdu, pslTable, streams] = await Promise.all([
+      newsList({ language: 'ur', limit: 6 }).catch(() => [] as Article[]),
+      list<RawStanding>('/psl/standings').then(r => r.map(toStanding)).catch(() => [] as Standing[]),
+      list<Stream>('/streams', { limit: 6 }).catch(() => [] as Stream[]),
+    ]);
+    return { urdu, pslTable: pslTable.slice(0, 4), streams };
   },
 
   async shorts(): Promise<Short[]> {
@@ -377,6 +470,10 @@ export const repo = {
     return (await api.post<{ toggled: 'added' | 'removed' }>('/reactions', { ...target(thread), emoji })).toggled;
   },
 
+  /** Latest win probability for a set of live matches (one bulk call). */
+  livePredictions: (matches: Match[]) => predictionsFor(matches),
+
+
   /** Matches in play right now (small list, refreshed on every live tick). */
   async liveMatches(): Promise<Match[]> {
     return matchList('live');
@@ -399,8 +496,12 @@ export const repo = {
 
   /** One page of matches with a status, like the website's match board tabs. */
   async statusPage(status: 'upcoming' | 'completed' | 'cancelled', pageNo: number): Promise<{ items: Match[]; hasMore: boolean }> {
-    const res = await page<RawMatch>('/matches', { status, page: pageNo, limit: PAGE_SIZE });
-    return { items: res.data.map(toMatch), hasMore: res.hasMore };
+    // The API returns cancelled matches in no particular order; it's a short list, so take it whole and sort.
+    const limit = status === 'cancelled' ? 100 : PAGE_SIZE;
+    const res = await page<RawMatch>('/matches', { status, page: pageNo, limit });
+    const items = res.data.map(toMatch);
+    if (status === 'cancelled') items.sort((a, b) => +new Date(b.startTime) - +new Date(a.startTime));
+    return { items, hasMore: res.hasMore };
   },
 
   /** Upcoming fixtures, soonest first, a page at a time. */
@@ -439,13 +540,13 @@ export const repo = {
     return { ...match, ...Object.fromEntries(Object.entries(extras).filter(([, v]) => v !== undefined && v !== '')) };
   },
 
-  async scorecard(id: string): Promise<Innings[]> {
-    const t = await timeline(id).catch(() => undefined);
+  async scorecard(id: string, finished = false): Promise<Innings[]> {
+    const t = await timeline(id, finished).catch(() => undefined);
     return t ? toScorecard(t) : [];
   },
 
-  async commentary(id: string): Promise<{ balls: Ball[]; overs: OverSummary[] }> {
-    const t = await timeline(id).catch(() => undefined);
+  async commentary(id: string, finished = false): Promise<{ balls: Ball[]; overs: OverSummary[] }> {
+    const t = await timeline(id, finished).catch(() => undefined);
     return t ? toCommentary(t) : { balls: [], overs: [] };
   },
 
@@ -524,11 +625,19 @@ export const repo = {
     };
   },
 
+  /** Just the player record, registered for lookups (favourites). */
+  async playerInfo(id: string) {
+    return toPlayer(await api.get<RawPlayer>(`/players/${seg(id)}`));
+  },
+
   async player(id: string) {
     const p = await api.get<RawPlayer & { recentMatches?: RawMatch[] }>(`/players/${seg(id)}`);
     const player = toPlayer(p);
     const news = await newsList({ language: 'en', playerId: id, limit: 10 }).catch(() => [] as Article[]);
-    return { player, news, recentMatches: (p.recentMatches ?? []).map(toMatch) };
+    // The profile's recent matches come without scores ("0/0"); fetch the first few in full.
+    const recent = (p.recentMatches ?? []).slice(0, 6);
+    const full = await Promise.all(recent.map(m => api.get<RawMatch>(`/matches/${seg(m.matchId)}`).catch(() => m)));
+    return { player, news, recentMatches: full.map(toMatch) };
   },
 
   async series(id: string) {
@@ -544,7 +653,9 @@ export const repo = {
         : list<RawMatch>('/matches', { tournamentId: id, limit: 100 }),
       newsList({ language: 'en', seriesId: id, limit: 10 }).catch(() => [] as Article[]),
     ]);
-    const ms = matches.map(toMatch).sort(byStart);
+    // Many stored matches carry the tournament name but no id: fall back to the name.
+    const byName = !matches.length && t?.name ? (await list<RawMatch>('/matches', { tournament: t.name, limit: 100 }).catch(() => [] as RawMatch[])).filter(m => m.tournament?.trim().toLowerCase() === t.name.trim().toLowerCase()) : [];
+    const ms = [...matches, ...byName].map(toMatch).sort(byStart);
     const known = seriesOf(id);
     const series = rememberSeries({
       id,
@@ -592,8 +703,17 @@ export const repo = {
 
   /** Streams and watch links, newest first. */
   async streamsPage(pageNo: number): Promise<{ items: Stream[]; hasMore: boolean }> {
-    const res = await page<Stream>('/streams', { page: pageNo, limit: PAGE_SIZE });
-    return { items: res.data, hasMore: res.hasMore };
+    const res = await page<Stream & { startedAt?: string | null; endedAt?: string | null }>('/streams', { page: pageNo, limit: PAGE_SIZE });
+    if (pageNo === 1) seenStreams.clear();
+    const items = res.data
+      .filter(s => {
+        const key = (s.streamUrl || s.title).trim().toLowerCase();
+        if (seenStreams.has(key)) return false;
+        seenStreams.add(key);
+        return true;
+      })
+      .map(s => ({ ...s, status: streamStatus(s) }));
+    return { items, hasMore: res.hasMore };
   },
 
   /** Every tournament the data feed covers, alphabetically. */
@@ -643,39 +763,78 @@ export const repo = {
     return { teams: { T20: [], ODI: [], Test: [], T10: [] }, players: { batters: [], bowlers: [], allrounders: [] } };
   },
 
-  /** Last meetings between two teams (Sportradar team-vs-team), newest first. */
-  async headToHead(a: string, b: string): Promise<{ played: number; aWins: number; bWins: number; noResult: number; last5: string[] } | undefined> {
+  /** Teams by name for pickers; exact and prefix matches first (the API also matches on country). */
+  async searchTeams(q: string): Promise<Team[]> {
+    const needle = q.trim().toLowerCase();
+    if (needle.length < 2) return [];
+    // The API matches on country too and sorts A–Z, so "Pakistan" sits behind every Pakistani
+    // domestic side; take the whole (small) result and rank it here.
+    const rows = await list<{ id: string; name: string; abbr?: string; logoUrl?: string | null }>('/teams', { q: q.trim(), limit: 100 });
+    const rank = (n: string) => (n.toLowerCase() === needle ? 0 : n.toLowerCase().startsWith(needle) ? 1 : n.toLowerCase().includes(needle) ? 2 : 3);
+    // The feed lists some sides twice under one name; offer each name once.
+    const seen = new Set<string>();
+    return rows
+      .sort((x, y) => rank(x.name) - rank(y.name) || Number(y.id === PAKISTAN_ID) - Number(x.id === PAKISTAN_ID) || x.name.localeCompare(y.name))
+      .filter(t => !seen.has(t.name.toLowerCase()) && !!seen.add(t.name.toLowerCase()))
+      .slice(0, 8)
+      .map(t => rememberTeam({ id: t.id, name: t.name, short: t.abbr, logoUrl: t.logoUrl }));
+  },
+
+  /** Players by name for pickers. */
+  async searchPlayers(q: string): Promise<Player[]> {
+    if (q.trim().length < 2) return [];
+    return (await list<RawPlayer>('/players', { q: q.trim(), limit: 8 })).map(p => toPlayer(p));
+  },
+
+  /**
+   * Every meeting between two teams, newest first: the stored head-to-head
+   * report when the API has one, otherwise the results in our own match
+   * archive. Upcoming fixtures between them come from the schedule.
+   */
+  async headToHead(a: string, b: string): Promise<HeadToHead> {
     const strip = (x: string) => (x.startsWith('code:') ? x.slice(5) : x);
-    const res = await maybe(
-      api.get<{ payload?: { last_meetings?: { sport_event_status?: { winner_id?: string } }[] } }>(`/head-to-head/${seg(strip(a))}/${seg(strip(b))}`),
-    ).catch(() => undefined);
-    const meetings = res?.payload?.last_meetings ?? [];
-    if (!meetings.length) return undefined;
-    const winners = meetings.map(m => m.sport_event_status?.winner_id ?? '');
-    const aWins = winners.filter(w => w === strip(a)).length;
-    const bWins = winners.filter(w => w === strip(b)).length;
-    return {
-      played: meetings.length,
-      aWins,
-      bWins,
-      noResult: meetings.length - aWins - bWins,
-      last5: winners.slice(0, 5).map(w => (w === strip(a) ? a : w === strip(b) ? b : '')),
-    };
+    const [x, y] = [strip(a), strip(b)].sort();
+    const between = (m: Match) => [m.teamA, m.teamB].every(id => id === a || id === b || team(id).name === team(a).name || team(id).name === team(b).name);
+    const [report, done, next] = await Promise.all([
+      maybe(api.get<{ payload?: { last_meetings?: RawMeeting[] } }>(`/head-to-head/${seg(x)}/${seg(y)}`)).catch(() => undefined),
+      matchList('completed', 60, { q: team(a).name }).catch(() => [] as Match[]),
+      matchList('upcoming', 30, { q: team(a).name }).catch(() => [] as Match[]),
+    ]);
+    const stored = (report?.payload?.last_meetings ?? []).map(toMeeting).filter((m): m is Meeting => !!m);
+    const archive = done.filter(between).map(m => ({
+      id: m.id,
+      date: m.startTime,
+      teamA: m.teamA,
+      teamB: m.teamB,
+      winnerId: m.result?.winnerId,
+      competition: seriesOf(m.seriesId)?.name ?? m.title,
+      venue: venueLabel(m.venueId) || undefined,
+      summary: m.statusText,
+      inApp: true,
+    }));
+    // Prefer the archive's rows (they open in the app); add stored meetings it doesn't have.
+    const seen = new Set(archive.map(m => m.id));
+    const meetings = [...archive, ...stored.filter(m => !seen.has(m.id))].sort((p, q) => +new Date(q.date) - +new Date(p.date));
+    const same = (w: string | undefined, id: string) => !!w && (w === id || strip(w) === strip(id) || team(w).name === team(id).name);
+    const aWins = meetings.filter(m => same(m.winnerId, a)).length;
+    const bWins = meetings.filter(m => same(m.winnerId, b)).length;
+    return { meetings, upcoming: next.filter(between), aWins, bWins, noResult: meetings.length - aWins - bWins };
   },
 
   async search(q: string) {
     const needle = q.trim();
     if (!needle) return { teams: [], players: [], series: [], articles: [] };
-    const [res, articles] = await Promise.all([
+    const [res, articles, teams] = await Promise.all([
       api.get<{
         players?: RawPlayer[];
         teams?: { id: string; name: string; abbr?: string; logoUrl?: string | null }[];
         tournaments?: { id: string; name: string; type?: string }[];
       }>('/search', { q: needle }),
       newsList({ q: needle, limit: 5 }).catch(() => [] as Article[]),
+      repo.searchTeams(needle).catch(() => [] as Team[]),
     ]);
     return {
-      teams: (res.teams ?? []).slice(0, 5).map(t => rememberTeam({ id: t.id, name: t.name, short: t.abbr, logoUrl: t.logoUrl })),
+      teams: teams.length ? teams.slice(0, 5) : (res.teams ?? []).slice(0, 5).map(t => rememberTeam({ id: t.id, name: t.name, short: t.abbr, logoUrl: t.logoUrl })),
       players: (res.players ?? []).slice(0, 6).map(p => toPlayer(p)),
       series: (res.tournaments ?? []).slice(0, 4).map(t =>
         rememberSeries({
@@ -683,7 +842,8 @@ export const repo = {
           name: t.name,
           short: t.name,
           slug: t.id,
-          format: t.type?.toLowerCase().includes('odi') ? 'ODI' : t.type?.toLowerCase().includes('test') ? 'Test' : 'T20',
+          format: formatOfType(t.type) ?? 'T20',
+          formatKnown: !!formatOfType(t.type),
           kind: 'tournament',
           start: '',
           end: '',

@@ -7,6 +7,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { useTheme } from '../../theme/ThemeProvider';
+import { reduceMotion } from '../../utils/motion';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -36,6 +37,7 @@ export function Touch({
   const value = useRef(new Animated.Value(1)).current;
 
   const to = (v: number) =>
+    !reduceMotion() &&
     Animated.spring(value, {
       toValue: v,
       useNativeDriver: true,

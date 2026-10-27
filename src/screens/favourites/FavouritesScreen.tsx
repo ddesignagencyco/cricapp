@@ -44,6 +44,9 @@ export default function FavouritesScreen() {
   const missing = teams.filter(id => team(id).name === 'TBC');
   useQuery(`fav:teams:${missing.join(',')}`, () => Promise.all(missing.map(id => repo.teamInfo(id).catch(() => null))));
   const players = favouritesOf('player');
+  // Same for players: a saved id without a name in the registry is looked up once.
+  const missingPlayers = players.filter(id => !player(id));
+  useQuery(`fav:players:${missingPlayers.join(',')}`, () => Promise.all(missingPlayers.map(id => repo.playerInfo(id).catch(() => null))));
   const matchIds = favouritesOf('match');
   const articleIds = favouritesOf('article');
   // Saved items are stored as ids; fetch them fresh (a removed item just drops out).

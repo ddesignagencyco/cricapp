@@ -19,6 +19,9 @@ import { useTheme } from '../../theme/ThemeProvider';
 import { space } from '../../theme/tokens';
 import { shortDate } from '../../utils/format';
 
+/** Feed tournament types as readers know them. */
+const formatLabel = (t: string) => ({ the_hundred: '100-ball', list_a: 'List A', first_class: 'First-class', t20: 'T20', t20i: 'T20I', odi: 'ODI', test: 'Test', t10: 'T10' } as Record<string, string>)[t.toLowerCase()] ?? t.replace(/_/g, ' ');
+
 export default function SeriesScreen() {
   const { id } = useParams('Series');
   const nav = useNavigation();
@@ -61,7 +64,7 @@ export default function SeriesScreen() {
         header={
           <HubHeader
             color={s?.color ?? colors.brand}
-            overline={[s?.format, data ? `${data.matches.length} MATCHES` : ''].filter(Boolean).join(' · ')}
+            overline={[data?.info.format ? formatLabel(data.info.format).toUpperCase() : undefined, data ? `${data.matches.length} ${data.matches.length === 1 ? 'MATCH' : 'MATCHES'}` : ''].filter(Boolean).join(' · ')}
             title={s?.name ?? 'Series'}
             subtitle={s?.start ? `${shortDate(s.start)}${s.end ? ` – ${shortDate(s.end)}` : ''}` : undefined}
             mark={
@@ -114,7 +117,7 @@ export default function SeriesScreen() {
               const i = data.info;
               const rows = [
                 ['Season', i.season],
-                ['Format', i.format ? i.format.replace(/_/g, ' ').toUpperCase() : undefined],
+                ['Format', i.format ? formatLabel(i.format) : undefined],
                 ['Category', i.category],
                 ['Gender', i.gender ? i.gender.charAt(0).toUpperCase() + i.gender.slice(1) : undefined],
                 ['Starts', i.start ? shortDate(i.start) : undefined],

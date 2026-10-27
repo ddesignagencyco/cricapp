@@ -46,7 +46,7 @@ function TabStrip({ tabs, index, onSelect }: { tabs: PagerTab[]; index: number; 
   }, [index, layouts]);
 
   return (
-    <View style={[styles.stripWrap, { backgroundColor: colors.surface, borderBottomColor: colors.hairline }]}>
+    <View style={[styles.stripWrap, { backgroundColor: colors.background }]}>
       <ScrollView ref={strip} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.strip}>
         {tabs.map((t, i) => {
           const on = i === index;
@@ -57,7 +57,8 @@ function TabStrip({ tabs, index, onSelect }: { tabs: PagerTab[]; index: number; 
               onPress={() => onSelect(i)}
               accessibilityRole="tab"
               accessibilityState={{ selected: on }}
-              style={[styles.pill, { backgroundColor: on ? colors.brand : colors.elevated }]}
+              hitSlop={{ top: 6, bottom: 6 }}
+              style={[styles.pill, on ? { backgroundColor: colors.brand, borderColor: colors.brand } : { backgroundColor: colors.surface, borderColor: colors.hairline }]}
             >
               <AppText variant="label" weight={on ? '700' : '600'} color={on ? '#FFFFFF' : 'textSecondary'}>
                 {t.label}
@@ -115,6 +116,8 @@ export function TabPager({
       <TabStrip tabs={tabs} index={index} onSelect={go} />
       <Animated.FlatList
         ref={list as never}
+        // Taps on search results inside a page must land while the keyboard is open.
+        keyboardShouldPersistTaps="handled"
         data={tabs}
         keyExtractor={t => t.key}
         horizontal
@@ -137,7 +140,7 @@ export function TabPager({
 }
 
 const styles = StyleSheet.create({
-  stripWrap: { borderBottomWidth: StyleSheet.hairlineWidth * 2 },
-  strip: { paddingHorizontal: space.lg, paddingVertical: 10, gap: space.sm },
-  pill: { height: 36, paddingHorizontal: 16, borderRadius: 18, justifyContent: 'center', overflow: 'hidden' },
+  stripWrap: {},
+  strip: { paddingHorizontal: space.lg, paddingVertical: space.sm + 2, gap: space.sm },
+  pill: { height: 36, minWidth: 64, paddingHorizontal: 16, borderRadius: 18, borderWidth: StyleSheet.hairlineWidth * 2, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
 });

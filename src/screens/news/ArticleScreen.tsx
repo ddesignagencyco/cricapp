@@ -1,8 +1,8 @@
 import React from 'react';
-import { Share, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Share, StyleSheet, View } from 'react-native';
 import { Avatar, TeamBadge } from '../../components/cricket/Badges';
 import { ArticleArt, NewsRow } from '../../components/cricket/NewsCards';
-import { CommentsPreview } from '../../components/cricket/Comments';
+import { CommentsThread } from '../../components/cricket/CommentsThread';
 import { FavouriteButton } from '../../components/ui/FavouriteButton';
 import { AppText } from '../../components/ui/AppText';
 import { SkeletonList } from '../../components/ui/Controls';
@@ -22,7 +22,6 @@ export default function ArticleScreen() {
   const nav = useNavigation();
   const { colors } = useTheme();
   const { data } = useQuery(`article:${id}`, () => repo.article(id));
-  const comments = useQuery(`comments:article:${id}`, () => repo.comments(`article:${id}`));
 
   if (!data) {
     return (
@@ -34,6 +33,10 @@ export default function ArticleScreen() {
   }
   const { article: a, related } = data;
   const ur = a.lang === 'ur';
+  // Section labels follow the story's language.
+  const t = ur
+    ? { story: 'اس خبر میں', centre: 'میچ سینٹر کھولیں', comments: 'تبصرے', related: 'متعلقہ خبریں', policy: 'کوئی غلطی نظر آئی؟ ہمیں corrections@pakcriczone.com پر بتائیں۔' }
+    : { story: 'In this story', centre: 'Open match centre', comments: 'Comments', related: 'Related', policy: 'Spotted an error? Read our editorial and corrections policy, or tell us at corrections@pakcriczone.com.' };
   const by = author(a.authorId);
   const share = () => Share.share({ message: `${a.title}\nhttps://pakcriczone.com/${ur ? 'ur/' : ''}cricket-news/${a.slug}` });
 
@@ -48,7 +51,8 @@ export default function ArticleScreen() {
           </>
         }
       />
-      <Body>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+      <Body keyboardShouldPersistTaps="handled">
         <View style={{ paddingHorizontal: space.lg }}>
           <View style={[styles.rowC, ur && { flexDirection: 'row-reverse' }]}>
             {a.breaking ? (
@@ -61,7 +65,10 @@ export default function ArticleScreen() {
               </AppText>
             )}
             <AppText variant="caption" color="textMuted" style={{ marginHorizontal: 8 }}>
-              · {a.readMinutes} min read
+              ·
+            </AppText>
+            <AppText variant="caption" color="textMuted">
+              {a.readMinutes} min read
             </AppText>
           </View>
           <AppText variant="display" rtl={ur} style={{ marginTop: space.sm }} accessibilityRole="header">
@@ -81,7 +88,6 @@ export default function ArticleScreen() {
                 {a.updatedAt ? ` · Updated ${ago(a.updatedAt)}` : ''}
               </AppText>
             </View>
-            {by ? <FavouriteButton kind="author" id={by.id} label={by.name} /> : null}
           </View>
         </View>
 
@@ -99,7 +105,7 @@ export default function ArticleScreen() {
 
         {a.teamIds.length || a.playerIds.length ? (
           <>
-            <SectionHeader title="In this story" style={{ marginTop: space.xxl }} />
+            <SectionHeader title={t.story} style={{ marginTop: space.xxl }} />
             <View style={styles.entities}>
               {a.teamIds.map(t => (
                 <Touch
@@ -131,7 +137,7 @@ export default function ArticleScreen() {
                   style={[styles.entity, { backgroundColor: colors.brandSoft, borderColor: colors.brandSoft }]}
                 >
                   <AppText variant="label" weight="700" color="accent">
-                    Open match centre
+                    {t.centre}
                   </AppText>
                 </Touch>
               ) : null}
@@ -141,19 +147,17 @@ export default function ArticleScreen() {
 
         <View style={[styles.policy, { borderColor: colors.hairline }]}>
           <AppText variant="caption" color="textMuted">
-            Spotted an error? Read our editorial and corrections policy, or tell us at corrections@pakcriczone.com.
+            {t.policy}
           </AppText>
         </View>
 
-        {comments.data ? (
-          <View style={{ marginTop: space.xxl }}>
-            <CommentsPreview thread={`article:${a.id}`} title={a.title} list={comments.data.list} total={comments.data.total} />
-          </View>
-        ) : null}
+        <View style={{ marginTop: space.xxl }}>
+          <CommentsThread thread={`article:${a.id}`} title={t.comments} />
+        </View>
 
         {related.length ? (
           <>
-            <SectionHeader title="Related" style={{ marginTop: space.xl }} />
+            <SectionHeader title={t.related} style={{ marginTop: space.xl }} />
             {related.map((r, i) => (
               <View key={r.id}>
                 {i > 0 ? <Hairline inset={space.lg} /> : null}
@@ -163,6 +167,7 @@ export default function ArticleScreen() {
           </>
         ) : null}
       </Body>
+      </KeyboardAvoidingView>
     </Screen>
   );
 }

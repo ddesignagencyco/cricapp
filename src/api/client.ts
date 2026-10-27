@@ -109,9 +109,18 @@ async function request<T>(
   return parsed as T;
 }
 
+/** Reads are safe to repeat: one retry on a timeout or dropped connection (status 0), never on an HTTP error. */
+async function getWithRetry<T>(path: string, timeoutMs?: number): Promise<T> {
+  try {
+    return await request<T>('GET', path, undefined, timeoutMs);
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 0) return request<T>('GET', path, undefined, timeoutMs);
+    throw e;
+  }
+}
+
 export const api = {
-  get: <T>(path: string, query?: Query, timeoutMs?: number) =>
-    request<T>('GET', withQuery(path, query), undefined, timeoutMs),
+  get: <T>(path: string, query?: Query, timeoutMs?: number) => getWithRetry<T>(withQuery(path, query), timeoutMs),
   /** Like `get`, but a 404 is an answer ("none"), not an error. */
   optional: async <T>(path: string, query?: Query): Promise<T | null> => {
     try {

@@ -11,7 +11,7 @@ import { EmptyState, ErrorState, IconButton, LiveIndicator, SectionHeader } from
 import { Touch } from '../../components/ui/Touch';
 import { seriesOf, team } from '../../data/refs';
 import { repo } from '../../data/repo';
-import type { Match } from '../../data/types';
+import type { Match, Prediction } from '../../data/types';
 import { usePaged } from '../../data/usePaged';
 import { useQuery } from '../../data/useQuery';
 import { useNavigation } from '../../navigation/Stack';
@@ -26,7 +26,7 @@ const dayStart = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(
 const offsetOf = (iso: string) => Math.round((dayStart(new Date(iso)) - dayStart(new Date())) / 86_400_000);
 
 /** Native date strip: a week either side of today, live dot on days in play. */
-function DateStrip({ value, onChange, liveDays, matchDays }: { value: number; onChange: (d: number) => void; liveDays: Set<number>; matchDays: Set<number> }) {
+function DateStrip({ value, onChange, liveDays }: { value: number; onChange: (d: number) => void; liveDays: Set<number> }) {
   const { colors } = useTheme();
   const scroll = useRef<React.ComponentRef<typeof ScrollView>>(null);
   const offsets = Array.from({ length: 22 }, (_, i) => i - 10);
@@ -63,10 +63,11 @@ function DateStrip({ value, onChange, liveDays, matchDays }: { value: number; on
             <AppText variant="micro" color={on ? colors.background : 'textMuted'}>
               {o === 0 ? 'TODAY' : DAYS[d.getDay()]}
             </AppText>
-            <AppText variant="headline" weight="700" tabular color={on ? colors.background : matchDays.has(o) ? 'text' : 'textMuted'} style={{ marginTop: 2 }}>
+            <AppText variant="headline" weight="700" tabular color={on ? colors.background : 'text'} style={{ marginTop: 2 }}>
               {d.getDate()}
             </AppText>
-            <View style={[styles.dayDot, { backgroundColor: liveDays.has(o) ? colors.live : matchDays.has(o) ? (on ? colors.background : colors.textMuted) : 'transparent' }]} />
+            {/* Only a day with play in progress gets a dot; a dot on every day said nothing. */}
+            <View style={[styles.dayDot, { backgroundColor: liveDays.has(o) ? colors.live : 'transparent' }]} />
           </Touch>
         );
       })}
@@ -90,7 +91,7 @@ function CompetitionSection({ seriesId, matches }: { seriesId: string; matches: 
             {s?.name ?? 'Other matches'}
           </AppText>
           <AppText variant="caption" color="textMuted">
-            {s?.format === 'T20' ? 'T20' : s?.format} · {matches.length} {matches.length === 1 ? 'match' : 'matches'}
+            {[s?.formatKnown === false ? undefined : s?.format, `${matches.length} ${matches.length === 1 ? 'match' : 'matches'}`].filter(Boolean).join(' · ')}
           </AppText>
         </View>
         <Icon name="chevronRight" size={16} color={colors.textMuted} />
@@ -115,7 +116,6 @@ function rankSeries(seriesId: string, list: Match[], favourites: string[]) {
 }
 
 /** Every day on the strip counts as a match day: fixtures load per day, on demand. */
-const ALL_DAYS = new Set(Array.from({ length: 22 }, (_, i) => i - 10));
 
 export function MatchesView({ initialDay = 0 }: { initialDay?: number }) {
   const { colors } = useTheme();
@@ -145,7 +145,7 @@ export function MatchesView({ initialDay = 0 }: { initialDay?: number }) {
   return (
     <View style={{ flex: 1 }}>
       <View style={[styles.stripBar, { backgroundColor: colors.surface, borderBottomColor: colors.hairline }]}>
-        <DateStrip value={day} onChange={setDay} liveDays={liveDays} matchDays={ALL_DAYS} />
+        <DateStrip value={day} onChange={setDay} liveDays={liveDays} />
       </View>
       {list.loading && !live.length ? (
         <SkeletonList count={3} height={160} />
@@ -194,6 +194,9 @@ export function MatchesView({ initialDay = 0 }: { initialDay?: number }) {
 /** Matches in play now, refreshed with every live tick. */
 function LiveNow() {
   const q = useQuery('matches:live', repo.liveMatches, { live: true });
+  // Cards show at once; win probability fills in when it arrives.
+  const ids = q.data?.map(m => m.id).join(',') ?? '';
+  const odds = useQuery(`matches:live-odds:${ids}`, () => (q.data?.length ? repo.livePredictions(q.data) : Promise.resolve({})), { live: true });
   if (!q.data && q.error) return <ErrorState error={q.error} onRetry={q.refresh} />;
   if (!q.data) return <SkeletonList count={2} height={180} />;
   if (!q.data.length) {
@@ -202,7 +205,7 @@ function LiveNow() {
   return (
     <Body onRefresh={q.refresh} refreshing={q.refreshing} bottomInset={false} contentStyle={{ gap: space.md, paddingHorizontal: space.lg, paddingTop: space.lg }}>
       {q.data.map(m => (
-        <MatchHeroCard key={m.id} match={m} />
+        <MatchHeroCard key={m.id} match={m} prediction={(odds.data as Record<string, Prediction> | undefined)?.[m.id]} />
       ))}
     </Body>
   );

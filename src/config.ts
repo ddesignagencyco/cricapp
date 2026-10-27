@@ -15,4 +15,4 @@ export const API_HEADERS: Record<string, string> = { 'localtonet-skip-warning': 
 /** The website, for pages the app links out to (policies, contact). */
 export const SITE_URL = 'https://pakcriczone.com';
 
-export const REQUEST_TIMEOUT_MS = 15000;
+export const REQUEST_TIMEOUT_MS = 20000;

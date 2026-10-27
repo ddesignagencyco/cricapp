@@ -9,6 +9,7 @@ import { repo } from '../../data/repo';
 import type { Match, Prediction } from '../../data/types';
 import { useQuery } from '../../data/useQuery';
 import { space } from '../../theme/tokens';
+import { ago } from '../../utils/format';
 
 function Cards({ list }: { list: { match: Match; prediction: Prediction }[] }) {
   return (
@@ -41,7 +42,11 @@ export default function PredictScreen() {
               <View style={styles.liveHead}>
                 <LiveIndicator label="LIVE MODEL" size="md" />
                 <AppText variant="caption" color="textMuted" style={{ marginLeft: 8 }}>
-                  Updates every ball
+                  {(() => {
+                    // Promise "every ball" only while the model is actually updating.
+                    const newest = Math.max(...data.live.map(x => +new Date(x.prediction.generatedAt)));
+                    return Date.now() - newest > 10 * 60_000 ? `Last update ${ago(new Date(newest).toISOString())}` : 'Updates every ball';
+                  })()}
                 </AppText>
               </View>
               <Cards list={data.live} />

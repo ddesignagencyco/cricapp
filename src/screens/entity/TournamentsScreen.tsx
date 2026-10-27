@@ -16,7 +16,7 @@ import { radius, space } from '../../theme/tokens';
 import { badgeFill, colorFor } from '../../utils/color';
 import { shortDate } from '../../utils/format';
 
-const FORMAT: Record<string, string> = { t20: 'T20', t20i: 'T20I', odi: 'ODI', test: 'Test', t10: 'T10', list_a: 'List A', first_class: 'First-class' };
+const FORMAT: Record<string, string> = { t20: 'T20', t20i: 'T20I', odi: 'ODI', test: 'Test', t10: 'T10', list_a: 'List A', first_class: 'First-class', the_hundred: '100-ball' };
 
 /** Where the current season stands, from its dates. */
 function phase(t: Tournament): { label: string; tone: 'success' | 'brand' | 'neutral' } | null {

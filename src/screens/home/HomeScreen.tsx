@@ -1,19 +1,15 @@
 import React, { useRef, useState } from 'react';
 import { FlatList, Image, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { MatchHeroCard, MatchRow } from '../../components/cricket/MatchCards';
-import { NewsHero, NewsRow, NewsTile } from '../../components/cricket/NewsCards';
+import { NewsTile } from '../../components/cricket/NewsCards';
 import { PointsTable } from '../../components/cricket/Tables';
 import { BannerCarousel, ShortsRow } from '../../components/cricket/Media';
-import { WinProbBar } from '../../components/cricket/Charts';
-import { TeamBadge } from '../../components/cricket/Badges';
 import { AppText } from '../../components/ui/AppText';
 import { SkeletonList } from '../../components/ui/Controls';
-import { Gradient } from '../../components/ui/Gradient';
 import { Icon, type IconName } from '../../components/ui/Icon';
 import { Body, Screen, TabHeader } from '../../components/ui/Layout';
-import { Card, ErrorState, Glow, Hairline, IconButton, SectionHeader } from '../../components/ui/Primitives';
+import { Card, ErrorState, Glow, IconButton, SectionHeader } from '../../components/ui/Primitives';
 import { Touch } from '../../components/ui/Touch';
-import { team } from '../../data/refs';
 import { repo, type Stream } from '../../data/repo';
 import type { Short } from '../../data/types';
 import { useQuery } from '../../data/useQuery';
@@ -21,7 +17,6 @@ import { useNavigation } from '../../navigation/Stack';
 import type { RouteName } from '../../navigation/routes';
 import { useTheme } from '../../theme/ThemeProvider';
 import { radius, space } from '../../theme/tokens';
-import { dayLabel, time } from '../../utils/format';
 
 function LiveCarousel({ data }: { data: Awaited<ReturnType<typeof repo.home>> }) {
   const { width } = useWindowDimensions();
@@ -45,7 +40,7 @@ function LiveCarousel({ data }: { data: Awaited<ReturnType<typeof repo.home>> })
         onViewableItemsChanged={onViewable}
         viewabilityConfig={{ itemVisiblePercentThreshold: 60 }}
         renderItem={({ item }) => (
-          <MatchHeroCard match={item} width={cardW} prediction={data.livePredictions[item.id]} />
+          <MatchHeroCard match={item} width={cardW} prediction={item.status === 'live' ? data.livePredictions[item.id] : undefined} />
         )}
       />
       {items.length > 1 ? (
@@ -124,66 +119,6 @@ function Shortcuts() {
   );
 }
 
-function PredictionTeaser({ data }: { data: Awaited<ReturnType<typeof repo.home>> }) {
-  const nav = useNavigation();
-  const p = data.featuredPrediction;
-  if (!p) return null;
-  const m = data.upcoming.find(x => x.id === p.matchId);
-  if (!m) return null;
-  // Graphite feature card with a faint brand glow: stands apart from the blue live hero.
-  return (
-    <Touch scale onPress={() => nav.navigate('Prediction', { id: m.id })} style={styles.teaser}>
-      <Gradient from="#2E3442" to="#1A1E27" base="#14171D" />
-      <Glow color="#3B68FC" size={280} opacity={0.35} style={{ right: -120, top: -140 }} />
-      <View style={styles.rowCenter}>
-        <View style={[styles.aiIcon, { backgroundColor: 'rgba(255,255,255,0.16)' }]}>
-          <Icon name="sparkles" size={16} color="#FFFFFF" />
-        </View>
-        <View style={{ flex: 1, marginLeft: 10 }}>
-          <AppText variant="label" weight="700" color="#FFFFFF">
-            AI Match Preview
-          </AppText>
-          <AppText variant="caption" color="#C9D3F2">
-            {dayLabel(m.startTime)} · {time(m.startTime)} · {m.title}
-          </AppText>
-        </View>
-        <View style={styles.confidence}>
-          <AppText variant="micro" color="#FFFFFF">
-            {p.confidence.toUpperCase()}
-          </AppText>
-        </View>
-      </View>
-      <View style={[styles.rowCenter, { marginTop: 18, marginBottom: 14 }]}>
-        <TeamBadge id={m.teamA} size={44} solid />
-        <View style={{ flex: 1, alignItems: 'center' }}>
-          <AppText variant="display" tabular color="#FFFFFF">
-            {Math.round(p.winA * 100)}
-            <AppText variant="title" color="#AEBBE6">
-              %
-            </AppText>
-          </AppText>
-          <AppText variant="caption" color="#D7DEF6">
-            {team(m.teamA).name} to win
-          </AppText>
-        </View>
-        <TeamBadge id={m.teamB} size={44} solid />
-      </View>
-      <WinProbBar teamA={m.teamA} teamB={m.teamB} p={p.winA} height={6} showLabels={false} />
-      <View style={[styles.rowCenter, styles.teaserFoot]}>
-        <AppText variant="caption" color="#C9D3F2" style={{ flex: 1 }}>
-          Projected {team(p.projected.teamId).short} score{' '}
-          <AppText variant="caption" weight="700" color="#FFFFFF" tabular>
-            {p.projected.low}–{p.projected.high}
-          </AppText>
-        </AppText>
-        <AppText variant="caption" weight="700" color="#FFFFFF">
-          Full preview
-        </AppText>
-        <Icon name="chevronRight" size={14} color="#FFFFFF" />
-      </View>
-    </Touch>
-  );
-}
 
 /** Watch links from the CMS: thumbnail, title, and whether it's live. Plays in the app. */
 function StreamsRail({ streams }: { streams: Stream[] }) {
@@ -233,6 +168,9 @@ function PhotosRail({ gallery }: { gallery: Short }) {
 export default function HomeScreen() {
   const nav = useNavigation();
   const { data, loading, error, refresh, refreshing } = useQuery('home', repo.home, { live: true });
+  // Lower sections load on their own once the top of Home is up.
+  const extras = useQuery(data ? 'home:extras' : 'home:extras:wait', () => (data ? repo.homeExtras() : Promise.resolve(null)));
+  const more = extras.data ?? { urdu: [], pslTable: [], streams: [] };
 
   return (
     <Screen>
@@ -266,30 +204,18 @@ export default function HomeScreen() {
           <LiveCarousel data={data} />
 
           <View style={styles.hubs}>
-            <HubTile title="Pakistan" subtitle="Squad, fixtures, news" color="#1FB86A" icon="flag" route="Pakistan" />
+            <HubTile title="Series" subtitle="All tournaments" color="#4D82FF" icon="layers" route="Tournaments" />
             <HubTile title="PSL" subtitle="Table, leaders, fixtures" color="#F5C04A" icon="trophy" route="Psl" />
           </View>
           <Shortcuts />
 
-          <SectionHeader title="Top stories" action="News" onAction={() => nav.navigate('Tabs', { tab: 'news' })} style={{ marginTop: space.xxl }} />
-          <NewsHero article={data.stories[0]} />
-          <View style={{ marginTop: space.xs }}>
-            {data.stories.slice(1, 4).map((a, i) => (
-              <View key={a.id}>
-                {i > 0 ? <Hairline inset={space.lg} /> : null}
-                <NewsRow article={a} />
-              </View>
-            ))}
-          </View>
 
-          <SectionHeader title="Predictions" action="All" onAction={() => nav.navigate('Tabs', { tab: 'predict' })} style={{ marginTop: space.xl }} />
-          <PredictionTeaser data={data} />
 
-          {data.pslTable.length ? (
+          {more.pslTable.length ? (
             <>
               <SectionHeader title="PSL table" action="Full table" onAction={() => nav.navigate('Psl')} style={{ marginTop: space.xxl }} />
               <Card padded={false} style={{ marginHorizontal: space.lg }}>
-                <PointsTable rows={data.pslTable} compact />
+                <PointsTable rows={more.pslTable} compact />
               </Card>
             </>
           ) : null}
@@ -308,10 +234,10 @@ export default function HomeScreen() {
             ))}
           </View>
 
-          {data.streams.length ? (
+          {more.streams.length ? (
             <>
               <SectionHeader title="Watch" action="All streams" onAction={() => nav.navigate('Streams')} style={{ marginTop: space.xxl }} />
-              <StreamsRail streams={data.streams} />
+              <StreamsRail streams={more.streams} />
             </>
           ) : null}
 
@@ -325,11 +251,11 @@ export default function HomeScreen() {
             ) : null;
           })()}
 
-          {data.urdu.length ? (
+          {more.urdu.length ? (
             <>
               <SectionHeader title="اردو خبریں" overline="URDU" style={{ marginTop: space.xxl }} />
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.rail}>
-                {data.urdu.map(a => (
+                {more.urdu.map(a => (
                   <NewsTile key={a.id} article={a} width={240} />
                 ))}
               </ScrollView>

@@ -68,6 +68,8 @@ export interface Series {
   short: string;
   slug: string;
   format: Format;
+  /** False when the format was guessed (the feed named no format). */
+  formatKnown?: boolean;
   kind: 'bilateral' | 'tournament' | 'league';
   start: string;
   end: string;
@@ -158,6 +160,10 @@ export interface Match {
   seriesId: string;
   title: string;
   format: Format;
+  /** False when the format was inferred (no tournament from the feed). */
+  formatKnown?: boolean;
+  /** When the feed last changed this match (live freshness). */
+  updatedAt?: string;
   status: MatchStatus;
   startTime: string;
   venueId: string;

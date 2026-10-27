@@ -141,7 +141,8 @@ export default function NewsScreen() {
                             onAction={() => nav.navigate('NewsSection', { title: sec.title, categories: sec.categories })}
                             style={{ marginTop: space.xxl }}
                           />
-                          {sec.layout === 'rail' ? (
+                          {/* A rail of one card leaves a blank strip; one story reads better as a row. */}
+                          {sec.layout === 'rail' && list.length > 1 ? (
                             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: space.lg, gap: space.md }}>
                               {list.map(a => (
                                 <NewsTile key={a.id} article={a} />

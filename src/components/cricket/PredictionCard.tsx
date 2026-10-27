@@ -29,7 +29,7 @@ export function PredictionCard({ match, prediction }: { match: Match; prediction
     >
       <View style={styles.rowC}>
         <AppText variant="caption" color="textMuted" numberOfLines={1} style={{ flex: 1 }}>
-          {seriesOf(match.seriesId)?.short} · {match.title}
+          {seriesOf(match.seriesId)?.short ?? match.title}
         </AppText>
         {match.status === 'live' ? (
           <LiveIndicator />

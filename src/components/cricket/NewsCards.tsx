@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Image, StyleSheet, View } from 'react-native';
 import { author, team as teamOf } from '../../data/refs';
 import type { Article } from '../../data/types';
@@ -48,8 +48,10 @@ export function ArticleArt({ article, height, rounded = radius.md }: { article: 
 function Meta({ article, light }: { article: Article; light?: boolean }) {
   const { colors } = useTheme();
   const by = author(article.authorId);
+  const ur = article.lang === 'ur';
   return (
-    <View style={styles.meta}>
+    // Urdu stories read right to left, meta included.
+    <View style={[styles.meta, ur && styles.metaRtl]}>
       {article.breaking ? (
         <View style={styles.meta}>
           <View style={[styles.breakDot, { backgroundColor: colors.live }]} />
@@ -58,7 +60,7 @@ function Meta({ article, light }: { article: Article; light?: boolean }) {
           </AppText>
         </View>
       ) : (
-        <AppText variant="micro" color={light ? '#FFFFFF' : 'text'} style={{ marginRight: 8 }} uppercase>
+        <AppText variant="micro" color={light ? '#FFFFFF' : 'text'} style={ur ? { marginLeft: 8 } : { marginRight: 8 }} uppercase>
           {article.category}
         </AppText>
       )}
@@ -71,7 +73,7 @@ function Meta({ article, light }: { article: Article; light?: boolean }) {
 }
 
 /** Full-bleed lead story with the headline over the image. */
-export function NewsHero({ article }: { article: Article }) {
+function NewsHeroBase({ article }: { article: Article }) {
   const nav = useNavigation();
   const ur = article.lang === 'ur';
   return (
@@ -91,7 +93,7 @@ export function NewsHero({ article }: { article: Article }) {
 }
 
 /** Standard list row: thumbnail beside headline. */
-export function NewsRow({ article }: { article: Article }) {
+function NewsRowBase({ article }: { article: Article }) {
   const { colors } = useTheme();
   const nav = useNavigation();
   const ur = article.lang === 'ur';
@@ -113,7 +115,7 @@ export function NewsRow({ article }: { article: Article }) {
 }
 
 /** Wide card for horizontal rails. */
-export function NewsTile({ article, width = 260 }: { article: Article; width?: number }) {
+function NewsTileBase({ article, width = 260 }: { article: Article; width?: number }) {
   const { colors } = useTheme();
   const nav = useNavigation();
   return (
@@ -135,6 +137,7 @@ export function NewsTile({ article, width = 260 }: { article: Article; width?: n
 
 const styles = StyleSheet.create({
   meta: { flexDirection: 'row', alignItems: 'center' },
+  metaRtl: { flexDirection: 'row-reverse' },
   breakDot: { width: 6, height: 6, borderRadius: 3, marginRight: 6 },
   hero: { marginHorizontal: space.lg, borderRadius: radius.xl, overflow: 'hidden' },
   heroShade: { position: 'absolute', left: 0, right: 0, bottom: 0 },
@@ -142,3 +145,12 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', paddingHorizontal: space.lg, paddingVertical: 14, alignItems: 'flex-start' },
   tile: { borderRadius: radius.lg, borderWidth: StyleSheet.hairlineWidth * 2, overflow: 'hidden' },
 });
+
+/** Memoised: a live update re-renders only the card whose data changed. */
+export const NewsHero = memo(NewsHeroBase);
+
+/** Memoised: a live update re-renders only the card whose data changed. */
+export const NewsRow = memo(NewsRowBase);
+
+/** Memoised: a live update re-renders only the card whose data changed. */
+export const NewsTile = memo(NewsTileBase);

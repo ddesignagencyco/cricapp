@@ -42,6 +42,8 @@ export default function ToolsScreen() {
         <SectionHeader title="Compare" />
         <Card padded={false} style={styles.card}>
           <Row icon="swords" title="Head-to-head" body="How two teams have fared against each other" onPress={() => nav.navigate('Compare', { kind: 'teams' })} />
+          <Hairline inset={space.lg + 40 + space.md} />
+          <Row icon="users" title="Compare players" body="Two players side by side" onPress={() => nav.navigate('Compare', { kind: 'players' })} />
         </Card>
         {GROUPS.map(g => (
           <View key={g} style={{ marginTop: space.xl }}>

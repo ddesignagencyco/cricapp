@@ -38,6 +38,8 @@ export interface RawMatch {
   teamScores?: { home?: Side; away?: Side } | null;
   tournament?: string | null;
   tournamentId?: string | null;
+  /** Sportradar tournament type when the row carries it: t20, odi, list_a, test, the_hundred… */
+  tournamentType?: string | null;
   venue?: string | null;
   scheduled?: string | null;
   currentInnings?: { runs?: number; overs?: number; runRate?: number; wickets?: number; battingTeam?: string } | null;
@@ -50,6 +52,7 @@ export interface RawMatch {
   tossDecision?: string | null;
   periodScores?: RawPeriod[] | null;
   displayOvers?: number | null;
+  updatedAt?: string | null;
 }
 
 interface RawPeriod {
@@ -199,6 +202,17 @@ const shortName = (name: string) => {
   return full.length > 1 ? `${full[0][0]} ${full.slice(1).join(' ')}` : full[0];
 };
 
+/** Format from the feed's tournament type; undefined for types the app has no format for (e.g. 100-ball). */
+export function formatOfType(type?: string | null): Format | undefined {
+  const t = type?.toLowerCase();
+  if (!t) return undefined;
+  if (t === 'test' || t === 'first_class') return 'Test';
+  if (t === 'odi' || t === 'list_a') return 'ODI';
+  if (t === 't20' || t === 't20i') return 'T20';
+  if (t === 't10') return 'T10';
+  return undefined;
+}
+
 function formatOf(...hints: (string | null | undefined)[]): Format {
   const h = hints.filter(Boolean).join(' ').toLowerCase();
   if (/\btest\b/.test(h)) return 'Test';
@@ -253,7 +267,11 @@ export function toMatch(m: RawMatch): Match {
   const teamA = rememberSide(home);
   const teamB = rememberSide(away);
   const status = STATUS[m.status] ?? STATUS[m.matchStatus ?? ''] ?? 'upcoming';
-  const format = formatOf(m.tournament);
+  // The tournament name is the only format hint; without one, overs bowled tell the rest.
+  const typed = formatOfType(m.tournamentType);
+  let format = typed ?? formatOf(m.tournament);
+  // A name only counts when it actually names a format.
+  const formatKnown = !!typed || /\b(test|t10|t20i?|odi|one.?day|50.?over|list a)\b/i.test(m.tournament ?? '');
 
   const seriesId = m.tournamentId ?? (m.tournament ? `name:${slugify(m.tournament)}` : 'other');
   if (m.tournament) {
@@ -263,6 +281,7 @@ export function toMatch(m: RawMatch): Match {
       short: m.tournament,
       slug: slugify(m.tournament),
       format,
+      formatKnown,
       kind: /league|super|premier|bash/i.test(m.tournament) ? 'league' : /series/i.test(m.tournament) ? 'bilateral' : 'tournament',
       start: m.scheduled ?? '',
       end: m.scheduled ?? '',
@@ -309,6 +328,11 @@ export function toMatch(m: RawMatch): Match {
       ? `${team(m.tossWonBy).name} won the toss${m.tossDecision ? ` and chose to ${m.tossDecision}` : ''}`
       : undefined;
 
+  if (!formatKnown) {
+    const most = Math.max(0, ...innings.map(i => i.balls ?? 0));
+    format = most > 300 ? 'Test' : most > 120 ? 'ODI' : format;
+  }
+
   const first = innings[0];
   const target = innings.length >= 2 && format !== 'Test' ? first.runs + 1 : undefined;
 
@@ -318,6 +342,8 @@ export function toMatch(m: RawMatch): Match {
     seriesId,
     title: `${team(teamA).name} v ${team(teamB).name}`,
     format,
+    formatKnown,
+    updatedAt: m.updatedAt ?? undefined,
     status,
     startTime: m.scheduled ?? new Date().toISOString(),
     venueId: m.venue ?? '',
@@ -326,7 +352,7 @@ export function toMatch(m: RawMatch): Match {
     innings,
     statusText:
       status === 'live'
-        ? liveLine(innings, target, battingTeamId)
+        ? liveLine(innings, format, target, battingTeamId)
         : status === 'break'
           ? 'Play interrupted'
           : /cancel|abandon/i.test(`${m.status} ${m.matchStatus ?? ''}`)
@@ -338,19 +364,33 @@ export function toMatch(m: RawMatch): Match {
     target,
     live:
       status === 'live'
-        ? { crr: m.currentInnings?.runRate ?? 0, recent: [] }
+        ? { crr: m.currentInnings?.runRate ?? 0, rrr: requiredRate(innings, format, target), recent: [] }
         : undefined,
   };
 }
 
-function liveLine(innings: InningsScore[], target?: number, batting?: string) {
+/** Balls in a full innings for limited-overs formats (none for Tests). */
+const quota = (f: Format) => (f === 'ODI' ? 300 : f === 'T20' ? 120 : f === 'T10' ? 60 : 0);
+
+function liveLine(innings: InningsScore[], format: Format, target?: number, batting?: string) {
   const cur = innings[innings.length - 1];
   if (!cur) return 'Live';
   if (target && innings.length >= 2) {
     const need = target - cur.runs;
-    return need > 0 ? `${team(batting ?? cur.teamId).name} need ${need} runs` : 'Target reached';
+    if (need <= 0) return 'Target reached';
+    const left = quota(format) - cur.balls;
+    return `${team(batting ?? cur.teamId).name} need ${need} ${need === 1 ? 'run' : 'runs'}${left > 0 ? ` from ${left} ${left === 1 ? 'ball' : 'balls'}` : ''}`;
   }
-  return `${team(cur.teamId).short} ${cur.runs}/${cur.wickets}`;
+  return `${team(cur.teamId).name} batting · ${cur.wickets} ${cur.wickets === 1 ? 'wicket' : 'wickets'} down`;
+}
+
+/** Required rate in a limited-overs chase, from the score and the balls left. */
+function requiredRate(innings: InningsScore[], format: Format, target?: number) {
+  const cur = innings[innings.length - 1];
+  const left = quota(format) - (cur?.balls ?? 0);
+  if (!target || !cur || innings.length < 2 || left <= 0) return undefined;
+  const need = target - cur.runs;
+  return need > 0 ? (need / left) * 6 : undefined;
 }
 
 /* ---------------------------------------------------------------- timeline */
@@ -577,6 +617,8 @@ export function toArticle(n: RawNews): Article {
 }
 
 /** Gallery images become one swipeable story; each video short is its own reel. */
+const clipLength = (sec: number) => `${Math.floor(sec / 60)}:${String(Math.round(sec % 60)).padStart(2, '0')}`;
+
 export function toShorts(items: RawGallery[]): Short[] {
   const images = items.filter(i => i.type === 'image');
   const shorts: Short[] = items
@@ -584,7 +626,8 @@ export function toShorts(items: RawGallery[]): Short[] {
     .map(i => ({
       id: i.id,
       kind: 'short' as const,
-      title: i.title || 'Highlights',
+      // The feed rarely titles shorts; the clip length tells them apart.
+      title: i.title || (i.duration ? `${clipLength(i.duration)} clip` : 'Short clip'),
       teamIds: [],
       photo: i.thumbnailUrl ?? undefined,
       slides: [{ headline: i.title || '', caption: i.caption || '', photo: i.thumbnailUrl ?? undefined, teamIds: [] }],
