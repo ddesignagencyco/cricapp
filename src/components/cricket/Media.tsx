@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { FlatList, Image, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Dimensions, FlatList, Image, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { team as teamOf } from '../../data/refs';
 import type { Banner, Photo, Short } from '../../data/types';
 import { useIsFocused, useNavigation } from '../../navigation/Stack';
@@ -10,6 +10,7 @@ import { Icon } from '../ui/Icon';
 import { Fade, Glow } from '../ui/Primitives';
 import { Touch } from '../ui/Touch';
 import { badgeFill, readableOn } from '../../utils/color';
+import { sized } from '../../utils/media';
 
 /** Graphite with a faint brand glow for generated covers: calm, consistent, not loud. */
 export const COVER_GLOW = '#4F74F0';
@@ -34,7 +35,7 @@ export function CoverArt({
   return (
     <View style={[StyleSheet.absoluteFill, { backgroundColor: photo ? '#0B1120' : COVER_BASE, overflow: 'hidden' }, style]}>
       {photo ? (
-        <Image source={{ uri: photo }} style={frame ? { position: 'absolute', top: 0, left: 0, width: frame.width, height: frame.height } : StyleSheet.absoluteFill} resizeMode="cover" />
+        <Image source={{ uri: sized(photo, frame?.width ?? Dimensions.get('window').width) }} style={frame ? { position: 'absolute', top: 0, left: 0, width: frame.width, height: frame.height } : StyleSheet.absoluteFill} resizeMode="cover" />
       ) : (
         <>
           <Glow color={COVER_GLOW} size={520} opacity={0.45} style={{ left: -260, top: -220 }} />
@@ -161,7 +162,6 @@ export function BannerCarousel({ banners }: { banners: Banner[] }) {
                 <AppText variant="label" weight="700" color="#0E1525">
                   {item.cta}
                 </AppText>
-                <Icon name="arrowRight" size={15} color="#0E1525" style={{ marginLeft: 6 }} />
               </View>
             </View>
           </Touch>

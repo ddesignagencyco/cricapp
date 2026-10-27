@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { Image, StyleSheet, View } from 'react-native';
+import { Dimensions, Image, StyleSheet, View } from 'react-native';
 import { author, team as teamOf } from '../../data/refs';
 import type { Article } from '../../data/types';
 import { useNavigation } from '../../navigation/Stack';
@@ -10,6 +10,7 @@ import { AppText } from '../ui/AppText';
 import { Fade, Glow } from '../ui/Primitives';
 import { Touch } from '../ui/Touch';
 import { badgeFill, shade } from '../../utils/color';
+import { sized } from '../../utils/media';
 
 /**
  * Cover art for an article: its photo when it has one, otherwise a
@@ -21,7 +22,7 @@ export function ArticleArt({ article, height, rounded = radius.md }: { article: 
   if (article.image) {
     return (
       <View style={{ height, borderRadius: rounded, overflow: 'hidden', backgroundColor: colors.elevated }}>
-        <Image source={{ uri: article.image }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+        <Image source={{ uri: sized(article.image, Math.min(Dimensions.get('window').width, height * 1.8)) }} style={StyleSheet.absoluteFill} resizeMode="cover" />
       </View>
     );
   }

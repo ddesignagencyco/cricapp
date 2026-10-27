@@ -17,6 +17,7 @@ import { useNavigation } from '../../navigation/Stack';
 import type { RouteName } from '../../navigation/routes';
 import { useTheme } from '../../theme/ThemeProvider';
 import { radius, space } from '../../theme/tokens';
+import { sized } from '../../utils/media';
 
 function LiveCarousel({ data }: { data: Awaited<ReturnType<typeof repo.home>> }) {
   const { width } = useWindowDimensions();
@@ -40,7 +41,7 @@ function LiveCarousel({ data }: { data: Awaited<ReturnType<typeof repo.home>> })
         onViewableItemsChanged={onViewable}
         viewabilityConfig={{ itemVisiblePercentThreshold: 60 }}
         renderItem={({ item }) => (
-          <MatchHeroCard match={item} width={cardW} prediction={item.status === 'live' ? data.livePredictions[item.id] : undefined} />
+          <MatchHeroCard match={item} width={cardW} />
         )}
       />
       {items.length > 1 ? (
@@ -158,7 +159,7 @@ function PhotosRail({ gallery }: { gallery: Short }) {
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.rail}>
       {gallery.slides.slice(0, 8).map((s, i) => (
         <Touch key={i} scale onPress={() => nav.navigate('MediaViewer', { id: gallery.id })} style={[styles.photo, { backgroundColor: colors.elevated }]} accessibilityLabel={s.headline || 'Photo'}>
-          {s.photo ? <Image source={{ uri: s.photo }} style={StyleSheet.absoluteFill} resizeMode="cover" /> : null}
+          {s.photo ? <Image source={{ uri: sized(s.photo, 120) }} style={StyleSheet.absoluteFill} resizeMode="cover" /> : null}
         </Touch>
       ))}
     </ScrollView>
@@ -196,7 +197,7 @@ export default function HomeScreen() {
           </View>
           <SectionHeader
             title={data.live.length ? 'Live now' : 'Coming up'}
-            overline={data.live.length ? `${data.live.length} ${data.live.length === 1 ? 'MATCH' : 'MATCHES'} IN PLAY` : undefined}
+
             action="All matches"
             onAction={() => nav.navigate('Schedule')}
             style={{ marginTop: space.xxl }}
@@ -253,7 +254,7 @@ export default function HomeScreen() {
 
           {more.urdu.length ? (
             <>
-              <SectionHeader title="اردو خبریں" overline="URDU" style={{ marginTop: space.xxl }} />
+              <SectionHeader title="اردو خبریں" style={{ marginTop: space.xxl }} />
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.rail}>
                 {more.urdu.map(a => (
                   <NewsTile key={a.id} article={a} width={240} />

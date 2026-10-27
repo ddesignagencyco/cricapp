@@ -63,3 +63,10 @@ export const motion = {
   base: 240,
   slow: 320,
 } as const;
+
+/**
+ * Control heights used across the app, so the same kind of control is the
+ * same size everywhere: main buttons and text fields, smaller buttons and
+ * chips (still a full touch target), and the section pills.
+ */
+export const control = { lg: 52, md: 44, pill: 36 } as const;

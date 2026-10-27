@@ -23,6 +23,21 @@
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
+        <!-- The app's own links: pakcriczone://screen/<Route> -->
+        <intent-filter>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="pakcriczone" />
+        </intent-filter>
+        <!-- Website links, offered to open in the app. -->
+        <intent-filter>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="https" android:host="pakcriczone.com" />
+            <data android:scheme="https" android:host="www.pakcriczone.com" />
+        </intent-filter>
       </activity>
     </application>
 </manifest>

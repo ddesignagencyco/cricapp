@@ -262,6 +262,9 @@ const parseScore = (score?: string) => {
 
 /* ---------------------------------------------------------------- matches */
 
+/** The feed pluralises every margin ("by 1 wickets"). */
+const grammar = (t?: string | null) => t?.replace(/\bby 1 (wicket|run)s\b/gi, 'by 1 $1') ?? t;
+
 export function toMatch(m: RawMatch): Match {
   const { home, away } = sides(m);
   const teamA = rememberSide(home);
@@ -322,7 +325,7 @@ export function toMatch(m: RawMatch): Match {
   const battingCode = m.currentInnings?.battingTeam;
   const battingTeamId =
     status === 'live' && battingCode ? (team(teamA).short === battingCode ? teamA : team(teamB).short === battingCode ? teamB : undefined) : undefined;
-  const resultText = m.result ?? m.matchResult ?? undefined;
+  const resultText = grammar(m.result ?? m.matchResult) ?? undefined;
   const toss =
     m.tossWonBy && (m.tossWonBy === home.id || m.tossWonBy === away.id)
       ? `${team(m.tossWonBy).name} won the toss${m.tossDecision ? ` and chose to ${m.tossDecision}` : ''}`

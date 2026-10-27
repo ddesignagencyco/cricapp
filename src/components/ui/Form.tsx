@@ -1,7 +1,7 @@
 import React, { forwardRef, useRef, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
 import { useTheme } from '../../theme/ThemeProvider';
-import { fontFamily, radius, space } from '../../theme/tokens';
+import { fontFamily, radius, space, control } from '../../theme/tokens';
 import { AppText } from './AppText';
 import { Icon, type IconName } from './Icon';
 import { Touch } from './Touch';
@@ -125,7 +125,7 @@ export function CodeInput({ value, onChange, length = 6, error }: { value: strin
 }
 
 const styles = StyleSheet.create({
-  field: { flexDirection: 'row', alignItems: 'center', height: 52, borderRadius: radius.md, paddingLeft: 14 },
+  field: { flexDirection: 'row', alignItems: 'center', height: control.lg, borderRadius: radius.md, paddingLeft: 14 },
   input: { flex: 1, fontSize: 15, marginLeft: 10, paddingVertical: 0, height: '100%' },
   eye: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 24 },
   meter: { flexDirection: 'row', gap: 6 },

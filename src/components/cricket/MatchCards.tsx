@@ -3,12 +3,12 @@ import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useNavigation } from '../../navigation/Stack';
 import { seriesOf, team as teamOf, venueLabel } from '../../data/refs';
 import { useLiveMatch } from '../../data/socket';
-import type { Match, Prediction } from '../../data/types';
+import type { Match } from '../../data/types';
 import { useTheme } from '../../theme/ThemeProvider';
 import { radius, space } from '../../theme/tokens';
-import { ago, countdown, dayLabel, inningsFor, overs, score, time } from '../../utils/format';
+import { countdown, dayLabel, inningsFor, overs, score, time } from '../../utils/format';
 import { AppText } from '../ui/AppText';
-import { Gradient } from '../ui/Gradient';
+import { Gradient, TeamWash } from '../ui/Gradient';
 import { Glow, LiveIndicator, Tag } from '../ui/Primitives';
 import { Touch } from '../ui/Touch';
 import { TeamBadge } from './Badges';
@@ -93,7 +93,7 @@ const order = (m: Match) => {
  * theme surface with soft colour blooms.
  */
 /** `inline`: the same scoreboard as the top of the match centre (no navigation, venue instead of series). */
-function MatchHeroCardBase({ match: fetched, prediction, width, inline }: { match: Match; prediction?: Prediction; width?: number; inline?: boolean }) {
+function MatchHeroCardBase({ match: fetched, width, inline }: { match: Match; width?: number; inline?: boolean }) {
   const match = useLiveMatch(fetched);
   const { colors } = useTheme();
   const nav = useNavigation();
@@ -103,9 +103,9 @@ function MatchHeroCardBase({ match: fetched, prediction, width, inline }: { matc
   const a = teamOf(first);
   const b = teamOf(second);
   const w = width ?? screen - space.lg * 2;
-  const vivid = match.status === 'live';
+  // Live cards, and every match-centre header, sit on the dark scoreboard.
+  const vivid = inline || match.status === 'live';
   const ink = vivid ? WHITE_INK : undefined;
-  const line = vivid ? 'rgba(255,255,255,0.16)' : colors.hairline;
   return (
     <Touch
       scale={!inline}
@@ -146,48 +146,13 @@ function MatchHeroCardBase({ match: fetched, prediction, width, inline }: { matc
         <TeamLine match={match} teamId={first} big ink={ink} />
         <TeamLine match={match} teamId={second} big ink={ink} />
       </View>
-      <AppText variant="label" weight="600" color={vivid ? LIVE_STATUS : match.status === 'upcoming' ? 'accent' : resultColor(match, colors)} style={{ marginTop: 10 }} numberOfLines={1}>
+      <AppText variant="label" weight="600" color={vivid ? onDark(match) : match.status === 'upcoming' ? 'accent' : resultColor(match, colors)} style={{ marginTop: 10 }} numberOfLines={1}>
         {match.status === 'upcoming' ? `${[dayLabel(match.startTime), time(match.startTime), venueLabel(match.venueId)].filter(Boolean).join(' · ')}` : match.statusText}
       </AppText>
-      {vivid && stale(match.updatedAt) ? (
-        <AppText variant="caption" color={ink?.muted ?? 'textMuted'} style={{ marginTop: 2 }} numberOfLines={1}>
-          Last update {ago(match.updatedAt!)}
-        </AppText>
-      ) : null}
-      {match.live ? (
-        <View style={[styles.heroFoot, { borderTopColor: line }]}>
-          <Stat label="CRR" value={match.live.crr.toFixed(2)} ink={ink} />
-          {match.live.rrr ? <Stat label="RRR" value={match.live.rrr.toFixed(2)} ink={ink} /> : null}
-          {match.target ? <Stat label="TARGET" value={String(match.target)} ink={ink} /> : null}
-          {match.live.partnership ? <Stat label="P'SHIP" value={`${match.live.partnership.runs} (${match.live.partnership.balls})`} ink={ink} /> : null}
-          {prediction ? (
-            <View style={{ flex: 1, alignItems: 'flex-end' }}>
-              <AppText variant="micro" color={ink?.muted ?? 'textMuted'}>
-                {teamOf(match.teamA).short} WIN
-              </AppText>
-              <AppText variant="label" weight="700" tabular color={vivid ? '#FFFFFF' : 'text'}>
-                {Math.round(prediction.winA * 100)}%
-              </AppText>
-            </View>
-          ) : null}
-        </View>
-      ) : null}
     </Touch>
   );
 }
 
-function Stat({ label, value, ink }: { label: string; value: string; ink?: Ink }) {
-  return (
-    <View>
-      <AppText variant="micro" color={ink?.muted ?? 'textMuted'}>
-        {label}
-      </AppText>
-      <AppText variant="label" weight="700" tabular color={ink?.text ?? 'text'} style={{ marginTop: 2 }}>
-        {value}
-      </AppText>
-    </View>
-  );
-}
 
 /** Compact list row for schedules and results. */
 /** Match-centre header: format and venue, else the series, so the corner is never blank. */
@@ -196,8 +161,8 @@ const headerParts = (m: Match) => {
   return parts.length ? parts : [seriesOf(m.seriesId)?.short ?? m.title];
 };
 
-/** A live match whose feed hasn't moved for 5 minutes. */
-const stale = (at?: string) => !!at && Date.now() - +new Date(at) > 5 * 60_000;
+/** Status line colour on the dark scoreboard: amber in play, mint for a result, soft blue before the start. */
+const onDark = (m: Match) => (m.status === 'live' || m.status === 'break' ? LIVE_STATUS : m.status === 'upcoming' ? '#A9C0FF' : m.result?.winnerId ? '#7FE0A6' : '#FFC857');
 
 /** Status line on the dark live card: warm amber reads clearly against graphite and white text. */
 const LIVE_STATUS = '#FFC857';
@@ -223,6 +188,9 @@ function MatchRowBase({ match: fetched, showSeries = true, dated = true }: { mat
       style={[styles.row, { backgroundColor: colors.surface, borderColor: colors.hairline }]}
       accessibilityLabel={`${teamOf(first).name} versus ${teamOf(second).name}. ${match.statusText}`}
     >
+      {/* Each card carries its two sides' colours; the winner's side reads a little stronger. */}
+      <TeamWash from={teamOf(first).color} to={teamOf(second).color} strength={colors.scheme === 'dark' ? 0.12 : 0.13} />
+      <View style={[styles.rowEdge, { backgroundColor: teamOf(match.result?.winnerId ?? first).color }]} />
       <View style={styles.rowTop}>
         <AppText variant="caption" color="textMuted" numberOfLines={1} style={{ flex: 1 }}>
           {showSeries && s?.short ? s.short : match.title}
@@ -277,6 +245,7 @@ const styles = StyleSheet.create({
   // Each match is its own card: separate rounded tiles with a gap between them.
   row: { paddingHorizontal: space.xl, paddingVertical: space.lg + 2, borderRadius: radius.lg, borderWidth: StyleSheet.hairlineWidth * 2, overflow: 'hidden' },
   rowTop: { flexDirection: 'row', alignItems: 'center' },
+  rowEdge: { position: 'absolute', left: 0, top: 14, bottom: 14, width: 3, borderTopRightRadius: 3, borderBottomRightRadius: 3 },
 });
 
 /** Memoised: a live update re-renders only the card whose data changed. */

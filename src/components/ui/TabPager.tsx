@@ -11,7 +11,7 @@ import {
   type NativeSyntheticEvent,
 } from 'react-native';
 import { useTheme } from '../../theme/ThemeProvider';
-import { space } from '../../theme/tokens';
+import { space, control } from '../../theme/tokens';
 import { AppText } from './AppText';
 import { Touch } from './Touch';
 
@@ -142,5 +142,5 @@ export function TabPager({
 const styles = StyleSheet.create({
   stripWrap: {},
   strip: { paddingHorizontal: space.lg, paddingVertical: space.sm + 2, gap: space.sm },
-  pill: { height: 36, minWidth: 64, paddingHorizontal: 16, borderRadius: 18, borderWidth: StyleSheet.hairlineWidth * 2, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  pill: { height: control.pill, minWidth: 64, paddingHorizontal: 16, borderRadius: 18, borderWidth: StyleSheet.hairlineWidth * 2, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
 });

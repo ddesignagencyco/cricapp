@@ -15,6 +15,9 @@ import { radius, space } from '../../theme/tokens';
 import { ago, dayLabel, time } from '../../utils/format';
 
 /** Where to watch: streams and official channels from the CMS. Tapping plays them in the app. */
+/** Strips emoji and stray symbols the uploader added around the title. */
+const plainTitle = (t: string) => t.replace(/[\p{Extended_Pictographic}\uFE0F\u200D]/gu, '').replace(/\s{2,}/g, ' ').trim();
+
 export default function StreamsScreen() {
   const list = usePaged('streams', repo.streamsPage);
   return (
@@ -55,7 +58,7 @@ function StreamRow({ stream }: { stream: Stream }) {
       </View>
       <View style={{ flex: 1, marginLeft: space.md }}>
         <AppText variant="label" weight="700" numberOfLines={2}>
-          {stream.title}
+          {plainTitle(stream.title)}
         </AppText>
         <View style={[styles.meta, { marginTop: 6 }]}>
           {stream.status === 'live' ? <Tag label="LIVE" tone="danger" /> : stream.status === 'upcoming' ? <Tag label="UPCOMING" tone="brand" /> : null}

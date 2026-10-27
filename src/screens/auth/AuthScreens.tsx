@@ -11,7 +11,7 @@ import { Touch } from '../../components/ui/Touch';
 import { useNavigation, useParams } from '../../navigation/Stack';
 import { isEmail, isUnverified, useAuth, usernameFrom } from '../../state/auth';
 import { useTheme } from '../../theme/ThemeProvider';
-import { radius, space } from '../../theme/tokens';
+import { radius, space, control } from '../../theme/tokens';
 import { AuthLayout } from './AuthLayout';
 
 type Ref = React.ComponentRef<typeof TextInput>;
@@ -27,7 +27,6 @@ function Submit({ label, busy, onPress }: { label: string; busy: boolean; onPres
           <AppText variant="headline" weight="700" color="#FFFFFF">
             {label}
           </AppText>
-          <Icon name="arrowRight" size={18} color="#FFFFFF" style={{ marginLeft: 8 }} />
         </>
       )}
     </Touch>
@@ -634,7 +633,7 @@ export function ResetPasswordScreen() {
 
 const styles = StyleSheet.create({
   submit: {
-    height: 54,
+    height: control.lg,
     borderRadius: radius.md,
     backgroundColor: '#3B68FC',
     alignItems: 'center',

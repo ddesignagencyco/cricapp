@@ -25,7 +25,8 @@ export function CommentItem({
   depth?: number;
 }) {
   const { colors } = useTheme();
-  const [open, setOpen] = useState(comment.replies.length <= 1);
+  // Short threads stay open so a new reply is visible straight away.
+  const [open, setOpen] = useState(comment.replies.length <= 3);
   return (
     <View>
       <View style={[styles.item, depth > 0 && { paddingLeft: space.lg + 44 }]}>
@@ -50,7 +51,7 @@ export function CommentItem({
             {comment.body}
           </AppText>
           <View style={[styles.rowC, { marginTop: 8, gap: 18 }]}>
-            {onReply && depth === 0 ? (
+            {onReply ? (
               <Touch onPress={() => onReply(comment)} style={styles.action}>
                 <Icon name="messageCircle" size={16} color={colors.textMuted} />
                 <AppText variant="caption" weight="600" color="textMuted" style={{ marginLeft: 5 }}>
@@ -63,7 +64,7 @@ export function CommentItem({
       </View>
       {comment.replies.length ? (
         open ? (
-          comment.replies.map(r => <CommentItem key={r.id} comment={r} depth={1} />)
+          comment.replies.map(r => <CommentItem key={r.id} comment={r} depth={1} onReply={onReply} />)
         ) : (
           <Touch onPress={() => setOpen(true)} style={[styles.more, { paddingLeft: space.lg + 50 }]}>
             <View style={[styles.line, { backgroundColor: colors.border }]} />

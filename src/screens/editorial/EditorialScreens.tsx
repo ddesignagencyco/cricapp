@@ -14,7 +14,7 @@ import { useQuery } from '../../data/useQuery';
 import { useParams } from '../../navigation/Stack';
 import { isEmail, useAuth } from '../../state/auth';
 import { useTheme } from '../../theme/ThemeProvider';
-import { fontFamily, radius, space } from '../../theme/tokens';
+import { fontFamily, radius, space, control } from '../../theme/tokens';
 import { shortDate } from '../../utils/format';
 
 /** CMS HTML → paragraphs (the app has no HTML renderer; headings become their own lines). */
@@ -261,6 +261,6 @@ const styles = StyleSheet.create({
   detail: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.lg, paddingVertical: 12, minHeight: 60 },
   detailIcon: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   socials: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm, paddingHorizontal: space.lg },
-  social: { flexDirection: 'row', alignItems: 'center', height: 40, paddingHorizontal: 14, borderRadius: radius.pill, borderWidth: StyleSheet.hairlineWidth * 2 },
+  social: { flexDirection: 'row', alignItems: 'center', height: control.md, paddingHorizontal: 14, borderRadius: radius.pill, borderWidth: StyleSheet.hairlineWidth * 2 },
   message: { minHeight: 130, borderRadius: radius.md, borderWidth: StyleSheet.hairlineWidth * 2, padding: space.md, fontSize: 15, textAlignVertical: 'top' },
 });

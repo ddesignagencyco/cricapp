@@ -1,8 +1,9 @@
-import React, { type ReactNode } from 'react';
+import React, { createContext, useCallback, useContext, useMemo, useRef, type ReactNode } from 'react';
 import {
   Image,
   RefreshControl,
   ScrollView,
+  StatusBar,
   StyleSheet,
   View,
   type ScrollViewProps,
@@ -10,11 +11,22 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation } from '../../navigation/Stack';
+import { useIsFocused, useNavigation } from '../../navigation/Stack';
 import { useTheme } from '../../theme/ThemeProvider';
 import { space } from '../../theme/tokens';
 import { AppText } from './AppText';
 import { IconButton } from './Primitives';
+
+/** Height of every top bar below the status bar / notch, so all headers match. */
+export const BAR_HEIGHT = 56;
+
+/**
+ * Light status-bar icons for dark, full-bleed screens (player, shorts, viewer).
+ * Only while the screen is on top, so a screen opened over it gets the theme's bar back.
+ */
+export function LightStatusBar() {
+  return useIsFocused() ? <StatusBar barStyle="light-content" /> : null;
+}
 
 export function Screen({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
   const { colors } = useTheme();
@@ -44,10 +56,10 @@ export function TabHeader({ title, right, flush }: { title?: string; right?: Rea
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   return (
-    <View style={[styles.tabHeader, styles.raised, { paddingTop: insets.top + 6, backgroundColor: colors.surface, borderBottomColor: colors.hairline }, flush && styles.flush]}>
+    <View style={[styles.tabHeader, styles.raised, { paddingTop: insets.top, backgroundColor: colors.surface, borderBottomColor: colors.hairline }, flush && styles.flush]}>
       {title ? null : <BrandMark />}
       {title ? (
-        <AppText variant="title" style={{ flex: 1 }} accessibilityRole="header">
+        <AppText variant="section" style={{ flex: 1 }} numberOfLines={1} accessibilityRole="header">
           {title}
         </AppText>
       ) : (
@@ -88,7 +100,7 @@ export function Header({
       <IconButton icon="arrowLeft" label="Back" onPress={onBack ?? nav.goBack} />
       <View style={{ flex: 1, marginLeft: 4 }}>
         {title ? (
-          <AppText variant="headline" numberOfLines={1} accessibilityRole="header">
+          <AppText variant={subtitle ? 'headline' : 'section'} numberOfLines={1} accessibilityRole="header">
             {title}
           </AppText>
         ) : null}
@@ -101,6 +113,15 @@ export function Header({
       <View style={styles.actions}>{right}</View>
     </View>
   );
+}
+
+type ViewType = React.ComponentRef<typeof View>;
+type BodyScroll = { reveal: (target: ViewType | null, offset?: number) => void };
+const BodyScrollContext = createContext<BodyScroll | null>(null);
+
+/** Scrolls the nearest Body so `target` sits near the top (e.g. a just-posted comment). */
+export function useBodyScroll() {
+  return useContext(BodyScrollContext);
 }
 
 /** Vertical scroll body with pull-to-refresh and room for the tab bar. */
@@ -120,8 +141,31 @@ export function Body({
 }) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const scroll = useRef<React.ComponentRef<typeof ScrollView>>(null);
+  const y = useRef(0);
+  const { onScroll } = rest;
+  const handleScroll = useCallback<NonNullable<ScrollViewProps['onScroll']>>(
+    e => {
+      y.current = e.nativeEvent.contentOffset.y;
+      onScroll?.(e);
+    },
+    [onScroll],
+  );
+  const reveal = useCallback((target: ViewType | null, offset = 96) => {
+    const sv = scroll.current;
+    if (!target || !sv) return;
+    // Both positions on screen; the difference is how far to move from where we are.
+    (sv as unknown as ViewType).measureInWindow((_x: number, top: number) => {
+      target.measureInWindow((_tx: number, ty: number) => {
+        sv.scrollTo({ y: Math.max(0, y.current + ty - top - offset), animated: true });
+      });
+    });
+  }, []);
+  const ctx = useMemo(() => ({ reveal }), [reveal]);
   return (
+    <BodyScrollContext.Provider value={ctx}>
     <ScrollView
+      ref={scroll}
       showsVerticalScrollIndicator={false}
       // Every page starts a step below its header; screens can override with contentStyle.
       contentContainerStyle={[{ paddingTop: space.md, paddingBottom: (bottomInset ? insets.bottom : 0) + 32 }, contentStyle]}
@@ -137,9 +181,12 @@ export function Body({
         ) : undefined
       }
       {...rest}
+      onScroll={handleScroll}
+      scrollEventThrottle={rest.scrollEventThrottle ?? 32}
     >
       {children}
     </ScrollView>
+    </BodyScrollContext.Provider>
   );
 }
 
@@ -148,16 +195,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: space.lg,
-    paddingBottom: space.sm,
+    // Same bar height as pushed screens; the notch/status bar is added on top.
+    minHeight: BAR_HEIGHT,
+    boxSizing: 'content-box',
     borderBottomWidth: StyleSheet.hairlineWidth * 2,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: space.xs,
-    minHeight: 56,
+    minHeight: BAR_HEIGHT,
+    boxSizing: 'content-box',
     paddingRight: space.sm,
-    paddingBottom: 4,
     borderBottomWidth: StyleSheet.hairlineWidth * 2,
   },
   actions: { flexDirection: 'row', alignItems: 'center' },

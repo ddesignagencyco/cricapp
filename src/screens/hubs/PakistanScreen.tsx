@@ -98,7 +98,6 @@ export default function PakistanScreen() {
         header={
           <HubHeader
             color={colors.pakistan}
-            overline="HUB"
             title="Pakistan"
             subtitle="Fixtures, squad and news"
             favourite={{ kind: 'team', id: PAKISTAN_ID }}

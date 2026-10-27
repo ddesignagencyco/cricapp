@@ -4,18 +4,18 @@ import { useQuery } from '../../data/useQuery';
 import { errorMessage } from '../../api/client';
 import { Field } from '../../components/ui/Form';
 import { repo } from '../../data/repo';
-import { Avatar } from '../../components/cricket/Badges';
-import { displayName, isEmail, useAuth } from '../../state/auth';
+import { isEmail, useAuth } from '../../state/auth';
 import { AppText } from '../../components/ui/AppText';
 import { Segmented } from '../../components/ui/Controls';
 import { Icon, type IconName } from '../../components/ui/Icon';
 import { Body, Header, Screen } from '../../components/ui/Layout';
-import { Button, Card, EmptyState, Glow, Hairline, SectionHeader } from '../../components/ui/Primitives';
+import { Button, Card, EmptyState, Hairline, SectionHeader } from '../../components/ui/Primitives';
 import { Touch } from '../../components/ui/Touch';
 import { useNavigation } from '../../navigation/Stack';
 import { usePrefs } from '../../state/prefs';
 import { useTheme, type ThemePreference } from '../../theme/ThemeProvider';
 import { radius, space } from '../../theme/tokens';
+import { PassButton, ProfilePass } from '../../components/cricket/ProfilePass';
 
 function LinkRow({ icon, title, value, onPress }: { icon: IconName; title: string; value?: string; onPress?: () => void }) {
   const { colors } = useTheme();
@@ -49,49 +49,25 @@ export function SettingsScreen() {
     Promise.all(ABOUT.filter(p => p.cmsOnly).map(p => repo.editorialPage(p.slug).then(x => (x ? p.slug : null)).catch(() => null))),
   );
   const aboutPages = ABOUT.filter(p => !p.cmsOnly || published.data?.includes(p.slug));
-  const { colors, preference, setPreference } = useTheme();
+  const { preference, setPreference } = useTheme();
   const { newsLang, setNewsLang } = usePrefs();
   const { user, signOut } = useAuth();
   return (
     <Screen>
       <Header title="Settings" />
       <Body>
-        <Card style={{ marginHorizontal: space.lg, marginTop: space.sm, overflow: 'hidden' }}>
-          <Glow color={colors.brand} size={240} opacity={0.22} style={{ right: -110, top: -120 }} />
-          {user ? (
-            <>
-            <View style={styles.rowC}>
-              <Avatar name={displayName(user)} size={48} />
-              <View style={{ flex: 1, marginLeft: 12 }}>
-                <AppText variant="headline" weight="700" style={{ textTransform: 'capitalize' }}>
-                  {displayName(user)}
-                </AppText>
-                <AppText variant="caption" color="textSecondary">
-                  {user.email}
-                </AppText>
-              </View>
-            </View>
-            <View style={[styles.rowC, { marginTop: space.lg, gap: space.sm }]}>
-              <View style={{ flex: 1 }}>
-                <Button label="Edit profile" compact onPress={() => nav.navigate('EditProfile')} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Button label="Sign out" variant="secondary" compact onPress={signOut} />
-              </View>
-            </View>
-            </>
-          ) : (
-            <>
-              <AppText variant="headline" weight="700">
-                Your account
-              </AppText>
-              <AppText variant="caption" color="textSecondary" style={{ marginTop: 4, marginBottom: 14 }}>
-                Sign in to comment, react and manage your profile.
-              </AppText>
-              <Button label="Sign in or create account" compact onPress={() => nav.navigate('SignIn')} />
-            </>
-          )}
-        </Card>
+        <View style={{ marginTop: space.sm }}>
+          <ProfilePass
+            actions={
+              user ? (
+                <>
+                  <PassButton label="Edit profile" onPress={() => nav.navigate('EditProfile')} />
+                  <PassButton label="Sign out" ghost onPress={signOut} />
+                </>
+              ) : undefined
+            }
+          />
+        </View>
 
         <SectionHeader title="Appearance" style={{ marginTop: space.xxl }} />
         <View style={{ paddingHorizontal: space.lg }}>
@@ -181,7 +157,7 @@ export function AlertsScreen() {
       <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
         <Body keyboardShouldPersistTaps="handled">
           <View style={{ paddingHorizontal: space.lg }}>
-            <AppText variant="title">Cricket in your inbox</AppText>
+            <AppText variant="display">Cricket in your inbox</AppText>
             <AppText variant="body" color="textSecondary" style={{ marginTop: 6 }}>
               Subscribe once and get these emails. Turn any of them off from the link at the bottom of every newsletter.
             </AppText>

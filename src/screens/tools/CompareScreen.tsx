@@ -77,7 +77,7 @@ function SearchPick<T>({
     const o = toOption(selected);
     return (
       <View>
-        <AppText variant="overline" color="textMuted" style={styles.fieldLabel}>
+        <AppText variant="label" weight="600" color="textSecondary" style={styles.fieldLabel}>
           {label}
         </AppText>
         <View style={[styles.field, styles.chosen, { backgroundColor: colors.surface, borderColor: colors.brand }]}>
@@ -103,7 +103,7 @@ function SearchPick<T>({
   const needle = q.trim();
   return (
     <View>
-      <AppText variant="overline" color="textMuted" style={styles.fieldLabel}>
+      <AppText variant="label" weight="600" color="textSecondary" style={styles.fieldLabel}>
         {label}
       </AppText>
       <View style={[styles.field, { backgroundColor: colors.surface, borderColor: colors.hairline }]}>
@@ -164,14 +164,15 @@ function SearchPick<T>({
 
 const teamOption = (t: Team): Option => ({ id: t.id, title: t.name, sub: t.short });
 
-function Teams() {
-  const [a, setA] = useState<Team>();
-  const [b, setB] = useState<Team>();
+function Teams({ initial }: { initial?: [string, string] }) {
+  // Opened from a match: both sides are already chosen.
+  const [a, setA] = useState<Team | undefined>(initial ? team(initial[0]) : undefined);
+  const [b, setB] = useState<Team | undefined>(initial ? team(initial[1]) : undefined);
   return (
     <Body keyboardShouldPersistTaps="handled" contentStyle={{ paddingTop: space.lg }}>
       <View style={styles.pickers}>
-        <SearchPick label="TEAM A" placeholder="Search a team" selected={a} onSelect={setA} search={repo.searchTeams} toOption={teamOption} leading={t => <TeamBadge id={t.id} size={32} />} />
-        <SearchPick label="TEAM B" placeholder="Search a team" selected={b} onSelect={setB} search={repo.searchTeams} toOption={teamOption} leading={t => <TeamBadge id={t.id} size={32} />} />
+        <SearchPick label="Team A" placeholder="Search a team" selected={a} onSelect={setA} search={repo.searchTeams} toOption={teamOption} leading={t => <TeamBadge id={t.id} size={32} />} />
+        <SearchPick label="Team B" placeholder="Search a team" selected={b} onSelect={setB} search={repo.searchTeams} toOption={teamOption} leading={t => <TeamBadge id={t.id} size={32} />} />
       </View>
       {!a || !b ? (
         <Hint icon="swords" text="Pick two teams to see every meeting between them." />
@@ -351,8 +352,8 @@ function Players() {
   return (
     <Body keyboardShouldPersistTaps="handled" contentStyle={{ paddingTop: space.lg }}>
       <View style={styles.pickers}>
-        <SearchPick label="PLAYER A" placeholder="Search a player" selected={a} onSelect={setA} search={repo.searchPlayers} toOption={playerOption} leading={p => <Avatar name={p.name} size={32} />} />
-        <SearchPick label="PLAYER B" placeholder="Search a player" selected={b} onSelect={setB} search={repo.searchPlayers} toOption={playerOption} leading={p => <Avatar name={p.name} size={32} />} />
+        <SearchPick label="Player A" placeholder="Search a player" selected={a} onSelect={setA} search={repo.searchPlayers} toOption={playerOption} leading={p => <Avatar name={p.name} size={32} />} />
+        <SearchPick label="Player B" placeholder="Search a player" selected={b} onSelect={setB} search={repo.searchPlayers} toOption={playerOption} leading={p => <Avatar name={p.name} size={32} />} />
       </View>
       {a && b && a.id !== b.id ? (
         <PlayerReport a={a.id} b={b.id} />
@@ -440,11 +441,11 @@ const TABS = [
 ];
 
 export default function CompareScreen() {
-  const { kind } = useParams('Compare');
+  const { kind, a, b } = useParams('Compare');
   return (
     <Screen>
       <Header title="Compare" />
-      <TabPager tabs={TABS} initialKey={kind} renderPage={key => (key === 'players' ? <Players /> : <Teams />)} />
+      <TabPager tabs={TABS} initialKey={kind} renderPage={key => (key === 'players' ? <Players /> : <Teams initial={a && b ? [a, b] : undefined} />)} />
     </Screen>
   );
 }

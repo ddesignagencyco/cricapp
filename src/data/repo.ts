@@ -400,8 +400,6 @@ export const repo = {
       newsList({ language: 'en', limit: 8 }),
       list<RawGallery>('/gallery', { limit: 20 }).catch(() => [] as RawGallery[]),
     ]);
-    // Win probability is shown for live matches only.
-    const livePredictions = await predictionsFor(live);
     // Hero banners: the latest stories that have a cover image.
     const banners: Banner[] = stories
       .filter(a => a.image)
@@ -417,7 +415,6 @@ export const repo = {
       }));
     return {
       live,
-      livePredictions,
       upcoming: upcoming.sort(byStart),
       results,
       stories,
@@ -469,9 +466,6 @@ export const repo = {
   async react(thread: string, emoji: string): Promise<'added' | 'removed'> {
     return (await api.post<{ toggled: 'added' | 'removed' }>('/reactions', { ...target(thread), emoji })).toggled;
   },
-
-  /** Latest win probability for a set of live matches (one bulk call). */
-  livePredictions: (matches: Match[]) => predictionsFor(matches),
 
 
   /** Matches in play right now (small list, refreshed on every live tick). */
@@ -914,11 +908,14 @@ interface RawPslMatch {
 }
 
 async function pslSeries() {
-  const [standings, schedule, news] = await Promise.all([
+  const [standings, schedule, news, played] = await Promise.all([
     list<RawStanding>('/psl/standings'),
     list<RawPslMatch>('/psl/schedule'),
     newsList({ language: 'en', category: 'psl', limit: 10 }).catch(() => [] as Article[]),
+    // The PSL schedule has no scores; the match archive does.
+    matchList('completed', 60, { tournament: 'Pakistan Super League' }).catch(() => [] as Match[]),
   ]);
+  const scored = new Map(played.map(m => [m.id, m]));
   const matches = schedule.map(s =>
     toMatch({
       matchId: s.matchId,
@@ -930,7 +927,11 @@ async function pslSeries() {
       scheduled: s.scheduled,
       result: s.resultText,
     }),
-  );
+  ).map(m => {
+    // Keep the schedule's series id so the match stays in the PSL, take scores and result from the archive.
+    const full = scored.get(m.id);
+    return full ? { ...full, seriesId: m.seriesId, title: m.title } : m;
+  });
   const table = standings.map(toStanding);
   const series = rememberSeries({
     id: PSL_ID,

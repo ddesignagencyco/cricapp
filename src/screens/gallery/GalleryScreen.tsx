@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { FlatList, Image, ScrollView, StatusBar, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { FlatList, Image, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CoverArt } from '../../components/cricket/Media';
 import { ClipPlayer } from '../../components/media/Players';
 import { AppText } from '../../components/ui/AppText';
 import { SkeletonList } from '../../components/ui/Controls';
 import { Icon } from '../../components/ui/Icon';
-import { Body, Header, Screen } from '../../components/ui/Layout';
+import { Body, Header, Screen, LightStatusBar } from '../../components/ui/Layout';
 import { EmptyState, ErrorState, Fade, SectionHeader } from '../../components/ui/Primitives';
 import { Touch } from '../../components/ui/Touch';
 import { repo } from '../../data/repo';
@@ -15,6 +15,7 @@ import { useNavigation, useParams } from '../../navigation/Stack';
 import { useTheme } from '../../theme/ThemeProvider';
 import { radius, space } from '../../theme/tokens';
 import { ago } from '../../utils/format';
+import { sized } from '../../utils/media';
 
 /** All media in one place: reels up top, a photo wall, then videos. */
 export function GalleryScreen() {
@@ -72,7 +73,7 @@ export function GalleryScreen() {
               <SectionHeader title="Photos" action={`${photos.length}`} style={{ marginTop: data.shorts.length ? space.xxl : 0 }} />
               <View style={{ paddingHorizontal: space.lg }}>
                 <Touch onPress={() => nav.navigate('MediaViewer', { id: gallery.id, index: 0 })} style={[styles.feature, { backgroundColor: colors.elevated }]} accessibilityLabel={photos[0].headline || 'Photo'}>
-                  {photos[0].photo ? <Image source={{ uri: photos[0].photo }} style={StyleSheet.absoluteFill} resizeMode="cover" /> : null}
+                  {photos[0].photo ? <Image source={{ uri: sized(photos[0].photo, width) }} style={StyleSheet.absoluteFill} resizeMode="cover" /> : null}
                   <View style={styles.shade} pointerEvents="none">
                     <Fade color="#03060C" height={110} flip opacity={0.85} />
                   </View>
@@ -97,7 +98,7 @@ export function GalleryScreen() {
                       style={{ width: cell, height: cell, borderRadius: radius.xs, overflow: 'hidden', backgroundColor: colors.elevated }}
                       accessibilityLabel={p.headline || 'Photo'}
                     >
-                      {p.photo ? <Image source={{ uri: p.photo }} style={StyleSheet.absoluteFill} resizeMode="cover" /> : null}
+                      {p.photo ? <Image source={{ uri: sized(p.photo, cell) }} style={StyleSheet.absoluteFill} resizeMode="cover" /> : null}
                     </Touch>
                   ))}
                 </View>
@@ -168,7 +169,7 @@ export function MediaViewerScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: '#000' }}>
-      <StatusBar barStyle="light-content" />
+      <LightStatusBar />
       {gallery ? (
         <FlatList
           data={gallery.slides}
@@ -182,7 +183,7 @@ export function MediaViewerScreen() {
           renderItem={({ item }) => (
             <View style={{ width, height, justifyContent: 'center' }}>
               {item.photo ? (
-                <Image source={{ uri: item.photo }} style={{ width, height: height * 0.72 }} resizeMode="contain" />
+                <Image source={{ uri: sized(item.photo, width) }} style={{ width, height: height * 0.72 }} resizeMode="contain" />
               ) : (
                 <View style={{ width, height: width * 0.75, overflow: 'hidden' }}>
                   <CoverArt teamIds={item.teamIds} />

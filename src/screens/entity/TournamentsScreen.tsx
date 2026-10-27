@@ -97,15 +97,17 @@ function Row({ t }: { t: Tournament }) {
         <AppText variant="label" weight="700" numberOfLines={2}>
           {t.name}
         </AppText>
-        <View style={[styles.meta, { marginTop: 4 }]}>
-          {p ? <Tag label={p.label} tone={p.tone} /> : null}
-          {t.gender === 'women' ? <Tag label="WOMEN" tone="psl" style={{ marginLeft: 6 }} /> : null}
-          {meta.length ? (
-            <AppText variant="caption" color="textMuted" numberOfLines={1} style={{ marginLeft: p || t.gender === 'women' ? 8 : 0, flexShrink: 1 }}>
-              {meta.join(' · ')}
-            </AppText>
-          ) : null}
-        </View>
+        {meta.length ? (
+          <AppText variant="caption" color="textMuted" numberOfLines={1} style={{ marginTop: 2 }}>
+            {meta.join(' · ')}
+          </AppText>
+        ) : null}
+        {p || t.gender === 'women' ? (
+          <View style={[styles.meta, { marginTop: 6 }]}>
+            {p ? <Tag label={p.label} tone={p.tone} /> : null}
+            {t.gender === 'women' ? <Tag label="WOMEN" tone="psl" style={p ? { marginLeft: 6 } : undefined} /> : null}
+          </View>
+        ) : null}
       </View>
       <Icon name="chevronRight" size={16} color={colors.textMuted} />
     </Touch>

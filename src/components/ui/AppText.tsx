@@ -21,6 +21,9 @@ export interface AppTextProps extends TextProps {
   rtl?: boolean;
 }
 
+/** Arabic-script letters (Urdu). */
+const ARABIC = /[\u0600-\u06FF\u0750-\u077F]/;
+
 export function AppText({
   variant = 'body',
   color = 'text',
@@ -36,6 +39,15 @@ export function AppText({
   const t = typeScale[variant];
   const resolved =
     color in colors ? (colors[color as ColorKey] as string) : color;
+  // Urdu words in otherwise LTR text (a label, a toggle) get the same treatment as Urdu blocks.
+  const urdu = rtl || (typeof rest.children === 'string' && ARABIC.test(rest.children));
+  // Urdu uses the phone's own Arabic-script font (Inter has none), with room for its taller marks.
+  const urduStyle = urdu && {
+    fontFamily: undefined,
+    fontWeight: (weight ?? t.weight) >= '600' ? ('700' as const) : ('400' as const),
+    lineHeight: Math.round(t.line * 1.45),
+    letterSpacing: 0,
+  };
   return (
     <Text
       allowFontScaling
@@ -44,7 +56,7 @@ export function AppText({
         {
           fontFamily: fontFamily[weight ?? t.weight],
           fontSize: t.size,
-          lineHeight: rtl ? t.line * 1.45 : t.line,
+          lineHeight: t.line,
           letterSpacing: t.tracking,
           color: resolved,
           includeFontPadding: false,
@@ -52,14 +64,8 @@ export function AppText({
         align && { textAlign: align },
         tabular && { fontVariant: ['tabular-nums'] },
         uppercase && { textTransform: 'uppercase' },
-        // Urdu falls back to the system Naskh font, which Inter doesn't cover.
-        rtl && {
-          writingDirection: 'rtl',
-          textAlign: 'right',
-          fontFamily: undefined,
-          fontWeight: (weight ?? t.weight) >= '600' ? '700' : '400',
-          letterSpacing: 0,
-        },
+        urduStyle,
+        rtl && { writingDirection: 'rtl', textAlign: 'right' },
         style,
       ]}
       {...rest}

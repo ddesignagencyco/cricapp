@@ -62,8 +62,8 @@ export default function ToolScreen() {
               opacity={results ? 0.28 : 0.12}
               style={{ right: -130, top: -140 }}
             />
-            <AppText variant="overline" color="textMuted">
-              {(primary?.label ?? tool.title).toUpperCase()}
+            <AppText variant="label" weight="600" color="textSecondary">
+              {primary?.label ?? 'Result'}
             </AppText>
             <AppText
               variant="scoreXl"

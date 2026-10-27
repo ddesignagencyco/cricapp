@@ -8,11 +8,12 @@ import React, {
   useState,
   type ComponentType,
 } from 'react';
-import { Animated, BackHandler, Easing, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Animated, BackHandler, Easing, Linking, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
 import type { RouteName, Routes } from './routes';
 import { ScreenBoundary } from '../components/ui/ScreenBoundary';
 import { reduceMotion } from '../utils/motion';
+import { parseLink } from './links';
 
 /**
  * A small animated stack navigator in plain JS: push / replace / back /
@@ -103,6 +104,17 @@ export function Stack({
     }),
     [push],
   );
+
+  // Links that open the app (a shared website link, or the app's own scheme) go straight to that screen.
+  useEffect(() => {
+    const open = (url: string | null | undefined) => {
+      const to = url ? parseLink(url) : undefined;
+      if (to && screens[to.name]) (navigation.navigate as (n: RouteName, p?: object) => void)(to.name, to.params);
+    };
+    Linking.getInitialURL().then(open).catch(() => {});
+    const sub = Linking.addEventListener('url', e => open(e.url));
+    return () => sub.remove();
+  }, [navigation, screens]);
 
   useEffect(() => {
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {

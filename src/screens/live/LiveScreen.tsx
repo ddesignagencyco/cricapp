@@ -11,7 +11,7 @@ import { EmptyState, ErrorState, IconButton, LiveIndicator, SectionHeader } from
 import { Touch } from '../../components/ui/Touch';
 import { seriesOf, team } from '../../data/refs';
 import { repo } from '../../data/repo';
-import type { Match, Prediction } from '../../data/types';
+import type { Match } from '../../data/types';
 import { usePaged } from '../../data/usePaged';
 import { useQuery } from '../../data/useQuery';
 import { useNavigation } from '../../navigation/Stack';
@@ -194,9 +194,6 @@ export function MatchesView({ initialDay = 0 }: { initialDay?: number }) {
 /** Matches in play now, refreshed with every live tick. */
 function LiveNow() {
   const q = useQuery('matches:live', repo.liveMatches, { live: true });
-  // Cards show at once; win probability fills in when it arrives.
-  const ids = q.data?.map(m => m.id).join(',') ?? '';
-  const odds = useQuery(`matches:live-odds:${ids}`, () => (q.data?.length ? repo.livePredictions(q.data) : Promise.resolve({})), { live: true });
   if (!q.data && q.error) return <ErrorState error={q.error} onRetry={q.refresh} />;
   if (!q.data) return <SkeletonList count={2} height={180} />;
   if (!q.data.length) {
@@ -205,7 +202,7 @@ function LiveNow() {
   return (
     <Body onRefresh={q.refresh} refreshing={q.refreshing} bottomInset={false} contentStyle={{ gap: space.md, paddingHorizontal: space.lg, paddingTop: space.lg }}>
       {q.data.map(m => (
-        <MatchHeroCard key={m.id} match={m} prediction={(odds.data as Record<string, Prediction> | undefined)?.[m.id]} />
+        <MatchHeroCard key={m.id} match={m} />
       ))}
     </Body>
   );
@@ -240,7 +237,7 @@ const SECTIONS = [
   { key: 'upcoming', label: 'Upcoming' },
   { key: 'completed', label: 'Results' },
   { key: 'cancelled', label: 'Cancelled' },
-  { key: 'calendar', label: 'By date' },
+  { key: 'calendar', label: 'Schedule' },
 ];
 
 export default function LiveScreen() {

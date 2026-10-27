@@ -10,7 +10,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { useTheme } from '../../theme/ThemeProvider';
-import { radius, space } from '../../theme/tokens';
+import { radius, space, control } from '../../theme/tokens';
 import { AppText } from './AppText';
 import { Icon, type IconName } from './Icon';
 import { Touch } from './Touch';
@@ -235,9 +235,11 @@ export function SectionHeader({
   style?: StyleProp<ViewStyle>;
 }) {
   const { colors } = useTheme();
+  // An Urdu heading reads from the right, with its action on the left.
+  const rtl = /[؀-ۿ]/.test(title);
   return (
-    <View style={[styles.sectionHeader, style]}>
-      <View style={{ flex: 1 }}>
+    <View style={[styles.sectionHeader, rtl && { flexDirection: 'row-reverse' }, style]}>
+      <View style={{ flex: 1, alignItems: rtl ? 'flex-end' : 'flex-start' }}>
         {overline ? (
           <AppText variant="overline" color="textMuted" style={{ marginBottom: 4 }}>
             {overline}
@@ -422,7 +424,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   button: {
-    height: 52,
+    height: control.lg,
     borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
@@ -431,7 +433,7 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth * 2,
     overflow: 'hidden',
   },
-  buttonCompact: { height: 40, paddingHorizontal: space.lg, borderRadius: radius.sm },
+  buttonCompact: { height: control.md, paddingHorizontal: space.lg, borderRadius: radius.sm },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'flex-end',

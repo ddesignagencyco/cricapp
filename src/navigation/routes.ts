@@ -16,7 +16,7 @@ export interface Routes {
   Rankings: undefined;
   Tools: undefined;
   Tool: { id: string };
-  Compare: { kind: 'players' | 'teams' };
+  Compare: { kind: 'players' | 'teams'; a?: string; b?: string };
   Search: undefined;
   Settings: undefined;
   Alerts: undefined;

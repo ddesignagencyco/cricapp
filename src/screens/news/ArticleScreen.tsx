@@ -14,7 +14,7 @@ import { repo } from '../../data/repo';
 import { useQuery } from '../../data/useQuery';
 import { useNavigation, useParams } from '../../navigation/Stack';
 import { useTheme } from '../../theme/ThemeProvider';
-import { radius, space } from '../../theme/tokens';
+import { radius, space, control } from '../../theme/tokens';
 import { ago, shortDate, time } from '../../utils/format';
 
 export default function ArticleScreen() {
@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
   entity: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 40,
+    height: control.pill,
     paddingHorizontal: 12,
     borderRadius: radius.pill,
     borderWidth: StyleSheet.hairlineWidth * 2,

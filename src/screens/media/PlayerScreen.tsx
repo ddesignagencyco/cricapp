@@ -1,11 +1,12 @@
 import React from 'react';
-import { StatusBar, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ClipPlayer, WebPlayer, isClip, youtubeId } from '../../components/media/Players';
 import { AppText } from '../../components/ui/AppText';
 import { Icon } from '../../components/ui/Icon';
 import { Touch } from '../../components/ui/Touch';
 import { useNavigation, useParams } from '../../navigation/Stack';
+import { LightStatusBar } from '../../components/ui/Layout';
 import { space } from '../../theme/tokens';
 
 /** Plays a stream or video inside the app: a 16:9 player for videos, the full screen for pages. */
@@ -18,7 +19,7 @@ export default function WatchScreen() {
 
   return (
     <View style={[styles.fill, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="light-content" />
+      <LightStatusBar />
       <View style={styles.bar}>
         <Touch borderless onPress={nav.goBack} style={styles.close} accessibilityLabel="Close">
           <Icon name="x" size={22} color="#FFFFFF" />

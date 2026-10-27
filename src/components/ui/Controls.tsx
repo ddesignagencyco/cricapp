@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useTheme } from '../../theme/ThemeProvider';
-import { radius, space } from '../../theme/tokens';
+import { radius, space, control } from '../../theme/tokens';
 import { AppText } from './AppText';
 import { Chip } from './Primitives';
 import { Touch } from './Touch';
@@ -126,7 +126,7 @@ export function SkeletonList({ count = 4, height = 92 }: { count?: number; heigh
 const styles = StyleSheet.create({
   segmented: {
     flexDirection: 'row',
-    height: 40,
+    height: control.md,
     borderRadius: radius.sm + 2,
     padding: 3,
     borderWidth: StyleSheet.hairlineWidth * 2,

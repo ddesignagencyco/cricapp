@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, Easing, FlatList, Pressable, Share, StatusBar, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, Animated, Easing, FlatList, Pressable, Share, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TeamBadge } from '../../components/cricket/Badges';
-import { BrandMark } from '../../components/ui/Layout';
+import { BrandMark, LightStatusBar } from '../../components/ui/Layout';
 import { CoverArt, seenShorts } from '../../components/cricket/Media';
 import { ClipPlayer } from '../../components/media/Players';
 import { AppText } from '../../components/ui/AppText';
@@ -13,7 +13,7 @@ import { repo } from '../../data/repo';
 import { useQuery } from '../../data/useQuery';
 import type { Short } from '../../data/types';
 import { useNavigation, useParams } from '../../navigation/Stack';
-import { radius, space } from '../../theme/tokens';
+import { radius, space, control } from '../../theme/tokens';
 import { ago } from '../../utils/format';
 
 const SLIDE_MS = 5000;
@@ -206,7 +206,7 @@ export default function ShortsScreen() {
   if (!data) {
     return (
       <View style={styles.loading}>
-        <StatusBar barStyle="light-content" />
+        <LightStatusBar />
         <ActivityIndicator color="#FFFFFF" />
       </View>
     );
@@ -231,7 +231,7 @@ function ShortsPager({ shorts, startId }: { shorts: Short[]; startId: string }) 
 
   return (
     <View style={{ flex: 1, backgroundColor: '#03060C' }}>
-      <StatusBar barStyle="light-content" />
+      <LightStatusBar />
       <FlatList
         ref={list}
         data={shorts}
@@ -269,5 +269,5 @@ const styles = StyleSheet.create({
   liveRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
   liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#FF4256', marginRight: 6 },
   matchLinkWrap: { position: 'absolute', left: space.lg },
-  matchLink: { flexDirection: 'row', alignItems: 'center', height: 40, paddingHorizontal: 16, borderRadius: radius.pill, backgroundColor: '#FFFFFF', overflow: 'hidden' },
+  matchLink: { flexDirection: 'row', alignItems: 'center', height: control.md, paddingHorizontal: 16, borderRadius: radius.pill, backgroundColor: '#FFFFFF', overflow: 'hidden' },
 });

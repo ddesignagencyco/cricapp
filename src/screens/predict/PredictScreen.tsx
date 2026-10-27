@@ -55,7 +55,7 @@ export default function PredictScreen() {
 
           {data.upcoming.length ? (
             <>
-              <SectionHeader title="Upcoming" overline="PRE-MATCH" style={{ marginTop: space.xxl }} />
+              <SectionHeader title="Upcoming" style={{ marginTop: space.xxl }} />
               <Cards list={data.upcoming} />
             </>
           ) : null}

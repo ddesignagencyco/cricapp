@@ -693,13 +693,68 @@ function InfoTab({ match }: { match: Match }) {
 }
 
 function PreviewTab({ match }: { match: Match }) {
+  const nav = useNavigation();
+  const { colors } = useTheme();
   const v = venue(match.venueId);
+  const series = seriesOf(match.seriesId);
+  const rows: [string, string | undefined][] = [
+    ['Starts', `${dayLabel(match.startTime)} · ${time(match.startTime)}`],
+    ['Series', series?.name],
+    ['Format', match.formatKnown === false ? undefined : match.format],
+    ['Venue', v ? [v.name, v.city].filter(Boolean).join(', ') : venueLabel(match.venueId) || undefined],
+    ['Toss', match.toss],
+  ];
   return (
     <Body bottomInset contentStyle={{ paddingTop: space.lg }}>
-      <View style={styles.statGrid}>
-        <StatBox label="STARTS" value={time(match.startTime)} sub={dayLabel(match.startTime)} />
-        {v ? <StatBox label="VENUE" value={v.city || v.name} sub={v.city ? v.name : undefined} /> : null}
-      </View>
+      <SectionHeader title="Teams" />
+      <Card padded={false} style={{ marginHorizontal: space.lg }}>
+        {[match.teamA, match.teamB].map((id, i) => (
+          <View key={id}>
+            {i > 0 ? <Hairline inset={space.lg} /> : null}
+            <Touch onPress={() => nav.navigate('Team', { id })} style={styles.summaryRow} accessibilityLabel={team(id).name}>
+              <TeamBadge id={id} size={32} />
+              <AppText variant="body" weight="600" style={{ flex: 1, marginLeft: space.md }} numberOfLines={1}>
+                {team(id).name}
+              </AppText>
+              <Icon name="chevronRight" size={16} color={colors.textMuted} />
+            </Touch>
+          </View>
+        ))}
+      </Card>
+
+      <SectionHeader title="Match details" style={{ marginTop: space.xl }} />
+      <Card padded={false} style={{ marginHorizontal: space.lg }}>
+        {rows
+          .filter(([, val]) => val)
+          .map(([label, val], i) => (
+            <View key={label}>
+              {i > 0 ? <Hairline inset={space.lg} /> : null}
+              <View style={styles.summaryRow}>
+                <AppText variant="caption" color="textMuted" style={{ width: 72 }}>
+                  {label}
+                </AppText>
+                <AppText variant="label" weight="600" style={{ flex: 1 }}>
+                  {val}
+                </AppText>
+              </View>
+            </View>
+          ))}
+      </Card>
+
+      <Card onPress={() => nav.navigate('Compare', { kind: 'teams', a: match.teamA, b: match.teamB })} style={{ marginHorizontal: space.lg, marginTop: space.xl }}>
+        <View style={styles.rowC}>
+          <Icon name="swords" size={18} color={colors.accent} />
+          <View style={{ flex: 1, marginLeft: space.md }}>
+            <AppText variant="label" weight="700">
+              Head-to-head
+            </AppText>
+            <AppText variant="caption" color="textSecondary" style={{ marginTop: 2 }}>
+              Every meeting between {team(match.teamA).short} and {team(match.teamB).short}
+            </AppText>
+          </View>
+          <Icon name="chevronRight" size={16} color={colors.textMuted} />
+        </View>
+      </Card>
     </Body>
   );
 }
@@ -725,7 +780,8 @@ export default function MatchCentreScreen() {
   const tabs = useMemo(
     () =>
       // Match chat is for matches in play only.
-      TABS.filter(t => t.key !== 'comments' || match?.status === 'live' || match?.status === 'break').map(t => (t.key === 'live' ? { ...t, label: match?.status === 'upcoming' ? 'Preview' : match?.status === 'completed' ? 'Summary' : 'Live' } : t)),
+      TABS.filter(t => t.key !== 'comments' || match?.status === 'live' || match?.status === 'break')
+        .filter(t => match?.status !== 'upcoming' || !['scorecard', 'commentary', 'stats'].includes(t.key)).map(t => (t.key === 'live' ? { ...t, label: match?.status === 'upcoming' ? 'Preview' : match?.status === 'completed' ? 'Summary' : 'Live' } : t)),
     [match?.status],
   );
 

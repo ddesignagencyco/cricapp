@@ -21,6 +21,19 @@ export function Gradient({ from, to, base = '#0D1733', strength = 1 }: { from: s
   );
 }
 
+/**
+ * Light team-colour wash for cards on a plain surface: the first side's colour
+ * from the left, the second's from the right, faint enough for dark text.
+ */
+export function TeamWash({ from, to, strength = 0.16 }: { from: string; to: string; strength?: number }) {
+  return (
+    <View style={StyleSheet.absoluteFill} pointerEvents="none">
+      <Image source={HFADE} resizeMode="stretch" style={[styles.fill, { tintColor: from, opacity: strength }]} />
+      <Image source={HFADE} resizeMode="stretch" style={[styles.fill, { tintColor: to, opacity: strength * 0.8, transform: [{ scaleX: -1 }] }]} />
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   fill: { ...StyleSheet.absoluteFill, width: '100%', height: '100%' },
   bottom: { position: 'absolute', bottom: 0 },

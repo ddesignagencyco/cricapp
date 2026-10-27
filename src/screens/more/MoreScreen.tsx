@@ -1,19 +1,21 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Avatar } from '../../components/cricket/Badges';
-import { displayName, useAuth } from '../../state/auth';
+import { ProfilePass } from '../../components/cricket/ProfilePass';
 import { AppText } from '../../components/ui/AppText';
 import { Icon, type IconName } from '../../components/ui/Icon';
 import { Body, Screen, TabHeader } from '../../components/ui/Layout';
-import { Card, Hairline } from '../../components/ui/Primitives';
+import { Card, Hairline, SectionHeader } from '../../components/ui/Primitives';
 import { Touch } from '../../components/ui/Touch';
 import { useNavigation, type Navigation } from '../../navigation/Stack';
 import { useTheme } from '../../theme/ThemeProvider';
-import { space } from '../../theme/tokens';
+import { radius, space, control } from '../../theme/tokens';
 
 interface Item {
   label: string;
+  hint: string;
   icon: IconName;
+  /** Each row keeps its own colour so the list can be scanned by colour. */
+  color: string;
   go: (nav: Navigation) => void;
 }
 
@@ -21,21 +23,21 @@ const GROUPS: { title: string; items: Item[] }[] = [
   {
     title: 'Cricket',
     items: [
-      { label: 'PSL', icon: 'trophy', go: n => n.navigate('Psl') },
-      { label: 'Upcoming fixtures', icon: 'calendar', go: n => n.navigate('Schedule') },
-      { label: 'Series & tournaments', icon: 'layers', go: n => n.navigate('Tournaments') },
-      { label: 'Find teams & players', icon: 'search', go: n => n.navigate('Search') },
-      { label: 'Live streams', icon: 'tv', go: n => n.navigate('Streams') },
-      { label: 'Gallery', icon: 'image', go: n => n.navigate('Gallery') },
-      { label: 'Cricket tools', icon: 'calculator', go: n => n.navigate('Tools') },
+      { label: 'PSL', hint: 'Table, fixtures and leaders', icon: 'trophy', color: '#E39B12', go: n => n.navigate('Psl') },
+      { label: 'Upcoming fixtures', hint: 'Every match coming up', icon: 'calendar', color: '#3B68FC', go: n => n.navigate('Schedule') },
+      { label: 'Series & tournaments', hint: 'All competitions we cover', icon: 'layers', color: '#7C5CFF', go: n => n.navigate('Tournaments') },
+      { label: 'Find teams & players', hint: 'Search profiles and squads', icon: 'search', color: '#0EA5A4', go: n => n.navigate('Search') },
+      { label: 'Live streams', hint: 'Where to watch', icon: 'tv', color: '#E5484D', go: n => n.navigate('Streams') },
+      { label: 'Gallery', hint: 'Photos and short clips', icon: 'image', color: '#D6409F', go: n => n.navigate('Gallery') },
+      { label: 'Cricket tools', hint: 'Run rates, compare, DLS', icon: 'calculator', color: '#1FA55B', go: n => n.navigate('Tools') },
     ],
   },
   {
     title: 'You',
     items: [
-      { label: 'Favourites', icon: 'heart', go: n => n.navigate('Favourites') },
-      { label: 'Newsletter', icon: 'mail', go: n => n.navigate('Alerts') },
-      { label: 'Settings', icon: 'settings', go: n => n.navigate('Settings') },
+      { label: 'Favourites', hint: 'Teams, players and matches you saved', icon: 'heart', color: '#E5484D', go: n => n.navigate('Favourites') },
+      { label: 'Newsletter', hint: 'Cricket in your inbox', icon: 'mail', color: '#F07A16', go: n => n.navigate('Alerts') },
+      { label: 'Settings', hint: 'Profile, theme, language', icon: 'settings', color: '#64748B', go: n => n.navigate('Settings') },
     ],
   },
 ];
@@ -43,46 +45,31 @@ const GROUPS: { title: string; items: Item[] }[] = [
 export default function MoreScreen() {
   const nav = useNavigation();
   const { colors } = useTheme();
-  const { user } = useAuth();
   return (
     <Screen>
       <TabHeader title="More" />
-      <Body bottomInset={false}>
-        <Card onPress={() => (user ? nav.navigate('Settings') : nav.navigate('SignIn'))} style={{ marginHorizontal: space.lg, marginTop: space.sm }}>
-          <View style={styles.rowC}>
-            {user ? (
-              <Avatar name={displayName(user)} size={46} />
-            ) : (
-              <View style={[styles.avatar, { backgroundColor: colors.elevated }]}>
-                <Icon name="user" size={22} color={colors.textSecondary} />
-              </View>
-            )}
-            <View style={{ flex: 1, marginLeft: 12 }}>
-              <AppText variant="headline" weight="700" style={user ? { textTransform: 'capitalize' } : undefined}>
-                {user ? displayName(user) : 'Sign in'}
-              </AppText>
-              <AppText variant="caption" color="textSecondary">
-                {user ? user.email : 'Comment, react and manage your profile'}
-              </AppText>
-            </View>
-            <Icon name="chevronRight" size={18} color={colors.textMuted} />
-          </View>
-        </Card>
+      <Body bottomInset={false} contentStyle={{ paddingTop: space.lg }}>
+        <ProfilePass />
 
         {GROUPS.map(g => (
           <View key={g.title} style={{ marginTop: space.xl }}>
-            <AppText variant="overline" color="textMuted" style={{ paddingHorizontal: space.lg + 4, marginBottom: space.sm }}>
-              {g.title.toUpperCase()}
-            </AppText>
+            <SectionHeader title={g.title} />
             <Card padded={false} style={{ marginHorizontal: space.lg }}>
               {g.items.map((it, i) => (
                 <View key={it.label}>
-                  {i > 0 ? <Hairline inset={56} /> : null}
-                  <Touch onPress={() => it.go(nav)} style={styles.item}>
-                    <Icon name={it.icon} size={20} color={colors.textSecondary} />
-                    <AppText variant="body" weight="500" style={{ flex: 1, marginLeft: 16 }}>
-                      {it.label}
-                    </AppText>
+                  {i > 0 ? <Hairline inset={space.lg + 38 + space.md} /> : null}
+                  <Touch onPress={() => it.go(nav)} style={styles.item} accessibilityLabel={it.label}>
+                    <View style={[styles.tile, { backgroundColor: `${it.color}1F` }]}>
+                      <Icon name={it.icon} size={19} color={it.color} />
+                    </View>
+                    <View style={{ flex: 1, marginLeft: space.md }}>
+                      <AppText variant="body" weight="600" numberOfLines={1}>
+                        {it.label}
+                      </AppText>
+                      <AppText variant="caption" color="textMuted" numberOfLines={1} style={{ marginTop: 1 }}>
+                        {it.hint}
+                      </AppText>
+                    </View>
                     <Icon name="chevronRight" size={16} color={colors.textMuted} style={{ marginLeft: 8 }} />
                   </Touch>
                 </View>
@@ -97,6 +84,14 @@ export default function MoreScreen() {
 
 const styles = StyleSheet.create({
   rowC: { flexDirection: 'row', alignItems: 'center' },
-  avatar: { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center' },
-  item: { flexDirection: 'row', alignItems: 'center', minHeight: 56, paddingHorizontal: space.lg, paddingVertical: 4 },
+  pass: { marginHorizontal: space.lg, borderRadius: radius.xl, padding: space.lg, overflow: 'hidden' },
+  portrait: { alignItems: 'center', justifyContent: 'center', overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.18)', borderWidth: 2, borderColor: 'rgba(255,255,255,0.55)' },
+  passStats: { flexDirection: 'row', marginTop: space.lg, paddingTop: space.md, borderTopWidth: StyleSheet.hairlineWidth * 2, borderTopColor: 'rgba(255,255,255,0.22)' },
+  passStat: { flex: 1, alignItems: 'center' },
+  passStatDivider: { borderLeftWidth: StyleSheet.hairlineWidth * 2, borderLeftColor: 'rgba(255,255,255,0.22)' },
+  passActions: { flexDirection: 'row', gap: space.sm, marginTop: space.lg },
+  passButton: { flex: 1, height: control.md, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
+  passGhost: { borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.7)' },
+  item: { flexDirection: 'row', alignItems: 'center', minHeight: 64, paddingHorizontal: space.lg, paddingVertical: space.sm },
+  tile: { width: 38, height: 38, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
 });

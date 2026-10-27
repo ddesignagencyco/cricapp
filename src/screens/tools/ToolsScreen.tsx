@@ -13,12 +13,14 @@ import { TOOLS, type Tool } from '../../tools/catalog';
 /** Calculators fans use while following a match; odds maths stays out of the general list. */
 const GROUPS: Tool['group'][] = ['Run rates', 'Batting & bowling', 'Match situations'];
 
-function Row({ icon, title, body, onPress }: { icon: IconName; title: string; body: string; onPress: () => void }) {
+const GROUP_COLOR: Record<string, string> = { Compare: '#7C5CFF', 'Run rates': '#3B68FC', 'Batting & bowling': '#1FA55B', 'Match situations': '#E39B12' };
+
+function Row({ icon, title, body, onPress, color = '#3B68FC' }: { icon: IconName; title: string; body: string; onPress: () => void; color?: string }) {
   const { colors } = useTheme();
   return (
     <Touch onPress={onPress} style={styles.row} accessibilityLabel={title}>
-      <View style={[styles.icon, { backgroundColor: colors.brandSoft }]}>
-        <Icon name={icon} size={18} color={colors.accent} />
+      <View style={[styles.icon, { backgroundColor: `${color}1F` }]}>
+        <Icon name={icon} size={18} color={color} />
       </View>
       <View style={{ flex: 1, marginHorizontal: space.md }}>
         <AppText variant="label" weight="700">
@@ -41,9 +43,9 @@ export default function ToolsScreen() {
       <Body>
         <SectionHeader title="Compare" />
         <Card padded={false} style={styles.card}>
-          <Row icon="swords" title="Head-to-head" body="How two teams have fared against each other" onPress={() => nav.navigate('Compare', { kind: 'teams' })} />
+          <Row icon="swords" title="Head-to-head" body="How two teams have fared against each other" color={GROUP_COLOR.Compare} onPress={() => nav.navigate('Compare', { kind: 'teams' })} />
           <Hairline inset={space.lg + 40 + space.md} />
-          <Row icon="users" title="Compare players" body="Two players side by side" onPress={() => nav.navigate('Compare', { kind: 'players' })} />
+          <Row icon="users" title="Compare players" body="Two players side by side" color={GROUP_COLOR.Compare} onPress={() => nav.navigate('Compare', { kind: 'players' })} />
         </Card>
         {GROUPS.map(g => (
           <View key={g} style={{ marginTop: space.xl }}>
@@ -52,7 +54,7 @@ export default function ToolsScreen() {
               {TOOLS.filter(t => t.group === g).map((t, i) => (
                 <View key={t.id}>
                   {i > 0 ? <Hairline inset={space.lg + 40 + space.md} /> : null}
-                  <Row icon={t.icon} title={t.title} body={t.explain} onPress={() => nav.navigate('Tool', { id: t.id })} />
+                  <Row icon={t.icon} title={t.title} body={t.explain} color={GROUP_COLOR[g]} onPress={() => nav.navigate('Tool', { id: t.id })} />
                 </View>
               ))}
             </Card>

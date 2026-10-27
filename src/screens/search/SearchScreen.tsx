@@ -11,7 +11,7 @@ import { Avatar, TeamBadge } from '../../components/cricket/Badges';
 import { NewsRow } from '../../components/cricket/NewsCards';
 import { AppText } from '../../components/ui/AppText';
 import { Icon } from '../../components/ui/Icon';
-import { Body, Screen } from '../../components/ui/Layout';
+import { Body, Screen, BAR_HEIGHT } from '../../components/ui/Layout';
 import {
   Card,
   Chip,
@@ -26,7 +26,7 @@ import { repo } from '../../data/repo';
 import { useQuery } from '../../data/useQuery';
 import { useNavigation } from '../../navigation/Stack';
 import { useTheme } from '../../theme/ThemeProvider';
-import { fontFamily, radius, space } from '../../theme/tokens';
+import { fontFamily, radius, space, control } from '../../theme/tokens';
 
 /** Starting points, not a popularity claim. */
 const SUGGESTIONS = ['Pakistan', 'PSL', 'Babar Azam', 'Shaheen', 'Lahore Qalandars', 'India'];
@@ -53,7 +53,7 @@ export default function SearchScreen() {
 
   return (
     <Screen>
-      <View style={[styles.bar, { paddingTop: insets.top + 6 }]}>
+      <View style={[styles.bar, { paddingTop: insets.top }]}>
         <IconButton icon="arrowLeft" label="Back" onPress={nav.goBack} />
         <View
           style={[
@@ -224,13 +224,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: space.xs,
     paddingRight: space.lg,
-    paddingBottom: space.sm,
+    minHeight: BAR_HEIGHT,
+    boxSizing: 'content-box',
   },
   field: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    height: 46,
+    height: control.md,
     borderRadius: radius.md,
     borderWidth: StyleSheet.hairlineWidth * 2,
     paddingLeft: 14,
