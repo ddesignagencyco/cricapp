@@ -8,7 +8,7 @@ import { useTheme } from '../../theme/ThemeProvider';
 import { radius, space } from '../../theme/tokens';
 import { countdown, dayLabel, inningsFor, overs, score, time } from '../../utils/format';
 import { AppText } from '../ui/AppText';
-import { Gradient, TeamWash } from '../ui/Gradient';
+import { Gradient } from '../ui/Gradient';
 import { Glow, LiveIndicator, Tag } from '../ui/Primitives';
 import { Touch } from '../ui/Touch';
 import { TeamBadge } from './Badges';
@@ -27,13 +27,14 @@ function TeamScore({ match, teamId, big, ink }: { match: Match; teamId: string; 
   const lost = match.status === 'completed' && match.result?.winnerId && match.result.winnerId !== teamId;
   if (!inns.length) {
     return (
-      <AppText variant={big ? 'score' : 'label'} color={ink?.muted ?? 'textMuted'}>
+      <AppText variant="label" weight="600" color={ink?.muted ?? 'textMuted'}>
         {match.status === 'live' || match.status === 'break' ? 'Yet to bat' : ''}
       </AppText>
     );
   }
   const last = inns[inns.length - 1];
   const test = match.format === 'Test';
+  const live = match.status === 'live' || match.status === 'break';
   return (
     <View style={styles.scoreRow}>
       {test && inns.length > 1 ? (
@@ -41,20 +42,22 @@ function TeamScore({ match, teamId, big, ink }: { match: Match; teamId: string; 
           {score(inns[0])} &
         </AppText>
       ) : null}
-      <AppText variant={big ? 'score' : 'headline'} weight="700" tabular color={lost ? ink?.secondary ?? 'textSecondary' : ink?.text ?? 'text'}>
+      <AppText variant={big ? 'scoreLg' : 'score'} weight="700" tabular color={lost ? ink?.secondary ?? 'textSecondary' : ink?.text ?? 'text'}>
         {score(last)}
       </AppText>
-      {!test || batting ? (
-        <AppText variant="caption" color={ink?.muted ?? 'textMuted'} tabular style={{ marginLeft: 6, minWidth: 34 }}>
-          {last.balls ? overs(last.balls) : ''}
+      {/* A fixed-width overs column keeps every total lined up. Live cards put overs and run rate in the status line instead. */}
+      {live ? null : (
+        <AppText variant="caption" color={ink?.muted ?? 'textMuted'} tabular align="right" style={styles.overs}>
+          {last.balls && (!test || batting) ? `${overs(last.balls)} ov` : ''}
         </AppText>
-      ) : null}
+      )}
     </View>
   );
 }
 
 function TeamLine({ match, teamId, big, ink }: { match: Match; teamId: string; big?: boolean; ink?: Ink }) {
   const t = teamOf(teamId);
+  // The batting side reads bolder; the status line under the teams says who is batting.
   const batting = match.status === 'live' && match.battingTeamId === teamId;
   const lost = match.status === 'completed' && match.result?.winnerId && match.result.winnerId !== teamId;
   return (
@@ -69,7 +72,6 @@ function TeamLine({ match, teamId, big, ink }: { match: Match; teamId: string; b
       >
         {t.name}
       </AppText>
-      {batting ? <View style={[styles.batDot, { backgroundColor: ink ? '#FFFFFF' : t.color }]} /> : null}
       <TeamScore match={match} teamId={teamId} big={big} ink={ink} />
     </View>
   );
@@ -188,8 +190,7 @@ function MatchRowBase({ match: fetched, showSeries = true, dated = true }: { mat
       style={[styles.row, { backgroundColor: colors.surface, borderColor: colors.hairline }]}
       accessibilityLabel={`${teamOf(first).name} versus ${teamOf(second).name}. ${match.statusText}`}
     >
-      {/* Each card carries its two sides' colours; the winner's side reads a little stronger. */}
-      <TeamWash from={teamOf(first).color} to={teamOf(second).color} strength={colors.scheme === 'dark' ? 0.12 : 0.13} />
+      {/* A plain card with one thin stripe in the winner's (or first side's) colour; only live cards get a gradient. */}
       <View style={[styles.rowEdge, { backgroundColor: teamOf(match.result?.winnerId ?? first).color }]} />
       <View style={styles.rowTop}>
         <AppText variant="caption" color="textMuted" numberOfLines={1} style={{ flex: 1 }}>
@@ -241,11 +242,11 @@ const styles = StyleSheet.create({
   },
   teamLine: { flexDirection: 'row', alignItems: 'center' },
   scoreRow: { flexDirection: 'row', alignItems: 'baseline' },
-  batDot: { width: 6, height: 6, borderRadius: 3, marginRight: 10 },
+  overs: { width: 50, marginLeft: 4 },
   // Each match is its own card: separate rounded tiles with a gap between them.
   row: { paddingHorizontal: space.xl, paddingVertical: space.lg + 2, borderRadius: radius.lg, borderWidth: StyleSheet.hairlineWidth * 2, overflow: 'hidden' },
   rowTop: { flexDirection: 'row', alignItems: 'center' },
-  rowEdge: { position: 'absolute', left: 0, top: 14, bottom: 14, width: 3, borderTopRightRadius: 3, borderBottomRightRadius: 3 },
+  rowEdge: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 4 },
 });
 
 /** Memoised: a live update re-renders only the card whose data changed. */

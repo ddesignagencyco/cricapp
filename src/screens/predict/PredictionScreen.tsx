@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { TeamBadge } from '../../components/cricket/Badges';
-import { LineChart, WinProbBar } from '../../components/cricket/Charts';
+import { LineChart, WinProbBar, sideColors } from '../../components/cricket/Charts';
 import { AppText } from '../../components/ui/AppText';
 import { SkeletonList } from '../../components/ui/Controls';
 import { Body, Header, Screen } from '../../components/ui/Layout';
@@ -131,8 +131,8 @@ export default function PredictionScreen() {
                 points={p.history.map(h => ({ x: h.over, y: h.p, event: h.event }))}
                 xMax={maxOver}
                 height={170}
-                color={a.color}
-                colorBelow={b.color}
+                color={sideColors(a.color, b.color)[0]}
+                colorBelow={sideColors(a.color, b.color)[1]}
                 xLabels={maxOver === 20 ? ['0', '5', '10', '15', '20'] : ['0', '10', '20', '30', '40', '50']}
               />
             </Card>

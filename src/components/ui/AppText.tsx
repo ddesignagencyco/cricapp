@@ -2,7 +2,7 @@ import React from 'react';
 import { Text, type TextProps, type TextStyle } from 'react-native';
 import { useTheme } from '../../theme/ThemeProvider';
 import type { Palette } from '../../theme/colors';
-import { fontFamily, typeScale, type TypeVariant, type Weight } from '../../theme/tokens';
+import { fontFamily, scoreFamily, typeScale, type TypeVariant, type Weight } from '../../theme/tokens';
 
 type ColorKey = {
   [K in keyof Palette]: Palette[K] extends string ? K : never;
@@ -23,6 +23,8 @@ export interface AppTextProps extends TextProps {
 
 /** Arabic-script letters (Urdu). */
 const ARABIC = /[\u0600-\u06FF\u0750-\u077F]/;
+/** The first letter of either script decides which way a string reads. */
+const FIRST_LETTER = /[A-Za-z\u0600-\u06FF\u0750-\u077F]/;
 
 export function AppText({
   variant = 'body',
@@ -40,7 +42,10 @@ export function AppText({
   const resolved =
     color in colors ? (colors[color as ColorKey] as string) : color;
   // Urdu words in otherwise LTR text (a label, a toggle) get the same treatment as Urdu blocks.
-  const urdu = rtl || (typeof rest.children === 'string' && ARABIC.test(rest.children));
+  const text = typeof rest.children === 'string' ? rest.children : undefined;
+  const urdu = rtl || (!!text && ARABIC.test(text));
+  // Text that starts in Urdu (a comment, a headline) sits on the right, unless the caller aligned it.
+  const fromRight = rtl || (!align && !!text && ARABIC.test(text.match(FIRST_LETTER)?.[0] ?? ''));
   // Urdu uses the phone's own Arabic-script font (Inter has none), with room for its taller marks.
   const urduStyle = urdu && {
     fontFamily: undefined,
@@ -54,7 +59,7 @@ export function AppText({
       maxFontSizeMultiplier={1.6}
       style={[
         {
-          fontFamily: fontFamily[weight ?? t.weight],
+          fontFamily: (variant.startsWith('score') ? scoreFamily : fontFamily)[weight ?? t.weight],
           fontSize: t.size,
           lineHeight: t.line,
           letterSpacing: t.tracking,
@@ -65,7 +70,7 @@ export function AppText({
         tabular && { fontVariant: ['tabular-nums'] },
         uppercase && { textTransform: 'uppercase' },
         urduStyle,
-        rtl && { writingDirection: 'rtl', textAlign: 'right' },
+        fromRight && { writingDirection: 'rtl', textAlign: 'right' },
         style,
       ]}
       {...rest}

@@ -46,28 +46,36 @@ export function ArticleArt({ article, height, rounded = radius.md }: { article: 
   );
 }
 
+/** Category names for Urdu stories, so an Urdu card reads in one language. */
+const URDU_CATEGORY: Record<string, string> = {
+  Breaking: 'بریکنگ',
+  Pakistan: 'پاکستان',
+  PSL: 'پی ایس ایل',
+  International: 'انٹرنیشنل',
+  'Match News': 'میچ کی خبریں',
+  Analysis: 'تجزیہ',
+  Features: 'فیچرز',
+  Records: 'ریکارڈز',
+  Interviews: 'انٹرویوز',
+  Explainers: 'وضاحتیں',
+};
+
+/** Category in the accent colour, then when and who in a quieter grey. */
 function Meta({ article, light }: { article: Article; light?: boolean }) {
   const { colors } = useTheme();
   const by = author(article.authorId);
   const ur = article.lang === 'ur';
+  const category = ur ? URDU_CATEGORY[article.category] ?? article.category : article.category;
+  const when = [ago(article.publishedAt), by && !light ? by.name : undefined].filter(Boolean).join(' · ');
   return (
     // Urdu stories read right to left, meta included.
     <View style={[styles.meta, ur && styles.metaRtl]}>
-      {article.breaking ? (
-        <View style={styles.meta}>
-          <View style={[styles.breakDot, { backgroundColor: colors.live }]} />
-          <AppText variant="micro" color={light ? '#FFFFFF' : 'live'} style={{ marginRight: 8 }}>
-            BREAKING
-          </AppText>
-        </View>
-      ) : (
-        <AppText variant="micro" color={light ? '#FFFFFF' : 'text'} style={ur ? { marginLeft: 8 } : { marginRight: 8 }} uppercase>
-          {article.category}
-        </AppText>
-      )}
-      <AppText variant="caption" weight="600" color={light ? '#D4DBF2' : colors.accent} numberOfLines={1}>
-        {ago(article.publishedAt)}
-        {by && !light ? ` · ${by.name}` : ''}
+      {article.breaking ? <View style={[styles.breakDot, ur ? { marginLeft: 6 } : { marginRight: 6 }, { backgroundColor: colors.live }]} /> : null}
+      <AppText variant="caption" weight="700" color={light ? '#FFFFFF' : article.breaking ? 'live' : 'accent'} numberOfLines={1}>
+        {article.breaking ? (ur ? URDU_CATEGORY.Breaking : 'Breaking') : category}
+      </AppText>
+      <AppText variant="caption" color={light ? '#D4DBF2' : 'textMuted'} numberOfLines={1} style={[{ flexShrink: 1 }, ur ? { marginRight: 8 } : { marginLeft: 8 }]}>
+        {when}
       </AppText>
     </View>
   );
@@ -139,7 +147,7 @@ function NewsTileBase({ article, width = 260 }: { article: Article; width?: numb
 const styles = StyleSheet.create({
   meta: { flexDirection: 'row', alignItems: 'center' },
   metaRtl: { flexDirection: 'row-reverse' },
-  breakDot: { width: 6, height: 6, borderRadius: 3, marginRight: 6 },
+  breakDot: { width: 6, height: 6, borderRadius: 3 },
   hero: { marginHorizontal: space.lg, borderRadius: radius.xl, overflow: 'hidden' },
   heroShade: { position: 'absolute', left: 0, right: 0, bottom: 0 },
   heroText: { position: 'absolute', left: space.lg, right: space.lg, bottom: space.lg },

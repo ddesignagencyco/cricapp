@@ -8,12 +8,13 @@ import { AppText } from '../../components/ui/AppText';
 import { SkeletonList } from '../../components/ui/Controls';
 import { Icon, type IconName } from '../../components/ui/Icon';
 import { Body, Screen, TabHeader } from '../../components/ui/Layout';
-import { Card, ErrorState, Glow, IconButton, SectionHeader } from '../../components/ui/Primitives';
+import { Card, ErrorState, IconButton, SectionHeader } from '../../components/ui/Primitives';
 import { Touch } from '../../components/ui/Touch';
 import { repo, type Stream } from '../../data/repo';
 import type { Short } from '../../data/types';
 import { useQuery } from '../../data/useQuery';
 import { useNavigation } from '../../navigation/Stack';
+import { usePrefs } from '../../state/prefs';
 import type { RouteName } from '../../navigation/routes';
 import { useTheme } from '../../theme/ThemeProvider';
 import { radius, space } from '../../theme/tokens';
@@ -78,17 +79,19 @@ function HubTile({
       scale
       onPress={() => nav.navigate(route as 'Pakistan')}
       style={[styles.hub, { backgroundColor: colors.surface, borderColor: colors.hairline }]}
+      accessibilityLabel={`${title}, ${subtitle}`}
     >
-      <Glow color={color} size={220} opacity={colors.scheme === 'dark' ? 0.28 : 0.18} style={{ right: -110, top: -110 }} />
-      <View style={[styles.hubIcon, { backgroundColor: colors.elevated }]}>
+      <View style={[styles.hubIcon, { backgroundColor: `${color}1F` }]}>
         <Icon name={icon} size={20} color={color} />
       </View>
-      <AppText variant="headline" weight="700" style={{ marginTop: 22 }}>
-        {title}
-      </AppText>
-      <AppText variant="caption" color="textSecondary" numberOfLines={1} style={{ marginTop: 2 }}>
-        {subtitle}
-      </AppText>
+      <View style={{ flex: 1, marginLeft: space.md }}>
+        <AppText variant="label" weight="700" numberOfLines={1}>
+          {title}
+        </AppText>
+        <AppText variant="caption" color="textSecondary" numberOfLines={1} style={{ marginTop: 1 }}>
+          {subtitle}
+        </AppText>
+      </View>
     </Touch>
   );
 }
@@ -168,6 +171,7 @@ function PhotosRail({ gallery }: { gallery: Short }) {
 
 export default function HomeScreen() {
   const nav = useNavigation();
+  const { setNewsLang } = usePrefs();
   const { data, loading, error, refresh, refreshing } = useQuery('home', repo.home, { live: true });
   // Lower sections load on their own once the top of Home is up.
   const extras = useQuery(data ? 'home:extras' : 'home:extras:wait', () => (data ? repo.homeExtras() : Promise.resolve(null)));
@@ -206,7 +210,7 @@ export default function HomeScreen() {
 
           <View style={styles.hubs}>
             <HubTile title="Series" subtitle="All tournaments" color="#4D82FF" icon="layers" route="Tournaments" />
-            <HubTile title="PSL" subtitle="Table, leaders, fixtures" color="#F5C04A" icon="trophy" route="Psl" />
+            <HubTile title="PSL" subtitle="Table and fixtures" color="#F5C04A" icon="trophy" route="Psl" />
           </View>
           <Shortcuts />
 
@@ -246,7 +250,7 @@ export default function HomeScreen() {
             const gallery = data.shorts.find(x => x.kind === 'gallery');
             return gallery ? (
               <>
-                <SectionHeader title="Photos" action="Gallery" onAction={() => nav.navigate('Gallery')} style={{ marginTop: space.xxl }} />
+                <SectionHeader title="Gallery" action="All photos" onAction={() => nav.navigate('Gallery')} style={{ marginTop: space.xxl }} />
                 <PhotosRail gallery={gallery} />
               </>
             ) : null;
@@ -254,7 +258,15 @@ export default function HomeScreen() {
 
           {more.urdu.length ? (
             <>
-              <SectionHeader title="اردو خبریں" style={{ marginTop: space.xxl }} />
+              <SectionHeader
+                title="Urdu News"
+                action="All Urdu news"
+                onAction={() => {
+                  setNewsLang('ur');
+                  nav.navigate('Tabs', { tab: 'news' });
+                }}
+                style={{ marginTop: space.xxl }}
+              />
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.rail}>
                 {more.urdu.map(a => (
                   <NewsTile key={a.id} article={a} width={240} />
@@ -279,9 +291,12 @@ const styles = StyleSheet.create({
   photo: { width: 120, height: 150, borderRadius: radius.md, overflow: 'hidden' },
   hub: {
     flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 64,
     borderRadius: radius.lg,
     borderWidth: StyleSheet.hairlineWidth * 2,
-    padding: space.lg,
+    paddingHorizontal: space.md,
     overflow: 'hidden',
   },
   hubIcon: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },

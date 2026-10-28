@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Share, StyleSheet, View } from 'react-native';
 import { Avatar, BallChip, BallStrip, TeamBadge } from '../../components/cricket/Badges';
-import { LineChart, Manhattan, WinProbBar } from '../../components/cricket/Charts';
+import { LineChart, Manhattan, WinProbBar, sideColors } from '../../components/cricket/Charts';
 import { MatchHeroCard } from '../../components/cricket/MatchCards';
 import { NewsRow } from '../../components/cricket/NewsCards';
 import { CommentsThread } from '../../components/cricket/CommentsThread';
@@ -11,6 +11,7 @@ import { AppText } from '../../components/ui/AppText';
 import { ChipRow, Segmented, SkeletonList } from '../../components/ui/Controls';
 import { Icon } from '../../components/ui/Icon';
 import { Body, Header, Screen } from '../../components/ui/Layout';
+import { LoadMore } from '../../components/ui/LoadMore';
 import { Card, EmptyState, ErrorState, Glow, Hairline, IconButton, SectionHeader } from '../../components/ui/Primitives';
 import { TabPager } from '../../components/ui/TabPager';
 import { Touch } from '../../components/ui/Touch';
@@ -77,8 +78,8 @@ function ProbabilityCard({ match, prediction }: { match: Match; prediction: Pred
             points={prediction.history.map(h => ({ x: h.over, y: h.p, event: h.event }))}
             xMax={maxOver}
             height={110}
-            color={a.color}
-            colorBelow={team(match.teamB).color}
+            color={sideColors(a.color, team(match.teamB).color)[0]}
+            colorBelow={sideColors(a.color, team(match.teamB).color)[1]}
             xLabels={Array.from({ length: 5 }, (_, i) => String(Math.round((maxOver / 4) * i)))}
           />
         </View>
@@ -165,7 +166,8 @@ function SummaryFallback({ match }: { match: Match }) {
 function LiveTab({ match }: { match: Match }) {
   const { colors } = useTheme();
   const card = useQuery(`card:${match.id}`, () => repo.scorecard(match.id, isFinished(match)), { live: inPlay(match) });
-  const comm = useQuery(`comm:${match.id}`, () => repo.commentary(match.id, isFinished(match)), { live: inPlay(match) });
+  // Same newest-overs page the Commentary tab shows, so the two share one request.
+  const comm = useQuery(`comm:${match.id}`, () => repo.commentaryPage(match.id), { live: inPlay(match) });
   // Win probability belongs to live play only.
   const isLive = match.status === 'live' || match.status === 'break';
   const pred = useQuery(`pred:${match.id}:${isLive}`, () => (isLive ? repo.prediction(match.id) : Promise.resolve(undefined)), { live: true });
@@ -227,6 +229,35 @@ function LiveTab({ match }: { match: Match }) {
             {match.live.lastWicket}
           </AppText>
         </View>
+      ) : null}
+
+      {comm.data?.overs.length ? (
+        <>
+          <SectionHeader title="Recent overs" style={{ marginTop: space.xxl }} />
+          <Card padded={false} style={{ marginHorizontal: space.lg }}>
+            {comm.data.overs.map((o, i) => (
+              <View key={`${i}-${o.over}`}>
+                {i > 0 ? <Hairline /> : null}
+                <View style={styles.overRow}>
+                  <View style={{ width: 64 }}>
+                    <AppText variant="label" weight="700">
+                      Over {o.over}
+                    </AppText>
+                    <AppText variant="caption" color="textMuted" tabular>
+                      {o.score}
+                    </AppText>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <BallStrip balls={o.balls} size={24} />
+                  </View>
+                  <AppText variant="label" weight="700" tabular>
+                    {o.runs}
+                  </AppText>
+                </View>
+              </View>
+            ))}
+          </Card>
+        </>
       ) : null}
 
       {isLive && pred.data ? (
@@ -403,23 +434,50 @@ function ScorecardTab({ match }: { match: Match }) {
 
 type CommFilter = 'all' | 'wickets' | 'boundaries';
 
+type CommentaryPage = Awaited<ReturnType<typeof repo.commentaryPage>>;
+
 function CommentaryTab({ match }: { match: Match }) {
-  const { data } = useQuery(`comm:${match.id}`, () => repo.commentary(match.id, isFinished(match)), { live: inPlay(match) });
+  // The newest four overs, refreshed while live; earlier overs load on request.
+  const { data, error, refresh } = useQuery(`comm:${match.id}`, () => repo.commentaryPage(match.id), { live: inPlay(match) });
+  const [older, setOlder] = useState<CommentaryPage[]>([]);
+  const [loadingOlder, setLoadingOlder] = useState(false);
   const [filter, setFilter] = useState<CommFilter>('all');
+  const cursor = older.length ? older[older.length - 1].before : data?.before ?? null;
+  const all = useMemo(() => {
+    const pages = data ? [data, ...older] : older;
+    const seen = new Set<string>();
+    return {
+      balls: pages.flatMap(p => p.balls).filter(b => (seen.has(b.id) ? false : (seen.add(b.id), true))),
+      overs: pages.flatMap(p => p.overs),
+    };
+  }, [data, older]);
   const balls = useMemo(
     () =>
-      (data?.balls ?? []).filter(b =>
+      all.balls.filter(b =>
         filter === 'all' ? true : filter === 'wickets' ? b.outcome.kind === 'wicket' : b.outcome.kind === 'four' || b.outcome.kind === 'six',
       ),
-    [data, filter],
+    [all, filter],
   );
-  if (!data) return <SkeletonList count={5} height={72} />;
-  if (!data.balls.length) {
-    return match.status === 'upcoming' ? (
-      <EmptyState icon="messageCircle" title="No commentary yet" body="Ball-by-ball commentary starts with the first delivery." />
-    ) : (
-      <EmptyState icon="messageCircle" title="Commentary unavailable" body="Ball-by-ball commentary for this match couldn’t be loaded right now." />
-    );
+  const loadEarlier = async () => {
+    if (!cursor || loadingOlder) return;
+    setLoadingOlder(true);
+    try {
+      const page = await repo.commentaryPage(match.id, cursor);
+      setOlder(list => [...list, page]);
+    } catch {
+      // The button stays, so another tap retries.
+    } finally {
+      setLoadingOlder(false);
+    }
+  };
+  if (!data) {
+    if (match.status === 'upcoming') {
+      return <EmptyState icon="messageCircle" title="No commentary yet" body="Ball-by-ball commentary starts with the first delivery." />;
+    }
+    return error ? <ErrorState error={error} onRetry={refresh} /> : <SkeletonList count={5} height={72} />;
+  }
+  if (!all.balls.length) {
+    return <EmptyState icon="messageCircle" title="No commentary yet" body="Ball-by-ball commentary appears here as the overs are bowled." />;
   }
   return (
     <Body bottomInset contentStyle={{ paddingTop: space.md }}>
@@ -440,34 +498,7 @@ function CommentaryTab({ match }: { match: Match }) {
           </View>
         ))}
       </View>
-      {filter === 'all' && data.overs.length ? (
-        <>
-          <SectionHeader title="Over by over" style={{ marginTop: space.xl }} />
-          <Card padded={false} style={{ marginHorizontal: space.lg }}>
-            {data.overs.map((o, i) => (
-              <View key={o.over}>
-                {i > 0 ? <Hairline /> : null}
-                <View style={styles.overRow}>
-                  <View style={{ width: 64 }}>
-                    <AppText variant="label" weight="700">
-                      Over {o.over}
-                    </AppText>
-                    <AppText variant="caption" color="textMuted" tabular>
-                      {o.score}
-                    </AppText>
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <BallStrip balls={o.balls} size={24} />
-                  </View>
-                  <AppText variant="label" weight="700" tabular>
-                    {o.runs}
-                  </AppText>
-                </View>
-              </View>
-            ))}
-          </Card>
-        </>
-      ) : null}
+      <LoadMore hasMore={!!cursor} loading={loadingOlder} onPress={loadEarlier} count={all.balls.length} label="Load earlier overs" />
     </Body>
   );
 }

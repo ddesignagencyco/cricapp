@@ -23,14 +23,26 @@ export function youtubeId(url: string): string | null {
 }
 
 /**
- * Cloudinary clips are uploaded at full size (some are 4K, 30+ MB). Ask for a
- * 720p rendition instead: a fraction of the data, and phones decode it easily.
+ * Cloudinary clips are uploaded at full size (some are 4K, 30+ MB for a few
+ * seconds). Ask for an HLS stream instead, the way YouTube streams: the clip
+ * comes in 4-second pieces, only as far ahead as it plays, and the player
+ * steps between 270p and 720p to match the connection.
  */
-export function lightClip(url: string) {
-  return url.includes('res.cloudinary.com') && /\/video\/upload\/(?!c_limit)/.test(url)
-    ? url.replace('/video/upload/', '/video/upload/c_limit,w_720,q_auto/')
-    : url;
+export function streamClip(url: string): { uri: string; type?: 'm3u8' } {
+  // Any existing transformations are dropped; the stream profile picks the sizes.
+  const m = url.match(/^(https:\/\/res\.cloudinary\.com\/[^/]+\/video\/upload\/)(?:[^/]+\/)*?(v\d+\/.+)\.(mp4|mov|webm)$/i);
+  return m ? { uri: `${m[1]}sp_auto/${m[2]}.m3u8`, type: 'm3u8' } : { uri: url };
 }
+
+/**
+ * Play as soon as a second is in, keep at most ~15s ahead (a short is rarely
+ * longer), and keep watched pieces on disk so a looping or replayed clip
+ * doesn't download again.
+ */
+const CLIP_BUFFER = { minBufferMs: 4000, maxBufferMs: 15000, bufferForPlaybackMs: 1000, bufferForPlaybackAfterRebufferMs: 2000, cacheSizeMB: 200 };
+
+/** 720p is the top rung a phone needs; higher only spends data. */
+const MAX_BITRATE = 3_300_000;
 
 /** A direct media file the native player can open. */
 export const isClip = (url: string) => /\.(mp4|m3u8|mov|webm)(\?|$)/i.test(url) || /\/video\/upload\//.test(url);
@@ -67,7 +79,8 @@ export function ClipPlayer({
   return (
     <View style={[styles.black, style]}>
       <Video
-        source={{ uri: lightClip(uri) }}
+        source={{ ...streamClip(uri), bufferConfig: CLIP_BUFFER }}
+        maxBitRate={MAX_BITRATE}
         style={StyleSheet.absoluteFill}
         resizeMode={cover ? ResizeMode.COVER : ResizeMode.CONTAIN}
         paused={paused}

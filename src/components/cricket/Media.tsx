@@ -66,7 +66,7 @@ export function ShortsRow({ shorts }: { shorts: Short[] }) {
         const seen = seenShorts.has(s.id);
         const ring = s.live ? colors.live : seen ? colors.border : colors.brand;
         return (
-          <Touch key={s.id} onPress={() => nav.navigate('Shorts', { id: s.id })} style={styles.short} accessibilityLabel={`${s.kind === 'gallery' ? 'Gallery' : 'Short'}: ${s.title}`}>
+          <Touch key={s.id} onPress={() => nav.navigate('Shorts', { id: s.id })} style={styles.short} accessibilityLabel={s.kind === 'gallery' ? `Gallery: ${s.title}` : s.title ? `Story: ${s.title}` : 'Story'}>
             <View style={[styles.ring, { borderColor: ring }]}>
               <View style={[styles.cover, { borderColor: colors.background }]}>
                 {s.photo ?? s.slides[0].photo ? (
@@ -93,9 +93,11 @@ export function ShortsRow({ shorts }: { shorts: Short[] }) {
                 </View>
               )}
             </View>
-            <AppText variant="caption" color={seen ? 'textMuted' : 'textSecondary'} numberOfLines={1} align="center" style={{ marginTop: 6, width: 76 }}>
-              {s.title}
-            </AppText>
+            {s.title ? (
+              <AppText variant="caption" color={seen ? 'textMuted' : 'textSecondary'} numberOfLines={1} align="center" style={{ marginTop: 6, width: 76 }}>
+                {s.title}
+              </AppText>
+            ) : null}
           </Touch>
         );
       })}
@@ -148,14 +150,13 @@ export function BannerCarousel({ banners }: { banners: Banner[] }) {
         renderItem={({ item }) => (
           <Touch scale onPress={() => open(item)} style={[styles.banner, { width: w }]} accessibilityLabel={`${item.title}. ${item.cta}`}>
             <CoverArt photo={item.photo} teamIds={item.teamIds} />
+            {/* A light dim over the whole photo, then a deep fade under the headline, so busy crowd shots stay readable. */}
+            <View style={[StyleSheet.absoluteFill, styles.bannerDim]} pointerEvents="none" />
             <View style={styles.bannerShade} pointerEvents="none">
-              <Fade color="#03060C" height={170} flip opacity={0.95} />
+              <Fade color="#03060C" height={230} flip opacity={0.97} />
             </View>
             <View style={styles.bannerText}>
-              <AppText variant="overline" color="#DCE3F8">
-                {item.overline}
-              </AppText>
-              <AppText variant="title" color="#FFFFFF" numberOfLines={2} style={{ marginTop: 4 }}>
+              <AppText variant="title" color="#FFFFFF" numberOfLines={2}>
                 {item.title}
               </AppText>
               <View style={styles.cta}>
@@ -184,6 +185,7 @@ const styles = StyleSheet.create({
   liveTag: { position: 'absolute', bottom: -6, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, borderWidth: 2 },
   kind: { position: 'absolute', bottom: -2, right: -2, width: 22, height: 22, borderRadius: 11, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   banner: { height: 190, borderRadius: radius.xl, overflow: 'hidden' },
+  bannerDim: { backgroundColor: 'rgba(3,6,12,0.2)' },
   bannerShade: { position: 'absolute', left: 0, right: 0, bottom: 0 },
   bannerText: { position: 'absolute', left: space.lg, right: space.lg, bottom: space.lg },
   cta: {

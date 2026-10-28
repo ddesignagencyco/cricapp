@@ -12,7 +12,7 @@ export function nearEnd(e: NativeSyntheticEvent<NativeScrollEvent>) {
 }
 
 /** Footer for paged lists: spinner while the next page loads, a button as a fallback, nothing at the end. */
-export function LoadMore({ hasMore, loading, onPress, count }: { hasMore: boolean; loading: boolean; onPress: () => void; count: number }) {
+export function LoadMore({ hasMore, loading, onPress, count, label = 'Load more' }: { hasMore: boolean; loading: boolean; onPress: () => void; count: number; label?: string }) {
   const { colors } = useTheme();
   if (loading) {
     return (
@@ -24,7 +24,7 @@ export function LoadMore({ hasMore, loading, onPress, count }: { hasMore: boolea
   if (hasMore) {
     return (
       <View style={{ paddingVertical: space.lg, alignItems: 'center' }}>
-        <Button label="Load more" variant="secondary" compact onPress={onPress} />
+        <Button label={label} variant="secondary" compact onPress={onPress} />
       </View>
     );
   }

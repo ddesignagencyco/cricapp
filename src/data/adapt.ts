@@ -382,9 +382,18 @@ function liveLine(innings: InningsScore[], format: Format, target?: number, batt
     const need = target - cur.runs;
     if (need <= 0) return 'Target reached';
     const left = quota(format) - cur.balls;
-    return `${team(batting ?? cur.teamId).name} need ${need} ${need === 1 ? 'run' : 'runs'}${left > 0 ? ` from ${left} ${left === 1 ? 'ball' : 'balls'}` : ''}`;
+    const chase = `${team(batting ?? cur.teamId).short} need ${need} ${need === 1 ? 'run' : 'runs'}${left > 0 ? ` from ${left} ${left === 1 ? 'ball' : 'balls'}` : ''}`;
+    return [chase, ...pace(cur).slice(1)].join(' · ');
   }
-  return `${team(cur.teamId).name} batting · ${cur.wickets} ${cur.wickets === 1 ? 'wicket' : 'wickets'} down`;
+  return [`${team(cur.teamId).short} batting`, ...pace(cur)].join(' · ');
+}
+
+/** "17.1 ov · RR 3.38": where the innings is and how fast it's going, for the live status line. */
+function pace(cur: InningsScore) {
+  if (!cur.balls) return [];
+  const o = Math.floor(cur.balls / 6);
+  const r = cur.balls % 6;
+  return [`${r ? `${o}.${r}` : o} ov`, `RR ${((cur.runs / cur.balls) * 6).toFixed(2)}`];
 }
 
 /** Required rate in a limited-overs chase, from the score and the balls left. */
@@ -620,7 +629,6 @@ export function toArticle(n: RawNews): Article {
 }
 
 /** Gallery images become one swipeable story; each video short is its own reel. */
-const clipLength = (sec: number) => `${Math.floor(sec / 60)}:${String(Math.round(sec % 60)).padStart(2, '0')}`;
 
 export function toShorts(items: RawGallery[]): Short[] {
   const images = items.filter(i => i.type === 'image');
@@ -629,8 +637,8 @@ export function toShorts(items: RawGallery[]): Short[] {
     .map(i => ({
       id: i.id,
       kind: 'short' as const,
-      // The feed rarely titles shorts; the clip length tells them apart.
-      title: i.title || (i.duration ? `${clipLength(i.duration)} clip` : 'Short clip'),
+      // The feed rarely titles shorts; an untitled one shows no label.
+      title: i.title || '',
       teamIds: [],
       photo: i.thumbnailUrl ?? undefined,
       slides: [{ headline: i.title || '', caption: i.caption || '', photo: i.thumbnailUrl ?? undefined, teamIds: [] }],

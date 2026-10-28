@@ -289,13 +289,16 @@ export interface ModelPerformance {
 
 export interface Comment {
   id: string;
+  /** The poster's account, to tell your own comments apart. */
+  userId?: string;
   author: string;
   /** Supporter badge shown next to the name. */
   teamId?: string;
   body: string;
   at: string;
-  likes: number;
-  replies: Comment[];
+  /** Reaction counts by emoji, and which of them are yours. */
+  reactions: Record<string, number>;
+  mine: string[];
   pinned?: boolean;
   /** Posted by the editorial team. */
   staff?: boolean;

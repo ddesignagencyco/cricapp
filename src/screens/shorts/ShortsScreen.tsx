@@ -25,7 +25,8 @@ function Progress({ count, index, value }: { count: number; index: number; value
         <View key={i} style={styles.track}>
           {i < index ? <View style={[styles.fill, { width: '100%' }]} /> : null}
           {i === index ? (
-            <Animated.View style={[styles.fill, { width: value.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }) }]} />
+            // Scaled from the left edge rather than resized, so it runs on the native thread.
+            <Animated.View style={[styles.fill, styles.fillGrow, { transform: [{ scaleX: value }] }]} />
           ) : null}
         </View>
       ))}
@@ -61,7 +62,7 @@ function ShortPage({
         toValue: 1,
         duration: SLIDE_MS * (1 - from),
         easing: Easing.linear,
-        useNativeDriver: false,
+        useNativeDriver: true,
       });
       anim.current.start(({ finished }) => {
         if (!finished) return;
@@ -135,8 +136,8 @@ function ShortPage({
         <View style={styles.headerRow} pointerEvents="box-none">
           {short.teamIds[0] ? <TeamBadge id={short.teamIds[0]} size={32} /> : <View style={styles.brand}><BrandMark height={16} /></View>}
           <View style={{ flex: 1, marginLeft: 10 }}>
-            <AppText variant="label" weight="700" color="#FFFFFF">
-              {short.title}
+            <AppText variant="label" weight="700" color="#FFFFFF" numberOfLines={1}>
+              {short.title || 'PAK CRICZONE'}
             </AppText>
             <AppText variant="caption" color="#C9CFDD">
               {short.kind === 'gallery' ? `Gallery · ${short.slides.length} photos` : 'Short'} · {ago(short.publishedAt)}
@@ -216,17 +217,21 @@ export default function ShortsScreen() {
 
 function ShortsPager({ shorts, startId }: { shorts: Short[]; startId: string }) {
   const nav = useNavigation();
-  const { height } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   const start = Math.max(0, shorts.findIndex(s => s.id === startId));
   const [active, setActive] = useState(start);
   const list = useRef<FlatList<Short>>(null);
 
-  const next = useCallback(
+  // Stories run sideways; the last one closes the viewer.
+  const goTo = useCallback(
     (i: number) => {
-      if (i >= shorts.length - 1) nav.goBack();
-      else list.current?.scrollToOffset({ offset: (i + 1) * height, animated: true });
+      if (i >= shorts.length) nav.goBack();
+      else if (i >= 0) {
+        list.current?.scrollToOffset({ offset: i * width, animated: true });
+        setActive(i);
+      }
     },
-    [height, nav, shorts.length],
+    [width, nav, shorts.length],
   );
 
   return (
@@ -236,21 +241,36 @@ function ShortsPager({ shorts, startId }: { shorts: Short[]; startId: string }) 
         ref={list}
         data={shorts}
         keyExtractor={s => s.id}
+        horizontal
         pagingEnabled
-        showsVerticalScrollIndicator={false}
+        showsHorizontalScrollIndicator={false}
         initialScrollIndex={start}
-        getItemLayout={(_, i) => ({ length: height, offset: height * i, index: i })}
-        onMomentumScrollEnd={e => setActive(Math.round(e.nativeEvent.contentOffset.y / height))}
+        getItemLayout={(_, i) => ({ length: width, offset: width * i, index: i })}
+        onMomentumScrollEnd={e => setActive(Math.round(e.nativeEvent.contentOffset.x / width))}
         windowSize={3}
         renderItem={({ item, index }) => (
-          <ShortPage short={item} active={index === active} height={height} onDone={() => next(index)} onClose={nav.goBack} />
+          <View style={{ width }}>
+            <ShortPage short={item} active={index === active} height={height} onDone={() => goTo(index + 1)} onClose={nav.goBack} />
+          </View>
         )}
       />
+      {/* Arrows to step between stories, for anyone who doesn't swipe. */}
+      {active > 0 ? (
+        <Touch borderless onPress={() => goTo(active - 1)} style={[styles.arrow, { left: space.sm, top: height / 2 - 22 }]} accessibilityLabel="Previous story">
+          <Icon name="chevronLeft" size={24} color="#FFFFFF" />
+        </Touch>
+      ) : null}
+      {active < shorts.length - 1 ? (
+        <Touch borderless onPress={() => goTo(active + 1)} style={[styles.arrow, { right: space.sm, top: height / 2 - 22 }]} accessibilityLabel="Next story">
+          <Icon name="chevronRight" size={24} color="#FFFFFF" />
+        </Touch>
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  arrow: { position: 'absolute', width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(3,6,12,0.45)', borderWidth: StyleSheet.hairlineWidth * 2, borderColor: 'rgba(255,255,255,0.25)', alignItems: 'center', justifyContent: 'center' },
   loading: { flex: 1, backgroundColor: '#03060C', alignItems: 'center', justifyContent: 'center' },
   brand: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   headline: { fontSize: 52, lineHeight: 58, letterSpacing: -1.5 },
@@ -261,6 +281,7 @@ const styles = StyleSheet.create({
   progress: { flexDirection: 'row', gap: 4 },
   track: { flex: 1, height: 3, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.3)', overflow: 'hidden' },
   fill: { height: 3, backgroundColor: '#FFFFFF' },
+  fillGrow: { width: '100%', transformOrigin: 'left' },
   headerRow: { flexDirection: 'row', alignItems: 'center', marginTop: 12 },
   close: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 22 },
   bottom: { position: 'absolute', left: 0, right: 0, bottom: 0, flexDirection: 'row', alignItems: 'flex-end', paddingLeft: space.lg, paddingRight: space.sm },

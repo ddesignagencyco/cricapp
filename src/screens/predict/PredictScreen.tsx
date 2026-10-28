@@ -4,12 +4,11 @@ import { PredictionCard } from '../../components/cricket/PredictionCard';
 import { AppText } from '../../components/ui/AppText';
 import { SkeletonList } from '../../components/ui/Controls';
 import { Body, Screen, TabHeader } from '../../components/ui/Layout';
-import { EmptyState, ErrorState, LiveIndicator, SectionHeader } from '../../components/ui/Primitives';
+import { EmptyState, ErrorState, SectionHeader } from '../../components/ui/Primitives';
 import { repo } from '../../data/repo';
 import type { Match, Prediction } from '../../data/types';
 import { useQuery } from '../../data/useQuery';
 import { space } from '../../theme/tokens';
-import { ago } from '../../utils/format';
 
 function Cards({ list }: { list: { match: Match; prediction: Prediction }[] }) {
   return (
@@ -39,16 +38,7 @@ export default function PredictScreen() {
 
           {data.live.length ? (
             <>
-              <View style={styles.liveHead}>
-                <LiveIndicator label="LIVE MODEL" size="md" />
-                <AppText variant="caption" color="textMuted" style={{ marginLeft: 8 }}>
-                  {(() => {
-                    // Promise "every ball" only while the model is actually updating.
-                    const newest = Math.max(...data.live.map(x => +new Date(x.prediction.generatedAt)));
-                    return Date.now() - newest > 10 * 60_000 ? `Last update ${ago(new Date(newest).toISOString())}` : 'Updates every ball';
-                  })()}
-                </AppText>
-              </View>
+              <SectionHeader title="Live" />
               <Cards list={data.live} />
             </>
           ) : null}
@@ -77,6 +67,5 @@ export default function PredictScreen() {
 }
 
 const styles = StyleSheet.create({
-  liveHead: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.lg, marginTop: space.xxl, marginBottom: space.md },
   note: { paddingHorizontal: space.xxl, marginTop: space.xl },
 });

@@ -91,7 +91,7 @@ export default function NewsScreen() {
   return (
     <Screen>
       <TabHeader
-        title={newsLang === 'ur' ? 'خبریں' : 'News'}
+        title="News"
         right={
           <>
             <LanguageToggle />

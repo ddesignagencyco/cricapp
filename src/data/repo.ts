@@ -17,6 +17,7 @@ import {
   type RawPlayer,
   type RawStanding,
   type RawTimeline,
+  type RawTimelineEvent,
 } from './adapt';
 import { allSeries, playerName, rememberSeries, rememberTeam, seriesOf, team, venueLabel } from './refs';
 import type {
@@ -375,18 +376,26 @@ const target = (thread: string) => {
 
 interface RawComment {
   id: string;
+  userId?: string;
   body: string;
   createdAt: string;
-  user?: { username?: string; displayName?: string | null };
+  user?: { id?: string; username?: string; displayName?: string | null };
+  /** Per-emoji counts and the signed-in user's own, sent with each comment. */
+  reactions?: Record<string, number>;
+  myReactions?: string[];
 }
+
+/** The website's reaction set, so a reaction counts the same on both. */
+export const REACTIONS = ['🔥', '❤️', '👏', '😂'];
 
 const toComment = (c: RawComment): Comment => ({
   id: c.id,
+  userId: c.userId ?? c.user?.id,
   author: c.user?.displayName || c.user?.username || 'Fan',
   body: c.body,
   at: c.createdAt,
-  likes: 0,
-  replies: [],
+  reactions: c.reactions ?? {},
+  mine: c.myReactions ?? [],
 });
 
 /* ---------------------------------------------------------------- repo */
@@ -457,9 +466,24 @@ export const repo = {
     return { list: all, total: page.meta?.totalRecords ?? all.length, reactions: reactions?.counts };
   },
 
-  /** Needs a signed-in user (the API checks the session cookie). Replies post as top-level comments. */
-  async postComment(thread: string, body: string, _replyTo?: string): Promise<Comment> {
+  /** Needs a signed-in user (the API checks the session cookie). */
+  async postComment(thread: string, body: string): Promise<Comment> {
     return toComment(await api.post<RawComment>('/comments', { ...target(thread), body }));
+  },
+
+  /** Toggle one of the signed-in user's reactions on a comment. */
+  async reactToComment(id: string, emoji: string): Promise<'added' | 'removed'> {
+    return (await api.post<{ toggled: 'added' | 'removed' }>('/reactions', { targetType: 'comment', targetId: id, emoji, commentId: id })).toggled;
+  },
+
+  async reportComment(id: string, reason: string): Promise<void> {
+    await api.post(`/comments/${id}/report`, { reason });
+  },
+
+  /** Your own comment is deleted outright; an admin removes anyone else's through moderation, as on the website. */
+  async deleteComment(id: string, asModerator: boolean): Promise<void> {
+    if (asModerator) await api.patch(`/admin/comments/${id}`, { status: 'deleted' });
+    else await api.delete(`/comments/${id}`);
   },
 
   /** Toggle the signed-in user's reaction on a thread. */
@@ -537,6 +561,19 @@ export const repo = {
   async scorecard(id: string, finished = false): Promise<Innings[]> {
     const t = await timeline(id, finished).catch(() => undefined);
     return t ? toScorecard(t) : [];
+  },
+
+  /**
+   * Commentary a few overs at a time (the newest first), so a long match
+   * doesn't download its whole timeline. `before` is the cursor the previous
+   * page returned.
+   */
+  async commentaryPage(id: string, before?: string): Promise<{ balls: Ball[]; overs: OverSummary[]; before: string | null }> {
+    const page = await api.get<{ events: RawTimelineEvent[]; hasMore: boolean; before: string | null }>(`/matches/${seg(id)}/commentary`, {
+      overs: 4,
+      ...(before ? { before } : {}),
+    });
+    return { ...toCommentary({ payload: { timeline: page.events } }), before: page.hasMore ? page.before : null };
   },
 
   async commentary(id: string, finished = false): Promise<{ balls: Ball[]; overs: OverSummary[] }> {

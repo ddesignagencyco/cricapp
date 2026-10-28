@@ -7,7 +7,7 @@ export const overs = (balls: number) => {
 };
 
 export const score = (i?: InningsScore) =>
-  i ? `${i.runs}${i.wickets === 10 ? '' : `/${i.wickets}`}${i.declared ? 'd' : ''}` : '';
+  i ? `${i.runs}/${i.wickets}${i.declared ? 'd' : ''}` : '';
 
 export const pct = (p: number, digits = 0) => `${(p * 100).toFixed(digits)}%`;
 

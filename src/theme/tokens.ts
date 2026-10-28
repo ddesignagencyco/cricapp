@@ -32,6 +32,17 @@ export const fontFamily: Record<Weight, string> = {
   '700': 'Inter-Bold',
 };
 
+/**
+ * Scores use Barlow Condensed: tall, narrow figures like a ground's
+ * scoreboard, so big totals fit and read at a glance. Two weights ship.
+ */
+export const scoreFamily: Record<Weight, string> = {
+  '400': 'BarlowCondensed-SemiBold',
+  '500': 'BarlowCondensed-SemiBold',
+  '600': 'BarlowCondensed-SemiBold',
+  '700': 'BarlowCondensed-Bold',
+};
+
 interface TypeStyle {
   size: number;
   line: number;
@@ -51,9 +62,9 @@ export const typeScale = {
   caption: { size: 12, line: 16, weight: '500', tracking: 0.1 },
   micro: { size: 11, line: 14, weight: '600', tracking: 0.3 },
   overline: { size: 11, line: 14, weight: '700', tracking: 1 },
-  score: { size: 17, line: 22, weight: '700', tracking: -0.2 },
-  scoreLg: { size: 30, line: 36, weight: '700', tracking: -0.8 },
-  scoreXl: { size: 40, line: 46, weight: '700', tracking: -1.2 },
+  score: { size: 18, line: 22, weight: '700', tracking: 0.2 },
+  scoreLg: { size: 23, line: 26, weight: '700', tracking: 0.1 },
+  scoreXl: { size: 38, line: 42, weight: '700', tracking: -0.2 },
 } as const satisfies Record<string, TypeStyle>;
 
 export type TypeVariant = keyof typeof typeScale;

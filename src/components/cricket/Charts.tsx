@@ -11,6 +11,27 @@ import { AppText } from '../ui/AppText';
  */
 
 /** Split bar: team A's share on the left, team B's on the right. */
+const rgb = (hex: string) => {
+  const h = hex.replace('#', '');
+  const n = parseInt(h.length === 3 ? h.replace(/./g, c => c + c) : h.slice(0, 6), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+};
+
+/** Slate for the second side when both teams wear nearly the same colour. */
+const CLASH = '#8A93A6';
+
+/**
+ * The two sides' colours for a split bar or chart. When they're too alike
+ * to tell apart (South Africa and Australia both in gold), the second side
+ * switches to slate.
+ */
+export function sideColors(a: string, b: string): [string, string] {
+  const [r1, g1, b1] = rgb(a);
+  const [r2, g2, b2] = rgb(b);
+  const distance = Math.hypot(r1 - r2, g1 - g2, b1 - b2);
+  return [a, distance < 90 ? CLASH : b];
+}
+
 export function WinProbBar({
   teamA,
   teamB,
@@ -27,22 +48,23 @@ export function WinProbBar({
   const a = teamOf(teamA);
   const b = teamOf(teamB);
   const left = Math.round(p * 100);
+  const [colorA, colorB] = sideColors(a.color, b.color);
   return (
     <View accessibilityLabel={`${a.name} ${left}%, ${b.name} ${100 - left}%`}>
       {showLabels ? (
         <View style={styles.probLabels}>
-          <AppText variant="label" weight="700" color={a.color} tabular>
+          <AppText variant="label" weight="700" color={colorA} tabular>
             {a.short} {left}%
           </AppText>
-          <AppText variant="label" weight="700" color={b.color} tabular>
+          <AppText variant="label" weight="700" color={colorB} tabular>
             {100 - left}% {b.short}
           </AppText>
         </View>
       ) : null}
       <View style={[styles.probTrack, { height, borderRadius: height / 2 }]}>
-        <View style={{ flex: Math.max(left, 1), backgroundColor: a.color, borderRadius: height / 2 }} />
+        <View style={{ flex: Math.max(left, 1), backgroundColor: colorA, borderRadius: height / 2 }} />
         <View style={{ width: 3 }} />
-        <View style={{ flex: Math.max(100 - left, 1), backgroundColor: b.color, borderRadius: height / 2 }} />
+        <View style={{ flex: Math.max(100 - left, 1), backgroundColor: colorB, borderRadius: height / 2 }} />
       </View>
     </View>
   );
