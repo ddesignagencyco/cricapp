@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsEnum, IsDateString, MinLength } from 'class-validator';
+import { IsString, IsOptional, IsEnum, IsDateString, MaxLength, MinLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginationQuery } from '../../common/dto/pagination.query.js';
 
@@ -84,9 +84,11 @@ export class StreamListQuery extends PaginationQuery {
 export class StreamCommentsQuery extends PaginationQuery {}
 
 export class CreateStreamCommentDto {
-  @ApiProperty({ example: 'What a shot!' })
+  /** Same 1000-character cap the web form enforces. */
+  @ApiProperty({ example: 'What a shot!', maxLength: 1000 })
   @IsString()
   @MinLength(1)
+  @MaxLength(1000)
   body: string;
 }
 

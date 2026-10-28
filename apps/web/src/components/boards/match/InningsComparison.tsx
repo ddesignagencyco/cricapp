@@ -36,8 +36,8 @@ export default function InningsComparison({ view }: { view: MatchViewModel }) {
               <tr className="mc-table__head">
                 <th scope="col" className="text-left">Team</th>
                 <th scope="col" className="text-left">Score</th>
-                <th scope="col" className="text-right">Overs</th>
-                <th scope="col" className="text-right">RR</th>
+                <th scope="col" className="text-left">Overs</th>
+                <th scope="col" className="text-left">RR</th>
               </tr>
             </thead>
             <tbody>

@@ -234,10 +234,10 @@ export default function UsersPage() {
               <thead>
                 <tr style={{ background: 'var(--admin-table-header)', borderBottom: '1px solid var(--admin-border)' }}>
                   <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>User</th>
-                  <th className="hidden px-4 py-3 text-xs font-bold uppercase tracking-wider lg:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>Email</th>
+                  <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Email</th>
                   <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Admin</th>
                   <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Verified</th>
-                  <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Actions</th>
+                  <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -261,7 +261,7 @@ export default function UsersPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="hidden max-w-[14rem] truncate px-4 py-3 lg:table-cell" style={{ color: 'var(--admin-text-secondary)' }} title={user.email}>{user.email}</td>
+                      <td className="max-w-[14rem] truncate px-4 py-3" style={{ color: 'var(--admin-text-secondary)' }} title={user.email}>{user.email}</td>
                       <td className="whitespace-nowrap px-4 py-3">
                         {locked ? (
                           <Badge tone="primary">Superadmin</Badge>
@@ -301,9 +301,9 @@ export default function UsersPage() {
                       </td>
                       <td className="px-4 py-3">
                         {locked ? (
-                          <p className="text-right text-xs" style={{ color: 'var(--admin-text-muted)' }}>—</p>
+                          <p className="text-xs" style={{ color: 'var(--admin-text-muted)' }}>—</p>
                         ) : (
-                          <div className="flex justify-end">
+                          <div className="flex">
                             <button
                               type="button"
                               disabled={busy || user.id === me?.id}

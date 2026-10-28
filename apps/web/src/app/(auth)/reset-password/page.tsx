@@ -9,7 +9,7 @@ export const metadata = {
 };
 
 interface ResetPageProps {
-  searchParams: Promise<{ token?: string; tid?: string }>;
+  searchParams: Promise<{ token?: string; tid?: string; email?: string }>;
 }
 
 export default async function ResetPasswordPage({ searchParams }: ResetPageProps) {
@@ -21,11 +21,11 @@ export default async function ResetPasswordPage({ searchParams }: ResetPageProps
       subtitle={
         fromLink
           ? 'Choose a new password for your account.'
-          : 'Open the reset link from your email. Codes are no longer accepted.'
+          : 'Enter the 6-digit code from your reset email and choose a new password, or open the link in that email.'
       }
       footer={<span>Back to <Link href="/login" className="font-semibold text-accent">login</Link></span>}
     >
-      <AuthForm mode="reset" token={params.token} tokenId={params.tid} />
+      <AuthForm mode="reset" token={params.token} tokenId={params.tid} initialEmail={params.email} />
     </AuthShell>
   );
 }

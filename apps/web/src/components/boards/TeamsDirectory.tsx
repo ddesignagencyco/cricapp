@@ -1,20 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { Fragment } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import SearchField from '../SearchField';
 import type { Team } from '../../types/index';
 import { fetchTeamsPage } from '../../services/teams';
 import DirectoryPageHeader from '../DirectoryPageHeader';
 import TeamCard from '../TeamCard';
-import { cardDiamond } from '../ui/interaction';
 import EmptyState from '../EmptyState';
 import ErrorState from '../ErrorState';
 import Pagination from '../Pagination';
 import AdSlot from '../advertisements/AdSlot';
-import dynamic from 'next/dynamic';
 
-const CompareBoard = dynamic(() => import('./CompareBoard'), { ssr: false });
 import { DirectoryGridSkeleton } from '../skeletons/Skeletons';
 import { useDebouncedUrlQuery } from '../../hooks/useDebouncedUrlQuery';
 import { withColonEntityQuery } from '../../utils/entityId';
@@ -38,11 +35,6 @@ export default function TeamsDirectory() {
     serializeParams: withColonEntityQuery,
   });
   const search = searchQuery.trim();
-  const [compareOpen, setCompareOpen] = useState(() => {
-    const a = searchParams.get('a');
-    const b = searchParams.get('b');
-    return Boolean(a || b);
-  });
 
   const listParams = { limit: LIMIT, page, q: search || undefined };
   const query = useTeamsQuery(listParams);
@@ -82,29 +74,6 @@ export default function TeamsDirectory() {
         countLabel="teams"
       />
 
-      <div className={`${cardDiamond} p-4`}>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm font-bold text-mtext">Compare teams</p>
-            <p className="text-xs text-stext">Head-to-head records and fixture history between any two sides.</p>
-          </div>
-          {!compareOpen ? (
-            <button
-              type="button"
-              onClick={() => setCompareOpen(true)}
-              className="btn-secondary shrink-0 rounded-md px-4 py-2 text-xs font-semibold"
-            >
-              Open compare
-            </button>
-          ) : null}
-        </div>
-        {compareOpen ? (
-          <div className="mt-4 border-t border-lborder pt-4">
-            <CompareBoard />
-          </div>
-        ) : null}
-      </div>
-
       {!query.isPending && !query.isError && teams.length > 0 ? (
         <AdSlot placement="teams-after-intro" />
       ) : null}
@@ -134,8 +103,17 @@ export default function TeamsDirectory() {
       ) : teams.length > 0 ? (
         <>
           <div className="fade-in grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {teams.map((t: Team) => (
-              <TeamCard key={t.id} team={t} />
+            {teams.map((t: Team, index) => (
+              <Fragment key={t.id}>
+                <TeamCard team={t} />
+                {/* A banner after the 6th and 18th cards: a full row at both 2- and 3-column
+                    widths, and only between rows (never after the last card). */}
+                {(index === 5 || index === 17) && index < teams.length - 1 ? (
+                  <div className="col-span-full py-1">
+                    <AdSlot placement="teams-infeed" />
+                  </div>
+                ) : null}
+              </Fragment>
             ))}
           </div>
 

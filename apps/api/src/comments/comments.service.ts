@@ -26,7 +26,26 @@ export class CommentsService {
       this.prisma.comment.count({ where }),
     ]);
 
-    return createPaginatedResponse(rows, total, page, limit);
+    // Reactions for the whole page in one query, so clients don't ask per comment.
+    const ids = rows.map((r) => r.id);
+    const reactionRows = ids.length
+      ? await this.prisma.reaction.findMany({
+          where: { targetType: 'comment', targetId: { in: ids } },
+          select: { targetId: true, emoji: true, userId: true },
+        })
+      : [];
+    const withReactions = rows.map((r) => {
+      const reactions: Record<string, number> = {};
+      const myReactions: string[] = [];
+      for (const x of reactionRows) {
+        if (x.targetId !== r.id) continue;
+        reactions[x.emoji] = (reactions[x.emoji] ?? 0) + 1;
+        if (userId && x.userId === userId) myReactions.push(x.emoji);
+      }
+      return { ...r, reactions, myReactions };
+    });
+
+    return createPaginatedResponse(withReactions, total, page, limit);
   }
 
   async createComment(userId: string, dto: CreateCommentDto) {

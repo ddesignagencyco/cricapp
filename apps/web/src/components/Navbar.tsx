@@ -551,13 +551,13 @@ function MobileNavLink({ item, active }: { item: NavItem; active: boolean }) {
     <Link
       href={item.to}
       aria-current={active ? 'page' : undefined}
-      // `relative` is required: the active underline is an `after:` pseudo-element,
+      // `relative` is required: the active bar is an `after:` pseudo-element,
       // and without a positioned ancestor it resolves against the nearest positioned
       // ancestor (the menu panel), so it stretched a full-width blue rule across the
-      // sheet instead of sitting under this one row.
+      // sheet instead of sitting beside this one row.
       className={`relative flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-semibold transition-colors ${
         active
-          ? 'bg-accent/10 text-accent after:absolute after:inset-x-3 after:bottom-1 after:h-0.5 after:rounded-full after:bg-accent'
+          ? 'bg-accent/10 text-accent after:absolute after:inset-y-2 after:left-0 after:w-1 after:rounded-r-full after:bg-accent'
           : 'text-mtext hover:bg-[var(--color-row-hover)]'
       }`}
     >

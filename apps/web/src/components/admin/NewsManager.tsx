@@ -177,11 +177,11 @@ export default function NewsManager() {
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--admin-border)', background: 'var(--admin-table-header)' }}>
                   <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>News</th>
-                  <th className="hidden px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider sm:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>Author</th>
-                  <th className="hidden px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider md:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>Category</th>
+                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Author</th>
+                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Category</th>
                   <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Status</th>
-                  <th className="hidden px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider sm:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>Date</th>
-                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-right" style={{ color: 'var(--admin-text-secondary)' }}>Actions</th>
+                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Date</th>
+                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -214,7 +214,7 @@ export default function NewsManager() {
                         </div>
                       </div>
                     </td>
-                    <td className="hidden max-w-[9rem] px-4 py-3 sm:table-cell">
+                    <td className="max-w-[9rem] px-4 py-3">
                       {authorName ? (
                         <div className="flex min-w-0 items-center gap-2">
                           <span className="shrink-0"><AdminAvatar name={authorName} src={authorImage} size={26} /></span>
@@ -224,7 +224,7 @@ export default function NewsManager() {
                         <span style={{ color: 'var(--admin-text-muted)' }}>—</span>
                       )}
                     </td>
-                    <td className="hidden px-4 py-3 md:table-cell">
+                    <td className="px-4 py-3">
                       <span className="inline-block max-w-[9rem] truncate rounded-full px-2 py-0.5 text-xs font-bold" style={{ background: 'var(--admin-input-bg)', color: 'var(--admin-text-secondary)' }} title={a.category?.name || 'General'}>
                         {a.category?.name || 'General'}
                       </span>
@@ -244,11 +244,11 @@ export default function NewsManager() {
                         {a.isPublished ? 'Published' : 'Draft'}
                       </button>
                     </td>
-                    <td className="hidden whitespace-nowrap px-4 py-3 font-mono sm:table-cell" style={{ color: 'var(--admin-text-muted)' }}>
+                    <td className="whitespace-nowrap px-4 py-3 font-mono" style={{ color: 'var(--admin-text-muted)' }}>
                       {new Date(a.publishedAt || a.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3">
-                      <div className="flex items-center justify-end gap-2">
+                      <div className="flex items-center justify-start gap-2">
                         <Link
                           href={newsHref(a)}
                           target="_blank"

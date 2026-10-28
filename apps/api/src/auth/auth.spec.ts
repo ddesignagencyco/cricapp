@@ -135,12 +135,25 @@ describe('AuthModule (integration)', () => {
     expect(res.body.message).toContain('Invalid or expired token');
   });
 
-  it('POST /auth/reset-password — rejects the removed OTP-only contract', async () => {
+  it('POST /auth/reset-password — rejects a code that is not 6 digits', async () => {
     await ctx.agent.post('/auth/reset-password').send({
-      tokenId: '00000000-0000-0000-0000-000000000000',
+      email: signupPayload.email,
       code: '4829',
       password: 'newpassword123',
     }).expect(400);
+  });
+
+  it('POST /auth/reset-password — rejects a code for an unknown email', async () => {
+    const res = await ctx.agent.post('/auth/reset-password').send({
+      email: 'missing@example.com',
+      code: '123456',
+      password: 'newpassword123',
+    }).expect(400);
+    expect(res.body.message).toContain('Invalid or expired code');
+  });
+
+  it('POST /auth/reset-password — requires either the link pair or email + code', async () => {
+    await ctx.agent.post('/auth/reset-password').send({ password: 'newpassword123' }).expect(400);
   });
 
   it('POST /auth/verify-email — rejects invalid token', async () => {

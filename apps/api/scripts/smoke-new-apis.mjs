@@ -2,12 +2,16 @@
  * Smoke-test the APIs added in the QA backend pass against a running server.
  * Does not truncate the database.
  */
-import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+// Prisma 7: the generated client is TypeScript under src/; run `npm run build` first.
+import { PrismaClient } from '../dist/src/generated/prisma/client.js';
+import { pgConnectionFromUrl } from '../dist/src/prisma/pg-connection.js';
 import bcrypt from 'bcrypt';
 import crypto from 'node:crypto';
 
 const BASE = process.env.API_BASE_URL || 'http://localhost:3001/api';
-const prisma = new PrismaClient();
+const { pool, schema } = pgConnectionFromUrl(process.env.DATABASE_URL ?? '');
+const prisma = new PrismaClient({ adapter: new PrismaPg(pool, schema ? { schema } : undefined) });
 const stamp = Date.now();
 const results = [];
 

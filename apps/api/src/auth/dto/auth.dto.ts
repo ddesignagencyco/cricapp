@@ -1,4 +1,4 @@
-import { IsEmail, IsString, MinLength, IsOptional } from 'class-validator';
+import { IsEmail, IsString, MinLength, IsOptional, Matches, ValidateIf } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class SignupDto {
@@ -89,14 +89,33 @@ export class ForgotPasswordDto {
   email: string;
 }
 
-export class ResetPasswordDto {
-  @ApiProperty({ example: 'token-id-uuid' })
-  @IsString()
-  tokenId: string;
+/** Link pair from the email (web) — sent instead of email + code. */
+const usesLink = (dto: { tokenId?: string; token?: string }) => Boolean(dto.tokenId || dto.token);
+/** Email + 6-digit code (apps) — validated whenever sent, and required without a link. */
+const usesCode = (dto: { tokenId?: string; token?: string; email?: string; code?: string }) =>
+  dto.email !== undefined || dto.code !== undefined || !usesLink(dto);
+const SIX_DIGITS = /^\d{6}$/;
 
-  @ApiProperty({ example: 'reset-secret-uuid', description: 'Token from the password-reset email link.' })
+export class ResetPasswordDto {
+  @ApiPropertyOptional({ example: 'token-id-uuid', description: 'The `tid` from the reset link. Send with `token`, or send `email` + `code` instead.' })
+  @ValidateIf(usesLink)
   @IsString()
-  token: string;
+  tokenId?: string;
+
+  @ApiPropertyOptional({ example: 'reset-secret-uuid', description: 'The `token` from the reset link.' })
+  @ValidateIf(usesLink)
+  @IsString()
+  token?: string;
+
+  @ApiPropertyOptional({ example: 'user@example.com', description: 'Account email, sent with `code`.' })
+  @ValidateIf(usesCode)
+  @IsEmail()
+  email?: string;
+
+  @ApiPropertyOptional({ example: '482913', description: '6-digit code from the reset email.' })
+  @ValidateIf(usesCode)
+  @Matches(SIX_DIGITS, { message: 'code must be 6 digits' })
+  code?: string;
 
   @ApiProperty({ example: 'newpassword123' })
   @IsString()
@@ -105,13 +124,25 @@ export class ResetPasswordDto {
 }
 
 export class VerifyEmailDto {
-  @ApiProperty({ example: 'token-id-uuid' })
+  @ApiPropertyOptional({ example: 'token-id-uuid', description: 'The `tid` from the verification link. Send with `token`, or send `email` + `code` instead.' })
+  @ValidateIf(usesLink)
   @IsString()
-  tokenId: string;
+  tokenId?: string;
 
-  @ApiProperty({ example: 'verify-secret-uuid' })
+  @ApiPropertyOptional({ example: 'verify-secret-uuid', description: 'The `token` from the verification link.' })
+  @ValidateIf(usesLink)
   @IsString()
-  token: string;
+  token?: string;
+
+  @ApiPropertyOptional({ example: 'user@example.com', description: 'Account email, sent with `code`.' })
+  @ValidateIf(usesCode)
+  @IsEmail()
+  email?: string;
+
+  @ApiPropertyOptional({ example: '482913', description: '6-digit code from the verification email.' })
+  @ValidateIf(usesCode)
+  @Matches(SIX_DIGITS, { message: 'code must be 6 digits' })
+  code?: string;
 }
 
 export class ResendVerificationDto {

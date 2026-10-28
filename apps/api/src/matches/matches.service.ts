@@ -4,7 +4,7 @@ import {
   NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { RedisService } from '../redis/redis.service.js';
 import { SportradarService } from '../sportradar/sportradar.service.js';
@@ -19,7 +19,7 @@ import {
   type LastEvent,
   type TeamScores,
 } from '@cricapp/shared-types';
-import type { Match } from '@prisma/client';
+import type { Match } from '../generated/prisma/client.js';
 import {
   createPaginatedResponse,
   getPaginationOffset,
@@ -519,6 +519,37 @@ export class MatchesService {
 
   private static readonly LIVE_TIMELINE_REFRESH_MIN_AGE_MS = 30_000;
 
+  /**
+   * One page of deliveries: the newest `overs` overs, or the ones before the
+   * `before` cursor ("<inning>:<over>"). Built from the same timeline the
+   * timeline endpoint serves, so it obeys the same storage and upstream rules,
+   * but answers with a few kilobytes instead of the whole match.
+   */
+  async getCommentaryPage(
+    matchId: string,
+    overs: number,
+    before: string | null,
+  ): Promise<{ matchId: string; revision: number | null; events: Record<string, unknown>[]; hasMore: boolean; before: string | null }> {
+    const { payload, revision } = await this.getTimeline(matchId, null);
+    const wrapper = payload.sport_event_timeline as Record<string, unknown> | undefined;
+    const all = ((wrapper?.timeline ?? payload.timeline ?? []) as Record<string, unknown>[]).filter(
+      (e) => typeof e.over_number === 'number' && typeof e.inning === 'number',
+    );
+    const key = (e: Record<string, unknown>) => (e.inning as number) * 10_000 + (e.over_number as number);
+    const [bi, bo] = (before ?? '').split(':').map(Number);
+    const limit = Number.isFinite(bi) && Number.isFinite(bo) ? bi * 10_000 + bo : Number.POSITIVE_INFINITY;
+    const keys = [...new Set(all.map(key))].filter((k) => k < limit).sort((a, b) => a - b);
+    const page = new Set(keys.slice(-overs));
+    const oldest = keys.length > overs ? keys[keys.length - overs] : null;
+    return {
+      matchId,
+      revision,
+      events: all.filter((e) => page.has(key(e))),
+      hasMore: oldest != null,
+      before: oldest != null ? `${Math.floor(oldest / 10_000)}:${oldest % 10_000}` : null,
+    };
+  }
+
   private async upsertTimelinePayload(
     matchId: string,
     fresh: Record<string, unknown>,
@@ -660,7 +691,9 @@ export class MatchesService {
       return this.buildTimelineResponse(matchId, row, storedPayload, since ?? null)!;
     }
 
-    if (!this.sportradar.isConfigured) {
+    // Nothing stored and not even shaped like a provider match id: answer 404 without
+    // spending an upstream request (Sportradar 404s are also mapped to 404 below).
+    if (!this.sportradar.isConfigured || (!matchRow && !/^sr:match:\d+$/.test(matchId))) {
       throw new NotFoundException(`Timeline for match ${matchId} not found`);
     }
 
@@ -676,10 +709,29 @@ export class MatchesService {
       }
     }
 
-    // Non-live match with no stored row: serve a fresh fetch WITHOUT writing,
-    // so completed/upcoming pages populate without growing or rewriting the
-    // table. The ingestion backfill (finished matches only) persists the
-    // one-shot history row and freezes it thereafter.
+    // A finished match's timeline no longer changes: store it on first fetch,
+    // the same one-shot row the ingestion backfill writes, so later requests
+    // never go upstream again (repeat fetches here were hitting Sportradar's
+    // rate limit and surfacing as 503s).
+    if (matchRow?.status === MATCH_STATUS.COMPLETED) {
+      try {
+        const fresh = await this.sportradar.fetchMatchTimeline(matchId);
+        await this.upsertTimelinePayload(matchId, fresh);
+        return this.buildTimelineResponse(matchId, null, dedupeTimelineEvents(fresh), since ?? null)!;
+      } catch (err) {
+        if (err instanceof ServiceUnavailableException) throw err;
+        throw new NotFoundException(`Timeline for match ${matchId} not found`);
+      }
+    }
+
+    // Upcoming and cancelled matches have no ball-by-ball yet: answer without
+    // spending an upstream call. Their timeline is fetched once the match goes
+    // live (and stored by the branches above).
+    if (matchRow) {
+      throw new NotFoundException(`Timeline for match ${matchId} not found`);
+    }
+
+    // A provider id we hold no row for: serve one fresh fetch without writing.
     try {
       const fresh = await this.sportradar.fetchMatchTimeline(matchId);
       return this.buildTimelineResponse(matchId, null, dedupeTimelineEvents(fresh), since ?? null)!;

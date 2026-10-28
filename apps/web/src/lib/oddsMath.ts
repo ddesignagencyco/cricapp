@@ -5,6 +5,15 @@ export function decimalFromFractional(num: number, den: number): number | null {
   return num / den + 1;
 }
 
+/**
+ * The `value` sent to the converter API for a fractional price. The sides go as typed:
+ * rounding them sent 1.5/1 as 2/1 (decimal 3.00 instead of 2.50).
+ */
+export function fractionalQuery(num: number, den: number): string {
+  if (!Number.isFinite(num) || !Number.isFinite(den) || num <= 0 || den <= 0) return '';
+  return `${num}/${den}`;
+}
+
 export function decimalFromAmerican(american: number): number | null {
   if (!Number.isFinite(american) || american === 0) return null;
   if (american > 0) return american / 100 + 1;

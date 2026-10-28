@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import crypto from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { MailerService } from '../mailer/mailer.service.js';
+import { buildNewsletterWelcomeEmail } from './newsletter-emails.js';
 import {
   createPaginatedResponse,
   getPaginationOffset,
@@ -22,6 +23,10 @@ export class NewsletterService {
     private readonly mailer: MailerService,
     private readonly config: ConfigService,
   ) {}
+
+  private get apiUrl(): string {
+    return this.config.get<string>('API_PUBLIC_URL', 'http://localhost:3001').replace(/\/$/, '');
+  }
 
   async subscribe(dto: SubscribeNewsletterDto) {
     const email = dto.email.trim().toLowerCase();
@@ -66,12 +71,17 @@ export class NewsletterService {
 
     const appUrl = this.config.get<string>('APP_URL', 'http://localhost:3000');
     const unsubscribeUrl = `${appUrl}/newsletter/unsubscribe?token=${subscriber.unsubscribeToken}`;
+    const welcome = buildNewsletterWelcomeEmail({ appUrl, unsubscribeUrl });
     void this.mailer
       .sendMail({
         to: subscriber.email,
-        subject: 'Welcome to the CricApp newsletter',
-        html: `<h1>CricApp Newsletter</h1><p>You are subscribed for cricket news and updates.</p><p><a href="${unsubscribeUrl}">Unsubscribe</a></p>`,
-        text: `You are subscribed to the CricApp newsletter.\n\nUnsubscribe: ${unsubscribeUrl}`,
+        subject: 'Welcome to the PakCricZone newsletter',
+        html: welcome.html,
+        text: welcome.text,
+        headers: {
+          'List-Unsubscribe': `<${this.apiUrl}/api/newsletter/unsubscribe/one-click?token=${subscriber.unsubscribeToken}>`,
+          'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+        },
       })
       .catch((error: unknown) => {
         this.logger.error(

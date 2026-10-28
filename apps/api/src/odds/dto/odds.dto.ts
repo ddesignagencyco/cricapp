@@ -1,6 +1,17 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsIn, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import {
+  ArrayMaxSize,
+  ArrayMinSize,
+  IsArray,
+  IsIn,
+  IsInt,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+} from 'class-validator';
 
 export class OddsComplianceDto {
   @ApiProperty()
@@ -191,6 +202,13 @@ export class OddsConvertDto {
 }
 
 export class OddsMarginBody {
+  // Without validators the global ValidationPipe (whitelist) stripped this field, so
+  // the endpoint always answered { margin: null }.
   @ApiProperty({ type: [Number], description: 'Decimal prices for all outcomes in one market' })
+  @IsArray()
+  @ArrayMinSize(2)
+  @ArrayMaxSize(50)
+  @IsNumber({ allowNaN: false, allowInfinity: false }, { each: true })
+  @Min(1.01, { each: true })
   decimals!: number[];
 }

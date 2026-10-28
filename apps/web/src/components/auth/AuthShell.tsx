@@ -25,7 +25,8 @@ function BrandLockup() {
     <Link href="/" className="inline-flex items-center gap-2.5" aria-label="PAK CRICZONE home">
       <Image
         src="/brand/logo.png"
-        alt="PAK CRICZONE"
+        alt=""
+        aria-hidden="true"
         width={120}
         height={48}
         className="h-10 w-auto object-contain sm:h-11"

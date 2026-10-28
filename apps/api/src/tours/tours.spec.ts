@@ -44,4 +44,31 @@ describe('ToursModule (integration)', () => {
       hasPrevPage: true,
     });
   });
+
+  it('GET /tours?q= — searches by name or country code and counts tournaments', async () => {
+    await ctx.prisma.tour.create({
+      data: {
+        id: 'cat:sr:category:9',
+        name: 'Pakistan',
+        category: { id: 'sr:category:9', name: 'Pakistan', country_code: 'PAK' },
+      },
+    });
+    await ctx.prisma.tournament.createMany({
+      data: [
+        { id: 't-1', name: 'Pakistan Super League', category: { id: 'sr:category:9', name: 'Pakistan' } },
+        { id: 't-2', name: 'Quaid-e-Azam Trophy', category: { id: 'sr:category:9', name: 'Pakistan' } },
+        { id: 't-3', name: 'Elsewhere Cup', category: { id: 'sr:category:1', name: 'Other' } },
+      ],
+    });
+
+    const byName = await ctx.agent.get('/tours?q=paki').expect(200);
+    expect(byName.body.data).toHaveLength(1);
+    expect(byName.body.data[0]).toMatchObject({ name: 'Pakistan', tournamentCount: 2 });
+
+    const byCode = await ctx.agent.get('/tours?q=pak').expect(200);
+    expect(byCode.body.data.map((t: { id: string }) => t.id)).toEqual(['cat:sr:category:9']);
+
+    const all = await ctx.agent.get('/tours').expect(200);
+    expect(all.body.data.find((t: { id: string }) => t.id === 'tour-1').tournamentCount).toBe(0);
+  });
 });

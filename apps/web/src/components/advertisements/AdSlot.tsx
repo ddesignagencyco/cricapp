@@ -195,9 +195,9 @@ function AdSenseUnit({
       <aside
         data-ad-placement={placement}
         aria-label="Advertisement"
-        className={`relative flex h-full min-h-[148px] flex-col overflow-hidden rounded-md border border-lborder ${className}`.trim()}
+        className={`relative flex h-full min-w-0 items-center justify-center overflow-hidden ${className}`.trim()}
       >
-        <div className="relative min-h-0 flex-1">{ins}</div>
+        {ins}
       </aside>
     );
   }

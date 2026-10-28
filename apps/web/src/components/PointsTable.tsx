@@ -22,16 +22,16 @@ export default function PointsTable({ rows = [], favoriteTeamId }: PointsTablePr
   return (
     <div className="surface-card overflow-hidden rounded-md">
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[520px] text-left text-sm">
+        <table className="w-full text-left sm:min-w-[520px] text-sm">
           <thead>
             <tr className="border-b border-lborder text-xs uppercase tracking-wider text-stext">
-              <th className="px-4 py-3">Pos</th>
-              <th className="px-4 py-3">Team</th>
-              <th className="px-4 py-3 text-center">P</th>
-              <th className="px-4 py-3 text-center">W</th>
-              <th className="px-4 py-3 text-center">L</th>
-              <th className="px-4 py-3 text-right">NRR</th>
-              <th className="px-4 py-3 text-center">Pts</th>
+              <th className="px-2 py-3 sm:px-4">Pos</th>
+              <th className="px-2 py-3 sm:px-4">Team</th>
+              <th className="px-2 py-3 sm:px-4 text-center">P</th>
+              <th className="px-2 py-3 sm:px-4 text-center">W</th>
+              <th className="hidden px-2 py-3 text-center sm:table-cell sm:px-4">L</th>
+              <th className="px-2 py-3 sm:px-4 text-right">NRR</th>
+              <th className="px-2 py-3 sm:px-4 text-center">Pts</th>
             </tr>
           </thead>
           <tbody>
@@ -47,29 +47,29 @@ export default function PointsTable({ rows = [], favoriteTeamId }: PointsTablePr
                   key={row.teamId}
                   className={`border-b border-lborder/60 transition-colors last:border-0 hover:bg-[var(--color-row-hover)] ${rowStyle}`}
                 >
-                  <td className="px-4 py-3 font-mono text-sm font-medium tabular-nums text-muted-foreground">{i + 1}</td>
-                  <td className="px-4 py-3">
+                  <td className="px-2 py-3 sm:px-4 font-mono text-sm font-medium tabular-nums text-muted-foreground">{i + 1}</td>
+                  <td className="px-2 py-3 sm:px-4">
                     <Link
                       href={`/teams/${row.teamId}`}
                       className="flex items-center gap-2.5 hover:text-accent"
                     >
                       <TeamLogo teamId={row.teamId} name={row.teamName} code={row.teamAbbr} size="md" link={false} />
                       <span className="text-sm font-semibold text-mtext">{row.teamName}</span>
-                      <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                      <span className="hidden text-xs font-medium uppercase tracking-wider text-muted-foreground sm:inline">
                         {row.teamAbbr}
                       </span>
                     </Link>
                   </td>
-                  <td className="px-4 py-3 text-center font-mono text-sm font-medium tabular-nums text-stext">{row.played}</td>
-                  <td className="px-4 py-3 text-center font-mono text-sm font-semibold tabular-nums text-accent">{row.won}</td>
-                  <td className="px-4 py-3 text-center font-mono text-sm font-medium tabular-nums text-danger">{row.lost}</td>
+                  <td className="px-2 py-3 sm:px-4 text-center font-mono text-sm font-medium tabular-nums text-stext">{row.played}</td>
+                  <td className="px-2 py-3 sm:px-4 text-center font-mono text-sm font-semibold tabular-nums text-accent">{row.won}</td>
+                  <td className="hidden px-2 py-3 text-center font-mono text-sm font-medium tabular-nums text-danger sm:table-cell sm:px-4">{row.lost}</td>
                   <td
                     className={`px-4 py-3 text-right font-mono text-sm font-semibold tabular-nums ${row.netRunRate >= 0 ? 'text-accent' : 'text-danger'
                       }`}
                   >
                     {row.netRunRate}
                   </td>
-                  <td className="px-4 py-3 text-center font-mono text-sm font-semibold tabular-nums text-mtext">
+                  <td className="px-2 py-3 sm:px-4 text-center font-mono text-sm font-semibold tabular-nums text-mtext">
                     {row.points}
                   </td>
                 </tr>

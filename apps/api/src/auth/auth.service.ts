@@ -10,9 +10,15 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { MailerService } from '../mailer/mailer.service.js';
+import { BRAND, emailButton, emailCode, emailLinkFallback, emailNote, renderEmail } from '../mailer/email-layout.js';
 import type { SignupDto, LoginDto, ForgotPasswordDto, ResetPasswordDto, VerifyEmailDto, ResendVerificationDto } from './dto/auth.dto.js';
 import { ConfigService } from '@nestjs/config';
 import crypto from 'crypto';
+
+/** Wrong guesses allowed on one emailed code before it stops working (the link still works). */
+const CODE_MAX_ATTEMPTS = 5;
+
+type CodeRecord = { id: string; codeHash: string | null; codeAttempts: number };
 
 @Injectable()
 export class AuthService {
@@ -47,11 +53,11 @@ export class AuthService {
 
     // Issue the token inside the request so it cannot outlive the user row,
     // then hand the slow SMTP call off so signup stays responsive.
-    const verifyLink = await this.createVerificationLink(user.id);
+    const verification = await this.createVerification(user.id);
     this.sendVerificationEmail(
       user.email,
       user.displayName ?? user.username,
-      verifyLink,
+      verification,
     ).catch((error: unknown) => {
       this.logger.error(
         `Failed to send verification email to ${user.email}`,
@@ -144,86 +150,44 @@ export class AuthService {
     );
   }
 
-  private buildResetEmail({ username, resetLink, expiresAt }: { username: string; resetLink: string; expiresAt: Date }): { html: string; text: string } {
+  private buildResetEmail({ username, resetLink, code, expiresAt }: { username: string; resetLink: string; code: string; expiresAt: Date }): { html: string; text: string } {
     const expiryTime = expiresAt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
     const expiryDate = expiresAt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
     const safeUsername = this.escapeHtml(username);
 
-    const html = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Reset Your CricApp Password</title>
-</head>
-<body style="margin:0;padding:0;background:#f4f7f6;font-family:'Segoe UI',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f4f7f6;padding:40px 0;">
-    <tr>
-      <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
-          <!-- Header -->
-          <tr>
-            <td style="background:linear-gradient(135deg,#1a5f2a 0%,#2e8b47 100%);padding:40px 30px;text-align:center;">
-              <h1 style="margin:0;color:#ffffff;font-size:28px;font-weight:700;letter-spacing:1px;">🏏 CricApp</h1>
-              <p style="margin:8px 0 0 0;color:#c8e6c9;font-size:14px;">Cricket News, Live Scores & Analytics</p>
-            </td>
-          </tr>
+    const appUrl = this.config.get<string>('APP_URL', 'http://localhost:3000');
+    const html = renderEmail({
+      appUrl,
+      title: 'Reset your PakCricZone password',
+      preheader: `Use this secure link or code to choose a new password. It expires at ${expiryTime}.`,
+      reason: 'You received this email because a password reset was requested for your PakCricZone account.',
+      bodyHtml: `
+        <h1 style="margin:0 0 6px;font-size:24px;line-height:1.3;color:${BRAND.ink};">Reset your password</h1>
+        <p style="margin:0 0 4px;">Hi <strong style="color:${BRAND.ink};">${safeUsername}</strong>,</p>
+        <p style="margin:0;">We received a request to reset the password for your PakCricZone account. Click the button below to choose a new one.</p>
+        ${emailButton(resetLink, 'Reset password')}
+        <p style="margin:0;text-align:center;">Using the PakCricZone app? Enter this code instead:</p>
+        ${emailCode(code, 'Reset code')}
+        ${emailNote(`This link and code expire at <strong>${expiryTime}</strong> on <strong>${expiryDate}</strong> and can only be used once. Never share the code with anyone.`)}
+        ${emailNote("<strong>Didn't request this?</strong> You can safely ignore this email. Your password stays the same and your account is secure.", 'warning')}
+        ${emailLinkFallback(resetLink)}`,
+    });
 
-          <!-- Body -->
-          <tr>
-            <td style="padding:40px 30px;">
-              <h2 style="margin:0 0 16px 0;color:#1a1a1a;font-size:22px;font-weight:600;">Password Reset Request</h2>
-              <p style="margin:0 0 24px 0;color:#555;font-size:15px;line-height:1.6;">Hi <strong>${safeUsername}</strong>, we received a request to reset your CricApp password.</p>
-
-              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0;">
-                <tr>
-                  <td style="text-align:center;">
-                    <a href="${resetLink}" style="display:inline-block;background:linear-gradient(135deg,#1a5f2a 0%,#2e8b47 100%);color:#ffffff;text-decoration:none;padding:14px 36px;border-radius:6px;font-size:15px;font-weight:600;letter-spacing:0.5px;">Reset Password</a>
-                  </td>
-                </tr>
-              </table>
-              <p style="margin:0 0 24px 0;color:#555;font-size:15px;line-height:1.6;">This secure link expires at <strong>${expiryTime}</strong> on <strong>${expiryDate}</strong> and can only be used once.</p>
-
-              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0;">
-                <tr>
-                  <td style="background:#fff8e1;border-left:4px solid #ffa000;border-radius:0 4px 4px 0;padding:16px;">
-                    <p style="margin:0;color:#795548;font-size:13px;line-height:1.5;"><strong>Didn't request this?</strong> If you didn't ask for a password reset, you can safely ignore this email. Your account remains secure.</p>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-
-          <!-- Footer -->
-          <tr>
-            <td style="background:#1a3c1d;padding:30px;text-align:center;border-top:3px solid #2e8b47;">
-              <p style="margin:0 0 8px 0;color:#a5d6a7;font-size:14px;font-weight:600;">🏏 CricApp — Your Cricket Companion</p>
-              <p style="margin:0 0 12px 0;color:#81c784;font-size:12px;">Live Scores • Match Analytics • Player Stats • News & Updates</p>
-              <p style="margin:0;color:#66bb6a;font-size:11px;">© ${new Date().getFullYear()} CricApp. All rights reserved.</p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>`;
-
-    const text = `CricApp Password Reset
+    const text = `Reset your PakCricZone password
 
 Hi ${username},
 
-Reset your password using this secure link:
+We received a request to reset your password. Use this secure link:
 ${resetLink}
 
-This link expires at ${expiryTime} on ${expiryDate} and can only be used once.
+Using the PakCricZone app? Enter this code instead: ${code}
 
-Didn't request this? Ignore this email — your account is safe.
+This link and code expire at ${expiryTime} on ${expiryDate} and can only be used once.
+Never share the code with anyone.
 
----
-CricApp — Your Cricket Companion
-Live Scores • Match Analytics • Player Stats • News & Updates
-© ${new Date().getFullYear()} CricApp`;
+Didn't request this? Ignore this email. Your password stays the same.
+
+PakCricZone — Every run. Every ball. Live.`;
 
     return { html, text };
   }
@@ -234,12 +198,20 @@ Live Scores • Match Analytics • Player Stats • News & Updates
       return { message: 'If an account exists, a reset email has been sent.' };
     }
 
+    // Only the newest email works: retire older links and codes so their
+    // remaining code attempts cannot be added up.
+    await this.prisma.passwordResetToken.updateMany({
+      where: { userId: user.id, usedAt: null },
+      data: { usedAt: new Date() },
+    });
+
     const rawToken = crypto.randomUUID();
-    const tokenHash = await bcrypt.hash(rawToken, 10);
+    const code = this.generateCode();
+    const [tokenHash, codeHash] = await Promise.all([bcrypt.hash(rawToken, 10), bcrypt.hash(code, 10)]);
     const expiresAt = new Date(Date.now() + 3600 * 1000); // 1 hour
 
     const tokenRecord = await this.prisma.passwordResetToken.create({
-      data: { userId: user.id, tokenHash, expiresAt },
+      data: { userId: user.id, tokenHash, codeHash, expiresAt },
     });
 
     const appUrl = this.config.get<string>('APP_URL', 'http://localhost:3000');
@@ -248,12 +220,13 @@ Live Scores • Match Analytics • Player Stats • News & Updates
     const { html, text } = this.buildResetEmail({
       username: user.displayName || user.username,
       resetLink,
+      code,
       expiresAt,
     });
 
     await this.mailer.sendMail({
       to: user.email,
-      subject: 'Reset your CricApp password',
+      subject: 'Reset your PakCricZone password',
       html,
       text,
     });
@@ -262,17 +235,9 @@ Live Scores • Match Analytics • Player Stats • News & Updates
   }
 
   async resetPassword(dto: ResetPasswordDto) {
-    const token = await this.prisma.passwordResetToken.findUnique({
-      where: { id: dto.tokenId },
-      include: { user: true },
-    });
-
-    if (!token || token.usedAt || token.expiresAt <= new Date()) {
-      throw new BadRequestException('Invalid or expired token');
-    }
-
-    const valid = await bcrypt.compare(dto.token, token.tokenHash);
-    if (!valid) throw new BadRequestException('Invalid or expired token');
+    const token = dto.tokenId && dto.token
+      ? await this.findResetTokenByLink(dto.tokenId, dto.token)
+      : await this.findResetTokenByCode(dto.email, dto.code);
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
 
@@ -297,14 +262,44 @@ Live Scores • Match Analytics • Player Stats • News & Updates
     return { message: 'Password has been reset successfully.' };
   }
 
+  private async findResetTokenByLink(tokenId: string, rawToken: string) {
+    const token = await this.prisma.passwordResetToken.findUnique({ where: { id: tokenId } });
+    if (!token || token.usedAt || token.expiresAt <= new Date()) {
+      throw new BadRequestException('Invalid or expired token');
+    }
+    const valid = await bcrypt.compare(rawToken, token.tokenHash);
+    if (!valid) throw new BadRequestException('Invalid or expired token');
+    return token;
+  }
+
+  private async findResetTokenByCode(email: string | undefined, code: string | undefined) {
+    const invalid = new BadRequestException('Invalid or expired code');
+    if (!email || !code) throw invalid;
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user) throw invalid;
+    const token = await this.prisma.passwordResetToken.findFirst({
+      where: { userId: user.id, usedAt: null, expiresAt: { gt: new Date() } },
+      orderBy: { createdAt: 'desc' },
+    });
+    const valid = await this.matchCode(token, code, (id) =>
+      this.prisma.passwordResetToken.updateMany({
+        where: { id, codeAttempts: { lt: CODE_MAX_ATTEMPTS } },
+        data: { codeAttempts: { increment: 1 } },
+      }),
+    );
+    if (!token || !valid) throw invalid;
+    return token;
+  }
+
   /* ------------------------------------------------------------------ */
   /* Email Verification                                                 */
   /* ------------------------------------------------------------------ */
 
   async verifyEmail(dto: VerifyEmailDto) {
+    if (!(dto.tokenId && dto.token)) return this.verifyEmailByCode(dto.email, dto.code);
+
     const token = await this.prisma.emailVerificationToken.findUnique({
       where: { id: dto.tokenId },
-      include: { user: true },
     });
 
     if (!token || token.usedAt || token.expiresAt <= new Date()) {
@@ -314,18 +309,45 @@ Live Scores • Match Analytics • Player Stats • News & Updates
     const valid = await bcrypt.compare(dto.token, token.tokenHash);
     if (!valid) throw new BadRequestException('Invalid or expired verification token');
 
-    await this.prisma.$transaction([
-      this.prisma.user.update({
+    await this.markEmailVerified(token, 'Invalid or expired verification token');
+    return { message: 'Email verified successfully.' };
+  }
+
+  private async verifyEmailByCode(email: string | undefined, code: string | undefined) {
+    const invalid = 'Invalid or expired verification code';
+    if (!email || !code) throw new BadRequestException(invalid);
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user) throw new BadRequestException(invalid);
+    // Same answer resend-verification already gives for a verified address.
+    if (user.emailVerified) return { message: 'Email is already verified.' };
+
+    const token = await this.prisma.emailVerificationToken.findUnique({ where: { userId: user.id } });
+    const live = token && !token.usedAt && token.expiresAt > new Date() ? token : null;
+    const valid = await this.matchCode(live, code, (id) =>
+      this.prisma.emailVerificationToken.updateMany({
+        where: { id, codeAttempts: { lt: CODE_MAX_ATTEMPTS } },
+        data: { codeAttempts: { increment: 1 } },
+      }),
+    );
+    if (!live || !valid) throw new BadRequestException(invalid);
+
+    await this.markEmailVerified(live, invalid);
+    return { message: 'Email verified successfully.' };
+  }
+
+  /** Claims the token once (link and code can race) and flips the user to verified. */
+  private async markEmailVerified(token: { id: string; userId: string }, invalidMessage: string) {
+    await this.prisma.$transaction(async (transaction) => {
+      const claimed = await transaction.emailVerificationToken.updateMany({
+        where: { id: token.id, usedAt: null, expiresAt: { gt: new Date() } },
+        data: { usedAt: new Date() },
+      });
+      if (claimed.count !== 1) throw new BadRequestException(invalidMessage);
+      await transaction.user.update({
         where: { id: token.userId },
         data: { emailVerified: true },
-      }),
-      this.prisma.emailVerificationToken.update({
-        where: { id: token.id },
-        data: { usedAt: new Date() },
-      }),
-    ]);
-
-    return { message: 'Email verified successfully.' };
+      });
+    });
   }
 
   async resendVerification(dto: ResendVerificationDto) {
@@ -337,11 +359,11 @@ Live Scores • Match Analytics • Player Stats • News & Updates
       return { message: 'Email is already verified.' };
     }
 
-    const verifyLink = await this.createVerificationLink(user.id);
+    const verification = await this.createVerification(user.id);
     await this.sendVerificationEmail(
       user.email,
       user.displayName ?? user.username,
-      verifyLink,
+      verification,
     );
     return { message: 'If an account exists, a verification email has been sent.' };
   }
@@ -349,76 +371,99 @@ Live Scores • Match Analytics • Player Stats • News & Updates
   private buildVerificationEmail({
     username,
     verifyLink,
+    code,
   }: {
     username: string;
     verifyLink: string;
+    code: string;
   }): { html: string; text: string } {
     const safeUsername = this.escapeHtml(username);
-    const html = `<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Verify your CricApp email</title></head>
-<body style="margin:0;padding:0;background:#f4f7f6;font-family:'Segoe UI',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 16px;background:#f4f7f6;">
-    <tr><td align="center">
-      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.08);">
-        <tr><td style="background:linear-gradient(135deg,#1a5f2a,#2e8b47);padding:36px 30px;text-align:center;">
-          <h1 style="margin:0;color:#fff;font-size:28px;">🏏 CricApp</h1>
-          <p style="margin:8px 0 0;color:#c8e6c9;font-size:14px;">Pakistan cricket, live scores, PSL and news</p>
-        </td></tr>
-        <tr><td style="padding:40px 30px;">
-          <h2 style="margin:0 0 16px;color:#1a1a1a;font-size:22px;">Welcome to CricApp</h2>
-          <p style="color:#555;font-size:15px;line-height:1.6;">Hi <strong>${safeUsername}</strong>, verify your email to activate your account and start following live matches, teams, players and cricket news.</p>
-          <p style="margin:28px 0;text-align:center;"><a href="${verifyLink}" style="display:inline-block;background:#2e8b47;color:#fff;text-decoration:none;padding:14px 36px;border-radius:6px;font-weight:600;">Verify Email Address</a></p>
-          <p style="color:#777;font-size:13px;line-height:1.5;">This link expires in 24 hours and can only be used once. If you did not create a CricApp account, ignore this email.</p>
-        </td></tr>
-        <tr><td style="background:#1a3c1d;padding:24px;text-align:center;color:#a5d6a7;font-size:12px;">CricApp — Your Cricket Companion</td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`;
-    const text = `Welcome to CricApp, ${username}!
+    const appUrl = this.config.get<string>('APP_URL', 'http://localhost:3000');
+    const html = renderEmail({
+      appUrl,
+      title: 'Verify your PakCricZone email',
+      preheader: 'One click (or one code) to activate your account and start following live cricket.',
+      reason: 'You received this email because someone signed up for PakCricZone with this address.',
+      bodyHtml: `
+        <h1 style="margin:0 0 6px;font-size:24px;line-height:1.3;color:${BRAND.ink};">Confirm your email</h1>
+        <p style="margin:0 0 4px;">Hi <strong style="color:${BRAND.ink};">${safeUsername}</strong>,</p>
+        <p style="margin:0;">Welcome to PakCricZone! Confirm your email address to activate your account and start following live matches, your favourite teams and players, and the latest cricket news.</p>
+        ${emailButton(verifyLink, 'Verify email address')}
+        <p style="margin:0;text-align:center;">Using the PakCricZone app? Enter this code instead:</p>
+        ${emailCode(code, 'Verification code')}
+        ${emailNote('This link and code expire in <strong>24 hours</strong> and can only be used once. If you did not create a PakCricZone account, you can safely ignore this email.')}
+        ${emailLinkFallback(verifyLink)}`,
+    });
+    const text = `Welcome to PakCricZone, ${username}!
 
-Verify your email to activate your account:
+Confirm your email address to activate your account:
 ${verifyLink}
 
-This link expires in 24 hours and can only be used once.
+Using the PakCricZone app? Enter this code instead: ${code}
 
-CricApp — Your Cricket Companion`;
+This link and code expire in 24 hours and can only be used once.
+If you did not create a PakCricZone account, ignore this email.
+
+PakCricZone — Every run. Every ball. Live.`;
     return { html, text };
   }
 
-  private async createVerificationLink(userId: string): Promise<string> {
+  private async createVerification(userId: string): Promise<{ link: string; code: string }> {
     await this.prisma.emailVerificationToken.deleteMany({ where: { userId } });
 
     const rawToken = crypto.randomUUID();
-    const tokenHash = await bcrypt.hash(rawToken, 10);
+    const code = this.generateCode();
+    const [tokenHash, codeHash] = await Promise.all([bcrypt.hash(rawToken, 10), bcrypt.hash(code, 10)]);
     const expiresAt = new Date(Date.now() + 24 * 3600 * 1000); // 24 hours
 
     const tokenRecord = await this.prisma.emailVerificationToken.create({
-      data: { userId, tokenHash, expiresAt },
+      data: { userId, tokenHash, codeHash, expiresAt },
     });
 
     const appUrl = this.config.get<string>('APP_URL', 'http://localhost:3000');
-    return `${appUrl}/verify-email?token=${rawToken}&tid=${tokenRecord.id}`;
+    return { link: `${appUrl}/verify-email?token=${rawToken}&tid=${tokenRecord.id}`, code };
   }
 
   private async sendVerificationEmail(
     email: string,
     username: string,
-    verifyLink: string,
+    verification: { link: string; code: string },
   ) {
     const { html, text } = this.buildVerificationEmail({
       username,
-      verifyLink,
+      verifyLink: verification.link,
+      code: verification.code,
     });
 
     await this.mailer.sendMail({
       to: email,
-      subject: 'Verify your CricApp email',
+      subject: 'Verify your PakCricZone email',
       html,
       text,
     });
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* One-time codes                                                     */
+  /* ------------------------------------------------------------------ */
+
+  private generateCode(): string {
+    return crypto.randomInt(0, 1_000_000).toString().padStart(6, '0');
+  }
+
+  /**
+   * Spends one attempt before comparing, so parallel guesses cannot slip past the
+   * limit. `claimAttempt` must increment only while attempts remain.
+   */
+  private async matchCode(
+    record: CodeRecord | null,
+    code: string,
+    claimAttempt: (id: string) => Promise<{ count: number }>,
+  ): Promise<boolean> {
+    if (!record?.codeHash) return false;
+    const claimed = await claimAttempt(record.id);
+    if (claimed.count !== 1) return false;
+    return bcrypt.compare(code, record.codeHash);
   }
 
   private toAuthUser(user: {

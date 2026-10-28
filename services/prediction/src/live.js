@@ -47,6 +47,9 @@ function reasonsFromEvent(lastEvent) {
   return ['score'];
 }
 
+/** Share of the innings the par run rate counts for when shrinking early run rates. */
+export const EARLY_SHRINK = 0.1;
+
 export function scoreLive(snapshot, previous = null, options = {}) {
   const { prior = null, priorWeightStart = 0.6, priorDecayProgress = 0.6 } = options;
   const format = snapshot.format === 'unknown' ? 't20' : snapshot.format;
@@ -66,8 +69,18 @@ export function scoreLive(snapshot, previous = null, options = {}) {
     wicketsLost,
   });
   const currentInning = snapshot.currentInning >= 2 ? 2 : 1;
-  const rr = Number(innings.runRate ?? snapshot.runRate ?? 0);
+  // A non-numeric provider run rate used to flow into sigmoid() and persist NaN.
+  const rrRaw = Number(innings.runRate ?? snapshot.runRate ?? 0);
+  const rr = Number.isFinite(rrRaw) ? rrRaw : 0;
   const remainingOvers = remainingBalls / 6;
+  // Early run rates are noise: one ball for 2 is "12 an over". Shrink the observed
+  // rate toward the par rate, weighting par as if it were EARLY_SHRINK of the
+  // innings (2 overs in a T20, 5 in an ODI). Without this, the first ball of an ODI
+  // projected ~600 and swung the win chance from 65% to 32% and back within an over.
+  const parRunRate = par / Math.max(1, allottedBalls / 6);
+  const shrinkBalls = Math.max(6, Math.round(allottedBalls * EARLY_SHRINK));
+  const settledRunRate =
+    ballsFaced > 0 ? (rr * ballsFaced + parRunRate * shrinkBalls) / (ballsFaced + shrinkBalls) : parRunRate;
   const firstScale = Number(snapshot.liveScales?.firstInningsScale ?? 25);
   const chaseScale = Number(snapshot.liveScales?.chaseScale ?? 18);
   const chaseWicketBonus = Number(snapshot.liveScales?.chaseWicketBonus ?? 0.35);
@@ -77,7 +90,12 @@ export function scoreLive(snapshot, previous = null, options = {}) {
   let requiredRuns = null;
 
   if (currentInning === 1) {
-    const projectedRemaining = rr > 0 ? rr * remainingOvers : (par / allottedBalls) * remainingBalls;
+    // The run-rate projection is scaled by the batting resources wickets have left.
+    // Without it, 60/0 and 60/9 after ten overs projected the same total and got the
+    // same win probability. With all ten wickets in hand the factor is 1.
+    const timeOnlyResources = resourcesRemainingFromTable({ format, remainingBalls, allottedBalls, wicketsLost: 0 });
+    const wicketFactor = timeOnlyResources > 0 ? Math.min(1, resourcesLeft / timeOnlyResources) : 1;
+    const projectedRemaining = settledRunRate * remainingOvers * wicketFactor;
     projectedTotal = (innings.runs ?? 0) + projectedRemaining;
     const blended = remainingBalls === 0 ? (innings.runs ?? 0) : 0.7 * projectedTotal + 0.3 * par;
     battingWinProb = sigmoid((blended - par) / firstScale);
@@ -89,7 +107,7 @@ export function scoreLive(snapshot, previous = null, options = {}) {
     const adjustedNeed = requiredRuns * (1 + chaseWicketBonus * wicketPressure);
     const requiredRunRate =
       remainingOvers > 0 ? requiredRuns / remainingOvers : requiredRuns;
-    const rrGap = rr - requiredRunRate;
+    const rrGap = settledRunRate - requiredRunRate;
     battingWinProb = sigmoid(
       (expectedRemaining - adjustedNeed) / chaseScale + rrGap * 0.15,
     );
@@ -99,7 +117,11 @@ export function scoreLive(snapshot, previous = null, options = {}) {
   const bowlingWinProb = Number((1 - battingWinProb).toFixed(4));
   const homeBatting = battingIsHomeTeam(snapshot) ?? false;
   const rawHomeWinProb = homeBatting ? battingWinProb : bowlingWinProb;
-  const progress = 1 - resourcesLeft;
+  // Progress through the whole match, not the current innings: measured per innings it
+  // reset to zero at the first ball of the chase, so the pre-match prior jumped back to
+  // full weight and erased what the first innings had shown.
+  const inningsProgress = 1 - resourcesLeft;
+  const progress = currentInning === 1 ? inningsProgress / 2 : 0.5 + inningsProgress / 2;
   const priorWeight =
     prior?.homeWinProb != null
       ? Math.max(
@@ -135,9 +157,14 @@ export function scoreLive(snapshot, previous = null, options = {}) {
   const pressureIndex = Number(
     Math.max(0, Math.min(1, 0.55 * wicketPressure + 0.45 * chasePressure)).toFixed(4),
   );
-  const momentum = Number(
-    Math.max(-1, Math.min(1, (scoringRate - 1) * 0.6 - pressureIndex * 0.4)).toFixed(4),
-  );
+  // Computed from the batting side's point of view, then reported from the home side's,
+  // which is how every consumer reads it (positive = home on top). Reported as-is, it
+  // told the UI "<away> have a slight hold" before a ball was bowled, and leaned the
+  // wrong way whenever the away side batted. No balls, no momentum.
+  const battingMomentum = ballsFaced > 0
+    ? Math.max(-1, Math.min(1, (scoringRate - 1) * 0.6 - pressureIndex * 0.4))
+    : 0;
+  const momentum = Number((homeBatting ? battingMomentum : -battingMomentum).toFixed(4)) + 0;
   const wicketRisk = Number(
     Math.max(0.05, Math.min(0.95, 0.12 + pressureIndex * 0.55 + wicketPressure * 0.2)).toFixed(4),
   );

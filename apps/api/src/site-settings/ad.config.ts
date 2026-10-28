@@ -1,4 +1,4 @@
-import type { Prisma } from '@prisma/client';
+import type { Prisma } from '../generated/prisma/client.js';
 
 export const AD_MODES = ['off', 'house', 'adsense'] as const;
 export type AdMode = (typeof AD_MODES)[number];

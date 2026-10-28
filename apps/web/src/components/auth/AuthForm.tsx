@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Mail, User } from 'lucide-react';
+import { KeyRound, Mail, User } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
 import toast from 'react-hot-toast';
@@ -49,8 +49,11 @@ interface FieldErrors {
   password?: string;
   confirmPassword?: string;
   terms?: string;
-  token?: string;
+  code?: string;
 }
+
+const SIX_DIGITS = /^\d{6}$/;
+const EMAIL_PATTERN = /^\S+@\S+\.\S+$/;
 
 const inputClass =
   'w-full rounded-md border border-lborder bg-input py-3 pl-10 pr-4 text-sm text-mtext outline-none transition-colors hover:border-border-strong focus:border-[var(--color-focus-ring)] focus:ring-2 focus:ring-[var(--color-focus-ring)]/30 aria-invalid:border-danger disabled:cursor-not-allowed disabled:opacity-60';
@@ -126,16 +129,62 @@ function TextField({
   );
 }
 
+function CodeField({
+  value,
+  onChange,
+  error,
+}: {
+  value: string;
+  onChange: (_value: string) => void;
+  error?: string;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <label htmlFor="code" className="block text-xs font-bold uppercase tracking-wider text-stext">
+        6-digit code <span className="text-danger">*</span>
+      </label>
+      <div className="relative">
+        <KeyRound size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-stext" />
+        <input
+          id="code"
+          name="code"
+          type="text"
+          inputMode="numeric"
+          autoComplete="one-time-code"
+          maxLength={6}
+          value={value}
+          onChange={(event) => onChange(event.target.value.replace(/\D/g, '').slice(0, 6))}
+          placeholder="123456"
+          required
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? 'code-error' : undefined}
+          className={`${inputClass} font-mono tracking-[0.4em]`}
+        />
+      </div>
+      {error && (
+        <p id="code-error" role="alert" className="text-xs font-semibold text-danger">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
 export default function AuthForm({ mode, token = '', tokenId = '', initialEmail = '' }: AuthFormProps) {
   const router = useRouter();
   const params = useSearchParams();
   const { refresh, isAuthenticated, loading: authLoading } = useAuth();
+  // Reset and verify arrive either from the email link or with a typed code.
+  const fromLink = Boolean(token && tokenId);
+  const usesCode = (mode === 'reset' || mode === 'verify') && !fromLink;
   const [name, setName] = useState('');
+  const [code, setCode] = useState('');
+  const [resending, setResending] = useState(false);
   const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [terms, setTerms] = useState(false);
-  const [loading, setLoading] = useState(mode === 'verify');
+  const [loading, setLoading] = useState(mode === 'verify' && fromLink);
   const [message, setMessage] = useState('');
   const [success, setSuccess] = useState('');
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -150,12 +199,7 @@ export default function AuthForm({ mode, token = '', tokenId = '', initialEmail 
   }, [authLoading, isAuthenticated, mode, router]);
 
   useEffect(() => {
-    if (mode !== 'verify') return;
-    if (!token || !tokenId) {
-      setLoading(false);
-      setMessage('This verification link is missing or incomplete.');
-      return;
-    }
+    if (mode !== 'verify' || !token || !tokenId) return;
     let cancelled = false;
     verifyEmailOnce(token, tokenId)
       .then((response) => {
@@ -186,12 +230,12 @@ export default function AuthForm({ mode, token = '', tokenId = '', initialEmail 
 
   const validate = (): FieldErrors => {
     const next: FieldErrors = {};
-    if ((mode === 'login' || mode === 'register' || mode === 'forgot') && !/^\S+@\S+\.\S+$/.test(email.trim())) next.email = 'Enter a valid email address.';
+    if ((mode === 'login' || mode === 'register' || mode === 'forgot' || usesCode) && !EMAIL_PATTERN.test(email.trim())) next.email = 'Enter a valid email address.';
+    if (usesCode && !SIX_DIGITS.test(code)) next.code = 'Enter the 6-digit code from your email.';
     if (mode === 'register' && name.trim().length < 2) next.name = 'Enter your full name.';
     if ((mode === 'login' || mode === 'register' || mode === 'reset') && password.length < 6) next.password = 'Password must be at least 6 characters.';
     if ((mode === 'register' || mode === 'reset') && password !== confirmPassword) next.confirmPassword = 'Passwords do not match.';
     if (mode === 'register' && !terms) next.terms = 'Accept the terms to continue.';
-    if (mode === 'reset' && (!token || !tokenId)) next.token = 'Open the reset link from your email to set a new password.';
     return next;
   };
 
@@ -219,20 +263,24 @@ export default function AuthForm({ mode, token = '', tokenId = '', initialEmail 
         const created = await register({ email: email.trim(), username: slugFromName(name, email), displayName: name.trim(), password });
         setSuccess(created.message || 'Account created. Check your email to verify your address before signing in.');
         toast.success('Account created. Check your inbox to verify your email.');
-        router.replace('/login');
+        router.replace(`/verify-email?email=${encodeURIComponent(email.trim())}`);
       } else if (mode === 'forgot') {
         const response = await forgotPassword({ email: email.trim() });
         setSuccess(response.message);
-        toast.success('If an account exists, we sent a reset link to your email.');
+        toast.success('If an account exists, we sent a reset link and code to your email.');
+        router.push(`/reset-password?email=${encodeURIComponent(email.trim())}`);
       } else if (mode === 'reset') {
-        const response = await resetPassword({
-          tokenId,
-          token,
-          password,
-        });
+        const response = await resetPassword(
+          fromLink ? { tokenId, token, password } : { email: email.trim(), code, password },
+        );
         setSuccess(response.message);
         toast.success('Password reset successfully.');
         router.replace('/login');
+      } else if (mode === 'verify') {
+        const response = await verifyEmail({ email: email.trim(), code });
+        setSuccess(response.message);
+        setVerified(true);
+        toast.success(response.message, { id: 'verify-email' });
       }
     } catch (error: unknown) {
       const text = errorMessage(error);
@@ -246,34 +294,60 @@ export default function AuthForm({ mode, token = '', tokenId = '', initialEmail 
     }
   };
 
-  if (mode === 'verify') {
+  /** Emails a fresh link + code to the address typed on a code form. */
+  const sendNewCode = async () => {
+    setMessage('');
+    setSuccess('');
+    if (!EMAIL_PATTERN.test(email.trim())) {
+      setErrors({ email: 'Enter a valid email address.' });
+      toast.error('Enter a valid email address.');
+      return;
+    }
+    setErrors({});
+    setResending(true);
+    try {
+      const response =
+        mode === 'verify'
+          ? await resendVerification({ email: email.trim() })
+          : await forgotPassword({ email: email.trim() });
+      setSuccess(response.message);
+      if (mode === 'verify' && alreadyVerified(response.message)) {
+        setVerified(true);
+        toast.success(response.message, { id: 'verify-email' });
+        return;
+      }
+      toast.success('If an account exists, a new code is on its way.', { id: 'new-code' });
+    } catch (error: unknown) {
+      const text = errorMessage(error);
+      setMessage(text);
+      toast.error(text, { id: 'new-code' });
+    } finally {
+      setResending(false);
+    }
+  };
+
+  if (mode === 'verify' && (fromLink || verified)) {
     return (
       <div className="space-y-4 text-center">
         {loading && <p className="text-sm text-stext">Verifying your email…</p>}
         {!loading && success && <FormMessage message={success} tone="success" />}
         {!loading && message && <FormMessage message={message} />}
         {!loading && !verified && (
-          <ResendForm
-            initialEmail={email}
-            onAlreadyVerified={(text) => {
-              setVerified(true);
-              setSuccess(text);
-              setMessage('');
-            }}
-          />
+          <>
+            <ResendForm
+              initialEmail={email}
+              onAlreadyVerified={(text) => {
+                setVerified(true);
+                setSuccess(text);
+                setMessage('');
+              }}
+            />
+            <Link href="/verify-email" className="block text-xs font-semibold text-accent">
+              Enter the 6-digit code from your email instead
+            </Link>
+          </>
         )}
         {!loading && <Link href="/login" className="inline-block text-sm font-semibold text-accent">Continue to login</Link>}
-      </div>
-    );
-  }
-
-  if (mode === 'reset' && (!token || !tokenId)) {
-    return (
-      <div className="space-y-4 text-center">
-        <FormMessage message="This reset page only works from the link in your email. Password-reset codes are no longer used." />
-        <Link href="/forgot-password" className="inline-block text-sm font-semibold text-accent">
-          Request a new reset link
-        </Link>
       </div>
     );
   }
@@ -282,13 +356,13 @@ export default function AuthForm({ mode, token = '', tokenId = '', initialEmail 
     <>
     <form onSubmit={submit} className="space-y-4" noValidate>
       {mode === 'register' && <TextField id="name" label="Full name" name="name" type="text" value={name} onChange={setName} autoComplete="name" placeholder="Your full name" error={errors.name} />}
-      {(mode === 'login' || mode === 'register' || mode === 'forgot') && <TextField id="email" label="Email" name="email" type="email" value={email} onChange={setEmail} autoComplete="email" placeholder="you@example.com" error={errors.email} />}
+      {(mode === 'login' || mode === 'register' || mode === 'forgot' || usesCode) && <TextField id="email" label="Email" name="email" type="email" value={email} onChange={setEmail} autoComplete="email" placeholder="you@example.com" error={errors.email} />}
+      {usesCode && <CodeField value={code} onChange={setCode} error={errors.code} />}
       {(mode === 'login' || mode === 'register' || mode === 'reset') && <PasswordField id="password" label={mode === 'reset' ? 'New password' : 'Password'} name="password" value={password} onChange={setPassword} autoComplete={mode === 'login' ? 'current-password' : 'new-password'} error={errors.password} />}
       {mode === 'register' && <PasswordField id="confirm-password" label="Confirm password" name="confirmPassword" value={confirmPassword} onChange={setConfirmPassword} autoComplete="new-password" error={errors.confirmPassword} />}
       {mode === 'reset' && <>
         <PasswordField id="confirm-password" label="Confirm password" name="confirmPassword" value={confirmPassword} onChange={setConfirmPassword} autoComplete="new-password" error={errors.confirmPassword} />
         <div className="rounded border border-lborder bg-elevated/50 p-3 text-xs text-stext">Use at least 6 characters. Avoid using a password you use elsewhere.</div>
-        {errors.token && <FormMessage message={errors.token} />}
       </>}
       {mode === 'register' && (
         <label className="flex items-start gap-2 text-xs text-stext cursor-pointer">
@@ -333,13 +407,39 @@ export default function AuthForm({ mode, token = '', tokenId = '', initialEmail 
           ? 'Create Free Account'
           : mode === 'forgot'
           ? 'Send reset link'
+          : mode === 'verify'
+          ? 'Verify email'
           : 'Reset Password'}
       </button>
+      {usesCode && (
+        <div className="flex items-center justify-between gap-3 text-xs">
+          <span className="text-stext">Didn&apos;t get a code?</span>
+          <button
+            type="button"
+            onClick={sendNewCode}
+            disabled={resending}
+            className="font-semibold text-accent disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {resending ? 'Sending…' : 'Send a new code'}
+          </button>
+        </div>
+      )}
+      {mode === 'verify' && (
+        <div className="text-center">
+          <Link href="/login" className="inline-block text-sm font-semibold text-accent">Continue to login</Link>
+        </div>
+      )}
     </form>
     {unverifiedLogin && (
       <div className="mt-4 rounded-xl border border-lborder bg-elevated/60 p-3">
         <p className="mb-2 text-xs text-stext">This account is not verified yet. Request a new verification email below.</p>
         <ResendForm initialEmail={email} />
+        <Link
+          href={`/verify-email?email=${encodeURIComponent(email.trim())}`}
+          className="mt-2 block text-center text-xs font-semibold text-accent"
+        >
+          Already have a code? Enter it here
+        </Link>
       </div>
     )}
     </>

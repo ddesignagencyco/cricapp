@@ -45,9 +45,9 @@ export default function TeamCard({ team }: TeamCardProps) {
 
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-2">
-            <h3 className="min-w-0 truncate text-sm font-semibold text-mtext transition-colors group-hover:text-accent">
+            <h2 className="min-w-0 truncate text-sm font-semibold text-mtext transition-colors group-hover:text-accent">
               {name}
-            </h3>
+            </h2>
             {code && (
               <span className="shrink-0 font-mono text-xs uppercase text-stext">{code}</span>
             )}
@@ -61,10 +61,13 @@ export default function TeamCard({ team }: TeamCardProps) {
 
       <div className="flex shrink-0 items-center gap-1">
         <FavoriteButton targetType="team" targetId={teamId} compact />
-        <ShareButton type="team" id={teamId} fallbackTitle={name} href={href} compact />
+        {/* Phones: the whole row is the link, so only the favourite stays beside the name. */}
+        <span className="hidden sm:inline-flex">
+          <ShareButton type="team" id={teamId} fallbackTitle={name} href={href} compact />
+        </span>
         <Link
           href={href}
-          className="grid h-8 w-8 place-items-center text-stext transition-colors group-hover:text-accent"
+          className="hidden h-8 w-8 place-items-center text-stext transition-colors group-hover:text-accent sm:grid"
           aria-label="View team"
         >
           <ChevronRight size={16} aria-hidden="true" />

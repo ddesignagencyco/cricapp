@@ -174,3 +174,79 @@ describe('scoreLive', () => {
     assert.ok(out.homeWinProb < 0.5);
   });
 });
+
+describe('live model fixes', () => {
+  const base = {
+    format: 't20',
+    homeAbbr: 'AUS',
+    homeName: 'Australia',
+    awayAbbr: 'NZL',
+    awayName: 'New Zealand',
+    parScore: 160,
+  };
+
+  it('first innings: losing wickets lowers the batting side’s chance at the same score', () => {
+    const fresh = scoreLive({ ...base, currentInning: 1, currentInnings: { battingTeam: 'AUS', runs: 60, wickets: 0, overs: 10, runRate: 6 } });
+    const collapsed = scoreLive({ ...base, currentInning: 1, currentInnings: { battingTeam: 'AUS', runs: 60, wickets: 9, overs: 10, runRate: 6 } });
+    assert.ok(collapsed.homeWinProb < fresh.homeWinProb - 0.05, `${collapsed.homeWinProb} vs ${fresh.homeWinProb}`);
+  });
+
+  it('first innings with all wickets in hand projects as before (factor 1)', () => {
+    const r = scoreLive({ ...base, currentInning: 1, currentInnings: { battingTeam: 'AUS', runs: 80, wickets: 0, overs: 10, runRate: 8 } });
+    assert.equal(r.explanation.projectedTotal, 160);
+  });
+
+  it('does not reset the pre-match prior to full weight at the start of the chase', () => {
+    const prior = { homeWinProb: 0.8 };
+    const startOfChase = scoreLive(
+      { ...base, currentInning: 2, target: 161, currentInnings: { battingTeam: 'NZL', runs: 0, wickets: 0, overs: 0, runRate: 0 } },
+      null,
+      { prior },
+    );
+    assert.ok(startOfChase.explanation.priorWeight < 0.2, `prior weight ${startOfChase.explanation.priorWeight}`);
+  });
+
+  it('reports momentum from the home side: away batting well is negative', () => {
+    const r = scoreLive({ ...base, currentInning: 1, currentInnings: { battingTeam: 'NZL', runs: 100, wickets: 0, overs: 10, runRate: 10 } });
+    assert.ok(r.momentum < 0, `momentum ${r.momentum}`);
+    assert.equal(r.homeWinProb < 0.5, true);
+  });
+
+  it('has no momentum before a ball is bowled', () => {
+    const r = scoreLive({ ...base, currentInning: 1, currentInnings: { battingTeam: 'AUS', runs: 0, wickets: 0, overs: 0, runRate: 0 } });
+    assert.equal(r.momentum, 0);
+  });
+
+  it('never produces NaN from a non-numeric run rate', () => {
+    const r = scoreLive({ ...base, currentInning: 1, currentInnings: { battingTeam: 'AUS', runs: 40, wickets: 1, overs: 5, runRate: 'n/a' } });
+    assert.ok(Number.isFinite(r.homeWinProb));
+  });
+});
+
+describe('scoreLive — early-innings run rate', () => {
+  // ODI first innings, away side batting, as stored for AFG v BAN on 21 Oct 2026.
+  const snap = (runs, overs, wickets = 0) => ({
+    format: 'odi',
+    allottedBalls: 300,
+    parScore: 270,
+    currentInning: 1,
+    battingTeam: 'away',
+    teamScores: { home: { score: '' }, away: { score: `${runs}/${wickets}` } },
+    matchStatus: 'first_innings_away_team',
+    currentInnings: { runs, wickets, overs, runRate: overs > 0 ? runs / (oversToBalls(overs) / 6) : 0 },
+  });
+
+  it('one ball for two does not swing the match', () => {
+    const start = scoreLive(snap(0, 0), null, { prior: { homeWinProb: 0.743 } });
+    const oneBall = scoreLive(snap(2, 0.1), start, { prior: { homeWinProb: 0.743 } });
+    // Previously 65% -> 32% on this ball (projected total ~600).
+    assert.ok(Math.abs(oneBall.homeWinProb - start.homeWinProb) < 0.05, `${start.homeWinProb} -> ${oneBall.homeWinProb}`);
+    assert.ok(oneBall.explanation.projectedTotal < 300, `projected ${oneBall.explanation.projectedTotal}`);
+  });
+
+  it('a sustained scoring rate still moves the projection', () => {
+    const fast = scoreLive(snap(120, 15), null);
+    const slow = scoreLive(snap(45, 15), null);
+    assert.ok(fast.explanation.projectedTotal > slow.explanation.projectedTotal + 100);
+  });
+});

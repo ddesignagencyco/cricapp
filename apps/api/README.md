@@ -11,7 +11,12 @@ the `/api` prefix.
   `cricapp_access_token` HttpOnly cookie.
 - Browser clients must send requests with credentials enabled.
 - `POST /api/auth/logout` clears the session cookie.
-- Password reset uses the one-time link token only (`token` + `tokenId`).
+- Reset and verification emails carry a one-time link and a 6-digit code.
+  `POST /api/auth/reset-password` and `POST /api/auth/verify-email` accept
+  either the link pair (`tokenId` + `token`, used by the web pages) or
+  `email` + `code` (for mobile apps). Only bcrypt hashes are stored; a code
+  stops working after 5 wrong guesses, and a new reset request retires the
+  previous link and code.
 
 Cookie security is configured through `AUTH_COOKIE_*` variables in
 `.env.example`. Production deployments should use HTTPS and

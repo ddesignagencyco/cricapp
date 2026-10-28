@@ -21,6 +21,7 @@ jest.mock('../hooks/useMatchStream', () => ({
   useMatchStream: () => null,
   mergeMatchLivePayload: (payload: unknown) => payload,
   mergeLiveUpdate: (list: unknown[]) => list,
+  mergeLiveRows: (_prev: unknown[], rows: unknown[]) => rows,
 }));
 
 jest.mock('next/navigation', () => ({

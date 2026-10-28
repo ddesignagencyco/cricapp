@@ -5,6 +5,8 @@ export interface ToursListParams {
   [key: string]: string | number | boolean | undefined;
   page?: number;
   limit?: number;
+  /** Name or country-code search (GET /tours?q=). */
+  q?: string;
 }
 
 export interface ToursPageResult {

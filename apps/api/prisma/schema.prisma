@@ -2,14 +2,20 @@
 // Models mirror the existing `matches` table (created by services/ingestion
 // data/init.sql) and add team / player data persisted by ingestion.
 
+// Prisma 7: the client is generated into src/ (ESM, `.js` import specifiers for
+// the API's nodenext build) and talks to Postgres through @prisma/adapter-pg.
 generator client {
-  provider = "prisma-client-js"
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  runtime             = "nodejs"
+  moduleFormat        = "esm"
+  importFileExtension = "js"
 }
 
+// Connection URLs live in prisma.config.ts (CLI: DIRECT_URL, for migrations)
+// and in PrismaService (runtime: DATABASE_URL, the pooled connection).
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "postgresql"
 }
 
 model Match {
@@ -555,6 +561,9 @@ model PasswordResetToken {
   id        String   @id @default(uuid())
   userId    String   @map("user_id")
   tokenHash String   @map("token_hash")
+  // bcrypt hash of the 6-digit code sent alongside the link (apps type it in).
+  codeHash  String?  @map("code_hash")
+  codeAttempts Int   @default(0) @map("code_attempts")
   expiresAt DateTime @map("expires_at")
   usedAt    DateTime? @map("used_at")
   createdAt DateTime @default(now()) @map("created_at")
@@ -568,6 +577,9 @@ model EmailVerificationToken {
   id        String   @id @default(uuid())
   userId    String   @unique @map("user_id")
   tokenHash String   @map("token_hash")
+  // bcrypt hash of the 6-digit code sent alongside the link (apps type it in).
+  codeHash  String?  @map("code_hash")
+  codeAttempts Int   @default(0) @map("code_attempts")
   expiresAt DateTime @map("expires_at")
   usedAt    DateTime? @map("used_at")
   createdAt DateTime @default(now()) @map("created_at")
@@ -764,12 +776,38 @@ model NewsletterSubscriber {
   unsubscribeToken String   @unique @map("unsubscribe_token")
   subscribedAt    DateTime  @default(now()) @map("subscribed_at")
   unsubscribedAt  DateTime? @map("unsubscribed_at")
+  /// Opt-outs per newsletter type, e.g. {"daily_digest": false}. Missing keys mean "on".
+  preferences     Json      @default("{}")
+  /// Last time the subscriber clicked a newsletter link (re-engagement uses it).
+  lastEngagedAt   DateTime? @map("last_engaged_at")
+  lastSentAt      DateTime? @map("last_sent_at")
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
   user            User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  sends           NewsletterSend[]
 
   @@index([status])
   @@map("newsletter_subscribers")
+}
+
+/// One newsletter delivered (or attempted) to one subscriber. The unique key makes a
+/// repeat send of the same issue impossible, whichever process or instance tries.
+model NewsletterSend {
+  id           String   @id @default(uuid())
+  subscriberId String   @map("subscriber_id")
+  type         String
+  /// Identifies the issue: a date for digests, an ISO week, a match id, a news id.
+  issueKey     String   @map("issue_key")
+  subject      String
+  status       String   @default("sent")
+  error        String?  @db.Text
+  sentAt       DateTime @default(now()) @map("sent_at")
+  subscriber   NewsletterSubscriber @relation(fields: [subscriberId], references: [id], onDelete: Cascade)
+
+  @@unique([subscriberId, type, issueKey])
+  @@index([type, issueKey])
+  @@index([subscriberId, sentAt])
+  @@map("newsletter_sends")
 }
 
 model ContactSubmission {

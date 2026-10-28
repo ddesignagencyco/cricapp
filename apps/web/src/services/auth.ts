@@ -39,11 +39,7 @@ export function forgotPassword(input: ForgotPasswordInput): Promise<MessageRespo
 }
 
 export function resetPassword(input: ResetPasswordInput): Promise<MessageResponse> {
-  return apiPost<MessageResponse>('/auth/reset-password', {
-    tokenId: input.tokenId,
-    token: input.token,
-    password: input.password,
-  });
+  return apiPost<MessageResponse>('/auth/reset-password', input);
 }
 
 export function verifyEmail(input: VerifyEmailInput): Promise<MessageResponse> {

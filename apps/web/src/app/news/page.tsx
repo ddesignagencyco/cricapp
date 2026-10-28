@@ -14,18 +14,17 @@ const PAGE_SIZE = 12;
 export default async function NewsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; category?: string; tag?: string; lang?: string }>;
+  searchParams: Promise<{ page?: string; category?: string; lang?: string }>;
 }) {
   const params = await searchParams;
   const page = Math.max(1, Number(params.page) || 1);
   const category = params.category?.trim() || undefined;
-  const tag = params.tag?.trim() || undefined;
   if (params.lang === 'ur') {
-    redirect(newsListPath('ur', { category, tag, page }));
+    redirect(newsListPath('ur', { category, page }));
   }
   const language = 'en';
   const [newsResult, categories] = await Promise.all([
-    fetchNewsPage({ page, limit: PAGE_SIZE, category, tag, language })
+    fetchNewsPage({ page, limit: PAGE_SIZE, category, language })
       .then((result) => ({ result, loadError: false as const }))
       .catch(() => ({ result: { items: [], total: 0, totalPages: 1 }, loadError: true as const })),
     fetchNewsCategories().catch(() => []),

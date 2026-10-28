@@ -127,11 +127,46 @@ async function processLiveMatch(id) {
   }
 }
 
+/** Schedule statuses that mean "in play", including rain or bad-light stoppages. */
+const IN_PLAY_STATUSES = new Set(['live', 'interrupted', 'suspended']);
+
+/**
+ * How long a match we hold as live keeps being followed after the live schedule stops
+ * listing it. Long enough for a five-day Test, short enough that a fixture the provider
+ * never closes cannot be polled forever.
+ */
+const FOLLOW_UP_MAX_MS = 6 * 24 * 60 * 60 * 1000;
+
+/**
+ * Matches we still hold as live that the live schedule no longer lists.
+ *
+ * A match drops off the live schedule the moment it ends, so its final summary — the
+ * result, the last ball — was never fetched: the row stayed "live" for hours until the
+ * daily sync corrected it. These are polled until their own summary says the match is
+ * over, at which point `publishMatchState` removes them from the live set.
+ */
+async function heldLiveIds(scheduleIds) {
+  const held = await redis.smembers(redisKeys.liveMatches()).catch(() => []);
+  const ids = [];
+  for (const id of held) {
+    if (scheduleIds.has(id)) continue;
+    const previous = await readPrevious(id).catch(() => null);
+    const scheduledAt = Date.parse(previous?.scheduled ?? '');
+    if (Number.isFinite(scheduledAt) && Date.now() - scheduledAt > FOLLOW_UP_MAX_MS) {
+      await redis.srem(redisKeys.liveMatches(), id).catch(() => {});
+      continue;
+    }
+    ids.push(id);
+  }
+  return ids;
+}
+
 export async function pollOnce() {
   const liveEvents = await fetchLiveSchedule();
-  const liveIds = liveEvents
-    .filter((se) => se.status === 'live')
+  const scheduleIds = liveEvents
+    .filter((se) => IN_PLAY_STATUSES.has(se.status))
     .map((se) => se.id);
+  const liveIds = [...scheduleIds, ...(await heldLiveIds(new Set(scheduleIds)))];
 
   for (const id of liveIds) {
     try {

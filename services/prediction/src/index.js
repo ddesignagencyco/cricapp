@@ -17,6 +17,7 @@ import {
   resolvePrematchWeights,
 } from './calibrate.js';
 import { snapshotPerformance } from './performance.js';
+import { acquireWorkerLock } from './schedulerLock.js';
 import { refreshRatings } from './ratings.js';
 
 const log = createLogger('prediction');
@@ -379,8 +380,11 @@ export async function startLiveSubscriber() {
   };
 }
 
+let schedulerLock = null;
+
 async function shutdown() {
   log.info('shutting down...');
+  await schedulerLock?.release();
   await shutdownRedis();
   await shutdownDb();
   process.exit(0);
@@ -391,6 +395,8 @@ process.on('SIGTERM', shutdown);
 
 async function main() {
   await ping();
+  // Only one prediction writer may run: see schedulerLock.js.
+  schedulerLock = await acquireWorkerLock({ log });
   await refreshRatings(query).catch((err) => log.error('initial ratings refresh failed', { error: err.message }));
   await scoreUpcomingMatches();
   setInterval(() => {

@@ -28,6 +28,30 @@ import ReportCommentDialog from './ReportCommentDialog';
 interface CommentsSectionProps {
   targetType: CommentTarget;
   targetId: string;
+  /**
+   * When set, silently re-fetch the first page on this interval while the tab is
+   * visible (used for live streams). Only runs while the reader is on page 1, so a
+   * "Load more" list is never replaced underneath them.
+   */
+  refreshIntervalMs?: number;
+}
+
+/** Characters allowed in one comment. The API does not cap `body`; this is the web limit. */
+export const COMMENT_MAX_LENGTH = 1000;
+
+/** "just now", "5m ago", "3h ago", "2d ago", then a short date. */
+export function formatCommentTime(iso: string, now = Date.now()): string {
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return '';
+  const sec = Math.max(0, Math.floor((now - then) / 1000));
+  if (sec < 60) return 'just now';
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min}m ago`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr}h ago`;
+  const days = Math.floor(hr / 24);
+  if (days < 7) return `${days}d ago`;
+  return new Date(then).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 function highlightedCommentId(): string {
@@ -38,7 +62,7 @@ function highlightedCommentId(): string {
   return hash.startsWith('comment-') ? hash.slice('comment-'.length) : '';
 }
 
-export default function CommentsSection({ targetType, targetId }: CommentsSectionProps) {
+export default function CommentsSection({ targetType, targetId, refreshIntervalMs }: CommentsSectionProps) {
   const { user, isAuthenticated, isAdmin } = useAuth();
   const pathname = usePathname();
   const [comments, setComments] = useState<CommentItem[]>([]);
@@ -96,6 +120,51 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
   useEffect(() => {
     load();
   }, [load]);
+
+  // Live targets: quietly pick up new comments. No skeleton, and reaction counts are
+  // only fetched for comments we have not seen yet, so each tick is one request.
+  const pageRef = useRef(page);
+  const knownCountsRef = useRef(commentCounts);
+  useEffect(() => {
+    pageRef.current = page;
+    knownCountsRef.current = commentCounts;
+  }, [page, commentCounts]);
+  useEffect(() => {
+    if (!refreshIntervalMs || refreshIntervalMs <= 0) return;
+    let cancelled = false;
+    const tick = () => {
+      if (pageRef.current !== 1) return;
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
+      listComments(targetType, targetId, 1, 10)
+        .then(async (r) => {
+          if (cancelled || pageRef.current !== 1) return;
+          setComments(r.items);
+          setTotal(r.total);
+          setTotalPages(r.totalPages);
+          const fresh = r.items.filter((c) => !(c.id in knownCountsRef.current));
+          if (fresh.length === 0) return;
+          const pairs = await Promise.all(
+            fresh.map((comment) =>
+              getReactionCounts('comment', comment.id)
+                .then((res) => [comment.id, res.counts] as const)
+                .catch(() => [comment.id, {}] as const),
+            ),
+          );
+          if (cancelled) return;
+          setCommentCounts((prev) => {
+            const next = { ...prev };
+            for (const [id, nextCounts] of pairs) next[id] = nextCounts;
+            return next;
+          });
+        })
+        .catch(() => undefined);
+    };
+    const timer = window.setInterval(tick, refreshIntervalMs);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [refreshIntervalMs, targetType, targetId]);
 
   useEffect(() => {
     const syncHighlight = () => setHighlightId(highlightedCommentId());
@@ -240,7 +309,7 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
               onChange={(e) => setBody(e.target.value)}
               onKeyDown={onBodyKeyDown}
               placeholder="Share your thoughts…"
-              maxLength={1000}
+              maxLength={COMMENT_MAX_LENGTH}
               className="min-h-[52px] w-full resize-none whitespace-pre-line bg-transparent text-sm leading-snug text-mtext shadow-none outline-none ring-0 placeholder:text-stext focus:border-transparent focus:outline-none focus:ring-0 focus-visible:border-transparent focus-visible:outline-none focus-visible:ring-0"
             />
           </div>
@@ -251,7 +320,7 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
               <kbd className="rounded bg-secondary px-1 py-0.5 font-mono text-[10px] text-mtext">Shift</kbd>+
               <kbd className="rounded bg-secondary px-1 py-0.5 font-mono text-[10px] text-mtext">Enter</kbd> for new line
             </span>
-            <span className="ml-auto text-[11px] font-medium tabular-nums text-stext">{body.length}/1000</span>
+            <span className="ml-auto text-[11px] font-medium tabular-nums text-stext">{body.length}/{COMMENT_MAX_LENGTH}</span>
             <button
               type="submit"
               disabled={submitting || !body.trim()}
@@ -299,9 +368,18 @@ export default function CommentsSection({ targetType, targetId }: CommentsSectio
                       <div className="min-w-0">
                         <p className="truncate text-xs font-semibold text-mtext">{name}</p>
                         <p className="text-[11px] text-stext">
-                          {new Date(comment.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                          {' · '}
-                          {new Date(comment.createdAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                          <time
+                            dateTime={comment.createdAt}
+                            title={new Date(comment.createdAt).toLocaleString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              hour: 'numeric',
+                              minute: '2-digit',
+                            })}
+                            suppressHydrationWarning
+                          >
+                            {formatCommentTime(comment.createdAt)}
+                          </time>
                         </p>
                       </div>
                       {(isAdmin || user?.id === comment.userId) && (

@@ -139,9 +139,9 @@ export default function AdminOddsPage() {
                     <tr style={{ borderBottom: '1px solid var(--admin-border)', background: 'var(--admin-table-header)' }}>
                       {[
                         { h: 'Source', cls: '' },
-                        { h: 'Slug', cls: 'hidden sm:table-cell' },
+                        { h: 'Slug', cls: '' },
                         { h: 'Mode', cls: '' },
-                        { h: 'License', cls: 'hidden md:table-cell' },
+                        { h: 'License', cls: '' },
                         { h: 'Last price', cls: '' },
                         { h: 'Health', cls: '' },
                       ].map((heading) => (
@@ -163,7 +163,7 @@ export default function AdminOddsPage() {
                           <td className="max-w-[9rem] truncate px-3 py-2.5 sm:max-w-[16rem]" style={{ color: 'var(--admin-text)' }} title={source.name}>
                             {source.name}
                           </td>
-                          <td className="hidden max-w-[8rem] truncate px-3 py-2.5 font-mono sm:table-cell" style={{ color: 'var(--admin-text-secondary)' }} title={source.slug}>
+                          <td className="max-w-[8rem] truncate px-3 py-2.5 font-mono" style={{ color: 'var(--admin-text-secondary)' }} title={source.slug}>
                             {source.slug}
                           </td>
                           <td className="px-3 py-2.5">
@@ -172,7 +172,7 @@ export default function AdminOddsPage() {
                               tone={seed ? 'warning' : 'info'}
                             />
                           </td>
-                          <td className="hidden px-3 py-2.5 md:table-cell">
+                          <td className="px-3 py-2.5">
                             <AdminChip
                               label={titleCase(source.licenseStatus)}
                               tone={source.licenseStatus.toLowerCase() === 'licensed' ? 'success' : 'neutral'}

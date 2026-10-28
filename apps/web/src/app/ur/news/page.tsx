@@ -11,14 +11,13 @@ const PAGE_SIZE = 12;
 export default async function UrduNewsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; category?: string; tag?: string }>;
+  searchParams: Promise<{ page?: string; category?: string }>;
 }) {
   const params = await searchParams;
   const page = Math.max(1, Number(params.page) || 1);
   const category = params.category?.trim() || undefined;
-  const tag = params.tag?.trim() || undefined;
   const [newsResult, categories] = await Promise.all([
-    fetchNewsPage({ page, limit: PAGE_SIZE, category, tag, language: 'ur' })
+    fetchNewsPage({ page, limit: PAGE_SIZE, category, language: 'ur' })
       .then((result) => ({ result, loadError: false as const }))
       .catch(() => ({ result: { items: [], total: 0, totalPages: 1 }, loadError: true as const })),
     fetchNewsCategories().catch(() => []),

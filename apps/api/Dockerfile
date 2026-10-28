@@ -1,4 +1,5 @@
-FROM node:20-bullseye-slim AS base
+# Prisma 7 needs Node >= 20.19; Node 20 is end-of-life, so build on Node 22 LTS.
+FROM node:22-bookworm-slim AS base
 
 # ---------- install ----------
 FROM base AS deps
@@ -23,7 +24,7 @@ COPY package.json package-lock.json ./
 COPY apps/api ./apps/api
 COPY packages/shared-types ./packages/shared-types
 
-RUN npx prisma generate --schema=apps/api/prisma/schema.prisma
+RUN npx prisma generate --config apps/api/prisma.config.ts
 RUN npm run build -w apps/api
 
 # ---------- production ----------
@@ -45,4 +46,5 @@ USER cricapp
 
 EXPOSE 3001
 
-CMD ["sh", "-c", "npx prisma migrate deploy --schema=apps/api/prisma/schema.prisma && node apps/api/dist/src/main.js"]
+# Migrations read DIRECT_URL (falling back to DATABASE_URL) from prisma.config.ts.
+CMD ["sh", "-c", "npx prisma migrate deploy --config apps/api/prisma.config.ts && node apps/api/dist/src/main.js"]

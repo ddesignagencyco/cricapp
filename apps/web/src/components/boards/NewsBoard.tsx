@@ -8,7 +8,6 @@ import {
   Calendar,
   Clock,
   Newspaper,
-  Tag as TagIcon,
   Flame,
 } from 'lucide-react';
 import Badge from '../Badge';
@@ -46,16 +45,6 @@ function getCategoryName(category: unknown): string {
     );
   }
   return 'Cricket';
-}
-
-function getArticleTags(item: NewsArticle): string[] {
-  if (Array.isArray(item.tags) && item.tags.length > 0) {
-    return item.tags.filter((tag) => typeof tag === 'string' && tag.trim());
-  }
-  if (typeof item.tag === 'string' && item.tag.trim()) {
-    return [item.tag.trim()];
-  }
-  return [];
 }
 
 interface Props {
@@ -129,7 +118,6 @@ export default function NewsBoard({
 
   const updateQuery = (nextCategory: string, nextPage = 1) => {
     const params = new URLSearchParams(searchParams.toString());
-    if (nextCategory !== selectedCategory) params.delete('tag');
     if (nextCategory === 'all') params.delete('category');
     else params.set('category', nextCategory);
     if (nextPage <= 1) params.delete('page');
@@ -139,13 +127,9 @@ export default function NewsBoard({
   };
 
   const spotlightCategory = featured ? getCategoryName(featured.category) : '';
-  const spotlightTags = featured ? getArticleTags(featured) : [];
 
   const newsListHref = (lang: 'en' | 'ur') =>
-    newsListPath(lang, {
-      category: selectedCategory,
-      tag: searchParams.get('tag') || undefined,
-    });
+    newsListPath(lang, { category: selectedCategory });
 
   return (
     <>
@@ -232,15 +216,6 @@ export default function NewsBoard({
                       {spotlightCategory}
                     </Badge>
                   )}
-                  {spotlightTags.slice(0, 3).map((tag) => (
-                    <span
-                      key={tag}
-                      className="inline-flex items-center gap-1 rounded border border-lborder bg-secondary px-2 py-1 text-xs font-medium text-stext"
-                    >
-                      <TagIcon size={10} className="text-accent" />
-                      {tag}
-                    </span>
-                  ))}
                 </div>
 
                 <NewsCopy
@@ -350,7 +325,6 @@ export default function NewsBoard({
 
 function ArticleCard({ item, language }: { item: NewsArticle; language: 'en' | 'ur' }) {
   const catName = getCategoryName(item.category);
-  const tags = getArticleTags(item);
 
   return (
     <Link
@@ -378,12 +352,6 @@ function ArticleCard({ item, language }: { item: NewsArticle; language: 'en' | '
               {catName}
             </Badge>
           )}
-          {tags[0] && tags[0] !== catName && (
-            <span className="inline-flex items-center gap-1 rounded bg-elevated px-2 py-0.5 text-xs font-medium text-stext ring-1 ring-lborder">
-              <TagIcon size={9} className="text-accent" />
-              {tags[0]}
-            </span>
-          )}
         </div>
       </div>
 
@@ -405,19 +373,6 @@ function ArticleCard({ item, language }: { item: NewsArticle; language: 'en' | '
           >
             {item.excerpt}
           </NewsCopy>
-        )}
-
-        {tags.length > 1 && (
-          <div className="mt-3 mb-3 flex flex-wrap items-center gap-2" aria-label="Article tags">
-            {tags.slice(1, 3).map((t) => (
-              <span
-                key={t}
-                className="rounded border border-lborder bg-secondary px-2.5 py-1 text-xs font-medium text-stext"
-              >
-                #{t}
-              </span>
-            ))}
-          </div>
         )}
 
         <div className="mt-auto flex items-center justify-between gap-2 border-t border-lborder pt-3 text-xs text-stext">

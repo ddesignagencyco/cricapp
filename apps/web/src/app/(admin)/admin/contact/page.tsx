@@ -176,9 +176,9 @@ export default function AdminContactPage() {
                 <tr style={{ background: 'var(--admin-table-header)', borderBottom: '1px solid var(--admin-border)' }}>
                   <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>From</th>
                   <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Message</th>
-                  <th className="hidden px-4 py-3 text-xs font-bold uppercase tracking-wider sm:table-cell" style={{ color: 'var(--admin-text-secondary)' }}>Date</th>
+                  <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Date</th>
                   <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Status</th>
-                  <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Actions</th>
+                  <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -221,14 +221,14 @@ export default function AdminContactPage() {
                           </span>
                         </button>
                       </td>
-                      <td className="hidden whitespace-nowrap px-4 py-3 align-top text-xs sm:table-cell" style={{ color: 'var(--admin-text-muted)' }}>
+                      <td className="whitespace-nowrap px-4 py-3 align-top text-xs" style={{ color: 'var(--admin-text-muted)' }}>
                         {formatWhen(item.createdAt)}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 align-top">
                         <StatusBadge status={item.status} />
                       </td>
                       <td className="px-4 py-3 align-top">
-                        <div className="flex flex-wrap justify-end gap-1.5">
+                        <div className="flex flex-wrap justify-start gap-1.5">
                           {otherStatuses(item.status).map((next) => (
                             <button
                               key={next}

@@ -66,9 +66,9 @@ export default function PlayerCard({ player }: PlayerCardProps) {
 
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 items-center gap-2">
-            <h3 className="truncate text-sm font-semibold text-mtext transition-colors group-hover:text-accent">
+            <h2 className="truncate text-sm font-semibold text-mtext transition-colors group-hover:text-accent">
               {name}
-            </h3>
+            </h2>
             <Badge tone={tone}>{role}</Badge>
           </div>
           <div className="mt-1 flex min-w-0 items-center gap-3 text-xs text-stext">
@@ -88,10 +88,13 @@ export default function PlayerCard({ player }: PlayerCardProps) {
 
       <div className="flex shrink-0 items-center gap-1">
         <FavoriteButton targetType="player" targetId={playerId} compact />
-        <ShareButton type="player" id={playerId} fallbackTitle={name} href={href} compact />
+        {/* Phones: the whole row is the link, so only the favourite stays beside the name. */}
+        <span className="hidden sm:inline-flex">
+          <ShareButton type="player" id={playerId} fallbackTitle={name} href={href} compact />
+        </span>
         <Link
           href={href}
-          className="grid h-8 w-8 place-items-center text-stext transition-colors group-hover:text-accent"
+          className="hidden h-8 w-8 place-items-center text-stext transition-colors group-hover:text-accent sm:grid"
           aria-label="View player"
         >
           <ChevronRight size={16} aria-hidden="true" />

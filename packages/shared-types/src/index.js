@@ -16,3 +16,4 @@ export {
   parseOddsToDecimal,
 } from "./odds.math.js";
 export * from "./revision.js";
+export * from "./winner.js";

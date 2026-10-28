@@ -61,6 +61,24 @@ export class MatchesController {
     return body;
   }
 
+  @Get(':matchId/commentary')
+  @ApiOperation({
+    summary: 'Ball-by-ball commentary, a few overs at a time',
+    description:
+      'The newest `overs` overs (default 4, max 20) of deliveries, newest last. Pass the returned `before` cursor (`<inning>:<over>`) to page back to earlier overs. Same source as the timeline, without its full payload.',
+  })
+  @ApiParam({ name: 'matchId', description: 'Provider match id (e.g. sr:match:66650320).' })
+  @ApiResponse({ status: 200, description: 'One page of commentary events.' })
+  @ApiResponse({ status: 404, description: 'Timeline not found.' })
+  async commentary(
+    @Param('matchId') matchId: string,
+    @Query('overs') overs?: string,
+    @Query('before') before?: string,
+  ) {
+    const count = Math.min(20, Math.max(1, Number.parseInt(overs ?? '', 10) || 4));
+    return this.matchesService.getCommentaryPage(matchId, count, before ?? null);
+  }
+
   @Get(':matchId')
   @ApiOperation({ summary: 'Get a match by id', description: 'Cached live match state first, then Postgres.' })
   @ApiParam({ name: 'matchId', description: 'Provider match id (e.g. sr:match:66650320).' })

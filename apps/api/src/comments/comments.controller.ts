@@ -11,9 +11,11 @@ import {
   ValidationPipe,
   Request,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiOperation, ApiResponse, ApiCookieAuth, ApiParam } from '@nestjs/swagger';
 import { CommentsService } from './comments.service.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
+import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard.js';
 import {
   CreateCommentDto,
   CreateReactionDto,
@@ -30,8 +32,9 @@ export class CommentsController {
   constructor(private readonly commentsService: CommentsService) {}
 
   @Get('comments')
+  @UseGuards(OptionalJwtAuthGuard)
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
-  @ApiOperation({ summary: 'List comments for a target (paginated)' })
+  @ApiOperation({ summary: 'List comments for a target (paginated), each with its reaction counts and, when signed in, your own reactions' })
   @ApiResponse({ status: 200, description: 'Paginated comments.' })
   async listComments(
     @Request() req: { user?: { id: string } },
@@ -42,6 +45,7 @@ export class CommentsController {
 
   @Post('comments')
   @UseGuards(JwtAuthGuard)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiCookieAuth()
   @ApiOperation({ summary: 'Create a comment' })
   @ApiResponse({ status: 201, type: CommentDto })

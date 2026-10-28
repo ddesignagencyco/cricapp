@@ -12,6 +12,8 @@ import { refreshStaleUpcomingMatch } from '../src/refSync.js';
 const TEST_MATCH_ID = 'sr:match:int-99999';
 const STALE_MATCH_ID = 'sr:match:int-stale-99999';
 const POSTPONED_MATCH_ID = 'sr:match:int-postponed-99999';
+/** Held as live, no longer on the live schedule, and its summary now says it ended. */
+const ENDED_MATCH_ID = 'sr:match:int-ended-99999';
 
 function staleSummaryPayload() {
   return {
@@ -97,6 +99,11 @@ function mockFetch() {
       return Response.json(staleSummaryPayload());
     }
 
+    if (path.includes(`/matches/${ENDED_MATCH_ID}/summary.json`)) {
+      const summary = staleSummaryPayload();
+      return Response.json({ ...summary, sport_event: { ...summary.sport_event, id: ENDED_MATCH_ID } });
+    }
+
     if (path.includes(`/matches/${POSTPONED_MATCH_ID}/summary.json`)) {
       return Response.json(postponedSummaryPayload());
     }
@@ -116,9 +123,16 @@ function mockFetch() {
 
 describe('ingestion integration', () => {
   let originalFetch;
+  // The live set lives in the shared dev Redis. Real live matches in it would now be
+  // followed by pollOnce (held-live follow-up), so they are set aside for the run.
+  let realLiveIds = [];
 
   before(async () => {
     originalFetch = mockFetch();
+    realLiveIds = (await redis.smembers(redisKeys.liveMatches())).filter((id) => !id.includes(':int-'));
+    if (realLiveIds.length) await redis.srem(redisKeys.liveMatches(), ...realLiveIds);
+    await redis.del(redisKeys.matchState(ENDED_MATCH_ID));
+    await query(`DELETE FROM matches WHERE match_id = $1`, [ENDED_MATCH_ID]);
     await query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS team_scores JSONB`);
     await query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS result_text TEXT`);
     // Clean up any previous test state
@@ -146,6 +160,11 @@ describe('ingestion integration', () => {
 
   after(async () => {
     globalThis.fetch = originalFetch;
+    if (realLiveIds.length) await redis.sadd(redisKeys.liveMatches(), ...realLiveIds);
+    await redis.del(redisKeys.matchState(ENDED_MATCH_ID));
+    await redis.srem(redisKeys.liveMatches(), ENDED_MATCH_ID);
+    await query(`DELETE FROM matches WHERE match_id = $1`, [ENDED_MATCH_ID]);
+    await query(`DELETE FROM sport_event_records WHERE event_id = $1 AND kind = 'match_summary'`, [ENDED_MATCH_ID]);
     await redis.del(redisKeys.matchState(TEST_MATCH_ID));
     await redis.del(redisKeys.matchState(STALE_MATCH_ID));
     await redis.del(redisKeys.matchState(POSTPONED_MATCH_ID));
@@ -173,7 +192,8 @@ describe('ingestion integration', () => {
   it('pollOnce: fetches live schedule, persists match to DB and Redis', async () => {
     try {
       const liveCount = await pollOnce();
-      assert.equal(liveCount, 1);
+      // A real ingestion process may re-add live ids to the shared set mid-run.
+      assert.ok(liveCount >= 1);
 
       // Verify DB
       const dbRes = await query(`SELECT * FROM matches WHERE match_id = $1`, [TEST_MATCH_ID]);
@@ -314,5 +334,31 @@ describe('ingestion integration', () => {
     );
     assert.equal(postponedRow.rows[0].status, 'upcoming');
     assert.equal(postponedRow.rows[0].scheduled, '2026-10-05T10:00:00Z');
+  });
+
+  it('keeps following a held live match off the schedule until its summary says it ended', async () => {
+    await redis.set(
+      redisKeys.matchState(ENDED_MATCH_ID),
+      JSON.stringify({ matchId: ENDED_MATCH_ID, status: 'live', scheduled: new Date().toISOString() }),
+    );
+    await redis.sadd(redisKeys.liveMatches(), ENDED_MATCH_ID);
+
+    await pollOnce();
+
+    const liveSet = await redis.smembers(redisKeys.liveMatches());
+    assert.ok(!liveSet.includes(ENDED_MATCH_ID), 'an ended match leaves the live set');
+    const row = await query(`SELECT status, result_text FROM matches WHERE match_id = $1`, [ENDED_MATCH_ID]);
+    assert.equal(row.rows[0]?.status, 'completed');
+  });
+
+  it('stops following a held match scheduled more than six days ago', async () => {
+    const old = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    await redis.set(redisKeys.matchState(ENDED_MATCH_ID), JSON.stringify({ matchId: ENDED_MATCH_ID, status: 'live', scheduled: old }));
+    await redis.sadd(redisKeys.liveMatches(), ENDED_MATCH_ID);
+
+    await pollOnce();
+
+    const liveSet = await redis.smembers(redisKeys.liveMatches());
+    assert.ok(!liveSet.includes(ENDED_MATCH_ID));
   });
 });

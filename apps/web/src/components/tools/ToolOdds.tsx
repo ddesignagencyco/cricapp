@@ -8,6 +8,7 @@ import {
   formatPct,
   impliedFromDecimal,
   fractionalFromDecimal,
+  fractionalQuery,
 } from '../../lib/oddsMath';
 import type { ToolDef } from '../../lib/toolsCatalog';
 import type { OddsConvertResponse } from '../../types/odds';
@@ -18,17 +19,13 @@ export default function ToolOdds({ tool }: { tool: ToolDef }) {
   const [mode, setMode] = useState<'decimal' | 'fractional' | 'american'>('decimal');
   const [a, setA] = useState('2.5');
   const [b, setB] = useState('2');
-  const [apiResult, setApiResult] = useState<OddsConvertResponse | null>(null);
+  // Keyed by the query it answered, so a reply for an older input is never shown.
+  const [apiResult, setApiResult] = useState<{ key: string; res: OddsConvertResponse | null } | null>(null);
   const [apiPending, setApiPending] = useState(false);
   const [apiError, setApiError] = useState(false);
 
   const queryValue = useMemo(() => {
-    if (mode === 'fractional') {
-      const numVal = num(a);
-      const denVal = num(b);
-      if (numVal <= 0 || denVal <= 0) return '';
-      return `${Math.round(numVal)}/${Math.round(denVal)}`;
-    }
+    if (mode === 'fractional') return fractionalQuery(num(a), num(b));
     return a.trim();
   }, [mode, a, b]);
 
@@ -60,7 +57,7 @@ export default function ToolOdds({ tool }: { tool: ToolDef }) {
       void convertOdds(mode, queryValue)
         .then((res) => {
           if (cancelled) return;
-          setApiResult(res);
+          setApiResult({ key: `${mode}:${queryValue}`, res });
           if (!res) setApiError(true);
         })
         .catch(() => {
@@ -76,11 +73,15 @@ export default function ToolOdds({ tool }: { tool: ToolDef }) {
     };
   }, [mode, queryValue]);
 
-  const decimal = apiResult?.decimal ?? local.decimal;
-  const implied = apiResult?.formats?.impliedProbability ?? local.implied;
-  const american = apiResult?.formats?.american ?? local.american;
-  const fractional =
-    apiResult?.formats?.fractional ?? (local.frac ? `${local.frac.num}/${local.frac.den}` : null);
+  // The API only confirms the local answer: a stale, missing or disagreeing reply
+  // falls back to the formula rather than replacing a correct number.
+  const current = apiResult?.key === `${mode}:${queryValue}` ? apiResult.res : null;
+  const api =
+    current && local.decimal !== null && Math.abs(current.decimal - local.decimal) < 1e-6 ? current : null;
+  const decimal = api?.decimal ?? local.decimal;
+  const implied = api?.formats?.impliedProbability ?? local.implied;
+  const american = api?.formats?.american ?? local.american;
+  const fractional = api?.formats?.fractional || (local.frac ? `${local.frac.num}/${local.frac.den}` : null);
 
   return (
     <ToolPage tool={tool}>

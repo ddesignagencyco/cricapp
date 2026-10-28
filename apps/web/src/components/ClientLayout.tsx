@@ -36,6 +36,12 @@ function showGlobalTopAd(pathname: string) {
   if (pathname.startsWith('/teams/') && pathname !== '/teams') return false;
   if (pathname.startsWith('/players/') && pathname !== '/players') return false;
   if (isEditorialPath(pathname)) return false;
+  // These pages place their own banner right after the intro; the global one on top
+  // put two ads in the first phone screen (Better Ads mobile density).
+  if (pathname === '/players' || pathname === '/teams') return false;
+  if (pathname === '/psl' || pathname.startsWith('/psl/')) return false;
+  if (pathname.startsWith('/tournaments/')) return false;
+  if (pathname === '/tournaments' || pathname === '/tours') return false;
   return true;
 }
 

@@ -3,12 +3,16 @@ import { authHeaders } from './auth';
 import type {
   AdminPredictionCalibration,
   AdminPredictionModelVersion,
+  AdminPredictionModelWeight,
   AdminPredictionRunDetail,
   BulkPredictionsResponse,
   MatchPredictions,
   PredictionChart,
   PredictionHistory,
   PredictionPerformance,
+  PredictionPerformanceHistory,
+  PredictionPerformanceSnapshot,
+  PredictionStage,
 } from '../types/predictions';
 
 function normalizeMatchId(id: string): string {
@@ -112,6 +116,45 @@ export async function fetchAdminPredictionModels(): Promise<AdminPredictionModel
     { headers: authHeaders() }
   );
   return Array.isArray(res) ? res : res?.data || [];
+}
+
+export async function fetchAdminPredictionModelWeights(): Promise<AdminPredictionModelWeight[]> {
+  const res = await apiGet<AdminPredictionModelWeight[] | { data: AdminPredictionModelWeight[] }>(
+    '/admin/predictions/model-weights',
+    undefined,
+    { headers: authHeaders() }
+  );
+  return Array.isArray(res) ? res : res?.data || [];
+}
+
+/** Scores settled matches now and stores the result as a new history row. */
+export async function createAdminPerformanceSnapshot(params: {
+  stage?: PredictionStage;
+  modelVersion?: string;
+} = {}): Promise<PredictionPerformanceSnapshot> {
+  // The endpoint reads its options from the query string, not the body.
+  const query = new URLSearchParams();
+  if (params.stage) query.set('stage', params.stage);
+  if (params.modelVersion) query.set('modelVersion', params.modelVersion);
+  const qs = query.toString();
+  return apiPost<PredictionPerformanceSnapshot>(
+    `/admin/predictions/performance/snapshot${qs ? `?${qs}` : ''}`,
+    undefined,
+    { headers: authHeaders() }
+  );
+}
+
+/** Stored accuracy snapshots, newest first. */
+export async function fetchPredictionPerformanceHistory(
+  params: { stage?: PredictionStage; modelVersion?: string; limit?: number } = {},
+  options: { revalidate?: number } = {}
+): Promise<PredictionPerformanceSnapshot[]> {
+  const res = await apiGet<PredictionPerformanceHistory>(
+    '/predictions/performance/history',
+    params,
+    options.revalidate !== undefined ? { revalidate: options.revalidate } : { cache: 'no-store' }
+  );
+  return Array.isArray(res?.data) ? res.data : [];
 }
 
 export async function fetchAdminPredictionCalibration(params: {

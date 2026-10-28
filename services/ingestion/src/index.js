@@ -80,9 +80,16 @@ async function pollLoop() {
     try {
       liveCount = await pollOnce();
     } catch (err) {
+      // One failed cycle (a 429, a timeout, a Redis blip) used to sleep the idle
+      // interval here *and* again below — two minutes with no polling, long enough for
+      // the 120s heartbeat to expire and every live score to freeze. Retry on the live
+      // cadence instead, and record the failure where the admin health card reads it.
       log.error('poll cycle failed', { error: err.message });
-      liveCount = 0;
-      await new Promise((r) => setTimeout(r, POLL_INTERVAL_IDLE_MS));
+      await redis
+        .set('ingestion:heartbeat', JSON.stringify({ ts: Date.now(), liveCount, error: err.message }), 'EX', 120)
+        .catch(() => {});
+      await new Promise((r) => setTimeout(r, POLL_INTERVAL_LIVE_MS));
+      continue;
     }
     const delay = liveCount > 0 ? POLL_INTERVAL_LIVE_MS : POLL_INTERVAL_IDLE_MS;
     await new Promise((r) => setTimeout(r, delay));

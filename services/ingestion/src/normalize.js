@@ -1,4 +1,5 @@
 ﻿import { PROVIDERS } from './schemas.js';
+import { resolveWinnerId } from '@cricapp/shared-types';
 import { buildTeamFromCompetitor, canonicalTeamAbbr, managerDisplayName } from './teamMeta.js';
 import { buildPlayerFromLineupEntry, parseFullName } from './playerMeta.js';
 import { battingSideFromToken } from './matchSide.js';
@@ -20,6 +21,78 @@ export function normalizeMatch(providerName, raw) {
     default:
       throw new Error(`No normalizer defined for provider "${providerName}"`);
   }
+}
+
+/** Legal balls in a cricket-notation overs value (14.3 → 87). Null when unparseable. */
+function oversToBalls(overs) {
+  const n = Number(overs);
+  if (overs === null || overs === undefined || overs === '' || !Number.isFinite(n) || n < 0) return null;
+  const whole = Math.floor(n);
+  return whole * 6 + Math.round((n - whole) * 10);
+}
+
+function ballsToOvers(balls) {
+  return Number((Math.floor(balls / 6) + (balls % 6) / 10).toFixed(1));
+}
+
+/**
+ * Overs bowled in an innings, summed ball by ball from the bowlers' figures.
+ *
+ * This lives in the same `statistics` block as the batting runs, so the two describe
+ * the same instant. `overs_completed` in that block only counts whole overs (14 at
+ * 14.3), and `sport_event_status.display_overs` is written separately and is often a
+ * ball behind the scorecard — pairing either with the scorecard runs produced scores
+ * that never existed (60 runs at 14.2 when the scorecard said 60 at 14.3).
+ */
+function scorecardOvers(inning) {
+  const teams = inning?.teams ?? [];
+  const bowling =
+    teams.find((t) => t.id === inning.bowling_team)?.statistics?.bowling ??
+    teams.find((t) => t.statistics?.bowling)?.statistics?.bowling;
+  const players = bowling?.players ?? [];
+  let balls = 0;
+  let counted = false;
+  for (const player of players) {
+    const b = oversToBalls(player?.statistics?.overs_bowled);
+    if (b === null) continue;
+    balls += b;
+    counted = true;
+  }
+  return counted && balls > 0 ? ballsToOvers(balls) : null;
+}
+
+/** The last "runs/wickets" in a display score ("IND 120/2", "250 & 120/3" → 120/2, 120/3). */
+function lastScorePair(displayScore) {
+  const all = [...String(displayScore ?? '').matchAll(/(\d+)\/(\d+)/g)];
+  const m = all[all.length - 1];
+  return m ? { runs: Number(m[1]), wickets: Number(m[2]), index: m.index, text: m[0] } : null;
+}
+
+/**
+ * Runs, wickets and overs for the current innings, taken from one provider block so
+ * they always agree with each other.
+ *
+ * 1. The scorecard: batting runs/wickets + the bowlers' overs (same block, freshest).
+ * 2. The status block's own pair, `display_score` + `display_overs`, when the bowlers'
+ *    figures are missing. If the status block disagrees with the scorecard runs, the
+ *    status pair is used whole rather than mixed with the scorecard.
+ * 3. The scorecard's whole overs, as a last resort.
+ */
+function consistentInningsLine(inning, batting, statusBlock) {
+  const runs = batting?.runs ?? 0;
+  const wickets = batting?.wickets_lost ?? 0;
+  const fromScorecard = scorecardOvers(inning);
+  if (fromScorecard !== null) return { runs, wickets, overs: fromScorecard };
+
+  const statusOvers = statusBlock.display_overs;
+  const statusPair = lastScorePair(statusBlock.display_score);
+  if (statusOvers != null && statusOvers !== '') {
+    if (!statusPair || (statusPair.runs === runs && statusPair.wickets === wickets)) {
+      return { runs, wickets, overs: statusOvers };
+    }
+    return { runs: statusPair.runs, wickets: statusPair.wickets, overs: statusOvers };
+  }
+  return { runs, wickets, overs: inning.overs_completed ?? 0 };
 }
 
 function sideTotal(periodScores, side) {
@@ -146,9 +219,7 @@ function normalizeSportradar(raw) {
     );
     const batting = battingTeamStats?.statistics?.batting;
 
-    const runs = batting?.runs ?? 0;
-    const wickets = batting?.wickets_lost ?? 0;
-    const overs =  statusBlock.display_overs ?? currentInning.overs_completed ?? 0;
+    const { runs, wickets, overs } = consistentInningsLine(currentInning, batting, statusBlock);
 
     currentInnings = {
       battingTeam: canonicalTeamAbbr(battingComp?.abbreviation, battingComp?.name) ?? battingTeamId ?? teams[0],
@@ -235,11 +306,22 @@ function normalizeSportradar(raw) {
     (typeof statusBlock.result === 'string' ? statusBlock.result : null) ??
     null;
 
-  const displayOversRaw = statusBlock.display_overs;
+  // The headline score and overs must describe the same instant as `currentInnings`;
+  // the status block is written separately and can trail the scorecard by a ball.
+  const displayOversRaw = currentInnings ? currentInnings.overs : statusBlock.display_overs;
   const displayOvers =
     displayOversRaw != null && displayOversRaw !== '' && !Number.isNaN(Number(displayOversRaw))
       ? Number(displayOversRaw)
       : null;
+  let displayScore = statusBlock.display_score ?? null;
+  const shownPair = lastScorePair(displayScore);
+  if (currentInnings && shownPair) {
+    const line = `${currentInnings.runs}/${currentInnings.wickets}`;
+    if (shownPair.text !== line) {
+      displayScore =
+        displayScore.slice(0, shownPair.index) + line + displayScore.slice(shownPair.index + shownPair.text.length);
+    }
+  }
 
   return {
     matchId: event.id ?? raw.id,
@@ -253,10 +335,11 @@ function normalizeSportradar(raw) {
     scheduled: event.scheduled ?? null,
     currentInnings,
     lastEvent: { type: 'none', runs: 0, over: currentInnings?.overs ?? 0 },
-    displayScore: statusBlock.display_score ?? null,
+    displayScore,
     matchStatus: statusBlock.match_status ?? rawStatus,
     matchResult,
-    winnerId: statusBlock.winner_id ?? null,
+    // Sportradar often omits winner_id; fall back to the winner named in the result text.
+    winnerId: resolveWinnerId(raw),
     tossWonBy: statusBlock.toss_won_by ?? null,
     tossDecision: statusBlock.toss_decision ?? null,
     currentInning:
@@ -287,7 +370,8 @@ function fillTeamScoresFromStatisticsInnings(inningsList, competitors, teamScore
     const batting = inn.teams?.find((t) => t.id === battingId)?.statistics?.batting;
     const runs = batting?.runs ?? 0;
     const wickets = batting?.wickets_lost ?? 0;
-    const overs = inn.overs_completed ?? '';
+    // Bowlers' overs, not `overs_completed`, which drops the balls of the current over.
+    const overs = scorecardOvers(inn) ?? inn.overs_completed ?? '';
     if (runs > 0 || wickets > 0) {
       teamScores[side].score = `${runs}/${wickets}`;
       if (overs !== '') teamScores[side].overs = String(overs);
@@ -297,7 +381,9 @@ function fillTeamScoresFromStatisticsInnings(inningsList, competitors, teamScore
 
 function isMatchDecided(statusBlock, currentInnings, teamScores) {
   const ms = `${statusBlock.match_status ?? ''} ${statusBlock.status ?? ''}`.toLowerCase();
-  if (/won|tied|draw|abandon|all.?out|closed|ended|complete|result/.test(ms)) {
+  // Each word must start a token: a bare `ended` also matched "susp-ended", so a
+  // rain-suspended match was marked completed mid-game.
+  if (/(?<![a-z])(won|tied|draw|abandon|all.?out|closed|ended|complete|result)/.test(ms)) {
     return true;
   }
   const w = currentInnings?.wickets ?? 0;
@@ -316,7 +402,17 @@ function mapSportradarStatus(status, matchStatus) {
   if (s.includes('cancel') || s.includes('postpon')) {
     return 'cancelled';
   }
-  if (s.includes('live') || s.includes('inprogress') || s.includes('in progress') || s.includes('innings')) {
+  // Rain or bad light stops play without ending the match: Sportradar reports it as
+  // interrupted / suspended. Mapping that to "upcoming" dropped the match out of the
+  // live set mid-game and froze its score until the daily sync hours later.
+  if (
+    s.includes('live') ||
+    s.includes('inprogress') ||
+    s.includes('in progress') ||
+    s.includes('innings') ||
+    s.includes('interrupt') ||
+    s.includes('suspend')
+  ) {
     return 'live';
   }
   if (

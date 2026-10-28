@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { Loader2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import AdminPagination from '../../../../components/admin/AdminPagination';
 import {
   AdminChip,
@@ -16,16 +17,23 @@ import {
 } from '../../../../components/admin/AdminShared';
 import { asPercent, isNil, stageLabel, xiNames } from '../../../../lib/predictions';
 import {
+  createAdminPerformanceSnapshot,
   fetchAdminPredictionCalibration,
   fetchAdminPredictionModels,
+  fetchAdminPredictionModelWeights,
   fetchAdminPredictionRun,
   fetchAdminPredictionRuns,
+  fetchPredictionPerformanceHistory,
 } from '../../../../services/predictions';
+import { ApiError } from '../../../../services/api/client';
 import type {
   AdminPredictionCalibration,
   AdminPredictionModelVersion,
+  AdminPredictionModelWeight,
   AdminPredictionRunDetail,
+  PredictionPerformanceSnapshot,
   PredictionPlayerPick,
+  PredictionStage,
 } from '../../../../types/predictions';
 import { formatScheduled } from '../../../../utils/helpers';
 
@@ -48,6 +56,15 @@ export default function AdminPredictionsPage() {
   const [error, setError] = useState('');
   const [selected, setSelected] = useState<AdminPredictionRunDetail | null>(null);
   const [loadingRun, setLoadingRun] = useState(false);
+  const [weights, setWeights] = useState<AdminPredictionModelWeight[]>([]);
+  const [loadingWeights, setLoadingWeights] = useState(true);
+  const [weightsError, setWeightsError] = useState(false);
+  const [snapshots, setSnapshots] = useState<PredictionPerformanceSnapshot[]>([]);
+  const [loadingSnapshots, setLoadingSnapshots] = useState(true);
+  const [snapshotStage, setSnapshotStage] = useState<PredictionStage>('pre_match');
+  const [takingSnapshot, setTakingSnapshot] = useState(false);
+  /** Bumped after a snapshot so the calibration card re-scores too. */
+  const [calRefresh, setCalRefresh] = useState(0);
   const detailRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -57,6 +74,51 @@ export default function AdminPredictionsPage() {
       .catch(() => setError('Could not load model versions.'))
       .finally(() => setLoadingModels(false));
   }, []);
+
+  useEffect(() => {
+    setLoadingWeights(true);
+    fetchAdminPredictionModelWeights()
+      .then((rows) => {
+        setWeights(rows);
+        setWeightsError(false);
+      })
+      .catch(() => setWeightsError(true))
+      .finally(() => setLoadingWeights(false));
+  }, []);
+
+  const loadSnapshots = useCallback(() => {
+    setLoadingSnapshots(true);
+    return fetchPredictionPerformanceHistory({ limit: 10 })
+      .then(setSnapshots)
+      .catch(() => setSnapshots([]))
+      .finally(() => setLoadingSnapshots(false));
+  }, []);
+
+  useEffect(() => {
+    void loadSnapshots();
+  }, [loadSnapshots]);
+
+  const takeSnapshot = async () => {
+    setTakingSnapshot(true);
+    try {
+      const snapshot = await createAdminPerformanceSnapshot({ stage: snapshotStage });
+      toast.success(
+        `Snapshot saved: ${asPercent(snapshot.accuracy)} accuracy over ${snapshot.sampleSize} matches.`
+      );
+      setCalRefresh((n) => n + 1);
+      await loadSnapshots();
+    } catch (err) {
+      toast.error(
+        err instanceof ApiError && err.status === 404
+          ? 'No settled matches to score for that stage yet.'
+          : err instanceof Error && err.message
+            ? `Snapshot failed: ${err.message}`
+            : 'Snapshot failed.'
+      );
+    } finally {
+      setTakingSnapshot(false);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -77,7 +139,7 @@ export default function AdminPredictionsPage() {
     return () => {
       cancelled = true;
     };
-  }, [calModel]);
+  }, [calModel, calRefresh]);
 
   const loadRuns = useCallback((nextPage: number) => {
     setLoadingRuns(true);
@@ -161,6 +223,59 @@ export default function AdminPredictionsPage() {
                 </p>
               </div>
             ))}
+          </div>
+        )}
+      </section>
+
+      <section className="rounded-lg p-3 sm:p-4" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
+        <div className="mb-3">
+          <h2 className="text-sm font-semibold" style={{ color: 'var(--admin-text)' }}>Model weights</h2>
+          <p className="mt-0.5 text-xs" style={{ color: 'var(--admin-text-muted)' }}>
+            Latest learned weight set per model, stage and format. Read-only.
+          </p>
+        </div>
+        {loadingWeights ? (
+          <LoadingState />
+        ) : weightsError ? (
+          <EmptyState title="Weights unavailable" message="Could not load model weights." />
+        ) : weights.length === 0 ? (
+          <EmptyState title="No learned weights" message="Weight sets appear after the training job stores one." />
+        ) : (
+          <div className="table-scroll">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--admin-border)' }}>
+                  {['Model', 'Stage', 'Format', 'Weights', 'Intercept', 'n', 'Accuracy', 'Brier', 'Source', 'Saved'].map((h) => (
+                    <th key={h} className="px-2 py-2 font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {weights.map((row) => (
+                  <tr key={row.id} className="align-top" style={{ borderBottom: '1px solid var(--admin-border)' }}>
+                    <td className="whitespace-nowrap px-2 py-2 font-mono">{row.modelVersion}</td>
+                    <td className="whitespace-nowrap px-2 py-2">{stageLabel(row.stage)}</td>
+                    <td className="whitespace-nowrap px-2 py-2 uppercase">{row.format}</td>
+                    <td className="px-2 py-2">
+                      <ul className="min-w-[12rem] space-y-0.5 font-mono">
+                        {Object.entries(row.weights ?? {}).map(([feature, value]) => (
+                          <li key={feature} className="flex justify-between gap-3">
+                            <span className="truncate" style={{ color: 'var(--admin-text-secondary)' }} title={feature}>{feature}</span>
+                            <span className="shrink-0">{formatWeight(value)}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </td>
+                    <td className="whitespace-nowrap px-2 py-2 font-mono">{formatWeight(row.intercept)}</td>
+                    <td className="px-2 py-2">{row.sampleSize}</td>
+                    <td className="whitespace-nowrap px-2 py-2 font-mono">{asPercent(row.accuracy)}</td>
+                    <td className="whitespace-nowrap px-2 py-2 font-mono">{isNil(row.brierScore) ? '—' : row.brierScore}</td>
+                    <td className="whitespace-nowrap px-2 py-2">{row.source || '—'}</td>
+                    <td className="whitespace-nowrap px-2 py-2" style={{ color: 'var(--admin-text-muted)' }}>{when(row.createdAt)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </section>
@@ -254,6 +369,76 @@ export default function AdminPredictionsPage() {
         )}
       </section>
 
+      <section className="rounded-lg p-3 sm:p-4" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
+        <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm font-semibold" style={{ color: 'var(--admin-text)' }}>Performance snapshots</h2>
+              {loadingSnapshots && snapshots.length > 0 ? (
+                <Loader2 size={13} className="animate-spin" style={{ color: 'var(--admin-text-muted)' }} aria-hidden="true" />
+              ) : null}
+            </div>
+            <p className="mt-0.5 text-xs" style={{ color: 'var(--admin-text-muted)' }}>
+              Score settled matches with the current model and store the result in the public accuracy history.
+            </p>
+          </div>
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+            <div className="w-full sm:w-36">
+              <AdminSelect
+                aria-label="Snapshot stage"
+                value={snapshotStage}
+                onChange={(e) => setSnapshotStage(e.target.value as PredictionStage)}
+                disabled={takingSnapshot}
+              >
+                <option value="pre_match">Pre-match</option>
+                <option value="live">Live</option>
+              </AdminSelect>
+            </div>
+            <button
+              type="button"
+              className="btn-brand inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-xs font-bold disabled:opacity-60"
+              onClick={takeSnapshot}
+              disabled={takingSnapshot}
+              aria-busy={takingSnapshot}
+            >
+              {takingSnapshot ? <Loader2 size={13} className="animate-spin" aria-hidden="true" /> : null}
+              {takingSnapshot ? 'Taking snapshot…' : 'Take performance snapshot'}
+            </button>
+          </div>
+        </div>
+        {loadingSnapshots && snapshots.length === 0 ? (
+          <LoadingState />
+        ) : snapshots.length === 0 ? (
+          <EmptyState title="No snapshots yet" message="Take one to start the accuracy history." />
+        ) : (
+          <div className="table-scroll">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--admin-border)' }}>
+                  {['Saved', 'Stage', 'Model', 'n', 'Accuracy', 'Brier', 'ECE', 'Source'].map((h) => (
+                    <th key={h} className="px-2 py-2 font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {snapshots.map((row) => (
+                  <tr key={row.id} style={{ borderBottom: '1px solid var(--admin-border)' }}>
+                    <td className="whitespace-nowrap px-2 py-2" style={{ color: 'var(--admin-text-muted)' }}>{when(row.createdAt)}</td>
+                    <td className="whitespace-nowrap px-2 py-2">{stageLabel(row.stage)}</td>
+                    <td className="whitespace-nowrap px-2 py-2 font-mono">{row.modelVersion}</td>
+                    <td className="px-2 py-2">{row.sampleSize}</td>
+                    <td className="whitespace-nowrap px-2 py-2 font-mono">{asPercent(row.accuracy)}</td>
+                    <td className="whitespace-nowrap px-2 py-2 font-mono">{isNil(row.brierScore) ? '—' : row.brierScore}</td>
+                    <td className="whitespace-nowrap px-2 py-2 font-mono">{isNil(row.expectedCalibrationError) ? '—' : row.expectedCalibrationError}</td>
+                    <td className="whitespace-nowrap px-2 py-2">{row.source || '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
       <section className="overflow-hidden rounded-lg" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
         <div className="flex flex-col gap-2 p-3 md:flex-row md:flex-wrap md:items-center" style={{ borderBottom: '1px solid var(--admin-border)' }}>
           <AdminSearchField
@@ -321,11 +506,11 @@ export default function AdminPredictionsPage() {
                     {[
                       { h: 'Match', cls: '' },
                       { h: 'Stage', cls: '' },
-                      { h: 'Model', cls: 'hidden md:table-cell' },
+                      { h: 'Model', cls: '' },
                       { h: 'Home', cls: '' },
-                      { h: 'Away', cls: 'hidden sm:table-cell' },
-                      { h: 'Conf', cls: 'hidden sm:table-cell' },
-                      { h: 'Band', cls: 'hidden md:table-cell' },
+                      { h: 'Away', cls: '' },
+                      { h: 'Conf', cls: '' },
+                      { h: 'Band', cls: '' },
                       { h: 'When', cls: '' },
                       { h: '', cls: '' },
                     ].map((col) => (
@@ -349,13 +534,13 @@ export default function AdminPredictionsPage() {
                           )}
                         </td>
                         <td className="whitespace-nowrap px-3 py-2.5">{stageLabel(run.stage)}</td>
-                        <td className="hidden max-w-[14rem] truncate px-3 py-2.5 font-mono md:table-cell" title={run.modelVersion}>{run.modelVersion}</td>
+                        <td className="max-w-[14rem] truncate px-3 py-2.5 font-mono" title={run.modelVersion}>{run.modelVersion}</td>
                         <td className="whitespace-nowrap px-3 py-2.5 font-mono">{asPercent(run.homeWinProb)}</td>
-                        <td className="hidden whitespace-nowrap px-3 py-2.5 font-mono sm:table-cell">{asPercent(run.awayWinProb)}</td>
-                        <td className="hidden whitespace-nowrap px-3 py-2.5 font-mono sm:table-cell">{run.confidence}</td>
-                        <td className="hidden max-w-[6rem] truncate px-3 py-2.5 md:table-cell">{run.calibrationBand}</td>
+                        <td className="whitespace-nowrap px-3 py-2.5 font-mono">{asPercent(run.awayWinProb)}</td>
+                        <td className="whitespace-nowrap px-3 py-2.5 font-mono">{run.confidence}</td>
+                        <td className="max-w-[6rem] truncate px-3 py-2.5">{run.calibrationBand}</td>
                         <td className="max-w-[8.5rem] truncate px-3 py-2.5 sm:max-w-none" style={{ color: 'var(--admin-text-muted)' }}>{when(run.createdAt)}</td>
-                        <td className="whitespace-nowrap px-3 py-2.5 text-right">
+                        <td className="whitespace-nowrap px-3 py-2.5">
                           <button
                             type="button"
                             className="whitespace-nowrap text-xs font-semibold"
@@ -686,6 +871,11 @@ function Stat({ label, value }: { label: string; value: string }) {
       <p className="mt-1 truncate text-sm font-semibold" style={{ color: 'var(--admin-text)' }} title={value}>{value}</p>
     </div>
   );
+}
+
+function formatWeight(value: unknown): string {
+  const n = Number(value);
+  return Number.isFinite(n) ? String(Number(n.toFixed(4))) : '—';
 }
 
 function when(iso?: string | null): string {

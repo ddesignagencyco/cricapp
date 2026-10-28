@@ -8,7 +8,8 @@ import LiveIndicator from './LiveIndicator';
 import EntityAvatar from './EntityAvatar';
 import { getInitials } from '../utils/helpers';
 import { deriveMatchState } from '../lib/deriveMatchState';
-import { mergeLiveUpdate, useMatchStream } from '../hooks/useMatchStream';
+import { mergeLiveRows, mergeLiveUpdate, mergeMatchLivePayload, rememberLiveSnapshot, useMatchStream, withLatestLive } from '../hooks/useMatchStream';
+import { useLiveMatchesQuery } from '../queries/useDirectoryQueries';
 import { describeMatchResult, scoreboardFromMatch } from '../lib/matchScoreboard';
 
 interface MatchTickerBarProps {
@@ -17,11 +18,11 @@ interface MatchTickerBarProps {
 
 export default function MatchTickerBar({ matches: initialMatches }: MatchTickerBarProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [matches, setMatches] = useState(initialMatches || []);
+  // Seeded from the newest score this tab has seen, not just the (cached) server render.
+  const [matches, setMatches] = useState(() => (initialMatches || []).map(withLatestLive));
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
   const liveUpdate = useMatchStream(undefined, true);
-  const overflows = canScrollLeft || canScrollRight;
 
   const updateScrollState = () => {
     const el = scrollRef.current;
@@ -35,14 +36,31 @@ export default function MatchTickerBar({ matches: initialMatches }: MatchTickerB
     setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 1);
   };
 
+  // A new server render re-lists the strip but must not rewind socket-fresh scores.
   useEffect(() => {
-    setMatches(initialMatches || []);
+    setMatches((prev) => mergeLiveRows(prev, initialMatches || []));
   }, [initialMatches]);
 
   useEffect(() => {
     if (!liveUpdate) return;
     setMatches((prev) => mergeLiveUpdate(prev, liveUpdate));
   }, [liveUpdate]);
+
+  // The same 30s backstop Live Now uses (one shared query, so no extra request):
+  // without it a missed socket frame left the ticker a ball behind until the next one.
+  const liveQuery = useLiveMatchesQuery();
+  useEffect(() => {
+    const rows = liveQuery.data;
+    if (!rows?.length) return;
+    rows.forEach(rememberLiveSnapshot);
+    const byId = new Map(rows.map((row) => [String(row.matchId ?? row.id ?? ''), row]));
+    setMatches((prev) =>
+      prev.map((match) => {
+        const fresh = byId.get(String(match?.matchId ?? match?.id ?? ''));
+        return fresh ? mergeMatchLivePayload(match, fresh as unknown as Record<string, unknown>) : match;
+      }),
+    );
+  }, [liveQuery.data]);
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -66,10 +84,17 @@ export default function MatchTickerBar({ matches: initialMatches }: MatchTickerB
     updateScrollState();
   }, [matches]);
 
+  // One card per click. A fixed pixel step drifted out of line with the card width,
+  // so every click left a half card at each edge.
   const scroll = (dir: 'left' | 'right') => {
-    if (!scrollRef.current) return;
-    const amount = 340;
-    scrollRef.current.scrollBy({ left: dir === 'left' ? -amount : amount, behavior: 'smooth' });
+    const el = scrollRef.current;
+    const card = el?.firstElementChild as HTMLElement | null;
+    if (!el || !card) return;
+    const gap = parseFloat(getComputedStyle(el).columnGap) || 0;
+    const step = card.offsetWidth + gap;
+    // Land on a card edge even if a swipe left the rail between two cards.
+    const index = Math.round(el.scrollLeft / step) + (dir === 'left' ? -1 : 1);
+    el.scrollTo({ left: Math.max(0, index * step), behavior: 'smooth' });
   };
 
   if (!matches.length) return null;
@@ -77,22 +102,23 @@ export default function MatchTickerBar({ matches: initialMatches }: MatchTickerB
   return (
     <div className="border-b border-lborder">
       <div className="mx-auto max-w-full px-4 sm:px-6">
-        <div className="flex items-center gap-3 py-3">
+        <div className="flex items-center gap-2 py-3 sm:gap-3">
           <button
             type="button"
             onClick={() => scroll('left')}
             disabled={!canScrollLeft}
-            className="carousel-control hidden sm:grid"
+            className="carousel-control grid"
             aria-label="Scroll left"
           >
             <ChevronLeft size={16} />
           </button>
 
+          {/* `justify-center-safe` centres a short row and starts from the left once it
+              overflows — in CSS, so cards no longer jump when hydration measures the rail. */}
           <div
             ref={scrollRef}
-            className={`no-scrollbar min-w-0 flex-1 flex gap-3 overflow-x-auto scroll-smooth py-2 ${
-              overflows ? '' : 'justify-center'
-            }`}
+            data-scroll-hint-off
+            className="@container no-scrollbar flex min-w-0 flex-1 snap-x snap-mandatory justify-center-safe gap-3 overflow-x-auto scroll-smooth px-px py-2"
           >
             {matches.map((m) => (
               <TickerCard key={m.matchId || m.id} match={m} />
@@ -103,7 +129,7 @@ export default function MatchTickerBar({ matches: initialMatches }: MatchTickerB
             type="button"
             onClick={() => scroll('right')}
             disabled={!canScrollRight}
-            className="carousel-control hidden sm:grid"
+            className="carousel-control grid"
             aria-label="Scroll right"
           >
             <ChevronRight size={16} />
@@ -114,6 +140,7 @@ export default function MatchTickerBar({ matches: initialMatches }: MatchTickerB
   );
 }
 
+/** Cards size to the rail (1–5 per view, each at least ~250px) so none is ever cut off. */
 function TickerCard({ match }: { match: any }) {
   const board = scoreboardFromMatch(match);
   const home = board.home;
@@ -145,7 +172,7 @@ function TickerCard({ match }: { match: any }) {
     <Link
       href={`/matches/${match.matchId || match.id}`}
       prefetch={false}
-      className="group flex w-[calc(100vw-2rem)] max-w-[420px] shrink-0 flex-col overflow-hidden rounded-xl bg-card p-3 ring-1 ring-lborder transition-colors hover:bg-[var(--color-row-hover)] hover:ring-border-strong sm:w-[260px] sm:max-w-none"
+      className="group flex w-full shrink-0 snap-start flex-col overflow-hidden rounded-xl bg-card p-3 ring-1 ring-lborder transition-colors hover:bg-[var(--color-row-hover)] hover:ring-border-strong @[32rem]:w-[calc((100%-0.75rem)/2)] @[48.5rem]:w-[calc((100%-1.5rem)/3)] @[65rem]:w-[calc((100%-2.25rem)/4)] @[81rem]:w-[calc((100%-3rem)/5)]"
     >
       <div className="mb-2 flex items-center justify-between gap-2">
         <span className="min-w-0 truncate text-xs font-semibold tracking-wide text-stext">

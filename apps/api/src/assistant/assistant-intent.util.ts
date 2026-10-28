@@ -230,7 +230,20 @@ export function parseTeamPairFromQuestion(question: string): {
     .replace(/\bh2h\b/gi, ' ')
     .replace(/\?/g, ' ')
     .trim();
-  const parts = withoutH2h.split(VS_SPLIT_RE).map((s) => s.trim()).filter(Boolean);
+  const parts = withoutH2h
+    .split(VS_SPLIT_RE)
+    .map((s) => stripTeamFiller(s))
+    .filter(Boolean);
   if (parts.length !== 2) return null;
   return { teamAQuery: parts[0]!, teamBQuery: parts[1]! };
+}
+
+/**
+ * Words people add around team names that are not part of them. "Pakistan vs England
+ * score" used to search for a team called "England score" and find nothing.
+ */
+const TEAM_FILLER_RE = /\b(?:live|scores?|scorecard|match(?:es)?|results?|today|latest|now|game)\b/gi;
+
+export function stripTeamFiller(fragment: string): string {
+  return fragment.replace(TEAM_FILLER_RE, ' ').replace(/\s+/g, ' ').trim();
 }

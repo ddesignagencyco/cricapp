@@ -84,7 +84,8 @@ export const COUNTRY_OPTIONS: ReadonlyArray<{ value: string; label: string; dial
   Object.freeze(
     COUNTRIES.map((item) => ({
       value: item.name,
-      label: `${item.name} (${item.dial})`,
+      // Name only: the dial code belongs to the phone field, which has its own picker.
+      label: item.name,
       dial: item.dial,
       code: item.code,
     })),
@@ -111,21 +112,55 @@ const CITY_MAX = 128;
 /** Matches the API's `@MaxLength(64)` on phone and whatsapp. */
 const PHONE_MAX = 64;
 
-const SOCIAL_HOST: Record<string, RegExp> = {
-  facebook: /(facebook\.com|fb\.com)\//i,
-  instagram: /instagram\.com\//i,
-  x: /(x\.com|twitter\.com)\//i,
-  youtube: /(youtube\.com|youtu\.be)\//i,
-  tiktok: /tiktok\.com\//i,
-  linkedin: /linkedin\.com\//i,
-  threads: /threads\.(net|com)\//i,
-  telegram: /(t\.me|telegram\.me)\//i,
-  discord: /(discord\.gg|discord\.com)\//i,
-  snapchat: /snapchat\.com\//i,
-  reddit: /reddit\.com\//i,
+/**
+ * Each network's own domains. A link is checked against the parsed hostname (the
+ * domain itself or a subdomain of it): the old substring patterns accepted
+ * `https://evil.com/facebook.com/` and `https://notfacebook.com/page`.
+ */
+const SOCIAL_DOMAINS: Record<string, readonly string[]> = {
+  facebook: ['facebook.com', 'fb.com'],
+  instagram: ['instagram.com'],
+  x: ['x.com', 'twitter.com'],
+  youtube: ['youtube.com', 'youtu.be'],
+  tiktok: ['tiktok.com'],
+  linkedin: ['linkedin.com'],
+  threads: ['threads.net', 'threads.com'],
+  telegram: ['t.me', 'telegram.me'],
+  discord: ['discord.gg', 'discord.com'],
+  snapchat: ['snapchat.com'],
+  reddit: ['reddit.com'],
 };
 
-const MAPS_RE = /^(https:\/\/)?(www\.)?(maps\.google\.|google\.[a-z.]+\/maps|maps\.app\.goo\.gl|goo\.gl\/maps)/i;
+function onDomain(host: string, domains: readonly string[]): boolean {
+  const h = host.toLowerCase().replace(/\.$/, '');
+  return domains.some((d) => h === d || h.endsWith(`.${d}`));
+}
+
+/** Parses a pasted link, adding https:// when the scheme was left off. */
+function parseLink(raw: string): URL | null {
+  const href = /^[a-z][a-z\d+.-]*:/i.test(raw) ? raw : `https://${raw}`;
+  try {
+    return new URL(href);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Google Maps lives on maps.google.<tld>, google.<tld>/maps, maps.app.goo.gl and
+ * goo.gl/maps. Checked on the parsed host so `maps.google.com.evil.ru` or
+ * `google.com.fake.net/maps` no longer pass.
+ */
+function isGoogleMapsUrl(url: URL): boolean {
+  const host = url.hostname.toLowerCase();
+  const path = url.pathname.toLowerCase();
+  if (host === 'maps.app.goo.gl') return true;
+  if (host === 'goo.gl') return path.startsWith('/maps');
+  // google.com, google.com.pk, google.co.uk … with or without www. / maps.
+  const google = /^(?:www\.|maps\.)?google\.(?:[a-z]{2,3}|co\.[a-z]{2}|com\.[a-z]{2})$/;
+  if (!google.test(host)) return false;
+  return host.startsWith('maps.') || path.startsWith('/maps');
+}
 
 /** Control characters and zero-width joiners, which break rendering and search. */
 const UNSAFE_TEXT_RE = /[\u0000-\u001F\u007F\u200B-\u200D\uFEFF]/;
@@ -169,8 +204,10 @@ export function isValidMapsUrl(value: string): boolean {
   const raw = value.trim();
   if (!raw) return true;
   if (raw.length > ADDRESS_MAX) return false;
-  if (UNSAFE_TEXT_RE.test(raw)) return false;
-  return MAPS_RE.test(raw);
+  if (UNSAFE_TEXT_RE.test(raw) || /\s/.test(raw)) return false;
+  const url = parseLink(raw);
+  if (!url || url.protocol !== 'https:' || url.username || url.password) return false;
+  return isGoogleMapsUrl(url);
 }
 
 /**
@@ -218,19 +255,16 @@ export function validateSocialValue(platform: string, value: string): string {
     return isValidPhone(raw) ? '' : 'Enter a WhatsApp number with country code.';
   }
   if (platform === 'telegram' && /^@?[a-zA-Z0-9_]{5,}$/.test(raw)) return '';
-  const href = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
-  let url: URL;
-  try {
-    url = new URL(href);
-  } catch {
-    return 'Enter a valid URL.';
-  }
-  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-    return 'Use an https link.';
-  }
-  const hostCheck = SOCIAL_HOST[platform];
-  if (hostCheck && !hostCheck.test(href)) {
-    return `Use a ${platform} URL.`;
+  if (/\s/.test(raw)) return 'A link cannot contain spaces.';
+  const url = parseLink(raw);
+  if (url && url.protocol !== 'http:' && url.protocol !== 'https:') return 'Use an https link.';
+  if (!url || !url.hostname.includes('.')) return 'Enter a valid URL.';
+  if (url.username || url.password) return 'Remove the user name or password from the link.';
+  const domains = SOCIAL_DOMAINS[platform];
+  if (domains) {
+    if (!onDomain(url.hostname, domains)) return `Use a ${domains[0]} link.`;
+    // A bare domain is the network's home page, not this site's profile.
+    if (url.pathname.replace(/\/+$/, '') === '') return 'Add the page or profile path, e.g. /pakcriczone.';
   }
   return '';
 }
@@ -264,6 +298,33 @@ export function formatPhoneNumber(raw: string, countryName?: string): string {
         : `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}`;
   if (!dial) return local.trim();
   return local ? `+${dial} ${local}` : `+${dial}`;
+}
+
+/**
+ * Stored phone text → E.164 ("+923001234567") for the phone input. A national
+ * number ("0300 1234567") is read in the site's country. Returns '' when the text
+ * is not a parseable number, so the field starts empty rather than wrong.
+ */
+export function toE164(raw: string | null | undefined, countryName?: string): string {
+  const text = raw?.trim() || '';
+  if (!text) return '';
+  const country = countryName ? countryByName(countryName) : null;
+  try {
+    return parsePhoneNumberFromString(text, country?.code as never)?.number ?? '';
+  } catch {
+    return '';
+  }
+}
+
+/** E.164 → the number's own international format ("+92 300 1234567") for display. */
+export function toDisplayPhone(e164: string | null | undefined): string {
+  const text = e164?.trim() || '';
+  if (!text) return '';
+  try {
+    return parsePhoneNumberFromString(text)?.formatInternational() ?? text;
+  } catch {
+    return text;
+  }
 }
 
 /* ─── Working hours ─── */

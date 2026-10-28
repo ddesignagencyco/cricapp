@@ -1,8 +1,8 @@
 'use client';
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useMemo } from 'react';
-import { mergeLiveUpdate, useMatchStream } from '../../hooks/useMatchStream';
+import { useEffect, useMemo, useState } from 'react';
+import { mergeLiveRows, mergeLiveUpdate, useMatchStream, withLatestLive } from '../../hooks/useMatchStream';
 import DirectoryPageHeader from '../DirectoryPageHeader';
 import PageToolbar from '../PageToolbar';
 import Badge from '../Badge';
@@ -12,7 +12,12 @@ import PredictionMatchCard from './PredictionMatchCard';
 import PredictionsUpcomingPager from './PredictionsUpcomingPager';
 import { asPercent, bandTone, isAccuracyPublishable } from '../../lib/predictions';
 import type { Match } from '../../types';
-import type { MatchPredictions, PredictionChartPoint, PredictionPerformance } from '../../types/predictions';
+import type {
+  MatchPredictions,
+  PredictionChartPoint,
+  PredictionPerformance,
+  PredictionPerformanceSnapshot,
+} from '../../types/predictions';
 
 interface Card {
   match: Match;
@@ -22,6 +27,8 @@ interface Card {
 
 interface Props {
   performance: PredictionPerformance | null;
+  /** Stored accuracy snapshots, newest first (`GET /predictions/performance/history`). */
+  performanceHistory?: PredictionPerformanceSnapshot[];
   live: Card[];
   upcoming: Card[];
   upcomingPage: number;
@@ -32,6 +39,7 @@ interface Props {
 
 export default function PredictionsHub({
   performance,
+  performanceHistory = [],
   live,
   upcoming,
   upcomingPage,
@@ -60,11 +68,24 @@ export default function PredictionsHub({
   // score for the whole time a match is running. The homepage and the matches page
   // both patch in SSE updates; the predictions page did not, which is why live cards
   // here were the only place a live score could look frozen or missing.
+  //
+  // Frames are accumulated in state. Merging only the latest frame onto the server
+  // rows reverted every other card to its 30s-old score whenever one match updated.
   const liveUpdate = useMatchStream(undefined, tab === 'live');
-  const liveCards = useMemo(
-    () => live.map((card) => ({ ...card, match: mergeLiveUpdate([card.match], liveUpdate)[0] ?? card.match })),
-    [live, liveUpdate],
-  );
+  const [liveMatches, setLiveMatches] = useState<Match[]>(() => live.map((card) => withLatestLive(card.match)));
+  useEffect(() => {
+    setLiveMatches((prev) => mergeLiveRows(prev, live.map((card) => card.match)));
+  }, [live]);
+  useEffect(() => {
+    if (liveUpdate) setLiveMatches((prev) => mergeLiveUpdate(prev, liveUpdate));
+  }, [liveUpdate]);
+  const liveCards = useMemo(() => {
+    const byId = new Map(liveMatches.map((match) => [String(match.matchId ?? match.id ?? ''), match]));
+    return live.map((card) => ({
+      ...card,
+      match: byId.get(String(card.match.matchId ?? card.match.id ?? '')) ?? card.match,
+    }));
+  }, [live, liveMatches]);
 
   const visible = tab === 'live' ? liveCards : upcoming;
   const tabTotal = tab === 'live' ? live.length : upcomingTotal;
@@ -105,9 +126,12 @@ export default function PredictionsHub({
               <p className="text-xs font-medium uppercase tracking-wider text-accent">Track record</p>
               <p className="mt-1 text-sm text-stext">{sample} settled matches</p>
             </div>
-            <p className="font-mono text-2xl font-semibold tabular-nums text-accent">
-              {asPercent(performance.accuracy)}
-            </p>
+            <div className="flex items-end gap-4">
+              <AccuracyTrend performance={performance} history={performanceHistory} />
+              <p className="font-mono text-2xl font-semibold tabular-nums text-accent">
+                {asPercent(performance.accuracy)}
+              </p>
+            </div>
           </div>
           {(performance.byFormat.length > 0 || performance.byConfidenceBand.length > 0) && (
             <div className="mt-4 grid grid-cols-1 gap-4 border-t border-lborder pt-4 lg:grid-cols-2">
@@ -193,5 +217,71 @@ function Breakdown({
         ))}
       </ul>
     </div>
+  );
+}
+
+/**
+ * Accuracy over recorded snapshots as a minimal sparkline. Only snapshots of the same
+ * model that themselves cleared the publish threshold are plotted — an early snapshot
+ * over a handful of matches is noise, the same reason the headline stays hidden.
+ */
+function AccuracyTrend({
+  performance,
+  history,
+}: {
+  performance: PredictionPerformance;
+  history: PredictionPerformanceSnapshot[];
+}) {
+  const minSample = performance.publishMinSamples ?? 0;
+  const points = history
+    .filter(
+      (row) =>
+        row.modelVersion === performance.modelVersion &&
+        typeof row.accuracy === 'number' &&
+        row.sampleSize >= minSample
+    )
+    .slice()
+    .reverse()
+    .map((row) => ({ accuracy: row.accuracy as number, createdAt: row.createdAt }));
+  if (points.length < 2) return null;
+
+  const width = 96;
+  const height = 28;
+  const pad = 2;
+  const values = points.map((p) => p.accuracy);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const span = max - min || 1;
+  const coords = points.map((p, i) => {
+    const x = pad + (i / (points.length - 1)) * (width - pad * 2);
+    const y = max === min ? height / 2 : pad + (1 - (p.accuracy - min) / span) * (height - pad * 2);
+    return [Number(x.toFixed(1)), Number(y.toFixed(1))] as const;
+  });
+  const first = points[0];
+  const last = points[points.length - 1];
+  const [lastX, lastY] = coords[coords.length - 1];
+  const label = `Accuracy trend over ${points.length} snapshots: ${asPercent(first.accuracy)} to ${asPercent(last.accuracy)}`;
+
+  return (
+    <svg
+      viewBox={`0 0 ${width} ${height}`}
+      width={width}
+      height={height}
+      className="shrink-0 text-accent"
+      role="img"
+      aria-label={label}
+    >
+      <title>{label}</title>
+      <polyline
+        points={coords.map(([x, y]) => `${x},${y}`).join(' ')}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={1.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        opacity={0.6}
+      />
+      <circle cx={lastX} cy={lastY} r={2.25} fill="currentColor" />
+    </svg>
   );
 }
