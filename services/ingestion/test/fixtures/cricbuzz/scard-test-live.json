@@ -1,0 +1,57 @@
+{
+ "_note": "Recorded from cricbuzz-cricket.p.rapidapi.com on 2026-11-09; per-innings batsman/bowler/fow lists removed to keep the file small.",
+ "scorecard": [
+  {
+   "inningsid": 1,
+   "extras": {
+    "legbyes": 1,
+    "byes": 6,
+    "wides": 2,
+    "noballs": 4,
+    "penalty": 0,
+    "total": 13
+   },
+   "score": 281,
+   "wickets": 5,
+   "overs": 67.2,
+   "runrate": 4.17,
+   "batteamname": "Pakistan",
+   "batteamsname": "PAK",
+   "isdeclared": false,
+   "isfollowon": false,
+   "ballnbr": 404,
+   "rpb": 0.7
+  }
+ ],
+ "ismatchcomplete": false,
+ "appindex": {
+  "seotitle": "Cricket scorecard - PAK vs SL 1st Test,Sri Lanka tour of Pakistan, 2026 | Cricbuzz.com",
+  "weburl": "http://www.cricbuzz.com/live-cricket-scorecard/170703/pak-vs-sl-1st-test-sri-lanka-tour-of-pakistan-2026"
+ },
+ "status": "Day 1: Stumps - Sri Lanka opt to bowl",
+ "responselastupdated": 1794244472,
+ "winprobability": {
+  "matchid": 170703,
+  "drawtiepercent": 2,
+  "team1": {
+   "id": 3,
+   "percent": 21,
+   "name": "Pakistan",
+   "shortname": "PAK",
+   "color": "#06A876|#06A876"
+  },
+  "team2": {
+   "id": 5,
+   "percent": 77,
+   "name": "Sri Lanka",
+   "shortname": "SL",
+   "color": "#2F61CA|#3E72E0"
+  },
+  "odds": {
+   "team1point": 4.5,
+   "team2point": 1.2,
+   "drawpoint": 47.5
+  },
+  "lastupdatedover": 67.2
+ }
+}

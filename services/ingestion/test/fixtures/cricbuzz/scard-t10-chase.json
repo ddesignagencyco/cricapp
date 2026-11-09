@@ -1,0 +1,86 @@
+{
+ "_note": "Recorded from cricbuzz-cricket.p.rapidapi.com on 2026-11-09; per-innings batsman/bowler/fow lists removed to keep the file small.",
+ "scorecard": [
+  {
+   "inningsid": 1,
+   "extras": {
+    "legbyes": 2,
+    "byes": 0,
+    "wides": 4,
+    "noballs": 0,
+    "penalty": 0,
+    "total": 6
+   },
+   "pp": {
+    "powerplay": [
+     {
+      "id": 32,
+      "ovrfrom": 0.1,
+      "ovrto": 2,
+      "pptype": "Mandatory",
+      "run": 12,
+      "wickets": 0
+     },
+     {
+      "id": 33,
+      "ovrfrom": 5.1,
+      "ovrto": 6,
+      "pptype": "Batting",
+      "run": 6,
+      "wickets": 0
+     }
+    ]
+   },
+   "score": 81,
+   "wickets": 9,
+   "overs": 10,
+   "runrate": 8.1,
+   "batteamname": "Royal Desert Champions",
+   "batteamsname": "RDC",
+   "isdeclared": false,
+   "isfollowon": false,
+   "ballnbr": 60,
+   "rpb": 1.35
+  },
+  {
+   "inningsid": 2,
+   "extras": {
+    "legbyes": 0,
+    "byes": 0,
+    "wides": 1,
+    "noballs": 0,
+    "penalty": 0,
+    "total": 1
+   },
+   "pp": {
+    "powerplay": [
+     {
+      "id": 34,
+      "ovrfrom": 0.1,
+      "ovrto": 2,
+      "pptype": "Mandatory",
+      "run": 28,
+      "wickets": 0
+     }
+    ]
+   },
+   "score": 37,
+   "wickets": 1,
+   "overs": 3,
+   "runrate": 12.33,
+   "batteamname": "United Tigers",
+   "batteamsname": "UT",
+   "isdeclared": false,
+   "isfollowon": false,
+   "ballnbr": 18,
+   "rpb": 2.06
+  }
+ ],
+ "ismatchcomplete": false,
+ "appindex": {
+  "seotitle": "Cricket scorecard - UT vs RDC 8th Match,Abu Dhabi T10 League 2026 | Cricbuzz.com",
+  "weburl": "http://www.cricbuzz.com/live-cricket-scorecard/176143/ut-vs-rdc-8th-match-abu-dhabi-t10-league-2026"
+ },
+ "status": "United Tigers need 45 runs in 42 balls",
+ "responselastupdated": 1794244619
+}

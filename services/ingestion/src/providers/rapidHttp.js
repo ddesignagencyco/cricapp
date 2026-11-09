@@ -1,10 +1,33 @@
 import { QuotaExceededError, ProviderAuthError } from './errors.js';
 
 const REQUEST_TIMEOUT_MS = Number(process.env.RAPIDAPI_TIMEOUT_MS || 15000);
+// BASIC plans reject two calls inside the same second ("exceeded the rate limit per
+// second" – a 429 even with monthly quota left), so real calls are spaced out per host.
+const minIntervalMs = () => Number(process.env.RAPIDAPI_MIN_INTERVAL_MS || 1200);
 
 const stats = { calls: 0, cacheHits: 0, quotaBlocked: 0, lastError: null };
 
 let store = null;
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const lastCallAt = new Map();
+const gates = new Map();
+
+/** Run `fn` no sooner than minIntervalMs() after the previous call to the same host. */
+function spaced(host, fn) {
+  const prev = gates.get(host) ?? Promise.resolve();
+  const run = prev.then(async () => {
+    const wait = (lastCallAt.get(host) ?? 0) + minIntervalMs() - Date.now();
+    if (wait > 0) await sleep(wait);
+    try {
+      return await fn();
+    } finally {
+      lastCallAt.set(host, Date.now());
+    }
+  });
+  gates.set(host, run.catch(() => {}));
+  return run;
+}
 
 /** Redis by default (loaded lazily so unit tests need no connection). Tests inject their own. */
 async function getStore() {
@@ -65,19 +88,35 @@ export async function rapidGet({ provider, host, path, query = {}, ttlSeconds = 
   await spendBudget(s, provider, budget);
 
   const url = `https://${host}/${path}${qs ? `?${qs}` : ''}`;
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  const attempt = () =>
+    spaced(host, async () => {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+      try {
+        return await fetch(url, {
+          headers: { 'x-rapidapi-key': apiKey, 'x-rapidapi-host': host },
+          signal: controller.signal,
+        });
+      } finally {
+        clearTimeout(timer);
+      }
+    });
+
   let res;
   try {
-    res = await fetch(url, {
-      headers: { 'x-rapidapi-key': apiKey, 'x-rapidapi-host': host },
-      signal: controller.signal,
-    });
+    res = await attempt();
+    // A per-second 429 says nothing about the monthly budget: wait it out once.
+    if (res.status === 429) {
+      const peek = (await res.clone().text().catch(() => '')).toLowerCase();
+      if (peek.includes('per second')) {
+        await sleep(minIntervalMs() * 2);
+        res = await attempt();
+      }
+    }
   } catch (err) {
     stats.lastError = `${provider}: ${err.message}`;
     throw new Error(`${provider} request failed: ${path} (${err.name === 'AbortError' ? 'timeout' : err.message})`);
-  } finally {
-    clearTimeout(timer);
   }
   stats.calls += 1;
 

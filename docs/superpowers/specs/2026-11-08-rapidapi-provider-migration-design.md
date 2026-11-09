@@ -32,8 +32,15 @@ Not supported yet (facade throws `ProviderUnsupportedError`, callers already ski
 - Budget guard: `RAPIDAPI_CRICBUZZ_MONTHLY_BUDGET` (default 200), `RAPIDAPI_HIGHLIGHTLY_DAILY_BUDGET` (default 100). Counter is incremented per real HTTP call; over budget → `QuotaExceededError` → fallback.
 - Consequence: the free tier cannot sustain continuous live polling. It supports development and low-frequency demo refresh only.
 
+## Verified 2026-11-09 (real key)
+- cricbuzz-cricket, cricbuzz-cricket2, unofficial-cricbuzz and cricbuzz-live1 all answer with real data.
+- Free-tier limits seen in response headers: cricbuzz-cricket 200, cricbuzz-cricket2 100, cricbuzz-live1 100, unofficial-cricbuzz 500. BASIC plans also enforce ~1 call/second (429 "per second").
+- cricbuzz-cricket2 serves the same endpoints and JSON shape as cricbuzz-cricket (drop-in via `RAPIDAPI_CRICBUZZ_HOST`).
+- The real `mcenter/v1/{id}/scard` shape differs from the first assumption (lowercase keys, no match header, no team ids). `toSummary(info, scard)` now combines the list entry with the scorecard. Fixtures in `test/fixtures/cricbuzz/` are recorded responses.
+- cricbuzz-live1 (sx_* ids) exposes series point tables, squads, team profiles and ball-by-ball commentary; not adapted yet.
+
 ## Known risks / unverified
-- Cricbuzz response shapes are mapped from the provider's documented endpoints (`matches/v1/live|recent|upcoming`, `mcenter/v1/{id}/scard`) and **have not been checked against a live response** (no key available when written). Fixtures in `test/fixtures/cricbuzz/` are hand-authored to that shape and must be replaced by recorded responses (`npm run record:cricbuzz`) once a key exists.
+- Toss is parsed from the scorecard status text ("X opt to bowl") because the endpoint has no toss block; it is absent until the toss is announced in that text.
 - Home/away is assigned by batting order in the adapter (the normalizer's period-score logic assumes the second innings is "away"). Multi-innings Tests are approximate.
 - Highlightly adapter not implemented.
 

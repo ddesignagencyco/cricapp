@@ -86,65 +86,82 @@ export function toSportEvent(info) {
   };
 }
 
-/** Scorecard response (`mcenter/v1/{id}/scard`) → SportsRadar match summary. */
-export function toSummary(scard, id) {
-  const header = scard?.matchHeader ?? {};
-  const innings = scard?.scoreCard ?? [];
-  const { status, matchStatus } = mapState(header.state, header.status);
+const norm = (v) => String(v ?? '').trim().toLowerCase();
 
-  const first = innings[0]?.batTeamDetails;
-  const firstBatId = first?.batTeamId ?? header.team1?.id;
-  const t1 = header.team1 ?? {};
-  const t2 = header.team2 ?? {};
+/** Which of the match's two teams a scorecard innings belongs to (the scorecard has no team ids). */
+function teamForInnings(inn, t1, t2) {
+  const keys = [norm(inn?.batteamsname), norm(inn?.batteamname)].filter(Boolean);
+  const is = (t) => keys.some((k) => k === norm(t?.teamSName) || k === norm(t?.teamName));
+  if (is(t1)) return t1;
+  if (is(t2)) return t2;
+  return null;
+}
+
+/** "Day 1: Stumps - Sri Lanka opt to bowl" → { team, decision }. Null when the text has no toss. */
+function parseToss(text, t1, t2) {
+  const m = String(text ?? '').match(/(?:^|[-:]\s*)([^-:]+?)\s+(?:opt|elected|chose)\s+to\s+(bat|bowl|field)/i);
+  if (!m) return null;
+  const who = norm(m[1]);
+  const team = [t1, t2].find((t) => norm(t?.teamName) === who || norm(t?.teamSName) === who);
+  return team ? { team, decision: /bat/i.test(m[2]) ? 'bat' : 'field' } : null;
+}
+
+/**
+ * List entry (`matchInfo`: teams, series, venue, state) + scorecard (`mcenter/v1/{id}/scard`:
+ * innings totals, status text) → SportsRadar match summary. The scorecard alone has no
+ * team ids, series or start time, so both are needed.
+ */
+export function toSummary(info, scard) {
+  const innings = scard?.scorecard ?? [];
+  const t1 = info.team1 ?? {};
+  const t2 = info.team2 ?? {};
+  const statusText = scard?.status ?? info.status ?? null;
+  const mapped = mapState(info.state, statusText);
+  const finished = mapped.status === 'closed' || scard?.ismatchcomplete === true;
+  const { status, matchStatus } = finished && mapped.status !== 'closed'
+    ? { status: 'closed', matchStatus: 'ended' }
+    : mapped;
+
   // The normalizer treats the first innings as "home" and the second as "away", so
-  // qualifiers follow batting order here, not the fixture list.
-  const homeTeam = String(t1.id) === String(firstBatId) ? t1 : String(t2.id) === String(firstBatId) ? t2 : t1;
+  // qualifiers follow batting order, not the fixture list.
+  const homeTeam = teamForInnings(innings[0], t1, t2) ?? t1;
   const awayTeam = homeTeam === t1 ? t2 : t1;
 
   const periods = innings.map((inn, i) => {
-    const side = String(inn.batTeamDetails?.batTeamId) === String(homeTeam.id) ? 'home' : 'away';
-    const d = inn.scoreDetails ?? {};
+    const side = teamForInnings(inn, t1, t2) === homeTeam ? 'home' : 'away';
     return {
       number: i + 1,
-      [`${side}_score`]: Number(d.runs ?? 0),
-      [`${side}_wickets`]: Number(d.wickets ?? 0),
-      display_overs: d.overs ?? 0,
+      [`${side}_score`]: Number(inn.score ?? 0),
+      [`${side}_wickets`]: Number(inn.wickets ?? 0),
+      display_overs: inn.overs ?? 0,
     };
   });
 
-  const lastInn = innings[innings.length - 1];
-  const last = lastInn?.scoreDetails;
-  const lastBat = lastInn?.batTeamDetails;
-  const displayScore = last
-    ? `${lastBat?.batTeamShortName ?? ''} ${last.runs}/${last.wickets}`.trim()
-    : null;
-
-  const finished = status === 'closed';
-  const toss = header.tossResults ?? {};
-  const decision = String(toss.decision ?? '').toLowerCase();
-  const winnerId = header.result?.winningteamId ?? header.result?.winningTeamId ?? null;
+  const last = innings[innings.length - 1];
+  const toss = parseToss(statusText, t1, t2);
 
   return {
     sport_event: {
-      id: matchId(id ?? header.matchId),
-      scheduled: iso(header.matchStartTimestamp),
+      id: matchId(info.matchId),
+      scheduled: iso(info.startDate),
       status,
-      tournament: { id: `${PREFIX.tournament}${header.seriesId}`, name: header.seriesName ?? null },
-      venue: { name: null },
+      tournament: { id: `${PREFIX.tournament}${info.seriesId}`, name: info.seriesName ?? null },
+      venue: { name: info.venueInfo?.ground ?? null },
       competitors: [competitor(homeTeam, 'home'), competitor(awayTeam, 'away')],
     },
     sport_event_status: {
       status,
       match_status: matchStatus,
-      display_score: displayScore,
+      display_score: last ? `${last.batteamsname ?? ''} ${last.score}/${last.wickets}`.trim() : null,
       display_overs: last?.overs ?? null,
       current_inning: innings.length || null,
       period_scores: periods,
-      // Free text like "Team X need 20 runs" is only a result once the match is over.
-      match_result_text: finished ? (header.status ?? null) : null,
-      winner_id: finished ? teamId(winnerId) : null,
-      toss_won_by: teamId(toss.tossWinnerId),
-      toss_decision: /bat/.test(decision) ? 'bat' : /bowl|field/.test(decision) ? 'field' : null,
+      // "Team X need 20 runs" is not a result: only a finished match has one. The winner
+      // is read from this text downstream (Cricbuzz gives no winner id here).
+      match_result_text: finished ? statusText : null,
+      winner_id: null,
+      toss_won_by: toss ? teamId(toss.team.teamId) : null,
+      toss_decision: toss?.decision ?? null,
     },
   };
 }
@@ -154,9 +171,20 @@ export async function fetchLiveSchedule() {
   return flattenMatches(data).map((m) => toSportEvent(m.matchInfo));
 }
 
+/** The list entry for a match. The poller has just fetched the live list, so that lookup is a cache hit. */
+async function findMatchInfo(id) {
+  const want = Number(rawMatchId(id));
+  for (const [kind, ttl] of [['live', LIVE_TTL_S], ['recent', LIST_TTL_S], ['upcoming', LIST_TTL_S]]) {
+    const hit = flattenMatches(await get(`matches/v1/${kind}`, ttl)).find((m) => Number(m.matchInfo.matchId) === want);
+    if (hit) return hit.matchInfo;
+  }
+  throw new Error(`cricbuzz match ${id} not found in the live, recent or upcoming lists`);
+}
+
 export async function fetchMatchSummary(id) {
-  const data = await get(`mcenter/v1/${rawMatchId(id)}/scard`, LIVE_TTL_S);
-  return toSummary(data, id);
+  const info = await findMatchInfo(id);
+  const scard = await get(`mcenter/v1/${rawMatchId(id)}/scard`, LIVE_TTL_S);
+  return toSummary(info, scard);
 }
 
 async function allListed() {

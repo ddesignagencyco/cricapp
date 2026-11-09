@@ -1,4 +1,5 @@
 process.env.RAPIDAPI_KEY = 'test-key';
+process.env.RAPIDAPI_MIN_INTERVAL_MS = '1';
 
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
@@ -30,16 +31,41 @@ function memoryStore() {
 const realFetch = globalThis.fetch;
 let fetchCalls;
 
+function response(status, body) {
+  const text = typeof body === 'string' ? body : JSON.stringify(body);
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    json: async () => JSON.parse(text),
+    text: async () => text,
+    clone() {
+      return response(status, body);
+    },
+  };
+}
+
+/** `route(url)` returns a body (200) or `{ __http: code, body }`. */
 function mockFetch(route) {
   fetchCalls = [];
   globalThis.fetch = async (url) => {
     fetchCalls.push(String(url));
-    const body = route(String(url));
-    return { ok: true, status: 200, json: async () => body, text: async () => '' };
+    const out = route(String(url));
+    return out?.__http ? response(out.__http, out.body) : response(200, out);
   };
 }
 
-describe('cricbuzz adapter', () => {
+/** Serves the recorded list for list endpoints and the recorded scorecard for `/{id}/scard`. */
+const recordedRoute = (scards = {}) => (url) => {
+  const m = url.match(/mcenter\/v1\/(\d+)\/scard/);
+  if (m) return fixture(scards[m[1]]);
+  return fixture('live.json');
+};
+const SCARDS = {
+  170703: 'scard-test-live.json',
+  172727: 'scard-test-drawn.json',
+  176143: 'scard-t10-chase.json',
+};
+describe('cricbuzz adapter (recorded responses)', () => {
   beforeEach(() => {
     setStore(memoryStore());
     process.env.DATA_PROVIDER = 'cricbuzz';
@@ -50,8 +76,9 @@ describe('cricbuzz adapter', () => {
     delete process.env.RAPIDAPI_CRICBUZZ_MONTHLY_BUDGET;
   });
 
-  it('maps states so normalize.js reads them correctly', () => {
+  it('maps Cricbuzz states so normalize.js reads them correctly', () => {
     assert.deepEqual(cricbuzz.mapState('In Progress'), { status: 'live', matchStatus: 'inprogress' });
+    assert.equal(cricbuzz.mapState('Stumps').status, 'interrupted');
     assert.equal(cricbuzz.mapState('Rain').status, 'interrupted');
     assert.equal(cricbuzz.mapState('Complete').status, 'closed');
     assert.equal(cricbuzz.mapState('Abandoned').matchStatus, 'abandoned');
@@ -59,48 +86,59 @@ describe('cricbuzz adapter', () => {
   });
 
   it('live schedule returns namespaced ids and statuses', async () => {
-    mockFetch(() => fixture('live.json'));
-    const events = await facade.fetchLiveSchedule();
-    assert.deepEqual(events.map((e) => [e.id, e.status]), [
-      ['cb:match:1001', 'live'],
-      ['cb:match:1002', 'interrupted'],
-      ['cb:match:1003', 'closed'],
-    ]);
-    assert.equal(events[0].competitors[0].id, 'cb:team:1');
+    mockFetch(recordedRoute());
+    const byId = Object.fromEntries((await facade.fetchLiveSchedule()).map((e) => [e.id, e]));
+    assert.equal(byId['cb:match:170703'].status, 'interrupted'); // Test, "Day 1: Stumps"
+    assert.equal(byId['cb:match:176143'].status, 'live'); // T10 chase in progress
+    assert.equal(byId['cb:match:172727'].status, 'closed'); // drawn Test
+    assert.equal(byId['cb:match:170703'].competitors[0].id, 'cb:team:3');
+    assert.equal(byId['cb:match:170703'].venue.name, 'Rawalpindi Cricket Stadium');
   });
 
-  it('live summary goes through normalizeMatch with the right score and status', async () => {
-    mockFetch(() => fixture('scard-live.json'));
-    const raw = await facade.fetchMatchSummary('cb:match:1001');
-    assert.match(fetchCalls[0], /mcenter\/v1\/1001\/scard$/);
+  it('live Test: score, overs, run rate and toss reach the normalized match', async () => {
+    mockFetch(recordedRoute(SCARDS));
+    const raw = await facade.fetchMatchSummary('cb:match:170703');
+    assert.match(fetchCalls.at(-1), /mcenter\/v1\/170703\/scard$/);
     const m = normalizeMatch(PROVIDERS.SPORTRADAR, raw);
-    assert.equal(m.matchId, 'cb:match:1001');
+    assert.equal(m.matchId, 'cb:match:170703');
+    assert.deepEqual(m.teams, ['PAK', 'SL']);
+    assert.equal(m.status, 'live'); // stumps is a pause, not an end
+    assert.equal(m.teamScores.home.score, '281/5');
+    assert.equal(m.currentInnings.overs, 67.2);
+    assert.equal(m.currentInnings.runRate, 4.17);
+    assert.equal(m.tossWonBy, 'cb:team:5');
+    assert.equal(m.tossDecision, 'field');
+    assert.equal(m.matchResult, null);
+  });
+
+  it('T10 chase: second innings batting, no result while in progress', async () => {
+    mockFetch(recordedRoute(SCARDS));
+    const m = normalizeMatch(PROVIDERS.SPORTRADAR, await facade.fetchMatchSummary('cb:match:176143'));
     assert.equal(m.status, 'live');
-    assert.equal(m.currentInnings.runs, 160);
-    assert.equal(m.currentInnings.wickets, 4);
-    assert.equal(m.teamScores.home.score, '180/6');
-    assert.equal(m.teamScores.away.score, '160/4');
-    assert.equal(m.tossDecision, 'bat');
+    assert.equal(m.teamScores.home.score, '81/9');
+    assert.equal(m.teamScores.away.score, '37/1');
+    assert.equal(m.currentInnings.battingTeam, m.teamScores.away.code);
+    assert.equal(m.currentInning, 2);
     assert.equal(m.matchResult, null, 'a chase in progress is not a result');
   });
 
-  it('completed summary is completed with winner and result text', async () => {
-    mockFetch(() => fixture('scard-complete.json'));
-    const m = normalizeMatch(PROVIDERS.SPORTRADAR, await facade.fetchMatchSummary('cb:match:1003'));
+  it('drawn Test is completed, with the result text and no winner', async () => {
+    mockFetch(recordedRoute(SCARDS));
+    const m = normalizeMatch(PROVIDERS.SPORTRADAR, await facade.fetchMatchSummary('cb:match:172727'));
     assert.equal(m.status, 'completed');
-    assert.equal(m.winnerId, 'cb:team:1');
-    assert.equal(m.matchResult, 'Karachi Kings won by 5 runs');
+    assert.equal(m.matchResult, 'Match drawn');
+    assert.equal(m.winnerId ?? null, null);
   });
 
   it('daily results only include finished matches on that date', async () => {
-    mockFetch(() => fixture('live.json'));
-    const day = new Date(1782900000000).toISOString().slice(0, 10);
-    const { results } = await facade.fetchDailyResults(day);
-    assert.deepEqual(results.map((r) => r.sport_event.id), ['cb:match:1003']);
+    mockFetch(recordedRoute());
+    const { results } = await facade.fetchDailyResults('2026-11-05');
+    assert.ok(results.some((r) => r.sport_event.id === 'cb:match:172727'));
+    assert.ok(results.every((r) => r.sport_event_status.status === 'closed'));
   });
 
   it('serves repeat calls from cache without spending quota', async () => {
-    mockFetch(() => fixture('live.json'));
+    mockFetch(recordedRoute());
     await facade.fetchLiveSchedule();
     await facade.fetchLiveSchedule();
     assert.equal(fetchCalls.length, 1);
@@ -109,10 +147,27 @@ describe('cricbuzz adapter', () => {
 
   it('blocks calls once the monthly budget is used up', async () => {
     process.env.RAPIDAPI_CRICBUZZ_MONTHLY_BUDGET = '1';
-    mockFetch(() => fixture('scard-live.json'));
-    await facade.fetchMatchSummary('cb:match:1');
-    await assert.rejects(() => facade.fetchMatchSummary('cb:match:2'), QuotaExceededError);
+    mockFetch(recordedRoute());
+    await facade.fetchLiveSchedule();
+    await assert.rejects(() => facade.fetchDailySchedule('2026-11-05'), QuotaExceededError);
     assert.equal(fetchCalls.length, 1);
+  });
+
+  it('retries once on the per-second 429 instead of treating it as quota exhaustion', async () => {
+    let n = 0;
+    mockFetch(() =>
+      ++n === 1
+        ? { __http: 429, body: '{"message":"You have exceeded the rate limit per second for your plan, BASIC"}' }
+        : fixture('live.json'),
+    );
+    const events = await facade.fetchLiveSchedule();
+    assert.ok(events.length > 0);
+    assert.equal(fetchCalls.length, 2);
+  });
+
+  it('a real 429 (not per-second) surfaces as a quota error', async () => {
+    mockFetch(() => ({ __http: 429, body: '{"message":"Monthly quota exceeded"}' }));
+    await assert.rejects(() => facade.fetchLiveSchedule(), QuotaExceededError);
   });
 
   it('reports unsupported endpoints instead of guessing', async () => {

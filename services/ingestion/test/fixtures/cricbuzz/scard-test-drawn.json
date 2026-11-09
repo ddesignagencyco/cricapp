@@ -1,0 +1,75 @@
+{
+ "_note": "Recorded from cricbuzz-cricket.p.rapidapi.com on 2026-11-09; per-innings batsman/bowler/fow lists removed to keep the file small.",
+ "scorecard": [
+  {
+   "inningsid": 1,
+   "extras": {
+    "legbyes": 3,
+    "byes": 8,
+    "wides": 0,
+    "noballs": 0,
+    "penalty": 0,
+    "total": 11
+   },
+   "score": 504,
+   "wickets": 10,
+   "overs": 134.3,
+   "runrate": 3.75,
+   "batteamname": "Zimbabwe",
+   "batteamsname": "ZIM",
+   "isdeclared": false,
+   "isfollowon": false,
+   "ballnbr": 807,
+   "rpb": 0.62
+  },
+  {
+   "inningsid": 2,
+   "extras": {
+    "legbyes": 10,
+    "byes": 4,
+    "wides": 1,
+    "noballs": 2,
+    "penalty": 0,
+    "total": 17
+   },
+   "score": 514,
+   "wickets": 10,
+   "overs": 169.4,
+   "runrate": 3.03,
+   "batteamname": "Afghanistan",
+   "batteamsname": "AFG",
+   "isdeclared": false,
+   "isfollowon": false,
+   "ballnbr": 1018,
+   "rpb": 0.5
+  },
+  {
+   "inningsid": 3,
+   "extras": {
+    "legbyes": 2,
+    "byes": 0,
+    "wides": 1,
+    "noballs": 0,
+    "penalty": 0,
+    "total": 3
+   },
+   "score": 523,
+   "wickets": 5,
+   "overs": 122.1,
+   "runrate": 4.28,
+   "batteamname": "Zimbabwe",
+   "batteamsname": "ZIM",
+   "isdeclared": false,
+   "isfollowon": false,
+   "ballnbr": 733,
+   "rpb": 0.71
+  }
+ ],
+ "ismatchcomplete": true,
+ "appindex": {
+  "seotitle": "Cricket scorecard - AFG vs ZIM 1st Test,Afghanistan vs Zimbabwe in UAE, 2026 | Cricbuzz.com",
+  "weburl": "http://www.cricbuzz.com/live-cricket-scorecard/172727/afg-vs-zim-1st-test-afghanistan-vs-zimbabwe-in-uae-2026"
+ },
+ "status": "Match drawn",
+ "responselastupdated": 1794244607
+}

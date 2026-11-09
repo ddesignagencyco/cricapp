@@ -1,55 +1,484 @@
 {
-  "_note": "HAND-AUTHORED to the documented Cricbuzz shape, NOT a recorded response. Replace with a recorded one once a RapidAPI key exists.",
-  "typeMatches": [
+ "_note": "Recorded from cricbuzz-cricket.p.rapidapi.com /matches/v1/live on 2026-11-09.",
+ "typeMatches": [
+  {
+   "matchType": "International",
+   "seriesMatches": [
     {
-      "matchType": "League",
-      "seriesMatches": [
-        {
-          "seriesAdWrapper": {
-            "seriesId": 777,
-            "seriesName": "Pakistan Super League 2026",
-            "matches": [
-              {
-                "matchInfo": {
-                  "matchId": 1001,
-                  "seriesId": 777,
-                  "seriesName": "Pakistan Super League 2026",
-                  "state": "In Progress",
-                  "status": "Lahore Qalandars need 20 runs",
-                  "startDate": "1783000000000",
-                  "team1": { "teamId": 1, "teamName": "Karachi Kings", "teamSName": "KK" },
-                  "team2": { "teamId": 2, "teamName": "Lahore Qalandars", "teamSName": "LQ" },
-                  "venueInfo": { "ground": "National Stadium" }
-                }
-              },
-              {
-                "matchInfo": {
-                  "matchId": 1002,
-                  "seriesId": 777,
-                  "seriesName": "Pakistan Super League 2026",
-                  "state": "Rain",
-                  "status": "Rain delay",
-                  "startDate": "1783000000000",
-                  "team1": { "teamId": 3, "teamName": "Multan Sultans", "teamSName": "MS" },
-                  "team2": { "teamId": 4, "teamName": "Quetta Gladiators", "teamSName": "QG" }
-                }
-              },
-              {
-                "matchInfo": {
-                  "matchId": 1003,
-                  "seriesId": 777,
-                  "seriesName": "Pakistan Super League 2026",
-                  "state": "Complete",
-                  "status": "Karachi Kings won by 5 runs",
-                  "startDate": "1782900000000",
-                  "team1": { "teamId": 1, "teamName": "Karachi Kings", "teamSName": "KK" },
-                  "team2": { "teamId": 3, "teamName": "Multan Sultans", "teamSName": "MS" }
-                }
-              }
-            ]
+     "seriesAdWrapper": {
+      "seriesId": 13037,
+      "seriesName": "Sri Lanka tour of Pakistan, 2026",
+      "matches": [
+       {
+        "matchInfo": {
+         "matchId": 170703,
+         "seriesId": 13037,
+         "seriesName": "Sri Lanka tour of Pakistan, 2026",
+         "matchDesc": "1st Test",
+         "matchFormat": "TEST",
+         "startDate": "1794198600000",
+         "endDate": "1794569400000",
+         "state": "Stumps",
+         "status": "Day 1: Stumps",
+         "team1": {
+          "teamId": 3,
+          "teamName": "Pakistan",
+          "teamSName": "PAK",
+          "imageId": 776308
+         },
+         "team2": {
+          "teamId": 5,
+          "teamName": "Sri Lanka",
+          "teamSName": "SL",
+          "imageId": 776254
+         },
+         "venueInfo": {
+          "id": 25,
+          "ground": "Rawalpindi Cricket Stadium",
+          "city": "Rawalpindi",
+          "timezone": "+05:00",
+          "latitude": "33.651525",
+          "longitude": "73.075824"
+         },
+         "currBatTeamId": 3,
+         "seriesStartDt": "1791504000000",
+         "seriesEndDt": "1795392000000",
+         "isTimeAnnounced": true,
+         "stateTitle": "Stumps",
+         "hideScoreStatus": "Day 1 : Stumps"
+        },
+        "matchScore": {
+         "team1Score": {
+          "inngs1": {
+           "inningsId": 1,
+           "runs": 281,
+           "wickets": 5,
+           "overs": 67.2
           }
+         }
         }
+       }
       ]
+     }
+    },
+    {
+     "seriesAdWrapper": {
+      "seriesId": 13201,
+      "seriesName": "Afghanistan vs Zimbabwe in UAE, 2026",
+      "matches": [
+       {
+        "matchInfo": {
+         "matchId": 172727,
+         "seriesId": 13201,
+         "seriesName": "Afghanistan vs Zimbabwe in UAE, 2026",
+         "matchDesc": "1st Test",
+         "matchFormat": "TEST",
+         "startDate": "1793858400000",
+         "endDate": "1794229200000",
+         "state": "Complete",
+         "status": "Match drawn",
+         "team1": {
+          "teamId": 12,
+          "teamName": "Zimbabwe",
+          "teamSName": "ZIM",
+          "imageId": 776198
+         },
+         "team2": {
+          "teamId": 96,
+          "teamName": "Afghanistan",
+          "teamSName": "AFG",
+          "imageId": 776177
+         },
+         "venueInfo": {
+          "id": 140,
+          "ground": "Sharjah Cricket Stadium",
+          "city": "Sharjah",
+          "timezone": "+04:00",
+          "latitude": "25.33095",
+          "longitude": "55.420902"
+         },
+         "seriesStartDt": "1793059200000",
+         "seriesEndDt": "1795046400000",
+         "isTimeAnnounced": true,
+         "stateTitle": "Complete",
+         "hideScoreStatus": "Match completed"
+        },
+        "matchScore": {
+         "team1Score": {
+          "inngs1": {
+           "inningsId": 1,
+           "runs": 504,
+           "wickets": 10,
+           "overs": 134.3
+          },
+          "inngs2": {
+           "inningsId": 3,
+           "runs": 523,
+           "wickets": 5,
+           "overs": 122.1
+          }
+         },
+         "team2Score": {
+          "inngs1": {
+           "inningsId": 2,
+           "runs": 514,
+           "wickets": 10,
+           "overs": 169.4
+          }
+         }
+        }
+       }
+      ]
+     }
     }
+   ]
+  },
+  {
+   "matchType": "League",
+   "seriesMatches": [
+    {
+     "seriesAdWrapper": {
+      "seriesId": 13307,
+      "seriesName": "Abu Dhabi T10 League 2026",
+      "matches": [
+       {
+        "matchInfo": {
+         "matchId": 176136,
+         "seriesId": 13307,
+         "seriesName": "Abu Dhabi T10 League 2026",
+         "matchDesc": "7th Match",
+         "matchFormat": "T20",
+         "startDate": "1794231900000",
+         "endDate": "1794244500000",
+         "state": "Complete",
+         "status": "Arabian Aces won by 10 wkts",
+         "team1": {
+          "teamId": 3631,
+          "teamName": "Emirates Eagles",
+          "teamSName": "EE",
+          "imageId": 1116767
+         },
+         "team2": {
+          "teamId": 3623,
+          "teamName": "Arabian Aces",
+          "teamSName": "ARA",
+          "imageId": 1116769
+         },
+         "venueInfo": {
+          "id": 94,
+          "ground": "Sheikh Zayed Stadium",
+          "city": "Abu Dhabi",
+          "timezone": "+04:00",
+          "latitude": "24.416138",
+          "longitude": "54.453566"
+         },
+         "currBatTeamId": 3623,
+         "seriesStartDt": "1794009600000",
+         "seriesEndDt": "1795305600000",
+         "isTimeAnnounced": true,
+         "stateTitle": "Complete",
+         "hideScoreStatus": "Match completed"
+        },
+        "matchScore": {
+         "team1Score": {
+          "inngs1": {
+           "inningsId": 1,
+           "runs": 108,
+           "wickets": 5,
+           "overs": 9.6
+          }
+         },
+         "team2Score": {
+          "inngs1": {
+           "inningsId": 2,
+           "runs": 110,
+           "overs": 6.5
+          }
+         }
+        }
+       },
+       {
+        "matchInfo": {
+         "matchId": 176143,
+         "seriesId": 13307,
+         "seriesName": "Abu Dhabi T10 League 2026",
+         "matchDesc": "8th Match",
+         "matchFormat": "T20",
+         "startDate": "1794240000000",
+         "endDate": "1794252600000",
+         "state": "In Progress",
+         "status": "United Tigers need 50 runs in 45 balls",
+         "team1": {
+          "teamId": 2885,
+          "teamName": "Royal Desert Champions",
+          "teamSName": "RDC",
+          "imageId": 1116766
+         },
+         "team2": {
+          "teamId": 3647,
+          "teamName": "United Tigers",
+          "teamSName": "UT",
+          "imageId": 1116768
+         },
+         "venueInfo": {
+          "id": 94,
+          "ground": "Sheikh Zayed Stadium",
+          "city": "Abu Dhabi",
+          "timezone": "+04:00",
+          "latitude": "24.416138",
+          "longitude": "54.453566"
+         },
+         "currBatTeamId": 3647,
+         "seriesStartDt": "1794009600000",
+         "seriesEndDt": "1795305600000",
+         "isTimeAnnounced": true,
+         "stateTitle": "In Progress",
+         "hideScoreStatus": "Match in progress"
+        },
+        "matchScore": {
+         "team1Score": {
+          "inngs1": {
+           "inningsId": 1,
+           "runs": 81,
+           "wickets": 9,
+           "overs": 9.6
+          }
+         },
+         "team2Score": {
+          "inngs1": {
+           "inningsId": 2,
+           "runs": 32,
+           "wickets": 1,
+           "overs": 2.3
+          }
+         }
+        }
+       }
+      ]
+     }
+    },
+    {
+     "seriesAdWrapper": {
+      "seriesId": 13430,
+      "seriesName": "Nepal Premier League 2026",
+      "matches": [
+       {
+        "matchInfo": {
+         "matchId": 177743,
+         "seriesId": 13430,
+         "seriesName": "Nepal Premier League 2026",
+         "matchDesc": "20th Match",
+         "matchFormat": "T20",
+         "startDate": "1794222900000",
+         "endDate": "1794235500000",
+         "state": "Complete",
+         "status": "Kathmandu Gorkhas won by 10 runs",
+         "team1": {
+          "teamId": 2937,
+          "teamName": "Kathmandu Gorkhas",
+          "teamSName": "KAG",
+          "imageId": 784125
+         },
+         "team2": {
+          "teamId": 2913,
+          "teamName": "Chitwan Rhinos",
+          "teamSName": "CHR",
+          "imageId": 784127
+         },
+         "venueInfo": {
+          "id": 458,
+          "ground": "Tribhuvan University International Cricket Ground",
+          "city": "Kirtipur",
+          "timezone": "+05:45",
+          "latitude": "27.6768145",
+          "longitude": "85.287199"
+         },
+         "currBatTeamId": 2937,
+         "seriesStartDt": "1792972800000",
+         "seriesEndDt": "1795392000000",
+         "isTimeAnnounced": true,
+         "stateTitle": "Complete",
+         "hideScoreStatus": "Match completed"
+        },
+        "matchScore": {
+         "team1Score": {
+          "inngs1": {
+           "inningsId": 1,
+           "runs": 180,
+           "wickets": 8,
+           "overs": 19.6
+          }
+         },
+         "team2Score": {
+          "inngs1": {
+           "inningsId": 2,
+           "runs": 170,
+           "wickets": 7,
+           "overs": 19.6
+          }
+         }
+        }
+       }
+      ]
+     }
+    },
+    {
+     "ad": {
+      "name": "native_matches",
+      "layout": "native_large",
+      "position": 4
+     }
+    }
+   ]
+  },
+  {
+   "matchType": "Domestic",
+   "seriesMatches": [
+    {
+     "seriesAdWrapper": {
+      "seriesId": 13091,
+      "seriesName": "India A tour of New Zealand, 2026",
+      "matches": [
+       {
+        "matchInfo": {
+         "matchId": 171307,
+         "seriesId": 13091,
+         "seriesName": "India A tour of New Zealand, 2026",
+         "matchDesc": "3rd Unofficial Test",
+         "matchFormat": "TEST",
+         "startDate": "1794002400000",
+         "endDate": "1794286800000",
+         "state": "Stumps",
+         "status": "Day 3: Stumps - New Zealand A trail by 428 runs",
+         "team1": {
+          "teamId": 78,
+          "teamName": "India A",
+          "teamSName": "INDA",
+          "imageId": 776181
+         },
+         "team2": {
+          "teamId": 80,
+          "teamName": "New Zealand A",
+          "teamSName": "NZA",
+          "imageId": 776336
+         },
+         "venueInfo": {
+          "id": 269,
+          "ground": "Bert Sutcliffe Oval",
+          "city": "Lincoln",
+          "timezone": "+13:00",
+          "latitude": "-43.646646",
+          "longitude": "172.46267"
+         },
+         "currBatTeamId": 80,
+         "seriesStartDt": "1792800000000",
+         "seriesEndDt": "1794441600000",
+         "isTimeAnnounced": true,
+         "stateTitle": "Stumps",
+         "hideScoreStatus": "Day 3 : Stumps"
+        },
+        "matchScore": {
+         "team1Score": {
+          "inngs1": {
+           "inningsId": 1,
+           "runs": 464,
+           "wickets": 5,
+           "overs": 145.6,
+           "isDeclared": true
+          }
+         },
+         "team2Score": {
+          "inngs1": {
+           "inningsId": 2,
+           "runs": 36,
+           "wickets": 2,
+           "overs": 13.6
+          }
+         }
+        }
+       }
+      ]
+     }
+    },
+    {
+     "seriesAdWrapper": {
+      "seriesId": 13333,
+      "seriesName": "ACC Men's U19 Asia Cup 2026",
+      "matches": [
+       {
+        "matchInfo": {
+         "matchId": 175680,
+         "seriesId": 13333,
+         "seriesName": "ACC Men's U19 Asia Cup 2026",
+         "matchDesc": "10th Match, Group B",
+         "matchFormat": "ODI",
+         "startDate": "1794200400000",
+         "endDate": "1794229200000",
+         "state": "Complete",
+         "status": "Afghanistan U19 won by 106 runs",
+         "team1": {
+          "teamId": 223,
+          "teamName": "Afghanistan U19",
+          "teamSName": "AFGU19",
+          "imageId": 172278
+         },
+         "team2": {
+          "teamId": 172,
+          "teamName": "Sri Lanka U19",
+          "teamSName": "SLU19",
+          "imageId": 776266
+         },
+         "venueInfo": {
+          "id": 549,
+          "ground": "Al Amerat Cricket Ground (Ministry Turf 1)",
+          "city": "Al Amerat",
+          "timezone": "+04:00",
+          "latitude": "23.483316",
+          "longitude": "58.4589062"
+         },
+         "currBatTeamId": 223,
+         "seriesStartDt": "1793836800000",
+         "seriesEndDt": "1794787200000",
+         "isTimeAnnounced": true,
+         "stateTitle": "AFGU19 Won",
+         "hideScoreStatus": "Match completed"
+        },
+        "matchScore": {
+         "team1Score": {
+          "inngs1": {
+           "inningsId": 1,
+           "runs": 275,
+           "wickets": 10,
+           "overs": 49.5
+          }
+         },
+         "team2Score": {
+          "inngs1": {
+           "inningsId": 2,
+           "runs": 169,
+           "wickets": 10,
+           "overs": 34.1
+          }
+         }
+        }
+       }
+      ]
+     }
+    }
+   ]
+  }
+ ],
+ "filters": {
+  "matchType": [
+   "International",
+   "League",
+   "Domestic",
+   "Women"
   ]
+ },
+ "appIndex": {
+  "seoTitle": "Live Cricket Score - Scorecard and Match Results",
+  "webURL": "www.cricbuzz.com/live-cricket-scores/"
+ },
+ "responseLastUpdated": "1794244461"
 }
