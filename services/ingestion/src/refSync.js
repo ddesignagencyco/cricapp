@@ -41,6 +41,8 @@ import {
   saveTours,
   listTournamentsForSync,
   listMatchesNeedingScorecard,
+  listMatchesForSquadlessTeams,
+  getMatchSidesHint,
   listTeamsInUpcomingMatches,
   getMatchTimelinePayload,
   saveTournaments,
@@ -563,12 +565,12 @@ export async function syncUpcomingTeamResults({ limit = 20, delayMs = 0 } = {}) 
  * its ball-by-ball events and just gains the scorecard; a match with no timeline gets a
  * scorecard-only payload (the page then shows the cards without commentary).
  */
-export async function backfillScorecards({ limit = 20, delayMs = 1300 } = {}) {
-  const ids = await listMatchesNeedingScorecard(limit);
+export async function backfillScorecards({ limit = 20, delayMs = 1300, ids: given = null } = {}) {
+  const ids = given ?? (await listMatchesNeedingScorecard(limit));
   let done = 0;
   for (const id of ids) {
     try {
-      const { competitors, statistics } = await fetchMatchScorecard(id);
+      const { competitors, statistics } = await fetchMatchScorecard(id, await getMatchSidesHint(id));
       const stored = await getMatchTimelinePayload(id);
       const payload = stored
         ? { ...stored, sport_event: { ...(stored.sport_event ?? { id }), competitors }, statistics }
@@ -639,6 +641,7 @@ export async function refSyncAll(options = {}) {
     lineupLimit = 20,
     playerProfileLimit = 15,
     teamRosterLimit = 3,
+    squadScorecardLimit = 2,
     headToHeadLimit = 50,
     tournamentSyncLimit = 0,
     scorecardLimit = 0,
@@ -748,6 +751,11 @@ export async function refSyncAll(options = {}) {
 
   // Squads: free ones from stored scorecards for every team, then real rosters (1 request each)
   // for the teams about to play.
+  if (squadScorecardLimit > 0) {
+    // Teams the provider has no squad for: one stored scorecard names enough of their players.
+    const ids = await listMatchesForSquadlessTeams(squadScorecardLimit);
+    if (ids.length) await safeRun(() => backfillScorecards({ ids }));
+  }
   const derivedSquads = await safeRun(() => deriveSquadsFromScorecards());
   if (derivedSquads) log.info(`squads derived from stored scorecards (${derivedSquads} new member(s))`);
   if (teamRosterLimit > 0) {

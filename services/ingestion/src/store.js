@@ -444,6 +444,44 @@ export async function listMatchesNeedingScorecard(limit = 20) {
   return r.rows.map((row) => row.match_id);
 }
 
+/**
+ * Latest finished match without a scorecard for each team that has no squad at all, so one
+ * request can give that team (and its opponent) a derived squad. Most recent first.
+ */
+export async function listMatchesForSquadlessTeams(limit = 2) {
+  const r = await query(
+    `WITH sides AS (
+       SELECT m.match_id, m.scheduled, s.side_id
+         FROM matches m
+         LEFT JOIN match_timelines t ON t.match_id = m.match_id
+         CROSS JOIN LATERAL (VALUES (m.team_scores->'home'->>'id'), (m.team_scores->'away'->>'id')) s(side_id)
+        WHERE m.status = 'completed' AND m.match_id LIKE 'cb:match:%'
+          AND (t.match_id IS NULL OR NOT (t.payload ? 'statistics'))
+          AND s.side_id LIKE 'cb:team:%'
+          AND NOT EXISTS (SELECT 1 FROM team_squad_members q WHERE q.team_id = s.side_id)
+          AND NOT EXISTS (SELECT 1 FROM players p WHERE p.team_id = s.side_id)
+     ), latest AS (
+       SELECT DISTINCT ON (side_id) match_id, scheduled FROM sides ORDER BY side_id, scheduled DESC NULLS LAST
+     )
+     SELECT DISTINCT match_id, scheduled FROM latest ORDER BY scheduled DESC NULLS LAST LIMIT $1`,
+    [limit],
+  );
+  return r.rows.map((row) => row.match_id);
+}
+
+/** The two sides of a stored match in Cricbuzz's own field names, for reading a scorecard that has left its lists. */
+export async function getMatchSidesHint(matchId) {
+  const r = await query(`SELECT team_scores FROM matches WHERE match_id = $1`, [matchId]);
+  const ts = r.rows[0]?.team_scores;
+  const side = (x) => {
+    const m = String(x?.id ?? '').match(/^cb:team:(\d+)$/);
+    return m ? { teamId: Number(m[1]), teamName: x.name ?? null, teamSName: x.code ?? null } : null;
+  };
+  const team1 = side(ts?.home);
+  const team2 = side(ts?.away);
+  return team1 && team2 ? { team1, team2 } : null;
+}
+
 export async function getMatchTimelinePayload(matchId) {
   const r = await query(`SELECT payload FROM match_timelines WHERE match_id = $1`, [matchId]);
   const raw = r.rows[0]?.payload;

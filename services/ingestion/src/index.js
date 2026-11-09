@@ -144,6 +144,7 @@ const refSyncOptions = () => ({
   lineupLimit: Number(process.env.REF_SYNC_LINEUP_LIMIT || 20),
   playerProfileLimit: Number(process.env.REF_SYNC_PLAYER_PROFILE_LIMIT || 15),
   teamRosterLimit: Number(process.env.REF_SYNC_TEAM_ROSTER_LIMIT || 3),
+  squadScorecardLimit: Number(process.env.REF_SYNC_SQUAD_SCORECARD_LIMIT || 2),
   headToHeadLimit: Number(process.env.REF_SYNC_HEAD_TO_HEAD_LIMIT || 50),
 });
 

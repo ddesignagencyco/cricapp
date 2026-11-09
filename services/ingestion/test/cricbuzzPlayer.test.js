@@ -72,3 +72,29 @@ test('a team roster maps ids, roles, styles and photos; entries without an id ar
   assert.equal(r.players[1].avatar_url, null);
   assert.deepEqual(toRoster('cb:team:3', { status: 'error' }).players, []);
 });
+
+import { normalizeScard, toStatistics } from '../src/providers/cricbuzz.js';
+
+test('a scorecard with batters keyed by slot is read like the list layout', () => {
+  const raw = fx2('scard-keyed-layout');
+  const info = {
+    team1: { teamId: 304, teamName: 'Oman', teamSName: 'OMAN' },
+    team2: { teamId: 24, teamName: 'Netherlands', teamSName: 'NED' },
+  };
+  const n = normalizeScard(raw);
+  assert.ok(Array.isArray(n.scorecard[0].batsman) && n.scorecard[0].batsman.length > 5);
+  assert.equal(n.scorecard[0].batsman[0].name, 'Jatinder Singh');
+  assert.equal(normalizeScard(n).scorecard[0].batsman.length, n.scorecard[0].batsman.length, 'idempotent');
+  const { statistics } = toStatistics(info, raw);
+  const [inn1] = statistics.innings;
+  assert.equal(inn1.batting_team, 'cb:team:304');
+  const batters = inn1.teams[0].statistics.batting.players;
+  assert.equal(batters[0].id, 'cb:player:10453');
+  assert.equal(batters[0].statistics.runs, 30);
+  assert.equal(batters[0].statistics.dismissal.type, 'bowled');
+  assert.ok(inn1.teams[1].statistics.bowling.players.some((p) => p.name === 'Fred Klaassen'));
+});
+
+function fx2(n) {
+  return JSON.parse(readFileSync(new URL(`./fixtures/cricbuzz/${n}.json`, import.meta.url), 'utf8'));
+}

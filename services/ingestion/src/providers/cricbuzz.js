@@ -125,6 +125,7 @@ function parseToss(text, t1, t2) {
  * team ids, series or start time, so both are needed.
  */
 export function toSummary(info, scard) {
+  scard = normalizeScard(scard);
   const innings = scard?.scorecard ?? [];
   const t1 = info.team1 ?? {};
   const t2 = info.team2 ?? {};
@@ -215,7 +216,41 @@ export function parseDismissal(outdec, names) {
  * `sport_event.competitors` and `statistics.innings[]` with every batter's and bowler's
  * figures. Home is the side that batted first, as everywhere else in this adapter.
  */
+/**
+ * Some matches come back with the batters and bowlers keyed by slot (`batsman.batsmenData.bat_1`,
+ * `bowler.bowlersData.bowl_1`, camelCase fields) instead of as plain lists. Rewrite that layout
+ * into the list layout the rest of the adapter reads; lists pass through untouched.
+ */
+export function normalizeScard(scard) {
+  if (!scard || !Array.isArray(scard.scorecard)) return scard;
+  const slots = (o) => Object.values(o ?? {}).filter((x) => x && typeof x === 'object');
+  return {
+    ...scard,
+    scorecard: scard.scorecard.map((inn) => {
+      const keyedBat = inn.batsman && !Array.isArray(inn.batsman);
+      const keyedBowl = inn.bowler && !Array.isArray(inn.bowler);
+      if (!keyedBat && !keyedBowl) return inn;
+      return {
+        ...inn,
+        batsman: keyedBat
+          ? slots(inn.batsman.batsmenData).map((b) => ({
+              id: b.batId, name: b.batName, runs: b.runs, balls: b.balls, fours: b.fours, sixes: b.sixes,
+              strkrate: b.strikeRate, outdec: b.outDesc, iscaptain: b.isCaptain, iskeeper: b.isKeeper,
+            }))
+          : inn.batsman,
+        bowler: keyedBowl
+          ? slots(inn.bowler.bowlersData).map((b) => ({
+              id: b.bowlerId, name: b.bowlName, overs: b.overs, maidens: b.maidens, runs: b.runs,
+              wickets: b.wickets, economy: b.economy, dots: b.dots, balls: b.balls,
+            }))
+          : inn.bowler,
+      };
+    }),
+  };
+}
+
 export function toStatistics(info, scard) {
+  scard = normalizeScard(scard);
   const t1 = info.team1 ?? {};
   const t2 = info.team2 ?? {};
   const list = scard?.scorecard ?? [];
@@ -338,7 +373,7 @@ export function createCricbuzz({ provider, host, budgetLimit, cacheNamespace = '
 
   async function fetchMatchSummary(id) {
     const info = await findMatchInfo(id);
-    const scard = await get(`mcenter/v1/${rawMatchId(id)}/scard`, LIVE_TTL_S);
+    const scard = normalizeScard(await get(`mcenter/v1/${rawMatchId(id)}/scard`, LIVE_TTL_S));
     return toSummary(info, scard);
   }
 
@@ -381,15 +416,17 @@ export function createCricbuzz({ provider, host, budgetLimit, cacheNamespace = '
   }
 
   /** List entry + scorecard for a match: the raw material for the timeline's scorecard. */
-  async function fetchScorecardBundle(id) {
-    const info = await findMatchInfo(id);
+  async function fetchScorecardBundle(id, hint = null) {
+    // A match that has left the provider's recent list can still be read when the caller knows
+    // its two sides ({ team1, team2 } in the provider's own field names).
+    const info = hint ? await findMatchInfo(id).catch(() => hint) : await findMatchInfo(id);
     const scard = await get(`mcenter/v1/${rawMatchId(id)}/scard`, LIVE_TTL_S);
     return { info, scard };
   }
 
   /** `{ competitors, statistics }` for the web scorecard (what a timeline payload carries). */
-  async function fetchMatchScorecard(id) {
-    const { info, scard } = await fetchScorecardBundle(id);
+  async function fetchMatchScorecard(id, hint = null) {
+    const { info, scard } = await fetchScorecardBundle(id, hint);
     return toStatistics(info, scard);
   }
 
