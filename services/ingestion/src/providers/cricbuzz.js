@@ -286,16 +286,23 @@ export function toStatistics(info, scard) {
  * but they share one response cache (`cacheNamespace`), so a fallback to the second host
  * costs nothing when the first already fetched the same page.
  */
-export function createCricbuzz({ provider, host, budgetLimit, cacheNamespace = 'cricbuzz' }) {
-  const get = (path, ttlSeconds) =>
-    rapidGet({
+export function createCricbuzz({ provider, host, budgetLimit, cacheNamespace = 'cricbuzz', endpoints = (logical) => ({ path: logical, query: {} }) }) {
+  // Call sites name an endpoint by its Cricbuzz Cricket path (the "logical" path); `endpoints`
+  // turns that into the real URL for hosts that lay the same data out differently. The logical
+  // path is also the cache key, so every host shares one cached response.
+  const get = (logical, ttlSeconds) => {
+    const { path, query } = endpoints(logical);
+    return rapidGet({
       provider,
       cacheNamespace,
+      cacheKeyPath: logical,
       host: host(),
       path,
+      query,
       ttlSeconds,
       budget: { period: 'month', limit: budgetLimit() },
     });
+  };
 
   async function fetchLiveSchedule() {
     const data = await get('matches/v1/live', LIVE_TTL_S);
@@ -379,6 +386,26 @@ const primary = createCricbuzz({
   provider: 'cricbuzz',
   host: () => process.env.RAPIDAPI_CRICBUZZ_HOST || 'cricbuzz-cricket.p.rapidapi.com',
   budgetLimit: () => Number(process.env.RAPIDAPI_CRICBUZZ_MONTHLY_BUDGET || 200),
+});
+
+/**
+ * cricbuzz-real-time-cricket-api: the same data and Cricbuzz ids, with the match list and the
+ * scorecard at different URLs (its list is `match/list?type=…`, its scorecard
+ * `match/get-scorecard?matchId=…`; the scorecard JSON is identical). A third quota pool.
+ */
+const realTimeEndpoints = (logical) => {
+  let m = logical.match(/^matches\/v1\/(live|recent|upcoming)$/);
+  if (m) return { path: 'match/list', query: { type: m[1] } };
+  m = logical.match(/^mcenter\/v1\/(\d+)\/scard$/);
+  if (m) return { path: 'match/get-scorecard', query: { matchId: m[1] } };
+  throw new Error(`cricbuzz3 has no endpoint for ${logical}`);
+};
+
+export const cricbuzz3 = createCricbuzz({
+  provider: 'cricbuzz3',
+  host: () => process.env.RAPIDAPI_CRICBUZZ3_HOST || 'cricbuzz-real-time-cricket-api.p.rapidapi.com',
+  budgetLimit: () => Number(process.env.RAPIDAPI_CRICBUZZ3_MONTHLY_BUDGET || 250),
+  endpoints: realTimeEndpoints,
 });
 
 /** cricbuzz-cricket2: same endpoints and shape, its own 100-request free plan. */

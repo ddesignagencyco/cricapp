@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 import { setStore, getRapidStats } from '../src/providers/rapidHttp.js';
 import { QuotaExceededError } from '../src/providers/errors.js';
 import * as cricbuzz from '../src/providers/cricbuzz.js';
-import { cricbuzz2 } from '../src/providers/cricbuzz.js';
+import { cricbuzz2, cricbuzz3 } from '../src/providers/cricbuzz.js';
 import * as facade from '../src/providers/index.js';
 import { normalizeMatch } from '../src/normalize.js';
 import { PROVIDERS } from '../src/schemas.js';
@@ -257,12 +257,14 @@ describe('second Cricbuzz host as a quota pool', () => {
     setStore(memoryStore());
     process.env.DATA_PROVIDER = 'auto';
     process.env.RAPIDAPI_CRICBUZZ_MONTHLY_BUDGET = '1';
+    process.env.RAPIDAPI_CRICBUZZ3_MONTHLY_BUDGET = '0'; // out of play: these tests are about hosts 1 and 2
   });
   afterEach(() => {
     globalThis.fetch = realFetch;
     delete process.env.DATA_PROVIDER;
     delete process.env.RAPIDAPI_CRICBUZZ_MONTHLY_BUDGET;
     delete process.env.RAPIDAPI_CRICBUZZ2_MONTHLY_BUDGET;
+    delete process.env.RAPIDAPI_CRICBUZZ3_MONTHLY_BUDGET;
   });
 
   it('falls over to cricbuzz-cricket2 when the first host budget is spent', async () => {
@@ -294,10 +296,47 @@ describe('second Cricbuzz host as a quota pool', () => {
   });
 });
 
+describe('third Cricbuzz pool (different URLs, same data)', () => {
+  beforeEach(() => {
+    setStore(memoryStore());
+    process.env.DATA_PROVIDER = 'auto';
+    process.env.RAPIDAPI_CRICBUZZ_MONTHLY_BUDGET = '1';
+    process.env.RAPIDAPI_CRICBUZZ2_MONTHLY_BUDGET = '1';
+  });
+  afterEach(() => {
+    globalThis.fetch = realFetch;
+    delete process.env.DATA_PROVIDER;
+    delete process.env.RAPIDAPI_CRICBUZZ_MONTHLY_BUDGET;
+    delete process.env.RAPIDAPI_CRICBUZZ2_MONTHLY_BUDGET;
+    delete process.env.RAPIDAPI_CRICBUZZ3_MONTHLY_BUDGET;
+  });
+
+  it('falls to cricbuzz-real-time-cricket-api when the first two budgets are spent, using its own URLs', async () => {
+    mockFetch(() => fixture('live.json'));
+    await facade.fetchLiveSchedule(); // spends host 1
+    // a different page → host 1 is out, host 2 takes it and spends its single request…
+    await facade.fetchDailyResults('2026-11-05');
+    // …and the remaining pages land on host 3
+    const events = await facade.fetchDailySchedule('2026-11-05');
+    assert.ok(events.sport_events.length > 0);
+    const urls = fetchCalls.filter((u) => u.includes('real-time-cricket-api'));
+    assert.ok(urls.length > 0, fetchCalls.join('\n'));
+    assert.ok(urls.every((u) => /\/match\/list\?type=(live|recent|upcoming)$/.test(u)), urls.join('\n'));
+  });
+
+  it('reads a scorecard from the real-time host with its own path and parameter', async () => {
+    mockFetch((url) => (url.includes('/match/get-scorecard') ? fixture('scorecard-t10-chase.json') : fixture('live.json')));
+    process.env.DATA_PROVIDER = 'cricbuzz3';
+    const { statistics } = await facade.fetchMatchScorecard('cb:match:176143');
+    assert.equal(statistics.innings.length, 2);
+    assert.ok(fetchCalls.some((u) => u.endsWith('/match/get-scorecard?matchId=176143')), fetchCalls.join('\n'));
+  });
+});
+
 describe('facade fallback', () => {
   afterEach(() => {
     delete process.env.DATA_PROVIDER;
-    facade.setModules({ cricbuzz, cricbuzz2, highlightly: {} });
+    facade.setModules({ cricbuzz, cricbuzz2, cricbuzz3, highlightly: {} });
   });
 
   it('auto falls back to the next provider on quota errors', async () => {
@@ -305,6 +344,7 @@ describe('facade fallback', () => {
     facade.setModules({
       cricbuzz: { fetchLiveSchedule: async () => { throw new QuotaExceededError('out'); } },
       cricbuzz2: {},
+      cricbuzz3: {},
       highlightly: { fetchLiveSchedule: async () => [{ id: 'hl:match:9', status: 'live' }] },
     });
     assert.deepEqual(await facade.fetchLiveSchedule(), [{ id: 'hl:match:9', status: 'live' }]);
