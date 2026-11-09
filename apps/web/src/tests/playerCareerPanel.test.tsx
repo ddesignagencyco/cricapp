@@ -64,3 +64,25 @@ describe('PlayerDetailBody full profile', () => {
     expect(screen.queryByRole('status')).toBeNull();
   });
 });
+
+describe('PlayerDetailBody tracked stats', () => {
+  it('shows tracked-match totals, labelled as not career totals', () => {
+    render(
+      <PlayerDetailBody
+        player={{
+          id: 'cb:player:1739', fullName: 'David Warner', role: 'batsman', team: null, recentMatches: [], profilePending: false,
+          trackedStats: {
+            matches: 3,
+            batting: { innings: 3, runs: 111, balls: 80, notOuts: 1, highest: 66, highestNotOut: true, average: 55.5, strikeRate: 138.75, fifties: 1, hundreds: 0, fours: 11, sixes: 4, ducks: 0 },
+            bowling: null,
+          },
+        }}
+      />,
+    );
+    expect(screen.getByText('111')).toBeTruthy();
+    expect(screen.getByText('66*')).toBeTruthy();
+    expect(screen.getByText('55.50')).toBeTruthy();
+    expect(screen.getByText(/not career totals/i)).toBeTruthy();
+    expect(screen.queryByText('Overs')).toBeNull();
+  });
+});

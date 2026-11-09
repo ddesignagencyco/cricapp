@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '../generated/prisma/client.js';
+import { aggregateTrackedStats, type TrackedStats, type BattingInnings, type BowlingSpell } from './tracked-stats.util.js';
 import { RedisService } from '../redis/redis.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import {
@@ -24,6 +25,8 @@ export interface PlayerProfileDto {
   providerProfile: Record<string, unknown> | null;
   /** True while the full provider profile has been requested but is not stored yet. */
   profilePending: boolean;
+  /** Totals over the scorecards stored here (not career figures); null when none name the player. */
+  trackedStats: TrackedStats | null;
   team: TeamSummary | null;
   recentMatches: Array<{
     matchId: string;
@@ -49,6 +52,50 @@ export class PlayersService {
    * within seconds and under a daily cap. `profile:backoff:*` keeps a player that failed (or was
    * just fetched) from being queued again for hours.
    */
+  /**
+   * Batting and bowling totals over the stored scorecards that name this player. Cached for ten
+   * minutes: the scan reads every stored scorecard that mentions the id.
+   */
+  async trackedStats(playerId: string): Promise<TrackedStats> {
+    const cacheKey = `player:tracked:${playerId}`;
+    try {
+      const hit = await this.redis.get<TrackedStats>(cacheKey);
+      if (hit) return hit;
+    } catch {
+      // cache is optional
+    }
+    const like = `%${playerId}"%`;
+    const rows = await this.prisma.$queryRaw<Array<{ matchId: string; kind: string; s: unknown }>>(Prisma.sql`
+      WITH hits AS MATERIALIZED (
+        SELECT match_id, payload FROM match_timelines WHERE payload::text LIKE ${like}
+      ), teams AS (
+        SELECT h.match_id, t
+          FROM hits h
+          CROSS JOIN LATERAL jsonb_array_elements(
+            CASE WHEN jsonb_typeof(h.payload->'statistics'->'innings') = 'array'
+                 THEN h.payload->'statistics'->'innings' ELSE '[]'::jsonb END) inn
+          CROSS JOIN LATERAL jsonb_array_elements(COALESCE(inn->'teams', '[]'::jsonb)) t
+      )
+      SELECT match_id AS "matchId", 'bat' AS kind, pl->'statistics' AS s
+        FROM teams CROSS JOIN LATERAL jsonb_array_elements(COALESCE(t->'statistics'->'batting'->'players', '[]'::jsonb)) pl
+       WHERE pl->>'id' = ${playerId}
+      UNION ALL
+      SELECT match_id, 'bowl', pl->'statistics'
+        FROM teams CROSS JOIN LATERAL jsonb_array_elements(COALESCE(t->'statistics'->'bowling'->'players', '[]'::jsonb)) pl
+       WHERE pl->>'id' = ${playerId}
+    `);
+    const stats = aggregateTrackedStats(
+      rows.filter((r) => r.kind === 'bat').map((r) => ({ matchId: r.matchId, s: r.s as BattingInnings })),
+      rows.filter((r) => r.kind === 'bowl').map((r) => ({ matchId: r.matchId, s: r.s as BowlingSpell })),
+    );
+    try {
+      await this.redis.cached.set(cacheKey, JSON.stringify(stats), 'EX', 600);
+    } catch {
+      // cache is optional
+    }
+    return stats;
+  }
+
   private async requestFullProfile(playerId: string): Promise<void> {
     if (!playerId.startsWith('cb:player:')) return;
     try {
@@ -169,6 +216,7 @@ export class PlayersService {
         ? (profile.payload as Record<string, unknown>)
         : null,
       profilePending,
+      trackedStats: await this.trackedStats(playerId).then((t) => (t.matches ? t : null)).catch(() => null),
       team,
       recentMatches: recent,
     };

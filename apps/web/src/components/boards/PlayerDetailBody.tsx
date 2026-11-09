@@ -19,6 +19,7 @@ import type { NewsArticle } from '../../types';
 import { RelatedNewsPanel, useLinkedNews } from './RelatedNewsPanel';
 import { entityNewsHref } from '../EntityLinks';
 import PlayerCareerPanel, { readExtras } from './PlayerCareerPanel';
+import PlayerTrackedStats from './PlayerTrackedStats';
 
 const playerTabs = [
   { key: 'profile', label: 'Profile', icon: User },
@@ -190,6 +191,12 @@ export default function PlayerDetailBody({ player, relatedNews = [] }: Props) {
         <p className="detail-panel fade-in p-3 text-sm text-stext" role="status">
           Loading the full profile (biography, rankings, recent form). This takes a few seconds the first time.
         </p>
+      )}
+
+      {tab === 'profile' && player.trackedStats && (
+        <div className="fade-in">
+          <PlayerTrackedStats stats={player.trackedStats} />
+        </div>
       )}
 
       {tab === 'profile' && extras && (

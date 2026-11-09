@@ -67,6 +67,9 @@ export class PlayerProfileDto {
   @ApiProperty({ description: 'True while the full profile is requested but not stored yet.' })
   profilePending: boolean;
 
+  @ApiPropertyOptional({ description: 'Batting and bowling totals over the scorecards stored here (not career figures).' })
+  trackedStats: Record<string, unknown> | null;
+
   @ApiPropertyOptional({ type: TeamSummaryDto })
   team: TeamSummaryDto | null;
 
