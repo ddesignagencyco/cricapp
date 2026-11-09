@@ -1,7 +1,7 @@
 import { PREMATCH_WEIGHTS, sigmoid } from './prematch.js';
 import { brierScore } from './settle.js';
 
-const EDGE_KEYS = ['form', 'h2h', 'table', 'venue', 'toss', 'conditions', 'xi'];
+const EDGE_KEYS = ['form', 'h2h', 'table', 'venue', 'toss', 'conditions', 'xi', 'elo'];
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
@@ -16,6 +16,7 @@ export function defaultPrematchWeights() {
     toss: PREMATCH_WEIGHTS.toss,
     conditions: PREMATCH_WEIGHTS.conditions,
     xi: 0.35,
+    elo: PREMATCH_WEIGHTS.elo,
   };
 }
 
@@ -28,6 +29,7 @@ export function edgesFromExplanation(explanation = {}, snapshot = {}) {
     toss: Number(explanation.tossEdge ?? snapshot.toss?.edge ?? 0),
     conditions: Number(explanation.conditionsImpact?.winEdge ?? 0),
     xi: Number(explanation.xiEdge ?? snapshot.xiEdge ?? 0),
+    elo: Number(explanation.eloEdge ?? snapshot.elo?.edge ?? 0),
   };
 }
 
@@ -86,6 +88,7 @@ export function fitPrematchWeights(
     toss: Number(clamp(weights.toss, 0.05, 1).toFixed(4)),
     conditions: Number(clamp(weights.conditions, 0.05, 1).toFixed(4)),
     xi: Number(clamp(weights.xi, 0.05, 1.5).toFixed(4)),
+    elo: Number(clamp(weights.elo, 0.05, 2.5).toFixed(4)),
   };
 
   let brier = 0;

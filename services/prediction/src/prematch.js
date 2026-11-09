@@ -12,6 +12,7 @@ export const PREMATCH_WEIGHTS = Object.freeze({
   toss: 0.15,
   conditions: 0.2,
   xi: 0.35,
+  elo: 0.9,
 });
 
 export const FEATURE_NAMES = Object.freeze([
@@ -22,6 +23,7 @@ export const FEATURE_NAMES = Object.freeze([
   'toss',
   'conditions',
   'xi',
+  'elo',
 ]);
 
 export function confidenceBand(confidence) {
@@ -90,7 +92,8 @@ export function featureVectorFromSnapshot(snapshot) {
   const tossEdge = Number((snapshot.toss?.edge ?? 0).toFixed(4));
   const conditionsEdge = Number(conditionImpact(snapshot.conditions ?? {}).winEdge.toFixed(4));
   const xiEdge = Number((snapshot.xiEdge ?? 0).toFixed(4));
-  return { names: FEATURE_NAMES, values: [formEdge, h2hEdge, tableEdge, venueEdge, tossEdge, conditionsEdge, xiEdge] };
+  const eloEdge = Number((snapshot.elo?.edge ?? 0).toFixed(4));
+  return { names: FEATURE_NAMES, values: [formEdge, h2hEdge, tableEdge, venueEdge, tossEdge, conditionsEdge, xiEdge, eloEdge] };
 }
 
 export function scorePrematch(snapshot) {
@@ -100,6 +103,8 @@ export function scorePrematch(snapshot) {
   const venue = snapshot.venueEdge ?? 0;
   const toss = snapshot.toss?.edge ?? 0;
   const xiEdge = snapshot.xiEdge ?? 0;
+  // Team strength from the results history (Elo), already shrunk when either side has few games.
+  const eloEdge = snapshot.elo?.edge ?? 0;
   const projection = projectedScore(snapshot);
   const conditionsEdge = projection.conditions.winEdge;
   const weights = {
@@ -114,7 +119,8 @@ export function scorePrematch(snapshot) {
     weights.venue * venue +
     weights.toss * toss +
     weights.conditions * conditionsEdge +
-    (weights.xi ?? 0.35) * xiEdge;
+    (weights.xi ?? 0.35) * xiEdge +
+    (weights.elo ?? PREMATCH_WEIGHTS.elo) * eloEdge;
 
   const calibrationSlope = Number(snapshot.calibration?.slope ?? 1);
   const calibrationIntercept = Number(snapshot.calibration?.intercept ?? 0);
@@ -130,6 +136,7 @@ export function scorePrematch(snapshot) {
     { factor: 'toss', contribution: Number((weights.toss * toss).toFixed(4)) },
     { factor: 'conditions', contribution: Number((weights.conditions * conditionsEdge).toFixed(4)) },
     { factor: 'xi', contribution: Number(((weights.xi ?? 0.35) * xiEdge).toFixed(4)) },
+    { factor: 'elo', contribution: Number(((weights.elo ?? PREMATCH_WEIGHTS.elo) * eloEdge).toFixed(4)) },
   ];
 
   return {
@@ -156,6 +163,7 @@ export function scorePrematch(snapshot) {
       venueEdge: venue,
       tossEdge: toss,
       xiEdge: Number(xiEdge.toFixed(4)),
+      eloEdge: Number(eloEdge.toFixed(4)),
       conditionsImpact: projection.conditions,
       weights,
       tossAdjusted: toss !== 0,

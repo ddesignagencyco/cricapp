@@ -228,7 +228,7 @@ export async function refitPrematchWeights(query) {
 }
 
 function EDGE_KEYS_EQUAL(a, b) {
-  const keys = ['form', 'h2h', 'table', 'venue', 'toss', 'conditions', 'xi'];
+  const keys = ['form', 'h2h', 'table', 'venue', 'toss', 'conditions', 'xi', 'elo'];
   return keys.every((key) => nearlyEqual(a?.[key] ?? 0, b?.[key] ?? 0));
 }
 

@@ -236,14 +236,37 @@ async function loadTeamResults(query, teamId, { before = null } = {}) {
   return own.rows;
 }
 
-async function loadHeadToHead(query, a, b) {
+/**
+ * Meetings of two teams. The stored head_to_head row (a SportsRadar feed) is used when it has
+ * any, otherwise the meetings are rebuilt from the stored results that name both teams. Either
+ * way a `before` cutoff keeps a prediction from seeing the match it is about, or anything after.
+ */
+async function loadHeadToHead(query, a, b, { before = null, useStoredRow = true } = {}) {
   if (!a || !b) return null;
-  const [teamAId, teamBId] = [a, b].sort();
-  const r = await query(
-    `SELECT payload FROM head_to_head WHERE team_a_id = $1 AND team_b_id = $2`,
-    [teamAId, teamBId],
+  if (useStoredRow) {
+    const [teamAId, teamBId] = [a, b].sort();
+    const r = await query(
+      `SELECT payload FROM head_to_head WHERE team_a_id = $1 AND team_b_id = $2`,
+      [teamAId, teamBId],
+    );
+    const stored = r.rows[0]?.payload ?? null;
+    if (stored && meetingsFromHeadToHead(stored).length > 0) return stored;
+  }
+  const rows = await query(
+    `SELECT DISTINCT ON (event_id) payload, scheduled
+       FROM sport_event_records
+      WHERE kind IN ('team_results', 'tournament_results', 'daily_results')
+        AND COALESCE(payload->'sport_event', payload)->'competitors' @> $1::jsonb
+        AND COALESCE(payload->'sport_event', payload)->'competitors' @> $2::jsonb
+        AND ($3::timestamptz IS NULL OR scheduled::timestamptz < $3::timestamptz)
+      ORDER BY event_id, scheduled DESC NULLS LAST`,
+    [JSON.stringify([{ id: a }]), JSON.stringify([{ id: b }]), before],
   );
-  return r.rows[0]?.payload ?? null;
+  if (rows.rows.length === 0) return null;
+  const last_meetings = rows.rows
+    .sort((x, y) => String(y.scheduled ?? '').localeCompare(String(x.scheduled ?? '')))
+    .map((row) => row.payload);
+  return { last_meetings, derived: true };
 }
 
 async function loadStandings(query, homeId, awayId) {
@@ -640,7 +663,23 @@ export function summarizeVenueHistoryRows(rows, homeId, awayId) {
   return { homeWins, homeN, awayWins, awayN };
 }
 
-export async function extractPrematchFeatures(matchId, { query, redis }) {
+/**
+ * Reliability of an Elo gap given how many games each side has behind it: full weight from
+ * `fullAt` games, linearly less below that, none for a side that has never been rated.
+ */
+export function eloReliability(homePlayed, awayPlayed, fullAt = 6) {
+  const n = Math.min(Number(homePlayed) || 0, Number(awayPlayed) || 0);
+  return Math.max(0, Math.min(1, n / fullAt));
+}
+
+/**
+ * `asOf` (an ISO time) builds the features as they would have been known at that moment, for
+ * replaying history: results, head to head and ratings (`ratings(teamId, format)`, supplied by
+ * the caller from games before `asOf`) are time-aware, while inputs that only exist as
+ * today's snapshot (the table, squads, venue history, toss trends) are left out rather than
+ * leak the future.
+ */
+export async function extractPrematchFeatures(matchId, { query, redis, asOf = null, ratings = null }) {
   const match = await loadMatch(query, matchId);
   if (!match) return null;
   const eventPayload = await loadEventPayload(query, matchId);
@@ -664,15 +703,36 @@ export async function extractPrematchFeatures(matchId, { query, redis }) {
     // count the match's own result as form.
     loadTeamResults(query, teams.homeTeamId, { before: match.scheduled ?? null }),
     loadTeamResults(query, teams.awayTeamId, { before: match.scheduled ?? null }),
-    loadHeadToHead(query, teams.homeTeamId, teams.awayTeamId),
-    loadStandings(query, teams.homeTeamId, teams.awayTeamId),
-    loadSquadPlayers(query, teams.homeTeamId),
-    loadSquadPlayers(query, teams.awayTeamId),
-    loadTeamProfile(query, teams.homeTeamId),
-    loadTeamProfile(query, teams.awayTeamId),
-    loadSituationStats(query, format),
-    loadVenueHistory(query, match.venue),
+    loadHeadToHead(query, teams.homeTeamId, teams.awayTeamId, {
+      before: match.scheduled ?? null,
+      useStoredRow: !asOf,
+    }),
+    asOf ? { used: false } : loadStandings(query, teams.homeTeamId, teams.awayTeamId),
+    asOf ? [] : loadSquadPlayers(query, teams.homeTeamId),
+    asOf ? [] : loadSquadPlayers(query, teams.awayTeamId),
+    asOf ? null : loadTeamProfile(query, teams.homeTeamId),
+    asOf ? null : loadTeamProfile(query, teams.awayTeamId),
+    asOf ? null : loadSituationStats(query, format),
+    asOf ? [] : loadVenueHistory(query, match.venue),
   ]);
+
+  const [homeRating, awayRating] = await Promise.all(
+    [teams.homeTeamId, teams.awayTeamId].map((id) =>
+      ratings ? ratings(id, format) : loadTeamRating(query, id, format),
+    ),
+  );
+  const elo =
+    homeRating && awayRating
+      ? {
+          home: homeRating.elo,
+          away: awayRating.elo,
+          homePlayed: homeRating.played,
+          awayPlayed: awayRating.played,
+          edge: Number(
+            (eloEdge(homeRating.elo, awayRating.elo) * eloReliability(homeRating.played, awayRating.played)).toFixed(4),
+          ),
+        }
+      : null;
 
   const homeForm = weightedForm(homeResults, teams.homeTeamId);
   const awayForm = weightedForm(awayResults, teams.awayTeamId);
@@ -732,6 +792,7 @@ export async function extractPrematchFeatures(matchId, { query, redis }) {
     venue: match.venue ?? null,
     tournament: match.tournament ?? null,
     scheduled: match.scheduled ?? null,
+    ...(asOf ? { backtest: true, asOf } : {}),
     format,
     parScore: par.par,
     parSource: par.source,
@@ -743,6 +804,7 @@ export async function extractPrematchFeatures(matchId, { query, redis }) {
       awayN: awayForm.n,
     },
     h2h,
+    elo,
     table,
     venueEdge: venueEdge({ venue: match.venue, home: homeForVenue, away: awayForVenue }),
     toss: {

@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import pool from './db.js';
 
-export async function persistPrediction(query, { matchId, stage, modelVersion, snapshot, result }) {
+export async function persistPrediction(query, { matchId, stage, modelVersion, snapshot, result, createdAt = null }) {
   const id = randomUUID();
   const client = pool ? await pool.connect() : null;
   const run = client ? client.query.bind(client) : query;
@@ -9,8 +9,8 @@ export async function persistPrediction(query, { matchId, stage, modelVersion, s
     await run('BEGIN');
     await run(
       `INSERT INTO prediction_runs (id, match_id, stage, model_version, created_at)
-       VALUES ($1, $2, $3, $4, NOW())`,
-      [id, matchId, stage, modelVersion],
+       VALUES ($1, $2, $3, $4, COALESCE($5::timestamptz, NOW()))`,
+      [id, matchId, stage, modelVersion, createdAt],
     );
     await run(
       `INSERT INTO prediction_features (run_id, snapshot) VALUES ($1, $2::jsonb)`,
