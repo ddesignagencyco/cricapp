@@ -39,6 +39,22 @@ const query = (url, key) => new URL(url).searchParams.get(key);
 const route = (url) => {
   const path = new URL(url).pathname;
   // recorded for the league category only; the other categories are empty here
+  if (path === '/series/list' && query(url, 'matchType') === 'international') {
+    const day = 86400000;
+    const now = Date.now();
+    return {
+      seriesMap: [
+        {
+          date: 'NOW',
+          series: [
+            { id: 13037, name: 'Sri Lanka tour of Pakistan, 2026', startDt: String(now - 3 * day), endDt: String(now + 20 * day) },
+            { id: 13100, name: 'ICC Mens T20 World Cup 2026', startDt: String(now + 60 * day), endDt: String(now + 90 * day) },
+            { id: 99, name: 'Old tour of Nowhere, 2020', startDt: String(now - 2000 * day), endDt: String(now - 1990 * day) },
+          ],
+        },
+      ],
+    };
+  }
   if (path === '/series/list') return query(url, 'matchType') === 'league' ? fx('series-list-league.json') : { seriesMap: [] };
   if (path === '/series/list-archives') {
     if (query(url, 'matchType') !== 'league') return { seriesMap: [] };
@@ -86,8 +102,30 @@ describe('tournament catalogue', () => {
     assert.equal(umbrella.currentSeason.id, PSL_2026, 'seasons need this row to exist (foreign key)');
   });
 
-  it('returns no tours: the app builds them from tournament categories', async () => {
-    assert.deepEqual(await facade.fetchTours(), { tours: [] });
+  it('tours are recent international series, labelled with the host country, and open their tournament', async () => {
+    const { tours } = await facade.fetchTours();
+    assert.deepEqual(tours.map((t) => t.id).sort(), ['cb:tournament:13037', 'cb:tournament:13100']);
+    const tour = tours.find((t) => t.id === 'cb:tournament:13037');
+    assert.equal(tour.name, 'Sri Lanka tour of Pakistan, 2026');
+    assert.equal(tour.category.name, 'Pakistan');
+    assert.equal(tours.find((t) => t.id === 'cb:tournament:13100').category.name, 'International', 'not a bilateral tour');
+  });
+
+  it('reads the host out of a tour name', () => {
+    assert.equal(cbu.hostCountry('Sri Lanka tour of Pakistan, 2026'), 'Pakistan');
+    assert.equal(cbu.hostCountry('India A tour of New Zealand 2026'), 'New Zealand');
+    assert.equal(cbu.hostCountry('England Women tour of India, 2025-26'), 'India');
+    assert.equal(cbu.hostCountry('Afghanistan vs India in India 2026'), 'India');
+    assert.equal(cbu.hostCountry('Afghanistan vs Bangladesh in UAE, 2026'), 'UAE');
+    assert.equal(cbu.hostCountry('ICC Mens T20 World Cup 2026'), null);
+  });
+
+  it('ignores series that ended long ago or are far in the future', () => {
+    const day = 86400000;
+    const now = Date.now();
+    assert.equal(cbu.isRecentSeries({ startDt: now - 3 * day, endDt: now + day }, now), true);
+    assert.equal(cbu.isRecentSeries({ startDt: now - 400 * day, endDt: now - 300 * day }, now), false);
+    assert.equal(cbu.isRecentSeries({ startDt: now + 400 * day, endDt: now + 410 * day }, now), false);
   });
 
   it('lists the PSL editions as seasons of the PSL tournament', async () => {
@@ -155,8 +193,29 @@ describe('PSL fixtures, leaders and squads', () => {
     assert.equal(first.matchId, 'cb:match:115626');
     assert.equal(first.homeTeamName, 'Lahore Qalandars');
     assert.equal(first.resultText, 'Islamabad United won by 8 wkts');
-    assert.equal(first.round, '1st Match');
+    assert.equal(first.round, null, 'a regular-season game has no round; the PSL page lists those as fixtures');
     assert.equal(first.seasonId, PSL_2025);
+  });
+
+  it('only playoff games carry a round, under the keys the PSL page reads', () => {
+    const k = cbu.roundKey;
+    assert.equal(k('1st Match'), null);
+    assert.equal(k('44th Match'), null);
+    assert.equal(k('Qualifier'), 'qualifier_1');
+    assert.equal(k('Qualifier 1'), 'qualifier_1');
+    assert.equal(k('Qualifier (1 v 2)'), 'qualifier_1');
+    assert.equal(k('Eliminator'), 'eliminator');
+    assert.equal(k('Eliminator 1 (3 v 4)'), 'eliminator');
+    assert.equal(k('Eliminator 2'), 'qualifier_2');
+    assert.equal(k('Qualifier 2'), 'qualifier_2');
+    assert.equal(k('Final'), 'final');
+  });
+
+  it('the 2026 playoffs are recognised, and every other game is a regular fixture', async () => {
+    const rows = normalizeSchedule(await facade.fetchSeasonSchedule(PSL_2026));
+    const playoffs = rows.filter((r) => r.round);
+    assert.deepEqual(playoffs.map((r) => r.round).sort(), ['eliminator', 'final', 'qualifier_1', 'qualifier_2']);
+    assert.equal(rows.length - playoffs.length, 40);
   });
 
   it('tournament results only contain finished games', async () => {

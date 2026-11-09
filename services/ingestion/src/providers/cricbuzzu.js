@@ -119,9 +119,39 @@ async function catalogue() {
   return [...seen.values()];
 }
 
-/** Cricbuzz has no tours; the app synthesizes them from tournament categories (backfillTours). */
+/**
+ * "Sri Lanka tour of Pakistan, 2026" → "Pakistan"; "Afghanistan vs India in India 2026" → "India".
+ * Null when the name says no host (an event such as a World Cup).
+ */
+export function hostCountry(name) {
+  const text = String(name ?? '');
+  const m = text.match(/\btours? of ([^,]+?)(?:,|\s+\d{4}|$)/i) ?? text.match(/ vs .+? in ([A-Z][^,]*?)(?:,|\s+\d{4}|$)/);
+  return m ? m[1].trim() : null;
+}
+
+/** Only current and recent series make a useful "tours" list (ended ≤ 120 days ago, starting ≤ 240 days ahead). */
+export function isRecentSeries(series, now = Date.now()) {
+  const end = Number(series.endDt) || Number(series.startDt) || 0;
+  const start = Number(series.startDt) || end;
+  return end >= now - 120 * 86400000 && start <= now + 240 * 86400000;
+}
+
+/**
+ * Cricbuzz has no "tours" of its own. The Tours page lists bilateral series and international
+ * events: each recent international or women's series becomes a tour (its id is the tournament
+ * id, so the card opens that tournament), labelled with the host country when the name says
+ * "X tour of Y".
+ */
 export async function fetchTours() {
-  return { tours: [] };
+  const tours = (await catalogue())
+    .filter((e) => (e.matchType === 'international' || e.matchType === 'women') && isRecentSeries(e.series))
+    .map(({ series, matchType }) => ({
+      id: `${PREFIX.tournament}${series.id}`,
+      name: series.name,
+      category: { id: `cb:category:${matchType}`, name: hostCountry(series.name) ?? CATEGORY_NAME[matchType] },
+      sport: CRICKET,
+    }));
+  return { tours };
 }
 
 /**
@@ -187,6 +217,21 @@ function competitor(team, qualifier) {
   };
 }
 
+/**
+ * Cricbuzz's match description → the round key the app uses ("1st Match" is a regular-season
+ * game and has none; only playoff games carry a round). Unknown descriptions have none too.
+ */
+export function roundKey(matchDesc) {
+  const d = String(matchDesc ?? '').trim().toLowerCase();
+  if (/^\d+(st|nd|rd|th) match$/.test(d)) return null;
+  if (/semi/.test(d)) return null;
+  if (/^final$/.test(d)) return 'final';
+  if (/^(qualifier|eliminator) 2\b/.test(d)) return 'qualifier_2';
+  if (/^eliminator\b/.test(d)) return 'eliminator';
+  if (/^qualifier\b/.test(d)) return 'qualifier_1';
+  return null;
+}
+
 export function toSportEvent(entry, seasonId) {
   const info = entry.matchInfo;
   const finished = isFinished(info);
@@ -197,7 +242,7 @@ export function toSportEvent(entry, seasonId) {
     // normalize.js reads the result text from here for closed events
     match_status: finished ? info.status : null,
     tournament: { id: `${PREFIX.tournament}${info.seriesId}`, name: info.seriesName },
-    tournament_round: { name: info.matchDesc ?? null },
+    tournament_round: roundKey(info.matchDesc) ? { name: roundKey(info.matchDesc) } : undefined,
     season: { id: seasonId ?? `${PREFIX.season}${info.seriesId}` },
     venue: { name: info.venueInfo?.ground ?? null },
     competitors: [competitor(info.team1, 'home'), competitor(info.team2, 'away')],

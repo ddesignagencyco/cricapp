@@ -363,7 +363,16 @@ export function createCricbuzz({ provider, host, budgetLimit, cacheNamespace = '
     return { info, scard };
   }
 
-  return { fetchLiveSchedule, fetchMatchSummary, fetchDailySchedule, fetchDailyResults, findMatchInfo, fetchScorecardBundle };
+  /** `{ competitors, statistics }` for the web scorecard (what a timeline payload carries). */
+  async function fetchMatchScorecard(id) {
+    const { info, scard } = await fetchScorecardBundle(id);
+    return toStatistics(info, scard);
+  }
+
+  return {
+    fetchLiveSchedule, fetchMatchSummary, fetchDailySchedule, fetchDailyResults,
+    findMatchInfo, fetchScorecardBundle, fetchMatchScorecard,
+  };
 }
 
 const primary = createCricbuzz({
@@ -379,7 +388,7 @@ export const cricbuzz2 = createCricbuzz({
   budgetLimit: () => Number(process.env.RAPIDAPI_CRICBUZZ2_MONTHLY_BUDGET || 100),
 });
 
-export const { fetchLiveSchedule, fetchMatchSummary, fetchDailySchedule, fetchDailyResults } = primary;
+export const { fetchLiveSchedule, fetchMatchSummary, fetchDailySchedule, fetchDailyResults, fetchMatchScorecard } = primary;
 
 /** Scorecard payload for the timeline (`sport_event.competitors` + `statistics`), trying both hosts. */
 export async function cricbuzzStatistics(id) {

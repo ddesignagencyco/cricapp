@@ -70,6 +70,8 @@ const wrap = (name) => (...args) => call(name, args);
 export const fetchLiveSchedule = wrap('fetchLiveSchedule');
 export const fetchMatchSummary = wrap('fetchMatchSummary');
 export const fetchMatchLineups = wrap('fetchMatchLineups');
+/** Batting/bowling cards for one match; Cricbuzz hosts only (other providers report it unsupported). */
+export const fetchMatchScorecard = wrap('fetchMatchScorecard');
 export const fetchTournamentSeasons = wrap('fetchTournamentSeasons');
 export const fetchSeasonSchedule = wrap('fetchSeasonSchedule');
 export const fetchSeasonStandings = wrap('fetchSeasonStandings');

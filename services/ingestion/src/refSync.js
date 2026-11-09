@@ -19,6 +19,7 @@ import {
   fetchTournamentInfo,
   fetchMatchLineups,
   fetchMatchSummary,
+  fetchMatchScorecard,
 } from './providers/index.js';
 import { normalizeLineups, normalizeMatch } from './normalize.js';
 import {
@@ -37,6 +38,9 @@ import {
 } from './reference.js';
 import {
   saveTours,
+  listTournamentsForSync,
+  listMatchesNeedingScorecard,
+  getMatchTimelinePayload,
   saveTournaments,
   backfillTours,
   saveMatch,
@@ -516,6 +520,57 @@ export async function syncTournamentResults(tournamentOrSeasonId, { persist = tr
 }
 
 /**
+ * Give completed matches a scorecard. One provider request per match. A stored timeline keeps
+ * its ball-by-ball events and just gains the scorecard; a match with no timeline gets a
+ * scorecard-only payload (the page then shows the cards without commentary).
+ */
+export async function backfillScorecards({ limit = 20, delayMs = 1300 } = {}) {
+  const ids = await listMatchesNeedingScorecard(limit);
+  let done = 0;
+  for (const id of ids) {
+    try {
+      const { competitors, statistics } = await fetchMatchScorecard(id);
+      const stored = await getMatchTimelinePayload(id);
+      const payload = stored
+        ? { ...stored, sport_event: { ...(stored.sport_event ?? { id }), competitors }, statistics }
+        : { sport_event: { id, competitors }, statistics, timeline: [] };
+      await saveMatchTimeline(id, payload);
+      done += 1;
+    } catch (err) {
+      log.warn(`scorecard for ${id} failed: ${err.message}`);
+    }
+    if (delayMs) await new Promise((r) => setTimeout(r, delayMs));
+  }
+  log.info('scorecards backfilled', { wanted: ids.length, done });
+  return { wanted: ids.length, done };
+}
+
+/**
+ * Results + team list for the current catalogue tournaments, so their detail pages are not
+ * empty. One provider request per tournament (results and teams come from the same cached
+ * fixtures list), bounded by `limit` and gated per tournament so a cycle only fetches what
+ * is due.
+ */
+export async function syncActiveTournaments({ limit = 30, pastDays = 45, futureDays = 30, delayMs = 0 } = {}) {
+  const targets = await listTournamentsForSync({ limit, pastDays, futureDays });
+  let synced = 0;
+  for (const { tournamentId, seasonId } of targets) {
+    if (!(await shouldSync('activeTournament', tournamentId))) continue;
+    try {
+      await syncTournamentResults(seasonId);
+      await syncTournamentInfoFor(tournamentId);
+      await markSynced('activeTournament', tournamentId, REF_CADENCE.activeTournament);
+      synced += 1;
+    } catch (err) {
+      log.warn(`active tournament ${tournamentId} failed: ${err.message}`);
+    }
+    if (delayMs) await new Promise((r) => setTimeout(r, delayMs));
+  }
+  log.info('active tournaments synced', { targets: targets.length, synced });
+  return { targets: targets.length, synced };
+}
+
+/**
  * Sync all reference/statistics endpoints. Targets are auto-derived from what
  * has already been ingested and each fetch is gated by a per-target staleness
  * stamp (Redis), so a cycle only fetches what is actually due — static lists
@@ -545,6 +600,8 @@ export async function refSyncAll(options = {}) {
     lineupLimit = 20,
     playerProfileLimit = 15,
     headToHeadLimit = 50,
+    tournamentSyncLimit = 0,
+    scorecardLimit = 0,
   } = options;
 
   await runStale('tours', null, REF_CADENCE.tours, syncTourList);
@@ -568,6 +625,16 @@ export async function refSyncAll(options = {}) {
   // when only the tournament list row exists in the DB.
   for (const id of [...new Set([...derivedTournamentIds, ...tournamentIds])]) {
     await runStale('tournamentInfo', id, REF_CADENCE.tournamentInfo, () => syncTournamentInfoFor(id), delay);
+  }
+
+  // Catalogue tournaments (Cricbuzz ids): results + team list so their detail pages are filled.
+  if (tournamentSyncLimit > 0) {
+    await safeRun(() => syncActiveTournaments({ limit: tournamentSyncLimit, delayMs: delay }));
+  }
+
+  // Completed matches: scorecards for the match page (Cricbuzz hosts; off unless configured).
+  if (scorecardLimit > 0) {
+    await safeRun(() => backfillScorecards({ limit: scorecardLimit, delayMs: delay }));
   }
 
   // Materialize per-team schedule/results from the match records we already

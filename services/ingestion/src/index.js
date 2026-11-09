@@ -112,6 +112,8 @@ log.info('starting ingestion service', {
 });
 
 const refSyncOptions = () => ({
+  tournamentSyncLimit: Number(process.env.REF_SYNC_TOURNAMENT_LIMIT || 0),
+  scorecardLimit: Number(process.env.REF_SYNC_SCORECARD_LIMIT || 0),
   matchIds: (process.env.REF_SYNC_MATCH_IDS || '')
     .split(',')
     .map((s) => s.trim())

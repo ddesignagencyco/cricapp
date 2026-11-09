@@ -24,6 +24,7 @@ export const REF_CADENCE = Object.freeze({
   teamSchedule: 24 * 3600e3,
   teamResults: 6 * 3600e3,
   seasonResults: 6 * 3600e3,
+  activeTournament: 6 * 3600e3,
   daily: 6 * 3600e3,
   staleUpcoming: 15 * 60e3,
   // One-shot syncs (retry if the key expired, otherwise skip forever).

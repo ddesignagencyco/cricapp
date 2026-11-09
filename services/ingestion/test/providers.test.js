@@ -233,6 +233,25 @@ describe('scorecard statistics (recorded T10 chase and live Test)', () => {
   });
 });
 
+describe('fetchMatchScorecard', () => {
+  beforeEach(() => {
+    setStore(memoryStore());
+    process.env.DATA_PROVIDER = 'cricbuzz';
+  });
+  afterEach(() => {
+    globalThis.fetch = realFetch;
+    delete process.env.DATA_PROVIDER;
+  });
+
+  it('returns competitors and per-player statistics for a Cricbuzz match', async () => {
+    mockFetch((url) => (url.includes('/scard') ? fixture('scorecard-t10-chase.json') : fixture('live.json')));
+    const { competitors, statistics } = await facade.fetchMatchScorecard('cb:match:176143');
+    assert.equal(statistics.innings.length, 2);
+    assert.deepEqual(competitors.map((c) => c.qualifier), ['home', 'away']);
+    assert.ok(statistics.innings[0].teams[0].statistics.batting.players.length > 5);
+  });
+});
+
 describe('second Cricbuzz host as a quota pool', () => {
   beforeEach(() => {
     setStore(memoryStore());

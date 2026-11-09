@@ -406,7 +406,57 @@ export async function saveTournaments(rows) {
  * categories (e.g. International, Pakistan, England) — a fabricated but
  * useful browsing/dropdown source.
  */
+/**
+ * Catalogue tournaments (Cricbuzz season ids) that are current: season ended within `pastDays`
+ * and starts within `futureDays`. Most recently finished first, so live series come before
+ * ones that ended weeks ago.
+ */
+export async function listTournamentsForSync({ pastDays = 45, futureDays = 30, limit = 30 } = {}) {
+  const r = await query(
+    `SELECT id, current_season->>'id' AS season_id
+       FROM tournaments
+      WHERE current_season->>'id' LIKE 'cb:season:%'
+        AND NULLIF(current_season->>'end_date', '')::date   >= CURRENT_DATE - $1::int
+        AND NULLIF(current_season->>'start_date', '')::date <= CURRENT_DATE + $2::int
+      ORDER BY current_season->>'end_date' DESC, id
+      LIMIT $3`,
+    [pastDays, futureDays, limit],
+  );
+  return r.rows.map((row) => ({ tournamentId: row.id, seasonId: row.season_id }));
+}
+
+/**
+ * Completed Cricbuzz matches whose stored timeline has no scorecard (or no timeline at all),
+ * newest first: what the match page's Scorecard tab reads from.
+ */
+export async function listMatchesNeedingScorecard(limit = 20) {
+  const r = await query(
+    `SELECT m.match_id
+       FROM matches m
+       LEFT JOIN match_timelines t ON t.match_id = m.match_id
+      WHERE m.status = 'completed'
+        AND m.match_id LIKE 'cb:match:%'
+        AND (t.match_id IS NULL OR NOT (t.payload ? 'statistics'))
+      ORDER BY m.scheduled DESC NULLS LAST
+      LIMIT $1`,
+    [limit],
+  );
+  return r.rows.map((row) => row.match_id);
+}
+
+export async function getMatchTimelinePayload(matchId) {
+  const r = await query(`SELECT payload FROM match_timelines WHERE match_id = $1`, [matchId]);
+  const raw = r.rows[0]?.payload;
+  if (!raw) return null;
+  return typeof raw === 'string' ? JSON.parse(raw) : raw;
+}
+
 export async function backfillTours() {
+  // Category "tours" are a fallback for providers that return no tours of their own. When real
+  // ones exist (any id that is not a synthesized `cat:`), adding the categories would only
+  // put four generic cards beside them.
+  const own = await query(`SELECT 1 FROM tours WHERE id NOT LIKE 'cat:%' LIMIT 1`);
+  if (own.rowCount) return 0;
   const r = await query(`
     INSERT INTO tours (id, name, category, sport, created_at, updated_at)
     SELECT DISTINCT
