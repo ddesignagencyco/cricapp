@@ -134,3 +134,18 @@ export async function rapidGet({ provider, cacheNamespace = provider, host, path
   await s.set(cacheKey, JSON.stringify(data), 'EX', ttlSeconds);
   return data;
 }
+
+/**
+ * Compute-once helper on the same store as the response cache (Redis in production),
+ * for derived values such as id mappings that cost API calls to build.
+ */
+export async function remember(key, ttlSeconds, compute, { nullTtlSeconds = 600 } = {}) {
+  const s = await getStore();
+  const hit = await s.get(`rapid:memo:${key}`);
+  if (hit) return JSON.parse(hit);
+  const value = await compute();
+  // A "not found" is remembered too, but briefly: otherwise every poll would repeat the
+  // lookup that found nothing and spend quota on it.
+  await s.set(`rapid:memo:${key}`, JSON.stringify(value ?? null), 'EX', value == null ? nullTtlSeconds : ttlSeconds);
+  return value;
+}

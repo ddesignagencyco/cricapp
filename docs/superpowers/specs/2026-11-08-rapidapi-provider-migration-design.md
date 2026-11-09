@@ -37,12 +37,16 @@ Not supported yet (facade throws `ProviderUnsupportedError`, callers already ski
 - Free-tier limits seen in response headers: cricbuzz-cricket 200, cricbuzz-cricket2 100, cricbuzz-live1 100, unofficial-cricbuzz 500. BASIC plans also enforce ~1 call/second (429 "per second").
 - cricbuzz-cricket2 serves the same endpoints and JSON shape as cricbuzz-cricket (drop-in via `RAPIDAPI_CRICBUZZ_HOST`).
 - The real `mcenter/v1/{id}/scard` shape differs from the first assumption (lowercase keys, no match header, no team ids). `toSummary(info, scard)` now combines the list entry with the scorecard. Fixtures in `test/fixtures/cricbuzz/` are recorded responses.
-- cricbuzz-live1 (sx_* ids) exposes series point tables, squads, team profiles and ball-by-ball commentary; not adapted yet.
+- cricbuzz-cricket2 is wired as a second quota pool (same adapter, own budget, shared response cache).
+- cricbuzz-live1 is adapted for the ball-by-ball timeline (+delta), PSL 2026 standings, squads and tournament teams (`providers/live1.js`, ids `lv:*`). Its commentary feed mixes record kinds: `ball` is every delivery, `wicketWidget` (id+1) carries the dismissal and is merged, per-ball `runs` is the total including extras and sums exactly to the innings total. A `cb:match` id is mapped to its live1 match by team pair + start time (memoised). PSL 2024/2025 do not exist upstream and are refused.
+- The generated timeline was run through the web app's own `parseTimelineEvents` / `countCommentary`: 124 deliveries, 120 legal balls, 10 wickets, runs 130 (matches the real innings).
 
 ## Known risks / unverified
 - Toss is parsed from the scorecard status text ("X opt to bowl") because the endpoint has no toss block; it is absent until the toss is announced in that text.
 - Home/away is assigned by batting order in the adapter (the normalizer's period-score logic assumes the second innings is "away"). Multi-innings Tests are approximate.
 - Highlightly adapter not implemented.
+- live1 free plan is 100 requests; a commentary page is ~400 KB and a live timeline refresh costs one request per cache TTL (60 s) per match, so live ball-by-ball cannot be sustained on the free plan. Standings/squads are cached 6 h.
+- PSL fixtures, leaders and match lineups still have no RapidAPI source here.
 
 ## Testing
 Node test runner, no network and no quota: mocked `fetch`, in-memory cache store, fixtures. Covers state mapping, SR-shape output through `normalizeMatch`, cache hit, budget block, and facade fallback.

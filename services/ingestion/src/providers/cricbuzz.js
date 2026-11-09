@@ -235,7 +235,7 @@ export function createCricbuzz({ provider, host, budgetLimit, cacheNamespace = '
     };
   }
 
-  return { fetchLiveSchedule, fetchMatchSummary, fetchDailySchedule, fetchDailyResults };
+  return { fetchLiveSchedule, fetchMatchSummary, fetchDailySchedule, fetchDailyResults, findMatchInfo };
 }
 
 const primary = createCricbuzz({
@@ -252,3 +252,14 @@ export const cricbuzz2 = createCricbuzz({
 });
 
 export const { fetchLiveSchedule, fetchMatchSummary, fetchDailySchedule, fetchDailyResults } = primary;
+
+/** List entry (teams, start time) for a Cricbuzz match, trying both hosts. Used to map ids across providers. */
+export async function cricbuzzMatchInfo(id) {
+  try {
+    return await primary.findMatchInfo(id);
+  } catch (err) {
+    return cricbuzz2.findMatchInfo(id).catch(() => {
+      throw err;
+    });
+  }
+}
