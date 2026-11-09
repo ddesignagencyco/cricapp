@@ -64,6 +64,9 @@ export class PlayerProfileDto {
   @ApiPropertyOptional({ description: 'Full provider profile payload (team history, per-format stats).' })
   providerProfile: Record<string, unknown> | null;
 
+  @ApiProperty({ description: 'True while the full profile is requested but not stored yet.' })
+  profilePending: boolean;
+
   @ApiPropertyOptional({ type: TeamSummaryDto })
   team: TeamSummaryDto | null;
 

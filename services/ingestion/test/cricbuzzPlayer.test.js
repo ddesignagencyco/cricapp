@@ -98,3 +98,38 @@ test('a scorecard with batters keyed by slot is read like the list layout', () =
 function fx2(n) {
   return JSON.parse(readFileSync(new URL(`./fixtures/cricbuzz/${n}.json`, import.meta.url), 'utf8'));
 }
+
+import { toRoster as toRosterU, roleFromSection } from '../src/providers/cricbuzzu.js';
+
+test('unofficial host roster: section headings give the role of the players after them', () => {
+  const r = toRosterU('cb:team:3', {
+    player: [
+      { name: 'BATSMEN', imageId: 1 },
+      { id: '8364', name: 'Imam-ul-Haq', imageId: 617489, battingStyle: 'Left-hand bat' },
+      { name: 'ALL ROUNDERS', imageId: 1 },
+      { id: '9', name: 'Shadab', imageId: 5, bowlingStyle: 'Legbreak' },
+      { name: 'WICKET KEEPERS' },
+      { id: '10', name: 'Rizwan' },
+    ],
+  });
+  assert.deepEqual(r.players.map((p) => [p.id, p.role]), [
+    ['cb:player:8364', 'batsman'], ['cb:player:9', 'all_rounder'], ['cb:player:10', 'wicketkeeper'],
+  ]);
+  assert.match(r.players[0].avatar_url, /c617489/);
+  assert.equal(roleFromSection('BOWLERS'), 'bowler');
+  assert.deepEqual(toRosterU('cb:team:129', {}).players, []);
+});
+
+import { teamForSquadName } from '../src/providers/cricbuzzu.js';
+
+test('an announced squad belongs to the team with the longest matching name', () => {
+  const teams = [
+    { id: 'cb:team:4', name: 'Australia' },
+    { id: 'cb:team:129', name: 'Australia U19' },
+    { id: 'cb:team:130', name: 'India U19' },
+  ];
+  assert.equal(teamForSquadName('Australia U19 ODI & Test Squad', teams).id, 'cb:team:129');
+  assert.equal(teamForSquadName('Australia Test Squad', teams).id, 'cb:team:4');
+  assert.equal(teamForSquadName('India U19 ODI Squad', teams).id, 'cb:team:130');
+  assert.equal(teamForSquadName('Nepal Squad', teams), null);
+});

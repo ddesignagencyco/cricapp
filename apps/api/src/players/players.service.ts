@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '../generated/prisma/client.js';
+import { RedisService } from '../redis/redis.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import {
   getPaginationOffset,
@@ -21,6 +22,8 @@ export interface PlayerProfileDto {
   jerseyNumber: number | null;
   height: number | null;
   providerProfile: Record<string, unknown> | null;
+  /** True while the full provider profile has been requested but is not stored yet. */
+  profilePending: boolean;
   team: TeamSummary | null;
   recentMatches: Array<{
     matchId: string;
@@ -35,7 +38,26 @@ export interface PlayerProfileDto {
 
 @Injectable()
 export class PlayersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly redis: RedisService,
+  ) {}
+
+  /**
+   * Ask the ingestion service for this player's full profile. Opening a page is what makes a
+   * profile worth a provider request, so the queue is driven by page views; ingestion drains it
+   * within seconds and under a daily cap. `profile:backoff:*` keeps a player that failed (or was
+   * just fetched) from being queued again for hours.
+   */
+  private async requestFullProfile(playerId: string): Promise<void> {
+    if (!playerId.startsWith('cb:player:')) return;
+    try {
+      if (await this.redis.cached.exists(`profile:backoff:${playerId}`)) return;
+      await this.redis.cached.zadd('profile:wanted', 'NX', Date.now(), playerId);
+    } catch {
+      // The queue is a convenience; a Redis hiccup must never fail the page.
+    }
+  }
 
   async search(params?: { q?: string; team?: string; page?: number; limit?: number; offset?: number }) {
     const { page, limit, skip } = getPaginationOffset(params?.page, params?.limit, params?.offset);
@@ -91,6 +113,8 @@ export class PlayersService {
     const profile = await this.prisma.playerProfile.findUnique({
       where: { playerId },
     });
+    const profilePending = !profile && playerId.startsWith('cb:player:');
+    if (profilePending) await this.requestFullProfile(playerId);
 
     let team: TeamSummary | null = null;
     if (player.team) {
@@ -144,6 +168,7 @@ export class PlayersService {
       providerProfile: profile
         ? (profile.payload as Record<string, unknown>)
         : null,
+      profilePending,
       team,
       recentMatches: recent,
     };

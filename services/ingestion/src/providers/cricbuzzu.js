@@ -495,3 +495,92 @@ export async function fetchSeasonSquad(seasonId, wantedTeamId) {
   const players = await get('series/get-players', { seriesId: sid, squadId: squad.squadId });
   return { team, players: toSquadPlayers(players) };
 }
+
+/** Section headings in `teams/get-players` ("BATSMEN", "ALL ROUNDERS"…) → the app's role names. */
+export function roleFromSection(heading) {
+  const s = String(heading ?? '').toLowerCase();
+  if (/keeper|wk/.test(s)) return 'wicketkeeper';
+  if (/all.?round/.test(s)) return 'all_rounder';
+  if (/bowl/.test(s)) return 'bowler';
+  if (/bat/.test(s)) return 'batsman';
+  return 'player';
+}
+
+/**
+ * A team's squad (`teams/get-players`, one request). The list is grouped: an entry without an
+ * id is a section heading whose role applies to the players that follow it.
+ */
+export function toRoster(teamIdValue, raw) {
+  const players = [];
+  let role = 'player';
+  for (const p of raw?.player ?? []) {
+    if (!p?.id) {
+      role = roleFromSection(p?.name);
+      continue;
+    }
+    if (!p.name) continue;
+    players.push({
+      id: playerId(p.id),
+      name: p.name,
+      role,
+      batting_style: p.battingStyle ?? null,
+      bowling_style: p.bowlingStyle ?? null,
+      avatar_url: IMG(p.imageId) ?? null,
+    });
+  }
+  return { team_id: teamIdValue, players };
+}
+
+export async function fetchTeamRoster(id) {
+  const m = String(id).match(/^cb:team:(\d+)$/);
+  if (!m) throw new ProviderUnsupportedError(`cricbuzzu rosters need a cb:team id, got ${id}`);
+  const raw = await get('teams/get-players', { teamId: m[1] }, 7 * 86400);
+  const roster = toRoster(id, raw);
+  if (!roster.players.length) throw new Error(`cricbuzzu returned no squad for ${id}`);
+  return roster;
+}
+
+const alnum = (s) => String(s ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+/**
+ * Which of `teams` an announced squad belongs to: squads are named "<team> <format> Squad", so
+ * the team is the one with the longest name the squad name starts with ("Australia U19 ODI Squad"
+ * is Australia U19, not Australia).
+ */
+export function teamForSquadName(squadType, teams) {
+  const key = alnum(squadType);
+  let best = null;
+  for (const t of teams) {
+    const n = alnum(t.name);
+    if (n && key.startsWith(n) && (!best || n.length > alnum(best.name).length)) best = t;
+  }
+  return best;
+}
+
+/**
+ * Announced squads of a series for the given teams (`[{ id, name }]`): one request for the list,
+ * then one per matching squad (at most `perTeam` per team). Returns `[{ team_id, players }]`.
+ */
+export async function fetchSeriesSquads(tournamentId, teams, { perTeam = 2 } = {}) {
+  const sid = seriesIdFor(tournamentId);
+  const list = await get('series/get-squads', { seriesId: sid }, 7 * 86400);
+  const taken = new Map();
+  const out = new Map();
+  for (const s of list?.squadAnnouncedList ?? []) {
+    if (!s.squadId || s.isHeader) continue;
+    const team = teamForSquadName(s.squadType, teams);
+    if (!team || (taken.get(team.id) ?? 0) >= perTeam) continue;
+    taken.set(team.id, (taken.get(team.id) ?? 0) + 1);
+    const players = toSquadPlayers(await get('series/get-players', { seriesId: sid, squadId: s.squadId }, 7 * 86400));
+    const prev = out.get(team.id) ?? [];
+    const seen = new Set(prev.map((p) => p.id));
+    out.set(team.id, [...prev, ...players.filter((p) => !seen.has(p.id))]);
+  }
+  return [...out].filter(([, p]) => p.length).map(([team_id, players]) => ({
+    team_id,
+    players: players.map((p) => ({
+      id: p.id, name: p.name, role: p.type ?? 'player',
+      batting_style: p.batting_style, bowling_style: p.bowling_style, avatar_url: p.avatar_url ?? null,
+    })),
+  }));
+}

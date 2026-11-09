@@ -9,6 +9,7 @@ import { startNewsSync } from './newsSync.js';
 import { startStreamsSync } from './streamsSync.js';
 import { startOddsSync } from './oddsSync.js';
 import { createLogger } from './logger.js';
+import { startProfileQueue } from './profileQueue.js';
 
 export { computeRunRate, normalizeMatch, normalizeLineups } from './normalize.js';
 export { diffMatch, hasMatchChanged } from './diff.js';
@@ -145,6 +146,7 @@ const refSyncOptions = () => ({
   playerProfileLimit: Number(process.env.REF_SYNC_PLAYER_PROFILE_LIMIT || 15),
   teamRosterLimit: Number(process.env.REF_SYNC_TEAM_ROSTER_LIMIT || 3),
   squadScorecardLimit: Number(process.env.REF_SYNC_SQUAD_SCORECARD_LIMIT || 2),
+  seriesSquadLimit: Number(process.env.REF_SYNC_SERIES_SQUAD_LIMIT || 2),
   headToHeadLimit: Number(process.env.REF_SYNC_HEAD_TO_HEAD_LIMIT || 50),
 });
 
@@ -164,6 +166,8 @@ ping()
     } catch (err) {
       log.error('initial poll cycle failed', { error: err.message });
     }
+
+    startProfileQueue();
 
     const kickPsl = () => {
       startPslSync().catch((err) => log.error('psl sync start failed', { error: err.message }));

@@ -90,6 +90,8 @@ export const fetchPlayerProfile = wrap('fetchPlayerProfile');
 export const fetchTeamProfile = wrap('fetchTeamProfile');
 /** A team's squad list; Cricbuzz real-time host only. */
 export const fetchTeamRoster = wrap('fetchTeamRoster');
+/** Announced squads of a series for some teams; unofficial-cricbuzz only. */
+export const fetchSeriesSquads = wrap('fetchSeriesSquads');
 export const fetchTeamResults = wrap('fetchTeamResults');
 export const fetchTeamSchedule = wrap('fetchTeamSchedule');
 export const fetchTeamVersusTeam = wrap('fetchTeamVersusTeam');

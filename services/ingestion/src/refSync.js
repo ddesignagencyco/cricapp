@@ -10,6 +10,7 @@ import {
   fetchPlayerProfile,
   fetchTeamProfile,
   fetchTeamRoster,
+  fetchSeriesSquads,
   fetchTeamResults,
   fetchTeamSchedule,
   fetchTeamVersusTeam,
@@ -72,6 +73,7 @@ import {
   listMatchesForRosterlessTeams,
   listPlayerIdsNeedingProfile,
   listTeamsNeedingRoster,
+  listSeriesNeedingSquads,
   saveTeamSquad,
   deriveSquadsFromScorecards,
   backfillTeamFieldsFromProfiles,
@@ -507,6 +509,15 @@ export async function syncHeadToHead(teamAId, teamBId) {
 
 const ROSTER_RETRY_MS = 6 * 3600e3;
 
+/** Squads announced for a series, for every team in it that has no provider squad yet. */
+export async function syncSeriesSquads({ tournamentId, teams }) {
+  const found = await fetchSeriesSquads(tournamentId, teams);
+  let saved = 0;
+  for (const { team_id, players } of found) saved += (await saveTeamSquad(team_id, players)) ? 1 : 0;
+  log.info(`series squads ${tournamentId}: ${saved} of ${teams.length} team(s) filled`);
+  return saved;
+}
+
 /** A team's squad from the provider (one request), replacing what was derived from scorecards. */
 export async function syncTeamRoster(teamId) {
   const roster = await fetchTeamRoster(teamId);
@@ -642,6 +653,7 @@ export async function refSyncAll(options = {}) {
     playerProfileLimit = 15,
     teamRosterLimit = 3,
     squadScorecardLimit = 2,
+    seriesSquadLimit = 2,
     headToHeadLimit = 50,
     tournamentSyncLimit = 0,
     scorecardLimit = 0,
@@ -749,12 +761,21 @@ export async function refSyncAll(options = {}) {
     await runStale('lineups', id, REF_CADENCE.lineups, () => syncMatchLineups(id), delay);
   }
 
+  let seriesSquadBudget = seriesSquadLimit;
   // Squads: free ones from stored scorecards for every team, then real rosters (1 request each)
   // for the teams about to play.
   if (squadScorecardLimit > 0) {
     // Teams the provider has no squad for: one stored scorecard names enough of their players.
     const ids = await listMatchesForSquadlessTeams(squadScorecardLimit);
     if (ids.length) await safeRun(() => backfillScorecards({ ids }));
+  }
+  if (seriesSquadLimit > 0) {
+    for (const target of await listSeriesNeedingSquads(seriesSquadLimit * 4)) {
+      if (!(await shouldSync('seriesSquads', target.tournamentId))) continue;
+      const done = await runStale('seriesSquads', target.tournamentId, REF_CADENCE.seriesSquads, () => syncSeriesSquads(target), delay);
+      if (done === null) await markSynced('seriesSquads', target.tournamentId, ROSTER_RETRY_MS);
+      if (--seriesSquadBudget <= 0) break;
+    }
   }
   const derivedSquads = await safeRun(() => deriveSquadsFromScorecards());
   if (derivedSquads) log.info(`squads derived from stored scorecards (${derivedSquads} new member(s))`);

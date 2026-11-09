@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Calendar, Newspaper, Target, User } from 'lucide-react';
 import StatCard from '../StatCard';
 import Tabs from '../Tabs';
@@ -32,6 +33,19 @@ interface Props {
 
 export default function PlayerDetailBody({ player, relatedNews = [] }: Props) {
   const [tab, setTab] = useState('profile');
+  const router = useRouter();
+  const pending = Boolean(player?.profilePending);
+  // The full profile is fetched in the background after the first visit: look again a few times.
+  useEffect(() => {
+    if (!pending) return undefined;
+    let tries = 0;
+    const timer = setInterval(() => {
+      tries += 1;
+      router.refresh();
+      if (tries >= 6) clearInterval(timer);
+    }, 8000);
+    return () => clearInterval(timer);
+  }, [pending, router]);
   const { articles: news, loading: newsLoading } = useLinkedNews(
     { playerId: String(player?.id || '') },
     relatedNews
@@ -170,6 +184,12 @@ export default function PlayerDetailBody({ player, relatedNews = [] }: Props) {
           <StatCard compact label="Bowling" value={player.bowlingStyle || '—'} sub="Style" tone="accent" />
           <StatCard compact label="Team" value={team?.abbr || '—'} sub="Franchise" tone="gold" />
         </div>
+      )}
+
+      {tab === 'profile' && pending && !extras && (
+        <p className="detail-panel fade-in p-3 text-sm text-stext" role="status">
+          Loading the full profile (biography, rankings, recent form). This takes a few seconds the first time.
+        </p>
       )}
 
       {tab === 'profile' && extras && (

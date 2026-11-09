@@ -1407,3 +1407,24 @@ export async function deriveSquadsFromScorecards({ sinceDays = 365 } = {}) {
   );
   return r.rowCount ?? 0;
 }
+
+/**
+ * Series (tournaments) in which some team still has no provider squad, with those teams, the
+ * series with the most such teams first. One series request can fill several of them.
+ */
+export async function listSeriesNeedingSquads(limit = 5) {
+  const r = await query(
+    `WITH sides AS (
+       SELECT m.tournament_id, s.side_id AS team_id FROM matches m
+         CROSS JOIN LATERAL (VALUES (m.team_scores->'home'->>'id'), (m.team_scores->'away'->>'id')) s(side_id)
+        WHERE m.tournament_id LIKE 'cb:tournament:%' AND s.side_id LIKE 'cb:team:%'
+     ), lacking AS (
+       SELECT DISTINCT sd.tournament_id, sd.team_id, t.name FROM sides sd JOIN teams t ON t.id = sd.team_id
+        WHERE NOT EXISTS (SELECT 1 FROM team_squad_members q WHERE q.team_id = sd.team_id AND q.source = 'roster')
+     )
+     SELECT tournament_id, json_agg(json_build_object('id', team_id, 'name', name)) AS teams, count(*) AS n
+       FROM lacking GROUP BY tournament_id ORDER BY n DESC, tournament_id DESC LIMIT $1`,
+    [limit],
+  );
+  return r.rows.map((x) => ({ tournamentId: x.tournament_id, teams: x.teams }));
+}

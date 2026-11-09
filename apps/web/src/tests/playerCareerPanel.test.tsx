@@ -35,3 +35,32 @@ describe('PlayerCareerPanel', () => {
     expect(container.firstChild).toBeNull();
   });
 });
+
+jest.mock('../components/AuthProvider', () => ({ useAuth: () => ({ isAuthenticated: false, user: null }) }));
+jest.mock('../services/favorites', () => ({ addFavorite: jest.fn(), removeFavorite: jest.fn(), listFavorites: jest.fn().mockResolvedValue([]) }));
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({ refresh: jest.fn(), push: jest.fn(), replace: jest.fn() }),
+  usePathname: () => '/players/cb:player:1',
+  useSearchParams: () => new URLSearchParams(),
+}));
+
+import PlayerDetailBody from '../components/boards/PlayerDetailBody';
+
+describe('PlayerDetailBody full profile', () => {
+  const base = { id: 'cb:player:1', fullName: 'Test Player', role: 'batsman', team: null, recentMatches: [] };
+
+  it('tells the visitor the full profile is loading while it is requested', () => {
+    render(<PlayerDetailBody player={{ ...base, profilePending: true, providerProfile: null }} />);
+    expect(screen.getByRole('status').textContent).toMatch(/Loading the full profile/);
+  });
+
+  it('shows the biography once the profile is stored', () => {
+    render(
+      <PlayerDetailBody
+        player={{ ...base, profilePending: false, providerProfile: { cricbuzz: { bio: 'Left-handed opener.' } } }}
+      />,
+    );
+    expect(screen.getByText('Left-handed opener.')).toBeTruthy();
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+});
