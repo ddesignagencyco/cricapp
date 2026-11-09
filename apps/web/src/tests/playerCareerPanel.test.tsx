@@ -86,3 +86,41 @@ describe('PlayerDetailBody tracked stats', () => {
     expect(screen.queryByText('Overs')).toBeNull();
   });
 });
+
+import userEvent from '@testing-library/user-event';
+import { truncateText } from '../components/boards/PlayerCareerPanel';
+
+describe('long biography and club list', () => {
+  const longBio = 'Word '.repeat(120).trim();
+
+  it('cuts at a word boundary and says whether it cut', () => {
+    expect(truncateText('short bio').truncated).toBe(false);
+    const t = truncateText(longBio, 100);
+    expect(t.truncated).toBe(true);
+    expect(t.short.endsWith('…')).toBe(true);
+    expect(t.short.length).toBeLessThanOrEqual(101);
+    expect(t.short.replace('…', '').endsWith('Word')).toBe(true);
+  });
+
+  it('shows Read more, then the whole biography, then Show less', async () => {
+    render(<PlayerCareerPanel extras={{ bio: longBio }} />);
+    expect(screen.queryByText(longBio)).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'Read more' }));
+    expect(screen.getByText(longBio)).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: 'Show less' }));
+    expect(screen.queryByText(longBio)).toBeNull();
+  });
+
+  it('collapses a long club list behind Show all', async () => {
+    const clubs = Array.from({ length: 14 }, (_, i) => ({ id: `cb:team:${i}`, name: `Club ${i}` }));
+    render(<PlayerCareerPanel extras={{ clubs }} />);
+    expect(screen.queryByText('Club 13')).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'Show all 14' }));
+    expect(screen.getByText('Club 13')).toBeTruthy();
+  });
+
+  it('has no toggle for a short biography', () => {
+    render(<PlayerCareerPanel extras={{ bio: 'A short bio.' }} />);
+    expect(screen.queryByRole('button', { name: 'Read more' })).toBeNull();
+  });
+});

@@ -1,3 +1,6 @@
+'use client';
+
+import { useState } from 'react';
 import Link from 'next/link';
 
 interface StatTable {
@@ -43,6 +46,59 @@ export function currentRankings(rankings: CricbuzzPlayerExtras['rankings']): Arr
     }
   }
   return out;
+}
+
+/** Cut at a word boundary so a long biography does not push the page's real content off screen. */
+export function truncateText(text: string, max = 320): { short: string; truncated: boolean } {
+  const clean = text.trim();
+  if (clean.length <= max) return { short: clean, truncated: false };
+  const cut = clean.slice(0, max);
+  const at = cut.lastIndexOf(' ');
+  return { short: `${(at > max * 0.6 ? cut.slice(0, at) : cut).replace(/[\s,;:.-]+$/, '')}…`, truncated: true };
+}
+
+function ReadMore({ text, max = 320 }: { text: string; max?: number }) {
+  const [open, setOpen] = useState(false);
+  const { short, truncated } = truncateText(text, max);
+  return (
+    <>
+      <p className="text-sm leading-relaxed text-stext">{open || !truncated ? text : short}</p>
+      {truncated && (
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          className="mt-1.5 text-xs font-semibold text-accent hover:underline"
+        >
+          {open ? 'Show less' : 'Read more'}
+        </button>
+      )}
+    </>
+  );
+}
+
+function ClubList({ clubs, initial = 8 }: { clubs: Array<{ id: string; name: string }>; initial?: number }) {
+  const [all, setAll] = useState(false);
+  const shown = all ? clubs : clubs.slice(0, initial);
+  return (
+    <>
+      <div className="flex flex-wrap gap-2">
+        {shown.map((c) => (
+          <Link key={c.id} href={`/teams/${c.id}`} className="detail-chip hover:text-accent">{c.name}</Link>
+        ))}
+      </div>
+      {clubs.length > initial && (
+        <button
+          type="button"
+          onClick={() => setAll((v) => !v)}
+          aria-expanded={all}
+          className="mt-2 text-xs font-semibold text-accent hover:underline"
+        >
+          {all ? 'Show fewer' : `Show all ${clubs.length}`}
+        </button>
+      )}
+    </>
+  );
 }
 
 function StatsTable({ title, table }: { title: string; table: StatTable }) {
@@ -118,7 +174,7 @@ export default function PlayerCareerPanel({ extras }: { extras: CricbuzzPlayerEx
       {extras.bio && (
         <section className="detail-panel p-3 sm:p-4" aria-label="Biography">
           <h3 className="mb-2 text-sm font-semibold text-mtext">Biography</h3>
-          <p className="text-sm leading-relaxed text-stext">{extras.bio}</p>
+          <ReadMore text={extras.bio} />
           {extras.birthPlace && <p className="mt-2 text-xs text-stext">Born in {extras.birthPlace}</p>}
         </section>
       )}
@@ -171,11 +227,7 @@ export default function PlayerCareerPanel({ extras }: { extras: CricbuzzPlayerEx
       {clubs.length > 0 && (
         <section className="detail-panel p-3 sm:p-4" aria-label="Teams played for">
           <h3 className="mb-2 text-sm font-semibold text-mtext">Teams played for</h3>
-          <div className="flex flex-wrap gap-2">
-            {clubs.map((c) => (
-              <Link key={c.id} href={`/teams/${c.id}`} className="detail-chip hover:text-accent">{c.name}</Link>
-            ))}
-          </div>
+          <ClubList clubs={clubs} />
         </section>
       )}
     </div>
