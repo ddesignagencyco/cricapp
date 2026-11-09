@@ -69,7 +69,7 @@ async function spendBudget(s, provider, budget) {
  * GET a RapidAPI endpoint with a Redis response cache and a request budget.
  * Cached responses cost no quota.
  */
-export async function rapidGet({ provider, host, path, query = {}, ttlSeconds = 60, budget }) {
+export async function rapidGet({ provider, cacheNamespace = provider, host, path, query = {}, ttlSeconds = 60, budget }) {
   const apiKey = process.env.RAPIDAPI_KEY;
   if (!apiKey) throw new ProviderAuthError(`${provider}: RAPIDAPI_KEY is not set`);
 
@@ -77,7 +77,7 @@ export async function rapidGet({ provider, host, path, query = {}, ttlSeconds = 
   const qs = new URLSearchParams(
     Object.entries(query).sort(([a], [b]) => a.localeCompare(b)),
   ).toString();
-  const cacheKey = `rapid:cache:${provider}:${path}${qs ? `?${qs}` : ''}`;
+  const cacheKey = `rapid:cache:${cacheNamespace}:${path}${qs ? `?${qs}` : ''}`;
 
   const cached = await s.get(cacheKey);
   if (cached) {

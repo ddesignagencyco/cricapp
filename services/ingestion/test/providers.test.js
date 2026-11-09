@@ -7,6 +7,7 @@ import { readFileSync } from 'node:fs';
 import { setStore, getRapidStats } from '../src/providers/rapidHttp.js';
 import { QuotaExceededError } from '../src/providers/errors.js';
 import * as cricbuzz from '../src/providers/cricbuzz.js';
+import { cricbuzz2 } from '../src/providers/cricbuzz.js';
 import * as facade from '../src/providers/index.js';
 import { normalizeMatch } from '../src/normalize.js';
 import { PROVIDERS } from '../src/schemas.js';
@@ -175,16 +176,59 @@ describe('cricbuzz adapter (recorded responses)', () => {
   });
 });
 
+describe('second Cricbuzz host as a quota pool', () => {
+  beforeEach(() => {
+    setStore(memoryStore());
+    process.env.DATA_PROVIDER = 'auto';
+    process.env.RAPIDAPI_CRICBUZZ_MONTHLY_BUDGET = '1';
+  });
+  afterEach(() => {
+    globalThis.fetch = realFetch;
+    delete process.env.DATA_PROVIDER;
+    delete process.env.RAPIDAPI_CRICBUZZ_MONTHLY_BUDGET;
+    delete process.env.RAPIDAPI_CRICBUZZ2_MONTHLY_BUDGET;
+  });
+
+  it('falls over to cricbuzz-cricket2 when the first host budget is spent', async () => {
+    mockFetch(recordedRoute());
+    await facade.fetchLiveSchedule(); // spends the single request of host 1
+    const { results } = await facade.fetchDailyResults('2026-11-05'); // other pages → host 1 is blocked
+    assert.ok(results.length > 0);
+    assert.match(fetchCalls[0], /^https:\/\/cricbuzz-cricket\.p\.rapidapi\.com\//);
+    assert.ok(fetchCalls.some((u) => u.startsWith('https://cricbuzz-cricket2.p.rapidapi.com/')));
+  });
+
+  it('shares the response cache across both hosts', async () => {
+    mockFetch(recordedRoute());
+    await facade.fetchLiveSchedule(); // host 1 fetches matches/v1/live
+    const before = fetchCalls.length;
+    await facade.fetchLiveSchedule(); // cached: neither host is called
+    assert.equal(fetchCalls.length, before);
+  });
+
+  it('gives each host its own budget counter', async () => {
+    process.env.RAPIDAPI_CRICBUZZ2_MONTHLY_BUDGET = '1';
+    mockFetch(recordedRoute());
+    await facade.fetchLiveSchedule(); // host 1 spends its 1 request
+    // A daily schedule reads three pages: live is cached, "recent" falls to host 2
+    // (its 1 request), "upcoming" finds both budgets spent.
+    await assert.rejects(() => facade.fetchDailySchedule('2026-11-05'), QuotaExceededError);
+    assert.equal(fetchCalls.filter((u) => u.includes('cricbuzz-cricket.p.')).length, 1);
+    assert.equal(fetchCalls.filter((u) => u.includes('cricbuzz-cricket2.p.')).length, 1);
+  });
+});
+
 describe('facade fallback', () => {
   afterEach(() => {
     delete process.env.DATA_PROVIDER;
-    facade.setModules({ cricbuzz, highlightly: {} });
+    facade.setModules({ cricbuzz, cricbuzz2, highlightly: {} });
   });
 
   it('auto falls back to the next provider on quota errors', async () => {
     process.env.DATA_PROVIDER = 'auto';
     facade.setModules({
       cricbuzz: { fetchLiveSchedule: async () => { throw new QuotaExceededError('out'); } },
+      cricbuzz2: {},
       highlightly: { fetchLiveSchedule: async () => [{ id: 'hl:match:9', status: 'live' }] },
     });
     assert.deepEqual(await facade.fetchLiveSchedule(), [{ id: 'hl:match:9', status: 'live' }]);

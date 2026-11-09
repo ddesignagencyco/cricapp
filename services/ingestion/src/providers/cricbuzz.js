@@ -9,22 +9,13 @@ import { rapidGet } from './rapidHttp.js';
  * correction stays local.
  */
 
-const HOST = process.env.RAPIDAPI_CRICBUZZ_HOST || 'cricbuzz-cricket.p.rapidapi.com';
 const LIVE_TTL_S = Number(process.env.RAPIDAPI_LIVE_TTL_S || 60);
-const LIST_TTL_S = Number(process.env.RAPIDAPI_LIST_TTL_S || 1800);
-const budget = () => ({
-  period: 'month',
-  limit: Number(process.env.RAPIDAPI_CRICBUZZ_MONTHLY_BUDGET || 200),
-});
+const LIST_TTL_S = Number(process.env.RAPIDAPI_LIST_TTL_S || 21600);
 
 const PREFIX = { match: 'cb:match:', team: 'cb:team:', tournament: 'cb:tournament:' };
 const matchId = (id) => `${PREFIX.match}${rawMatchId(id)}`;
 const teamId = (id) => (id == null ? null : `${PREFIX.team}${id}`);
 const rawMatchId = (id) => String(id).replace(PREFIX.match, '');
-
-function get(path, ttlSeconds) {
-  return rapidGet({ provider: 'cricbuzz', host: HOST, path, ttlSeconds, budget: budget() });
-}
 
 /**
  * Cricbuzz "state" (+ free-text status) → SportsRadar status words.
@@ -166,62 +157,98 @@ export function toSummary(info, scard) {
   };
 }
 
-export async function fetchLiveSchedule() {
-  const data = await get('matches/v1/live', LIVE_TTL_S);
-  return flattenMatches(data).map((m) => toSportEvent(m.matchInfo));
-}
-
-/** The list entry for a match. The poller has just fetched the live list, so that lookup is a cache hit. */
-async function findMatchInfo(id) {
-  const want = Number(rawMatchId(id));
-  for (const [kind, ttl] of [['live', LIVE_TTL_S], ['recent', LIST_TTL_S], ['upcoming', LIST_TTL_S]]) {
-    const hit = flattenMatches(await get(`matches/v1/${kind}`, ttl)).find((m) => Number(m.matchInfo.matchId) === want);
-    if (hit) return hit.matchInfo;
-  }
-  throw new Error(`cricbuzz match ${id} not found in the live, recent or upcoming lists`);
-}
-
-export async function fetchMatchSummary(id) {
-  const info = await findMatchInfo(id);
-  const scard = await get(`mcenter/v1/${rawMatchId(id)}/scard`, LIVE_TTL_S);
-  return toSummary(info, scard);
-}
-
-async function allListed() {
-  const [live, recent, upcoming] = await Promise.all(
-    ['live', 'recent', 'upcoming'].map((k) => get(`matches/v1/${k}`, LIST_TTL_S)),
-  );
-  const seen = new Set();
-  return [...flattenMatches(live), ...flattenMatches(recent), ...flattenMatches(upcoming)].filter((m) => {
-    const id = m.matchInfo.matchId;
-    if (seen.has(id)) return false;
-    seen.add(id);
-    return true;
-  });
-}
-
 const onDate = (m, date) => iso(m.matchInfo.startDate)?.slice(0, 10) === date;
 
-export async function fetchDailySchedule(date) {
-  const matches = (await allListed()).filter((m) => onDate(m, date));
-  return { sport_events: matches.map((m) => toSportEvent(m.matchInfo)) };
+/**
+ * One adapter per Cricbuzz Cricket RapidAPI host. Both hosts serve the same endpoints and
+ * JSON, so a second host is a second free-tier quota: each instance spends its own budget
+ * but they share one response cache (`cacheNamespace`), so a fallback to the second host
+ * costs nothing when the first already fetched the same page.
+ */
+export function createCricbuzz({ provider, host, budgetLimit, cacheNamespace = 'cricbuzz' }) {
+  const get = (path, ttlSeconds) =>
+    rapidGet({
+      provider,
+      cacheNamespace,
+      host: host(),
+      path,
+      ttlSeconds,
+      budget: { period: 'month', limit: budgetLimit() },
+    });
+
+  async function fetchLiveSchedule() {
+    const data = await get('matches/v1/live', LIVE_TTL_S);
+    return flattenMatches(data).map((m) => toSportEvent(m.matchInfo));
+  }
+
+  /** The list entry for a match. The poller has just fetched the live list, so that lookup is a cache hit. */
+  async function findMatchInfo(id) {
+    const want = Number(rawMatchId(id));
+    for (const [kind, ttl] of [['live', LIVE_TTL_S], ['recent', LIST_TTL_S], ['upcoming', LIST_TTL_S]]) {
+      const hit = flattenMatches(await get(`matches/v1/${kind}`, ttl)).find((m) => Number(m.matchInfo.matchId) === want);
+      if (hit) return hit.matchInfo;
+    }
+    throw new Error(`cricbuzz match ${id} not found in the live, recent or upcoming lists`);
+  }
+
+  async function fetchMatchSummary(id) {
+    const info = await findMatchInfo(id);
+    const scard = await get(`mcenter/v1/${rawMatchId(id)}/scard`, LIVE_TTL_S);
+    return toSummary(info, scard);
+  }
+
+  async function allListed() {
+    const [live, recent, upcoming] = await Promise.all(
+      ['live', 'recent', 'upcoming'].map((k) => get(`matches/v1/${k}`, LIST_TTL_S)),
+    );
+    const seen = new Set();
+    return [...flattenMatches(live), ...flattenMatches(recent), ...flattenMatches(upcoming)].filter((m) => {
+      const id = m.matchInfo.matchId;
+      if (seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    });
+  }
+
+
+  async function fetchDailySchedule(date) {
+    const matches = (await allListed()).filter((m) => onDate(m, date));
+    return { sport_events: matches.map((m) => toSportEvent(m.matchInfo)) };
+  }
+
+  async function fetchDailyResults(date) {
+    const matches = (await allListed()).filter(
+      (m) => onDate(m, date) && mapState(m.matchInfo.state, m.matchInfo.status).status === 'closed',
+    );
+    return {
+      results: matches.map((m) => {
+        const { status, matchStatus } = mapState(m.matchInfo.state, m.matchInfo.status);
+        return {
+          sport_event: toSportEvent(m.matchInfo),
+          sport_event_status: {
+            status,
+            match_status: matchStatus,
+            match_result_text: m.matchInfo.status ?? null,
+          },
+        };
+      }),
+    };
+  }
+
+  return { fetchLiveSchedule, fetchMatchSummary, fetchDailySchedule, fetchDailyResults };
 }
 
-export async function fetchDailyResults(date) {
-  const matches = (await allListed()).filter(
-    (m) => onDate(m, date) && mapState(m.matchInfo.state, m.matchInfo.status).status === 'closed',
-  );
-  return {
-    results: matches.map((m) => {
-      const { status, matchStatus } = mapState(m.matchInfo.state, m.matchInfo.status);
-      return {
-        sport_event: toSportEvent(m.matchInfo),
-        sport_event_status: {
-          status,
-          match_status: matchStatus,
-          match_result_text: m.matchInfo.status ?? null,
-        },
-      };
-    }),
-  };
-}
+const primary = createCricbuzz({
+  provider: 'cricbuzz',
+  host: () => process.env.RAPIDAPI_CRICBUZZ_HOST || 'cricbuzz-cricket.p.rapidapi.com',
+  budgetLimit: () => Number(process.env.RAPIDAPI_CRICBUZZ_MONTHLY_BUDGET || 200),
+});
+
+/** cricbuzz-cricket2: same endpoints and shape, its own 100-request free plan. */
+export const cricbuzz2 = createCricbuzz({
+  provider: 'cricbuzz2',
+  host: () => process.env.RAPIDAPI_CRICBUZZ2_HOST || 'cricbuzz-cricket2.p.rapidapi.com',
+  budgetLimit: () => Number(process.env.RAPIDAPI_CRICBUZZ2_MONTHLY_BUDGET || 100),
+});
+
+export const { fetchLiveSchedule, fetchMatchSummary, fetchDailySchedule, fetchDailyResults } = primary;
