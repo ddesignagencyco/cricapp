@@ -23,3 +23,35 @@ function unwrapMeetings(value: unknown): unknown[] {
   }
   return [];
 }
+
+const norm = (v: unknown): string =>
+  String(v ?? '')
+    .toLowerCase()
+    .replace(/[^a-z0-9()& ]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+/**
+ * The competitor named as the winner in a result line ("Alpha Kings won by 10 runs"), or
+ * undefined for ties, no results and abandonments. Same rule as `winnerFromResultText` in
+ * packages/shared-types (the team must be the subject of "won" / "beat"); kept here because
+ * Jest cannot load that package's re-exports, which would leave this untestable.
+ */
+export function winnerIdFromResultText(
+  resultText: unknown,
+  competitors: Array<{ id?: unknown; name?: unknown; abbreviation?: unknown }>,
+): string | undefined {
+  const text = norm(resultText);
+  if (!text || !/\b(won|beat|win)\b/.test(text)) return undefined;
+  if (/\b(tied|no result|abandoned|drawn|draw)\b/.test(text) && !/\bwon\b/.test(text)) return undefined;
+  let best: { id: string; len: number } | null = null;
+  for (const c of competitors) {
+    for (const label of [c.name, c.abbreviation]) {
+      const name = norm(label);
+      if (!name) continue;
+      const re = new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(\\s*\\([^)]*\\))?\\s+(won|beat|win)\\b`);
+      if (re.test(text) && (!best || name.length > best.len)) best = { id: String(c.id), len: name.length };
+    }
+  }
+  return best?.id;
+}
