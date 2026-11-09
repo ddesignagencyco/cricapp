@@ -46,6 +46,16 @@ describe('TeamsModule (integration)', () => {
     expect(res.body.data[0].playerCount).toBe(2);
   });
 
+  it('GET /teams/logos — maps ids, abbreviations and names to logos (and is not read as an abbreviation)', async () => {
+    await ctx.prisma.team.update({ where: { id: 'sr:team:1' }, data: { logoUrl: 'https://img.test/eng.png' } });
+    await ctx.prisma.team.create({ data: { id: 'sr:team:2', name: 'No Logo XI', abbr: 'NLX' } });
+    const res = await ctx.agent.get('/teams/logos').expect(200);
+    expect(res.body['id:sr:team:1']).toBe('https://img.test/eng.png');
+    expect(res.body['abbr:eng']).toBe('https://img.test/eng.png');
+    expect(res.body['name:england']).toBe('https://img.test/eng.png');
+    expect(Object.keys(res.body).some((k) => k.includes('nlx') || k.includes('no logo'))).toBe(false);
+  });
+
   it('GET /teams/:idOrAbbr — returns team by id', async () => {
     const res = await ctx.agent.get('/teams/sr:team:1').expect(200);
     expect(res.body.id).toBe('sr:team:1');

@@ -63,6 +63,27 @@ export class TeamsService {
     };
   }
 
+  /**
+   * Every team logo, keyed so a component that only knows an id, an abbreviation or a name
+   * can find it: `id:<id>`, `abbr:<abbr>`, `name:<name>` (all lowercase). Ids win; an
+   * abbreviation or name shared by two teams keeps the first.
+   */
+  async logoLookup(): Promise<Record<string, string>> {
+    const teams = await this.prisma.team.findMany({
+      where: { logoUrl: { not: null } },
+      select: { id: true, abbr: true, name: true, logoUrl: true },
+      orderBy: [{ id: 'asc' }],
+    });
+    const out: Record<string, string> = {};
+    for (const t of teams) if (t.logoUrl) out[`id:${t.id.toLowerCase()}`] = t.logoUrl;
+    for (const t of teams) {
+      if (!t.logoUrl) continue;
+      if (t.abbr) out[`abbr:${t.abbr.toLowerCase()}`] ??= t.logoUrl;
+      if (t.name) out[`name:${t.name.toLowerCase()}`] ??= t.logoUrl;
+    }
+    return out;
+  }
+
   async list(params?: { q?: string; page?: number; limit?: number; offset?: number }) {
     const { page, limit, skip } = getPaginationOffset(params?.page, params?.limit, params?.offset);
 

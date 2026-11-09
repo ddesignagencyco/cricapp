@@ -55,6 +55,22 @@ describe('PlayersModule (integration)', () => {
     expect(root).toMatchObject({ nationality: 'England', birth: '1990-12-30' });
   });
 
+  it('GET /players — list rows carry the photo, styles and team logo the directory cards draw', async () => {
+    await ctx.prisma.team.update({ where: { id: 'sr:team:1' }, data: { logoUrl: 'https://img.test/eng.png' } });
+    await ctx.prisma.player.update({
+      where: { id: 'sr:player:1' },
+      data: { profileUrl: 'https://img.test/root.jpg', battingStyle: 'Right-hand bat', bowlingStyle: 'Right-arm offbreak' },
+    });
+    const res = await ctx.agent.get('/players').expect(200);
+    const root = res.body.data.find((p: { id: string }) => p.id === 'sr:player:1');
+    expect(root).toMatchObject({
+      profileUrl: 'https://img.test/root.jpg',
+      battingStyle: 'Right-hand bat',
+      bowlingStyle: 'Right-arm offbreak',
+    });
+    expect(root.team.logoUrl).toBe('https://img.test/eng.png');
+  });
+
   it('GET /players?q=Joe — filters by name substring', async () => {
     const res = await ctx.agent.get('/players?q=Joe').expect(200);
     expect(res.body.data).toHaveLength(1);

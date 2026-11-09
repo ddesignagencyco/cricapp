@@ -18,6 +18,13 @@ export class TeamsController {
     return this.teamsService.list(query);
   }
 
+  // Declared before ':idOrAbbr', which would otherwise swallow "logos" as a team abbreviation.
+  @Get('logos')
+  @ApiOperation({ summary: 'Team logo lookup', description: 'Map of id:/abbr:/name: keys to logo URLs, for components that only know a code.' })
+  async logos() {
+    return this.teamsService.logoLookup();
+  }
+
   @Get(':idOrAbbr')
   @ApiOperation({ summary: 'Get a team profile', description: 'By id or abbreviation (e.g. ENG).' })
   @ApiParam({ name: 'idOrAbbr', description: 'Team id or abbreviation.' })

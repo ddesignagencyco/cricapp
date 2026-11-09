@@ -66,7 +66,12 @@ export class PlayersService {
           role: true,
           nationality: true,
           birth: true,
-          team: { select: { id: true, name: true, abbr: true } },
+          // The list cards render the photo and style badges, so they must come with the row;
+          // without them the directory shows initials for every player.
+          profileUrl: true,
+          battingStyle: true,
+          bowlingStyle: true,
+          team: { select: { id: true, name: true, abbr: true, logoUrl: true } },
         },
       }),
       this.prisma.player.count({ where }),

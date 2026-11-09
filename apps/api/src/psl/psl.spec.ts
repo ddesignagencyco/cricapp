@@ -148,4 +148,40 @@ describe('PslModule (integration)', () => {
     expect(lq.players[0].playerName).toBe('Shaheen Afridi');
     expect(res.body.meta.totalRecords).toBe(2);
   });
+
+  describe('pictures', () => {
+    beforeEach(async () => {
+      await ctx.prisma.team.update({ where: { id: 'sr:team:1' }, data: { logoUrl: 'https://img.test/lq.png' } });
+      // leaders are seeded for sr:player:1, which has no roster row yet
+      await ctx.prisma.player.create({
+        data: { id: 'sr:player:1', fullName: 'Fakhar Zaman', teamId: 'sr:team:1', profileUrl: 'https://img.test/fakhar.jpg' },
+      });
+      await ctx.prisma.player.update({ where: { id: 'sr:player:10' }, data: { profileUrl: 'https://img.test/shaheen.jpg' } });
+    });
+
+    it('standings carry each team logo', async () => {
+      const res = await ctx.agent.get('/psl/standings').expect(200);
+      const lq = res.body.data.find((r: any) => r.teamId === 'sr:team:1');
+      const kk = res.body.data.find((r: any) => r.teamId === 'sr:team:2');
+      expect(lq.logoUrl).toBe('https://img.test/lq.png');
+      expect(kk.logoUrl).toBeNull();
+    });
+
+    it('leaders carry the player photo and fall back to the roster for team and logo', async () => {
+      const res = await ctx.agent.get('/psl/leaders').expect(200);
+      const entry = res.body.data[0].entries.find((e: any) => e.playerId === 'sr:player:1');
+      expect(entry.profileUrl).toBe('https://img.test/fakhar.jpg');
+      expect(entry.teamLogoUrl).toBe('https://img.test/lq.png');
+      expect(entry.teamAbbr).toBeTruthy();
+      const other = res.body.data[0].entries.find((e: any) => e.playerId === 'sr:player:2');
+      expect(other.profileUrl).toBeNull(); // no roster row: no photo, but the entry is still returned
+    });
+
+    it('squads carry the team logo and each player photo', async () => {
+      const res = await ctx.agent.get('/psl/squads').expect(200);
+      const lq = res.body.data.find((s: any) => s.teamAbbr === 'LQ');
+      expect(lq.logoUrl).toBe('https://img.test/lq.png');
+      expect(lq.players.find((p: any) => p.playerId === 'sr:player:10').profileUrl).toBe('https://img.test/shaheen.jpg');
+    });
+  });
 });
