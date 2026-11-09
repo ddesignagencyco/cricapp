@@ -1,10 +1,9 @@
+import TeamLogo from './TeamLogo';
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { Calendar, Clock, MapPin } from 'lucide-react';
 import { StatusBadge, BlinkingDot } from './Badge';
-import RemoteImage from './RemoteImage';
-import EntityAvatar from './EntityAvatar';
-import { formatScheduled, getInitials, getPslLogo } from '../utils/helpers';
+import { formatScheduled } from '../utils/helpers';
 import { deriveMatchState } from '../lib/deriveMatchState';
 import { describeMatchResult, scoreboardFromMatch } from '../lib/matchScoreboard';
 import { cardInteractive } from './ui/interaction';
@@ -257,25 +256,10 @@ function TeamRow({
   upcoming?: boolean;
   dense?: boolean;
 }) {
-  const pslLogo = getPslLogo(code);
-  const avatarSize = dense ? 'h-6 w-6 text-[9px]' : 'h-7 w-7 text-[10px]';
-  const imgSize = dense ? 24 : 28;
 
   return (
     <div className={`flex items-center ${dense ? 'gap-2' : 'gap-2.5'}`}>
-      {pslLogo ? (
-        <RemoteImage
-          src={pslLogo}
-          alt={name}
-          width={imgSize}
-          height={imgSize}
-          className={`${avatarSize} shrink-0 rounded-full border border-lborder bg-white object-contain p-0.5`}
-        />
-      ) : (
-        <EntityAvatar className={`${avatarSize} shrink-0`} title={name}>
-          {getInitials(name || code)}
-        </EntityAvatar>
-      )}
+      <TeamLogo code={code} name={name} size={dense ? 'xs' : 'sm'} link={false} />
       <p
         className={`min-w-0 flex-1 truncate font-semibold ${dense ? 'text-xs' : 'text-sm'} ${
           live ? 'text-accent' : 'text-mtext'

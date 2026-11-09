@@ -6,6 +6,7 @@ import { Target, Flame, Trophy, Zap } from 'lucide-react';
 import Tabs from '../Tabs';
 import EmptyState from '../EmptyState';
 import TeamLogo from '../TeamLogo';
+import PersonAvatar from '../PersonAvatar';
 import { formatPlayerName } from '../../utils/helpers';
 import type { LeaderEntry, LeaderGroup } from '../../types/index';
 
@@ -114,7 +115,7 @@ function LeaderSection({ stat, entries }: { stat: string; entries: LeaderEntry[]
                 const name = formatPlayerName(row.playerName);
                 return (
                   <tr
-                    key={row.playerId || `${stat}-${index}`}
+                    key={`${row.playerId || stat}-${index}`}
                     className={`border-b border-lborder/60 last:border-0 transition-colors hover:bg-[var(--color-row-hover)] ${
                       index % 2 === 1 ? 'bg-card/60' : ''
                     }`}
@@ -130,7 +131,11 @@ function LeaderSection({ stat, entries }: { stat: string; entries: LeaderEntry[]
                     </td>
                     <td className="px-4 py-3 align-middle">
                       <Link href={`/players/${row.playerId}`} className="flex items-center gap-2.5 hover:text-accent">
-                        <TeamLogo name={row.teamName} code={row.teamAbbr} size="xs" link={false} />
+                        {row.profileUrl ? (
+                          <PersonAvatar name={name} src={row.profileUrl} size={32} />
+                        ) : (
+                          <TeamLogo name={row.teamName} code={row.teamAbbr} logoUrl={row.teamLogoUrl} size="xs" link={false} />
+                        )}
                         <span className="min-w-0">
                           <span className="block font-semibold text-mtext">{name}</span>
                           <span className="block text-xs text-stext">

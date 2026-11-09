@@ -1,12 +1,11 @@
 'use client';
 
+import TeamLogo from './TeamLogo';
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Badge, { normalizeStatus } from './Badge';
 import LiveIndicator from './LiveIndicator';
-import EntityAvatar from './EntityAvatar';
-import { getInitials } from '../utils/helpers';
 import { deriveMatchState } from '../lib/deriveMatchState';
 import { mergeLiveRows, mergeLiveUpdate, mergeMatchLivePayload, rememberLiveSnapshot, useMatchStream, withLatestLive } from '../hooks/useMatchStream';
 import { useLiveMatchesQuery } from '../queries/useDirectoryQueries';
@@ -280,7 +279,5 @@ function scheduleTime(match: any): string {
 }
 
 function TeamMini({ label }: { label: string }) {
-  return (
-    <EntityAvatar className="h-7 w-7 text-xs font-black">{getInitials(label)}</EntityAvatar>
-  );
+  return <TeamLogo name={label} size="sm" link={false} />;
 }

@@ -1,8 +1,6 @@
+import TeamLogo from './TeamLogo';
 import Link from 'next/link';
 import { StatusBadge } from './Badge';
-import RemoteImage from './RemoteImage';
-import EntityAvatar from './EntityAvatar';
-import { getInitials, getPslLogo } from '../utils/helpers';
 import { describeMatchResult, scoreboardFromMatch } from '../lib/matchScoreboard';
 
 interface RecentResultCardProps {
@@ -77,23 +75,9 @@ export default function RecentResultCard({ match }: RecentResultCardProps) {
 }
 
 function ScoreRow({ code, name, score, overs }: { code: string; name: string; score: string; overs: string }) {
-  const pslLogo = getPslLogo(code);
-
   return (
     <div className="flex items-center gap-2.5">
-      {pslLogo ? (
-        <RemoteImage
-          src={pslLogo}
-          alt={name}
-          width={28}
-          height={28}
-          className="h-7 w-7 shrink-0 rounded-full border border-lborder bg-white object-contain p-0.5"
-        />
-      ) : (
-        <EntityAvatar className="h-7 w-7 text-[10px]" title={name}>
-          {getInitials(name || code)}
-        </EntityAvatar>
-      )}
+      <TeamLogo code={code} name={name} size="sm" link={false} />
       <p className="min-w-0 flex-1 truncate text-sm font-semibold text-mtext">{name}</p>
       <div className="min-w-14 shrink-0 text-right">
         <p className="font-mono text-sm font-bold tabular-nums text-mtext">

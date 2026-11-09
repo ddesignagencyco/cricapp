@@ -1,8 +1,11 @@
+'use client';
+
 import Link from 'next/link';
 import RemoteImage from './RemoteImage';
 import EntityAvatar from './EntityAvatar';
 import { teamHref } from './EntityLinks';
 import { getInitials, getPslLogo } from '../utils/helpers';
+import { lookupTeamLogo, useTeamLogos } from './TeamLogosProvider';
 
 interface TeamLogoProps {
   teamId?: string;
@@ -12,14 +15,23 @@ interface TeamLogoProps {
   size?: string;
   className?: string;
   link?: boolean;
+  /** A logo the caller already has (e.g. from the API); skips the lookup. */
+  logoUrl?: string | null;
 }
 
-export default function TeamLogo({ teamId, name, code, color, size = 'md', className = '', link = true }: TeamLogoProps) {
+export default function TeamLogo({ teamId, name, code, color, size = 'md', className = '', link = true, logoUrl }: TeamLogoProps) {
+  const logos = useTeamLogos();
   const displayName = name || code || '';
   const abbr = (code || '').replace(/[^a-zA-Z0-9]/g, '');
   const initials = (abbr.length >= 2 && abbr.length <= 4 ? abbr : getInitials(displayName)).slice(0, 2).toUpperCase();
-  const pslLogo = getPslLogo(code || '') || getPslLogo(teamId || '');
-  const logo = pslLogo || null;
+  // An explicit logo wins; then the site's own PSL artwork; then whatever the database knows
+  // (ids and codes differ per data provider, so the lookup also tries the name).
+  const logo =
+    logoUrl?.trim() ||
+    getPslLogo(code || '') ||
+    getPslLogo(teamId || '') ||
+    lookupTeamLogo(logos, { teamId, code, name }) ||
+    null;
   const sizes: Record<string, string> = {
     xs: 'h-6 w-6 text-xs',
     sm: 'h-8 w-8 text-xs',

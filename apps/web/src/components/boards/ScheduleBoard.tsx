@@ -1,5 +1,6 @@
 'use client';
 
+import TeamLogo from '../TeamLogo';
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Calendar, ChevronLeft, ChevronRight, Clock, MapPin } from 'lucide-react';
@@ -11,9 +12,7 @@ import ErrorState from '../ErrorState';
 import PageToolbar from '../PageToolbar';
 import Pagination from '../Pagination';
 import Tabs from '../Tabs';
-import RemoteImage from '../RemoteImage';
-import EntityAvatar from '../EntityAvatar';
-import { APP_TIME_ZONE, getPslLogo, toKarachiISODate } from '../../utils/helpers';
+import { APP_TIME_ZONE, toKarachiISODate } from '../../utils/helpers';
 import { isSportRadarId, str } from '../../utils/extract';
 import type { Match, SportEventRecord } from '../../types/index';
 import { useLiveMatchMap } from '../../hooks/useLiveMatchMap';
@@ -345,14 +344,6 @@ function venueLabel(ev: Record<string, unknown>): string {
   );
 }
 
-/** Two letters, like every other avatar on the site: "PA" for Pakistan, "NZ" for New Zealand. */
-function initialsFor(name: string): string {
-  const words = name.trim().split(/\s+/).filter(Boolean);
-  if (words.length === 0) return '';
-  const letters = words.length > 1 ? words[0][0] + words[1][0] : words[0].slice(0, 2);
-  return letters.toUpperCase();
-}
-
 function TeamRow({
   code,
   name,
@@ -362,26 +353,9 @@ function TeamRow({
   name: string;
   score?: string | null;
 }) {
-  const pslLogo = getPslLogo(code);
-  const label =
-    initialsFor(name || code || '') ||
-    (code || '??').slice(0, 2).toUpperCase();
-
   return (
     <div className="flex items-center gap-2.5">
-      {pslLogo ? (
-        <RemoteImage
-          src={pslLogo}
-          alt={name}
-          width={28}
-          height={28}
-          className="h-7 w-7 shrink-0 rounded-full border border-lborder bg-white object-contain p-0.5"
-        />
-      ) : (
-        <EntityAvatar className="h-7 w-7 text-[10px]" title={name}>
-          {label}
-        </EntityAvatar>
-      )}
+      <TeamLogo code={code} name={name} size="sm" link={false} />
       <p className="min-w-0 flex-1 truncate text-sm font-semibold text-mtext" title={name}>
         {name}
       </p>

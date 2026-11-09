@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ChevronRight, MapPin, Shield } from 'lucide-react';
 import Tabs from './Tabs';
 import TeamLogo from './TeamLogo';
+import PersonAvatar from './PersonAvatar';
 import { formatPlayerName, getInitials } from '../utils/helpers';
 import type { PslSquad, PslSquadPlayer, TabItem } from '../types/index';
 
@@ -85,6 +86,7 @@ export default function PslSquadsBoard({ squads }: { squads: PslSquad[] }) {
             teamId={squad.teamId}
             name={squad.teamName}
             code={squad.teamAbbr}
+            logoUrl={squad.logoUrl}
             size="2xl"
             link={false}
             className="self-center sm:self-auto"
@@ -139,14 +141,18 @@ function SquadPlayerRow({ player, teamName }: { player: PslSquadPlayer; teamName
       href={`/players/${player.playerId}`}
       className="group flex items-center gap-3 border-b border-lborder/70 px-4 py-3 transition-colors hover:bg-[var(--color-row-hover)] sm:px-5"
     >
-      <span
-        className="btn-brand grid h-10 w-10 shrink-0 place-items-center rounded-full text-xs font-semibold"
-        aria-hidden="true"
-      >
-        {player.jerseyNumber === null || player.jerseyNumber === undefined
-          ? getInitials(name)
-          : player.jerseyNumber}
-      </span>
+      {player.profileUrl ? (
+        <PersonAvatar name={name} src={player.profileUrl} size={40} />
+      ) : (
+        <span
+          className="btn-brand grid h-10 w-10 shrink-0 place-items-center rounded-full text-xs font-semibold"
+          aria-hidden="true"
+        >
+          {player.jerseyNumber === null || player.jerseyNumber === undefined
+            ? getInitials(name)
+            : player.jerseyNumber}
+        </span>
+      )}
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold text-mtext group-hover:text-accent">{name}</p>
         <div className="mt-0.5 flex min-w-0 items-center gap-2 text-xs text-stext">

@@ -13,7 +13,11 @@ export default function TourCard({ tour }: { tour: Tour }) {
   const sport = str(tour.sport) || 'Cricket';
   const code =
     typeof tour.category === 'object' && tour.category?.country_code ? String(tour.category.country_code) : '';
-  const href = `/tournaments?country=${encodeURIComponent(country)}`;
+  // A tour that is a real series (id is its tournament id) opens that tournament; the
+  // synthesized category tours only filter the tournaments list.
+  const href = /^cb:tournament:/.test(tour.id)
+    ? `/tournaments/${tour.id}`
+    : `/tournaments?country=${encodeURIComponent(country)}`;
   const name = tour.name || 'Tour';
 
   return (

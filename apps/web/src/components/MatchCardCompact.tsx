@@ -1,9 +1,8 @@
 'use client';
 
+import TeamLogo from './TeamLogo';
 import Link from 'next/link';
-import RemoteImage from './RemoteImage';
-import EntityAvatar from './EntityAvatar';
-import { getInitials, getPslLogo } from '../utils/helpers';
+import { getInitials } from '../utils/helpers';
 
 interface MatchCardCompactProps {
   match: any;
@@ -65,19 +64,7 @@ export default function MatchCardCompact({ match }: MatchCardCompactProps) {
 }
 
 function TeamCell({ name, abbr, align }: { name: string; abbr: string; align: 'left' | 'right' }) {
-  const pslLogo = getPslLogo(abbr);
-
-  const badge = pslLogo ? (
-    <RemoteImage
-      src={pslLogo}
-      alt={name}
-      width={28}
-      height={28}
-      className="h-7 w-7 shrink-0 rounded-full border border-lborder bg-white object-contain p-0.5"
-    />
-  ) : (
-    <EntityAvatar className="h-7 w-7 text-[10px]">{abbr.slice(0, 2)}</EntityAvatar>
-  );
+  const badge = <TeamLogo code={abbr} name={name} size="sm" link={false} />;
 
   return (
     <div className={`flex min-w-0 flex-1 items-center gap-2 ${align === 'right' ? 'flex-row-reverse text-right' : ''}`}>

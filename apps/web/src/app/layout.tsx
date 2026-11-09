@@ -12,6 +12,8 @@ import ClientLayout from '../components/ClientLayout';
 import Footer from '../components/Footer';
 import AdProvider from '../components/advertisements/AdProvider';
 import { loadSiteSettings } from '../services/siteSettings';
+import { loadTeamLogos } from '../services/teamLogos';
+import { TeamLogosProvider } from '../components/TeamLogosProvider';
 
 // Toast runtime (react-hot-toast + goober) is only needed for user actions
 // after hydration, so it splits into its own chunk. SSR output is unchanged
@@ -74,7 +76,7 @@ export const viewport = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const settings = await loadSiteSettings();
+  const [settings, teamLogos] = await Promise.all([loadSiteSettings(), loadTeamLogos()]);
   // The API origin serves scores/news and the live socket. Preconnecting saves
   // ~150ms on the first API round-trip (Lighthouse `uses-rel-preconnect`).
   let apiOrigin: string | null = null;
@@ -109,7 +111,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <AuthProvider>
             <QueryProvider>
               <AdProvider config={settings.ads}>
-                <ClientLayout footer={<Footer settings={settings} />}>{children}</ClientLayout>
+                <TeamLogosProvider logos={teamLogos}>
+                  <ClientLayout footer={<Footer settings={settings} />}>{children}</ClientLayout>
+                </TeamLogosProvider>
               </AdProvider>
               <Toaster
                 position="top-right"

@@ -337,6 +337,8 @@ export interface LeaderEntry {
   teamAbbr: string;
   teamName: string;
   value: number | string;
+  profileUrl?: string | null;
+  teamLogoUrl?: string | null;
 }
 
 export interface LeaderGroup {
@@ -384,6 +386,7 @@ export interface PslSquadPlayer {
   nationality?: string | null;
   dateOfBirth?: string | null;
   jerseyNumber?: number | null;
+  profileUrl?: string | null;
 }
 
 export interface PslSquad {
@@ -391,6 +394,7 @@ export interface PslSquad {
   teamName: string;
   teamAbbr: string;
   manager?: string | null;
+  logoUrl?: string | null;
   players: PslSquadPlayer[];
 }
 
