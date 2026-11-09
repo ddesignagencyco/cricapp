@@ -4,7 +4,7 @@
  */
 import { query, shutdown as shutdownDb } from '../src/db.js';
 import { shutdown as shutdownRedis } from '../src/redis.js';
-import { fetchTeamProfile } from '../src/sportradar.js';
+import { fetchTeamProfile } from '../src/providers/index.js';
 import { saveTeamProfile } from '../src/store.js';
 import { normalizeTeamProfile } from '../src/reference.js';
 

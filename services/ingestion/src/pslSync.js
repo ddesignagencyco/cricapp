@@ -6,7 +6,7 @@ import {
   fetchSeasonLeaders,
   fetchTournamentInfo,
   fetchSeasonSquad,
-} from "./sportradar.js";
+} from "./providers/index.js";
 import {
   normalizeSchedule,
   normalizeStandings,

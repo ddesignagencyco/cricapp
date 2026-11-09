@@ -31,7 +31,7 @@ import { syncPsAll } from '../src/pslSync.js';
 import { PSL_SEASONS } from '../src/schemas.js';
 import { syncAllNewsSources } from '../src/newsSync.js';
 import { syncStreamsOnce } from '../src/streamsSync.js';
-import { getCallStats } from '../src/sportradar.js';
+import { getCallStats } from '../src/providers/index.js';
 import {
   syncTourCatalog,
   syncTournamentResults,

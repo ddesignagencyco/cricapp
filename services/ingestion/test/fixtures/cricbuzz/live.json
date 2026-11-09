@@ -1,0 +1,55 @@
+{
+  "_note": "HAND-AUTHORED to the documented Cricbuzz shape, NOT a recorded response. Replace with a recorded one once a RapidAPI key exists.",
+  "typeMatches": [
+    {
+      "matchType": "League",
+      "seriesMatches": [
+        {
+          "seriesAdWrapper": {
+            "seriesId": 777,
+            "seriesName": "Pakistan Super League 2026",
+            "matches": [
+              {
+                "matchInfo": {
+                  "matchId": 1001,
+                  "seriesId": 777,
+                  "seriesName": "Pakistan Super League 2026",
+                  "state": "In Progress",
+                  "status": "Lahore Qalandars need 20 runs",
+                  "startDate": "1783000000000",
+                  "team1": { "teamId": 1, "teamName": "Karachi Kings", "teamSName": "KK" },
+                  "team2": { "teamId": 2, "teamName": "Lahore Qalandars", "teamSName": "LQ" },
+                  "venueInfo": { "ground": "National Stadium" }
+                }
+              },
+              {
+                "matchInfo": {
+                  "matchId": 1002,
+                  "seriesId": 777,
+                  "seriesName": "Pakistan Super League 2026",
+                  "state": "Rain",
+                  "status": "Rain delay",
+                  "startDate": "1783000000000",
+                  "team1": { "teamId": 3, "teamName": "Multan Sultans", "teamSName": "MS" },
+                  "team2": { "teamId": 4, "teamName": "Quetta Gladiators", "teamSName": "QG" }
+                }
+              },
+              {
+                "matchInfo": {
+                  "matchId": 1003,
+                  "seriesId": 777,
+                  "seriesName": "Pakistan Super League 2026",
+                  "state": "Complete",
+                  "status": "Karachi Kings won by 5 runs",
+                  "startDate": "1782900000000",
+                  "team1": { "teamId": 1, "teamName": "Karachi Kings", "teamSName": "KK" },
+                  "team2": { "teamId": 3, "teamName": "Multan Sultans", "teamSName": "MS" }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

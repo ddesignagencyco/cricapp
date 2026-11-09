@@ -10,14 +10,14 @@ import {
   pruneStaleLiveMatchRedisSet,
   TIMELINE_REVISION_KEY,
 } from './store.js';
-import { getCallStats } from './sportradar.js';
+import { getCallStats } from './providers/index.js';
 import redis, { redisKeys } from './redis.js';
 import {
   fetchLiveSchedule,
   fetchMatchSummary,
   fetchMatchTimeline,
   fetchMatchTimelineDelta,
-} from './sportradar.js';
+} from './providers/index.js';
 
 const DELTAS_ENABLED = process.env.LIVE_TIMELINE_DELTAS === 'true';
 /** Full timeline.json during live play; 0 disables. Default 3 (~every 3 live poll cycles). */

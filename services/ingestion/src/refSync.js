@@ -19,7 +19,7 @@ import {
   fetchTournamentInfo,
   fetchMatchLineups,
   fetchMatchSummary,
-} from './sportradar.js';
+} from './providers/index.js';
 import { normalizeLineups, normalizeMatch } from './normalize.js';
 import {
   normalizeDailySchedule,
@@ -72,7 +72,7 @@ import {
 import { createLogger } from './logger.js';
 import { shouldSync, markSynced, clearSyncStamp, REF_CADENCE } from './refState.js';
 import { PSL, PROVIDERS } from './schemas.js';
-import { getCallStats } from './sportradar.js';
+import { getCallStats } from './providers/index.js';
 import redis, { redisKeys } from './redis.js';
 
 const log = createLogger('ref');
