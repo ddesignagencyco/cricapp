@@ -40,6 +40,7 @@ import {
   saveTours,
   listTournamentsForSync,
   listMatchesNeedingScorecard,
+  listTeamsInUpcomingMatches,
   getMatchTimelinePayload,
   saveTournaments,
   backfillTours,
@@ -520,6 +521,30 @@ export async function syncTournamentResults(tournamentOrSeasonId, { persist = tr
 }
 
 /**
+ * Recent results for the teams in upcoming or live matches (one provider request each), so
+ * their form, head to head and ratings rest on real history. Providers without a team-results
+ * feed report it unsupported and the sync simply stops.
+ */
+export async function syncUpcomingTeamResults({ limit = 20, delayMs = 0 } = {}) {
+  const ids = await listTeamsInUpcomingMatches(limit);
+  let synced = 0;
+  for (const id of ids) {
+    if (!(await shouldSync('teamResults', id))) continue;
+    try {
+      await syncTeamMatches(id, { schedule: false, results: true });
+      await markSynced('teamResults', id, REF_CADENCE.teamResults);
+      synced += 1;
+    } catch (err) {
+      log.warn(`team results ${id} failed: ${err.message}`);
+      if (/does not support/.test(err.message)) break; // nothing to ask; do not retry every team
+    }
+    if (delayMs) await new Promise((r) => setTimeout(r, delayMs));
+  }
+  log.info('upcoming-team results synced', { teams: ids.length, synced });
+  return { teams: ids.length, synced };
+}
+
+/**
  * Give completed matches a scorecard. One provider request per match. A stored timeline keeps
  * its ball-by-ball events and just gains the scorecard; a match with no timeline gets a
  * scorecard-only payload (the page then shows the cards without commentary).
@@ -602,6 +627,7 @@ export async function refSyncAll(options = {}) {
     headToHeadLimit = 50,
     tournamentSyncLimit = 0,
     scorecardLimit = 0,
+    upcomingTeamLimit = 0,
   } = options;
 
   await runStale('tours', null, REF_CADENCE.tours, syncTourList);
@@ -630,6 +656,11 @@ export async function refSyncAll(options = {}) {
   // Catalogue tournaments (Cricbuzz ids): results + team list so their detail pages are filled.
   if (tournamentSyncLimit > 0) {
     await safeRun(() => syncActiveTournaments({ limit: tournamentSyncLimit, delayMs: delay }));
+  }
+
+  // Teams in upcoming/live matches: recent results for the predictions (off unless configured).
+  if (upcomingTeamLimit > 0) {
+    await safeRun(() => syncUpcomingTeamResults({ limit: upcomingTeamLimit, delayMs: delay }));
   }
 
   // Completed matches: scorecards for the match page (Cricbuzz hosts; off unless configured).

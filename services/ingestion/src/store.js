@@ -451,6 +451,28 @@ export async function getMatchTimelinePayload(matchId) {
   return typeof raw === 'string' ? JSON.parse(raw) : raw;
 }
 
+/**
+ * Team ids playing in an upcoming or live match, soonest first: the sides whose recent form
+ * the predictions need.
+ */
+export async function listTeamsInUpcomingMatches(limit = 20) {
+  const r = await query(
+    `WITH next AS (
+       SELECT team_scores, scheduled FROM matches
+        WHERE status IN ('upcoming', 'live') AND team_scores IS NOT NULL
+        ORDER BY scheduled ASC NULLS LAST LIMIT 200
+     ), sides AS (
+       SELECT team_scores->'home'->>'id' AS id, scheduled FROM next
+       UNION ALL
+       SELECT team_scores->'away'->>'id', scheduled FROM next
+     )
+     SELECT id FROM sides WHERE id IS NOT NULL AND id <> ''
+      GROUP BY id ORDER BY MIN(scheduled) ASC NULLS LAST LIMIT $1`,
+    [limit],
+  );
+  return r.rows.map((row) => row.id);
+}
+
 export async function backfillTours() {
   // Category "tours" are a fallback for providers that return no tours of their own. When real
   // ones exist (any id that is not a synthesized `cat:`), adding the categories would only

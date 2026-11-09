@@ -55,6 +55,23 @@ function flattenMatches(payload) {
   return out;
 }
 
+/**
+ * A team's recent results (`teamMatchesData[].matchDetailsMap.match[]`) → SportsRadar's
+ * `{ results: [{ sport_event, sport_event_status }] }`. Only finished games are results; the
+ * winner is left to be read from the result text, as everywhere else.
+ */
+export function toTeamResults(payload) {
+  const entries = (payload?.teamMatchesData ?? []).flatMap((g) => g.matchDetailsMap?.match ?? []);
+  return {
+    results: entries
+      .filter((m) => m?.matchInfo && /complete/i.test(m.matchInfo.state ?? ''))
+      .map((m) => ({
+        sport_event: toSportEvent(m.matchInfo),
+        sport_event_status: { status: 'closed', match_status: 'ended', match_result_text: m.matchInfo.status ?? null },
+      })),
+  };
+}
+
 /** Cricbuzz serves team flags / logos publicly by image id, so a logo costs no API request. */
 const logoUrl = (imageId) =>
   imageId ? `https://static.cricbuzz.com/a/img/v1/152x152/i1/c${imageId}/i.jpg` : undefined;
@@ -286,7 +303,7 @@ export function toStatistics(info, scard) {
  * but they share one response cache (`cacheNamespace`), so a fallback to the second host
  * costs nothing when the first already fetched the same page.
  */
-export function createCricbuzz({ provider, host, budgetLimit, cacheNamespace = 'cricbuzz', endpoints = (logical) => ({ path: logical, query: {} }) }) {
+export function createCricbuzz({ provider, host, budgetLimit, cacheNamespace = 'cricbuzz', endpoints = (logical) => ({ path: logical, query: {} }), teamResults = false }) {
   // Call sites name an endpoint by its Cricbuzz Cricket path (the "logical" path); `endpoints`
   // turns that into the real URL for hosts that lay the same data out differently. The logical
   // path is also the cache key, so every host shares one cached response.
@@ -376,9 +393,16 @@ export function createCricbuzz({ provider, host, budgetLimit, cacheNamespace = '
     return toStatistics(info, scard);
   }
 
+  /** A team's recent finished games. Only offered by hosts that have the endpoint (`teamResults`). */
+  async function fetchTeamResults(teamId) {
+    const id = String(teamId).replace(PREFIX.team, '');
+    return toTeamResults(await get(`teams/${id}/results`, LIST_TTL_S));
+  }
+
   return {
     fetchLiveSchedule, fetchMatchSummary, fetchDailySchedule, fetchDailyResults,
     findMatchInfo, fetchScorecardBundle, fetchMatchScorecard,
+    ...(teamResults && { fetchTeamResults }),
   };
 }
 
@@ -398,6 +422,8 @@ const realTimeEndpoints = (logical) => {
   if (m) return { path: 'match/list', query: { type: m[1] } };
   m = logical.match(/^mcenter\/v1\/(\d+)\/scard$/);
   if (m) return { path: 'match/get-scorecard', query: { matchId: m[1] } };
+  m = logical.match(/^teams\/(\d+)\/results$/);
+  if (m) return { path: 'team/get-results', query: { teamId: m[1] } };
   throw new Error(`cricbuzz3 has no endpoint for ${logical}`);
 };
 
@@ -406,6 +432,7 @@ export const cricbuzz3 = createCricbuzz({
   host: () => process.env.RAPIDAPI_CRICBUZZ3_HOST || 'cricbuzz-real-time-cricket-api.p.rapidapi.com',
   budgetLimit: () => Number(process.env.RAPIDAPI_CRICBUZZ3_MONTHLY_BUDGET || 250),
   endpoints: realTimeEndpoints,
+  teamResults: true,
 });
 
 /** cricbuzz-cricket2: same endpoints and shape, its own 100-request free plan. */

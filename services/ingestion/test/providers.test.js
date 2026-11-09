@@ -252,6 +252,34 @@ describe('fetchMatchScorecard', () => {
   });
 });
 
+describe('team results (real-time host only)', () => {
+  beforeEach(() => {
+    setStore(memoryStore());
+    process.env.DATA_PROVIDER = 'auto';
+  });
+  afterEach(() => {
+    globalThis.fetch = realFetch;
+    delete process.env.DATA_PROVIDER;
+  });
+
+  it('maps a team\'s recent results to events with the result text', () => {
+    const { results } = cricbuzz.toTeamResults(fixture('team-results-334.json'));
+    assert.equal(results.length, 10);
+    const final = results.find((r) => r.sport_event.id === 'cb:match:149392');
+    assert.equal(final.sport_event_status.match_result_text, 'Peshawar Zalmi won by 5 wkts');
+    assert.deepEqual(final.sport_event.competitors.map((c) => c.id), ['cb:team:3114', 'cb:team:334']);
+    assert.equal(final.sport_event.tournament.name, 'Pakistan Super League 2026');
+  });
+
+  it('is served by the real-time host with its own URL, never by hosts without the endpoint', async () => {
+    mockFetch(() => fixture('team-results-334.json'));
+    const { results } = await facade.fetchTeamResults('cb:team:334');
+    assert.equal(results.length, 10);
+    assert.equal(fetchCalls.length, 1, fetchCalls.join('\n'));
+    assert.match(fetchCalls[0], /^https:\/\/cricbuzz-real-time-cricket-api\.p\.rapidapi\.com\/team\/get-results\?teamId=334$/);
+  });
+});
+
 describe('second Cricbuzz host as a quota pool', () => {
   beforeEach(() => {
     setStore(memoryStore());
