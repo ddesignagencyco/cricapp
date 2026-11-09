@@ -11,7 +11,7 @@ import type { Team } from '../../types/index';
 import { HeadToHead } from '../../types/index';
 import { formatTeamSelectLabel } from '../../utils/helpers';
 
-function dedupeOpponents(team: any, teamMatches: any[], catalog: Team[]): Team[] {
+export function dedupeOpponents(team: any, teamMatches: any[], catalog: Team[]): Team[] {
   const seen = new Map<string, any>();
   const teamAbbr = (team.abbr || '').toLowerCase();
   const teamId = (team.id || '').toLowerCase();
@@ -29,8 +29,13 @@ function dedupeOpponents(team: any, teamMatches: any[], catalog: Team[]): Team[]
   };
 
   for (const match of teamMatches) {
+    // A match row names its teams by code...
     const codes: string[] = match.teams || [];
     codes.forEach(addOpponent);
+    // ...but the team's schedule and results are stored records, whose teams are the
+    // competitors of the event inside the payload. Without this no opponent was ever found.
+    const event = match.payload?.sport_event ?? match.payload ?? {};
+    for (const competitor of event.competitors ?? []) addOpponent(competitor?.id || competitor?.abbreviation || '');
   }
 
   return [...seen.values()].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
