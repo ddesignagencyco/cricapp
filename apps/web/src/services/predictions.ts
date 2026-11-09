@@ -51,7 +51,8 @@ export async function fetchMatchPredictions(matchId: string): Promise<MatchPredi
 /* ─── Bulk ─────────────────────────────────────────────────── */
 
 /** The API's ValidationPipe rejects the whole batch if any id is malformed. */
-const BULK_ID_PATTERN = /^sr:match:[A-Za-z0-9][A-Za-z0-9_-]*$/;
+// Any provider prefix (sr:, cb:, lv:), since matches now come from several sources.
+const BULK_ID_PATTERN = /^[a-z]{2,4}:match:[A-Za-z0-9][A-Za-z0-9_-]*$/;
 /** Server-side `@ArrayMaxSize(50)`. */
 const BULK_MAX_IDS = 50;
 

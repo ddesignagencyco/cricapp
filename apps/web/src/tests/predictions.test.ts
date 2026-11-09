@@ -115,4 +115,10 @@ describe('fetchBulkPredictions', () => {
     expect(post).toHaveBeenCalledTimes(2);
     expect(result.get('sr:match:1')?.preMatch?.runId).toBe('run-sr:match:1');
   });
+
+  it('sends Cricbuzz and live1 match ids too, not only SportsRadar ones', async () => {
+    post.mockResolvedValue({ data: {} });
+    await fetchBulkPredictions(['cb:match:176155', 'lv:match:sx_AbC123', 'cb:team:334', 'nonsense']);
+    expect(post).toHaveBeenCalledWith('/predictions/bulk', { matchIds: ['cb:match:176155', 'lv:match:sx_AbC123'] });
+  });
 });

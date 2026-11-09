@@ -148,6 +148,15 @@ describe('PredictionsModule (integration)', () => {
     expect(Object.keys(res.body.data)).toEqual(['sr:match:pred-1']);
   });
 
+  it('POST /predictions/bulk — accepts match ids from any provider, and only match ids', async () => {
+    for (const id of ['cb:match:176155', 'lv:match:sx_AbC123', 'sr:match:1']) {
+      await ctx.agent.post('/predictions/bulk').send({ matchIds: [id] }).expect(200);
+    }
+    for (const id of ['cb:team:334', 'CB:match:1', 'cb:match:', 'match:1', 'cb:match:../x']) {
+      await ctx.agent.post('/predictions/bulk').send({ matchIds: [id] }).expect(400);
+    }
+  });
+
   it('POST /predictions/bulk — rejects invalid and oversized payloads', async () => {
     await ctx.agent
       .post('/predictions/bulk')

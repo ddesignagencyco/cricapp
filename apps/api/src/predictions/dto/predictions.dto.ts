@@ -105,7 +105,7 @@ export class BulkPredictionsRequestDto {
   @ArrayMinSize(1)
   @ArrayMaxSize(50)
   @IsString({ each: true })
-  @Matches(/^sr:match:[A-Za-z0-9][A-Za-z0-9_-]*$/, { each: true })
+  @Matches(/^[a-z]{2,4}:match:[A-Za-z0-9][A-Za-z0-9_-]*$/, { each: true })
   matchIds: string[];
 }
 
