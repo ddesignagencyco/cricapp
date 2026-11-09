@@ -17,6 +17,8 @@
     "prisma:baseline": "node --env-file-if-exists=.env scripts/baseline-existing-db.mjs",
     "prisma:seed": "npm run build && prisma db seed",
     "lint": "eslint \"src/**/*.ts\"",
+    "seed:content": "node --env-file-if-exists=.env scripts/seed-content/index.mjs",
+    "test:seed-content": "node --test scripts/seed-content/generators.test.mjs",
     "test": "node --env-file-if-exists=.env scripts/run-tests.mjs",
     "typecheck": "tsc --noEmit",
     "prebuild": "prisma generate",

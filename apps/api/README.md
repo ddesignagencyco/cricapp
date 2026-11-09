@@ -73,3 +73,16 @@ namespace. Listen for `live:update` globally, or emit `subscribe:match` with
 
 Shorts are limited to 30 seconds and videos to 60 seconds. Over-limit
 Cloudinary uploads are deleted immediately and return `400`.
+
+## Demo content seed
+
+`npm run seed:content` (from `apps/api`) fills a fresh environment with authors, news articles, gallery images,
+official-channel streams and editorial pages, so the site is not empty.
+
+- Articles are generated from data already in the database (match reports, previews, PSL table reviews,
+  tracked-match numbers, record lists) plus hand-written rules explainers. Nothing is quoted and no figure is invented.
+- Author profiles are **demonstration personas with invented names**, not real journalists. Replace them before launch.
+- Artwork is generated SVG written to `apps/web/public/seed/` (git-ignored; the seed recreates it).
+- Streams point to official YouTube channel live embeds; they only show video while that channel is live.
+- Idempotent: re-running updates rows by slug. It refuses to run with `NODE_ENV=production` unless `--force` is passed.
+- `npm run test:seed-content` runs the generator tests.
