@@ -145,3 +145,41 @@ export async function fetchPlayerProfile(playerId) {
   const bowling = await optional('bowling stats', () => stats('bowling'));
   return toProfile(id, info, career, batting, bowling);
 }
+
+/**
+ * A team's squad (`team/get-players`, one request): id, name, role, styles and photo per player.
+ * Returns `{ team_id, players }`; an empty squad is an error so it is not stored as "no players".
+ */
+export function toRoster(teamId, raw) {
+  const list = Array.isArray(raw) ? raw : [];
+  return {
+    team_id: teamId,
+    players: list
+      .filter((p) => p?.id && p?.name)
+      .map((p) => ({
+        id: `cb:player:${p.id}`,
+        name: p.name,
+        role: roleType(p.role) ?? 'player',
+        batting_style: p.battingStyle ?? null,
+        bowling_style: p.bowlingStyle ?? null,
+        avatar_url: IMG(p.imageId),
+      })),
+  };
+}
+
+export async function fetchTeamRoster(teamId) {
+  const m = String(teamId).match(/^cb:team:(\d+)$/);
+  if (!m) throw new ProviderUnsupportedError(`cricbuzz rosters need a cb:team id, got ${teamId}`);
+  const raw = await rapidGet({
+    provider: 'cricbuzz3',
+    cacheNamespace: 'cricbuzz3',
+    host: host3(),
+    path: 'team/get-players',
+    query: { teamId: m[1] },
+    ttlSeconds: PROFILE_TTL_S,
+    budget: budget3(),
+  });
+  const roster = toRoster(teamId, raw);
+  if (!roster.players.length) throw new Error(`cricbuzz returned no squad for ${teamId}`);
+  return roster;
+}

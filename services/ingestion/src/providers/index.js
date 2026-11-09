@@ -4,7 +4,7 @@ import { cricbuzz2, cricbuzz3 } from './cricbuzz.js';
 import * as cricbuzzu from './cricbuzzu.js';
 import * as live1 from './live1.js';
 import * as highlightly from './highlightly.js';
-import { fetchPlayerProfile as cricbuzzPlayerProfile } from './cricbuzzPlayer.js';
+import { fetchPlayerProfile as cricbuzzPlayerProfile, fetchTeamRoster as cricbuzzTeamRoster } from './cricbuzzPlayer.js';
 import { getRapidStats } from './rapidHttp.js';
 import { ProviderUnsupportedError } from './errors.js';
 
@@ -20,7 +20,7 @@ import { ProviderUnsupportedError } from './errors.js';
  */
 
 // Profiles span two hosts, so the cricbuzz3 slot carries them; the budgets of both are respected inside.
-const MODULES = { sportradar, cricbuzz, cricbuzz2, cricbuzz3: { ...cricbuzz3, fetchPlayerProfile: cricbuzzPlayerProfile }, cricbuzzu, live1, highlightly };
+const MODULES = { sportradar, cricbuzz, cricbuzz2, cricbuzz3: { ...cricbuzz3, fetchPlayerProfile: cricbuzzPlayerProfile, fetchTeamRoster: cricbuzzTeamRoster }, cricbuzzu, live1, highlightly };
 const CHAINS = {
   sportradar: ['sportradar'],
   cricbuzz: ['cricbuzz'],
@@ -88,6 +88,8 @@ export const fetchMatchTimeline = wrap('fetchMatchTimeline');
 export const fetchMatchTimelineDelta = wrap('fetchMatchTimelineDelta');
 export const fetchPlayerProfile = wrap('fetchPlayerProfile');
 export const fetchTeamProfile = wrap('fetchTeamProfile');
+/** A team's squad list; Cricbuzz real-time host only. */
+export const fetchTeamRoster = wrap('fetchTeamRoster');
 export const fetchTeamResults = wrap('fetchTeamResults');
 export const fetchTeamSchedule = wrap('fetchTeamSchedule');
 export const fetchTeamVersusTeam = wrap('fetchTeamVersusTeam');

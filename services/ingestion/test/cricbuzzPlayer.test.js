@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { toProfile, toStatTable, hasActivity, roleType, isoDate, rawPlayerId } from '../src/providers/cricbuzzPlayer.js';
+import { toRoster, toProfile, toStatTable, hasActivity, roleType, isoDate, rawPlayerId } from '../src/providers/cricbuzzPlayer.js';
 import { buildPlayerFromProfile } from '../src/playerMeta.js';
 
 const fx = (n) => JSON.parse(readFileSync(new URL(`./fixtures/cricbuzzplayer/${n}.json`, import.meta.url), 'utf8'));
@@ -53,4 +53,22 @@ test('helpers', () => {
 test('a profile saved without the stats responses is marked incomplete for a later retry', () => {
   assert.equal(toProfile('1', fx('info'), null, null, null).cricbuzz.statsComplete, false);
   assert.equal(toProfile('1', fx('info'), null, fx('batting'), fx('bowling')).cricbuzz.statsComplete, true);
+});
+
+test('a team roster maps ids, roles, styles and photos; entries without an id are dropped', () => {
+  const r = toRoster('cb:team:3', [
+    { id: '8359', name: 'Babar Azam', imageId: '846059', role: 'Batsman', battingStyle: 'Right Handed Bat', bowlingStyle: 'Right-arm offbreak' },
+    { id: '9', name: 'Keeper', role: 'WK-Batsman', imageId: null },
+    { name: 'No id' },
+  ]);
+  assert.equal(r.team_id, 'cb:team:3');
+  assert.equal(r.players.length, 2);
+  assert.deepEqual(r.players[0], {
+    id: 'cb:player:8359', name: 'Babar Azam', role: 'batsman',
+    batting_style: 'Right Handed Bat', bowling_style: 'Right-arm offbreak',
+    avatar_url: 'https://static.cricbuzz.com/a/img/v1/152x152/i1/c846059/i.jpg',
+  });
+  assert.equal(r.players[1].role, 'wicketkeeper');
+  assert.equal(r.players[1].avatar_url, null);
+  assert.deepEqual(toRoster('cb:team:3', { status: 'error' }).players, []);
 });

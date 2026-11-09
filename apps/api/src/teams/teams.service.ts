@@ -113,9 +113,21 @@ export class TeamsService {
         ? await this.prisma.teamProfile.findMany({ where: { teamId: { in: ids } } })
         : [];
     const profileById = new Map(profiles.map((p) => [p.teamId, p]));
+    const squadCounts =
+      ids.length > 0
+        ? await this.prisma.teamSquadMember.groupBy({
+            by: ['teamId'],
+            where: { teamId: { in: ids } },
+            _count: { _all: true },
+          })
+        : [];
+    const squadById = new Map(squadCounts.map((c) => [c.teamId, c._count._all]));
 
     return createPaginatedResponse(
-      rows.map((t) => ({ ...this.toSummary(t, profileById.get(t.id)), playerCount: t._count.players })),
+      rows.map((t) => ({
+        ...this.toSummary(t, profileById.get(t.id)),
+        playerCount: Math.max(t._count.players, squadById.get(t.id) ?? 0),
+      })),
       total,
       page,
       limit,
@@ -152,14 +164,18 @@ export class TeamsService {
     const team = await this.getProfile(idOrAbbr);
     const { page, limit, skip } = getPaginationOffset(params?.page, params?.limit, params?.offset);
 
+    // A squad is the provider's squad list (team_squad_members) plus anyone linked by players.team_id.
+    const where = {
+      OR: [{ teamId: team.id }, { squadMemberships: { some: { teamId: team.id } } }],
+    };
     const [rows, total] = await Promise.all([
       this.prisma.player.findMany({
-        where: { teamId: team.id },
+        where,
         take: limit,
         skip,
         orderBy: [{ fullName: 'asc' }],
       }),
-      this.prisma.player.count({ where: { teamId: team.id } }),
+      this.prisma.player.count({ where }),
     ]);
 
     const mapped = rows.map((p) => ({
@@ -168,6 +184,9 @@ export class TeamsService {
       shortName: p.shortName,
       role: p.role,
       nationality: p.nationality,
+      profileUrl: p.profileUrl,
+      battingStyle: p.battingStyle,
+      bowlingStyle: p.bowlingStyle,
     }));
 
     return createPaginatedResponse(mapped, total, page, limit);

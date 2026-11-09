@@ -19,6 +19,7 @@ export const REF_CADENCE = Object.freeze({
   tournamentInfo: 7 * 24 * 3600e3,
   teamProfile: 7 * 24 * 3600e3,
   playerProfile: 7 * 24 * 3600e3,
+  teamRoster: 14 * 24 * 3600e3,
   headToHead: 7 * 24 * 3600e3,
   // Slow-moving per-target data.
   teamSchedule: 24 * 3600e3,

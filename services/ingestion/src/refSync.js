@@ -9,6 +9,7 @@ import {
   fetchMatchTimeline,
   fetchPlayerProfile,
   fetchTeamProfile,
+  fetchTeamRoster,
   fetchTeamResults,
   fetchTeamSchedule,
   fetchTeamVersusTeam,
@@ -68,6 +69,9 @@ import {
   materializeTeamEvents,
   listMatchesForRosterlessTeams,
   listPlayerIdsNeedingProfile,
+  listTeamsNeedingRoster,
+  saveTeamSquad,
+  deriveSquadsFromScorecards,
   backfillTeamFieldsFromProfiles,
   backfillTeamFieldsFromLineups,
   backfillTeamManagersFromPlayers,
@@ -499,6 +503,16 @@ export async function syncHeadToHead(teamAId, teamBId) {
   return { teamAId: norm.teamAId, teamBId: norm.teamBId };
 }
 
+const ROSTER_RETRY_MS = 6 * 3600e3;
+
+/** A team's squad from the provider (one request), replacing what was derived from scorecards. */
+export async function syncTeamRoster(teamId) {
+  const roster = await fetchTeamRoster(teamId);
+  const n = await saveTeamSquad(teamId, roster.players.map((p) => ({ ...p })));
+  log.info(`team roster synced for ${teamId}: ${n} player(s)`);
+  return n;
+}
+
 export async function syncPlayerProfile(playerId) {
   const raw = await fetchPlayerProfile(playerId);
   const norm = normalizePlayerProfile(playerId, raw);
@@ -624,6 +638,7 @@ export async function refSyncAll(options = {}) {
     teamLimit = 10,
     lineupLimit = 20,
     playerProfileLimit = 15,
+    teamRosterLimit = 3,
     headToHeadLimit = 50,
     tournamentSyncLimit = 0,
     scorecardLimit = 0,
@@ -729,6 +744,23 @@ export async function refSyncAll(options = {}) {
   const rosterMatchIds = await listMatchesForRosterlessTeams({ limit: lineupLimit });
   for (const id of rosterMatchIds) {
     await runStale('lineups', id, REF_CADENCE.lineups, () => syncMatchLineups(id), delay);
+  }
+
+  // Squads: free ones from stored scorecards for every team, then real rosters (1 request each)
+  // for the teams about to play.
+  const derivedSquads = await safeRun(() => deriveSquadsFromScorecards());
+  if (derivedSquads) log.info(`squads derived from stored scorecards (${derivedSquads} new member(s))`);
+  if (teamRosterLimit > 0) {
+    // Teams the provider has no squad for (or that errored) back off for hours, and must not
+    // keep the front of the queue: only real attempts count against the limit.
+    let attempted = 0;
+    for (const id of await listTeamsNeedingRoster(teamRosterLimit * 10)) {
+      if (attempted >= teamRosterLimit) break;
+      if (!(await shouldSync('teamRoster', id))) continue;
+      attempted += 1;
+      const done = await runStale('teamRoster', id, REF_CADENCE.teamRoster, () => syncTeamRoster(id), delay);
+      if (done === null) await markSynced('teamRoster', id, ROSTER_RETRY_MS);
+    }
   }
 
   const derivedPlayerIds = await listPlayerIdsNeedingProfile({ limit: playerProfileLimit });

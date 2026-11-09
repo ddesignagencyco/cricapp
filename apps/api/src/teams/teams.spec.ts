@@ -90,6 +90,22 @@ describe('TeamsModule (integration)', () => {
     expect(res.body.meta.totalRecords).toBe(1);
   });
 
+  it('GET /teams/:idOrAbbr/players — a player can be in a squad without being linked to the team', async () => {
+    await ctx.prisma.player.createMany({
+      data: [
+        { id: 'sr:player:1', fullName: 'Joe Root', teamId: 'sr:team:1', role: 'batsman' },
+        // Plays for a club; also in England's squad.
+        { id: 'sr:player:2', fullName: 'Jos Buttler', teamId: null, role: 'wicketkeeper' },
+        { id: 'sr:player:3', fullName: 'Someone Else', teamId: null },
+      ],
+    });
+    await ctx.prisma.teamSquadMember.create({ data: { teamId: 'sr:team:1', playerId: 'sr:player:2' } });
+
+    const res = await ctx.agent.get('/teams/ENG/players').expect(200);
+    expect(res.body.data.map((p: { fullName: string }) => p.fullName)).toEqual(['Joe Root', 'Jos Buttler']);
+    expect(res.body.meta.totalRecords).toBe(2);
+  });
+
   it('GET /teams/:idOrAbbr/schedule — returns upcoming matches', async () => {
     await ctx.prisma.sportEventRecord.create({
       data: {

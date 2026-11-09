@@ -1271,3 +1271,101 @@ export async function saveTournamentInfo(tournamentId, tournamentInfo) {
   );
   return teamCount;
 }
+
+/**
+ * Replace a team's provider squad. Players are upserted without moving their club (`team_id`
+ * is only filled for players that have none), then the membership rows are swapped so players
+ * who left the squad drop out. Derived rows for the team are superseded by the real squad.
+ */
+export async function saveTeamSquad(teamId, players) {
+  const rows = (players ?? []).filter((p) => p?.id);
+  for (const p of rows) {
+    await query(
+      `INSERT INTO players (id, full_name, short_name, team_id, batting_style, bowling_style, role, profile_url, created_at, updated_at)
+       VALUES ($1,$2,$2,$3,$4,$5,$6,$7,NOW(),NOW())
+       ON CONFLICT (id) DO UPDATE SET
+         team_id = COALESCE(players.team_id, EXCLUDED.team_id),
+         batting_style = COALESCE(players.batting_style, EXCLUDED.batting_style),
+         bowling_style = COALESCE(players.bowling_style, EXCLUDED.bowling_style),
+         role = CASE WHEN players.role IS NULL OR players.role IN ('', 'player') THEN EXCLUDED.role ELSE players.role END,
+         profile_url = COALESCE(players.profile_url, EXCLUDED.profile_url),
+         updated_at = NOW()`,
+      [p.id, p.name, teamId, p.batting_style ?? null, p.bowling_style ?? null, p.role ?? null, p.avatar_url ?? null],
+    );
+  }
+  await query(`DELETE FROM team_squad_members WHERE team_id = $1`, [teamId]);
+  for (const p of rows) {
+    await query(
+      `INSERT INTO team_squad_members (team_id, player_id, source, updated_at) VALUES ($1,$2,'roster',NOW())
+       ON CONFLICT (team_id, player_id) DO UPDATE SET source = 'roster', updated_at = NOW()`,
+      [teamId, p.id],
+    );
+  }
+  return rows.length;
+}
+
+/**
+ * Teams in live / upcoming matches that have no provider squad yet, soonest match first.
+ * Costs nothing to ask: the matches table is already ours.
+ */
+export async function listTeamsNeedingRoster(limit = 3) {
+  const r = await query(
+    `WITH next AS (
+       SELECT team_scores, scheduled FROM matches
+        WHERE status IN ('upcoming', 'live') AND team_scores IS NOT NULL
+        ORDER BY scheduled ASC NULLS LAST LIMIT 200
+     ), sides AS (
+       SELECT team_scores->'home'->>'id' AS id, scheduled FROM next
+       UNION ALL
+       SELECT team_scores->'away'->>'id', scheduled FROM next
+     )
+     SELECT s.id FROM sides s
+      WHERE s.id LIKE 'cb:team:%'
+        AND NOT EXISTS (SELECT 1 FROM team_squad_members m WHERE m.team_id = s.id AND m.source = 'roster')
+      GROUP BY s.id ORDER BY MIN(s.scheduled) ASC NULLS LAST LIMIT $1`,
+    [limit],
+  );
+  return r.rows.map((x) => x.id);
+}
+
+/** Who batted or bowled for which team in the stored scorecards ($1 = look-back days). */
+const SEEN_IN_SCORECARDS = `WITH seen AS (
+       SELECT DISTINCT t->>'id' AS team_id, pl->>'id' AS player_id, pl->>'name' AS name
+         FROM match_timelines mt
+         JOIN matches m ON m.match_id = mt.match_id
+         CROSS JOIN LATERAL jsonb_array_elements(
+           CASE WHEN jsonb_typeof(mt.payload->'statistics'->'innings') = 'array'
+                THEN mt.payload->'statistics'->'innings' ELSE '[]'::jsonb END) inn
+         CROSS JOIN LATERAL jsonb_array_elements(COALESCE(inn->'teams', '[]'::jsonb)) t
+         CROSS JOIN LATERAL jsonb_array_elements(
+           COALESCE(t->'statistics'->'batting'->'players', '[]'::jsonb)
+           || COALESCE(t->'statistics'->'bowling'->'players', '[]'::jsonb)) pl
+        WHERE m.scheduled::timestamptz > NOW() - ($1 || ' days')::interval
+     )
+`;
+
+/**
+ * Squads for every team from the scorecards we already store (no provider requests): anyone who
+ * batted or bowled for a team in a match of the last year. Only adds `derived` rows, and never to
+ * a team whose provider squad is known.
+ */
+export async function deriveSquadsFromScorecards({ sinceDays = 365 } = {}) {
+  // Scorecard participants we have never stored become (name-only) player rows first.
+  await query(
+    `${SEEN_IN_SCORECARDS}     INSERT INTO players (id, full_name, short_name, created_at, updated_at)
+     SELECT DISTINCT ON (s.player_id) s.player_id, s.name, s.name, NOW(), NOW() FROM seen s
+      WHERE s.player_id LIKE 'cb:player:%' AND s.name IS NOT NULL AND s.name <> ''
+     ON CONFLICT (id) DO NOTHING`,
+    [String(sinceDays)],
+  );
+  const r = await query(
+    `${SEEN_IN_SCORECARDS}     INSERT INTO team_squad_members (team_id, player_id, source, updated_at)
+     SELECT s.team_id, s.player_id, 'derived', NOW() FROM seen s
+      WHERE s.team_id LIKE 'cb:team:%' AND s.player_id LIKE 'cb:player:%'
+        AND EXISTS (SELECT 1 FROM teams t WHERE t.id = s.team_id)
+        AND NOT EXISTS (SELECT 1 FROM team_squad_members x WHERE x.team_id = s.team_id AND x.source = 'roster')
+     ON CONFLICT (team_id, player_id) DO NOTHING`,
+    [String(sinceDays)],
+  );
+  return r.rowCount ?? 0;
+}
