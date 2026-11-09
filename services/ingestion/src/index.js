@@ -107,7 +107,7 @@ process.on('SIGINT', shutdown);
 process.on('SIGTERM', shutdown);
 
 log.info('starting ingestion service', {
-  provider: PROVIDERS.SPORTRADAR,
+  provider: process.env.DATA_PROVIDER || PROVIDERS.SPORTRADAR,
   pollIntervalMs: { live: POLL_INTERVAL_LIVE_MS, idle: POLL_INTERVAL_IDLE_MS },
 });
 

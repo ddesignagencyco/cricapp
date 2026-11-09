@@ -11,6 +11,7 @@ import {
   TIMELINE_REVISION_KEY,
 } from './store.js';
 import { getCallStats } from './providers/index.js';
+import { pickLiveIds } from './liveSelection.js';
 import redis, { redisKeys } from './redis.js';
 import {
   fetchLiveSchedule,
@@ -18,6 +19,9 @@ import {
   fetchMatchTimeline,
   fetchMatchTimelineDelta,
 } from './providers/index.js';
+
+/** Cap on matches followed per cycle (0 = all). Each followed match costs provider requests. */
+const MAX_LIVE_MATCHES = Number(process.env.POLL_MAX_LIVE_MATCHES || 0);
 
 const DELTAS_ENABLED = process.env.LIVE_TIMELINE_DELTAS === 'true';
 /** Full timeline.json during live play; 0 disables. Default 3 (~every 3 live poll cycles). */
@@ -163,9 +167,7 @@ async function heldLiveIds(scheduleIds) {
 
 export async function pollOnce() {
   const liveEvents = await fetchLiveSchedule();
-  const scheduleIds = liveEvents
-    .filter((se) => IN_PLAY_STATUSES.has(se.status))
-    .map((se) => se.id);
+  const scheduleIds = pickLiveIds(liveEvents, IN_PLAY_STATUSES, MAX_LIVE_MATCHES);
   const liveIds = [...scheduleIds, ...(await heldLiveIds(new Set(scheduleIds)))];
 
   for (const id of liveIds) {
