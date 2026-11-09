@@ -302,7 +302,11 @@ function ScoreSide({ view, side }: { view: MatchViewModel; side: 'home' | 'away'
             </p>
           ) : (
             <p className="mt-0.5 text-sm text-stext">
-              {view.isUpcoming ? 'Yet to start' : 'No score recorded'}
+              {view.isUpcoming
+                ? 'Yet to start'
+                : !view.isCompleted && (view.headline.home?.score || view.headline.away?.score)
+                  ? 'Yet to bat'
+                  : 'No score recorded'}
             </p>
           )}
           {headline && headline.runRate ? (

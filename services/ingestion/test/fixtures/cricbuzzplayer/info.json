@@ -1,0 +1,211 @@
+{
+ "id": "13170",
+ "bat": "Right Handed Bat",
+ "bowl": "Right-arm fast-medium",
+ "name": "Aaron Hardie",
+ "fullName": "Aaron Mark Hardie",
+ "role": "Batting Allrounder",
+ "birthPlace": "Bournemouth, Dorset",
+ "intlTeam": "Australia",
+ "teams": "Western Australia XI, Australia U19, Cricket Australia XI, Perth Scorchers, Western Australia, Australia A, Surrey, Prime Ministers XI, Australia, Texas Super Kings, Punjab Kings, Peshawar Zalmi, San Francisco Unicorns, Perth Scorchers XI",
+ "DoB": "January 07, 1999 (27 years)",
+ "image": "http://i.cricketcb.com/stats/img/faceImages/13170.jpg",
+ "bio": "Amongst a host of other well-built all-rounders going around the Australian circuit, Aaron Hardie is a right-handed batter and a useful right-arm medium-pace bowler. He dismissed Root, playing for Cri",
+ "rankings": {
+  "bat": {},
+  "bowl": {
+   "t20BestRank": "71"
+  },
+  "all": {
+   "t20Rank": "64",
+   "t20BestRank": "31",
+   "t20DiffRank": "+1"
+  }
+ },
+ "appIndex": {
+  "seoTitle": "Aaron Hardie Profile - Cricbuzz | Cricbuzz.com",
+  "webURL": "http://www.cricbuzz.com/profiles/13170/aaron-hardie"
+ },
+ "DoBFormat": "January 07, 1999",
+ "faceImageId": 619878,
+ "teamNameIds": [
+  {
+   "teamId": "436",
+   "teamName": "Western Australia XI"
+  },
+  {
+   "teamId": "129",
+   "teamName": "Australia U19"
+  },
+  {
+   "teamId": "306",
+   "teamName": "Cricket Australia XI"
+  },
+  {
+   "teamId": "197",
+   "teamName": "Perth Scorchers"
+  },
+  {
+   "teamId": "87",
+   "teamName": "Western Australia"
+  },
+  {
+   "teamId": "79",
+   "teamName": "Australia A"
+  },
+  {
+   "teamId": "148",
+   "teamName": "Surrey"
+  },
+  {
+   "teamId": "279",
+   "teamName": "Prime Ministers XI"
+  },
+  {
+   "teamId": "4",
+   "teamName": "Australia"
+  },
+  {
+   "teamId": "1577",
+   "teamName": "Texas Super Kings"
+  },
+  {
+   "teamId": "65",
+   "teamName": "Punjab Kings"
+  },
+  {
+   "teamId": "334",
+   "teamName": "Peshawar Zalmi"
+  },
+  {
+   "teamId": "1584",
+   "teamName": "San Francisco Unicorns"
+  },
+  {
+   "teamId": "3197",
+   "teamName": "Perth Scorchers XI"
+  }
+ ],
+ "playerTeamIds": "436, 129, 306, 197, 87, 79, 148, 279, 4, 1577, 65, 334, 1584, 3197",
+ "intlTeamImageId": 776202,
+ "recentBatting": {
+  "headers": [
+   "Score",
+   "OPPN.",
+   "Format",
+   "Date"
+  ],
+  "rows": [
+   {
+    "values": [
+     "153772",
+     "DNB",
+     "BAN",
+     "T20I",
+     "21 Jun 26"
+    ],
+    "followUpLinkText": "/live-cricket-scores/153772/ban-vs-aus-3rd-t20i-australia-tour-of-bangladesh-2026"
+   },
+   {
+    "values": [
+     "153761",
+     "DNB",
+     "BAN",
+     "T20I",
+     "19 Jun 26"
+    ],
+    "followUpLinkText": "/live-cricket-scores/153761/ban-vs-aus-2nd-t20i-australia-tour-of-bangladesh-2026"
+   },
+   {
+    "values": [
+     "117017",
+     "10(16)",
+     "RSA",
+     "ODI",
+     "22 Aug 25"
+    ],
+    "followUpLinkText": "/live-cricket-scores/117017/aus-vs-rsa-2nd-odi-south-africa-tour-of-australia-2025"
+   },
+   {
+    "values": [
+     "117008",
+     "4(10)",
+     "RSA",
+     "ODI",
+     "19 Aug 25"
+    ],
+    "followUpLinkText": "/live-cricket-scores/117008/aus-vs-rsa-1st-odi-south-africa-tour-of-australia-2025"
+   },
+   {
+    "values": [
+     "116990",
+     "1(2)",
+     "RSA",
+     "T20I",
+     "16 Aug 25"
+    ],
+    "followUpLinkText": "/live-cricket-scores/116990/aus-vs-rsa-3rd-t20i-south-africa-tour-of-australia-2025"
+   }
+  ]
+ },
+ "recentBowling": {
+  "headers": [
+   "Wickets",
+   "OPPN.",
+   "Format",
+   "Date"
+  ],
+  "rows": [
+   {
+    "values": [
+     "153772",
+     "0-4",
+     "BAN",
+     "T20I",
+     "21 Jun 26"
+    ],
+    "followUpLinkText": "/live-cricket-scores/153772/ban-vs-aus-3rd-t20i-australia-tour-of-bangladesh-2026"
+   },
+   {
+    "values": [
+     "153761",
+     "2-40",
+     "BAN",
+     "T20I",
+     "19 Jun 26"
+    ],
+    "followUpLinkText": "/live-cricket-scores/153761/ban-vs-aus-2nd-t20i-australia-tour-of-bangladesh-2026"
+   },
+   {
+    "values": [
+     "117017",
+     "0-35",
+     "RSA",
+     "ODI",
+     "22 Aug 25"
+    ],
+    "followUpLinkText": "/live-cricket-scores/117017/aus-vs-rsa-2nd-odi-south-africa-tour-of-australia-2025"
+   },
+   {
+    "values": [
+     "117008",
+     "0-20",
+     "RSA",
+     "ODI",
+     "19 Aug 25"
+    ],
+    "followUpLinkText": "/live-cricket-scores/117008/aus-vs-rsa-1st-odi-south-africa-tour-of-australia-2025"
+   },
+   {
+    "values": [
+     "116990",
+     "0-33",
+     "RSA",
+     "T20I",
+     "16 Aug 25"
+    ],
+    "followUpLinkText": "/live-cricket-scores/116990/aus-vs-rsa-3rd-t20i-south-africa-tour-of-australia-2025"
+   }
+  ]
+ }
+}

@@ -17,6 +17,7 @@ import { getInitials } from '../../utils/helpers';
 import type { NewsArticle } from '../../types';
 import { RelatedNewsPanel, useLinkedNews } from './RelatedNewsPanel';
 import { entityNewsHref } from '../EntityLinks';
+import PlayerCareerPanel, { readExtras } from './PlayerCareerPanel';
 
 const playerTabs = [
   { key: 'profile', label: 'Profile', icon: User },
@@ -48,6 +49,7 @@ export default function PlayerDetailBody({ player, relatedNews = [] }: Props) {
   const team = player.team;
   const nickname = player.shortName?.split(', ')[0];
   const initials = getInitials(name);
+  const extras = readExtras(player.providerProfile);
   const role = String(player.role || 'Player')
     .replace(/_/g, ' ')
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
@@ -167,6 +169,12 @@ export default function PlayerDetailBody({ player, relatedNews = [] }: Props) {
           <StatCard compact label="Batting" value={player.battingStyle || '—'} sub="Style" />
           <StatCard compact label="Bowling" value={player.bowlingStyle || '—'} sub="Style" tone="accent" />
           <StatCard compact label="Team" value={team?.abbr || '—'} sub="Franchise" tone="gold" />
+        </div>
+      )}
+
+      {tab === 'profile' && extras && (
+        <div className="fade-in">
+          <PlayerCareerPanel extras={extras} />
         </div>
       )}
 

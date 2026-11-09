@@ -944,6 +944,28 @@ export async function listEventIdsWithoutMatchSummary({ limit = 20 } = {}) {
  * Player ids that still lack profile-derived fields — progressive profile sync queue.
  */
 export async function listPlayerIdsNeedingProfile({ limit = 15 } = {}) {
+  // Cricbuzz players: never profiled, playing for a team in a live / upcoming match first.
+  const cb = await query(
+    `SELECT p.id FROM players p
+      LEFT JOIN player_profiles pp ON pp.player_id = p.id
+      WHERE p.id LIKE 'cb:player:%' AND pp.player_id IS NULL
+      ORDER BY (p.team_id IN (
+                  SELECT team_scores->'home'->>'id' FROM matches WHERE status IN ('live','upcoming')
+                  UNION SELECT team_scores->'away'->>'id' FROM matches WHERE status IN ('live','upcoming')
+                )) DESC NULLS LAST,
+               p.updated_at DESC
+      LIMIT $1`,
+    [limit],
+  );
+  // Profiles saved while the stats host was unavailable are completed once a day.
+  const retry = await query(
+    `SELECT player_id AS id FROM player_profiles
+      WHERE player_id LIKE 'cb:player:%'
+        AND COALESCE(payload->'cricbuzz'->>'statsComplete', 'true') = 'false'
+        AND updated_at < NOW() - INTERVAL '1 day'
+      ORDER BY updated_at ASC LIMIT $1`,
+    [limit],
+  );
   const r = await query(
     `SELECT id FROM players
      WHERE id LIKE 'sr:player:%'
@@ -956,7 +978,7 @@ export async function listPlayerIdsNeedingProfile({ limit = 15 } = {}) {
      LIMIT $1`,
     [limit],
   );
-  return r.rows.map((x) => x.id).filter(Boolean);
+  return [...cb.rows, ...retry.rows, ...r.rows].map((x) => x.id).filter(Boolean).slice(0, limit);
 }
 
 export async function listTeamsWithoutSync({ limit = 10 } = {}) {

@@ -4,6 +4,7 @@ import { cricbuzz2, cricbuzz3 } from './cricbuzz.js';
 import * as cricbuzzu from './cricbuzzu.js';
 import * as live1 from './live1.js';
 import * as highlightly from './highlightly.js';
+import { fetchPlayerProfile as cricbuzzPlayerProfile } from './cricbuzzPlayer.js';
 import { getRapidStats } from './rapidHttp.js';
 import { ProviderUnsupportedError } from './errors.js';
 
@@ -18,7 +19,8 @@ import { ProviderUnsupportedError } from './errors.js';
  * failing moves on to the next provider.
  */
 
-const MODULES = { sportradar, cricbuzz, cricbuzz2, cricbuzz3, cricbuzzu, live1, highlightly };
+// Profiles span two hosts, so the cricbuzz3 slot carries them; the budgets of both are respected inside.
+const MODULES = { sportradar, cricbuzz, cricbuzz2, cricbuzz3: { ...cricbuzz3, fetchPlayerProfile: cricbuzzPlayerProfile }, cricbuzzu, live1, highlightly };
 const CHAINS = {
   sportradar: ['sportradar'],
   cricbuzz: ['cricbuzz'],
