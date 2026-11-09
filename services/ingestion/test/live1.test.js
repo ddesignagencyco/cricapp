@@ -43,6 +43,7 @@ function mockFetch(route) {
 
 /** Routes every host the tests touch to the recorded responses. */
 const route = (url) => {
+  if (url.includes('/scard')) return fx('cricbuzz', 'scorecard-t10-chase.json');
   if (url.includes('/commentary')) return live1Fx('commentary-psl-inn2.json');
   if (url.includes('/point-table')) return live1Fx('point-table.json');
   if (url.includes('/squads')) return live1Fx('squads.json');
@@ -113,6 +114,7 @@ describe('live1 timeline (recorded PSL match, second innings)', () => {
     const t = await live1.fetchMatchTimeline('lv:match:sx_wVYScYVr');
     assert.equal(t.sport_event.id, 'lv:match:sx_wVYScYVr');
     assert.match(calls[0], /\/cricket\/api\/v2\/match\/sx_wVYScYVr\/commentary$/);
+    assert.equal(t.statistics, undefined, 'a live1-only match has no Cricbuzz scorecard to attach');
   });
 
   it('delta returns only events after the given sequence', async () => {
@@ -132,9 +134,28 @@ describe('cricbuzz id → live1 match mapping', () => {
     const t = await facade.fetchMatchTimeline('cb:match:176143'); // RDC v UT, Abu Dhabi T10
     assert.equal(t.sport_event.id, 'cb:match:176143', 'stored under the poller\'s id');
     assert.ok(calls.some((u) => u.includes('/match/sx_1n3nEZvc/commentary')), calls.join('\n'));
+    // the scorecard the web draws is attached to the same payload
+    assert.equal(t.statistics.innings.length, 2);
+    assert.deepEqual(t.sport_event.competitors.map((c) => c.qualifier), ['home', 'away']);
+    assert.ok(t.statistics.innings[0].teams[0].statistics.batting.players.length >= 5);
     const before = calls.filter((u) => u.includes('match/schedule')).length;
     await live1.fetchMatchTimeline('cb:match:176143'); // lookup is remembered; commentary is cached
     assert.equal(calls.filter((u) => u.includes('match/schedule')).length, before);
+  });
+
+  it('still returns the commentary when the scorecard cannot be fetched', async () => {
+    mockFetch((url) => (url.includes('/scard') ? { message: 'x' } && undefined : route(url)));
+    const t = await facade.fetchMatchTimeline('cb:match:176143');
+    assert.ok(t.timeline.length > 0);
+    assert.equal(t.statistics, undefined);
+  });
+
+  it('a match live1 does not list still gets its scorecard (no commentary)', async () => {
+    mockFetch((url) => (url.includes('match/schedule') ? [] : route(url)));
+    const t = await facade.fetchMatchTimeline('cb:match:176143');
+    assert.deepEqual(t.timeline, []);
+    assert.equal(t.statistics.innings.length, 2);
+    assert.equal(t.sport_event.id, 'cb:match:176143');
   });
 
   it('refuses ids it cannot map instead of guessing', async () => {

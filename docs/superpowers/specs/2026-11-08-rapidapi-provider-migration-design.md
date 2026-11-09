@@ -46,7 +46,15 @@ Not supported yet (facade throws `ProviderUnsupportedError`, callers already ski
 - Home/away is assigned by batting order in the adapter (the normalizer's period-score logic assumes the second innings is "away"). Multi-innings Tests are approximate.
 - Highlightly adapter not implemented.
 - live1 free plan is 100 requests; a commentary page is ~400 KB and a live timeline refresh costs one request per cache TTL (60 s) per match, so live ball-by-ball cannot be sustained on the free plan. Standings/squads are cached 6 h.
-- PSL fixtures, leaders and match lineups still have no RapidAPI source here.
+- Lineups, player/team profiles and head-to-head still have no RapidAPI source here.
+
+## Reference data (added 2026-11-09)
+`providers/cricbuzzu.js` (unofficial-cricbuzz, 500 req/month) fills what the live Cricbuzz hosts lack, with `cb:*` ids shared with live matches:
+- tournament catalogue (`series/list` + `list-archives`, 4 categories → 4 tours via the existing `backfillTours`) plus the app's own PSL tournament row (`sr:tournament:14931`, needed as the parent of its seasons);
+- PSL 2024/2025/2026 (Cricbuzz series 7492 / 11372 / 11537): fixtures, standings, 11 leader categories, squads, tournament results;
+- 2025 has no upstream points table, so standings are derived from league-stage results. Checked against the official tables: 2026 matches exactly (points, record, NRR to 3 dp); 2024 matches on points, record and order but NRR differs for two teams (rain-reduced games);
+- team logos and player photos from `static.cricbuzz.com/a/img/v1/152x152/i1/c{imageId}/i.jpg` (public, no quota).
+The web scorecard reads `statistics.innings[]` and `sport_event.competitors` from the *timeline* payload, so the live1 timeline for a `cb:` match carries a scorecard built from Cricbuzz's `scard` response (cached from the summary poll); matches live1 does not list get a scorecard-only payload. Checked against the web app's own `readProviderInningsCards`.
 
 ## Testing
 Node test runner, no network and no quota: mocked `fetch`, in-memory cache store, fixtures. Covers state mapping, SR-shape output through `normalizeMatch`, cache hit, budget block, and facade fallback.

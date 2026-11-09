@@ -55,12 +55,17 @@ function flattenMatches(payload) {
   return out;
 }
 
+/** Cricbuzz serves team flags / logos publicly by image id, so a logo costs no API request. */
+const logoUrl = (imageId) =>
+  imageId ? `https://static.cricbuzz.com/a/img/v1/152x152/i1/c${imageId}/i.jpg` : undefined;
+
 function competitor(team, qualifier) {
   return {
     id: teamId(team?.teamId ?? team?.id),
     name: team?.teamName ?? team?.name ?? null,
     abbreviation: team?.teamSName ?? team?.shortName ?? null,
     qualifier,
+    logo_url: logoUrl(team?.imageId),
   };
 }
 
@@ -159,6 +164,122 @@ export function toSummary(info, scard) {
 
 const onDate = (m, date) => iso(m.matchInfo.startDate)?.slice(0, 10) === date;
 
+const titleCaseName = (name) =>
+  name && name === name.toUpperCase() ? name.toLowerCase().replace(/\b[a-z]/g, (c) => c.toUpperCase()) : name;
+
+/**
+ * The keywords (c, b, lbw, st) are matched case-sensitively: Cricbuzz writes them in lowercase, and
+ * a fielder called "B Azam" must not be read as the separator before the bowler.
+ *
+ * "c Sahibzada Farhan b Awais Ali" → the dismissal the web scorecard reads. `names` maps
+ * player names to ids so the bowler and fielder can link to their pages.
+ */
+export function parseDismissal(outdec, names) {
+  const t = String(outdec ?? '').trim();
+  if (!t || /^(not out|batting)$/i.test(t)) return null;
+  const idOf = (n) => {
+    const id = names.get(norm(n));
+    return id == null ? null : `cb:player:${id}`;
+  };
+  let m;
+  if ((m = t.match(/^c (?:&|and) b (.+)$/))) return { type: 'caught', bowler: idOf(m[1]), fielder: idOf(m[1]) };
+  if ((m = t.match(/^c (.+?) b (.+)$/))) return { type: 'caught', bowler: idOf(m[2]), fielder: idOf(m[1]) };
+  if ((m = t.match(/^lbw b (.+)$/))) return { type: 'lbw', bowler: idOf(m[1]), fielder: null };
+  if ((m = t.match(/^st (.+?) b (.+)$/))) return { type: 'stumped', bowler: idOf(m[2]), fielder: idOf(m[1]) };
+  if ((m = t.match(/^run out \((.+?)\)$/i))) return { type: 'run_out', bowler: null, fielder: idOf(m[1].split('/')[0]) };
+  if ((m = t.match(/^hit wicket b (.+)$/))) return { type: 'hit_wicket', bowler: idOf(m[1]), fielder: null };
+  if ((m = t.match(/^b (.+)$/))) return { type: 'bowled', bowler: idOf(m[1]), fielder: null };
+  if (/^retired/i.test(t)) return { type: 'retired', bowler: null, fielder: null };
+  return { type: t, bowler: null, fielder: null };
+}
+
+/**
+ * List entry + scorecard → what the web's scorecard reads from the timeline payload:
+ * `sport_event.competitors` and `statistics.innings[]` with every batter's and bowler's
+ * figures. Home is the side that batted first, as everywhere else in this adapter.
+ */
+export function toStatistics(info, scard) {
+  const t1 = info.team1 ?? {};
+  const t2 = info.team2 ?? {};
+  const list = scard?.scorecard ?? [];
+  const home = teamForInnings(list[0], t1, t2) ?? t1;
+  const away = home === t1 ? t2 : t1;
+
+  const names = new Map();
+  for (const inn of list) {
+    for (const p of [...(inn.batsman ?? []), ...(inn.bowler ?? [])]) names.set(norm(p.name), p.id);
+  }
+  const teamRef = (t) => ({ id: teamId(t.teamId), name: titleCaseName(t.teamName), abbreviation: t.teamSName });
+
+  const innings = list.map((inn, i) => {
+    const bat = teamForInnings(inn, t1, t2) ?? (i % 2 === 0 ? home : away);
+    const bowl = bat === t1 ? t2 : t1;
+    const wickets = new Map((inn.fow?.fow ?? []).map((f) => [f.batsmanid, f]));
+
+    const batters = (inn.batsman ?? [])
+      .filter((b) => b.outdec || b.balls > 0) // an empty line is a player who has yet to bat
+      .map((b, order) => {
+        const d = parseDismissal(b.outdec, names);
+        const fow = wickets.get(b.id);
+        const over = fow ? Number(fow.overnbr) : null;
+        return {
+          id: `cb:player:${b.id}`,
+          name: b.name,
+          statistics: {
+            order: order + 1,
+            runs: b.runs,
+            balls_faced: b.balls,
+            fours: b.fours,
+            sixes: b.sixes,
+            strike_rate: Number(b.strkrate) || 0,
+            ...(d && {
+              dismissal: {
+                type: d.type,
+                bowler_id: d.bowler,
+                fielder_id: d.fielder,
+                ...(over != null && {
+                  // fall-of-wicket overs are 0-based cricket notation; the reader wants one-based
+                  over_number: Math.floor(over) + 1,
+                  ball_number: Math.round((over - Math.floor(over)) * 10) || undefined,
+                }),
+              },
+            }),
+          },
+        };
+      });
+
+    const bowlers = (inn.bowler ?? []).map((b, order) => ({
+      id: `cb:player:${b.id}`,
+      name: b.name,
+      statistics: {
+        order: order + 1,
+        overs_bowled: String(b.overs),
+        maidens: b.maidens,
+        conceded_runs: b.runs,
+        wickets: b.wickets,
+        economy_rate: Number(b.economy) || 0,
+        dot_balls: b.dots ?? undefined,
+      },
+    }));
+
+    return {
+      number: inn.inningsid ?? i + 1,
+      batting_team: teamId(bat.teamId),
+      bowling_team: teamId(bowl.teamId),
+      overs_completed: Math.floor(Number(inn.overs)) || 0,
+      teams: [
+        { ...teamRef(bat), statistics: { batting: { runs: inn.score, wickets_lost: inn.wickets, players: batters } } },
+        { ...teamRef(bowl), statistics: { bowling: { players: bowlers } } },
+      ],
+    };
+  });
+
+  return {
+    competitors: [competitor(home, 'home'), competitor(away, 'away')],
+    statistics: { innings },
+  };
+}
+
 /**
  * One adapter per Cricbuzz Cricket RapidAPI host. Both hosts serve the same endpoints and
  * JSON, so a second host is a second free-tier quota: each instance spends its own budget
@@ -235,7 +356,14 @@ export function createCricbuzz({ provider, host, budgetLimit, cacheNamespace = '
     };
   }
 
-  return { fetchLiveSchedule, fetchMatchSummary, fetchDailySchedule, fetchDailyResults, findMatchInfo };
+  /** List entry + scorecard for a match: the raw material for the timeline's scorecard. */
+  async function fetchScorecardBundle(id) {
+    const info = await findMatchInfo(id);
+    const scard = await get(`mcenter/v1/${rawMatchId(id)}/scard`, LIVE_TTL_S);
+    return { info, scard };
+  }
+
+  return { fetchLiveSchedule, fetchMatchSummary, fetchDailySchedule, fetchDailyResults, findMatchInfo, fetchScorecardBundle };
 }
 
 const primary = createCricbuzz({
@@ -252,6 +380,19 @@ export const cricbuzz2 = createCricbuzz({
 });
 
 export const { fetchLiveSchedule, fetchMatchSummary, fetchDailySchedule, fetchDailyResults } = primary;
+
+/** Scorecard payload for the timeline (`sport_event.competitors` + `statistics`), trying both hosts. */
+export async function cricbuzzStatistics(id) {
+  let bundle;
+  try {
+    bundle = await primary.fetchScorecardBundle(id);
+  } catch (err) {
+    bundle = await cricbuzz2.fetchScorecardBundle(id).catch(() => {
+      throw err;
+    });
+  }
+  return toStatistics(bundle.info, bundle.scard);
+}
 
 /** List entry (teams, start time) for a Cricbuzz match, trying both hosts. Used to map ids across providers. */
 export async function cricbuzzMatchInfo(id) {

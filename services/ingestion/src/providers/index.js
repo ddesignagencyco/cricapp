@@ -1,6 +1,7 @@
 import * as sportradar from '../sportradar.js';
 import * as cricbuzz from './cricbuzz.js';
 import { cricbuzz2 } from './cricbuzz.js';
+import * as cricbuzzu from './cricbuzzu.js';
 import * as live1 from './live1.js';
 import * as highlightly from './highlightly.js';
 import { getRapidStats } from './rapidHttp.js';
@@ -10,20 +11,23 @@ import { ProviderUnsupportedError } from './errors.js';
  * Provider facade. Same function names as sportradar.js, so callers only change their
  * import. DATA_PROVIDER picks the chain; the default (sportradar) preserves old behaviour.
  *
- *   sportradar | cricbuzz | cricbuzz2 | live1 | highlightly | auto (= cricbuzz, cricbuzz2, live1, highlightly)
+ *   sportradar | cricbuzz | cricbuzz2 | cricbuzzu | live1 | highlightly
+ *   | auto (= cricbuzz, cricbuzz2, cricbuzzu, live1, highlightly)
  *
  * With more than one provider in the chain, a call that is unsupported, over budget or
  * failing moves on to the next provider.
  */
 
-const MODULES = { sportradar, cricbuzz, cricbuzz2, live1, highlightly };
+const MODULES = { sportradar, cricbuzz, cricbuzz2, cricbuzzu, live1, highlightly };
 const CHAINS = {
   sportradar: ['sportradar'],
   cricbuzz: ['cricbuzz'],
   cricbuzz2: ['cricbuzz2'],
+  cricbuzzu: ['cricbuzzu'],
   live1: ['live1'],
   highlightly: ['highlightly'],
-  auto: ['cricbuzz', 'cricbuzz2', 'live1', 'highlightly'],
+  // cricbuzzu before live1: reference data (PSL, catalogue) then shares Cricbuzz ids with live matches
+  auto: ['cricbuzz', 'cricbuzz2', 'cricbuzzu', 'live1', 'highlightly'],
 };
 
 export function providerChain() {

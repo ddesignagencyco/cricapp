@@ -1,6 +1,6 @@
 import { rapidGet, remember } from './rapidHttp.js';
 import { ProviderUnsupportedError } from './errors.js';
-import { cricbuzzMatchInfo } from './cricbuzz.js';
+import { cricbuzzMatchInfo, cricbuzzStatistics } from './cricbuzz.js';
 
 /**
  * cricbuzz-live1 (RapidAPI) → SportsRadar-shaped JSON, for what the Cricbuzz Cricket hosts
@@ -95,7 +95,7 @@ export function dismissalType(text) {
  * `runs` is the total on the ball including extras ("1wd", "4lb", "2NB" all parse to the
  * total) — verified: per-ball runs sum exactly to the innings total.
  */
-export function toTimeline(entries, matchId) {
+export function toTimeline(entries, matchId, scorecard = null) {
   const list = Array.isArray(entries) ? entries : [];
   const widgets = new Map();
   for (const w of list) {
@@ -165,13 +165,15 @@ export function toTimeline(entries, matchId) {
   const latest = timeline[timeline.length - 1];
 
   return {
-    sport_event: { id: matchId },
+    // competitors + per-player statistics let the web draw the scorecard (cb: matches only)
+    sport_event: { id: matchId, ...(scorecard && { competitors: scorecard.competitors }) },
     sport_event_status: {
       current_inning: latest?.inning ?? null,
       display_score: latest?.display_score ?? null,
       display_overs: latest?.display_overs ?? null,
       period_scores,
     },
+    ...(scorecard && { statistics: scorecard.statistics }),
     timeline,
   };
 }
@@ -211,10 +213,32 @@ async function rawMatchId(id) {
   throw new ProviderUnsupportedError(`live1 cannot serve match id ${s}`);
 }
 
+/** The Cricbuzz scorecard for a `cb:` match, or null (it must never lose the commentary). */
+async function scorecardFor(id) {
+  if (!String(id).startsWith('cb:match:')) return null;
+  return cricbuzzStatistics(id).catch((err) => {
+    console.warn(`[live1] no scorecard for ${id}: ${err.message}`);
+    return null;
+  });
+}
+
 export async function fetchMatchTimeline(id) {
-  const raw = await rawMatchId(id);
+  let raw;
+  try {
+    raw = await rawMatchId(id);
+  } catch (err) {
+    // live1 does not list this match (e.g. an old result). The scorecard alone is still
+    // worth storing, so the match page can show the batting and bowling cards.
+    if (err instanceof ProviderUnsupportedError) {
+      const scorecard = await scorecardFor(id);
+      if (scorecard) return toTimeline([], id, scorecard);
+    }
+    throw err;
+  }
   const entries = await get(`match/${raw}/commentary`, LIVE_TTL_S);
-  return toTimeline(entries, id);
+  // The scorecard comes from Cricbuzz, so only Cricbuzz match ids have one. Its request is
+  // the one the summary poll already made (cached).
+  return toTimeline(entries, id, await scorecardFor(id));
 }
 
 /** Same request as the full timeline (so it is a cache hit), filtered to entries after `since`. */

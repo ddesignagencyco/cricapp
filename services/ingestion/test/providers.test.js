@@ -176,6 +176,63 @@ describe('cricbuzz adapter (recorded responses)', () => {
   });
 });
 
+describe('scorecard statistics (recorded T10 chase and live Test)', () => {
+  const info = (id) => {
+    const live = fixture('live.json');
+    return live.typeMatches.flatMap((t) => t.seriesMatches).flatMap((m) => m.seriesAdWrapper?.matches ?? [])
+      .map((m) => m.matchInfo).find((i) => i.matchId === id);
+  };
+
+  it('every innings adds up: batters runs + extras = the innings score', () => {
+    const scard = fixture('scorecard-t10-chase.json');
+    const { statistics } = cricbuzz.toStatistics(info(176143), scard);
+    assert.equal(statistics.innings.length, 2);
+    statistics.innings.forEach((inn, i) => {
+      const batting = inn.teams[0].statistics.batting;
+      const runs = batting.players.reduce((n, p) => n + p.statistics.runs, 0);
+      assert.equal(runs + scard.scorecard[i].extras.total, batting.runs, `innings ${i + 1}`);
+      assert.equal(batting.wickets_lost, scard.scorecard[i].wickets);
+    });
+  });
+
+  it('keeps who bowled and who caught, with fall-of-wicket overs, for the web scorecard', () => {
+    const { statistics, competitors } = cricbuzz.toStatistics(info(176143), fixture('scorecard-t10-chase.json'));
+    const first = statistics.innings[0];
+    const pooran = first.teams[0].statistics.batting.players.find((p) => p.name === 'Nicholas Pooran').statistics;
+    assert.equal(pooran.dismissal.type, 'caught');
+    assert.equal(pooran.dismissal.bowler_id, 'cb:player:22936'); // Awais Ali
+    assert.match(pooran.dismissal.fielder_id, /^cb:player:\d+$/); // Sahibzada Farhan, from the other innings
+    assert.deepEqual([pooran.dismissal.over_number, pooran.dismissal.ball_number], [1, 1]); // fell on 0.1
+    assert.equal(pooran.order, 1);
+    const awais = first.teams[1].statistics.bowling.players.find((p) => p.name === 'Awais Ali').statistics;
+    assert.deepEqual([awais.overs_bowled, awais.wickets, awais.conceded_runs], ['2', 2, 16]);
+    assert.deepEqual(competitors.map((c) => c.qualifier), ['home', 'away']);
+    assert.equal(first.batting_team, competitors[0].id, 'home is the side that batted first');
+  });
+
+  it('players still at the crease have no dismissal, players yet to bat are left out', () => {
+    const { statistics } = cricbuzz.toStatistics(info(176143), fixture('scorecard-t10-chase.json'));
+    const batters = statistics.innings[0].teams[0].statistics.batting.players;
+    const notOut = batters.filter((b) => !b.statistics.dismissal);
+    assert.ok(notOut.length >= 1 && notOut.every((b) => b.statistics.balls_faced > 0));
+  });
+
+  it('parses every dismissal form', () => {
+    const names = new Map([['a b', 1], ['c d', 2], ['e f', 3]]);
+    const t = (s) => cricbuzz.parseDismissal(s, names);
+    assert.deepEqual(t('c A B b C D'), { type: 'caught', bowler: 'cb:player:2', fielder: 'cb:player:1' });
+    assert.deepEqual(t('c & b E F'), { type: 'caught', bowler: 'cb:player:3', fielder: 'cb:player:3' });
+    assert.equal(t('lbw b C D').type, 'lbw');
+    assert.equal(t('b C D').type, 'bowled');
+    assert.deepEqual(t('st A B b C D'), { type: 'stumped', bowler: 'cb:player:2', fielder: 'cb:player:1' });
+    assert.deepEqual(t('run out (A B/E F)'), { type: 'run_out', bowler: null, fielder: 'cb:player:1' });
+    assert.deepEqual(t('c B Azam b C D'), { type: 'caught', bowler: 'cb:player:2', fielder: null }, 'a capital B in a name is not the separator');
+    assert.equal(t('not out'), null);
+    assert.equal(t('batting'), null);
+    assert.equal(t('c Unknown Sub b C D').fielder, null, 'a substitute not in the lists links nowhere');
+  });
+});
+
 describe('second Cricbuzz host as a quota pool', () => {
   beforeEach(() => {
     setStore(memoryStore());

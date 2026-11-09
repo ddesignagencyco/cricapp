@@ -31,7 +31,7 @@ export function roleFromSportradarType(p) {
   return 'player';
 }
 
-function resolveProfileUrlFromPayload(p) {
+export function resolveProfileUrlFromPayload(p) {
   if (!p || typeof p !== 'object') return null;
   if (typeof p.avatar_url === 'string') return p.avatar_url;
   if (typeof p.headshot_url === 'string') return p.headshot_url;

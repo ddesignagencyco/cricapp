@@ -1,5 +1,6 @@
 import { PSL_LEADER_CATEGORIES } from "./schemas.js";
 import { resolveTeamCountry, resolveTeamLogo } from "./teamMeta.js";
+import { resolveProfileUrlFromPayload } from "./playerMeta.js";
 
 function pickRanked(payload, sortKey) {
   if (!Array.isArray(payload)) return [];
@@ -138,6 +139,7 @@ export function normalizeSquad(raw) {
     nationality: p.nationality ?? p.country_code ?? null,
     dateOfBirth: p.date_of_birth ?? null,
     jerseyNumber: p.jersey_number ?? null,
+    profileUrl: resolveProfileUrlFromPayload(p),
   }));
   return {
     teamId: team.id ?? null,
