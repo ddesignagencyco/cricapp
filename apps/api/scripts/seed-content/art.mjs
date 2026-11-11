@@ -59,6 +59,31 @@ ${scoreline ? `<text x="72" y="${300 + lines.length * 74 + 24}" font-family="sys
 </svg>`;
 }
 
+/** 800x800 square poster for the gallery grid: everything centred and wrapped so a square crop loses nothing. */
+export function posterSvg({ title, category, label, sub }) {
+  const [c1, c2] = PALETTES[category] ?? PALETTES.features;
+  const lines = wrap(title, 17, 3);
+  const y0 = 440 - (lines.length - 1) * 38;
+  const text = lines
+    .map((l, i) => `<text x="400" y="${y0 + i * 76}" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="62" font-weight="700" fill="#ffffff">${esc(l)}</text>`)
+    .join('');
+  const subLines = sub ? wrap(sub, 34, 2) : [];
+  const subText = subLines
+    .map((l, i) => `<text x="400" y="${y0 + lines.length * 76 + 20 + i * 42}" text-anchor="middle" font-family="system-ui, sans-serif" font-size="32" fill="#ffffff" opacity="0.9">${esc(l)}</text>`)
+    .join('');
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" role="img" aria-label="${esc(title)}">
+<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient>
+<pattern id="s" width="40" height="40" patternUnits="userSpaceOnUse" patternTransform="rotate(18)"><rect width="20" height="40" fill="#ffffff" opacity="0.04"/></pattern></defs>
+<rect width="800" height="800" fill="url(#g)"/><rect width="800" height="800" fill="url(#s)"/>
+<g opacity="0.14"><rect x="330" y="-40" width="140" height="880" rx="14" fill="#fff"/></g>
+<circle cx="400" cy="190" r="72" fill="#dc2626" opacity="0.92"/><path d="M340 160c32 20 32 62 0 84M460 160c-32 20-32 62 0 84" stroke="#fff" stroke-width="5" fill="none" opacity="0.85"/>
+<text x="400" y="86" text-anchor="middle" font-family="system-ui, sans-serif" font-size="26" font-weight="700" letter-spacing="5" fill="#ffffff" opacity="0.85">${esc((label ?? category ?? '').toUpperCase())}</text>
+${text}
+${subText}
+<text x="400" y="750" text-anchor="middle" font-family="system-ui, sans-serif" font-size="24" letter-spacing="4" fill="#ffffff" opacity="0.7">CRICAPP</text>
+</svg>`;
+}
+
 export function avatarSvg(name, hue) {
   const initials = name.split(/\s+/).map((p) => p[0]).slice(0, 2).join('').toUpperCase();
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="${esc(name)}"><rect width="200" height="200" fill="hsl(${hue} 55% 38%)"/><text x="100" y="124" text-anchor="middle" font-family="system-ui, sans-serif" font-size="84" font-weight="700" fill="#fff">${esc(initials)}</text></svg>`;

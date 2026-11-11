@@ -14,7 +14,7 @@
 import pg from 'pg';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
-import { heroSvg, avatarSvg, writeAsset } from './art.mjs';
+import { heroSvg, posterSvg, avatarSvg, writeAsset } from './art.mjs';
 import { EXPLAINERS } from './explainers.mjs';
 import { matchResultBrief, cricketToday, tournamentWatch, busiestCompetitions, matchReport, matchPreview, pslTable, batterSpotlight, bowlerSpotlight, recordList, inningsOf } from './generators.mjs';
 
@@ -239,11 +239,12 @@ for (const a of articles) {
 let gallery = 0;
 for (const a of articles.filter((x) => /^(match-report|match-result|match-preview|tournament-watch)-/.test(x.slug)).slice(0, 24)) {
   const file = `/seed/gallery/${a.slug}.svg`;
-  writeAsset(`${PUBLIC}${file}`, heroSvg({ title: a.scoreline || a.title, category: 'features', label: a.label, scoreline: a.title }));
+  const teams = a.title.replace(/^Preview:\s*/, '').split(': ')[0];
+  writeAsset(`${PUBLIC}${file}`, posterSvg({ title: teams, category: a.category, label: a.label, sub: a.scoreline }));
   await q(
     `INSERT INTO gallery_media (id, title, caption, type, purpose, url, public_id, resource_type, width, height, format, created_at, updated_at)
-     VALUES (gen_random_uuid(), $1, $2, 'image', 'gallery', $3, $4, 'image', 1200, 630, 'svg', NOW(), NOW())
-     ON CONFLICT (public_id) DO UPDATE SET title = EXCLUDED.title, caption = EXCLUDED.caption, url = EXCLUDED.url, updated_at = NOW()`,
+     VALUES (gen_random_uuid(), $1, $2, 'image', 'gallery', $3, $4, 'image', 800, 800, 'svg', NOW(), NOW())
+     ON CONFLICT (public_id) DO UPDATE SET title = EXCLUDED.title, caption = EXCLUDED.caption, url = EXCLUDED.url, width = EXCLUDED.width, height = EXCLUDED.height, updated_at = NOW()`,
     [a.label + ': ' + (a.scoreline || a.title), a.summary, file, `seed-gallery-${a.slug}`],
   );
   gallery += 1;
