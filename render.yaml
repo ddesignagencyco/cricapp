@@ -45,11 +45,11 @@ services:
       - key: API_KEY
         sync: false
       - key: CORS_ORIGINS
-        sync: false
+        value: https://cricapp.onrender.com
       - key: JWT_SECRET
         generateValue: true
       - key: PUBLIC_WEB_URL
-        sync: false
+        value: https://cricapp.onrender.com
       - key: AUTH_COOKIE_NAME
         value: cricapp_token
       - key: AUTH_COOKIE_SECURE
@@ -86,7 +86,7 @@ services:
         sync: false
 
   - type: web
-    name: cricapp-web
+    name: cricapp
     runtime: docker
     dockerfilePath: ./apps/web/Dockerfile
     dockerContext: .
@@ -97,12 +97,11 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      # Public URL of cricapp-api (https://<api>.onrender.com). Baked into the client bundle at
-      # build time, so set it before the first build and redeploy after changing it.
+      # Public URL of cricapp-api. Baked into the client bundle at build time: redeploy after changing it.
       - key: NEXT_PUBLIC_API_URL
-        sync: false
+        value: https://cricapp-api.onrender.com
       - key: API_URL
-        sync: false
+        value: https://cricapp-api.onrender.com
       - key: NEXT_PUBLIC_ADSENSE_CLIENT
         sync: false
 
