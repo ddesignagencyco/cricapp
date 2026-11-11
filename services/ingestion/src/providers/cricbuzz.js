@@ -180,6 +180,29 @@ export function toSummary(info, scard) {
   };
 }
 
+/**
+ * `matchScore` on a list entry (`team1Score.inngs1 = {runs, wickets, overs}` ...) → SportsRadar-style
+ * `period_scores`. team1 is "home" and team2 "away", the same order as `toSportEvent`'s competitors,
+ * so the two stay consistent. Innings are numbered in the order Cricbuzz numbers them (`inningsId`).
+ */
+export function periodsFromMatchScore(matchScore) {
+  const innings = [];
+  for (const [side, block] of [['home', matchScore?.team1Score], ['away', matchScore?.team2Score]]) {
+    for (const [key, inn] of Object.entries(block ?? {})) {
+      const n = Number(key.replace(/\D/g, ''));
+      if (!inn || inn.runs == null || !Number.isFinite(n)) continue;
+      innings.push({ order: Number(inn.inningsId) || n, n, side, inn });
+    }
+  }
+  innings.sort((a, b) => a.order - b.order || a.n - b.n);
+  return innings.map(({ side, inn }, i) => ({
+    number: i + 1,
+    [`${side}_score`]: Number(inn.runs),
+    ...(inn.wickets != null ? { [`${side}_wickets`]: Number(inn.wickets) } : {}),
+    display_overs: inn.overs != null ? String(inn.overs) : '0',
+  }));
+}
+
 const onDate = (m, date) => iso(m.matchInfo.startDate)?.slice(0, 10) === date;
 
 const titleCaseName = (name) =>
@@ -409,6 +432,7 @@ export function createCricbuzz({ provider, host, budgetLimit, cacheNamespace = '
             status,
             match_status: matchStatus,
             match_result_text: m.matchInfo.status ?? null,
+            ...(m.matchScore ? { period_scores: periodsFromMatchScore(m.matchScore) } : {}),
           },
         };
       }),

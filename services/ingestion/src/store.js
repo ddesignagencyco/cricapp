@@ -31,7 +31,15 @@ export async function saveMatch(match) {
        END,
        teams = EXCLUDED.teams,
        team_names = EXCLUDED.team_names,
-       team_scores = COALESCE(EXCLUDED.team_scores, matches.team_scores),
+       -- a blank score must not wipe one already stored (the results list carries none)
+       team_scores = CASE
+         WHEN COALESCE(EXCLUDED.team_scores->'home'->>'score', '') = ''
+          AND COALESCE(EXCLUDED.team_scores->'away'->>'score', '') = ''
+          AND (COALESCE(matches.team_scores->'home'->>'score', '') <> ''
+            OR COALESCE(matches.team_scores->'away'->>'score', '') <> '')
+         THEN matches.team_scores
+         ELSE COALESCE(EXCLUDED.team_scores, matches.team_scores)
+       END,
        tournament = COALESCE(EXCLUDED.tournament, matches.tournament),
       tournament_id = COALESCE(EXCLUDED.tournament_id, matches.tournament_id),
        venue = COALESCE(EXCLUDED.venue, matches.venue),
