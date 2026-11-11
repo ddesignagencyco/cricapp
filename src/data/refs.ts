@@ -37,18 +37,6 @@ const KNOWN: Record<string, { color: string; flag?: string; kind?: Team['kind'] 
   'Rawalpindi Pindiz': { color: '#C2417A', kind: 'franchise' },
 };
 
-/** PSL crests, the same files the website shows (cric_info/apps/web/src/utils/helpers.ts). */
-const PSL_LOGOS: Record<string, string> = {
-  'Islamabad United': 'https://psl-t20.com/wp-content/uploads/2016/01/psl-islamabad-united.png',
-  'Hyderabad Kingsmen': 'https://psl-t20.com/wp-content/uploads/2026/03/Hyderabad-Kingsmen-logo-1.png',
-  'Karachi Kings': 'https://psl-t20.com/wp-content/uploads/2017/02/psl-karachi-kings.png',
-  'Lahore Qalandars': 'https://psl-t20.com/wp-content/uploads/2016/01/psl-lahore-qalandars.png',
-  'Multan Sultans': 'https://psl-t20.com/wp-content/uploads/2019/01/psl-multan-sultan.png',
-  'Peshawar Zalmi': 'https://psl-t20.com/wp-content/uploads/2016/01/psl-peshawar-zalmi.png',
-  'Quetta Gladiators': 'https://psl-t20.com/wp-content/uploads/2017/02/psl-quetta-gladiators.png',
-  'Rawalpindi Pindiz': 'https://psl-t20.com/wp-content/uploads/2026/03/Rawalpindiz-Logo.png',
-};
-
 const FULL_MEMBERS = new Set(Object.keys(KNOWN).filter(n => !KNOWN[n].kind));
 
 export const slugify = (s: string) =>
@@ -70,7 +58,9 @@ export function rememberTeam(t: { id: string; name: string; short?: string; kind
     kind: t.kind ?? known?.kind ?? prev?.kind ?? (FULL_MEMBERS.has(name) ? 'international' : 'domestic'),
     flag: known?.flag ?? prev?.flag,
     slug: slugify(name),
-    logoUrl: t.logoUrl ?? prev?.logoUrl ?? PSL_LOGOS[name],
+    // Logos come from the CricApp API (teams / standings carry a logoUrl);
+    // keep whatever an earlier response already gave this team.
+    logoUrl: t.logoUrl ?? prev?.logoUrl,
   };
   teams.set(t.id, next);
   return next;

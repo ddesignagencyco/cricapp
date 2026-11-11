@@ -172,6 +172,7 @@ export interface RawStanding {
   teamId: string;
   teamName: string;
   teamAbbr?: string;
+  logoUrl?: string | null;
   rank?: number;
   played: number;
   won: number;
@@ -712,7 +713,7 @@ export function toPlayer(p: RawPlayer, fallbackTeam?: string): Player {
 }
 
 export function toStanding(s: RawStanding): Standing {
-  rememberTeam({ id: s.teamId, name: s.teamName, short: s.teamAbbr, kind: 'franchise' });
+  rememberTeam({ id: s.teamId, name: s.teamName, short: s.teamAbbr, kind: 'franchise', logoUrl: s.logoUrl });
   return {
     teamId: s.teamId,
     played: s.played,

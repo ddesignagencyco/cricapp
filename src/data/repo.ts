@@ -75,10 +75,47 @@ async function maybe<T>(p: Promise<T>): Promise<T | undefined> {
 
 const byStart = (a: Match, b: Match) => +new Date(a.startTime) - +new Date(b.startTime);
 
+/* ---------------------------------------------------------------- team logos */
+
+type RawTeamRow = { id: string; name: string; abbr?: string; logoUrl?: string | null };
+type TeamsPage = { data?: RawTeamRow[]; meta?: { totalPages?: number; hasNextPage?: boolean } };
+
+const rememberTeamRow = (t: RawTeamRow) => rememberTeam({ id: t.id, name: t.name, short: t.abbr, logoUrl: t.logoUrl });
+
+/*
+ * The match feeds carry no team logos (only id, code, name and score), so —
+ * as the website does — load every team once and cache its crest. After this,
+ * `team(id).logoUrl` resolves a logo for any side shown in a match card, live
+ * tile or scorecard, not just the PSL table. ~196 teams over two pages;
+ * memoised so it runs at most once per session (and may retry after a failure).
+ */
+let teamsPrimed: Promise<void> | null = null;
+function primeTeams(): Promise<void> {
+  return (teamsPrimed ??= (async () => {
+    try {
+      const first = await api.get<TeamsPage>('/teams', { limit: 100, page: 1 });
+      (first.data ?? []).forEach(rememberTeamRow);
+      const pages = first.meta?.totalPages ?? 1;
+      if (pages > 1) {
+        const rest = await Promise.all(
+          Array.from({ length: pages - 1 }, (_, i) => api.get<TeamsPage>('/teams', { limit: 100, page: i + 2 }).catch(() => undefined)),
+        );
+        rest.forEach(r => (r?.data ?? []).forEach(rememberTeamRow));
+      }
+    } catch {
+      teamsPrimed = null; // leave it unset so a later screen can try again
+    }
+  })());
+}
+
 /* ---------------------------------------------------------------- matches */
 
 async function matchList(status: 'live' | 'upcoming' | 'completed', limit = 60, extra?: Query) {
-  const rows = status === 'live' ? await list<RawMatch>('/matches/live') : await list<RawMatch>('/matches', { status, limit, ...extra });
+  // Load logos alongside the matches so every side has its crest on first render.
+  const [rows] = await Promise.all([
+    status === 'live' ? list<RawMatch>('/matches/live') : list<RawMatch>('/matches', { status, limit, ...extra }),
+    primeTeams(),
+  ]);
   return rows.map(toMatch);
 }
 
@@ -506,6 +543,7 @@ export const repo = {
     const [fixtures, results] = await Promise.all([
       page<RawScheduleRow>(`/schedules/${date}`, { page: pageNo, limit: 20 }),
       pageNo === 1 ? page<RawScheduleRow>(`/schedules/${date}/results`, { limit: 100 }).catch(() => ({ data: [], hasMore: false })) : Promise.resolve({ data: [] as RawScheduleRow[], hasMore: false }),
+      primeTeams(),
     ]);
     const scored = new Map(results.data.map(r => [r.eventId, r]));
     const items = fixtures.data.map(r => toMatch(fromSchedule(r, scored.get(r.eventId))));
@@ -516,7 +554,7 @@ export const repo = {
   async statusPage(status: 'upcoming' | 'completed' | 'cancelled', pageNo: number): Promise<{ items: Match[]; hasMore: boolean }> {
     // The API returns cancelled matches in no particular order; it's a short list, so take it whole and sort.
     const limit = status === 'cancelled' ? 100 : PAGE_SIZE;
-    const res = await page<RawMatch>('/matches', { status, page: pageNo, limit });
+    const [res] = await Promise.all([page<RawMatch>('/matches', { status, page: pageNo, limit }), primeTeams()]);
     const items = res.data.map(toMatch);
     if (status === 'cancelled') items.sort((a, b) => +new Date(b.startTime) - +new Date(a.startTime));
     return { items, hasMore: res.hasMore };
@@ -524,12 +562,12 @@ export const repo = {
 
   /** Upcoming fixtures, soonest first, a page at a time. */
   async upcomingPage(pageNo: number): Promise<{ items: Match[]; hasMore: boolean }> {
-    const res = await page<RawMatch>('/matches', { status: 'upcoming', page: pageNo, limit: PAGE_SIZE });
+    const [res] = await Promise.all([page<RawMatch>('/matches', { status: 'upcoming', page: pageNo, limit: PAGE_SIZE }), primeTeams()]);
     return { items: res.data.map(toMatch), hasMore: res.hasMore };
   },
 
   async match(id: string): Promise<Match> {
-    const [m, t] = await Promise.all([api.get<RawMatch>(`/matches/${seg(id)}`), timeline(id).catch(() => undefined)]);
+    const [m, t] = await Promise.all([api.get<RawMatch>(`/matches/${seg(id)}`), timeline(id).catch(() => undefined), primeTeams()]);
     const match = toMatch(m);
     if (!t) return match;
     const extras = matchExtras(t);
@@ -683,6 +721,7 @@ export const repo = {
         ? list<RawMatch>('/matches', { tournament: seriesOf(id)?.name, limit: 100 })
         : list<RawMatch>('/matches', { tournamentId: id, limit: 100 }),
       newsList({ language: 'en', seriesId: id, limit: 10 }).catch(() => [] as Article[]),
+      primeTeams(),
     ]);
     // Many stored matches carry the tournament name but no id: fall back to the name.
     const byName = !matches.length && t?.name ? (await list<RawMatch>('/matches', { tournament: t.name, limit: 100 }).catch(() => [] as RawMatch[])).filter(m => m.tournament?.trim().toLowerCase() === t.name.trim().toLowerCase()) : [];
