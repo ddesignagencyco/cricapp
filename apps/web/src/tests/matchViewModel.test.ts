@@ -898,3 +898,35 @@ describe('a match row that states its own ids, with no timeline', () => {
     expect(teamHref(bare.home.id)).toBeNull();
   });
 });
+
+describe('a finished match whose row has scores but no innings list', () => {
+  const row = {
+    matchId: 'cb:match:175680',
+    status: 'completed',
+    teams: {
+      home: { id: 'cb:team:223', code: 'AFGU19', name: 'Afghanistan U19', score: '275/10', overs: '49.5' },
+      away: { id: 'cb:team:172', code: 'SLU19', name: 'Sri Lanka U19', score: '169/10', overs: '34.1' },
+    },
+    teamScores: {
+      home: { id: 'cb:team:223', code: 'AFGU19', name: 'Afghanistan U19', score: '275/10', overs: '49.5' },
+      away: { id: 'cb:team:172', code: 'SLU19', name: 'Sri Lanka U19', score: '169/10', overs: '34.1' },
+    },
+    periodScores: [],
+    matchResult: 'Afghanistan U19 won by 106 runs',
+  };
+
+  it('shows the row scores in the headline, as the matches list does', () => {
+    const view = buildMatchViewModel({ match: row, timeline: { payload: { sport_event_status: { period_scores: [] } } } });
+    expect(view.headline.home?.score).toBe('275/10');
+    expect(view.headline.home?.oversLabel).toBe('49.5');
+    expect(view.headline.away?.score).toBe('169/10');
+    expect(view.innings).toHaveLength(2);
+  });
+
+  it('does not invent scores for a side with none, or for a live match', () => {
+    const blank = buildMatchViewModel({ match: { ...row, teams: { home: { score: '' }, away: { score: '' } }, teamScores: undefined }, timeline: null });
+    expect(blank.headline.home).toBeNull();
+    const live = buildMatchViewModel({ match: { ...row, status: 'live' }, timeline: null });
+    expect(live.headline.home).toBeNull();
+  });
+});

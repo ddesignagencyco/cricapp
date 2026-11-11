@@ -438,6 +438,7 @@ export function buildMatchInnings({
   const competitors = readCompetitors(payload);
   const statistics = readStatisticsInnings(payload);
   const periods = readPeriodScores(match ?? null, payload);
+  if (periods.length === 0 && !isLive) return inningsFromRowScores(match ?? null, readOversLimit(payload));
   const oversLimit = readOversLimit(payload);
   const status = statusBlockOf(payload);
   const currentInningsSide = sideForCode(
@@ -542,6 +543,43 @@ export function buildMatchInnings({
       sideSource,
     };
   });
+}
+
+/**
+ * Last resort for a match whose innings list is empty (the provider's results list carries only
+ * each side's total, so the row has `teams.home.score` but no `period_scores`). One innings per
+ * side, read from the row's own score, so the header shows what the matches list already shows.
+ * Not used when a real innings list exists, and not for live matches (the live row overlay owns those).
+ */
+function inningsFromRowScores(
+  match: Record<string, unknown> | null,
+  oversLimit: number | null,
+): MatchInnings[] {
+  const sides = asRecord(match?.teamScores) ?? asRecord(match?.teams);
+  const out: MatchInnings[] = [];
+  for (const side of ['home', 'away'] as const) {
+    const block = asRecord(sides?.[side]);
+    const text = asString(block?.score);
+    if (!text) continue;
+    const runs = runsFromScore(text);
+    if (runs === null) continue;
+    const wickets = wicketsFromScore(text);
+    const overs = asOversNumber(block?.overs);
+    out.push({
+      number: out.length + 1,
+      side,
+      runs,
+      wickets,
+      overs,
+      oversLabel: formatCricketOvers(overs),
+      score: scoreText(runs, wickets, text),
+      runRate: overs !== null ? currentRunRate(runs, overs) : null,
+      allottedOvers: oversLimit,
+      isComplete: true,
+      sideSource: 'unknown',
+    });
+  }
+  return out;
 }
 
 function firstNonZero(...values: Array<number | null>): number | null {

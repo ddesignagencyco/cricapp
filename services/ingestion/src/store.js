@@ -53,7 +53,11 @@ export async function saveMatch(match) {
        toss_won_by = COALESCE(EXCLUDED.toss_won_by, matches.toss_won_by),
        toss_decision = COALESCE(EXCLUDED.toss_decision, matches.toss_decision),
        current_inning = COALESCE(EXCLUDED.current_inning, matches.current_inning),
-       period_scores = COALESCE(EXCLUDED.period_scores, matches.period_scores),
+       -- an empty innings list must not wipe one already stored
+       period_scores = CASE
+         WHEN EXCLUDED.period_scores IS NULL OR EXCLUDED.period_scores::text IN ('[]', 'null') THEN matches.period_scores
+         ELSE EXCLUDED.period_scores
+       END,
        display_overs = COALESCE(EXCLUDED.display_overs, matches.display_overs),
        updated_at = NOW()`,
     [
