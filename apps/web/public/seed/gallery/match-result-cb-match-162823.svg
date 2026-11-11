@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-label="Adelaide Strikers Women won by 4 wkts">
+<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#be185d"/><stop offset="1" stop-color="#500724"/></linearGradient>
+<pattern id="s" width="40" height="40" patternUnits="userSpaceOnUse" patternTransform="rotate(18)"><rect width="20" height="40" fill="#ffffff" opacity="0.04"/></pattern></defs>
+<rect width="1200" height="630" fill="url(#g)"/><rect width="1200" height="630" fill="url(#s)"/>
+<g opacity="0.16"><rect x="800" y="-40" width="170" height="760" rx="14" fill="#fff"/><rect x="858" y="40" width="54" height="8" fill="#fff"/><rect x="858" y="560" width="54" height="8" fill="#fff"/></g>
+<circle cx="1010" cy="170" r="78" fill="#dc2626" opacity="0.92"/><path d="M944 138c34 22 34 72 0 94M1076 138c-34 22-34 72 0 94" stroke="#fff" stroke-width="5" fill="none" opacity="0.85"/>
+<text x="72" y="120" font-family="system-ui, sans-serif" font-size="26" font-weight="700" letter-spacing="5" fill="#ffffff" opacity="0.85">MATCH RESULT</text>
+<text x="72" y="300" font-family="Georgia, 'Times New Roman', serif" font-size="62" font-weight="700" fill="#ffffff">Adelaide Strikers Women</text><text x="72" y="374" font-family="Georgia, 'Times New Roman', serif" font-size="62" font-weight="700" fill="#ffffff">won by 4 wkts</text>
+<text x="72" y="472" font-family="system-ui, sans-serif" font-size="34" fill="#ffffff" opacity="0.9">Hobart Hurricanes Women v Adelaide Strikers Women: Adelaide Strikers Women won by 4 wkts</text>
+<text x="72" y="580" font-family="system-ui, sans-serif" font-size="24" letter-spacing="4" fill="#ffffff" opacity="0.7">CRICAPP</text>
+</svg>

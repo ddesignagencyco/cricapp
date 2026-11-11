@@ -227,3 +227,125 @@ export function recordList({ slug, title, summary, intro, items, label }) {
     playerIds: [],
   };
 }
+
+/* ---------- articles from the fixtures list alone (no scorecards needed) ---------- */
+
+const slugify = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+const sides = (m) => ({ home: m.team_scores?.home ?? {}, away: m.team_scores?.away ?? {} });
+const sideScore = (s) => (s?.score ? `${esc(s.name)} ${esc(s.score)}${s.overs ? ` (${esc(s.overs)} ov)` : ''}` : null);
+const isPakistan = (m) => (m.team_names ?? []).some((n) => /pakistan/i.test(n));
+const isWomen = (m) => /women/i.test(`${m.tournament ?? ''} ${(m.team_names ?? []).join(' ')}`);
+const isInternational = (m) => /\btour\b|\bseries\b|T20I|ODI|ICC|Asia Cup|World Cup|Emerging Nations/i.test(m.tournament ?? '');
+const editorialCategory = (m) => (isPakistan(m) ? 'pakistan-cricket' : isWomen(m) && !isInternational(m) ? 'features' : isInternational(m) ? 'international' : 'match-news');
+const utcStamp = (d) => new Date(d).toISOString().replace('T', ' ').slice(0, 16) + ' UTC';
+
+/** A finished match, written from the stored result line and the two innings scores. */
+export function matchResultBrief(m) {
+  const { home, away } = sides(m);
+  const [t1, t2] = m.team_names ?? [home.name, away.name];
+  if (!m.result_text || !t1 || !t2) return null;
+  const scores = [sideScore(home), sideScore(away)].filter(Boolean);
+  const html = [
+    p(`${esc(m.result_text)}. ${esc(t1)} played ${esc(t2)} in the ${esc(m.tournament ?? 'fixture')} at ${esc(m.venue ?? 'a venue to be confirmed')} on ${when(m.scheduled)}.`),
+    scores.length ? p(`The scores: ${scores.join('; ')}.`) : '',
+    p(`The full ${matchLink(m.match_id, `${t1} v ${t2}`)} page has the scorecard and ball-by-ball detail where the data provider supplies it.`),
+  ].filter(Boolean).join('\n');
+  return {
+    slug: `match-result-${slugify(m.match_id)}`,
+    title: `${t1} v ${t2}: ${m.result_text}`,
+    summary: `${m.result_text}. ${t1} v ${t2}, ${m.tournament ?? 'fixture'}, ${when(m.scheduled)}.`,
+    html,
+    category: editorialCategory(m),
+    label: 'Match result',
+    scoreline: `${m.result_text}`,
+    publishedAt: new Date(Math.min(Date.now(), new Date(m.scheduled).getTime() + 8 * 3600e3)),
+    matchIds: [m.match_id],
+    teamIds: [home.id, away.id].filter(Boolean),
+    playerIds: [],
+  };
+}
+
+const li = (m, extra) => `<li>${matchLink(m.match_id, (m.team_names ?? []).join(' v '))} — ${esc(m.tournament ?? '')}${extra ? `: ${extra}` : ''}</li>`;
+
+/** One digest for the day: what is live, what finished, what is next. Dated by the clock it is written at. */
+export function cricketToday(live, finished, next, now = new Date()) {
+  if (!live.length && !finished.length && !next.length) return null;
+  const day = when(now);
+  const parts = [p(`CricApp's round-up of the cricket on ${day}, written from the match data we hold at ${utcStamp(now)}. Live scores change quickly, so open a match page for the current state.`)];
+  if (live.length) {
+    parts.push('<h2>Live now</h2>', `<ul>${live.map((m) => { const { home, away } = sides(m); return li(m, [sideScore(home), sideScore(away)].filter(Boolean).join(' · ') || 'yet to start'); }).join('')}</ul>`);
+  }
+  if (finished.length) {
+    parts.push('<h2>Recent results</h2>', `<ul>${finished.map((m) => li(m, esc(m.result_text ?? 'result to follow'))).join('')}</ul>`);
+  }
+  if (next.length) {
+    parts.push('<h2>Coming up</h2>', `<ul>${next.map((m) => li(m, `${when(m.scheduled)}, ${esc(m.venue ?? 'venue to be confirmed')}`)).join('')}</ul>`);
+  }
+  const t = (n, w, many) => plural(n, w, many);
+  return {
+    slug: `cricket-today-${now.toISOString().slice(0, 10)}`,
+    title: `Cricket today, ${day}: ${t(live.length, 'match', 'matches')} live, ${t(finished.length, 'result')} in`,
+    summary: `${t(live.length, 'match', 'matches')} live, ${t(finished.length, 'recent result')} and ${t(next.length, 'fixture')} to come on ${day}.`,
+    html: parts.join('\n'),
+    category: 'breaking',
+    label: 'Cricket today',
+    scoreline: `${live.length} live`,
+    publishedAt: now,
+    matchIds: [...live, ...finished, ...next].map((m) => m.match_id),
+    teamIds: [],
+    playerIds: [],
+  };
+}
+
+/** Where a competition stands: every stored match in it, grouped by state. */
+export function tournamentWatch(name, tournamentId, rows) {
+  if (!name || rows.length < 2) return null;
+  const by = (s) => rows.filter((m) => m.status === s);
+  const live = by('live'), done = by('completed'), next = by('upcoming');
+  const parts = [p(`${esc(name)} currently has ${plural(rows.length, 'match')} on CricApp: ${live.length} live, ${done.length} completed and ${next.length} upcoming.`)];
+  if (live.length) parts.push('<h2>Live</h2>', `<ul>${live.map((m) => li(m, [sideScore(sides(m).home), sideScore(sides(m).away)].filter(Boolean).join(' · ') || 'yet to start')).join('')}</ul>`);
+  if (done.length) parts.push('<h2>Results</h2>', `<ul>${done.map((m) => li(m, esc(m.result_text ?? ''))).join('')}</ul>`);
+  if (next.length) parts.push('<h2>Fixtures</h2>', `<ul>${next.map((m) => li(m, when(m.scheduled))).join('')}</ul>`);
+  if (tournamentId) parts.push(p(`More on the <a href="/tournaments/${esc(tournamentId)}">${esc(name)}</a> page.`));
+  const lead = rows[0];
+  return {
+    slug: `tournament-watch-${slugify(name)}`,
+    title: `${name}: results, fixtures and live scores`,
+    summary: `${live.length} live, ${done.length} completed, ${next.length} upcoming in the ${name}.`,
+    html: parts.join('\n'),
+    category: editorialCategory(lead),
+    label: 'Tournament watch',
+    scoreline: name,
+    publishedAt: new Date(Date.now() - 30 * 60e3),
+    matchIds: rows.map((m) => m.match_id),
+    teamIds: [],
+    playerIds: [],
+  };
+}
+
+/** The busiest competitions in the data, as a numbers piece. */
+export function busiestCompetitions(rows, now = new Date()) {
+  const counts = new Map();
+  for (const m of rows) if (m.tournament) counts.set(m.tournament, (counts.get(m.tournament) ?? 0) + 1);
+  const top = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 8);
+  if (top.length < 3) return null;
+  const state = (s) => rows.filter((m) => m.status === s).length;
+  return {
+    slug: `analysis-busiest-competitions-${now.toISOString().slice(0, 10)}`,
+    title: 'By the numbers: where the cricket is right now',
+    summary: `${top[0][0]} has the most matches on CricApp (${top[0][1]}), among ${counts.size} competitions in the data.`,
+    html: [
+      p(`CricApp holds ${plural(rows.length, 'match')} across ${plural(counts.size, 'competition')} in its current window: ${state('live')} live, ${state('completed')} completed and ${state('upcoming')} upcoming.`),
+      '<h2>Most matches in the window</h2>',
+      `<ol>${top.map(([n, c]) => `<li>${esc(n)} — ${plural(c, 'match')}</li>`).join('')}</ol>`,
+      p('Counts cover the fixtures our data provider lists for the current days, not full seasons.'),
+    ].join('\n'),
+    category: 'analysis',
+    label: 'Analysis',
+    scoreline: `${counts.size} competitions`,
+    publishedAt: new Date(now.getTime() - 3600e3),
+    matchIds: [],
+    teamIds: [],
+    playerIds: [],
+  };
+}

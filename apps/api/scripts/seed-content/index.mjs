@@ -16,7 +16,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import { heroSvg, avatarSvg, writeAsset } from './art.mjs';
 import { EXPLAINERS } from './explainers.mjs';
-import { matchReport, matchPreview, pslTable, batterSpotlight, bowlerSpotlight, recordList, inningsOf } from './generators.mjs';
+import { matchResultBrief, cricketToday, tournamentWatch, busiestCompetitions, matchReport, matchPreview, pslTable, batterSpotlight, bowlerSpotlight, recordList, inningsOf } from './generators.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const PUBLIC = resolve(here, '../../../web/public');
@@ -27,12 +27,12 @@ if (process.env.NODE_ENV === 'production' && !process.argv.includes('--force')) 
 }
 
 const AUTHORS = [
-  { slug: 'imran-khalid-mirza', name: 'Imran Khalid Mirza', hue: 150, bio: 'Covers Pakistan cricket and the PSL. Writes match reports and season reviews.', cats: ['pakistan-cricket', 'psl'] },
+  { slug: 'imran-khalid-mirza', name: 'Imran Khalid Mirza', hue: 150, bio: 'Covers Pakistan cricket and the PSL. Writes match reports and season reviews.', cats: ['pakistan-cricket', 'psl', 'international'] },
   { slug: 'sadia-anwar-chaudhry', name: 'Sadia Anwar Chaudhry', hue: 330, bio: 'Reports on international and women’s cricket, with a focus on tournament tables and qualification races.', cats: ['international', 'features'] },
-  { slug: 'daniel-whitcombe', name: 'Daniel Whitcombe', hue: 210, bio: 'Writes match reports and previews across the global T20 calendar.', cats: ['match-news'] },
-  { slug: 'priya-venkataraman', name: 'Priya Venkataraman', hue: 28, bio: 'Analyst. Writes player and team numbers pieces from scorecard data.', cats: ['analysis', 'records'] },
+  { slug: 'daniel-whitcombe', name: 'Daniel Whitcombe', hue: 210, bio: 'Writes match reports and previews across the global T20 calendar.', cats: ['match-news', 'international'] },
+  { slug: 'priya-venkataraman', name: 'Priya Venkataraman', hue: 28, bio: 'Analyst. Writes player and team numbers pieces from scorecard data.', cats: ['analysis', 'records', 'features'] },
   { slug: 'tariq-hussain-baig', name: 'Tariq Hussain Baig', hue: 260, bio: 'Explains the laws and the statistics of the game for newer fans.', cats: ['explainers'] },
-  { slug: 'marcus-oyelaran', name: 'Marcus Oyelaran', hue: 185, bio: 'Breaking news and live coverage desk.', cats: ['breaking'] },
+  { slug: 'marcus-oyelaran', name: 'Marcus Oyelaran', hue: 185, bio: 'Breaking news and live coverage desk.', cats: ['breaking', 'match-news'] },
 ];
 
 const STREAMS = [
@@ -117,7 +117,29 @@ async function form(teamId) {
   );
   return r.rows.map((x) => (x.winner_id === teamId ? 'W' : 'L'));
 }
-for (const m of upcoming.rows) articles.push(matchPreview(m, await form(m.teams_ids[0]), await form(m.teams_ids[1])));
+for (const m of upcoming.rows) {
+  const a = matchPreview(m, await form(m.teams_ids[0]), await form(m.teams_ids[1]));
+  if ((m.team_names ?? []).some((n) => /pakistan/i.test(n))) a.category = 'pakistan-cricket';
+  articles.push(a);
+}
+
+/* ---------- fresh coverage from the fixtures list (works without scorecards) ---------- */
+const window_ = (await q(
+  `SELECT m.*, ARRAY[m.team_scores->'home'->>'id', m.team_scores->'away'->>'id'] AS teams_ids
+     FROM matches m ORDER BY m.scheduled DESC LIMIT 200`,
+)).rows;
+const haveReport = new Set(articles.filter((a) => a.slug.startsWith('match-report-')).map((a) => a.matchIds[0]));
+const finished = window_.filter((m) => m.status === 'completed' && m.result_text);
+for (const m of finished.slice(0, 20)) if (!haveReport.has(m.match_id)) { const a = matchResultBrief(m); if (a) articles.push(a); }
+const liveNow = window_.filter((m) => m.status === 'live');
+const nextUp = window_.filter((m) => m.status === 'upcoming').reverse().slice(0, 8);
+{ const a = cricketToday(liveNow.slice(0, 8), finished.slice(0, 6), nextUp); if (a) articles.push(a); }
+const byTournament = new Map();
+for (const m of window_) if (m.tournament) byTournament.set(m.tournament, [...(byTournament.get(m.tournament) ?? []), m]);
+for (const [name, rows] of [...byTournament.entries()].sort((a, b) => b[1].length - a[1].length).slice(0, 6)) {
+  const a = tournamentWatch(name, rows[0].tournament_id, rows); if (a) articles.push(a);
+}
+{ const a = busiestCompetitions(window_); if (a) articles.push(a); }
 
 const SEASON_YEAR = { 'sr:season:114833': 2024, 'sr:season:129023': 2025, 'sr:season:140552': 2026 };
 for (const [seasonId, year] of Object.entries(SEASON_YEAR)) {
@@ -215,7 +237,7 @@ for (const a of articles) {
 
 /* ---------- gallery: its own posters (the public gallery hides images that articles already use) ---------- */
 let gallery = 0;
-for (const a of articles.filter((x) => x.slug.startsWith('match-report-')).slice(0, 12)) {
+for (const a of articles.filter((x) => /^(match-report|match-result|match-preview|tournament-watch)-/.test(x.slug)).slice(0, 24)) {
   const file = `/seed/gallery/${a.slug}.svg`;
   writeAsset(`${PUBLIC}${file}`, heroSvg({ title: a.scoreline || a.title, category: 'features', label: a.label, scoreline: a.title }));
   await q(

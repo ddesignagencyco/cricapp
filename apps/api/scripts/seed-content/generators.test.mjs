@@ -71,3 +71,39 @@ test('ordinals, standings and overs', () => {
   assert.equal(possessive('UAE Bulls'), "UAE Bulls'");
   assert.equal(possessive('India'), "India's");
 });
+
+import { matchResultBrief, cricketToday, tournamentWatch, busiestCompetitions } from './generators.mjs';
+
+const fx = (id, status, extra = {}) => ({
+  match_id: `cb:match:${id}`, status, tournament: 'Test Cup 2026', venue: 'Ground', scheduled: '2026-11-10T08:00:00.000Z',
+  team_names: ['Alpha', 'Beta'], result_text: null,
+  team_scores: { home: { id: 'cb:team:1', name: 'Alpha', score: '150/7', overs: '20' }, away: { id: 'cb:team:2', name: 'Beta', score: '151/3', overs: '18.2' } },
+  ...extra,
+});
+
+test('matchResultBrief needs a result line and routes Pakistan matches to the Pakistan desk', () => {
+  assert.equal(matchResultBrief(fx(1, 'completed')), null);
+  const a = matchResultBrief(fx(1, 'completed', { result_text: 'Beta won by 7 wkts' }));
+  assert.equal(a.slug, 'match-result-cb-match-1');
+  assert.match(a.html, /Alpha 150\/7/);
+  assert.equal(a.category, 'match-news');
+  assert.equal(matchResultBrief(fx(2, 'completed', { result_text: 'x won', team_names: ['Pakistan', 'Beta'] })).category, 'pakistan-cricket');
+});
+
+test('cricketToday lists live, results and fixtures, and is empty when there is nothing', () => {
+  assert.equal(cricketToday([], [], []), null);
+  const a = cricketToday([fx(1, 'live')], [fx(2, 'completed', { result_text: 'Alpha won' })], [fx(3, 'upcoming')], new Date('2026-11-11T10:00:00Z'));
+  assert.equal(a.slug, 'cricket-today-2026-11-11');
+  assert.match(a.title, /1 match live, 1 result in/);
+  assert.match(a.html, /Live now[\s\S]*Recent results[\s\S]*Coming up/);
+});
+
+test('tournamentWatch and busiestCompetitions need enough rows', () => {
+  assert.equal(tournamentWatch('Test Cup', 'cb:tournament:1', [fx(1, 'live')]), null);
+  const t = tournamentWatch('Test Cup', 'cb:tournament:1', [fx(1, 'live'), fx(2, 'upcoming')]);
+  assert.equal(t.slug, 'tournament-watch-test-cup');
+  assert.match(t.html, /1 live, 0 completed and 1 upcoming/);
+  assert.equal(busiestCompetitions([fx(1, 'live')]), null);
+  const rows = ['A', 'B', 'C'].flatMap((n, i) => Array.from({ length: 3 - i }, (_, k) => fx(`${n}${k}`, 'live', { tournament: n })));
+  assert.match(busiestCompetitions(rows, new Date('2026-11-11T00:00:00Z')).summary, /^A has the most matches/);
+});
