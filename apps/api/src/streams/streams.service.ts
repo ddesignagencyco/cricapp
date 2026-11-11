@@ -49,7 +49,7 @@ export class StreamsService {
     const [rows, total] = await Promise.all([
       this.prisma.liveStream.findMany({
         where,
-        orderBy: { scheduledAt: 'desc' },
+        orderBy: [{ scheduledAt: { sort: 'desc', nulls: 'last' } }, { createdAt: 'desc' }],
         skip,
         take: limit,
       }),
