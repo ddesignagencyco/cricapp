@@ -28,6 +28,8 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
     NEXT_TELEMETRY_DISABLED=1
 
 COPY --from=deps /app/node_modules ./node_modules
+# npm hoists only part of the tree; workspace-local packages (next, jest-dom, ...) live here
+COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
 COPY package.json package-lock.json ./
 COPY apps/web ./apps/web
 COPY packages/shared-types ./packages/shared-types

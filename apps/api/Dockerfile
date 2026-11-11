@@ -19,6 +19,8 @@ FROM base AS builder
 WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
+# workspace-local packages (ioredis, ...) are not hoisted to the root
+COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
 
 COPY package.json package-lock.json ./
 COPY apps/api ./apps/api
