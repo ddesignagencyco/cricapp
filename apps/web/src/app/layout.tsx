@@ -81,7 +81,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // ~150ms on the first API round-trip (Lighthouse `uses-rel-preconnect`).
   let apiOrigin: string | null = null;
   try {
-    const raw = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || '';
+    const configured = process.env.NEXT_PUBLIC_API_URL;
+    const raw = (configured && configured !== 'same-origin' ? configured : process.env.NEXT_PUBLIC_SOCKET_URL || process.env.API_URL) || '';
     apiOrigin = raw ? new URL(raw).origin : null;
   } catch {
     apiOrigin = null;

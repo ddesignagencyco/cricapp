@@ -2,8 +2,20 @@ import type { PaginatedResponse } from '../../types/index';
 
 /* ─── Config ──────────────────────────────────────────────── */
 
-const CLIENT_BASE: string = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const SERVER_BASE: string = process.env.API_URL || CLIENT_BASE;
+const RAW_API_URL: string = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+/**
+ * `NEXT_PUBLIC_API_URL=same-origin` makes the browser call `/api/...` on the site's own domain;
+ * `next.config.mjs` rewrites that to `API_URL`. The sign-in cookie then stays first-party, which
+ * browsers require when the site and the API live on different domains (e.g. two onrender.com
+ * hosts). Sockets cannot go through a rewrite, so they use `NEXT_PUBLIC_SOCKET_URL`.
+ */
+const SAME_ORIGIN = RAW_API_URL === 'same-origin';
+const CLIENT_BASE: string = SAME_ORIGIN ? '' : RAW_API_URL;
+/** The API's real origin: image allow-list, preconnect and the live socket. */
+const API_ORIGIN: string = SAME_ORIGIN
+  ? process.env.NEXT_PUBLIC_SOCKET_URL || process.env.API_URL || 'http://localhost:3001'
+  : RAW_API_URL;
+const SERVER_BASE: string = process.env.API_URL || (SAME_ORIGIN ? API_ORIGIN : CLIENT_BASE);
 
 function getBase(): string {
   return typeof window === 'undefined' ? SERVER_BASE : CLIENT_BASE;
@@ -207,4 +219,4 @@ export function extractPage<T>(res: unknown): { items: T[]; meta: PageMeta } {
   return { items: [], meta: EMPTY_META };
 }
 
-export { CLIENT_BASE, SERVER_BASE };
+export { CLIENT_BASE, SERVER_BASE, API_ORIGIN };

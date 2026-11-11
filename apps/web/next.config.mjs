@@ -12,7 +12,8 @@ const enableAnalyzer = process.env.ANALYZE === '1';
 // unoptimized passthrough for those instead of breaking the render.
 const apiHostname = (() => {
   try {
-    const raw = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || '';
+    const configured = process.env.NEXT_PUBLIC_API_URL;
+    const raw = (configured && configured !== 'same-origin' ? configured : process.env.NEXT_PUBLIC_SOCKET_URL || process.env.API_URL) || '';
     const host = new URL(raw).hostname;
     return host && host !== 'localhost' && host !== '127.0.0.1' ? host : null;
   } catch {
@@ -37,6 +38,13 @@ const nextConfig = {
       { protocol: 'https', hostname: 'res.cloudinary.com' },
       ...(apiHostname ? [{ protocol: 'https', hostname: apiHostname }] : []),
     ],
+  },
+  // With NEXT_PUBLIC_API_URL=same-origin the browser calls /api on this site and the server
+  // forwards it to the API, so the sign-in cookie is first-party (see services/api/client.ts).
+  async rewrites() {
+    const target = process.env.API_URL?.replace(/\/$/, '');
+    if (process.env.NEXT_PUBLIC_API_URL !== 'same-origin' || !target) return [];
+    return [{ source: '/api/:path*', destination: `${target}/api/:path*` }];
   },
   async redirects() {
     return [

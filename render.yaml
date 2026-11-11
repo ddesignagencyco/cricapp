@@ -98,9 +98,14 @@ services:
       - key: NODE_ENV
         value: production
       # Public URL of cricapp-api. Baked into the client bundle at build time: redeploy after changing it.
+      # "same-origin": the browser calls /api on this site and the server forwards it to API_URL, so the
+      # sign-in cookie stays first-party (the site and API are on different onrender.com hosts).
       - key: NEXT_PUBLIC_API_URL
-        value: https://cricapp-api.onrender.com
+        value: same-origin
       - key: API_URL
+        value: https://cricapp-api.onrender.com
+      # Live scores use a socket, which cannot go through the proxy.
+      - key: NEXT_PUBLIC_SOCKET_URL
         value: https://cricapp-api.onrender.com
       - key: NEXT_PUBLIC_ADSENSE_CLIENT
         sync: false

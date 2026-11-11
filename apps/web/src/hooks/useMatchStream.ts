@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { io, type Socket } from 'socket.io-client';
-import { CLIENT_BASE } from '../services/api/client';
+import { API_ORIGIN } from '../services/api/client';
 import { cricketOversToBalls } from '../utils/helpers';
 
 export interface LiveUpdate {
@@ -43,7 +43,7 @@ let sharedRefCount = 0;
 const SOCKET_UPDATE_WINDOW_MS = 1000;
 
 function socketUrl(): string {
-  return CLIENT_BASE.replace(/\/$/, '');
+  return API_ORIGIN.replace(/\/$/, '');
 }
 
 function acquireMatchesSocket(): Socket {

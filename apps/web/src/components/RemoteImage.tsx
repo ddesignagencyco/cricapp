@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import type { CSSProperties, SyntheticEvent } from 'react';
-import { CLIENT_BASE } from '../services/api/client';
+import { API_ORIGIN } from '../services/api/client';
 
 interface RemoteImageProps {
   src: string;
@@ -33,7 +33,7 @@ const TRUSTED_HOSTS = ['psl-t20.com', 'picsum.photos', 'res.cloudinary.com'];
 
 function apiHostname(): string | null {
   try {
-    const host = new URL(CLIENT_BASE).hostname;
+    const host = new URL(API_ORIGIN).hostname;
     return host && host !== 'localhost' && host !== '127.0.0.1' ? host : null;
   } catch {
     return null;
