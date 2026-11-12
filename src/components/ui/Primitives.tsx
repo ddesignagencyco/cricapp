@@ -56,52 +56,48 @@ export function Card({
   return <View style={base}>{children}</View>;
 }
 
-/** Red dot + text. Live state is never shown as a filled pill. */
+/** A vibrant red "LIVE" pill with a blinking white dot and a soft red glow. */
 export function LiveIndicator({ label = 'LIVE', size = 'sm' }: { label?: string; size?: 'sm' | 'md' }) {
   const { colors } = useTheme();
   const pulse = useRef(new Animated.Value(0)).current;
   useEffect(() => {
-    // A steady dot instead of a pulse when the system asks for less motion.
     if (reduceMotion()) return;
     const loop = Animated.loop(
-      Animated.timing(pulse, {
-        toValue: 1,
-        duration: 1400,
-        easing: Easing.out(Easing.quad),
-        useNativeDriver: true,
-      }),
+      Animated.timing(pulse, { toValue: 1, duration: 1200, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
     );
     loop.start();
     return () => loop.stop();
   }, [pulse]);
-  const dot = size === 'md' ? 8 : 6;
+  const dot = size === 'md' ? 7 : 6;
   return (
-    <View style={styles.row} accessibilityLabel="Live">
-      <View style={{ width: dot * 2.6, height: dot * 2.6, alignItems: 'center', justifyContent: 'center' }}>
-        {/* Expanding "ping" ring. */}
-        <Animated.View
-          style={{
-            position: 'absolute',
-            width: dot * 2.6,
-            height: dot * 2.6,
-            borderRadius: dot * 1.3,
-            backgroundColor: colors.live,
-            opacity: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.55, 0] }),
-            transform: [{ scale: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.45, 1] }) }],
-          }}
-        />
-        {/* Solid dot that blinks so "live" is unmistakable. */}
-        <Animated.View
-          style={{
-            width: dot,
-            height: dot,
-            borderRadius: dot / 2,
-            backgroundColor: colors.live,
-            opacity: pulse.interpolate({ inputRange: [0, 0.5, 1], outputRange: [1, 0.25, 1] }),
-          }}
-        />
-      </View>
-      <AppText variant={size === 'md' ? 'label' : 'micro'} weight="700" color="live" style={{ marginLeft: 2 }}>
+    <View
+      accessibilityLabel="Live"
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: colors.live,
+        paddingLeft: size === 'md' ? 9 : 7,
+        paddingRight: size === 'md' ? 11 : 9,
+        height: size === 'md' ? 26 : 22,
+        borderRadius: 999,
+        shadowColor: colors.live,
+        shadowOpacity: 0.55,
+        shadowRadius: 7,
+        shadowOffset: { width: 0, height: 0 },
+        elevation: 4,
+      }}
+    >
+      <Animated.View
+        style={{
+          width: dot,
+          height: dot,
+          borderRadius: dot / 2,
+          backgroundColor: '#FFFFFF',
+          marginRight: 6,
+          opacity: pulse.interpolate({ inputRange: [0, 0.5, 1], outputRange: [1, 0.25, 1] }),
+        }}
+      />
+      <AppText variant={size === 'md' ? 'label' : 'micro'} weight="700" color="#FFFFFF" style={{ letterSpacing: 0.8 }}>
         {label}
       </AppText>
     </View>

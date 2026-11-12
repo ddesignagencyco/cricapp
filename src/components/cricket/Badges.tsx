@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Image, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
-import { team as teamOf, player as playerOf } from '../../data/refs';
+import { team as teamOf, player as playerOf, teamLogo } from '../../data/refs';
 import type { BallOutcome } from '../../data/types';
 import { useTheme } from '../../theme/ThemeProvider';
 import { alpha, badgeFill, colorFor, readableOn } from '../../utils/color';
@@ -44,11 +44,12 @@ export function TeamBadge({ id, size = 36, style, solid }: { id: string; size?: 
   // A logo can be slow or fail to load; if it does, fall back to the disc
   // rather than leaving an empty tile.
   const [logoFailed, setLogoFailed] = useState(false);
-  // Crest when we have one (PSL franchises), otherwise the coloured disc with the team code.
-  if (t.logoUrl && !logoFailed) {
+  const logo = teamLogo(t);
+  // Crest when we have one (own or borrowed by name), otherwise the coloured disc with the team code.
+  if (logo && !logoFailed) {
     return (
       <View accessibilityLabel={t.name} style={[{ width: size, height: size, borderRadius: size / 2, backgroundColor: colors.surface, borderWidth: StyleSheet.hairlineWidth * 2, borderColor: colors.hairline, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }, style]}>
-        <Image source={{ uri: t.logoUrl }} style={{ width: size * 0.8, height: size * 0.8 }} resizeMode="contain" onError={() => setLogoFailed(true)} />
+        <Image source={{ uri: logo }} style={{ width: size * 0.8, height: size * 0.8 }} resizeMode="contain" onError={() => setLogoFailed(true)} />
       </View>
     );
   }

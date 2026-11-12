@@ -45,11 +45,27 @@ export const slugify = (s: string) =>
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
 
+/*
+ * A logo learned for a team name, keyed by slug. The same side turns up under
+ * different ids across feeds (match lists use cb:team ids, schedules and some
+ * tournaments use other ids), so once any response gives a name its crest we
+ * can lend it to every other id with that name.
+ */
+const logoByName = new Map<string, string>();
+
+/** The team's own logo, or one learned for another id with the same name. */
+export const teamLogo = (t: Team): string | undefined => t.logoUrl ?? logoByName.get(t.slug);
+
 /** Register (or enrich) a team. Later calls fill in fields earlier ones lacked. */
 export function rememberTeam(t: { id: string; name: string; short?: string; kind?: Team['kind']; logoUrl?: string | null }): Team {
   const prev = teams.get(t.id);
   const name = t.name || prev?.name || 'TBC';
   const known = KNOWN[name];
+  const slug = slugify(name);
+  // Logos come from the CricApp API (teams / standings carry a logoUrl); keep
+  // whatever an earlier response gave this id, else borrow one by name.
+  const logoUrl = t.logoUrl ?? prev?.logoUrl ?? logoByName.get(slug);
+  if (logoUrl) logoByName.set(slug, logoUrl);
   const next: Team = {
     id: t.id,
     name,
@@ -57,10 +73,8 @@ export function rememberTeam(t: { id: string; name: string; short?: string; kind
     color: known?.color ?? prev?.color ?? colorFor(name),
     kind: t.kind ?? known?.kind ?? prev?.kind ?? (FULL_MEMBERS.has(name) ? 'international' : 'domestic'),
     flag: known?.flag ?? prev?.flag,
-    slug: slugify(name),
-    // Logos come from the CricApp API (teams / standings carry a logoUrl);
-    // keep whatever an earlier response already gave this team.
-    logoUrl: t.logoUrl ?? prev?.logoUrl,
+    slug,
+    logoUrl,
   };
   teams.set(t.id, next);
   return next;
