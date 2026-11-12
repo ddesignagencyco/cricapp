@@ -1,0 +1,24 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- blue ball (matches the in-app Criczapp mark) -->
+    <path
+        android:fillColor="#3B68FC"
+        android:pathData="M54,24 a30,30 0 1,0 0,60 a30,30 0 1,0 0,-60 Z" />
+    <!-- white seam -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="3.2"
+        android:strokeLineCap="round"
+        android:pathData="M48,28 C 58,42 58,66 48,80" />
+    <!-- white stitches -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2.4"
+        android:strokeLineCap="round"
+        android:pathData="M46,33 l9,2.6 M48,44 l9,1.6 M49,55 l9,0 M48,66 l9,-1.8 M46,77 l9,-2.6" />
+</vector>

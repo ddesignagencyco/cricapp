@@ -137,7 +137,7 @@ function ShortPage({
           {short.teamIds[0] ? <TeamBadge id={short.teamIds[0]} size={32} /> : <View style={styles.brand}><BrandMark height={16} /></View>}
           <View style={{ flex: 1, marginLeft: 10 }}>
             <AppText variant="label" weight="700" color="#FFFFFF" numberOfLines={1}>
-              {short.title || 'PAK CRICZONE'}
+              {short.title || 'Criczapp'}
             </AppText>
             <AppText variant="caption" color="#C9CFDD">
               {short.kind === 'gallery' ? `Gallery · ${short.slides.length} photos` : 'Short'} · {ago(short.publishedAt)}
@@ -175,7 +175,7 @@ function ShortPage({
         <View style={styles.actions}>
           <Touch
             borderless
-            onPress={() => Share.share({ message: `${short.title} — PAK CRICZONE\nhttps://pakcriczone.com/shorts/${short.id}` })}
+            onPress={() => Share.share({ message: `${short.title} — Criczapp\nhttps://criczapp.com/shorts/${short.id}` })}
             style={styles.action}
             accessibilityLabel="Share"
           >

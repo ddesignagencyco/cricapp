@@ -446,19 +446,18 @@ export const repo = {
       newsList({ language: 'en', limit: 8 }),
       list<RawGallery>('/gallery', { limit: 20 }).catch(() => [] as RawGallery[]),
     ]);
-    // Hero banners: the latest stories that have a cover image.
-    const banners: Banner[] = stories
-      .filter(a => a.image)
-      .slice(0, 3)
-      .map(a => ({
-        id: `b-${a.id}`,
-        overline: a.category.toUpperCase(),
-        title: a.title,
-        cta: 'Read story',
-        photo: a.image,
-        teamIds: a.teamIds,
-        route: { name: 'Article', id: a.id },
-      }));
+    // Hero banners use each story's own cover image only. A story without one
+    // still shows (CoverArt falls back to a branded glow) rather than borrowing
+    // another story's picture.
+    const banners: Banner[] = stories.slice(0, 3).map(a => ({
+      id: `b-${a.id}`,
+      overline: a.category.toUpperCase(),
+      title: a.title,
+      cta: 'Read story',
+      photo: a.image,
+      teamIds: a.teamIds,
+      route: { name: 'Article', id: a.id },
+    }));
     return {
       live,
       upcoming: upcoming.sort(byStart),
@@ -607,10 +606,15 @@ export const repo = {
    * page returned.
    */
   async commentaryPage(id: string, before?: string): Promise<{ balls: Ball[]; overs: OverSummary[]; before: string | null }> {
-    const page = await api.get<{ events: RawTimelineEvent[]; hasMore: boolean; before: string | null }>(`/matches/${seg(id)}/commentary`, {
-      overs: 4,
-      ...(before ? { before } : {}),
-    });
+    // A match with no stored timeline (older games) answers 404; treat that as
+    // "no commentary" so the screen shows a calm empty state, not an error.
+    const page = await maybe(
+      api.get<{ events: RawTimelineEvent[]; hasMore: boolean; before: string | null }>(`/matches/${seg(id)}/commentary`, {
+        overs: 4,
+        ...(before ? { before } : {}),
+      }),
+    );
+    if (!page) return { balls: [], overs: [], before: null };
     return { ...toCommentary({ payload: { timeline: page.events } }), before: page.hasMore ? page.before : null };
   },
 

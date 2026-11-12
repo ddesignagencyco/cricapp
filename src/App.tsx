@@ -4,6 +4,7 @@ import {
   SafeAreaProvider,
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
+import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { Stack } from './navigation/Stack';
 import { screens } from './navigation/screens';
 import { ThemeProvider, useTheme } from './theme/ThemeProvider';
@@ -42,20 +43,22 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <ThemeProvider>
-        <AuthProvider>
-          <PrefsProvider>
-            <Root>
-              {onboarded === null ? null : (
-                <Stack
-                  screens={screens}
-                  initialRoute={onboarded ? 'Tabs' : 'Onboarding'}
-                />
-              )}
-            </Root>
-          </PrefsProvider>
-        </AuthProvider>
-      </ThemeProvider>
+      <ErrorBoundary>
+        <ThemeProvider>
+          <AuthProvider>
+            <PrefsProvider>
+              <Root>
+                {onboarded === null ? null : (
+                  <Stack
+                    screens={screens}
+                    initialRoute={onboarded ? 'Tabs' : 'Onboarding'}
+                  />
+                )}
+              </Root>
+            </PrefsProvider>
+          </AuthProvider>
+        </ThemeProvider>
+      </ErrorBoundary>
     </SafeAreaProvider>
   );
 }

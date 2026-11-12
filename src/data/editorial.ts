@@ -20,12 +20,12 @@ export interface EditorialFallback {
 
 export const EDITORIAL_FALLBACK: Record<string, EditorialFallback> = {
   about: {
-    title: 'About PAK CRICZONE',
+    title: 'About Criczapp',
     intro: 'Your home for live cricket scores, PSL fixtures, teams, players and in-depth analysis — built for fans who follow every ball.',
     sections: [
       {
         title: '',
-        text: 'PAK CRICZONE is your destination for cricket coverage in Pakistan and beyond. From live ball-by-ball scores and PSL fixtures to player profiles and historical statistics, we bring the game closer to you.',
+        text: 'Criczapp is your destination for cricket coverage in Pakistan and beyond. From live ball-by-ball scores and PSL fixtures to player profiles and historical statistics, we bring the game closer to you.',
       },
       {
         title: '',
@@ -37,14 +37,14 @@ export const EDITORIAL_FALLBACK: Record<string, EditorialFallback> = {
       { title: 'For Fans', text: 'Built by cricket lovers, for cricket lovers. Every feature designed with the fan experience in mind.' },
       {
         title: 'Our story',
-        text: 'PAK CRICZONE was created to fill the gap for a dedicated, fan-first cricket platform focused on Pakistani cricket. Starting with PSL coverage, we aim to expand into full international reporting, fantasy insights and community features.\n\nEvery run, every ball, every wicket — live and at your fingertips.',
+        text: 'Criczapp was created to fill the gap for a dedicated, fan-first cricket platform focused on Pakistani cricket. Starting with PSL coverage, we aim to expand into full international reporting, fantasy insights and community features.\n\nEvery run, every ball, every wicket — live and at your fingertips.',
       },
     ],
   },
   privacy: {
     title: 'Privacy Policy',
     updatedAt: '2026-09-02',
-    intro: 'At PAK CRICZONE, your privacy is important to us. This policy explains how we collect, use and protect your information when you use our website and services.',
+    intro: 'At Criczapp, your privacy is important to us. This policy explains how we collect, use and protect your information when you use our website and services.',
     sections: [
       {
         title: 'Information We Collect',
@@ -56,7 +56,7 @@ export const EDITORIAL_FALLBACK: Record<string, EditorialFallback> = {
       },
       {
         title: 'Cookies & Tracking',
-        text: 'PAK CRICZONE uses cookies to maintain your session preferences and analyse traffic. You can control cookie settings through your browser. We do not use third-party advertising trackers.',
+        text: 'Criczapp uses cookies to maintain your session preferences and analyse traffic. You can control cookie settings through your browser. We do not use third-party advertising trackers.',
       },
       {
         title: 'Data Sharing',
@@ -68,32 +68,32 @@ export const EDITORIAL_FALLBACK: Record<string, EditorialFallback> = {
       },
       {
         title: 'Your Rights',
-        text: 'You have the right to access, correct or delete your personal data. To exercise these rights, please contact us at privacy@pakcriczone.com.',
+        text: 'You have the right to access, correct or delete your personal data. To exercise these rights, please contact us at privacy@criczapp.com.',
       },
       {
         title: 'Changes to This Policy',
         text: 'We may update this privacy policy from time to time. Changes will be posted on this page with an updated revision date. Continued use of the site after changes constitutes acceptance of the revised policy.',
       },
     ],
-    outro: 'If you have any questions about this Privacy Policy, please contact us at privacy@pakcriczone.com.',
+    outro: 'If you have any questions about this Privacy Policy, please contact us at privacy@criczapp.com.',
   },
   terms: {
     title: 'Terms of Service',
     updatedAt: '2026-09-02',
-    intro: 'Please read these Terms of Service carefully before using PAK CRICZONE. They govern your access to and use of our website and services.',
+    intro: 'Please read these Terms of Service carefully before using Criczapp. They govern your access to and use of our website and services.',
     sections: [
-      { title: 'Acceptance of Terms', text: 'By accessing or using PAK CRICZONE, you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the site.' },
+      { title: 'Acceptance of Terms', text: 'By accessing or using Criczapp, you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the site.' },
       {
         title: 'Use of the Service',
-        text: 'PAK CRICZONE provides cricket scores, statistics, news and live stream links for informational and personal entertainment purposes only. You may not use the service for any commercial purpose without prior written consent.',
+        text: 'Criczapp provides cricket scores, statistics, news and live stream links for informational and personal entertainment purposes only. You may not use the service for any commercial purpose without prior written consent.',
       },
       {
         title: 'Content Accuracy',
-        text: 'While we strive for accuracy, match scores, statistics and other data displayed on the site may contain errors or delays. PAK CRICZONE is not liable for any decisions made based on the information presented.',
+        text: 'While we strive for accuracy, match scores, statistics and other data displayed on the site may contain errors or delays. Criczapp is not liable for any decisions made based on the information presented.',
       },
       {
         title: 'Intellectual Property',
-        text: 'All content on PAK CRICZONE — including design, graphics, logos and text — is owned by or licensed to us. You may not reproduce, distribute or create derivative works without permission.',
+        text: 'All content on Criczapp — including design, graphics, logos and text — is owned by or licensed to us. You may not reproduce, distribute or create derivative works without permission.',
       },
       {
         title: 'User Conduct',
@@ -105,7 +105,7 @@ export const EDITORIAL_FALLBACK: Record<string, EditorialFallback> = {
       },
       {
         title: 'Limitation of Liability',
-        text: 'PAK CRICZONE and its team shall not be held liable for any indirect, incidental or consequential damages arising from your use of or inability to use the service.',
+        text: 'Criczapp and its team shall not be held liable for any indirect, incidental or consequential damages arising from your use of or inability to use the service.',
       },
       {
         title: 'Termination',
@@ -116,6 +116,6 @@ export const EDITORIAL_FALLBACK: Record<string, EditorialFallback> = {
         text: 'We may modify these terms at any time. Updated terms will be posted on this page. Your continued use of the site after changes constitutes acceptance of the revised terms.',
       },
     ],
-    outro: 'For questions about these Terms, contact us at legal@pakcriczone.com.',
+    outro: 'For questions about these Terms, contact us at legal@criczapp.com.',
   },
 };

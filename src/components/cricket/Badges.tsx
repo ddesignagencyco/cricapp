@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Image, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { team as teamOf, player as playerOf } from '../../data/refs';
 import type { BallOutcome } from '../../data/types';
@@ -41,11 +41,14 @@ export function TeamBadge({ id, size = 36, style, solid }: { id: string; size?: 
   const t = teamOf(id);
   const code = t.short.length > 3 ? t.short.slice(0, 3) : t.short;
   const { colors } = useTheme();
+  // A logo can be slow or fail to load; if it does, fall back to the disc
+  // rather than leaving an empty tile.
+  const [logoFailed, setLogoFailed] = useState(false);
   // Crest when we have one (PSL franchises), otherwise the coloured disc with the team code.
-  if (t.logoUrl) {
+  if (t.logoUrl && !logoFailed) {
     return (
       <View accessibilityLabel={t.name} style={[{ width: size, height: size, borderRadius: size / 2, backgroundColor: colors.surface, borderWidth: StyleSheet.hairlineWidth * 2, borderColor: colors.hairline, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }, style]}>
-        <Image source={{ uri: t.logoUrl }} style={{ width: size * 0.8, height: size * 0.8 }} resizeMode="contain" />
+        <Image source={{ uri: t.logoUrl }} style={{ width: size * 0.8, height: size * 0.8 }} resizeMode="contain" onError={() => setLogoFailed(true)} />
       </View>
     );
   }
@@ -77,7 +80,22 @@ export function Avatar({
     .join('')
     .toUpperCase();
   const base = color ?? (p ? teamOf(p.teamId).color : colorFor(full));
-  return <Disc fill={badgeFill(base)} label={label} size={size} labelScale={0.36} />;
+  const [photoFailed, setPhotoFailed] = useState(false);
+  // The initials disc is always rendered; the headshot overlays it when the
+  // feed has one, so a missing or broken photo still leaves the initials.
+  return (
+    <View style={{ width: size, height: size }}>
+      <Disc fill={badgeFill(base)} label={label} size={size} labelScale={0.36} />
+      {p?.photo && !photoFailed ? (
+        <Image
+          source={{ uri: p.photo }}
+          style={{ position: 'absolute', top: 0, left: 0, width: size, height: size, borderRadius: size / 2 }}
+          resizeMode="cover"
+          onError={() => setPhotoFailed(true)}
+        />
+      ) : null}
+    </View>
+  );
 }
 
 /** One delivery in a strip: dot, runs, boundary, wicket or extra. */

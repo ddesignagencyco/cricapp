@@ -1,4 +1,19 @@
+import { API_URL } from '../config';
 import { player, rememberAuthor, rememberPlayer, rememberSeries, rememberTeam, rememberVenue, slugify, team } from './refs';
+
+/**
+ * Normalise an image URL from the feed: make a relative path absolute against
+ * the API host, and drop formats React Native's <Image> can't render (SVG), so
+ * a broken or placeholder asset becomes "no image" instead of a blank box.
+ */
+export function mediaUrl(u?: string | null): string | undefined {
+  if (!u) return undefined;
+  const abs = /^https?:\/\//i.test(u) ? u : `${API_URL}${u.startsWith('/') ? '' : '/'}${u}`;
+  if (/\.svg(\?|#|$)/i.test(abs)) return undefined;
+  // Cloudinary video thumbnails default to the first frame (so_0), which is
+  // usually a black title card; take a frame a couple of seconds in instead.
+  return abs.replace('/video/upload/so_0/', '/video/upload/so_2/');
+}
 import type {
   Article,
   Ball,
@@ -160,6 +175,7 @@ export interface RawPlayer {
   id: string;
   fullName: string;
   shortName?: string | null;
+  profileUrl?: string | null;
   role?: string | null;
   battingStyle?: string | null;
   bowlingStyle?: string | null;
@@ -607,7 +623,7 @@ export function toArticle(n: RawNews): Article {
     .map(stripTags)
     .filter(Boolean);
   const words = body.join(' ').split(/\s+/).length;
-  const a = rememberAuthor(n.author?.trim() || 'PCZ Desk');
+  const a = rememberAuthor(n.author?.trim() || 'Criczapp Desk');
   return {
     id: n.id,
     slug: n.slug,
@@ -625,14 +641,15 @@ export function toArticle(n: RawNews): Article {
     playerIds: n.playerIds ?? [],
     matchId: n.matchIds?.[0],
     seriesId: n.seriesIds?.[0],
-    image: n.imageUrl ?? undefined,
+    image: mediaUrl(n.imageUrl),
   };
 }
 
 /** Gallery images become one swipeable story; each video short is its own reel. */
 
 export function toShorts(items: RawGallery[]): Short[] {
-  const images = items.filter(i => i.type === 'image');
+  // Only photos the app can actually show (a renderable, absolute URL).
+  const images = items.filter(i => i.type === 'image' && mediaUrl(i.url));
   const shorts: Short[] = items
     .filter(i => i.type === 'short')
     .map(i => ({
@@ -641,8 +658,8 @@ export function toShorts(items: RawGallery[]): Short[] {
       // The feed rarely titles shorts; an untitled one shows no label.
       title: i.title || '',
       teamIds: [],
-      photo: i.thumbnailUrl ?? undefined,
-      slides: [{ headline: i.title || '', caption: i.caption || '', photo: i.thumbnailUrl ?? undefined, teamIds: [] }],
+      photo: mediaUrl(i.thumbnailUrl),
+      slides: [{ headline: i.title || '', caption: i.caption || '', photo: mediaUrl(i.thumbnailUrl), teamIds: [] }],
       views: 0,
       publishedAt: i.createdAt,
       videoUrl: i.url,
@@ -653,8 +670,8 @@ export function toShorts(items: RawGallery[]): Short[] {
       kind: 'gallery',
       title: 'Latest photos',
       teamIds: [],
-      photo: images[0].url,
-      slides: images.map(i => ({ headline: i.title || '', caption: i.caption || '', photo: i.url, teamIds: [] })),
+      photo: mediaUrl(images[0].url),
+      slides: images.map(i => ({ headline: i.title || '', caption: i.caption || '', photo: mediaUrl(i.url), teamIds: [] })),
       views: 0,
       publishedAt: images[0].createdAt,
     });
@@ -669,7 +686,7 @@ export function toVideo(i: RawGallery): Video {
     title: i.title || 'Video',
     duration: `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`,
     teamIds: [],
-    photo: i.thumbnailUrl ?? undefined,
+    photo: mediaUrl(i.thumbnailUrl),
     views: 0,
     publishedAt: i.createdAt,
     category: i.type === 'short' ? 'Shorts' : 'Video',
@@ -707,6 +724,7 @@ export function toPlayer(p: RawPlayer, fallbackTeam?: string): Player {
     age: Number.isFinite(age) ? age : undefined,
     slug: slugify(name),
     nationality: p.nationality ?? undefined,
+    photo: mediaUrl(p.profileUrl),
     stats: {},
     recent: [],
   });

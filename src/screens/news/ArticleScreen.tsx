@@ -35,10 +35,10 @@ export default function ArticleScreen() {
   const ur = a.lang === 'ur';
   // Section labels follow the story's language.
   const t = ur
-    ? { story: 'اس خبر میں', centre: 'میچ سینٹر کھولیں', comments: 'تبصرے', related: 'متعلقہ خبریں', policy: 'کوئی غلطی نظر آئی؟ ہمیں corrections@pakcriczone.com پر بتائیں۔' }
-    : { story: 'In this story', centre: 'Open match centre', comments: 'Comments', related: 'Related', policy: 'Spotted an error? Read our editorial and corrections policy, or tell us at corrections@pakcriczone.com.' };
+    ? { story: 'اس خبر میں', centre: 'میچ سینٹر کھولیں', comments: 'تبصرے', related: 'متعلقہ خبریں', policy: 'کوئی غلطی نظر آئی؟ ہمیں corrections@criczapp.com پر بتائیں۔' }
+    : { story: 'In this story', centre: 'Open match centre', comments: 'Comments', related: 'Related', policy: 'Spotted an error? Read our editorial and corrections policy, or tell us at corrections@criczapp.com.' };
   const by = author(a.authorId);
-  const share = () => Share.share({ message: `${a.title}\nhttps://pakcriczone.com/${ur ? 'ur/' : ''}cricket-news/${a.slug}` });
+  const share = () => Share.share({ message: `${a.title}\nhttps://criczapp.com/${ur ? 'ur/' : ''}cricket-news/${a.slug}` });
 
   return (
     <Screen>

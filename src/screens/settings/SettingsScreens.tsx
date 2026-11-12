@@ -12,7 +12,6 @@ import { Body, Header, Screen } from '../../components/ui/Layout';
 import { Button, Card, EmptyState, Hairline, SectionHeader } from '../../components/ui/Primitives';
 import { Touch } from '../../components/ui/Touch';
 import { useNavigation } from '../../navigation/Stack';
-import { usePrefs } from '../../state/prefs';
 import { useTheme, type ThemePreference } from '../../theme/ThemeProvider';
 import { radius, space } from '../../theme/tokens';
 import { PassButton, ProfilePass } from '../../components/cricket/ProfilePass';
@@ -36,7 +35,7 @@ function LinkRow({ icon, title, value, onPress }: { icon: IconName; title: strin
 }
 
 const ABOUT: { slug: string; title: string; icon: IconName; cmsOnly?: boolean }[] = [
-  { slug: 'about', title: 'About PAK CRICZONE', icon: 'info' },
+  { slug: 'about', title: 'About Criczapp', icon: 'info' },
   { slug: 'editorial-policy', title: 'Editorial policy', icon: 'bookOpen', cmsOnly: true },
   { slug: 'corrections', title: 'Corrections', icon: 'squarePen', cmsOnly: true },
   { slug: 'privacy', title: 'Privacy policy', icon: 'lock' },
@@ -50,7 +49,6 @@ export function SettingsScreen() {
   );
   const aboutPages = ABOUT.filter(p => !p.cmsOnly || published.data?.includes(p.slug));
   const { preference, setPreference } = useTheme();
-  const { newsLang, setNewsLang } = usePrefs();
   const { user, signOut } = useAuth();
   return (
     <Screen>
@@ -81,23 +79,6 @@ export function SettingsScreen() {
             ]}
           />
         </View>
-
-        <SectionHeader title="Language" style={{ marginTop: space.xxl }} />
-        <Card padded={false} style={{ marginHorizontal: space.lg }}>
-          <View style={{ padding: space.lg }}>
-            <AppText variant="label" weight="600" style={{ marginBottom: 10 }}>
-              News language
-            </AppText>
-            <Segmented
-              value={newsLang}
-              onChange={setNewsLang}
-              options={[
-                { key: 'en', label: 'English' },
-                { key: 'ur', label: 'اردو' },
-              ]}
-            />
-          </View>
-        </Card>
 
         <SectionHeader title="About" style={{ marginTop: space.xxl }} />
         <Card padded={false} style={{ marginHorizontal: space.lg }}>

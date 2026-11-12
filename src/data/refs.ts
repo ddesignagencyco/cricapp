@@ -78,6 +78,7 @@ export function rememberPlayer(p: Player): Player {
         bowling: p.bowling ?? prev.bowling,
         batting: p.batting || prev.batting,
         nationality: p.nationality ?? prev.nationality,
+        photo: p.photo ?? prev.photo,
       }
     : p;
   players.set(p.id, next);

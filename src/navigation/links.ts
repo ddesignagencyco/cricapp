@@ -1,9 +1,9 @@
 import type { RouteName } from './routes';
 
 /*
- * Links into the app. Website links (pakcriczone.com/…) open the matching
+ * Links into the app. Website links (criczapp.com/…) open the matching
  * screen, so a shared story or match lands in the app; the app's own scheme
- * (pakcriczone://screen/<Route>?param=value) can open any screen.
+ * (criczapp://screen/<Route>?param=value) can open any screen.
  */
 
 type Target = { name: RouteName; params?: Record<string, string> };
@@ -29,11 +29,11 @@ export function parseLink(url: string): Target | undefined {
     const [k, v = ''] = pair.split('=');
     params[decodeURIComponent(k)] = decodeURIComponent(v.replace(/\+/g, ' '));
   }
-  if (scheme === 'pakcriczone' && host === 'screen') {
+  if (scheme === 'criczapp' && host === 'screen') {
     const name = path.replace(/^\//, '') as RouteName;
     return name ? { name, params: Object.keys(params).length ? params : undefined } : undefined;
   }
-  if (/^(www\.)?pakcriczone\.com$/i.test(host)) {
+  if (/^(www\.)?criczapp\.com$/i.test(host)) {
     for (const [re, to] of WEB) {
       const hit = path.match(re);
       if (hit) return to(hit);

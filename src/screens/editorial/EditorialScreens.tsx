@@ -173,6 +173,17 @@ export function ContactScreen() {
       <Header title="Contact us" />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
         <Body keyboardShouldPersistTaps="handled">
+          <View style={styles.contactHero}>
+            <View style={[styles.contactHeroIcon, { backgroundColor: colors.brand }]}>
+              <Icon name="messageCircle" size={26} color="#FFFFFF" />
+            </View>
+            <AppText variant="hero" weight="700" style={{ fontSize: 26, letterSpacing: -0.6, marginTop: space.md }}>
+              We’d love to hear from you
+            </AppText>
+            <AppText variant="body" color="textSecondary" style={{ marginTop: 6, lineHeight: 22 }}>
+              Questions, feedback or a correction — reach the Criczapp team and we’ll get back to you.
+            </AppText>
+          </View>
           {details.length ? (
             <Card padded={false} style={styles.card}>
               {details.map(([icon, label, value, href], i) => (
@@ -258,6 +269,8 @@ const styles = StyleSheet.create({
   para: { marginTop: space.md, lineHeight: 24 },
   note: { marginTop: space.xl, padding: space.lg, borderRadius: radius.md },
   card: { marginHorizontal: space.lg },
+  contactHero: { paddingHorizontal: space.lg, paddingTop: space.md, paddingBottom: space.lg },
+  contactHeroIcon: { width: 52, height: 52, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   detail: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.lg, paddingVertical: 12, minHeight: 60 },
   detailIcon: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   socials: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm, paddingHorizontal: space.lg },

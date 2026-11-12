@@ -10,7 +10,7 @@ import { space } from '../../theme/tokens';
 
 /**
  * Shared shell for sign-in, sign-up and recovery: a clean page with the
- * back arrow, the PCZ mark centred, a left-aligned title and the form.
+ * back arrow, the Criczapp mark centred, a left-aligned title and the form.
  * A faint brand-blue bloom in the corner is the only decoration. The form
  * scrolls and lifts above the keyboard on small screens.
  */

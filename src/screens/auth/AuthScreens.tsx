@@ -233,7 +233,7 @@ export function SignUpScreen() {
   return (
     <AuthLayout
       title="Create your account"
-      subtitle="Join PAK CRICZONE for personalised cricket updates, predictions and more."
+      subtitle="Join Criczapp for personalised cricket updates, predictions and more."
       footer={<Switcher text="Already have an account?" action="Log in" onPress={() => nav.replace('SignIn')} />}
     >
       <Notice tone="danger" message={formError} />

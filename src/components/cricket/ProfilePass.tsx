@@ -56,7 +56,7 @@ export function ProfilePass({ actions }: { actions?: React.ReactNode }) {
       <View style={styles.pass}>
         <Backdrop />
         <AppText variant="section" color="#FFFFFF">
-          Join PAK CRICZONE
+          Join Criczapp
         </AppText>
         <AppText variant="bodySm" color="#D6E0FF" style={{ marginTop: 6, maxWidth: 300 }}>
           Save teams and players, react to matches and chat while they’re live.

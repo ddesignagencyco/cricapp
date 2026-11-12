@@ -172,6 +172,7 @@ function PhotosRail({ gallery }: { gallery: Short }) {
 export default function HomeScreen() {
   const nav = useNavigation();
   const { setNewsLang } = usePrefs();
+  const { isDark, setPreference } = useTheme();
   const { data, loading, error, refresh, refreshing } = useQuery('home', repo.home, { live: true });
   // Lower sections load on their own once the top of Home is up.
   const extras = useQuery(data ? 'home:extras' : 'home:extras:wait', () => (data ? repo.homeExtras() : Promise.resolve(null)));
@@ -183,7 +184,11 @@ export default function HomeScreen() {
         right={
           <>
             <IconButton icon="search" label="Search" onPress={() => nav.navigate('Search')} />
-            <IconButton icon="mail" label="Newsletter" onPress={() => nav.navigate('Alerts')} />
+            <IconButton
+              icon={isDark ? 'sun' : 'moon'}
+              label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+              onPress={() => setPreference(isDark ? 'light' : 'dark')}
+            />
           </>
         }
       />

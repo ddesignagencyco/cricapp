@@ -35,6 +35,8 @@ export interface Player {
   age?: number;
   slug: string;
   nationality?: string;
+  /** Headshot (Cricbuzz), when the feed has one. */
+  photo?: string;
   /** Career snapshot by format (empty until the API provides career stats). */
   stats: Partial<Record<Format, PlayerFormatStats>>;
   recent: number[];

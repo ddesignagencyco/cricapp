@@ -477,7 +477,14 @@ function CommentaryTab({ match }: { match: Match }) {
     return error ? <ErrorState error={error} onRetry={refresh} /> : <SkeletonList count={5} height={72} />;
   }
   if (!all.balls.length) {
-    return <EmptyState icon="messageCircle" title="No commentary yet" body="Ball-by-ball commentary appears here as the overs are bowled." />;
+    const done = match.status === 'completed' || match.status === 'break';
+    return (
+      <EmptyState
+        icon="messageCircle"
+        title={done ? 'Commentary not available' : 'No commentary yet'}
+        body={done ? 'Ball-by-ball commentary wasn’t recorded for this match.' : 'Ball-by-ball commentary appears here as the overs are bowled.'}
+      />
+    );
   }
   return (
     <Body bottomInset contentStyle={{ paddingTop: space.md }}>
@@ -836,7 +843,7 @@ export default function MatchCentreScreen() {
             <IconButton
               icon="share2"
               label="Share"
-              onPress={() => Share.share({ message: `${team(match.teamA).name} vs ${team(match.teamB).name} — ${match.statusText}\nhttps://pakcriczone.com/live-cricket-score/${match.slug}` })}
+              onPress={() => Share.share({ message: `${team(match.teamA).name} vs ${team(match.teamB).name} — ${match.statusText}\nhttps://criczapp.com/live-cricket-score/${match.slug}` })}
             />
           </>
         }

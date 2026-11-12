@@ -27,40 +27,64 @@ const MUTED = '#55627D';
 const BLUE = '#3B68FC';
 const PAPER = '#F3F7FF';
 
-type Slide = { key: string; title: string; body: string; features: { icon: IconName; label: string }[] };
+type Seg = { t: string; accent?: boolean };
+type Feature = { icon: IconName; label: string; sub: string };
+type Slide = { key: string; eyebrow: string; title: Seg[][]; body: string; features: Feature[] };
 
 const SLIDES: Slide[] = [
   {
     key: 'scores',
-    title: 'All your cricket\nin one place',
+    eyebrow: 'Live scores & news',
+    title: [[{ t: 'All your ' }, { t: 'cricket', accent: true }], [{ t: 'in one place' }]],
     body: 'Live scores, fixtures and news from every series we cover, with the PSL front and centre.',
     features: [
-      { icon: 'radio', label: 'Live scores' },
-      { icon: 'trophy', label: 'PSL table' },
-      { icon: 'languages', label: 'English & Urdu' },
+      { icon: 'radio', label: 'Live scores', sub: 'Ball-by-ball, refreshing on its own' },
+      { icon: 'trophy', label: 'PSL table', sub: 'Standings, fixtures and results' },
+      { icon: 'languages', label: 'English & Urdu', sub: 'Read the game in your language' },
     ],
   },
   {
     key: 'live',
-    title: 'Follow every ball\nas it’s bowled',
+    eyebrow: 'Live match centre',
+    title: [[{ t: 'Follow ' }, { t: 'every ball', accent: true }], [{ t: 'as it’s bowled' }]],
     body: 'Commentary, scorecards and win probability update on their own while the match is on.',
     features: [
-      { icon: 'messageCircle', label: 'Commentary' },
-      { icon: 'table2', label: 'Scorecards' },
-      { icon: 'chartLine', label: 'Win probability' },
+      { icon: 'messageCircle', label: 'Live commentary', sub: 'Every delivery, as it happens' },
+      { icon: 'table2', label: 'Full scorecards', sub: 'Batting, bowling and extras' },
+      { icon: 'chartLine', label: 'Win probability', sub: 'See the match swing live' },
     ],
   },
   {
     key: 'account',
-    title: 'Make the app\nyours',
+    eyebrow: 'Your cricket, saved',
+    title: [[{ t: 'Make the app' }], [{ t: 'yours', accent: true }]],
     body: 'Sign up to save teams and players, get the newsletter and chat during live matches.',
     features: [
-      { icon: 'heart', label: 'Favourites' },
-      { icon: 'mail', label: 'Newsletter' },
-      { icon: 'users', label: 'Match chat' },
+      { icon: 'heart', label: 'Favourites', sub: 'Save your teams and players' },
+      { icon: 'mail', label: 'Newsletter', sub: 'The week’s cricket, in your inbox' },
+      { icon: 'users', label: 'Match chat', sub: 'Talk to fans during live games' },
     ],
   },
 ];
+
+/** A feature as a little card: a tinted icon tile beside a title and one line. */
+function FeatureCard({ icon, label, sub }: Feature) {
+  return (
+    <View style={styles.card}>
+      <View style={styles.cardIcon}>
+        <Icon name={icon} size={20} color={BLUE} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <AppText variant="label" weight="700" color={NAVY}>
+          {label}
+        </AppText>
+        <AppText variant="caption" color={MUTED} style={{ marginTop: 1 }} numberOfLines={1}>
+          {sub}
+        </AppText>
+      </View>
+    </View>
+  );
+}
 
 /* Control sizes, so each slide's copy sits just above its own buttons. */
 const BUTTON = control.lg;
@@ -158,7 +182,7 @@ export default function OnboardingScreen() {
         scrollEventThrottle={16}
         style={StyleSheet.absoluteFill}
         renderItem={({ item, index: i }) => (
-          <View style={{ width, height, justifyContent: 'flex-end', paddingBottom: bottom + controlsHeight(i === SLIDES.length - 1) + space.xl }}>
+          <View style={{ width, height, justifyContent: 'center', paddingTop: insets.top + 72, paddingBottom: bottom + controlsHeight(i === SLIDES.length - 1) + space.lg }}>
             {/* Copy follows the finger: it fades with the swipe instead of animating on its own. */}
             <Animated.View
               style={{
@@ -166,20 +190,29 @@ export default function OnboardingScreen() {
                 opacity: x.interpolate({ inputRange: [(i - 0.7) * width, i * width, (i + 0.7) * width], outputRange: [0, 1, 0], extrapolate: 'clamp' }),
               }}
             >
-              <AppText variant="hero" color={NAVY} style={{ fontSize: titleSize, lineHeight: titleSize * 1.12, letterSpacing: -0.9 }} accessibilityRole="header">
-                {item.title}
-              </AppText>
+              <View style={styles.eyebrow}>
+                <View style={styles.eyebrowBar} />
+                <AppText variant="micro" weight="700" color={BLUE} uppercase style={{ letterSpacing: 1.4 }}>
+                  {item.eyebrow}
+                </AppText>
+              </View>
+              <View accessibilityRole="header">
+                {item.title.map((line, li) => (
+                  <View key={li} style={styles.titleLine}>
+                    {line.map((seg, si) => (
+                      <AppText key={si} variant="hero" weight="700" color={seg.accent ? BLUE : NAVY} style={{ fontSize: titleSize, lineHeight: titleSize * 1.1, letterSpacing: -1 }}>
+                        {seg.t}
+                      </AppText>
+                    ))}
+                  </View>
+                ))}
+              </View>
               <AppText variant="body" color={BODY} style={styles.body}>
                 {item.body}
               </AppText>
-              <View style={styles.features}>
+              <View style={styles.cards}>
                 {item.features.map(f => (
-                  <View key={f.label} style={styles.feature}>
-                    <Icon name={f.icon} size={16} color={BLUE} />
-                    <AppText variant="label" weight="600" color={NAVY} style={{ marginLeft: 6 }} numberOfLines={1}>
-                      {f.label}
-                    </AppText>
-                  </View>
+                  <FeatureCard key={f.label} {...f} />
                 ))}
               </View>
             </Animated.View>
@@ -197,9 +230,10 @@ export default function OnboardingScreen() {
         {/* Separate keys so a pressed Next never hands its press state to Login. */}
         {last ? (
           <View key="final">
-            <Touch scale onPress={() => finish('SignUp')} style={[styles.button, styles.primary]} accessibilityLabel="Create account">
+            {/* Get started enters the app as a guest; sign-in stays optional. */}
+            <Touch scale onPress={() => finish()} style={[styles.button, styles.primary]} accessibilityLabel="Get started">
               <AppText variant="headline" weight="700" color="#FFFFFF">
-                Create account
+                Get Started
               </AppText>
             </Touch>
             <Touch onPress={() => finish('SignIn')} style={[styles.button, styles.outline]} accessibilityLabel="Log in">
@@ -232,20 +266,37 @@ const styles = StyleSheet.create({
   bottomFade: { position: 'absolute', bottom: 0 },
   bottomSolid: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: PAPER },
   brand: { position: 'absolute', top: 0, left: space.xl },
+  eyebrow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  eyebrowBar: { width: 18, height: 3, borderRadius: 2, backgroundColor: BLUE, marginRight: 8 },
+  titleLine: { flexDirection: 'row', flexWrap: 'wrap' },
   body: { marginTop: space.md, fontSize: 16, lineHeight: 24, maxWidth: 400 },
-  features: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm, marginTop: space.lg },
-  feature: {
+  cards: { marginTop: space.lg, gap: 10 },
+  card: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 34,
-    paddingHorizontal: 12,
-    borderRadius: 17,
-    backgroundColor: 'rgba(255,255,255,0.9)',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
     borderWidth: StyleSheet.hairlineWidth * 2,
-    borderColor: 'rgba(12,42,107,0.12)',
+    borderColor: 'rgba(12,42,107,0.08)',
+    shadowColor: '#0C2A6B',
+    shadowOpacity: 0.07,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 2,
+  },
+  cardIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: 'rgba(59,104,252,0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
   },
   controls: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: space.xl },
-  balls: { flexDirection: 'row', alignItems: 'center', gap: 10, height: BALLS, marginBottom: space.lg },
+  balls: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, height: BALLS, marginBottom: space.lg },
   ball: { borderWidth: 1.5, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   seam: { borderLeftWidth: 1.5, borderRightWidth: 1.5, transform: [{ rotate: '35deg' }] },
   button: { height: BUTTON, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', overflow: 'hidden' },
