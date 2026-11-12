@@ -113,11 +113,14 @@ export default function MatchTickerBar({ matches: initialMatches }: MatchTickerB
           </button>
 
           {/* `justify-center-safe` centres a short row and starts from the left once it
-              overflows — in CSS, so cards no longer jump when hydration measures the rail. */}
+              overflows — in CSS, so cards no longer jump when hydration measures the rail.
+              `scroll-px-px` matches the 1px padding so the first snap point is 0: without it the
+              browser snapped the rail to scrollLeft 1 on load, and that scroll, before first
+              paint, made Chrome stop measuring LCP on phones (Lighthouse: NO_LCP, score 0). */}
           <div
             ref={scrollRef}
             data-scroll-hint-off
-            className="@container no-scrollbar flex min-w-0 flex-1 snap-x snap-mandatory justify-center-safe gap-3 overflow-x-auto scroll-smooth px-px py-2"
+            className="@container no-scrollbar flex min-w-0 flex-1 snap-x snap-mandatory justify-center-safe gap-3 overflow-x-auto scroll-smooth scroll-px-px px-px py-2"
           >
             {matches.map((m) => (
               <TickerCard key={m.matchId || m.id} match={m} />
