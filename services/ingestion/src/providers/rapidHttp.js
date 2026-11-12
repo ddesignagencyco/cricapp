@@ -132,7 +132,10 @@ export async function rapidGet({ provider, cacheNamespace = provider, cacheKeyPa
     throw new Error(`${provider} request failed (${res.status}): ${path} ${body}`);
   }
 
-  const data = await res.json();
+  // "Nothing here" comes back as 204 with an empty body (e.g. a series without a points
+  // table); callers read that as an empty payload rather than a failed request.
+  const body = res.status === 204 ? '' : await res.text();
+  const data = body.trim() ? JSON.parse(body) : {};
   await s.set(cacheKey, JSON.stringify(data), 'EX', ttlSeconds);
   return data;
 }
@@ -150,4 +153,17 @@ export async function remember(key, ttlSeconds, compute, { nullTtlSeconds = 600 
   // lookup that found nothing and spend quota on it.
   await s.set(`rapid:memo:${key}`, JSON.stringify(value ?? null), 'EX', value == null ? nullTtlSeconds : ttlSeconds);
   return value;
+}
+
+/** Read a value stored with `memoSet` (null when absent or expired). */
+export async function memoGet(key) {
+  const s = await getStore();
+  const hit = await s.get(`rapid:memo:${key}`);
+  return hit ? JSON.parse(hit) : null;
+}
+
+/** Store a derived value next to the response cache, e.g. commentary accumulated across polls. */
+export async function memoSet(key, value, ttlSeconds) {
+  const s = await getStore();
+  await s.set(`rapid:memo:${key}`, JSON.stringify(value), 'EX', ttlSeconds);
 }

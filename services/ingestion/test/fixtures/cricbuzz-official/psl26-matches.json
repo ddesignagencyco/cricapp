@@ -1,0 +1,2452 @@
+{
+ "matchDetails": [
+  {
+   "matchDetailsMap": {
+    "key": "Thu, 26 Mar 2026",
+    "match": [
+     {
+      "matchInfo": {
+       "matchId": 148962,
+       "seriesId": 11537,
+       "seriesName": "Pakistan Super League 2026",
+       "matchDesc": "1st Match",
+       "matchFormat": "T20",
+       "startDate": "1774533600000",
+       "endDate": "1774483200000",
+       "state": "complete",
+       "status": "Lahore Qalandars won by 69 runs",
+       "team1": {
+        "teamId": 333,
+        "teamName": "LAHORE QALANDARS",
+        "teamSName": "LHQ",
+        "imageId": 883181
+       },
+       "team2": {
+        "teamId": 3114,
+        "teamName": "HYDERABAD KINGSMEN",
+        "teamSName": "HYDK",
+        "imageId": 883179
+       },
+       "venueInfo": {
+        "ground": "Gaddafi Stadium",
+        "city": "Lahore",
+        "timezone": "+05:00"
+       },
+       "currBatTeamId": 333,
+       "isTimeAnnounced": true
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 199,
+         "wickets": 6,
+         "overs": 20
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 130,
+         "wickets": 10,
+         "overs": 20
+        }
+       }
+      }
+     }
+    ],
+    "seriesId": 11537
+   }
+  },
+  {
+   "adDetail": {
+    "name": "native_news_index_random_1",
+    "layout": "native_large",
+    "position": 1
+   }
+  },
+  {
+   "matchDetailsMap": {
+    "key": "Fri, 27 Mar 2026",
+    "match": [
+     {
+      "matchInfo": {
+       "matchId": 148963,
+       "seriesId": 11537,
+       "seriesName": "Pakistan Super League 2026",
+       "matchDesc": "2nd Match",
+       "matchFormat": "T20",
+       "startDate": "1774620000000",
+       "endDate": "1774569600000",
+       "state": "complete",
+       "status": "Karachi Kings won by 14 runs",
+       "team1": {
+        "teamId": 331,
+        "teamName": "QUETTA GLADIATORS",
+        "teamSName": "QTG",
+        "imageId": 883182
+       },
+       "team2": {
+        "teamId": 332,
+        "teamName": "KARACHI KINGS",
+        "teamSName": "KRK",
+        "imageId": 883188
+       },
+       "venueInfo": {
+        "ground": "Gaddafi Stadium",
+        "city": "Lahore",
+        "timezone": "+05:00"
+       },
+       "currBatTeamId": 332,
+       "isTimeAnnounced": true
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 167,
+         "wickets": 7,
+         "overs": 20
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 181,
+         "wickets": 7,
+         "overs": 20
+        }
+       }
+      }
+     }
+    ],
+    "seriesId": 11537
+   }
+  },
+  {
+   "matchDetailsMap": {
+    "key": "Sat, 28 Mar 2026",
+    "match": [
+     {
+      "matchInfo": {
+       "matchId": 148973,
+       "seriesId": 11537,
+       "seriesName": "Pakistan Super League 2026",
+       "matchDesc": "3rd Match",
+       "matchFormat": "T20",
+       "startDate": "1774690200000",
+       "endDate": "1774656000000",
+       "state": "complete",
+       "status": "Peshawar Zalmi won by 5 wkts",
+       "team1": {
+        "teamId": 334,
+        "teamName": "PESHAWAR ZALMI",
+        "teamSName": "PSZ",
+        "imageId": 883180
+       },
+       "team2": {
+        "teamId": 3116,
+        "teamName": "RAWALPINDIZ",
+        "teamSName": "RWP",
+        "imageId": 883174
+       },
+       "venueInfo": {
+        "ground": "Gaddafi Stadium",
+        "city": "Lahore",
+        "timezone": "+05:00"
+       },
+       "currBatTeamId": 334,
+       "isTimeAnnounced": true
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 218,
+         "wickets": 5,
+         "overs": 19.1
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 214,
+         "wickets": 4,
+         "overs": 20
+        }
+       }
+      }
+     },
+     {
+      "matchInfo": {
+       "matchId": 148984,
+       "seriesId": 11537,
+       "seriesName": "Pakistan Super League 2026",
+       "matchDesc": "4th Match",
+       "matchFormat": "T20",
+       "startDate": "1774706400000",
+       "endDate": "1774656000000",
+       "state": "complete",
+       "status": "Multan Sultans won by 5 wkts",
+       "team1": {
+        "teamId": 437,
+        "teamName": "MULTAN SULTANS",
+        "teamSName": "MS",
+        "imageId": 883178
+       },
+       "team2": {
+        "teamId": 330,
+        "teamName": "ISLAMABAD UNITED",
+        "teamSName": "ISU",
+        "imageId": 883184
+       },
+       "venueInfo": {
+        "ground": "Gaddafi Stadium",
+        "city": "Lahore",
+        "timezone": "+05:00"
+       },
+       "currBatTeamId": 437,
+       "isTimeAnnounced": true
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 175,
+         "wickets": 5,
+         "overs": 18.4
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 171,
+         "wickets": 8,
+         "overs": 20
+        }
+       }
+      }
+     }
+    ],
+    "seriesId": 11537
+   }
+  },
+  {
+   "matchDetailsMap": {
+    "key": "Sun, 29 Mar 2026",
+    "match": [
+     {
+      "matchInfo": {
+       "matchId": 148987,
+       "seriesId": 11537,
+       "seriesName": "Pakistan Super League 2026",
+       "matchDesc": "5th Match",
+       "matchFormat": "T20",
+       "startDate": "1774776600000",
+       "endDate": "1774742400000",
+       "state": "complete",
+       "status": "Quetta Gladiators won by 40 runs",
+       "team1": {
+        "teamId": 331,
+        "teamName": "QUETTA GLADIATORS",
+        "teamSName": "QTG",
+        "imageId": 883182
+       },
+       "team2": {
+        "teamId": 3114,
+        "teamName": "HYDERABAD KINGSMEN",
+        "teamSName": "HYDK",
+        "imageId": 883179
+       },
+       "venueInfo": {
+        "ground": "Gaddafi Stadium",
+        "city": "Lahore",
+        "timezone": "+05:00"
+       },
+       "currBatTeamId": 331,
+       "isTimeAnnounced": true
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 174,
+         "wickets": 8,
+         "overs": 20
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 134,
+         "wickets": 8,
+         "overs": 20
+        }
+       }
+      }
+     },
+     {
+      "matchInfo": {
+       "matchId": 148998,
+       "seriesId": 11537,
+       "seriesName": "Pakistan Super League 2026",
+       "matchDesc": "6th Match",
+       "matchFormat": "T20",
+       "startDate": "1774792800000",
+       "endDate": "1774742400000",
+       "state": "complete",
+       "status": "Karachi Kings won by 4 wkts",
+       "team1": {
+        "teamId": 333,
+        "teamName": "LAHORE QALANDARS",
+        "teamSName": "LHQ",
+        "imageId": 883181
+       },
+       "team2": {
+        "teamId": 332,
+        "teamName": "KARACHI KINGS",
+        "teamSName": "KRK",
+        "imageId": 883188
+       },
+       "venueInfo": {
+        "ground": "Gaddafi Stadium",
+        "city": "Lahore",
+        "timezone": "+05:00"
+       },
+       "currBatTeamId": 332,
+       "isTimeAnnounced": true
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 128,
+         "wickets": 9,
+         "overs": 20
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 131,
+         "wickets": 6,
+         "overs": 19.3
+        }
+       }
+      }
+     }
+    ],
+    "seriesId": 11537
+   }
+  },
+  {
+   "matchDetailsMap": {
+    "key": "Tue, 31 Mar 2026",
+    "match": [
+     {
+      "matchInfo": {
+       "matchId": 149009,
+       "seriesId": 11537,
+       "seriesName": "Pakistan Super League 2026",
+       "matchDesc": "7th Match",
+       "matchFormat": "T20",
+       "startDate": "1774965600000",
+       "endDate": "1774915200000",
+       "state": "complete",
+       "status": "Match abandoned due to rain",
+       "team1": {
+        "teamId": 330,
+        "teamName": "ISLAMABAD UNITED",
+        "teamSName": "ISU",
+        "imageId": 883184
+       },
+       "team2": {
+        "teamId": 334,
+        "teamName": "PESHAWAR ZALMI",
+        "teamSName": "PSZ",
+        "imageId": 883180
+       },
+       "venueInfo": {
+        "ground": "Gaddafi Stadium",
+        "city": "Lahore",
+        "timezone": "+05:00"
+       },
+       "isTimeAnnounced": true
+      }
+     }
+    ],
+    "seriesId": 11537
+   }
+  },
+  {
+   "matchDetailsMap": {
+    "key": "Wed, 01 Apr 2026",
+    "match": [
+     {
+      "matchInfo": {
+       "matchId": 149020,
+       "seriesId": 11537,
+       "seriesName": "Pakistan Super League 2026",
+       "matchDesc": "8th Match",
+       "matchFormat": "T20",
+       "startDate": "1775052000000",
+       "endDate": "1775001600000",
+       "state": "complete",
+       "status": "Multan Sultans won by 6 wkts",
+       "team1": {
+        "teamId": 437,
+        "teamName": "MULTAN SULTANS",
+        "teamSName": "MS",
+        "imageId": 883178
+       },
+       "team2": {
+        "teamId": 3114,
+        "teamName": "HYDERABAD KINGSMEN",
+        "teamSName": "HYDK",
+        "imageId": 883179
+       },
+       "venueInfo": {
+        "ground": "Gaddafi Stadium",
+        "city": "Lahore",
+        "timezone": "+05:00"
+       },
+       "currBatTeamId": 437,
+       "isTimeAnnounced": true
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 227,
+         "wickets": 4,
+         "overs": 18.4
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 225,
+         "wickets": 5,
+         "overs": 20
+        }
+       }
+      }
+     }
+    ],
+    "seriesId": 11537
+   }
+  },
+  {
+   "matchDetailsMap": {
+    "key": "Thu, 02 Apr 2026",
+    "match": [
+     {
+      "matchInfo": {
+       "matchId": 149031,
+       "seriesId": 11537,
+       "seriesName": "Pakistan Super League 2026",
+       "matchDesc": "9th Match",
+       "matchFormat": "T20",
+       "startDate": "1775122200000",
+       "endDate": "1775088000000",
+       "state": "complete",
+       "status": "Islamabad United won by 8 wkts",
+       "team1": {
+        "teamId": 331,
+        "teamName": "QUETTA GLADIATORS",
+        "teamSName": "QTG",
+        "imageId": 883182
+       },
+       "team2": {
+        "teamId": 330,
+        "teamName": "ISLAMABAD UNITED",
+        "teamSName": "ISU",
+        "imageId": 883184
+       },
+       "venueInfo": {
+        "ground": "Gaddafi Stadium",
+        "city": "Lahore",
+        "timezone": "+05:00"
+       },
+       "currBatTeamId": 330,
+       "isTimeAnnounced": true
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 183,
+         "wickets": 5,
+         "overs": 20
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 189,
+         "wickets": 2,
+         "overs": 18.2
+        }
+       }
+      }
+     },
+     {
+      "matchInfo": {
+       "matchId": 149042,
+       "seriesId": 11537,
+       "seriesName": "Pakistan Super League 2026",
+       "matchDesc": "10th Match",
+       "matchFormat": "T20",
+       "startDate": "1775138400000",
+       "endDate": "1775088000000",
+       "state": "complete",
+       "status": "Karachi Kings won by 5 wkts",
+       "team1": {
+        "teamId": 3116,
+        "teamName": "RAWALPINDIZ",
+        "teamSName": "RWP",
+        "imageId": 883174
+       },
+       "team2": {
+        "teamId": 332,
+        "teamName": "KARACHI KINGS",
+        "teamSName": "KRK",
+        "imageId": 883188
+       },
+       "venueInfo": {
+        "ground": "Gaddafi Stadium",
+        "city": "Lahore",
+        "timezone": "+05:00"
+       },
+       "currBatTeamId": 332,
+       "isTimeAnnounced": true
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 197,
+         "wickets": 6,
+         "overs": 20
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 199,
+         "wickets": 5,
+         "overs": 19.2
+        }
+       }
+      }
+     }
+    ],
+    "seriesId": 11537
+   }
+  },
+  {
+   "matchDetailsMap": {
+    "key": "Fri, 03 Apr 2026",
+    "match": [
+     {
+      "matchInfo": {
+       "matchId": 149053,
+       "seriesId": 11537,
+       "seriesName": "Pakistan Super League 2026",
+       "matchDesc": "11th Match",
+       "matchFormat": "T20",
+       "startDate": "1775224800000",
+       "endDate": "1775174400000",
+       "state": "complete",
+       "status": "Lahore Qalandars won by 20 runs (13 Overs game due to rain)",
+       "team1": {
+        "teamId": 333,
+        "teamName": "LAHORE QALANDARS",
+        "teamSName": "LHQ",
+        "imageId": 883181
+       },
+       "team2": {
+        "teamId": 437,
+        "teamName": "MULTAN SULTANS",
+        "teamSName": "MS",
+        "imageId": 883178
+       },
+       "venueInfo": {
+        "ground": "Gaddafi Stadium",
+        "city": "Lahore",
+        "timezone": "+05:00"
+       },
+       "currBatTeamId": 333,
+       "isTimeAnnounced": true
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 185,
+         "wickets": 5,
+         "overs": 13
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 165,
+         "wickets": 5,
+         "overs": 13
+        }
+       }
+      }
+     }
+    ],
+    "seriesId": 11537
+   }
+  },
+  {
+   "matchDetailsMap": {
+    "key": "Sat, 04 Apr 2026",
+    "match": [
+     {
+      "matchInfo": {
+       "matchId": 149064,
+       "seriesId": 11537,
+       "seriesName": "Pakistan Super League 2026",
+       "matchDesc": "12th Match",
+       "matchFormat": "T20",
+       "startDate": "1775311200000",
+       "endDate": "1775260800000",
+       "state": "complete",
+       "status": "Islamabad United won by 7 wkts",
+       "team1": {
+        "teamId": 3116,
+        "teamName": "RAWALPINDIZ",
+        "teamSName": "RWP",
+        "imageId": 883174
+       },
+       "team2": {
+        "teamId": 330,
+        "teamName": "ISLAMABAD UNITED",
+        "teamSName": "ISU",
+        "imageId": 883184
+       },
+       "venueInfo": {
+        "ground": "Gaddafi Stadium",
+        "city": "Lahore",
+        "timezone": "+05:00"
+       },
+       "currBatTeamId": 330,
+       "isTimeAnnounced": true
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 156,
+         "wickets": 7,
+         "overs": 20
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 157,
+         "wickets": 3,
+         "overs": 14.2
+        }
+       }
+      }
+     }
+    ],
+    "seriesId": 11537
+   }
+  },
+  {
+   "matchDetailsMap": {
+    "key": "Sun, 05 Apr 2026",
+    "match": [
+     {
+      "matchInfo": {
+       "matchId": 149075,
+       "seriesId": 11537,
+       "seriesName": "Pakistan Super League 2026",
+       "matchDesc": "13th Match",
+       "matchFormat": "T20",
+       "startDate": "1775397600000",
+       "endDate": "1775347200000",
+       "state": "complete",
+       "status": "Multan Sultans won by 6 wkts",
+       "team1": {
+        "teamId": 331,
+        "teamName": "QUETTA GLADIATORS",
+        "teamSName": "QTG",
+        "imageId": 883182
+       },
+       "team2": {
+        "teamId": 437,
+        "teamName": "MULTAN SULTANS",
+        "teamSName": "MS",
+        "imageId": 883178
+       },
+       "venueInfo": {
+        "ground": "Gaddafi Stadium",
+        "city": "Lahore",
+        "timezone": "+05:00"
+       },
+       "currBatTeamId": 437,
+       "isTimeAnnounced": true
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 166,
+         "wickets": 7,
+         "overs": 20
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 167,
+         "wickets": 4,
+         "overs": 17.3
+        }
+       }
+      }
+     }
+    ],
+    "seriesId": 11537
+   }
+  },
+  {
+   "matchDetailsMap": {
+    "key": "Mon, 06 Apr 2026",
+    "match": [
+     {
+      "matchInfo": {
+       "matchId": 149086,
+       "seriesId": 11537,
+       "seriesName": "Pakistan Super League 2026",
+       "matchDesc": "14th Match",
+       "matchFormat": "T20",
+       "startDate": "1775484000000",
+       "endDate": "1775433600000",
+       "state": "complete",
+       "status": "Multan Sultans won by 7 wkts",
+       "team1": {
+        "teamId": 437,
+        "teamName": "MULTAN SULTANS",
+        "teamSName": "MS",
+        "imageId": 883178
+       },
+       "team2": {
+        "teamId": 3116,
+        "teamName": "RAWALPINDIZ",
+        "teamSName": "RWP",
+        "imageId": 883174
+       },
+       "venueInfo": {
+        "ground": "Gaddafi Stadium",
+        "city": "Lahore",
+        "timezone": "+05:00"
+       },
+       "currBatTeamId": 437,
+       "isTimeAnnounced": true
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 186,
+         "wickets": 3,
+         "overs": 16.2
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 182,
+         "wickets": 8,
+         "overs": 20
+        }
+       }
+      }
+     }
+    ],
+    "seriesId": 11537
+   }
+  },
+  {
+   "matchDetailsMap": {
+    "key": "Wed, 08 Apr 2026",
+    "match": [
+     {
+      "matchInfo": {
+       "matchId": 149094,
+       "seriesId": 11537,
+       "seriesName": "Pakistan Super League 2026",
+       "matchDesc": "15th Match",
+       "matchFormat": "T20",
+       "startDate": "1775656800000",
+       "endDate": "1775606400000",
+       "state": "complete",
+       "status": "Peshawar Zalmi won by 4 wkts",
+       "team1": {
+        "teamId": 3114,
+        "teamName": "HYDERABAD KINGSMEN",
+        "teamSName": "HYDK",
+        "imageId": 883179
+       },
+       "team2": {
+        "teamId": 334,
+        "teamName": "PESHAWAR ZALMI",
+        "teamSName": "PSZ",
+        "imageId": 883180
+       },
+       "venueInfo": {
+        "ground": "National Stadium",
+        "city": "Karachi",
+        "timezone": "+05:00"
+       },
+       "currBatTeamId": 334,
+       "isTimeAnnounced": true
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 145,
+         "wickets": 10,
+         "overs": 18.2
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 146,
+         "wickets": 6,
+         "overs": 20
+        }
+       }
+      }
+     }
+    ],
+    "seriesId": 11537
+   }
+  },
+  {
+   "matchDetailsMap": {
+    "key": "Thu, 09 Apr 2026",
+    "match": [
+     {
+      "matchInfo": {
+       "matchId": 149105,
+       "seriesId": 11537,
+       "seriesName": "Pakistan Super League 2026",
+       "matchDesc": "16th Match",
+       "matchFormat": "T20",
+       "startDate": "1775727000000",
+       "endDate": "1775692800000",
+       "state": "complete",
+       "status": "Islamabad United won by 9 wkts",
+       "team1": {
+        "teamId": 333,
+        "teamName": "LAHORE QALANDARS",
+        "teamSName": "LHQ",
+        "imageId": 883181
+       },
+       "team2": {
+        "teamId": 330,
+        "teamName": "ISLAMABAD UNITED",
+        "teamSName": "ISU",
+        "imageId": 883184
+       },
+       "venueInfo": {
+        "ground": "National Stadium",
+        "city": "Karachi",
+        "timezone": "+05:00"
+       },
+       "currBatTeamId": 330,
+       "isTimeAnnounced": true
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 100,
+         "wickets": 10,
+         "overs": 18.3
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 104,
+         "wickets": 1,
+         "overs": 10.2
+        }
+       }
+      }
+     },
+     {
+      "matchInfo": {
+       "matchId": 149116,
+       "seriesId": 11537,
+       "seriesName": "Pakistan Super League 2026",
+       "matchDesc": "17th Match",
+       "matchFormat": "T20",
+       "startDate": "1775743200000",
+       "endDate": "1775692800000",
+       "state": "complete",
+       "status": "Peshawar Zalmi won by 159 runs",
+       "team1": {
+        "teamId": 332,
+        "teamName": "KARACHI KINGS",
+        "teamSName": "KRK",
+        "imageId": 883188
+       },
+       "team2": {
+        "teamId": 334,
+        "teamName": "PESHAWAR ZALMI",
+        "teamSName": "PSZ",
+        "imageId": 883180
+       },
+       "venueInfo": {
+        "ground": "National Stadium",
+        "city": "Karachi",
+        "timezone": "+05:00"
+       },
+       "currBatTeamId": 334,
+       "isTimeAnnounced": true
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 87,
+         "wickets": 10,
+         "overs": 16.1
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 246,
+         "wickets": 3,
+         "overs": 20
+        }
+       }
+      }
+     }
+    ],
+    "seriesId": 11537
+   }
+  },
+  {
+   "matchDetailsMap": {
+    "key": "Fri, 10 Apr 2026",
+    "match": [
+     {
+      "matchInfo": {
+       "matchId": 149127,
+       "seriesId": 11537,
+       "seriesName": "Pakistan Super League 2026",
+       "matchDesc": "18th Match",
+       "matchFormat": "T20",
+       "startDate": "1775829600000",
+       "endDate": "1775779200000",
+       "state": "complete",
+       "status": "Quetta Gladiators won by 61 runs",
+       "team1": {
+        "teamId": 331,
+        "teamName": "QUETTA GLADIATORS",
+        "teamSName": "QTG",
+        "imageId": 883182
+       },
+       "team2": {
+        "teamId": 3116,
+        "teamName": "RAWALPINDIZ",
+        "teamSName": "RWP",
+        "imageId": 883174
+       },
+       "venueInfo": {
+        "ground": "National Stadium",
+        "city": "Karachi",
+        "timezone": "+05:00"
+       },
+       "currBatTeamId": 331,
+       "isTimeAnnounced": true
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 182,
+         "wickets": 6,
+         "overs": 20
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 121,
+         "wickets": 10,
+         "overs": 17.3
+        }
+       }
+      }
+     }
+    ],
+    "seriesId": 11537
+   }
+  },
+  {
+   "matchDetailsMap": {
+    "key": "Sat, 11 Apr 2026",
+    "match": [
+     {
+      "matchInfo": {
+       "matchId": 149138,
+       "seriesId": 11537,
+       "seriesName": "Pakistan Super League 2026",
+       "matchDesc": "19th Match",
+       "matchFormat": "T20",
+       "startDate": "1775899800000",
+       "endDate": "1775865600000",
+       "state": "complete",
+       "status": "Peshawar Zalmi won by 76 runs",
+       "team1": {
+        "teamId": 334,
+        "teamName": "PESHAWAR ZALMI",
+        "teamSName": "PSZ",
+        "imageId": 883180
+       },
+       "team2": {
+        "teamId": 333,
+        "teamName": "LAHORE QALANDARS",
+        "teamSName": "LHQ",
+        "imageId": 883181
+       },
+       "venueInfo": {
+        "ground": "National Stadium",
+        "city": "Karachi",
+        "timezone": "+05:00"
+       },
+       "currBatTeamId": 334,
+       "isTimeAnnounced": true
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 173,
+         "wickets": 7,
+         "overs": 20
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 97,
+         "wickets": 10,
+         "overs": 17
+        }
+       }
+      }
+     },
+     {
+      "matchInfo": {
+       "matchId": 149149,
+       "seriesId": 11537,
+       "seriesName": "Pakistan Super League 2026",
+       "matchDesc": "20th Match",
+       "matchFormat": "T20",
+       "startDate": "1775916000000",
+       "endDate": "1775865600000",
+       "state": "complete",
+       "status": "Hyderabad Kingsmen won by 4 wkts",
+       "team1": {
+        "teamId": 332,
+        "teamName": "KARACHI KINGS",
+        "teamSName": "KRK",
+        "imageId": 883188
+       },
+       "team2": {
+        "teamId": 3114,
+        "teamName": "HYDERABAD KINGSMEN",
+        "teamSName": "HYDK",
+        "imageId": 883179
+       },
+       "venueInfo": {
+        "ground": "National Stadium",
+        "city": "Karachi",
+        "timezone": "+05:00"
+       },
+       "currBatTeamId": 3114,
+       "isTimeAnnounced": true
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 188,
+         "wickets": 8,
+         "overs": 20
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 189,
+         "wickets": 6,
+         "overs": 19.1
+        }
+       }
+      }
+     }
+    ],
+    "seriesId": 11537
+   }
+  },
+  {
+   "matchDetailsMap": {
+    "key": "Sun, 12 Apr 2026",
+    "match": [
+     {
+      "matchInfo": {
+       "matchId": 149160,
+       "seriesId": 11537,
+       "seriesName": "Pakistan Super League 2026",
+       "matchDesc": "21st Match",
+       "matchFormat": "T20",
+       "startDate": "1776002400000",
+       "endDate": "1775952000000",
+       "state": "complete",
+       "status": "Hyderabad Kingsmen won by 6 wkts",
+       "team1": {
+        "teamId": 3114,
+        "teamName": "HYDERABAD KINGSMEN",
+        "teamSName": "HYDK",
+        "imageId": 883179
+       },
+       "team2": {
+        "teamId": 330,
+        "teamName": "ISLAMABAD UNITED",
+        "teamSName": "ISU",
+        "imageId": 883184
+       },
+       "venueInfo": {
+        "ground": "National Stadium",
+        "city": "Karachi",
+        "timezone": "+05:00"
+       },
+       "currBatTeamId": 3114,
+       "isTimeAnnounced": true
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 157,
+         "wickets": 4,
+         "overs": 18.1
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 153,
+         "wickets": 9,
+         "overs": 20
+        }
+       }
+      }
+     }
+    ],
+    "seriesId": 11537
+   }
+  },
+  {
+   "matchDetailsMap": {
+    "key": "Mon, 13 Apr 2026",
+    "match": [
+     {
+      "matchInfo": {
+       "matchId": 149171,
+       "seriesId": 11537,
+       "seriesName": "Pakistan Super League 2026",
+       "matchDesc": "22nd Match",
+       "matchFormat": "T20",
+       "startDate": "1776088800000",
+       "endDate": "1776038400000",
+       "state": "complete",
+       "status": "Peshawar Zalmi won by 24 runs",
+       "team1": {
+        "teamId": 334,
+        "teamName": "PESHAWAR ZALMI",
+        "teamSName": "PSZ",
+        "imageId": 883180
+       },
+       "team2": {
+        "teamId": 437,
+        "teamName": "MULTAN SULTANS",
+        "teamSName": "MS",
+        "imageId": 883178
+       },
+       "venueInfo": {
+        "ground": "National Stadium",
+        "city": "Karachi",
+        "timezone": "+05:00"
+       },
+       "currBatTeamId": 334,
+       "isTimeAnnounced": true
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 196,
+         "wickets": 6,
+         "overs": 20
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 172,
+         "wickets": 8,
+         "overs": 20
+        }
+       }
+      }
+     }
+    ],
+    "seriesId": 11537
+   }
+  },
+  {
+   "matchDetailsMap": {
+    "key": "Wed, 15 Apr 2026",
+    "match": [
+     {
+      "matchInfo": {
+       "matchId": 149182,
+       "seriesId": 11537,
+       "seriesName": "Pakistan Super League 2026",
+       "matchDesc": "23rd Match",
+       "matchFormat": "T20",
+       "startDate": "1776261600000",
+       "endDate": "1776211200000",
+       "state": "complete",
+       "status": "Peshawar Zalmi won by 8 wkts",
+       "team1": {
+        "teamId": 334,
+        "teamName": "PESHAWAR ZALMI",
+        "teamSName": "PSZ",
+        "imageId": 883180
+       },
+       "team2": {
+        "teamId": 331,
+        "teamName": "QUETTA GLADIATORS",
+        "teamSName": "QTG",
+        "imageId": 883182
+       },
+       "venueInfo": {
+        "ground": "National Stadium",
+        "city": "Karachi",
+        "timezone": "+05:00"
+       },
+       "currBatTeamId": 334,
+       "isTimeAnnounced": true
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 156,
+         "wickets": 2,
+         "overs": 18.3
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 154,
+         "wickets": 10,
+         "overs": 20
+        }
+       }
+      }
+     }
+    ],
+    "seriesId": 11537
+   }
+  },
+  {
+   "matchDetailsMap": {
+    "key": "Thu, 16 Apr 2026",
+    "match": [
+     {
+      "matchInfo": {
+       "matchId": 149193,
+       "seriesId": 11537,
+       "seriesName": "Pakistan Super League 2026",
+       "matchDesc": "24th Match",
+       "matchFormat": "T20",
+       "startDate": "1776331800000",
+       "endDate": "1776297600000",
+       "state": "complete",
+       "status": "Hyderabad Kingsmen won by 5 wkts",
+       "team1": {
+        "teamId": 3114,
+        "teamName": "HYDERABAD KINGSMEN",
+        "teamSName": "HYDK",
+        "imageId": 883179
+       },
+       "team2": {
+        "teamId": 3116,
+        "teamName": "RAWALPINDIZ",
+        "teamSName": "RWP",
+        "imageId": 883174
+       },
+       "venueInfo": {
+        "ground": "National Stadium",
+        "city": "Karachi",
+        "timezone": "+05:00"
+       },
+       "currBatTeamId": 3114,
+       "isTimeAnnounced": true
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 123,
+         "wickets": 5,
+         "overs": 16.3
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 121,
+         "wickets": 9,
+         "overs": 20
+        }
+       }
+      }
+     },
+     {
+      "matchInfo": {
+       "matchId": 149204,
+       "seriesId": 11537,
+       "seriesName": "Pakistan Super League 2026",
+       "matchDesc": "25th Match",
+       "matchFormat": "T20",
+       "startDate": "1776348000000",
+       "endDate": "1776297600000",
+       "state": "complete",
+       "status": "Islamabad United won by 8 wkts",
+       "team1": {
+        "teamId": 332,
+        "teamName": "KARACHI KINGS",
+        "teamSName": "KRK",
+        "imageId": 883188
+       },
+       "team2": {
+        "teamId": 330,
+        "teamName": "ISLAMABAD UNITED",
+        "teamSName": "ISU",
+        "imageId": 883184
+       },
+       "venueInfo": {
+        "ground": "National Stadium",
+        "city": "Karachi",
+        "timezone": "+05:00"
+       },
+       "currBatTeamId": 330,
+       "isTimeAnnounced": true
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 150,
+         "wickets": 6,
+         "overs": 20
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 153,
+         "wickets": 2,
+         "overs": 16
+        }
+       }
+      }
+     }
+    ],
+    "seriesId": 11537
+   }
+  },
+  {
+   "matchDetailsMap": {
+    "key": "Fri, 17 Apr 2026",
+    "match": [
+     {
+      "matchInfo": {
+       "matchId": 149215,
+       "seriesId": 11537,
+       "seriesName": "Pakistan Super League 2026",
+       "matchDesc": "26th Match",
+       "matchFormat": "T20",
+       "startDate": "1776434400000",
+       "endDate": "1776384000000",
+       "state": "complete",
+       "status": "Quetta Gladiators won by 6 wkts",
+       "team1": {
+        "teamId": 333,
+        "teamName": "LAHORE QALANDARS",
+        "teamSName": "LHQ",
+        "imageId": 883181
+       },
+       "team2": {
+        "teamId": 331,
+        "teamName": "QUETTA GLADIATORS",
+        "teamSName": "QTG",
+        "imageId": 883182
+       },
+       "venueInfo": {
+        "ground": "National Stadium",
+        "city": "Karachi",
+        "timezone": "+05:00"
+       },
+       "currBatTeamId": 331,
+       "isTimeAnnounced": true
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 134,
+         "wickets": 10,
+         "overs": 19.5
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 138,
+         "wickets": 4,
+         "overs": 16.2
+        }
+       }
+      }
+     }
+    ],
+    "seriesId": 11537
+   }
+  },
+  {
+   "matchDetailsMap": {
+    "key": "Sat, 18 Apr 2026",
+    "match": [
+     {
+      "matchInfo": {
+       "matchId": 149216,
+       "seriesId": 11537,
+       "seriesName": "Pakistan Super League 2026",
+       "matchDesc": "27th Match",
+       "matchFormat": "T20",
+       "startDate": "1776520800000",
+       "endDate": "1776470400000",
+       "state": "complete",
+       "status": "Lahore Qalandars won by 32 runs",
+       "team1": {
+        "teamId": 333,
+        "teamName": "LAHORE QALANDARS",
+        "teamSName": "LHQ",
+        "imageId": 883181
+       },
+       "team2": {
+        "teamId": 3116,
+        "teamName": "RAWALPINDIZ",
+        "teamSName": "RWP",
+        "imageId": 883174
+       },
+       "venueInfo": {
+        "ground": "National Stadium",
+        "city": "Karachi",
+        "timezone": "+05:00"
+       },
+       "currBatTeamId": 333,
+       "isTimeAnnounced": true
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 210,
+         "wickets": 4,
+         "overs": 20
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 178,
+         "wickets": 9,
+         "overs": 20
+        }
+       }
+      }
+     }
+    ],
+    "seriesId": 11537
+   }
+  },
+  {
+   "matchDetailsMap": {
+    "key": "Sun, 19 Apr 2026",
+    "match": [
+     {
+      "matchInfo": {
+       "matchId": 149227,
+       "seriesId": 11537,
+       "seriesName": "Pakistan Super League 2026",
+       "matchDesc": "28th Match",
+       "matchFormat": "T20",
+       "startDate": "1776591000000",
+       "endDate": "1776556800000",
+       "state": "complete",
+       "status": "Multan Sultans won by 11 runs",
+       "team1": {
+        "teamId": 332,
+        "teamName": "KARACHI KINGS",
+        "teamSName": "KRK",
+        "imageId": 883188
+       },
+       "team2": {
+        "teamId": 437,
+        "teamName": "MULTAN SULTANS",
+        "teamSName": "MS",
+        "imageId": 883178
+       },
+       "venueInfo": {
+        "ground": "National Stadium",
+        "city": "Karachi",
+        "timezone": "+05:00"
+       },
+       "currBatTeamId": 437,
+       "isTimeAnnounced": true
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 196,
+         "wickets": 10,
+         "overs": 19.4
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 207,
+         "wickets": 7,
+         "overs": 20
+        }
+       }
+      }
+     },
+     {
+      "matchInfo": {
+       "matchId": 149238,
+       "seriesId": 11537,
+       "seriesName": "Pakistan Super League 2026",
+       "matchDesc": "29th Match",
+       "matchFormat": "T20",
+       "startDate": "1776607200000",
+       "endDate": "1776556800000",
+       "state": "complete",
+       "status": "Peshawar Zalmi won by 118 runs",
+       "team1": {
+        "teamId": 334,
+        "teamName": "PESHAWAR ZALMI",
+        "teamSName": "PSZ",
+        "imageId": 883180
+       },
+       "team2": {
+        "teamId": 331,
+        "teamName": "QUETTA GLADIATORS",
+        "teamSName": "QTG",
+        "imageId": 883182
+       },
+       "venueInfo": {
+        "ground": "National Stadium",
+        "city": "Karachi",
+        "timezone": "+05:00"
+       },
+       "currBatTeamId": 334,
+       "isTimeAnnounced": true
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 255,
+         "wickets": 3,
+         "overs": 20
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 137,
+         "wickets": 10,
+         "overs": 18.1
+        }
+       }
+      }
+     }
+    ],
+    "seriesId": 11537
+   }
+  },
+  {
+   "matchDetailsMap": {
+    "key": "Tue, 21 Apr 2026",
+    "match": [
+     {
+      "matchInfo": {
+       "matchId": 149249,
+       "seriesId": 11537,
+       "seriesName": "Pakistan Super League 2026",
+       "matchDesc": "30th Match",
+       "matchFormat": "T20",
+       "startDate": "1776763800000",
+       "endDate": "1776729600000",
+       "state": "complete",
+       "status": "Lahore Qalandars won by 9 runs",
+       "team1": {
+        "teamId": 333,
+        "teamName": "LAHORE QALANDARS",
+        "teamSName": "LHQ",
+        "imageId": 883181
+       },
+       "team2": {
+        "teamId": 331,
+        "teamName": "QUETTA GLADIATORS",
+        "teamSName": "QTG",
+        "imageId": 883182
+       },
+       "venueInfo": {
+        "ground": "Gaddafi Stadium",
+        "city": "Lahore",
+        "timezone": "+05:00"
+       },
+       "currBatTeamId": 333,
+       "isTimeAnnounced": true
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 197,
+         "wickets": 6,
+         "overs": 20
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 188,
+         "wickets": 7,
+         "overs": 20
+        }
+       }
+      }
+     },
+     {
+      "matchInfo": {
+       "matchId": 149260,
+       "seriesId": 11537,
+       "seriesName": "Pakistan Super League 2026",
+       "matchDesc": "31st Match",
+       "matchFormat": "T20",
+       "startDate": "1776780000000",
+       "endDate": "1776729600000",
+       "state": "complete",
+       "status": "Multan Sultans won by 6 wkts",
+       "team1": {
+        "teamId": 3116,
+        "teamName": "RAWALPINDIZ",
+        "teamSName": "RWP",
+        "imageId": 883174
+       },
+       "team2": {
+        "teamId": 437,
+        "teamName": "MULTAN SULTANS",
+        "teamSName": "MS",
+        "imageId": 883178
+       },
+       "venueInfo": {
+        "ground": "National Stadium",
+        "city": "Karachi",
+        "timezone": "+05:00"
+       },
+       "currBatTeamId": 437,
+       "isTimeAnnounced": true
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 166,
+         "wickets": 4,
+         "overs": 20
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 167,
+         "wickets": 4,
+         "overs": 18.4
+        }
+       }
+      }
+     }
+    ],
+    "seriesId": 11537
+   }
+  },
+  {
+   "matchDetailsMap": {
+    "key": "Wed, 22 Apr 2026",
+    "match": [
+     {
+      "matchInfo": {
+       "matchId": 149270,
+       "seriesId": 11537,
+       "seriesName": "Pakistan Super League 2026",
+       "matchDesc": "32nd Match",
+       "matchFormat": "T20",
+       "startDate": "1776850200000",
+       "endDate": "1776816000000",
+       "state": "complete",
+       "status": "Peshawar Zalmi won by 7 wkts",
+       "team1": {
+        "teamId": 332,
+        "teamName": "KARACHI KINGS",
+        "teamSName": "KRK",
+        "imageId": 883188
+       },
+       "team2": {
+        "teamId": 334,
+        "teamName": "PESHAWAR ZALMI",
+        "teamSName": "PSZ",
+        "imageId": 883180
+       },
+       "venueInfo": {
+        "ground": "Gaddafi Stadium",
+        "city": "Lahore",
+        "timezone": "+05:00"
+       },
+       "currBatTeamId": 334,
+       "isTimeAnnounced": true
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 182,
+         "wickets": 9,
+         "overs": 20
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 186,
+         "wickets": 3,
+         "overs": 18.5
+        }
+       }
+      }
+     },
+     {
+      "matchInfo": {
+       "matchId": 149281,
+       "seriesId": 11537,
+       "seriesName": "Pakistan Super League 2026",
+       "matchDesc": "33rd Match",
+       "matchFormat": "T20",
+       "startDate": "1776866400000",
+       "endDate": "1776816000000",
+       "state": "complete",
+       "status": "Hyderabad Kingsmen won by 4 wkts",
+       "team1": {
+        "teamId": 3114,
+        "teamName": "HYDERABAD KINGSMEN",
+        "teamSName": "HYDK",
+        "imageId": 883179
+       },
+       "team2": {
+        "teamId": 437,
+        "teamName": "MULTAN SULTANS",
+        "teamSName": "MS",
+        "imageId": 883178
+       },
+       "venueInfo": {
+        "ground": "National Stadium",
+        "city": "Karachi",
+        "timezone": "+05:00"
+       },
+       "currBatTeamId": 3114,
+       "isTimeAnnounced": true
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 214,
+         "wickets": 6,
+         "overs": 19.3
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 213,
+         "wickets": 7,
+         "overs": 20
+        }
+       }
+      }
+     }
+    ],
+    "seriesId": 11537
+   }
+  },
+  {
+   "matchDetailsMap": {
+    "key": "Thu, 23 Apr 2026",
+    "match": [
+     {
+      "matchInfo": {
+       "matchId": 149292,
+       "seriesId": 11537,
+       "seriesName": "Pakistan Super League 2026",
+       "matchDesc": "34th Match",
+       "matchFormat": "T20",
+       "startDate": "1776936600000",
+       "endDate": "1776902400000",
+       "state": "complete",
+       "status": "Rawalpindiz won by 6 wkts",
+       "team1": {
+        "teamId": 3116,
+        "teamName": "RAWALPINDIZ",
+        "teamSName": "RWP",
+        "imageId": 883174
+       },
+       "team2": {
+        "teamId": 330,
+        "teamName": "ISLAMABAD UNITED",
+        "teamSName": "ISU",
+        "imageId": 883184
+       },
+       "venueInfo": {
+        "ground": "National Stadium",
+        "city": "Karachi",
+        "timezone": "+05:00"
+       },
+       "currBatTeamId": 3116,
+       "isTimeAnnounced": true
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 140,
+         "wickets": 4,
+         "overs": 18.1
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 137,
+         "wickets": 10,
+         "overs": 20
+        }
+       }
+      }
+     },
+     {
+      "matchInfo": {
+       "matchId": 149303,
+       "seriesId": 11537,
+       "seriesName": "Pakistan Super League 2026",
+       "matchDesc": "35th Match",
+       "matchFormat": "T20",
+       "startDate": "1776952800000",
+       "endDate": "1776902400000",
+       "state": "complete",
+       "status": "Karachi Kings won by 5 wkts",
+       "team1": {
+        "teamId": 333,
+        "teamName": "LAHORE QALANDARS",
+        "teamSName": "LHQ",
+        "imageId": 883181
+       },
+       "team2": {
+        "teamId": 332,
+        "teamName": "KARACHI KINGS",
+        "teamSName": "KRK",
+        "imageId": 883188
+       },
+       "venueInfo": {
+        "ground": "Gaddafi Stadium",
+        "city": "Lahore",
+        "timezone": "+05:00"
+       },
+       "currBatTeamId": 332,
+       "isTimeAnnounced": true
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 199,
+         "wickets": 6,
+         "overs": 20
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 203,
+         "wickets": 5,
+         "overs": 18.4
+        }
+       }
+      }
+     }
+    ],
+    "seriesId": 11537
+   }
+  },
+  {
+   "matchDetailsMap": {
+    "key": "Fri, 24 Apr 2026",
+    "match": [
+     {
+      "matchInfo": {
+       "matchId": 149314,
+       "seriesId": 11537,
+       "seriesName": "Pakistan Super League 2026",
+       "matchDesc": "36th Match",
+       "matchFormat": "T20",
+       "startDate": "1777039200000",
+       "endDate": "1776988800000",
+       "state": "complete",
+       "status": "Islamabad United won by 8 wkts",
+       "team1": {
+        "teamId": 3114,
+        "teamName": "HYDERABAD KINGSMEN",
+        "teamSName": "HYDK",
+        "imageId": 883179
+       },
+       "team2": {
+        "teamId": 330,
+        "teamName": "ISLAMABAD UNITED",
+        "teamSName": "ISU",
+        "imageId": 883184
+       },
+       "venueInfo": {
+        "ground": "National Stadium",
+        "city": "Karachi",
+        "timezone": "+05:00"
+       },
+       "currBatTeamId": 330,
+       "isTimeAnnounced": true
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 80,
+         "wickets": 10,
+         "overs": 15.5
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 83,
+         "wickets": 2,
+         "overs": 6.4
+        }
+       }
+      }
+     }
+    ],
+    "seriesId": 11537
+   }
+  },
+  {
+   "matchDetailsMap": {
+    "key": "Sat, 25 Apr 2026",
+    "match": [
+     {
+      "matchInfo": {
+       "matchId": 149325,
+       "seriesId": 11537,
+       "seriesName": "Pakistan Super League 2026",
+       "matchDesc": "37th Match",
+       "matchFormat": "T20",
+       "startDate": "1777109400000",
+       "endDate": "1777075200000",
+       "state": "complete",
+       "status": "Karachi Kings won by 9 wkts",
+       "team1": {
+        "teamId": 331,
+        "teamName": "QUETTA GLADIATORS",
+        "teamSName": "QTG",
+        "imageId": 883182
+       },
+       "team2": {
+        "teamId": 332,
+        "teamName": "KARACHI KINGS",
+        "teamSName": "KRK",
+        "imageId": 883188
+       },
+       "venueInfo": {
+        "ground": "Gaddafi Stadium",
+        "city": "Lahore",
+        "timezone": "+05:00"
+       },
+       "currBatTeamId": 332,
+       "isTimeAnnounced": true
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 195,
+         "wickets": 6,
+         "overs": 20
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 199,
+         "wickets": 1,
+         "overs": 18.3
+        }
+       }
+      }
+     },
+     {
+      "matchInfo": {
+       "matchId": 149336,
+       "seriesId": 11537,
+       "seriesName": "Pakistan Super League 2026",
+       "matchDesc": "38th Match",
+       "matchFormat": "T20",
+       "startDate": "1777125600000",
+       "endDate": "1777075200000",
+       "state": "complete",
+       "status": "Lahore Qalandars won by 6 wkts",
+       "team1": {
+        "teamId": 333,
+        "teamName": "LAHORE QALANDARS",
+        "teamSName": "LHQ",
+        "imageId": 883181
+       },
+       "team2": {
+        "teamId": 334,
+        "teamName": "PESHAWAR ZALMI",
+        "teamSName": "PSZ",
+        "imageId": 883180
+       },
+       "venueInfo": {
+        "ground": "Gaddafi Stadium",
+        "city": "Lahore",
+        "timezone": "+05:00"
+       },
+       "currBatTeamId": 333,
+       "isTimeAnnounced": true
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 200,
+         "wickets": 4,
+         "overs": 19.3
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 199,
+         "wickets": 4,
+         "overs": 20
+        }
+       }
+      }
+     }
+    ],
+    "seriesId": 11537
+   }
+  },
+  {
+   "matchDetailsMap": {
+    "key": "Sun, 26 Apr 2026",
+    "match": [
+     {
+      "matchInfo": {
+       "matchId": 149347,
+       "seriesId": 11537,
+       "seriesName": "Pakistan Super League 2026",
+       "matchDesc": "39th Match",
+       "matchFormat": "T20",
+       "startDate": "1777195800000",
+       "endDate": "1777161600000",
+       "state": "complete",
+       "status": "Hyderabad Kingsmen won by 108 runs",
+       "team1": {
+        "teamId": 3114,
+        "teamName": "HYDERABAD KINGSMEN",
+        "teamSName": "HYDK",
+        "imageId": 883179
+       },
+       "team2": {
+        "teamId": 3116,
+        "teamName": "RAWALPINDIZ",
+        "teamSName": "RWP",
+        "imageId": 883174
+       },
+       "venueInfo": {
+        "ground": "National Stadium",
+        "city": "Karachi",
+        "timezone": "+05:00"
+       },
+       "currBatTeamId": 3114,
+       "isTimeAnnounced": true
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 244,
+         "wickets": 6,
+         "overs": 20
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 136,
+         "wickets": 10,
+         "overs": 17.1
+        }
+       }
+      }
+     },
+     {
+      "matchInfo": {
+       "matchId": 149358,
+       "seriesId": 11537,
+       "seriesName": "Pakistan Super League 2026",
+       "matchDesc": "40th Match",
+       "matchFormat": "T20",
+       "startDate": "1777212000000",
+       "endDate": "1777161600000",
+       "state": "complete",
+       "status": "Islamabad United won by 4 wkts",
+       "team1": {
+        "teamId": 330,
+        "teamName": "ISLAMABAD UNITED",
+        "teamSName": "ISU",
+        "imageId": 883184
+       },
+       "team2": {
+        "teamId": 437,
+        "teamName": "MULTAN SULTANS",
+        "teamSName": "MS",
+        "imageId": 883178
+       },
+       "venueInfo": {
+        "ground": "National Stadium",
+        "city": "Karachi",
+        "timezone": "+05:00"
+       },
+       "currBatTeamId": 330,
+       "isTimeAnnounced": true
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 193,
+         "wickets": 6,
+         "overs": 18.4
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 192,
+         "wickets": 7,
+         "overs": 20
+        }
+       }
+      }
+     }
+    ],
+    "seriesId": 11537
+   }
+  },
+  {
+   "matchDetailsMap": {
+    "key": "Tue, 28 Apr 2026",
+    "match": [
+     {
+      "matchInfo": {
+       "matchId": 149365,
+       "seriesId": 11537,
+       "seriesName": "Pakistan Super League 2026",
+       "matchDesc": "Qualifier",
+       "matchFormat": "T20",
+       "startDate": "1777384800000",
+       "endDate": "1777334400000",
+       "state": "complete",
+       "status": "Peshawar Zalmi won by 70 runs",
+       "team1": {
+        "teamId": 334,
+        "teamName": "PESHAWAR ZALMI",
+        "teamSName": "PSZ",
+        "imageId": 883180
+       },
+       "team2": {
+        "teamId": 330,
+        "teamName": "ISLAMABAD UNITED",
+        "teamSName": "ISU",
+        "imageId": 883184
+       },
+       "venueInfo": {
+        "ground": "National Stadium",
+        "city": "Karachi",
+        "timezone": "+05:00"
+       },
+       "currBatTeamId": 334,
+       "isTimeAnnounced": true
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 221,
+         "wickets": 7,
+         "overs": 20
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 151,
+         "wickets": 10,
+         "overs": 18.4
+        }
+       }
+      }
+     }
+    ],
+    "seriesId": 11537
+   }
+  },
+  {
+   "matchDetailsMap": {
+    "key": "Wed, 29 Apr 2026",
+    "match": [
+     {
+      "matchInfo": {
+       "matchId": 149376,
+       "seriesId": 11537,
+       "seriesName": "Pakistan Super League 2026",
+       "matchDesc": "Eliminator 1",
+       "matchFormat": "T20",
+       "startDate": "1777471200000",
+       "endDate": "1777420800000",
+       "state": "complete",
+       "status": "Hyderabad Kingsmen won by 8 wkts",
+       "team1": {
+        "teamId": 437,
+        "teamName": "MULTAN SULTANS",
+        "teamSName": "MS",
+        "imageId": 883178
+       },
+       "team2": {
+        "teamId": 3114,
+        "teamName": "HYDERABAD KINGSMEN",
+        "teamSName": "HYDK",
+        "imageId": 883179
+       },
+       "venueInfo": {
+        "ground": "Gaddafi Stadium",
+        "city": "Lahore",
+        "timezone": "+05:00"
+       },
+       "currBatTeamId": 3114,
+       "isTimeAnnounced": true
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 159,
+         "wickets": 9,
+         "overs": 20
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 162,
+         "wickets": 2,
+         "overs": 15.2
+        }
+       }
+      }
+     }
+    ],
+    "seriesId": 11537
+   }
+  },
+  {
+   "matchDetailsMap": {
+    "key": "Fri, 01 May 2026",
+    "match": [
+     {
+      "matchInfo": {
+       "matchId": 149387,
+       "seriesId": 11537,
+       "seriesName": "Pakistan Super League 2026",
+       "matchDesc": "Eliminator 2",
+       "matchFormat": "T20",
+       "startDate": "1777644000000",
+       "endDate": "1777593600000",
+       "state": "complete",
+       "status": "Hyderabad Kingsmen won by 2 runs",
+       "team1": {
+        "teamId": 330,
+        "teamName": "ISLAMABAD UNITED",
+        "teamSName": "ISU",
+        "imageId": 883184
+       },
+       "team2": {
+        "teamId": 3114,
+        "teamName": "HYDERABAD KINGSMEN",
+        "teamSName": "HYDK",
+        "imageId": 883179
+       },
+       "venueInfo": {
+        "ground": "Gaddafi Stadium",
+        "city": "Lahore",
+        "timezone": "+05:00"
+       },
+       "currBatTeamId": 3114,
+       "isTimeAnnounced": true
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 184,
+         "wickets": 7,
+         "overs": 20
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 186,
+         "wickets": 5,
+         "overs": 20
+        }
+       }
+      }
+     }
+    ],
+    "seriesId": 11537
+   }
+  },
+  {
+   "matchDetailsMap": {
+    "key": "Sun, 03 May 2026",
+    "match": [
+     {
+      "matchInfo": {
+       "matchId": 149392,
+       "seriesId": 11537,
+       "seriesName": "Pakistan Super League 2026",
+       "matchDesc": "Final",
+       "matchFormat": "T20",
+       "startDate": "1777820400000",
+       "endDate": "1777766400000",
+       "state": "complete",
+       "status": "Peshawar Zalmi won by 5 wkts",
+       "team1": {
+        "teamId": 334,
+        "teamName": "PESHAWAR ZALMI",
+        "teamSName": "PSZ",
+        "imageId": 883180
+       },
+       "team2": {
+        "teamId": 3114,
+        "teamName": "HYDERABAD KINGSMEN",
+        "teamSName": "HYDK",
+        "imageId": 883179
+       },
+       "venueInfo": {
+        "ground": "Gaddafi Stadium",
+        "city": "Lahore",
+        "timezone": "+05:00"
+       },
+       "currBatTeamId": 334,
+       "isTimeAnnounced": true
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 130,
+         "wickets": 5,
+         "overs": 15.2
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 129,
+         "wickets": 10,
+         "overs": 18
+        }
+       }
+      }
+     }
+    ],
+    "seriesId": 11537
+   }
+  }
+ ],
+ "appIndex": {
+  "seoTitle": "Pakistan Super League 2026 live scores, schedule and results - Cricbuzz | Cricbuzz.com",
+  "webURL": "www.cricbuzz.com/cricket-series/"
+ }
+}

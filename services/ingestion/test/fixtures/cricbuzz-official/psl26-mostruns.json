@@ -1,0 +1,175 @@
+{
+ "t20StatsList": {
+  "headers": [
+   "Batter",
+   "M",
+   "I",
+   "R",
+   "SR"
+  ],
+  "values": [
+   {
+    "values": [
+     "8359",
+     "Babar Azam",
+     "11",
+     "11",
+     "588",
+     "145.91"
+    ]
+   },
+   {
+    "values": [
+     "9494",
+     "Kusal Mendis",
+     "11",
+     "11",
+     "550",
+     "168.20"
+    ]
+   },
+   {
+    "values": [
+     "10863",
+     "Fakhar Zaman",
+     "8",
+     "8",
+     "401",
+     "151.89"
+    ]
+   },
+   {
+    "values": [
+     "19013",
+     "Usman Khan",
+     "13",
+     "13",
+     "389",
+     "162.76"
+    ]
+   },
+   {
+    "values": [
+     "13625",
+     "Sahibzada Farhan",
+     "10",
+     "10",
+     "380",
+     "166.67"
+    ]
+   },
+   {
+    "values": [
+     "2250",
+     "Steven Smith",
+     "11",
+     "11",
+     "380",
+     "161.70"
+    ]
+   },
+   {
+    "values": [
+     "9545",
+     "Shan Masood",
+     "11",
+     "11",
+     "367",
+     "158.19"
+    ]
+   },
+   {
+    "values": [
+     "1466842",
+     "Sameer Minhas",
+     "11",
+     "11",
+     "349",
+     "155.80"
+    ]
+   },
+   {
+    "values": [
+     "10182",
+     "Marnus Labuschagne",
+     "13",
+     "13",
+     "344",
+     "130.30"
+    ]
+   },
+   {
+    "values": [
+     "2244",
+     "Rilee Rossouw",
+     "9",
+     "9",
+     "317",
+     "142.79"
+    ]
+   },
+   {
+    "values": [
+     "9838",
+     "Devon Conway",
+     "11",
+     "11",
+     "315",
+     "129.10"
+    ]
+   },
+   {
+    "values": [
+     "41113",
+     "Hasan Nawaz",
+     "10",
+     "10",
+     "291",
+     "134.10"
+    ]
+   },
+   {
+    "values": [
+     "9812",
+     "Saud Shakeel",
+     "10",
+     "10",
+     "280",
+     "132.08"
+    ]
+   },
+   {
+    "values": [
+     "13172",
+     "Josh Philippe",
+     "11",
+     "11",
+     "268",
+     "151.41"
+    ]
+   },
+   {
+    "values": [
+     "22816",
+     "Maaz Sadaqat",
+     "12",
+     "12",
+     "260",
+     "178.08"
+    ]
+   }
+  ]
+ },
+ "appIndex": {
+  "seoTitle": "Pakistan Super League 2026Statistics - Cricbuzz | Cricbuzz.com",
+  "webURL": "http://www.cricbuzz.com/cricket-series/11537/pakistan-super-league-2026/stats"
+ },
+ "filter": {
+  "matchtype": [
+   {
+    "matchTypeId": "3",
+    "matchTypeDesc": "T20"
+   }
+  ]
+ }
+}

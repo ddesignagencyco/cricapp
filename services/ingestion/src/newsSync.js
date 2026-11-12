@@ -148,6 +148,7 @@ export async function ensureNewsCategory(name) {
 export async function saveNewsArticles(articles) {
   let inserted = 0;
   let updated = 0;
+  let duplicates = 0;
 
   for (const article of articles) {
     const existing = await query(
@@ -178,9 +179,13 @@ export async function saveNewsArticles(articles) {
       );
       updated++;
     } else {
-      await query(
+      // The slug is title + link hash, so the same story carried by two feeds (Google News
+      // "Pakistan cricket" and "PSL" overlap) maps to one slug: keep the first copy instead
+      // of letting the unique-slug error abort the rest of this feed.
+      const res = await query(
         `INSERT INTO news_articles (id, title, slug, summary, content, image_url, author, source, category_id, published_at, is_published, created_at, updated_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, true, NOW(), NOW())`,
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, true, NOW(), NOW())
+         ON CONFLICT (slug) DO NOTHING`,
         [
           crypto.randomUUID(),
           article.title,
@@ -194,11 +199,12 @@ export async function saveNewsArticles(articles) {
           article.publishedAt,
         ],
       );
-      inserted++;
+      if (res.rowCount) inserted++;
+      else duplicates++;
     }
   }
 
-  return { inserted, updated };
+  return { inserted, updated, duplicates };
 }
 
 /* ------------------------------------------------------------------ */

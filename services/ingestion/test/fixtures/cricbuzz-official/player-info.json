@@ -1,0 +1,231 @@
+{
+ "id": "8359",
+ "bat": "Right Handed Bat",
+ "bowl": "Right-arm offbreak",
+ "name": "Babar Azam",
+ "fullName": "Mohammad Babar Azam",
+ "role": "Batsman",
+ "birthPlace": "Lahore, Punjab ",
+ "intlTeam": "Pakistan",
+ "teams": "Pakistan U19, Sylhet Royals, Pakistan, Pakistan A, Islamabad United, Rangpur Riders, Karachi Kings, Guyana Amazon Warriors, Sylhet Sixers, Somerset, Dublin Guardians, Team White, Team Green, Peshawar Zalmi, Colombo Kaps, Sydney Sixers, Desert Vipers, ",
+ "DoB": "October 15, 1994 (32 years)",
+ "image": "http://i.cricketcb.com/stats/img/faceImages/8359.jpg",
+ "bio": "When Babar Azam notched up his 5th ODI ton against West Indies in his 25th innings in early 2017, he became the second quickest after Quinton De Kock to score five ODI tons. His aggregate of 1306 runs after 25 knocks tallied the highest, beating Jonathan Trott's numbers. Life indeed has been on fast tracks for Babar Azam. His three consecutive ODI tons against the Windies in 2016 in the UAE were a precursor to one glorious career that stares at us. <br/>  <br/> Pakistan's search for a dependable number 3 in the shorter formats has been an eternal one. Their batting stocks at the international level, especially in the shorter formats have looked as bare as Old Mother Hubbard's cupboard. The arrival of Babar onto the big scene however can't exactly be termed as serendipity. <br/>  <br/> Ever since he was drafted into the Pakistan under-19 team for the 2010 World Cup as a fifteen year old, it seemed as if another raw talent has been unleashed. However, some polishing resulted in another under-19 World Cup campaign in 2012. This time he was the skipper. Pakistan were knocked out by eventual winners India but Babar had piled the runs to be the top run getter for his team. <br/>  <br/> The journey post that was through the domestic system and come his chance in 2016, Babar grabbed it with hands as big as tentacles against the Windies in the UAE. A Test debut against the caribbean team also went well and the fairytale had a continuity. But flaws were ripped open on the bouncy tracks of Australia in late 2016 and early 2017 in the whites. But given the fact that he wants to emaluate Virat Kohli' feats and idolizes ABD, Babar would carve a way out. <br/>  <br/> Babar Azam is the cousin of Akmal (Kamran, Umar and Adnan) brothers and is often denoted as a talented batsman. He was the leading run-scorer in the tri-series that included Sri Lanka and Bangladesh Under - 19 in 2009. His consistency at Under - 19 level pushed the selectors to offer him a chance to play for his national side. <br/>  <br/> Over the years, Babar Azam has shown tremendous consistency across all formats and is considered as one of the best players in the history of Pakistan cricket. His impeccable stats are a proof of his achievements and it wouldn't be a surprise if he breaks several records in future.",
+ "rankings": {
+  "bat": {
+   "testRank": "15",
+   "odiRank": "9",
+   "t20Rank": "49",
+   "testBestRank": "2",
+   "odiBestRank": "1",
+   "t20BestRank": "1",
+   "odiDiffRank": "-2",
+   "t20DiffRank": "-1"
+  },
+  "bowl": {},
+  "all": {
+   "testBestRank": "99"
+  }
+ },
+ "appIndex": {
+  "seoTitle": "Babar Azam Profile - Cricbuzz | Cricbuzz.com",
+  "webURL": "http://www.cricbuzz.com/profiles/8359/babar-azam"
+ },
+ "DoBFormat": "October 15, 1994",
+ "faceImageId": 846059,
+ "teamNameIds": [
+  {
+   "teamId": "56",
+   "teamName": "Pakistan U19"
+  },
+  {
+   "teamId": "206",
+   "teamName": "Sylhet Royals"
+  },
+  {
+   "teamId": "3",
+   "teamName": "Pakistan"
+  },
+  {
+   "teamId": "325",
+   "teamName": "Pakistan A"
+  },
+  {
+   "teamId": "330",
+   "teamName": "Islamabad United"
+  },
+  {
+   "teamId": "256",
+   "teamName": "Rangpur Riders"
+  },
+  {
+   "teamId": "332",
+   "teamName": "Karachi Kings"
+  },
+  {
+   "teamId": "159",
+   "teamName": "Guyana Amazon Warriors"
+  },
+  {
+   "teamId": "434",
+   "teamName": "Sylhet Sixers"
+  },
+  {
+   "teamId": "119",
+   "teamName": "Somerset"
+  },
+  {
+   "teamId": "576",
+   "teamName": "Dublin Guardians"
+  },
+  {
+   "teamId": "749",
+   "teamName": "Team White"
+  },
+  {
+   "teamId": "754",
+   "teamName": "Team Green"
+  },
+  {
+   "teamId": "334",
+   "teamName": "Peshawar Zalmi"
+  },
+  {
+   "teamId": "943",
+   "teamName": "Colombo Kaps"
+  },
+  {
+   "teamId": "198",
+   "teamName": "Sydney Sixers"
+  },
+  {
+   "teamId": "1326",
+   "teamName": "Desert Vipers"
+  },
+  {
+   "teamId": "0"
+  }
+ ],
+ "playerTeamIds": "56, 206, 3, 325, 330, 256, 332, 159, 434, 119, 576, 749, 754, 334, 943, 198, 1326, 0",
+ "intlTeamImageId": 776308,
+ "recentBatting": {
+  "headers": [
+   "Score",
+   "OPPN.",
+   "Format",
+   "Date"
+  ],
+  "rows": [
+   {
+    "values": [
+     "170761",
+     "0(5)",
+     "SL",
+     "ODI",
+     "31 Oct 26"
+    ],
+    "followUpLinkText": "/live-cricket-scores/170761/pak-vs-sl-final-pakistan-odi-tri-series-2026"
+   },
+   {
+    "values": [
+     "170737",
+     "29(33)",
+     "SL",
+     "ODI",
+     "27 Oct 26"
+    ],
+    "followUpLinkText": "/live-cricket-scores/170737/pak-vs-sl-5th-match-pakistan-odi-tri-series-2026"
+   },
+   {
+    "values": [
+     "170733",
+     "10(12)",
+     "ENG",
+     "ODI",
+     "25 Oct 26"
+    ],
+    "followUpLinkText": "/live-cricket-scores/170733/pak-vs-eng-4th-match-pakistan-odi-tri-series-2026"
+   },
+   {
+    "values": [
+     "170723",
+     "34(52)",
+     "ENG",
+     "ODI",
+     "20 Oct 26"
+    ],
+    "followUpLinkText": "/live-cricket-scores/170723/pak-vs-eng-2nd-match-pakistan-odi-tri-series-2026"
+   },
+   {
+    "values": [
+     "170720",
+     "45(57)",
+     "SL",
+     "ODI",
+     "18 Oct 26"
+    ],
+    "followUpLinkText": "/live-cricket-scores/170720/pak-vs-sl-1st-match-pakistan-odi-tri-series-2026"
+   }
+  ]
+ },
+ "recentBowling": {
+  "headers": [
+   "Wickets",
+   "OPPN.",
+   "Format",
+   "Date"
+  ],
+  "rows": [
+   {
+    "values": [
+     "56717",
+     "0-11 & DNB",
+     "NZ",
+     "Test",
+     "26 Dec 22"
+    ],
+    "followUpLinkText": "/live-cricket-scores/56717/pak-vs-nz-1st-test-new-zealand-tour-of-pakistan-2022-23"
+   },
+   {
+    "values": [
+     "48732",
+     "DNB & 0-6",
+     "SL",
+     "Test",
+     "24 Jul 22"
+    ],
+    "followUpLinkText": "/live-cricket-scores/48732/sl-vs-pak-2nd-test-pakistan-tour-of-sri-lanka-2022"
+   },
+   {
+    "values": [
+     "48725",
+     "DNB & 0-9",
+     "SL",
+     "Test",
+     "16 Jul 22"
+    ],
+    "followUpLinkText": "/live-cricket-scores/48725/sl-vs-pak-1st-test-pakistan-tour-of-sri-lanka-2022"
+   },
+   {
+    "values": [
+     "40358",
+     "0-2 & DNB",
+     "AUS",
+     "Test",
+     "21 Mar 22"
+    ],
+    "followUpLinkText": "/live-cricket-scores/40358/pak-vs-aus-3rd-test-australia-tour-of-pakistan-2022"
+   },
+   {
+    "values": [
+     "40353",
+     "1-7 & DNB",
+     "AUS",
+     "Test",
+     "12 Mar 22"
+    ],
+    "followUpLinkText": "/live-cricket-scores/40353/pak-vs-aus-2nd-test-australia-tour-of-pakistan-2022"
+   }
+  ]
+ }
+}

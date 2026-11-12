@@ -1,10 +1,8 @@
 import * as sportradar from '../sportradar.js';
-import * as cricbuzz from './cricbuzz.js';
-import { cricbuzz2, cricbuzz3 } from './cricbuzz.js';
-import * as cricbuzzu from './cricbuzzu.js';
-import * as live1 from './live1.js';
-import * as highlightly from './highlightly.js';
-import { fetchPlayerProfile as cricbuzzPlayerProfile, fetchTeamRoster as cricbuzzTeamRoster } from './cricbuzzPlayer.js';
+import * as cricbuzzMatches from './cricbuzz.js';
+import * as cricbuzzRef from './cricbuzzRef.js';
+import * as cricbuzzTimeline from './cricbuzzTimeline.js';
+import { fetchPlayerProfile as cricbuzzPlayerProfile } from './cricbuzzPlayer.js';
 import { getRapidStats } from './rapidHttp.js';
 import { ProviderUnsupportedError } from './errors.js';
 
@@ -12,25 +10,29 @@ import { ProviderUnsupportedError } from './errors.js';
  * Provider facade. Same function names as sportradar.js, so callers only change their
  * import. DATA_PROVIDER picks the chain; the default (sportradar) preserves old behaviour.
  *
- *   sportradar | cricbuzz | cricbuzz2 | cricbuzz3 | cricbuzzu | live1 | highlightly
- *   | auto (= cricbuzz, cricbuzz2, cricbuzz3, cricbuzzu, live1, highlightly)
+ *   sportradar | cricbuzz | auto (= cricbuzz)
  *
- * With more than one provider in the chain, a call that is unsupported, over budget or
- * failing moves on to the next provider.
+ * `cricbuzz` is the official Cricbuzz Cricket listing on RapidAPI only: matches and
+ * scorecards (cricbuzz.js), PSL / catalogue / squads / rosters (cricbuzzRef.js), the
+ * ball-by-ball timeline (cricbuzzTimeline.js) and player profiles (cricbuzzPlayer.js), all on
+ * one host, one response cache and one request budget. With more than one provider in a
+ * chain, a call that is unsupported, over budget or failing moves on to the next provider.
  */
 
-// Profiles span two hosts, so the cricbuzz3 slot carries them; the budgets of both are respected inside.
-const MODULES = { sportradar, cricbuzz, cricbuzz2, cricbuzz3: { ...cricbuzz3, fetchPlayerProfile: cricbuzzPlayerProfile, fetchTeamRoster: cricbuzzTeamRoster }, cricbuzzu, live1, highlightly };
+const cricbuzz = {
+  ...cricbuzzRef,
+  ...cricbuzzMatches,
+  fetchMatchTimeline: cricbuzzTimeline.fetchMatchTimeline,
+  fetchMatchTimelineDelta: cricbuzzTimeline.fetchMatchTimelineDelta,
+  fetchPlayerProfile: cricbuzzPlayerProfile,
+};
+
+const MODULES = { sportradar, cricbuzz };
 const CHAINS = {
   sportradar: ['sportradar'],
   cricbuzz: ['cricbuzz'],
-  cricbuzz2: ['cricbuzz2'],
-  cricbuzz3: ['cricbuzz3'],
-  cricbuzzu: ['cricbuzzu'],
-  live1: ['live1'],
-  highlightly: ['highlightly'],
-  // cricbuzzu before live1: reference data (PSL, catalogue) then shares Cricbuzz ids with live matches
-  auto: ['cricbuzz', 'cricbuzz2', 'cricbuzz3', 'cricbuzzu', 'live1', 'highlightly'],
+  // kept so existing deployments with DATA_PROVIDER=auto keep working
+  auto: ['cricbuzz'],
 };
 
 export function providerChain() {
@@ -73,7 +75,7 @@ const wrap = (name) => (...args) => call(name, args);
 export const fetchLiveSchedule = wrap('fetchLiveSchedule');
 export const fetchMatchSummary = wrap('fetchMatchSummary');
 export const fetchMatchLineups = wrap('fetchMatchLineups');
-/** Batting/bowling cards for one match; Cricbuzz hosts only (other providers report it unsupported). */
+/** Batting/bowling cards for one match; Cricbuzz only (Sportradar reports it unsupported). */
 export const fetchMatchScorecard = wrap('fetchMatchScorecard');
 export const fetchTournamentSeasons = wrap('fetchTournamentSeasons');
 export const fetchSeasonSchedule = wrap('fetchSeasonSchedule');
@@ -88,9 +90,9 @@ export const fetchMatchTimeline = wrap('fetchMatchTimeline');
 export const fetchMatchTimelineDelta = wrap('fetchMatchTimelineDelta');
 export const fetchPlayerProfile = wrap('fetchPlayerProfile');
 export const fetchTeamProfile = wrap('fetchTeamProfile');
-/** A team's squad list; Cricbuzz real-time host only. */
+/** A team's squad list; Cricbuzz only. */
 export const fetchTeamRoster = wrap('fetchTeamRoster');
-/** Announced squads of a series for some teams; unofficial-cricbuzz only. */
+/** Announced squads of a series for some teams; Cricbuzz only. */
 export const fetchSeriesSquads = wrap('fetchSeriesSquads');
 export const fetchTeamResults = wrap('fetchTeamResults');
 export const fetchTeamSchedule = wrap('fetchTeamSchedule');

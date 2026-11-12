@@ -1,24 +1,18 @@
-import { rapidGet } from './rapidHttp.js';
 import { ProviderUnsupportedError } from './errors.js';
+import { cricbuzzGet } from './cricbuzz.js';
 
 /**
- * Player profiles from two Cricbuzz hosts (same RapidAPI key, separate free plans):
- *  - cricbuzz-real-time-cricket-api (cricbuzz3): `player/get-info` (bio, birth, teams, rankings,
- *    recent form) and `player/get-career` (debut / last match per format);
- *  - cricbuzz-cricket2: `stats/v1/player/{id}/batting|bowling` (career tables per format).
- *    The real-time host answers NOT_FOUND for those two, so the stats come from this one.
+ * Player profiles from the official Cricbuzz Cricket host:
+ *  - `stats/v1/player/{id}`: bio, birth, teams, rankings, recent form;
+ *  - `stats/v1/player/{id}/career`: debut / last match per format;
+ *  - `stats/v1/player/{id}/batting|bowling`: career tables per format.
  *
  * Profiles change slowly, so each response is cached for a week. One profile costs up to four
- * requests; the stats and career calls are optional (a failure there still yields a profile).
+ * requests; the career and stats calls are optional (a failure there still yields a profile).
  */
 
 const PROFILE_TTL_S = 7 * 24 * 3600;
 const IMG = (imageId) => (imageId ? `https://static.cricbuzz.com/a/img/v1/152x152/i1/c${imageId}/i.jpg` : null);
-
-const host3 = () => process.env.RAPIDAPI_CRICBUZZ3_HOST || 'cricbuzz-real-time-cricket-api.p.rapidapi.com';
-const host2 = () => process.env.RAPIDAPI_CRICBUZZ2_HOST || 'cricbuzz-cricket2.p.rapidapi.com';
-const budget3 = () => ({ period: 'month', limit: Number(process.env.RAPIDAPI_CRICBUZZ3_MONTHLY_BUDGET || 250) });
-const budget2 = () => ({ period: 'month', limit: Number(process.env.RAPIDAPI_CRICBUZZ2_MONTHLY_BUDGET || 100) });
 
 export function rawPlayerId(id) {
   const m = String(id).match(/^cb:player:(\d+)$/) ?? String(id).match(/^(\d+)$/);
@@ -133,53 +127,12 @@ async function optional(label, fn) {
 
 export async function fetchPlayerProfile(playerId) {
   const id = rawPlayerId(playerId);
-  const real = (path) =>
-    rapidGet({ provider: 'cricbuzz3', cacheNamespace: 'cricbuzz3', host: host3(), path, query: { playerId: id }, ttlSeconds: PROFILE_TTL_S, budget: budget3() });
-  const stats = (kind) =>
-    rapidGet({ provider: 'cricbuzz2', cacheNamespace: 'cricbuzz2', host: host2(), path: `stats/v1/player/${id}/${kind}`, ttlSeconds: PROFILE_TTL_S, budget: budget2() });
+  const get = (suffix = '') => cricbuzzGet(`stats/v1/player/${id}${suffix}`, PROFILE_TTL_S);
 
-  const info = await real('player/get-info');
+  const info = await get();
   if (!info?.id) throw new Error(`cricbuzz has no profile for player ${id}`);
-  const career = await optional('career', () => real('player/get-career'));
-  const batting = await optional('batting stats', () => stats('batting'));
-  const bowling = await optional('bowling stats', () => stats('bowling'));
+  const career = await optional('career', () => get('/career'));
+  const batting = await optional('batting stats', () => get('/batting'));
+  const bowling = await optional('bowling stats', () => get('/bowling'));
   return toProfile(id, info, career, batting, bowling);
-}
-
-/**
- * A team's squad (`team/get-players`, one request): id, name, role, styles and photo per player.
- * Returns `{ team_id, players }`; an empty squad is an error so it is not stored as "no players".
- */
-export function toRoster(teamId, raw) {
-  const list = Array.isArray(raw) ? raw : [];
-  return {
-    team_id: teamId,
-    players: list
-      .filter((p) => p?.id && p?.name)
-      .map((p) => ({
-        id: `cb:player:${p.id}`,
-        name: p.name,
-        role: roleType(p.role) ?? 'player',
-        batting_style: p.battingStyle ?? null,
-        bowling_style: p.bowlingStyle ?? null,
-        avatar_url: IMG(p.imageId),
-      })),
-  };
-}
-
-export async function fetchTeamRoster(teamId) {
-  const m = String(teamId).match(/^cb:team:(\d+)$/);
-  if (!m) throw new ProviderUnsupportedError(`cricbuzz rosters need a cb:team id, got ${teamId}`);
-  const raw = await rapidGet({
-    provider: 'cricbuzz3',
-    cacheNamespace: 'cricbuzz3',
-    host: host3(),
-    path: 'team/get-players',
-    query: { teamId: m[1] },
-    ttlSeconds: PROFILE_TTL_S,
-    budget: budget3(),
-  });
-  const roster = toRoster(teamId, raw);
-  if (!roster.players.length) throw new Error(`cricbuzz returned no squad for ${teamId}`);
-  return roster;
 }

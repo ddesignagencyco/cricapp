@@ -8,11 +8,14 @@ interface PslSpotlightProps {
   standings?: any[];
 }
 
+// Checked against the official Cricbuzz fixtures for PSL 2026 (series 11537): 44 matches,
+// 26 Mar - 3 May 2026, two grounds, eight franchises after Hyderabad Kingsmen and
+// Rawalpindiz joined. The team count follows the live standings when they are loaded.
 const PSL_DATA = {
   season: 'PSL 2026',
-  dates: 'Mar 11 - Apr 18, 2026',
-  teams: 6,
-  venues: 4,
+  dates: 'Mar 26 - May 3, 2026',
+  teams: 8,
+  venues: 2,
   description:
     'The biggest cricketing festival in Pakistan returns with more thrills, bigger rivalries and world-class talent.',
 };
@@ -45,7 +48,7 @@ export default function PslSpotlight({ standings = [] }: PslSpotlightProps) {
                 </span>
                 <span className="flex items-center gap-1.5">
                   <Users size={12} className="text-accent" />
-                  {PSL_DATA.teams} Teams
+                  {standings.length || PSL_DATA.teams} Teams
                 </span>
                 <span className="flex items-center gap-1.5">
                   <MapPin size={12} className="text-accent" />

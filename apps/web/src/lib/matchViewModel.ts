@@ -541,6 +541,9 @@ function resolveChase(
   if (innings.length !== 2) return null;
   const [first, second] = innings;
   if (!battingSide || first.side === second.side) return null;
+  // Two innings that are not the first two (a Test's 2nd and 3rd, when the 1st is missing
+  // from the payload) are not a chase: reading them as one showed "Chasing 447".
+  if ((first.number ?? 1) !== 1 || (second.number ?? 2) !== 2) return null;
   if (first.runs === null || second.runs === null) return null;
   const target = first.runs + 1;
   const runsRemaining = target - second.runs;

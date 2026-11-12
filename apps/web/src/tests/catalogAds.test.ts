@@ -1,6 +1,5 @@
 import { TOOLS, TOOL_GROUPS, toolBySlug, toolSource, TOOL_SOURCE_LABEL, type ToolKind } from '../lib/toolsCatalog';
 import {
-  dummyAdPlaceholderUrl,
   resolveDummyAdCreative,
   shouldHideDummyAds,
   dummyAdAlt,
@@ -78,22 +77,19 @@ describe('toolsCatalog', () => {
 });
 
 describe('ad placements', () => {
-  it('builds a picsum url carrying the requested dimensions', () => {
-    expect(dummyAdPlaceholderUrl(300, 250, 'home--medium-rectangle')).toBe(
-      'https://picsum.photos/seed/home--medium-rectangle/300/250',
+  it('serves house creatives from this site, never a third-party image host', () => {
+    const sizes: DummyAdSize[] = ['tablet-banner', 'mobile-banner', 'medium-rectangle', 'large-rectangle', 'half-page'];
+    sizes.forEach((size) => expect(resolveDummyAdCreative(size, 'x').src).toMatch(/^\/advertisements\/.+\.png$/));
+    (['wide', 'desktop', 'tablet', 'mobile'] as LeaderboardVariant[]).forEach((variant) =>
+      expect(resolveDummyAdCreative('leaderboard', 'x', variant).src).toMatch(/^\/advertisements\//),
     );
   });
 
-  it('sanitises a seed that would break the url path', () => {
-    const url = dummyAdPlaceholderUrl(10, 10, 'a b/../c?d=1');
-    expect(url).not.toContain(' ');
-    expect(url).not.toContain('?');
-    expect(url).not.toContain('..');
-  });
-
-  it('caps a very long seed so the url stays sane', () => {
-    const url = dummyAdPlaceholderUrl(10, 10, 'x'.repeat(400));
-    expect(url).toBe(`https://picsum.photos/seed/${'x'.repeat(96)}/10/10`);
+  it('uses the creative whose pixel size matches the slot', () => {
+    expect(resolveDummyAdCreative('medium-rectangle', 'x').src).toBe('/advertisements/rectangle-300x250.png');
+    expect(resolveDummyAdCreative('half-page', 'x').src).toBe('/advertisements/half-page-300x600.png');
+    expect(resolveDummyAdCreative('leaderboard', 'x', 'wide').src).toBe('/advertisements/leaderboard-970x90.png');
+    expect(resolveDummyAdCreative('leaderboard', 'x', 'desktop').src).toBe('/advertisements/leaderboard-728x90.png');
   });
 
   it('resolves a fixed size slot to its declared dimensions', () => {
@@ -112,12 +108,6 @@ describe('ad placements', () => {
     expect(resolveDummyAdCreative('leaderboard', 'home').width).toBe(LEADERBOARD_SLOT_META.desktop.width);
   });
 
-  it('gives different placements different images for the same size', () => {
-    const a = resolveDummyAdCreative('medium-rectangle', 'home-leader');
-    const b = resolveDummyAdCreative('medium-rectangle', 'sidebar');
-    expect(a.src).not.toBe(b.src);
-  });
-
   it('is stable for the same placement and size so the ad does not flicker', () => {
     expect(resolveDummyAdCreative('medium-rectangle', 'home-leader').src).toBe(
       resolveDummyAdCreative('medium-rectangle', 'home-leader').src,
@@ -127,7 +117,7 @@ describe('ad placements', () => {
   it('pre-sizes the deprecated maps too, for the scripts that still read them', () => {
     (Object.keys(DUMMY_AD_CREATIVES) as Array<keyof typeof DUMMY_AD_CREATIVES>).forEach((key) => {
       const creative = DUMMY_AD_CREATIVES[key];
-      expect(creative.src).toContain(`/${creative.width}/${creative.height}`);
+      expect(creative.src).toContain(`${creative.width}x${creative.height}`);
     });
     expect(RESPONSIVE_LEADERBOARD.wide.width).toBe(970);
     expect(RESPONSIVE_LEADERBOARD.mobile.width).toBe(320);
@@ -207,7 +197,7 @@ describe('ad size types', () => {
 
   it('covers every leaderboard variant', () => {
     (['wide', 'desktop', 'tablet', 'mobile'] as LeaderboardVariant[]).forEach((variant) => {
-      expect(resolveDummyAdCreative('leaderboard', 'x', variant).src).toContain(variant);
+      expect(resolveDummyAdCreative('leaderboard', 'x', variant).src).toBeTruthy();
     });
   });
 });

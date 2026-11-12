@@ -1,0 +1,782 @@
+{
+ "inningsid": 0,
+ "comwrapper": [
+  {
+   "commentary": {
+    "commtxt": "B0$ Nothing new to report. The big covers stay in place and there's hardly any movement from the groundstaff. Don't think it's raining, but it's very dark and gloomy at the moment",
+    "timestamp": 1794476509994,
+    "overnum": 0,
+    "inningsid": 3,
+    "eventtype": "NONE",
+    "commentaryformats": [
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "bold",
+      "value": [
+       {
+        "id": "B0$",
+        "value": "14:40 Local Time, 09:40 GMT, 15:10 IST:"
+       }
+      ]
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     }
+    ],
+    "videotype": "",
+    "videourl": "",
+    "videoid": 0,
+    "ballnbr": 0,
+    "planid": 0,
+    "imageid": 0,
+    "premiumvideourl": "",
+    "ispremiumfree": false,
+    "batteamscore": 0,
+    "boundarytracker": false
+   }
+  },
+  {
+   "commentary": {
+    "commtxt": "B0$ The entire square has been covered now. Not a lot of movement from the groundstaff. The overhead conditions look dark and grim.",
+    "timestamp": 1794474603134,
+    "overnum": 0,
+    "inningsid": 3,
+    "eventtype": "NONE",
+    "commentaryformats": [
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "bold",
+      "value": [
+       {
+        "id": "B0$",
+        "value": "14:10 Local Time, 09:10 GMT, 14:40 IST:"
+       }
+      ]
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     }
+    ],
+    "videotype": "",
+    "videourl": "",
+    "videoid": 0,
+    "ballnbr": 0,
+    "planid": 0,
+    "imageid": 0,
+    "premiumvideourl": "",
+    "ispremiumfree": false,
+    "batteamscore": 0,
+    "boundarytracker": false
+   }
+  },
+  {
+   "commentary": {
+    "commtxt": "B0$ Looks like it has started to rain as the groundstaff bring on the covers. The pitch is covered and they are waiting with more covers near the sideline.",
+    "timestamp": 1794473408941,
+    "overnum": 0,
+    "inningsid": 3,
+    "eventtype": "NONE",
+    "commentaryformats": [
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "bold",
+      "value": [
+       {
+        "id": "B0$",
+        "value": "13:50 Local Time, 08:50 GMT, 14:20 IST:"
+       }
+      ]
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     }
+    ],
+    "videotype": "",
+    "videourl": "",
+    "videoid": 0,
+    "ballnbr": 0,
+    "planid": 0,
+    "imageid": 0,
+    "premiumvideourl": "",
+    "ispremiumfree": false,
+    "batteamscore": 0,
+    "boundarytracker": false
+   }
+  },
+  {
+   "commentary": {
+    "commtxt": "B0$ Rod Tucker takes another reading and walks towards his partner. B1$ The cloud looks heavy, but they're not bringing in the covers as yet. For now, bad light has stopped play.",
+    "timestamp": 1794471953791,
+    "overnum": 0,
+    "inningsid": 3,
+    "eventtype": "NONE",
+    "commentaryformats": [
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "bold",
+      "value": [
+       {
+        "id": "B0$",
+        "value": "13:25 Local Time, 08:25 GMT, 13:55 IST:"
+       },
+       {
+        "id": "B1$",
+        "value": "Light has faded and they're going off."
+       }
+      ]
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     }
+    ],
+    "videotype": "",
+    "videourl": "",
+    "videoid": 0,
+    "ballnbr": 0,
+    "planid": 0,
+    "imageid": 0,
+    "premiumvideourl": "",
+    "ispremiumfree": false,
+    "batteamscore": 0,
+    "boundarytracker": false
+   }
+  },
+  {
+   "commentary": {
+    "commtxt": "Lahiru Kumara to Mohammad Taha, 1 run, short and into the body, tucked behind square on the on-side for a single",
+    "timestamp": 1794471914466,
+    "overnum": 21.2,
+    "inningsid": 3,
+    "eventtype": "NONE",
+    "commentaryformats": [
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     }
+    ],
+    "videotype": "",
+    "videourl": "",
+    "videoid": 0,
+    "ballnbr": 128,
+    "planid": 0,
+    "imageid": 0,
+    "premiumvideourl": "",
+    "ispremiumfree": false,
+    "batteamscore": 0,
+    "boundarytracker": false
+   }
+  },
+  {
+   "commentary": {
+    "commtxt": "Lahiru Kumara to Mohammad Taha, B0$, B1$, pitched up by Kumara - Taha leans forward, presents the full face of the bat and then drives it to the left of the non-striker, the timing is sweet and the ball runs away to the ropes",
+    "timestamp": 1794471854041,
+    "overnum": 21.1,
+    "inningsid": 3,
+    "eventtype": "FOUR",
+    "commentaryformats": [
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "bold",
+      "value": [
+       {
+        "id": "B0$",
+        "value": "FOUR"
+       },
+       {
+        "id": "B1$",
+        "value": "nicely played"
+       }
+      ]
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     }
+    ],
+    "videotype": "",
+    "videourl": "",
+    "videoid": 0,
+    "ballnbr": 127,
+    "planid": 0,
+    "imageid": 0,
+    "premiumvideourl": "",
+    "ispremiumfree": false,
+    "batteamscore": 0,
+    "boundarytracker": false
+   }
+  },
+  {
+   "commentary": {
+    "commtxt": "B0$ Rod Tucker takes a reading, it's gone a bit dark and the floodlights are starting to take full effect. But they'll continue for now",
+    "timestamp": 1794471817821,
+    "overnum": 0,
+    "inningsid": 3,
+    "eventtype": "NONE",
+    "commentaryformats": [
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "bold",
+      "value": [
+       {
+        "id": "B0$",
+        "value": "13:23 Local Time, 08:23 GMT, 13:53 IST:"
+       }
+      ]
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     }
+    ],
+    "videotype": "",
+    "videourl": "",
+    "videoid": 0,
+    "ballnbr": 0,
+    "planid": 0,
+    "imageid": 0,
+    "premiumvideourl": "",
+    "ispremiumfree": false,
+    "batteamscore": 0,
+    "boundarytracker": false
+   }
+  },
+  {
+   "commentary": {
+    "commtxt": "Milan Rathnayake to Azan Awais, no run, edged, edged and B0$, probing channel just outside off from Rathnayake, makes Awais play and finds the edge. But he did so with soft hands and ensured that it didn't carry",
+    "timestamp": 1794471752389,
+    "overnum": 20.6,
+    "inningsid": 3,
+    "eventtype": "over-break",
+    "oversep": {
+     "score": 52,
+     "wickets": 1,
+     "inningsid": 3,
+     "oversummary": "0 0 0 0 0 0 ",
+     "runs": 0,
+     "batstrikerdetails": "19(53)",
+     "batnonstrikerdetails": "22(65)",
+     "bowldetails": "0-13 (6)",
+     "timestamp": 1794471752391,
+     "overnum": 20.6,
+     "ovrbatnames": [],
+     "ovrbowlnames": [],
+     "batstrikername": "Mohammad Taha",
+     "batnonstrikername": "Azan Awais",
+     "bowlname": "Milan Priyanath Rathnayake",
+     "battingteamname": "PAK"
+    },
+    "commentaryformats": [
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "bold",
+      "value": [
+       {
+        "id": "B0$",
+        "value": "the ball falls in front of first slip"
+       }
+      ]
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     }
+    ],
+    "videotype": "",
+    "videourl": "",
+    "videoid": 0,
+    "ballnbr": 126,
+    "planid": 0,
+    "imageid": 0,
+    "premiumvideourl": "",
+    "ispremiumfree": false,
+    "batteamscore": 0,
+    "boundarytracker": false,
+    "ad": {
+     "name": "multicall_overbreak",
+     "layout": "mpu",
+     "position": 1
+    }
+   }
+  },
+  {
+   "commentary": {
+    "commtxt": "Milan Rathnayake to Azan Awais, no run, on a length and well wide of off, left alone",
+    "timestamp": 1794471713540,
+    "overnum": 20.5,
+    "inningsid": 3,
+    "eventtype": "NONE",
+    "commentaryformats": [
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     }
+    ],
+    "videotype": "",
+    "videourl": "",
+    "videoid": 0,
+    "ballnbr": 125,
+    "planid": 0,
+    "imageid": 0,
+    "premiumvideourl": "",
+    "ispremiumfree": false,
+    "batteamscore": 0,
+    "boundarytracker": false
+   }
+  },
+  {
+   "commentary": {
+    "commtxt": "Milan Rathnayake to Azan Awais, no run, tad fuller and just outside off - Awais prods across and defends it to the off-side",
+    "timestamp": 1794471673593,
+    "overnum": 20.4,
+    "inningsid": 3,
+    "eventtype": "NONE",
+    "commentaryformats": [
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     }
+    ],
+    "videotype": "",
+    "videourl": "",
+    "videoid": 0,
+    "ballnbr": 124,
+    "planid": 0,
+    "imageid": 0,
+    "premiumvideourl": "",
+    "ispremiumfree": false,
+    "batteamscore": 0,
+    "boundarytracker": false
+   }
+  }
+ ],
+ "miniscore": {
+  "batsmanstriker": {
+   "id": 52677,
+   "balls": 65,
+   "runs": 22,
+   "fours": 3,
+   "sixes": 0,
+   "strkrate": "33.84615384615385",
+   "name": "Azan Awais",
+   "nickname": "Azan Awais",
+   "iscaptain": false,
+   "iskeeper": false,
+   "outdec": "",
+   "videotype": "",
+   "videourl": "",
+   "videoid": 0,
+   "planid": 0,
+   "imageid": 0,
+   "premiumvideourl": "",
+   "iscbplusfree": false,
+   "ispremiumfree": false,
+   "inmatchchange": "",
+   "isoverseas": false,
+   "playingxichange": ""
+  },
+  "batsmannonstriker": {
+   "id": 13193,
+   "balls": 55,
+   "runs": 24,
+   "fours": 3,
+   "sixes": 0,
+   "strkrate": "43.63636363636363",
+   "name": "Mohammad Taha",
+   "nickname": "Mohammad Taha",
+   "iscaptain": false,
+   "iskeeper": false,
+   "outdec": "",
+   "videotype": "",
+   "videourl": "",
+   "videoid": 0,
+   "planid": 0,
+   "imageid": 0,
+   "premiumvideourl": "",
+   "iscbplusfree": false,
+   "ispremiumfree": false,
+   "inmatchchange": "",
+   "isoverseas": false,
+   "playingxichange": ""
+  },
+  "bowlerstriker": {
+   "id": 10928,
+   "overs": "7.2",
+   "maidens": 2,
+   "wickets": 0,
+   "runs": 19,
+   "economy": "2.59",
+   "name": "Lahiru Kumara",
+   "nickname": "",
+   "iscaptain": false,
+   "iskeeper": false,
+   "videotype": "",
+   "videourl": "",
+   "videoid": 0,
+   "dots": 0,
+   "balls": 0,
+   "rpb": 0,
+   "planid": 0,
+   "imageid": 0,
+   "premiumvideourl": "",
+   "ispremiumfree": false,
+   "inmatchchange": "",
+   "isoverseas": false,
+   "playingxichange": ""
+  },
+  "bowlernonstriker": {
+   "id": 39678,
+   "overs": "6",
+   "maidens": 2,
+   "wickets": 0,
+   "runs": 13,
+   "economy": "2.17",
+   "name": "Milan Priyanath Rathnayake",
+   "nickname": "",
+   "iscaptain": false,
+   "iskeeper": false,
+   "videotype": "",
+   "videourl": "",
+   "videoid": 0,
+   "dots": 0,
+   "balls": 0,
+   "rpb": 0,
+   "planid": 0,
+   "imageid": 0,
+   "premiumvideourl": "",
+   "ispremiumfree": false,
+   "inmatchchange": "",
+   "isoverseas": false,
+   "playingxichange": ""
+  },
+  "crr": 2.67,
+  "rrr": 0,
+  "inningsnbr": "2nd inn",
+  "lastwkt": "Tayyab Arif  lbw b Asitha Fernando 11(8)  - 15/1 in 2.2 ov.",
+  "curovsstats": "... 1 0 0 2  | 0 0 0 0 0 0  | 4 1",
+  "inningsscores": {
+   "inningsscore": [
+    {
+     "inningsid": 3,
+     "batteamid": 3,
+     "batteamshortname": "PAK",
+     "runs": 57,
+     "wickets": 1,
+     "overs": 21.2,
+     "isdeclared": false,
+     "isfollowon": false,
+     "target": 0,
+     "balls": 128
+    },
+    {
+     "inningsid": 2,
+     "batteamid": 5,
+     "batteamshortname": "SL",
+     "runs": 446,
+     "wickets": 10,
+     "overs": 117.2,
+     "isdeclared": false,
+     "isfollowon": false,
+     "target": 0,
+     "balls": 704
+    },
+    {
+     "inningsid": 1,
+     "batteamid": 3,
+     "batteamshortname": "PAK",
+     "runs": 434,
+     "wickets": 9,
+     "overs": 106.3,
+     "isdeclared": true,
+     "isfollowon": false,
+     "target": 0,
+     "balls": 639
+    }
+   ]
+  },
+  "inningsid": 3,
+  "performance": [
+   {
+    "runs": 23,
+    "wickets": 0,
+    "label": "Last 10 overs"
+   }
+  ],
+  "udrs": {
+   "team1id": 3,
+   "team1remaining": 2,
+   "team1successful": 0,
+   "team1unsuccessful": 1,
+   "team2id": 5,
+   "team2remaining": 3,
+   "team2successful": 0,
+   "team2unsuccessful": 0
+  },
+  "partnership": "42(114)",
+  "oversrem": "58.4",
+  "target": 0,
+  "custstatus": "",
+  "ballsrem": 0,
+  "rpb": 0,
+  "rrpb": 0,
+  "responselastupdated": 0,
+  "event": "",
+  "timestamp": 1794471914466
+ },
+ "matchheaders": {
+  "state": "Tea",
+  "status": "Day 4: Tea Break - Pakistan lead by 45 runs",
+  "matchformat": "TEST",
+  "matchstarttimestamp": 1794198600000,
+  "teamdetails": {
+   "batteamid": 3,
+   "batteamname": "PAK",
+   "bowlteamid": 5,
+   "bowlteamname": "SL"
+  },
+  "momplayers": {
+   "player": [],
+   "category": ""
+  },
+  "mosplayers": {
+   "player": [],
+   "category": ""
+  },
+  "winningteamid": 0,
+  "revisedtarget": 0,
+  "matchendtimestamp": 1794569400000,
+  "seriesid": 13037,
+  "matchdesc": "1st Test",
+  "seriesname": "Sri Lanka tour of Pakistan, 2026",
+  "alerttype": "auto",
+  "tossresults": {
+   "tosswinnerid": 5,
+   "tosswinnername": "Sri Lanka",
+   "decision": "Bowling"
+  },
+  "livestreamenabled": false,
+  "team1": {
+   "teamid": 3,
+   "teamname": "Pakistan",
+   "teamsname": "PAK",
+   "isfullmember": false,
+   "isassociated": false,
+   "isleagueteam": false,
+   "iswomenteam": false,
+   "isheader": false,
+   "isactive": false,
+   "teampriority": "",
+   "isvideopresent": false,
+   "imageid": 0,
+   "countryname": "",
+   "belongsto": "",
+   "teamcolor": "",
+   "isdefaultimage": false
+  },
+  "team2": {
+   "teamid": 5,
+   "teamname": "Sri Lanka",
+   "teamsname": "SL",
+   "isfullmember": false,
+   "isassociated": false,
+   "isleagueteam": false,
+   "iswomenteam": false,
+   "isheader": false,
+   "isactive": false,
+   "teampriority": "",
+   "isvideopresent": false,
+   "imageid": 0,
+   "countryname": "",
+   "belongsto": "",
+   "teamcolor": "",
+   "isdefaultimage": false
+  }
+ },
+ "appindex": {
+  "seotitle": "PAK vs SL 1st Test,Sri Lanka tour of Pakistan, 2026 | Cricbuzz.com",
+  "weburl": "http://www.cricbuzz.com/live-cricket-scores/170703/pak-vs-sl-1st-test-sri-lanka-tour-of-pakistan-2026"
+ },
+ "matchvideos": [],
+ "responselastupdated": 1794477529,
+ "buzz": {
+  "imageids": [
+   1121188,
+   1121428,
+   1120148
+  ],
+  "position": 2,
+  "applink": "cricbuzz://buzz",
+  "isbuzzenabled": true
+ },
+ "partnersstrip": {
+  "team1sname": "PAK",
+  "team2sname": "SL",
+  "header": "Back your predictions & Win big with Melbet 💰",
+  "title": "Back your predictions & Win big with Melbet 💰",
+  "ctalabel": "Bet Now",
+  "imageid": 1082339,
+  "applink": "http://play1xgame.com/BZnkpqPP",
+  "weblink": "",
+  "partnername": "Melbet WPP PK",
+  "striptype": "WPP",
+  "disclaimer": "",
+  "skintype": 2,
+  "requireddata": [
+   "WINPERCENT"
+  ],
+  "lightimageid": 1082339,
+  "darkimageid": 1082340
+ },
+ "winprobability": {
+  "matchid": 170703,
+  "drawtiepercent": 34,
+  "team1": {
+   "id": 3,
+   "percent": 14,
+   "name": "Pakistan",
+   "shortname": "PAK",
+   "color": "#06A876|#06A876"
+  },
+  "team2": {
+   "id": 5,
+   "percent": 52,
+   "name": "Sri Lanka",
+   "shortname": "SL",
+   "color": "#2F61CA|#3E72E0"
+  },
+  "odds": {
+   "team1point": 6.8,
+   "team2point": 1.8,
+   "drawpoint": 2.8
+  },
+  "lastupdatedover": 21.2
+ }
+}

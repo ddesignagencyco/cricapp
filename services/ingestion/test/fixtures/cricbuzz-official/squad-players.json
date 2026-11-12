@@ -1,0 +1,178 @@
+{
+ "player": [
+  {
+   "name": "BATTERS",
+   "isHeader": true
+  },
+  {
+   "id": "15037",
+   "name": "Haider Ali",
+   "role": "Batsman",
+   "imageId": 244938,
+   "battingStyle": "Right-hand bat"
+  },
+  {
+   "id": "1466842",
+   "name": "Sameer Minhas",
+   "role": "Batsman",
+   "imageId": 826186,
+   "battingStyle": "Right-hand bat",
+   "bowlingStyle": "Right-arm legbreak"
+  },
+  {
+   "id": "9976",
+   "name": "Mark Chapman",
+   "role": "Batsman",
+   "imageId": 845494,
+   "battingStyle": "Left-hand bat",
+   "bowlingStyle": "Left-arm orthodox"
+  },
+  {
+   "id": "1464541",
+   "name": "Mohammad Faiq",
+   "role": "Batsman",
+   "imageId": 174146,
+   "battingStyle": "Right-hand bat",
+   "bowlingStyle": "Right-arm medium"
+  },
+  {
+   "id": "1450999",
+   "name": "Mohsin Riaz",
+   "role": "Batsman",
+   "imageId": 174146,
+   "battingStyle": "Right-hand bat"
+  },
+  {
+   "name": "ALL ROUNDERS",
+   "isHeader": true
+  },
+  {
+   "id": "11155",
+   "name": "Dipendra Singh Airee",
+   "role": "Batting Allrounder",
+   "imageId": 848428,
+   "battingStyle": "Right-hand bat",
+   "bowlingStyle": "Right-arm offbreak"
+  },
+  {
+   "id": "11265",
+   "name": "Faheem Ashraf",
+   "role": "Bowling Allrounder",
+   "imageId": 846064,
+   "battingStyle": "Left-hand bat",
+   "bowlingStyle": "Right-arm medium"
+  },
+  {
+   "id": "10408",
+   "name": "Imad Wasim",
+   "role": "Bowling Allrounder",
+   "imageId": 170782,
+   "battingStyle": "Left-hand bat",
+   "bowlingStyle": "Left-arm orthodox"
+  },
+  {
+   "id": "11186",
+   "name": "Shadab Khan",
+   "captain": true,
+   "role": "Bowling Allrounder",
+   "imageId": 846060,
+   "battingStyle": "Right-hand bat",
+   "bowlingStyle": "Right-arm legbreak"
+  },
+  {
+   "id": "10162",
+   "name": "Chris Green",
+   "role": "Bowling Allrounder",
+   "imageId": 180331,
+   "battingStyle": "Right-hand bat",
+   "bowlingStyle": "Right-arm offbreak"
+  },
+  {
+   "name": "WICKET KEEPERS",
+   "isHeader": true
+  },
+  {
+   "id": "9838",
+   "name": "Devon Conway",
+   "role": "WK-Batsman",
+   "imageId": 845526,
+   "battingStyle": "Left-hand bat",
+   "bowlingStyle": "Right-arm medium"
+  },
+  {
+   "id": "11959",
+   "name": "Andries Gous",
+   "role": "WK-Batsman",
+   "imageId": 846063,
+   "battingStyle": "Right-hand bat"
+  },
+  {
+   "name": "BOWLERS",
+   "isHeader": true
+  },
+  {
+   "id": "10477",
+   "name": "Richard Gleeson",
+   "role": "Bowler",
+   "imageId": 597836,
+   "battingStyle": "Right-hand bat",
+   "bowlingStyle": "Right-arm fast-medium"
+  },
+  {
+   "id": "50458",
+   "name": "Shamar Joseph",
+   "role": "Bowler",
+   "imageId": 845522,
+   "battingStyle": "Left-hand bat",
+   "bowlingStyle": "Right-arm fast"
+  },
+  {
+   "id": "14248",
+   "name": "Mohammad Hasnain",
+   "role": "Bowler",
+   "imageId": 616436,
+   "battingStyle": "Right-hand bat",
+   "bowlingStyle": "Right-arm fast-medium"
+  },
+  {
+   "id": "22821",
+   "name": "Mehran Mumtaz",
+   "role": "Bowler",
+   "imageId": 174146,
+   "battingStyle": "Left-hand bat",
+   "bowlingStyle": "Left-arm orthodox"
+  },
+  {
+   "id": "15040",
+   "name": "Mohammad Wasim Jr",
+   "role": "Bowler",
+   "imageId": 352429,
+   "battingStyle": "Right-hand bat",
+   "bowlingStyle": "Right-arm fast-medium"
+  },
+  {
+   "id": "13632",
+   "name": "Salman Irshad",
+   "role": "Bowler",
+   "imageId": 174146,
+   "battingStyle": "Right-hand bat",
+   "bowlingStyle": "Right-arm fast"
+  },
+  {
+   "id": "11193",
+   "name": "Sameen Gul",
+   "role": "Bowler",
+   "imageId": 174146,
+   "battingStyle": "Right-hand bat",
+   "bowlingStyle": "Right-arm medium"
+  },
+  {
+   "id": "1469992",
+   "name": "Hamza Sajjad",
+   "role": "Bowler",
+   "imageId": 174146,
+   "battingStyle": "Right-hand bat",
+   "bowlingStyle": "Right-arm fast-medium"
+  }
+ ]
+}

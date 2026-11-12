@@ -1,0 +1,1267 @@
+{
+ "pointsTable": [
+  {
+   "groupName": "Teams",
+   "pointsTableInfo": [
+    {
+     "teamId": 334,
+     "teamName": "PSZ",
+     "matchesPlayed": 10,
+     "matchesWon": 8,
+     "matchesLost": 1,
+     "noRes": 1,
+     "points": 17,
+     "nrr": "+2.324",
+     "teamFullName": "Peshawar Zalmi",
+     "teamMatches": [
+      {
+       "opponent": "Rawalpindiz",
+       "startdt": "1774690200000",
+       "result": "Won by 5 wkts",
+       "opponentSName": "RWP",
+       "matchId": 148973,
+       "matchName": "3rd Match",
+       "winner": 334,
+       "opponentId": 3116,
+       "opponentImageId": 883174,
+       "nrrChanges": "+0.674"
+      },
+      {
+       "opponent": "Islamabad United",
+       "startdt": "1774965600000",
+       "result": "Match abandoned due to rain",
+       "opponentSName": "ISU",
+       "matchId": 149009,
+       "matchName": "7th Match",
+       "opponentId": 330,
+       "opponentImageId": 883184,
+       "nrrChanges": "0.000"
+      },
+      {
+       "opponent": "Hyderabad Kingsmen",
+       "startdt": "1775656800000",
+       "result": "Won by 4 wkts",
+       "opponentSName": "HYDK",
+       "matchId": 149094,
+       "matchName": "15th Match",
+       "winner": 334,
+       "opponentId": 3114,
+       "opponentImageId": 883179,
+       "nrrChanges": "-0.355"
+      },
+      {
+       "opponent": "Karachi Kings",
+       "startdt": "1775743200000",
+       "result": "Won by 159 runs",
+       "opponentSName": "KRK",
+       "matchId": 149116,
+       "matchName": "17th Match",
+       "winner": 334,
+       "opponentId": 332,
+       "opponentImageId": 883188,
+       "nrrChanges": "+2.558"
+      },
+      {
+       "opponent": "Lahore Qalandars",
+       "startdt": "1775899800000",
+       "result": "Won by 76 runs",
+       "opponentSName": "LHQ",
+       "matchId": 149138,
+       "matchName": "19th Match",
+       "winner": 334,
+       "opponentId": 333,
+       "opponentImageId": 883181,
+       "nrrChanges": "+0.226"
+      },
+      {
+       "opponent": "Multan Sultans",
+       "startdt": "1776088800000",
+       "result": "Won by 24 runs",
+       "opponentSName": "MS",
+       "matchId": 149171,
+       "matchName": "22nd Match",
+       "winner": 334,
+       "opponentId": 437,
+       "opponentImageId": 883178,
+       "nrrChanges": "-0.381"
+      },
+      {
+       "opponent": "Quetta Gladiators",
+       "startdt": "1776261600000",
+       "result": "Won by 8 wkts",
+       "opponentSName": "QTG",
+       "matchId": 149182,
+       "matchName": "23rd Match",
+       "winner": 334,
+       "opponentId": 331,
+       "opponentImageId": 883182,
+       "nrrChanges": "-0.318"
+      },
+      {
+       "opponent": "Quetta Gladiators",
+       "startdt": "1776607200000",
+       "result": "Won by 118 runs",
+       "opponentSName": "QTG",
+       "matchId": 149238,
+       "matchName": "29th Match",
+       "winner": 334,
+       "opponentId": 331,
+       "opponentImageId": 883182,
+       "nrrChanges": "+0.507"
+      },
+      {
+       "opponent": "Karachi Kings",
+       "startdt": "1776850200000",
+       "result": "Won by 7 wkts",
+       "opponentSName": "KRK",
+       "matchId": 149270,
+       "matchName": "32nd Match",
+       "winner": 334,
+       "opponentId": 332,
+       "opponentImageId": 883188,
+       "nrrChanges": "-0.266"
+      },
+      {
+       "opponent": "Lahore Qalandars",
+       "startdt": "1777125600000",
+       "result": "Lost by 6 wkts",
+       "opponentSName": "LHQ",
+       "matchId": 149336,
+       "matchName": "38th Match",
+       "winner": 333,
+       "opponentId": 333,
+       "opponentImageId": 883181,
+       "nrrChanges": "-0.321"
+      },
+      {
+       "opponent": "Islamabad United",
+       "startdt": "1777384800000",
+       "result": "Won by 70 runs",
+       "opponentSName": "ISU",
+       "matchId": 149365,
+       "matchName": "Qualifier",
+       "winner": 334,
+       "opponentId": 330,
+       "opponentImageId": 883184
+      },
+      {
+       "opponent": "Hyderabad Kingsmen",
+       "startdt": "1777820400000",
+       "result": "Won by 5 wkts",
+       "opponentSName": "HYDK",
+       "matchId": 149392,
+       "matchName": "Final",
+       "winner": 334,
+       "opponentId": 3114,
+       "opponentImageId": 883179
+      }
+     ],
+     "form": [
+      "W",
+      "W",
+      "L",
+      "W",
+      "W"
+     ],
+     "teamImageId": 883180,
+     "teamQualifyStatus": "Q"
+    },
+    {
+     "teamId": 330,
+     "teamName": "ISU",
+     "matchesPlayed": 10,
+     "matchesWon": 6,
+     "matchesLost": 3,
+     "noRes": 1,
+     "points": 13,
+     "nrr": "+1.667",
+     "teamFullName": "Islamabad United",
+     "teamMatches": [
+      {
+       "opponent": "Multan Sultans",
+       "startdt": "1774706400000",
+       "result": "Lost by 5 wkts",
+       "opponentSName": "MS",
+       "matchId": 148984,
+       "matchName": "4th Match",
+       "winner": 437,
+       "opponentId": 437,
+       "opponentImageId": 883178,
+       "nrrChanges": "-0.825"
+      },
+      {
+       "opponent": "Peshawar Zalmi",
+       "startdt": "1774965600000",
+       "result": "Match abandoned due to rain",
+       "opponentSName": "PSZ",
+       "matchId": 149009,
+       "matchName": "7th Match",
+       "opponentId": 334,
+       "opponentImageId": 883180,
+       "nrrChanges": "0.000"
+      },
+      {
+       "opponent": "Quetta Gladiators",
+       "startdt": "1775122200000",
+       "result": "Won by 8 wkts",
+       "opponentSName": "QTG",
+       "matchId": 149031,
+       "matchName": "9th Match",
+       "winner": 330,
+       "opponentId": 331,
+       "opponentImageId": 883182,
+       "nrrChanges": "+0.958"
+      },
+      {
+       "opponent": "Rawalpindiz",
+       "startdt": "1775311200000",
+       "result": "Won by 7 wkts",
+       "opponentSName": "RWP",
+       "matchId": 149064,
+       "matchName": "12th Match",
+       "winner": 330,
+       "opponentId": 3116,
+       "opponentImageId": 883174,
+       "nrrChanges": "+0.922"
+      },
+      {
+       "opponent": "Lahore Qalandars",
+       "startdt": "1775727000000",
+       "result": "Won by 9 wkts",
+       "opponentSName": "LHQ",
+       "matchId": 149105,
+       "matchName": "16th Match",
+       "winner": 330,
+       "opponentId": 333,
+       "opponentImageId": 883181,
+       "nrrChanges": "+0.997"
+      },
+      {
+       "opponent": "Hyderabad Kingsmen",
+       "startdt": "1776002400000",
+       "result": "Lost by 6 wkts",
+       "opponentSName": "HYDK",
+       "matchId": 149160,
+       "matchName": "21st Match",
+       "winner": 3114,
+       "opponentId": 3114,
+       "opponentImageId": 883179,
+       "nrrChanges": "-0.689"
+      },
+      {
+       "opponent": "Karachi Kings",
+       "startdt": "1776348000000",
+       "result": "Won by 8 wkts",
+       "opponentSName": "KRK",
+       "matchId": 149204,
+       "matchName": "25th Match",
+       "winner": 330,
+       "opponentId": 332,
+       "opponentImageId": 883188,
+       "nrrChanges": "+0.118"
+      },
+      {
+       "opponent": "Rawalpindiz",
+       "startdt": "1776936600000",
+       "result": "Lost by 6 wkts",
+       "opponentSName": "RWP",
+       "matchId": 149292,
+       "matchName": "34th Match",
+       "winner": 3116,
+       "opponentId": 3116,
+       "opponentImageId": 883174,
+       "nrrChanges": "-0.399"
+      },
+      {
+       "opponent": "Hyderabad Kingsmen",
+       "startdt": "1777039200000",
+       "result": "Won by 8 wkts",
+       "opponentSName": "HYDK",
+       "matchId": 149314,
+       "matchName": "36th Match",
+       "winner": 330,
+       "opponentId": 3114,
+       "opponentImageId": 883179,
+       "nrrChanges": "+0.684"
+      },
+      {
+       "opponent": "Multan Sultans",
+       "startdt": "1777212000000",
+       "result": "Won by 4 wkts",
+       "opponentSName": "MS",
+       "matchId": 149358,
+       "matchName": "40th Match",
+       "winner": 330,
+       "opponentId": 437,
+       "opponentImageId": 883178,
+       "nrrChanges": "-0.099"
+      },
+      {
+       "opponent": "Peshawar Zalmi",
+       "startdt": "1777384800000",
+       "result": "Lost by 70 runs",
+       "opponentSName": "PSZ",
+       "matchId": 149365,
+       "matchName": "Qualifier",
+       "winner": 334,
+       "opponentId": 334,
+       "opponentImageId": 883180
+      },
+      {
+       "opponent": "Hyderabad Kingsmen",
+       "startdt": "1777644000000",
+       "result": "Lost by 2 runs",
+       "opponentSName": "HYDK",
+       "matchId": 149387,
+       "matchName": "Eliminator 2",
+       "winner": 3114,
+       "opponentId": 3114,
+       "opponentImageId": 883179
+      }
+     ],
+     "form": [
+      "L",
+      "W",
+      "W",
+      "L",
+      "L"
+     ],
+     "teamImageId": 883184,
+     "teamQualifyStatus": "Q"
+    },
+    {
+     "teamId": 437,
+     "teamName": "MS",
+     "matchesPlayed": 10,
+     "matchesWon": 6,
+     "matchesLost": 4,
+     "points": 12,
+     "nrr": "+0.326",
+     "teamFullName": "Multan Sultans",
+     "teamMatches": [
+      {
+       "opponent": "Islamabad United",
+       "startdt": "1774706400000",
+       "result": "Won by 5 wkts",
+       "opponentSName": "ISU",
+       "matchId": 148984,
+       "matchName": "4th Match",
+       "winner": 437,
+       "opponentId": 330,
+       "opponentImageId": 883184,
+       "nrrChanges": "+0.825"
+      },
+      {
+       "opponent": "Hyderabad Kingsmen",
+       "startdt": "1775052000000",
+       "result": "Won by 6 wkts",
+       "opponentSName": "HYDK",
+       "matchId": 149020,
+       "matchName": "8th Match",
+       "winner": 437,
+       "opponentId": 3114,
+       "opponentImageId": 883179,
+       "nrrChanges": "+0.043"
+      },
+      {
+       "opponent": "Lahore Qalandars",
+       "startdt": "1775224800000",
+       "result": "Lost by 20 runs (13 Overs game due to rain)",
+       "opponentSName": "LHQ",
+       "matchId": 149053,
+       "matchName": "11th Match",
+       "winner": 333,
+       "opponentId": 333,
+       "opponentImageId": 883181,
+       "nrrChanges": "-0.565"
+      },
+      {
+       "opponent": "Quetta Gladiators",
+       "startdt": "1775397600000",
+       "result": "Won by 6 wkts",
+       "opponentSName": "QTG",
+       "matchId": 149075,
+       "matchName": "13th Match",
+       "winner": 437,
+       "opponentId": 331,
+       "opponentImageId": 883182,
+       "nrrChanges": "+0.285"
+      },
+      {
+       "opponent": "Rawalpindiz",
+       "startdt": "1775484000000",
+       "result": "Won by 7 wkts",
+       "opponentSName": "RWP",
+       "matchId": 149086,
+       "matchName": "14th Match",
+       "winner": 437,
+       "opponentId": 3116,
+       "opponentImageId": 883174,
+       "nrrChanges": "+0.353"
+      },
+      {
+       "opponent": "Peshawar Zalmi",
+       "startdt": "1776088800000",
+       "result": "Lost by 24 runs",
+       "opponentSName": "PSZ",
+       "matchId": 149171,
+       "matchName": "22nd Match",
+       "winner": 334,
+       "opponentId": 334,
+       "opponentImageId": 883180,
+       "nrrChanges": "-0.414"
+      },
+      {
+       "opponent": "Karachi Kings",
+       "startdt": "1776591000000",
+       "result": "Won by 11 runs",
+       "opponentSName": "KRK",
+       "matchId": 149227,
+       "matchName": "28th Match",
+       "winner": 437,
+       "opponentId": 332,
+       "opponentImageId": 883188,
+       "nrrChanges": "+0.002"
+      },
+      {
+       "opponent": "Rawalpindiz",
+       "startdt": "1776780000000",
+       "result": "Won by 6 wkts",
+       "opponentSName": "RWP",
+       "matchId": 149260,
+       "matchName": "31st Match",
+       "winner": 437,
+       "opponentId": 3116,
+       "opponentImageId": 883174,
+       "nrrChanges": "+0.016"
+      },
+      {
+       "opponent": "Hyderabad Kingsmen",
+       "startdt": "1776866400000",
+       "result": "Lost by 4 wkts",
+       "opponentSName": "HYDK",
+       "matchId": 149281,
+       "matchName": "33rd Match",
+       "winner": 3114,
+       "opponentId": 3114,
+       "opponentImageId": 883179,
+       "nrrChanges": "-0.095"
+      },
+      {
+       "opponent": "Islamabad United",
+       "startdt": "1777212000000",
+       "result": "Lost by 4 wkts",
+       "opponentSName": "ISU",
+       "matchId": 149358,
+       "matchName": "40th Match",
+       "winner": 330,
+       "opponentId": 330,
+       "opponentImageId": 883184,
+       "nrrChanges": "-0.124"
+      },
+      {
+       "opponent": "Hyderabad Kingsmen",
+       "startdt": "1777471200000",
+       "result": "Lost by 8 wkts",
+       "opponentSName": "HYDK",
+       "matchId": 149376,
+       "matchName": "Eliminator 1",
+       "winner": 3114,
+       "opponentId": 3114,
+       "opponentImageId": 883179
+      }
+     ],
+     "form": [
+      "W",
+      "W",
+      "L",
+      "L",
+      "L"
+     ],
+     "teamImageId": 883178,
+     "teamQualifyStatus": "Q"
+    },
+    {
+     "teamId": 3114,
+     "teamName": "HYDK",
+     "matchesPlayed": 10,
+     "matchesWon": 5,
+     "matchesLost": 5,
+     "points": 10,
+     "nrr": "-0.361",
+     "teamFullName": "Hyderabad Kingsmen",
+     "teamMatches": [
+      {
+       "opponent": "Lahore Qalandars",
+       "startdt": "1774533600000",
+       "result": "Lost by 69 runs",
+       "opponentSName": "LHQ",
+       "matchId": 148962,
+       "matchName": "1st Match",
+       "winner": 333,
+       "opponentId": 333,
+       "opponentImageId": 883181,
+       "nrrChanges": "-3.450"
+      },
+      {
+       "opponent": "Quetta Gladiators",
+       "startdt": "1774776600000",
+       "result": "Lost by 40 runs",
+       "opponentSName": "QTG",
+       "matchId": 148987,
+       "matchName": "5th Match",
+       "winner": 331,
+       "opponentId": 331,
+       "opponentImageId": 883182,
+       "nrrChanges": "+0.725"
+      },
+      {
+       "opponent": "Multan Sultans",
+       "startdt": "1775052000000",
+       "result": "Lost by 6 wkts",
+       "opponentSName": "MS",
+       "matchId": 149020,
+       "matchName": "8th Match",
+       "winner": 437,
+       "opponentId": 437,
+       "opponentImageId": 883178,
+       "nrrChanges": "+0.648"
+      },
+      {
+       "opponent": "Peshawar Zalmi",
+       "startdt": "1775656800000",
+       "result": "Lost by 4 wkts",
+       "opponentSName": "PSZ",
+       "matchId": 149094,
+       "matchName": "15th Match",
+       "winner": 334,
+       "opponentId": 334,
+       "opponentImageId": 883180,
+       "nrrChanges": "+0.519"
+      },
+      {
+       "opponent": "Karachi Kings",
+       "startdt": "1775916000000",
+       "result": "Won by 4 wkts",
+       "opponentSName": "KRK",
+       "matchId": 149149,
+       "matchName": "20th Match",
+       "winner": 3114,
+       "opponentId": 332,
+       "opponentImageId": 883188,
+       "nrrChanges": "+0.391"
+      },
+      {
+       "opponent": "Islamabad United",
+       "startdt": "1776002400000",
+       "result": "Won by 6 wkts",
+       "opponentSName": "ISU",
+       "matchId": 149160,
+       "matchName": "21st Match",
+       "winner": 3114,
+       "opponentId": 330,
+       "opponentImageId": 883184,
+       "nrrChanges": "+0.359"
+      },
+      {
+       "opponent": "Rawalpindiz",
+       "startdt": "1776331800000",
+       "result": "Won by 5 wkts",
+       "opponentSName": "RWP",
+       "matchId": 149193,
+       "matchName": "24th Match",
+       "winner": 3114,
+       "opponentId": 3116,
+       "opponentImageId": 883174,
+       "nrrChanges": "+0.338"
+      },
+      {
+       "opponent": "Multan Sultans",
+       "startdt": "1776866400000",
+       "result": "Won by 4 wkts",
+       "opponentSName": "MS",
+       "matchId": 149281,
+       "matchName": "33rd Match",
+       "winner": 3114,
+       "opponentId": 437,
+       "opponentImageId": 883178,
+       "nrrChanges": "+0.103"
+      },
+      {
+       "opponent": "Islamabad United",
+       "startdt": "1777039200000",
+       "result": "Lost by 8 wkts",
+       "opponentSName": "ISU",
+       "matchId": 149314,
+       "matchName": "36th Match",
+       "winner": 330,
+       "opponentId": 330,
+       "opponentImageId": 883184,
+       "nrrChanges": "-0.670"
+      },
+      {
+       "opponent": "Rawalpindiz",
+       "startdt": "1777195800000",
+       "result": "Won by 108 runs",
+       "opponentSName": "RWP",
+       "matchId": 149347,
+       "matchName": "39th Match",
+       "winner": 3114,
+       "opponentId": 3116,
+       "opponentImageId": 883174,
+       "nrrChanges": "+0.676"
+      },
+      {
+       "opponent": "Multan Sultans",
+       "startdt": "1777471200000",
+       "result": "Won by 8 wkts",
+       "opponentSName": "MS",
+       "matchId": 149376,
+       "matchName": "Eliminator 1",
+       "winner": 3114,
+       "opponentId": 437,
+       "opponentImageId": 883178
+      },
+      {
+       "opponent": "Islamabad United",
+       "startdt": "1777644000000",
+       "result": "Won by 2 runs",
+       "opponentSName": "ISU",
+       "matchId": 149387,
+       "matchName": "Eliminator 2",
+       "winner": 3114,
+       "opponentId": 330,
+       "opponentImageId": 883184
+      },
+      {
+       "opponent": "Peshawar Zalmi",
+       "startdt": "1777820400000",
+       "result": "Lost by 5 wkts",
+       "opponentSName": "PSZ",
+       "matchId": 149392,
+       "matchName": "Final",
+       "winner": 334,
+       "opponentId": 334,
+       "opponentImageId": 883180
+      }
+     ],
+     "form": [
+      "L",
+      "W",
+      "W",
+      "W",
+      "L"
+     ],
+     "teamImageId": 883179,
+     "teamQualifyStatus": "Q"
+    },
+    {
+     "teamId": 333,
+     "teamName": "LHQ",
+     "matchesPlayed": 10,
+     "matchesWon": 5,
+     "matchesLost": 5,
+     "points": 10,
+     "nrr": "-0.482",
+     "teamFullName": "Lahore Qalandars",
+     "teamMatches": [
+      {
+       "opponent": "Hyderabad Kingsmen",
+       "startdt": "1774533600000",
+       "result": "Won by 69 runs",
+       "opponentSName": "HYDK",
+       "matchId": 148962,
+       "matchName": "1st Match",
+       "winner": 333,
+       "opponentId": 3114,
+       "opponentImageId": 883179,
+       "nrrChanges": "+3.450"
+      },
+      {
+       "opponent": "Karachi Kings",
+       "startdt": "1774792800000",
+       "result": "Lost by 4 wkts",
+       "opponentSName": "KRK",
+       "matchId": 148998,
+       "matchName": "6th Match",
+       "winner": 332,
+       "opponentId": 332,
+       "opponentImageId": 883188,
+       "nrrChanges": "-1.883"
+      },
+      {
+       "opponent": "Multan Sultans",
+       "startdt": "1775224800000",
+       "result": "Won by 20 runs (13 Overs game due to rain)",
+       "opponentSName": "MS",
+       "matchId": 149053,
+       "matchName": "11th Match",
+       "winner": 333,
+       "opponentId": 437,
+       "opponentImageId": 883178,
+       "nrrChanges": "-0.021"
+      },
+      {
+       "opponent": "Islamabad United",
+       "startdt": "1775727000000",
+       "result": "Lost by 9 wkts",
+       "opponentSName": "ISU",
+       "matchId": 149105,
+       "matchName": "16th Match",
+       "winner": 330,
+       "opponentId": 330,
+       "opponentImageId": 883184,
+       "nrrChanges": "-1.597"
+      },
+      {
+       "opponent": "Peshawar Zalmi",
+       "startdt": "1775899800000",
+       "result": "Lost by 76 runs",
+       "opponentSName": "PSZ",
+       "matchId": 149138,
+       "matchName": "19th Match",
+       "winner": 334,
+       "opponentId": 334,
+       "opponentImageId": 883180,
+       "nrrChanges": "-0.812"
+      },
+      {
+       "opponent": "Quetta Gladiators",
+       "startdt": "1776434400000",
+       "result": "Lost by 6 wkts",
+       "opponentSName": "QTG",
+       "matchId": 149215,
+       "matchName": "26th Match",
+       "winner": 331,
+       "opponentId": 331,
+       "opponentImageId": 883182,
+       "nrrChanges": "-0.157"
+      },
+      {
+       "opponent": "Rawalpindiz",
+       "startdt": "1776520800000",
+       "result": "Won by 32 runs",
+       "opponentSName": "RWP",
+       "matchId": 149216,
+       "matchName": "27th Match",
+       "winner": 333,
+       "opponentId": 3116,
+       "opponentImageId": 883174,
+       "nrrChanges": "+0.386"
+      },
+      {
+       "opponent": "Quetta Gladiators",
+       "startdt": "1776763800000",
+       "result": "Won by 9 runs",
+       "opponentSName": "QTG",
+       "matchId": 149249,
+       "matchName": "30th Match",
+       "winner": 333,
+       "opponentId": 331,
+       "opponentImageId": 883182,
+       "nrrChanges": "+0.131"
+      },
+      {
+       "opponent": "Karachi Kings",
+       "startdt": "1776952800000",
+       "result": "Lost by 5 wkts",
+       "opponentSName": "KRK",
+       "matchId": 149303,
+       "matchName": "35th Match",
+       "winner": 332,
+       "opponentId": 332,
+       "opponentImageId": 883188,
+       "nrrChanges": "-0.055"
+      },
+      {
+       "opponent": "Peshawar Zalmi",
+       "startdt": "1777125600000",
+       "result": "Won by 6 wkts",
+       "opponentSName": "PSZ",
+       "matchId": 149336,
+       "matchName": "38th Match",
+       "winner": 333,
+       "opponentId": 334,
+       "opponentImageId": 883180,
+       "nrrChanges": "+0.076"
+      }
+     ],
+     "form": [
+      "L",
+      "W",
+      "W",
+      "L",
+      "W"
+     ],
+     "teamImageId": 883181,
+     "teamQualifyStatus": "E"
+    },
+    {
+     "teamId": 332,
+     "teamName": "KRK",
+     "matchesPlayed": 10,
+     "matchesWon": 5,
+     "matchesLost": 5,
+     "points": 10,
+     "nrr": "-0.869",
+     "teamFullName": "Karachi Kings",
+     "teamMatches": [
+      {
+       "opponent": "Quetta Gladiators",
+       "startdt": "1774620000000",
+       "result": "Won by 14 runs",
+       "opponentSName": "QTG",
+       "matchId": 148963,
+       "matchName": "2nd Match",
+       "winner": 332,
+       "opponentId": 331,
+       "opponentImageId": 883182,
+       "nrrChanges": "+0.700"
+      },
+      {
+       "opponent": "Lahore Qalandars",
+       "startdt": "1774792800000",
+       "result": "Won by 4 wkts",
+       "opponentSName": "LHQ",
+       "matchId": 148998,
+       "matchName": "6th Match",
+       "winner": 332,
+       "opponentId": 333,
+       "opponentImageId": 883181,
+       "nrrChanges": "-0.176"
+      },
+      {
+       "opponent": "Rawalpindiz",
+       "startdt": "1775138400000",
+       "result": "Won by 5 wkts",
+       "opponentSName": "RWP",
+       "matchId": 149042,
+       "matchName": "10th Match",
+       "winner": 332,
+       "opponentId": 3116,
+       "opponentImageId": 883174,
+       "nrrChanges": "-0.038"
+      },
+      {
+       "opponent": "Peshawar Zalmi",
+       "startdt": "1775743200000",
+       "result": "Lost by 159 runs",
+       "opponentSName": "PSZ",
+       "matchId": 149116,
+       "matchName": "17th Match",
+       "winner": 334,
+       "opponentId": 334,
+       "opponentImageId": 883180,
+       "nrrChanges": "-2.125"
+      },
+      {
+       "opponent": "Hyderabad Kingsmen",
+       "startdt": "1775916000000",
+       "result": "Lost by 4 wkts",
+       "opponentSName": "HYDK",
+       "matchId": 149149,
+       "matchName": "20th Match",
+       "winner": 3114,
+       "opponentId": 3114,
+       "opponentImageId": 883179,
+       "nrrChanges": "+0.244"
+      },
+      {
+       "opponent": "Islamabad United",
+       "startdt": "1776348000000",
+       "result": "Lost by 8 wkts",
+       "opponentSName": "ISU",
+       "matchId": 149204,
+       "matchName": "25th Match",
+       "winner": 330,
+       "opponentId": 330,
+       "opponentImageId": 883184,
+       "nrrChanges": "-0.106"
+      },
+      {
+       "opponent": "Multan Sultans",
+       "startdt": "1776591000000",
+       "result": "Lost by 11 runs",
+       "opponentSName": "MS",
+       "matchId": 149227,
+       "matchName": "28th Match",
+       "winner": 437,
+       "opponentId": 437,
+       "opponentImageId": 883178,
+       "nrrChanges": "+0.133"
+      },
+      {
+       "opponent": "Peshawar Zalmi",
+       "startdt": "1776850200000",
+       "result": "Lost by 7 wkts",
+       "opponentSName": "PSZ",
+       "matchId": 149270,
+       "matchName": "32nd Match",
+       "winner": 334,
+       "opponentId": 334,
+       "opponentImageId": 883180,
+       "nrrChanges": "+0.076"
+      },
+      {
+       "opponent": "Lahore Qalandars",
+       "startdt": "1776952800000",
+       "result": "Won by 5 wkts",
+       "opponentSName": "LHQ",
+       "matchId": 149303,
+       "matchName": "35th Match",
+       "winner": 332,
+       "opponentId": 333,
+       "opponentImageId": 883181,
+       "nrrChanges": "+0.229"
+      },
+      {
+       "opponent": "Quetta Gladiators",
+       "startdt": "1777109400000",
+       "result": "Won by 9 wkts",
+       "opponentSName": "QTG",
+       "matchId": 149325,
+       "matchName": "37th Match",
+       "winner": 332,
+       "opponentId": 331,
+       "opponentImageId": 883182,
+       "nrrChanges": "+0.194"
+      }
+     ],
+     "form": [
+      "L",
+      "L",
+      "L",
+      "W",
+      "W"
+     ],
+     "teamImageId": 883188,
+     "teamQualifyStatus": "E"
+    },
+    {
+     "teamId": 331,
+     "teamName": "QTG",
+     "matchesPlayed": 10,
+     "matchesWon": 3,
+     "matchesLost": 7,
+     "points": 6,
+     "nrr": "-0.410",
+     "teamFullName": "Quetta Gladiators",
+     "teamMatches": [
+      {
+       "opponent": "Karachi Kings",
+       "startdt": "1774620000000",
+       "result": "Lost by 14 runs",
+       "opponentSName": "KRK",
+       "matchId": 148963,
+       "matchName": "2nd Match",
+       "winner": 332,
+       "opponentId": 332,
+       "opponentImageId": 883188,
+       "nrrChanges": "-0.700"
+      },
+      {
+       "opponent": "Hyderabad Kingsmen",
+       "startdt": "1774776600000",
+       "result": "Won by 40 runs",
+       "opponentSName": "HYDK",
+       "matchId": 148987,
+       "matchName": "5th Match",
+       "winner": 331,
+       "opponentId": 3114,
+       "opponentImageId": 883179,
+       "nrrChanges": "+1.350"
+      },
+      {
+       "opponent": "Islamabad United",
+       "startdt": "1775122200000",
+       "result": "Lost by 8 wkts",
+       "opponentSName": "ISU",
+       "matchId": 149031,
+       "matchName": "9th Match",
+       "winner": 330,
+       "opponentId": 330,
+       "opponentImageId": 883184,
+       "nrrChanges": "-0.557"
+      },
+      {
+       "opponent": "Multan Sultans",
+       "startdt": "1775397600000",
+       "result": "Lost by 6 wkts",
+       "opponentSName": "MS",
+       "matchId": 149075,
+       "matchName": "13th Match",
+       "winner": 437,
+       "opponentId": 437,
+       "opponentImageId": 883178,
+       "nrrChanges": "-0.316"
+      },
+      {
+       "opponent": "Rawalpindiz",
+       "startdt": "1775829600000",
+       "result": "Won by 61 runs",
+       "opponentSName": "RWP",
+       "matchId": 149127,
+       "matchName": "18th Match",
+       "winner": 331,
+       "opponentId": 3116,
+       "opponentImageId": 883174,
+       "nrrChanges": "+0.679"
+      },
+      {
+       "opponent": "Peshawar Zalmi",
+       "startdt": "1776261600000",
+       "result": "Lost by 8 wkts",
+       "opponentSName": "PSZ",
+       "matchId": 149182,
+       "matchName": "23rd Match",
+       "winner": 334,
+       "opponentId": 334,
+       "opponentImageId": 883180,
+       "nrrChanges": "-0.198"
+      },
+      {
+       "opponent": "Lahore Qalandars",
+       "startdt": "1776434400000",
+       "result": "Won by 6 wkts",
+       "opponentSName": "LHQ",
+       "matchId": 149215,
+       "matchName": "26th Match",
+       "winner": 331,
+       "opponentId": 333,
+       "opponentImageId": 883181,
+       "nrrChanges": "+0.225"
+      },
+      {
+       "opponent": "Peshawar Zalmi",
+       "startdt": "1776607200000",
+       "result": "Lost by 118 runs",
+       "opponentSName": "PSZ",
+       "matchId": 149238,
+       "matchName": "29th Match",
+       "winner": 334,
+       "opponentId": 334,
+       "opponentImageId": 883180,
+       "nrrChanges": "-0.824"
+      },
+      {
+       "opponent": "Lahore Qalandars",
+       "startdt": "1776763800000",
+       "result": "Lost by 9 runs",
+       "opponentSName": "LHQ",
+       "matchId": 149249,
+       "matchName": "30th Match",
+       "winner": 333,
+       "opponentId": 333,
+       "opponentImageId": 883181,
+       "nrrChanges": "-0.014"
+      },
+      {
+       "opponent": "Karachi Kings",
+       "startdt": "1777109400000",
+       "result": "Lost by 9 wkts",
+       "opponentSName": "KRK",
+       "matchId": 149325,
+       "matchName": "37th Match",
+       "winner": 332,
+       "opponentId": 332,
+       "opponentImageId": 883188,
+       "nrrChanges": "-0.055"
+      }
+     ],
+     "form": [
+      "L",
+      "W",
+      "L",
+      "L",
+      "L"
+     ],
+     "teamImageId": 883182,
+     "teamQualifyStatus": "E"
+    },
+    {
+     "teamId": 3116,
+     "teamName": "RWP",
+     "matchesPlayed": 10,
+     "matchesWon": 1,
+     "matchesLost": 9,
+     "points": 2,
+     "nrr": "-1.760",
+     "teamFullName": "Rawalpindiz",
+     "teamMatches": [
+      {
+       "opponent": "Peshawar Zalmi",
+       "startdt": "1774690200000",
+       "result": "Lost by 5 wkts",
+       "opponentSName": "PSZ",
+       "matchId": 148973,
+       "matchName": "3rd Match",
+       "winner": 334,
+       "opponentId": 334,
+       "opponentImageId": 883180,
+       "nrrChanges": "-0.674"
+      },
+      {
+       "opponent": "Karachi Kings",
+       "startdt": "1775138400000",
+       "result": "Lost by 5 wkts",
+       "opponentSName": "KRK",
+       "matchId": 149042,
+       "matchName": "10th Match",
+       "winner": 332,
+       "opponentId": 332,
+       "opponentImageId": 883188,
+       "nrrChanges": "+0.118"
+      },
+      {
+       "opponent": "Islamabad United",
+       "startdt": "1775311200000",
+       "result": "Lost by 7 wkts",
+       "opponentSName": "ISU",
+       "matchId": 149064,
+       "matchName": "12th Match",
+       "winner": 330,
+       "opponentId": 330,
+       "opponentImageId": 883184,
+       "nrrChanges": "-0.858"
+      },
+      {
+       "opponent": "Multan Sultans",
+       "startdt": "1775484000000",
+       "result": "Lost by 7 wkts",
+       "opponentSName": "MS",
+       "matchId": 149086,
+       "matchName": "14th Match",
+       "winner": 437,
+       "opponentId": 437,
+       "opponentImageId": 883178,
+       "nrrChanges": "-0.211"
+      },
+      {
+       "opponent": "Quetta Gladiators",
+       "startdt": "1775829600000",
+       "result": "Lost by 61 runs",
+       "opponentSName": "QTG",
+       "matchId": 149127,
+       "matchName": "18th Match",
+       "winner": 331,
+       "opponentId": 331,
+       "opponentImageId": 883182,
+       "nrrChanges": "-0.239"
+      },
+      {
+       "opponent": "Hyderabad Kingsmen",
+       "startdt": "1776331800000",
+       "result": "Lost by 5 wkts",
+       "opponentSName": "HYDK",
+       "matchId": 149193,
+       "matchName": "24th Match",
+       "winner": 3114,
+       "opponentId": 3114,
+       "opponentImageId": 883179,
+       "nrrChanges": "+0.043"
+      },
+      {
+       "opponent": "Lahore Qalandars",
+       "startdt": "1776520800000",
+       "result": "Lost by 32 runs",
+       "opponentSName": "LHQ",
+       "matchId": 149216,
+       "matchName": "27th Match",
+       "winner": 333,
+       "opponentId": 333,
+       "opponentImageId": 883181,
+       "nrrChanges": "+0.025"
+      },
+      {
+       "opponent": "Multan Sultans",
+       "startdt": "1776780000000",
+       "result": "Lost by 6 wkts",
+       "opponentSName": "MS",
+       "matchId": 149260,
+       "matchName": "31st Match",
+       "winner": 437,
+       "opponentId": 437,
+       "opponentImageId": 883178,
+       "nrrChanges": "+0.149"
+      },
+      {
+       "opponent": "Islamabad United",
+       "startdt": "1776936600000",
+       "result": "Won by 6 wkts",
+       "opponentSName": "ISU",
+       "matchId": 149292,
+       "matchName": "34th Match",
+       "winner": 3116,
+       "opponentId": 330,
+       "opponentImageId": 883184,
+       "nrrChanges": "+0.317"
+      },
+      {
+       "opponent": "Hyderabad Kingsmen",
+       "startdt": "1777195800000",
+       "result": "Lost by 108 runs",
+       "opponentSName": "HYDK",
+       "matchId": 149347,
+       "matchName": "39th Match",
+       "winner": 3114,
+       "opponentId": 3114,
+       "opponentImageId": 883179,
+       "nrrChanges": "-0.430"
+      }
+     ],
+     "form": [
+      "L",
+      "L",
+      "L",
+      "W",
+      "L"
+     ],
+     "teamImageId": 883174,
+     "teamQualifyStatus": "E"
+    }
+   ]
+  }
+ ],
+ "appIndex": {
+  "seoTitle": "Pakistan Super League 2026 Points Table | Cricbuzz.com",
+  "webURL": "www.cricbuzz.com/cricket-series/11537/pakistan-super-league-2026/points-table"
+ },
+ "legend": [
+  {
+   "key": "PTS",
+   "value": "Points"
+  },
+  {
+   "key": "NRR",
+   "value": "Net Run Rate"
+  },
+  {
+   "key": "Q",
+   "value": "Qualified"
+  },
+  {
+   "key": "E",
+   "value": "Eliminated"
+  },
+  {
+   "key": "P",
+   "value": "Matches played"
+  },
+  {
+   "key": "W",
+   "value": "Matches won"
+  },
+  {
+   "key": "L",
+   "value": "Matches lost"
+  },
+  {
+   "key": "NR",
+   "value": "No Result"
+  },
+  {
+   "key": "D",
+   "value": "Disqualified"
+  }
+ ]
+}

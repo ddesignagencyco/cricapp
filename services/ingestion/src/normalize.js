@@ -109,8 +109,10 @@ function sideTotal(periodScores, side) {
     const hasWickets = !Number.isNaN(w);
     const inningCounts =
       (hasRuns && value > 0) || (hasWickets && w >= 0 && !Number.isNaN(w));
+    // A side's headline is its latest innings. Adding innings together showed a score that
+    // never existed in multi-innings matches (Test: 434/9 then 57/1 became "491/1").
     if (inningCounts) {
-      if (hasRuns && value > 0) runs += value;
+      runs = hasRuns && value > 0 ? value : 0;
       recorded = true;
       if (hasWickets) wickets = w;
       if (inning.display_overs != null) {
@@ -238,10 +240,21 @@ function normalizeSportradar(raw) {
     const awayBattingFirst =
       ms.includes('away') && ms.includes('inning') && !ms.includes('second');
     const inningNum = Number(statusBlock.current_inning) || 1;
+    // An innings entry that names only one side says who is batting. This must win over
+    // "innings 2+ is the away side", which is only true for one-innings-each formats: in a
+    // Test's third innings it read the other side's empty score and showed "0/0".
+    const hasHome = period.home_score != null || period.home_wickets != null;
+    const hasAway = period.away_score != null || period.away_wickets != null;
     let battingComp = homeComp;
     let runs = period.home_score;
     let wickets = period.home_wickets;
-    if (inningNum > 1) {
+    if (hasHome !== hasAway) {
+      if (hasAway) {
+        battingComp = awayComp;
+        runs = period.away_score;
+        wickets = period.away_wickets;
+      }
+    } else if (inningNum > 1) {
       battingComp = awayComp;
       runs = period.away_score;
       wickets = period.away_wickets;

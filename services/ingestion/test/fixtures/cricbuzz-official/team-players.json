@@ -1,0 +1,294 @@
+{
+ "player": [
+  {
+   "name": "BATSMEN",
+   "imageId": 174146
+  },
+  {
+   "id": "8364",
+   "name": "Imam-ul-Haq",
+   "imageId": 617489,
+   "battingStyle": "Left-hand bat"
+  },
+  {
+   "id": "15847",
+   "name": "Muhammad Hurraira",
+   "imageId": 174146,
+   "battingStyle": "Right-hand bat",
+   "bowlingStyle": "Right-arm offbreak"
+  },
+  {
+   "id": "8359",
+   "name": "Babar Azam",
+   "imageId": 846059,
+   "battingStyle": "Right-hand bat",
+   "bowlingStyle": "Right-arm offbreak"
+  },
+  {
+   "id": "9545",
+   "name": "Shan Masood",
+   "imageId": 244962,
+   "battingStyle": "Left-hand bat",
+   "bowlingStyle": "Right-arm medium"
+  },
+  {
+   "id": "10863",
+   "name": "Fakhar Zaman",
+   "imageId": 846057,
+   "battingStyle": "Left-hand bat",
+   "bowlingStyle": "Left-arm orthodox"
+  },
+  {
+   "id": "41113",
+   "name": "Hasan Nawaz",
+   "imageId": 174146,
+   "battingStyle": "Right-hand bat",
+   "bowlingStyle": "Right-arm offbreak"
+  },
+  {
+   "id": "13625",
+   "name": "Sahibzada Farhan",
+   "imageId": 846069,
+   "battingStyle": "Right-hand bat"
+  },
+  {
+   "id": "12139",
+   "name": "Abdullah Shafique",
+   "imageId": 352418,
+   "battingStyle": "Right-hand bat",
+   "bowlingStyle": "Right-arm offbreak"
+  },
+  {
+   "id": "37572",
+   "name": "Tayyab Tahir",
+   "imageId": 616438,
+   "battingStyle": "Right-hand bat",
+   "bowlingStyle": "Right-arm legbreak"
+  },
+  {
+   "id": "13239",
+   "name": "Omair Yousuf",
+   "imageId": 174146,
+   "battingStyle": "Right-hand bat"
+  },
+  {
+   "id": "1433121",
+   "name": "Abdul Samad",
+   "imageId": 174146,
+   "battingStyle": "Right-hand bat"
+  },
+  {
+   "name": "ALL ROUNDER",
+   "imageId": 174146
+  },
+  {
+   "id": "9812",
+   "name": "Saud Shakeel",
+   "imageId": 616442,
+   "battingStyle": "Left-hand bat",
+   "bowlingStyle": "Left-arm orthodox"
+  },
+  {
+   "id": "9807",
+   "name": "Kamran Ghulam",
+   "imageId": 616444,
+   "battingStyle": "Right-hand bat",
+   "bowlingStyle": "Left-arm orthodox"
+  },
+  {
+   "id": "10101",
+   "name": "Salman Agha",
+   "imageId": 846055,
+   "battingStyle": "Right-hand bat",
+   "bowlingStyle": "Right-arm offbreak"
+  },
+  {
+   "id": "14241",
+   "name": "Saim Ayub",
+   "imageId": 846058,
+   "battingStyle": "Left-hand bat",
+   "bowlingStyle": "Right-arm offbreak"
+  },
+  {
+   "id": "12565",
+   "name": "Khushdil Shah",
+   "imageId": 616448,
+   "battingStyle": "Left-hand bat",
+   "bowlingStyle": "Left-arm orthodox"
+  },
+  {
+   "id": "15460",
+   "name": "Irfan Khan",
+   "imageId": 582346,
+   "battingStyle": "Right-hand bat",
+   "bowlingStyle": "Right-arm fast-medium"
+  },
+  {
+   "id": "9804",
+   "name": "Hussain Talat",
+   "imageId": 174146,
+   "battingStyle": "Left-hand bat",
+   "bowlingStyle": "Right-arm medium"
+  },
+  {
+   "id": "14545",
+   "name": "Noman Ali",
+   "imageId": 174146,
+   "battingStyle": "Left-hand bat",
+   "bowlingStyle": "Left-arm orthodox"
+  },
+  {
+   "id": "11265",
+   "name": "Faheem Ashraf",
+   "imageId": 846064,
+   "battingStyle": "Left-hand bat",
+   "bowlingStyle": "Right-arm medium"
+  },
+  {
+   "id": "11186",
+   "name": "Shadab Khan",
+   "imageId": 846060,
+   "battingStyle": "Right-hand bat",
+   "bowlingStyle": "Right-arm legbreak"
+  },
+  {
+   "id": "55256",
+   "name": "Jahandad Khan",
+   "imageId": 174146,
+   "battingStyle": "Left-hand bat",
+   "bowlingStyle": "Left-arm fast-medium"
+  },
+  {
+   "name": "WICKET KEEPER",
+   "imageId": 174146
+  },
+  {
+   "id": "13192",
+   "name": "Rohail Nazir",
+   "imageId": 155978,
+   "battingStyle": "Right-hand bat"
+  },
+  {
+   "id": "9468",
+   "name": "Mohammad Rizwan",
+   "imageId": 616445,
+   "battingStyle": "Right-hand bat"
+  },
+  {
+   "id": "15038",
+   "name": "Mohammad Haris",
+   "imageId": 244950,
+   "battingStyle": "Right-hand bat",
+   "bowlingStyle": "Right-arm offbreak"
+  },
+  {
+   "id": "19013",
+   "name": "Usman Khan",
+   "imageId": 846070,
+   "battingStyle": "Right-hand bat",
+   "bowlingStyle": "Right-arm offbreak"
+  },
+  {
+   "name": "BOWLER",
+   "imageId": 174146
+  },
+  {
+   "id": "12555",
+   "name": "Abrar Ahmed",
+   "imageId": 846068,
+   "battingStyle": "Right-hand bat",
+   "bowlingStyle": "Right-arm legbreak"
+  },
+  {
+   "id": "19066",
+   "name": "Sajid Khan",
+   "imageId": 174146,
+   "battingStyle": "Right-hand bat",
+   "bowlingStyle": "Right-arm offbreak"
+  },
+  {
+   "id": "35250",
+   "name": "Mohammad Ali",
+   "imageId": 174146,
+   "battingStyle": "Right-hand bat",
+   "bowlingStyle": "Right-arm fast-medium"
+  },
+  {
+   "id": "19627",
+   "name": "Khurram Shahzad",
+   "imageId": 174146,
+   "battingStyle": "Right-hand bat",
+   "bowlingStyle": "Right-arm medium"
+  },
+  {
+   "id": "1450089",
+   "name": "Kashif Ali",
+   "imageId": 174146,
+   "battingStyle": "Right-hand bat",
+   "bowlingStyle": "Right-arm medium"
+  },
+  {
+   "id": "14561",
+   "name": "Haris Rauf",
+   "imageId": 616449,
+   "battingStyle": "Right-hand bat",
+   "bowlingStyle": "Right-arm fast"
+  },
+  {
+   "id": "14247",
+   "name": "Naseem Shah",
+   "imageId": 846067,
+   "battingStyle": "Right-hand bat",
+   "bowlingStyle": "Right-arm fast"
+  },
+  {
+   "id": "11320",
+   "name": "Hasan Ali",
+   "imageId": 352428,
+   "battingStyle": "Right-hand bat",
+   "bowlingStyle": "Right-arm fast-medium"
+  },
+  {
+   "id": "15034",
+   "name": "Abbas Afridi",
+   "imageId": 582350,
+   "battingStyle": "Right-hand bat",
+   "bowlingStyle": "Right-arm fast-medium"
+  },
+  {
+   "id": "15751",
+   "name": "Akif Javed",
+   "imageId": 174146,
+   "battingStyle": "Right-hand bat",
+   "bowlingStyle": "Left-arm fast-medium"
+  },
+  {
+   "id": "15040",
+   "name": "Mohammad Wasim Jr",
+   "imageId": 352429,
+   "battingStyle": "Right-hand bat",
+   "bowlingStyle": "Right-arm fast-medium"
+  },
+  {
+   "id": "41169",
+   "name": "Sufyan Moqim",
+   "imageId": 174146,
+   "battingStyle": "Left-hand bat",
+   "bowlingStyle": "Left-arm wrist-spin"
+  },
+  {
+   "id": "12160",
+   "name": "Shaheen Afridi",
+   "imageId": 846065,
+   "battingStyle": "Left-hand bat",
+   "bowlingStyle": "Left-arm fast-medium"
+  },
+  {
+   "id": "14248",
+   "name": "Mohammad Hasnain",
+   "imageId": 616436,
+   "battingStyle": "Right-hand bat",
+   "bowlingStyle": "Right-arm fast-medium"
+  }
+ ]
+}

@@ -130,8 +130,13 @@ services:
         fromDatabase:
           name: cricapp-db
           property: connectionString
+      # auto = the official Cricbuzz Cricket listing on RapidAPI only (see services/ingestion/.env.example).
       - key: DATA_PROVIDER
         value: auto
+      # Local request cap per month; sized for the Ultra plan (300k) with headroom.
+      # Polling speed and cache times stay at their defaults.
+      - key: RAPIDAPI_CRICBUZZ_MONTHLY_BUDGET
+        value: "290000"
       - key: RAPIDAPI_KEY
         sync: false
       - key: REF_SYNC_PLAYER_PROFILE_LIMIT

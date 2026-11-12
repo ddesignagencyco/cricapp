@@ -1,0 +1,855 @@
+{
+ "inningsid": 0,
+ "comwrapper": [
+  {
+   "commentary": {
+    "commtxt": "A comprehensive victory for the Qalandars, they've started on a winning note. The Kingsmen will take the positives and will look to come back better in their next match. PSL keps rolling and do join us tomorrow for the second match. For now, cheers and bye..",
+    "timestamp": 1774549209585,
+    "overnum": 0,
+    "inningsid": 2,
+    "eventtype": "NONE",
+    "commentaryformats": [
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     }
+    ],
+    "videotype": "",
+    "videourl": "",
+    "videoid": 0,
+    "ballnbr": 0,
+    "planid": 0,
+    "imageid": 0,
+    "premiumvideourl": "",
+    "ispremiumfree": false,
+    "batteamscore": 0,
+    "boundarytracker": false
+   }
+  },
+  {
+   "commentary": {
+    "commtxt": "B0$ - We enjoyed it, we've been together for the last week and have had good game time. Fakhar and Naeem were excellent in the powerplay with the batting. We struggled a bit in the middle overs, but this is just the start of a tournament and we have plenty of firepower. Mustafizur and I started at the same time for the Qalandars and we're back together. Rauf has been good for us - we've made changes to the playing XI at times and it's worked. That's my job, when I'm batting, I try to build momentum for the team. We wanted to take wickets and build the pressure.",
+    "timestamp": 1774549136417,
+    "overnum": 0,
+    "inningsid": 2,
+    "eventtype": "NONE",
+    "commentaryformats": [
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "bold",
+      "value": [
+       {
+        "id": "B0$",
+        "value": "Shaheen Afridi | Lahore Qalandars Captain"
+       }
+      ]
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     }
+    ],
+    "videotype": "",
+    "videourl": "",
+    "videoid": 0,
+    "ballnbr": 0,
+    "planid": 0,
+    "imageid": 0,
+    "premiumvideourl": "",
+    "ispremiumfree": false,
+    "batteamscore": 0,
+    "boundarytracker": false
+   }
+  },
+  {
+   "commentary": {
+    "commtxt": "B0$ - It's the first hit out for the team; there are lots of lessons to learn. The spinners dragged it back in the middle overs, which was positive, but the batting struggled. We lost wickets in the powerplay and couldn't regain momentum. There are a lot of things that need to go right in a 200-run chase, need partnerships to develop. The conservativeness came down because of the loss of 3-4 wickets, the outfield was fast and there was value for shots.",
+    "timestamp": 1774549087008,
+    "overnum": 0,
+    "inningsid": 2,
+    "eventtype": "NONE",
+    "commentaryformats": [
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "bold",
+      "value": [
+       {
+        "id": "B0$",
+        "value": "Marnus Labuschagne | Hyderabad Kingsmen Captain"
+       }
+      ]
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     }
+    ],
+    "videotype": "",
+    "videourl": "",
+    "videoid": 0,
+    "ballnbr": 0,
+    "planid": 0,
+    "imageid": 0,
+    "premiumvideourl": "",
+    "ispremiumfree": false,
+    "batteamscore": 0,
+    "boundarytracker": false
+   }
+  },
+  {
+   "commentary": {
+    "commtxt": "B0$ - To be honest, I wasn't at my best and the wicket wasn't easy to bat on. I was lucky to score those runs and the bowlers were excellent. I was talking to Naeem, the message sent to the dressing room was that the wicket wasn't easy. We needed wickets in hand to score big in the death overs. Naeem made it easy for me - the plan was simple - he would take the attack to the bowlers and I wait for the bad balls. he's a special talent and I enjoyed batting with him.",
+    "timestamp": 1774549027463,
+    "overnum": 0,
+    "inningsid": 2,
+    "eventtype": "NONE",
+    "commentaryformats": [
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "bold",
+      "value": [
+       {
+        "id": "B0$",
+        "value": "Fakhar Zaman | Player of the Match"
+       }
+      ]
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     }
+    ],
+    "videotype": "",
+    "videourl": "",
+    "videoid": 0,
+    "ballnbr": 0,
+    "planid": 0,
+    "imageid": 0,
+    "premiumvideourl": "",
+    "ispremiumfree": false,
+    "batteamscore": 0,
+    "boundarytracker": false
+   }
+  },
+  {
+   "commentary": {
+    "commtxt": "B0$ A convincing win for the defending champions and a humbling loss for the newcomers - PSL 2026 has started with a one-sided affair. Chasing 200 was always going to be tough and the Kingsmen struggled right from the onset. They needed some big partnerships, but 25 for the opening wicket was their best stand. Marnus Labuschagne's laboured 26 was the top score, and they never looked competitive in the chase. Every bowler took atleast one wicket as the defending champions started their title defence on a canter. Stay tuned for the presentations.",
+    "timestamp": 1774547809052,
+    "overnum": 0,
+    "inningsid": 2,
+    "eventtype": "NONE",
+    "commentaryformats": [
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "bold",
+      "value": [
+       {
+        "id": "B0$",
+        "value": "22:56 Local Time, 17:56 GMT, 23:26 IST:"
+       }
+      ]
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     }
+    ],
+    "videotype": "",
+    "videourl": "",
+    "videoid": 0,
+    "ballnbr": 0,
+    "planid": 0,
+    "imageid": 0,
+    "premiumvideourl": "",
+    "ispremiumfree": false,
+    "batteamscore": 0,
+    "boundarytracker": false
+   }
+  },
+  {
+   "commentary": {
+    "commtxt": "Mustafizur Rahman to Riley Meredith, B0$ Mohammad Ali Run Out!! A run-out to end the match? There's a direct hit at the striker's end with Mohammad Ali scrambling to make his ground - he's caught a yard short and Qalandars complete a 69-run win to begin their PSL 2026 campaign. Was short and at the body, Meredith was shaping to pull and the ball rolled to Ubaid at short fine, he shies and makes a direct hit, catching Mohammad Ali well short. B1$,",
+    "timestamp": 1774547641552,
+    "overnum": 19.6,
+    "inningsid": 2,
+    "eventtype": "over-break,WICKET",
+    "oversep": {
+     "score": 130,
+     "wickets": 10,
+     "inningsid": 2,
+     "oversummary": "1 1 N1 0 2 1 W ",
+     "runs": 7,
+     "batstrikerdetails": "10(9)",
+     "batnonstrikerdetails": "19(26)",
+     "bowldetails": "1-19 (4)",
+     "timestamp": 1774547641554,
+     "overnum": 19.6,
+     "ovrbatnames": [],
+     "ovrbowlnames": [],
+     "batstrikername": "Mohammad Ali",
+     "batnonstrikername": "Riley Meredith",
+     "bowlname": "Mustafizur Rahman",
+     "battingteamname": "HYDK"
+    },
+    "commentaryformats": [
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "bold",
+      "value": [
+       {
+        "id": "B0$",
+        "value": "out"
+       },
+       {
+        "id": "B1$",
+        "value": "Mohammad Ali run out (Ubaid Shah) 10(9)"
+       }
+      ]
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     }
+    ],
+    "videotype": "",
+    "videourl": "",
+    "videoid": 0,
+    "ballnbr": 120,
+    "planid": 0,
+    "imageid": 0,
+    "premiumvideourl": "",
+    "ispremiumfree": false,
+    "batteamscore": 0,
+    "boundarytracker": false
+   }
+  },
+  {
+   "commentary": {
+    "commtxt": "Mustafizur Rahman to Riley Meredith, B0$ Run Out!!",
+    "timestamp": 1774547640046,
+    "overnum": 0,
+    "inningsid": 2,
+    "eventtype": "NONE",
+    "commentaryformats": [
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "bold",
+      "value": [
+       {
+        "id": "B0$",
+        "value": "THATS OUT!!"
+       }
+      ]
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     }
+    ],
+    "videotype": "",
+    "videourl": "",
+    "videoid": 0,
+    "ballnbr": 0,
+    "planid": 0,
+    "imageid": 0,
+    "premiumvideourl": "",
+    "ispremiumfree": false,
+    "batteamscore": 0,
+    "boundarytracker": false
+   }
+  },
+  {
+   "commentary": {
+    "commtxt": "Mustafizur Rahman to Mohammad Ali, 1 run, slower ball outside off - pushed into the gap wide of cover-point for a single",
+    "timestamp": 1774547567520,
+    "overnum": 19.5,
+    "inningsid": 2,
+    "eventtype": "NONE",
+    "commentaryformats": [
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     }
+    ],
+    "videotype": "",
+    "videourl": "",
+    "videoid": 0,
+    "ballnbr": 119,
+    "planid": 0,
+    "imageid": 0,
+    "premiumvideourl": "",
+    "ispremiumfree": false,
+    "batteamscore": 0,
+    "boundarytracker": false
+   }
+  },
+  {
+   "commentary": {
+    "commtxt": "Mustafizur Rahman to Mohammad Ali, 2 runs, short of a good length and at the stumps, whipped into the gap wide of mid-wicket for a couple",
+    "timestamp": 1774547536665,
+    "overnum": 19.4,
+    "inningsid": 2,
+    "eventtype": "NONE",
+    "commentaryformats": [
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     }
+    ],
+    "videotype": "",
+    "videourl": "",
+    "videoid": 0,
+    "ballnbr": 118,
+    "planid": 0,
+    "imageid": 0,
+    "premiumvideourl": "",
+    "ispremiumfree": false,
+    "batteamscore": 0,
+    "boundarytracker": false
+   }
+  },
+  {
+   "commentary": {
+    "commtxt": "Mustafizur Rahman to Mohammad Ali, no run, fuller length delivery on the pads, Mohammad Ali looks to clip and misses",
+    "timestamp": 1774547504736,
+    "overnum": 19.3,
+    "inningsid": 2,
+    "eventtype": "NONE",
+    "commentaryformats": [
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     }
+    ],
+    "videotype": "",
+    "videourl": "",
+    "videoid": 0,
+    "ballnbr": 117,
+    "planid": 0,
+    "imageid": 0,
+    "premiumvideourl": "",
+    "ispremiumfree": false,
+    "batteamscore": 0,
+    "boundarytracker": false
+   }
+  }
+ ],
+ "miniscore": {
+  "batsmanstriker": {
+   "id": 12226,
+   "balls": 26,
+   "runs": 19,
+   "fours": 1,
+   "sixes": 0,
+   "strkrate": "73.07692307692307",
+   "name": "Riley Meredith",
+   "nickname": "Riley Meredith",
+   "iscaptain": false,
+   "iskeeper": false,
+   "outdec": "",
+   "videotype": "",
+   "videourl": "",
+   "videoid": 0,
+   "planid": 0,
+   "imageid": 0,
+   "premiumvideourl": "",
+   "iscbplusfree": false,
+   "ispremiumfree": false,
+   "inmatchchange": "",
+   "isoverseas": false,
+   "playingxichange": ""
+  },
+  "batsmannonstriker": {
+   "id": 0,
+   "balls": 0,
+   "runs": 0,
+   "fours": 0,
+   "sixes": 0,
+   "strkrate": "0",
+   "name": "",
+   "nickname": "",
+   "iscaptain": false,
+   "iskeeper": false,
+   "outdec": "",
+   "videotype": "",
+   "videourl": "",
+   "videoid": 0,
+   "planid": 0,
+   "imageid": 0,
+   "premiumvideourl": "",
+   "iscbplusfree": false,
+   "ispremiumfree": false,
+   "inmatchchange": "",
+   "isoverseas": false,
+   "playingxichange": ""
+  },
+  "bowlerstriker": {
+   "id": 12160,
+   "overs": "4",
+   "maidens": 0,
+   "wickets": 1,
+   "runs": 28,
+   "economy": "7",
+   "name": "Shaheen Afridi",
+   "nickname": "",
+   "iscaptain": false,
+   "iskeeper": false,
+   "videotype": "",
+   "videourl": "",
+   "videoid": 0,
+   "dots": 0,
+   "balls": 0,
+   "rpb": 0,
+   "planid": 0,
+   "imageid": 0,
+   "premiumvideourl": "",
+   "ispremiumfree": false,
+   "inmatchchange": "",
+   "isoverseas": false,
+   "playingxichange": ""
+  },
+  "bowlernonstriker": {
+   "id": 9863,
+   "overs": "4",
+   "maidens": 0,
+   "wickets": 1,
+   "runs": 19,
+   "economy": "4.75",
+   "name": "Mustafizur Rahman",
+   "nickname": "",
+   "iscaptain": false,
+   "iskeeper": false,
+   "videotype": "",
+   "videourl": "",
+   "videoid": 0,
+   "dots": 0,
+   "balls": 0,
+   "rpb": 0,
+   "planid": 0,
+   "imageid": 0,
+   "premiumvideourl": "",
+   "ispremiumfree": false,
+   "inmatchchange": "",
+   "isoverseas": false,
+   "playingxichange": ""
+  },
+  "crr": 6.5,
+  "rrr": 0,
+  "inningsnbr": "1st inn",
+  "lastwkt": "Mohammad Ali  run out (Ubaid Shah)  10(9)  - 130/10 in 20.0 ov.",
+  "curovsstats": "... | 1 1 0 2 0 1  | 1 1 N1 0 2 1 W",
+  "inningsscores": {
+   "inningsscore": [
+    {
+     "inningsid": 2,
+     "batteamid": 3114,
+     "batteamshortname": "HYDK",
+     "runs": 130,
+     "wickets": 10,
+     "overs": 19.6,
+     "isdeclared": false,
+     "isfollowon": false,
+     "target": 200,
+     "balls": 120
+    },
+    {
+     "inningsid": 1,
+     "batteamid": 333,
+     "batteamshortname": "LHQ",
+     "runs": 199,
+     "wickets": 6,
+     "overs": 19.6,
+     "isdeclared": false,
+     "isfollowon": false,
+     "target": 200,
+     "balls": 120
+    }
+   ]
+  },
+  "inningsid": 2,
+  "performance": [
+   {
+    "runs": 29,
+    "wickets": 2,
+    "label": "Last 5 overs"
+   },
+   {
+    "runs": 15,
+    "wickets": 1,
+    "label": "Last 3 overs"
+   }
+  ],
+  "udrs": {
+   "team1id": 333,
+   "team1remaining": 1,
+   "team1successful": 1,
+   "team1unsuccessful": 1,
+   "team2id": 3114,
+   "team2remaining": 2,
+   "team2successful": 0,
+   "team2unsuccessful": 0
+  },
+  "partnership": "23(24)",
+  "oversrem": "",
+  "pp": {
+   "powerplay": [
+    {
+     "id": 27,
+     "ovrfrom": 0.1,
+     "ovrto": 6,
+     "pptype": "Mandatory",
+     "run": 48,
+     "wickets": 0
+    }
+   ]
+  },
+  "target": 0,
+  "custstatus": "",
+  "ballsrem": 0,
+  "rpb": 0,
+  "rrpb": 0,
+  "responselastupdated": 0,
+  "event": "",
+  "timestamp": 1774547641552
+ },
+ "matchheaders": {
+  "state": "Complete",
+  "status": "Lahore Qalandars won by 69 runs",
+  "matchformat": "T20",
+  "matchstarttimestamp": 1774533600000,
+  "teamdetails": {
+   "batteamid": 3114,
+   "batteamname": "HYDK",
+   "bowlteamid": 333,
+   "bowlteamname": "LHQ"
+  },
+  "momplayers": {
+   "player": [
+    {
+     "id": "10863",
+     "name": "Fakhar Zaman",
+     "captain": false,
+     "role": "",
+     "keeper": false,
+     "teamname": "Pakistan",
+     "isheader": false,
+     "imageId": 0,
+     "battingStyle": "",
+     "bowlingStyle": "",
+     "faceimageid": 846057,
+     "countryimageid": 0,
+     "playingxichange": "",
+     "inmatchchange": "",
+     "isoverseas": false,
+     "battingsummary": "53(39)",
+     "bowlingsummary": ""
+    }
+   ],
+   "category": ""
+  },
+  "mosplayers": {
+   "player": [],
+   "category": ""
+  },
+  "winningteamid": 333,
+  "revisedtarget": 0,
+  "matchendtimestamp": 1774547654089,
+  "seriesid": 11537,
+  "matchdesc": "1st Match",
+  "seriesname": "Pakistan Super League 2026",
+  "alerttype": "auto",
+  "tossresults": {
+   "tosswinnerid": 333,
+   "tosswinnername": "Lahore Qalandars",
+   "decision": "Batting"
+  },
+  "livestreamenabled": false,
+  "team1": {
+   "teamid": 333,
+   "teamname": "Lahore Qalandars",
+   "teamsname": "LHQ",
+   "isfullmember": false,
+   "isassociated": false,
+   "isleagueteam": false,
+   "iswomenteam": false,
+   "isheader": false,
+   "isactive": false,
+   "teampriority": "",
+   "isvideopresent": false,
+   "imageid": 0,
+   "countryname": "",
+   "belongsto": "",
+   "teamcolor": "",
+   "isdefaultimage": false
+  },
+  "team2": {
+   "teamid": 3114,
+   "teamname": "Hyderabad Kingsmen",
+   "teamsname": "HYDK",
+   "isfullmember": false,
+   "isassociated": false,
+   "isleagueteam": false,
+   "iswomenteam": false,
+   "isheader": false,
+   "isactive": false,
+   "teampriority": "",
+   "isvideopresent": false,
+   "imageid": 0,
+   "countryname": "",
+   "belongsto": "",
+   "teamcolor": "",
+   "isdefaultimage": false
+  }
+ },
+ "appindex": {
+  "seotitle": "LHQ vs HYDK 1st Match,Pakistan Super League 2026 | Cricbuzz.com",
+  "weburl": "http://www.cricbuzz.com/live-cricket-scores/148962/lhq-vs-hydk-1st-match-pakistan-super-league-2026"
+ },
+ "matchvideos": [
+  {
+   "infratype": "Content_Promotion - Video",
+   "headline": "Match Forecast: PSL - Lahore Qalandars vs Hyderabad Kingsmen, 1st Match",
+   "commtimestamp": 1774432704846,
+   "eventtimestamp": 0,
+   "content": [],
+   "itemid": "1_tsvnendq",
+   "embedcode": "",
+   "applinkurl": "cricbuzz://video?id=1_tsvnendq&name=Match Forecast: PSL - Lahore Qalandars vs Hyderabad Kingsmen, 1st Match",
+   "inningsid": 0,
+   "imageid": 883256,
+   "context": "",
+   "islive": false,
+   "mappingid": "1_tsvnendq",
+   "videourl": "https://cdnapisec.kaltura.com/p/1999781/sp/199978100/playManifest/entryId/1_tsvnendq/format/applehttp/protocol/https/a.m3u8?ks=djJ8MTk5OTc4MXzY7W6XGI9RwsM3TNjokVF8xFPmcI6FZHIW3Gyw7bnxQ-bFdmEmAZepBmR3XJWTkLYXCz5FEBz2jWGc6ozztLyzGk6lX31J8liWrQkdQNCYu4Mv4bTH73DYDppf4iW4uFE=",
+   "adtag": "vast-Match-Forecast",
+   "category": [
+    {
+     "id": 53,
+     "name": "Match Forecast",
+     "imageid": 803739,
+     "videocount": 0,
+     "imagehash": ""
+    }
+   ],
+   "language": "English",
+   "planid": 0,
+   "premiumvideourl": "",
+   "videoid": 167035,
+   "videotype": "Match Forecast",
+   "batsmanid": 0,
+   "bowlerid": 0,
+   "tags": [
+    {
+     "itemname": "Pakistan Super League 2026, 1st Match",
+     "itemtype": "match",
+     "itemid": 148962,
+     "imagehash": ""
+    },
+    {
+     "itemname": "Lahore Qalandars",
+     "itemtype": "team",
+     "itemid": 333,
+     "imagehash": ""
+    },
+    {
+     "itemname": "Hyderabad Kingsmen",
+     "itemtype": "team",
+     "itemid": 3114,
+     "imagehash": ""
+    },
+    {
+     "itemname": "Shaheen Afridi",
+     "itemtype": "player",
+     "itemid": 12160,
+     "imagehash": ""
+    },
+    {
+     "itemname": "Saim Ayub",
+     "itemtype": "player",
+     "itemid": 14241,
+     "imagehash": ""
+    },
+    {
+     "itemname": "Pakistan Super League 2026",
+     "itemtype": "series",
+     "itemid": 11537,
+     "imagehash": ""
+    }
+   ],
+   "ispremiumfree": false,
+   "assetkey": "",
+   "starttime": 0,
+   "endtime": 0,
+   "isloginrequired": false,
+   "haslivestreamfreeminutes": false,
+   "freeminutebeginmessage": {
+    "title": "",
+    "message": ""
+   },
+   "freeminuteexpiredmessage": {
+    "title": "",
+    "message": ""
+   }
+  }
+ ],
+ "responselastupdated": 1794477432,
+ "buzz": {
+  "imageids": [
+   1121188,
+   1121428,
+   1120148
+  ],
+  "position": 2,
+  "applink": "cricbuzz://buzz",
+  "isbuzzenabled": true
+ },
+ "partnersstrip": {
+  "team1sname": "LHQ",
+  "team2sname": "HYDK",
+  "header": "Back your predictions & Win big with Melbet 💰",
+  "title": "Back your predictions & Win big with Melbet 💰",
+  "ctalabel": "Bet Now",
+  "imageid": 1082339,
+  "applink": "http://play1xgame.com/BZnkpqPP",
+  "weblink": "",
+  "partnername": "Melbet WPP PK",
+  "striptype": "WPP",
+  "disclaimer": "",
+  "skintype": 2,
+  "requireddata": [
+   "WINPERCENT"
+  ],
+  "lightimageid": 1082339,
+  "darkimageid": 1082340
+ }
+}

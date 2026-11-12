@@ -114,35 +114,37 @@ export const AD_SIZE_LABELS: Record<DummyAdSize, { label: string; hint: string }
   'half-page': { label: 'Half page', hint: 'Tall unit for a wide sidebar' },
 };
 
-/** Stable per placement + size — different slots get different photos, same slot stays consistent. */
-export function dummyAdPlaceholderUrl(width: number, height: number, seed: string): string {
-  const safe = seed.replace(/[^a-zA-Z0-9-_]/g, '-').slice(0, 96);
-  return `https://picsum.photos/seed/${encodeURIComponent(safe)}/${width}/${height}`;
-}
+/**
+ * House creatives are served from this site (`public/advertisements/`), one per box size.
+ * They used to be random photos from picsum.photos: when that service was slow or
+ * unreachable every ad box rendered empty, and production depended on a third party.
+ */
+const HOUSE_CREATIVE_SRC: Record<Exclude<DummyAdSize, 'leaderboard'>, string> = {
+  'tablet-banner': '/advertisements/tablet-468x60.png',
+  'mobile-banner': '/advertisements/mobile-320x100.png',
+  'medium-rectangle': '/advertisements/rectangle-300x250.png',
+  'large-rectangle': '/advertisements/large-rectangle-336x280.png',
+  'half-page': '/advertisements/half-page-300x600.png',
+};
 
-function seedFor(placement: string, size: DummyAdSize, variant?: LeaderboardVariant): string {
-  return variant ? `${placement}--${size}--${variant}` : `${placement}--${size}`;
-}
+const HOUSE_LEADERBOARD_SRC: Record<LeaderboardVariant, string> = {
+  wide: '/advertisements/leaderboard-970x90.png',
+  desktop: '/advertisements/leaderboard-728x90.png',
+  tablet: '/advertisements/tablet-468x60.png',
+  mobile: '/advertisements/mobile-320x100.png',
+};
 
 export function resolveDummyAdCreative(
   size: DummyAdSize,
-  placement: string,
+  // Kept so call sites stay unchanged; every placement of a size shares its creative.
+  _placement: string,
   variant?: LeaderboardVariant
 ): DummyAdCreative {
   if (size === 'leaderboard') {
     const v = variant ?? 'desktop';
-    const meta = LEADERBOARD_SLOT_META[v];
-    return {
-      ...meta,
-      src: dummyAdPlaceholderUrl(meta.width, meta.height, seedFor(placement, size, v)),
-    };
+    return { ...LEADERBOARD_SLOT_META[v], src: HOUSE_LEADERBOARD_SRC[v] };
   }
-
-  const meta = SLOT_META[size];
-  return {
-    ...meta,
-    src: dummyAdPlaceholderUrl(meta.width, meta.height, seedFor(placement, size)),
-  };
+  return { ...SLOT_META[size], src: HOUSE_CREATIVE_SRC[size] };
 }
 
 /** @deprecated Use resolveDummyAdCreative(placement) — kept for scripts/tests */

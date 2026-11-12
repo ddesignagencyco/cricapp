@@ -246,15 +246,22 @@ export function readStatisticsInnings(
  *
  * The timeline block is the fresher of the two: the match row is written by the
  * summary path and the status block by the timeline path, and during a live match
- * they disagree by a ball or two.
+ * they disagree by a ball or two. The two are merged by innings number rather than one
+ * replacing the other: a timeline built from commentary can lack early innings (a Test's
+ * first innings older than the backfill reached), and the row still has them.
  */
 export function readPeriodScores(
   match: Record<string, unknown> | null,
   payload: Record<string, unknown> | null,
 ): PeriodScore[] {
   const fromTimeline = readPeriodScoreList(statusBlockOf(payload)?.period_scores);
-  if (fromTimeline.length > 0) return fromTimeline;
-  return readPeriodScoreList(match?.periodScores);
+  const fromRow = readPeriodScoreList(match?.periodScores);
+  if (fromTimeline.length === 0) return fromRow;
+  if (fromRow.length === 0) return fromTimeline;
+  const byNumber = new Map<number, PeriodScore>();
+  for (const p of fromRow) byNumber.set(p.number, p);
+  for (const p of fromTimeline) byNumber.set(p.number, p);
+  return [...byNumber.values()].sort((a, b) => a.number - b.number);
 }
 
 function readPeriodScoreList(raw: unknown): PeriodScore[] {

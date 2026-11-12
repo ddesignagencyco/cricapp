@@ -1,0 +1,1104 @@
+{
+ "inningsid": 0,
+ "comwrapper": [
+  {
+   "commentary": {
+    "commtxt": "Mustafizur Rahman to Mohammad Ali, no run, fuller length delivery on the pads, Mohammad Ali looks to clip and misses",
+    "timestamp": 1774547504736,
+    "overnum": 19.3,
+    "inningsid": 2,
+    "eventtype": "NONE",
+    "commentaryformats": [
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     }
+    ],
+    "videotype": "",
+    "videourl": "",
+    "videoid": 0,
+    "ballnbr": 117,
+    "planid": 0,
+    "imageid": 0,
+    "premiumvideourl": "",
+    "ispremiumfree": false,
+    "batteamscore": 0,
+    "boundarytracker": false
+   }
+  },
+  {
+   "commentary": {
+    "commtxt": "Mustafizur Rahman to Riley Meredith, B0$, 1 run, a loopy full-toss, dipped onto the right-hander and it's slapped down to long-off. They check for the height and it's above the waist, called as a no-ball",
+    "timestamp": 1774547469686,
+    "overnum": 19.3,
+    "inningsid": 2,
+    "eventtype": "NONE",
+    "commentaryformats": [
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "bold",
+      "value": [
+       {
+        "id": "B0$",
+        "value": "no ball"
+       }
+      ]
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     }
+    ],
+    "videotype": "",
+    "videourl": "",
+    "videoid": 0,
+    "ballnbr": 117,
+    "planid": 0,
+    "imageid": 0,
+    "premiumvideourl": "",
+    "ispremiumfree": false,
+    "batteamscore": 0,
+    "boundarytracker": false
+   }
+  },
+  {
+   "commentary": {
+    "commtxt": "Mustafizur Rahman to Mohammad Ali, 1 run, slower ball on the pads, nudged behind square on the on-side for a single",
+    "timestamp": 1774547373668,
+    "overnum": 19.2,
+    "inningsid": 2,
+    "eventtype": "NONE",
+    "commentaryformats": [
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     }
+    ],
+    "videotype": "",
+    "videourl": "",
+    "videoid": 0,
+    "ballnbr": 116,
+    "planid": 0,
+    "imageid": 0,
+    "premiumvideourl": "",
+    "ispremiumfree": false,
+    "batteamscore": 0,
+    "boundarytracker": false
+   }
+  },
+  {
+   "commentary": {
+    "commtxt": "Mustafizur Rahman to Riley Meredith, 1 run, slower ball from Mustafizur, driven down to long-on for a single",
+    "timestamp": 1774547339511,
+    "overnum": 19.1,
+    "inningsid": 2,
+    "eventtype": "NONE",
+    "commentaryformats": [
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     }
+    ],
+    "videotype": "",
+    "videourl": "",
+    "videoid": 0,
+    "ballnbr": 115,
+    "planid": 0,
+    "imageid": 0,
+    "premiumvideourl": "",
+    "ispremiumfree": false,
+    "batteamscore": 0,
+    "boundarytracker": false
+   }
+  },
+  {
+   "commentary": {
+    "commtxt": "Shaheen, from round the wicket",
+    "timestamp": 1774547304578,
+    "overnum": 0,
+    "inningsid": 2,
+    "eventtype": "NONE",
+    "commentaryformats": [
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     }
+    ],
+    "videotype": "",
+    "videourl": "",
+    "videoid": 0,
+    "ballnbr": 0,
+    "planid": 0,
+    "imageid": 0,
+    "premiumvideourl": "",
+    "ispremiumfree": false,
+    "batteamscore": 0,
+    "boundarytracker": false
+   }
+  },
+  {
+   "commentary": {
+    "commtxt": "Shaheen Afridi to Riley Meredith, 1 run, back of a length and just outside off - Meredith runs it down to third man",
+    "timestamp": 1774547295509,
+    "overnum": 18.6,
+    "inningsid": 2,
+    "eventtype": "over-break",
+    "oversep": {
+     "score": 123,
+     "wickets": 9,
+     "inningsid": 2,
+     "oversummary": "1 1 0 2 0 1 ",
+     "runs": 5,
+     "batstrikerdetails": "6(5)",
+     "batnonstrikerdetails": "17(23)",
+     "bowldetails": "1-28 (4)",
+     "timestamp": 1774547295511,
+     "overnum": 18.6,
+     "ovrbatnames": [],
+     "ovrbowlnames": [],
+     "batstrikername": "Mohammad Ali",
+     "batnonstrikername": "Riley Meredith",
+     "bowlname": "Shaheen Afridi",
+     "battingteamname": "HYDK"
+    },
+    "commentaryformats": [
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     }
+    ],
+    "videotype": "",
+    "videourl": "",
+    "videoid": 0,
+    "ballnbr": 114,
+    "planid": 0,
+    "imageid": 0,
+    "premiumvideourl": "",
+    "ispremiumfree": false,
+    "batteamscore": 0,
+    "boundarytracker": false
+   }
+  },
+  {
+   "commentary": {
+    "commtxt": "Shaheen Afridi to Riley Meredith, no run, low full-toss from Shaheen, Meredith's bottom-hand comes off on the drive to mid-off",
+    "timestamp": 1774547255040,
+    "overnum": 18.5,
+    "inningsid": 2,
+    "eventtype": "NONE",
+    "commentaryformats": [
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     }
+    ],
+    "videotype": "",
+    "videourl": "",
+    "videoid": 0,
+    "ballnbr": 113,
+    "planid": 0,
+    "imageid": 0,
+    "premiumvideourl": "",
+    "ispremiumfree": false,
+    "batteamscore": 0,
+    "boundarytracker": false
+   }
+  },
+  {
+   "commentary": {
+    "commtxt": "Shaheen Afridi to Riley Meredith, 2 runs, banged in short by Shaheen - Meredith clears his front-leg and then swats it over mid-wicket, comes back for the second",
+    "timestamp": 1774547223903,
+    "overnum": 18.4,
+    "inningsid": 2,
+    "eventtype": "NONE",
+    "commentaryformats": [
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     }
+    ],
+    "videotype": "",
+    "videourl": "",
+    "videoid": 0,
+    "ballnbr": 112,
+    "planid": 0,
+    "imageid": 0,
+    "premiumvideourl": "",
+    "ispremiumfree": false,
+    "batteamscore": 0,
+    "boundarytracker": false
+   }
+  },
+  {
+   "commentary": {
+    "commtxt": "Shaheen Afridi to Riley Meredith, no run, on a good length and angling across the right-hander, Meredith backs away on the drive and misses",
+    "timestamp": 1774547186153,
+    "overnum": 18.3,
+    "inningsid": 2,
+    "eventtype": "NONE",
+    "commentaryformats": [
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     }
+    ],
+    "videotype": "",
+    "videourl": "",
+    "videoid": 0,
+    "ballnbr": 111,
+    "planid": 0,
+    "imageid": 0,
+    "premiumvideourl": "",
+    "ispremiumfree": false,
+    "batteamscore": 0,
+    "boundarytracker": false
+   }
+  },
+  {
+   "commentary": {
+    "commtxt": "Shaheen Afridi to Mohammad Ali, 1 run, short of a good length and at the pads, clipped down to long leg for a single",
+    "timestamp": 1774547156355,
+    "overnum": 18.2,
+    "inningsid": 2,
+    "eventtype": "NONE",
+    "commentaryformats": [
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     }
+    ],
+    "videotype": "",
+    "videourl": "",
+    "videoid": 0,
+    "ballnbr": 110,
+    "planid": 0,
+    "imageid": 0,
+    "premiumvideourl": "",
+    "ispremiumfree": false,
+    "batteamscore": 0,
+    "boundarytracker": false
+   }
+  },
+  {
+   "commentary": {
+    "commtxt": "Shaheen Afridi to Riley Meredith, 1 run, a direct hit and that would've been the end for Mohammad Ali - was very slow to respond to Meredith's call, pushed in front of mid-off and the fielder had plenty of time to throw down the stumps at the striker's end",
+    "timestamp": 1774547123392,
+    "overnum": 18.1,
+    "inningsid": 2,
+    "eventtype": "RUNOUT_MISS",
+    "commentaryformats": [
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     }
+    ],
+    "videotype": "",
+    "videourl": "",
+    "videoid": 0,
+    "ballnbr": 109,
+    "planid": 0,
+    "imageid": 0,
+    "premiumvideourl": "",
+    "ispremiumfree": false,
+    "batteamscore": 0,
+    "boundarytracker": false
+   }
+  },
+  {
+   "commentary": {
+    "commtxt": "B0$",
+    "timestamp": 1774547111195,
+    "overnum": 0,
+    "inningsid": 2,
+    "eventtype": "NONE",
+    "commentaryformats": [
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "bold",
+      "value": [
+       {
+        "id": "B0$",
+        "value": "Shaheen Afridi [3.0-0-23-1] is back into the attack"
+       }
+      ]
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     }
+    ],
+    "videotype": "",
+    "videourl": "",
+    "videoid": 0,
+    "ballnbr": 0,
+    "planid": 0,
+    "imageid": 0,
+    "premiumvideourl": "",
+    "ispremiumfree": false,
+    "batteamscore": 0,
+    "boundarytracker": false
+   }
+  },
+  {
+   "commentary": {
+    "commtxt": "Mustafizur Rahman to Riley Meredith, 1 run, another slower ball outside off - Meredith backs away on the swing and the mishit lobs up in the air, dropping wide of cover",
+    "timestamp": 1774547068430,
+    "overnum": 17.6,
+    "inningsid": 2,
+    "eventtype": "over-break",
+    "oversep": {
+     "score": 118,
+     "wickets": 9,
+     "inningsid": 2,
+     "oversummary": "0 1 1 0 0 1 ",
+     "runs": 3,
+     "batstrikerdetails": "5(4)",
+     "batnonstrikerdetails": "13(18)",
+     "bowldetails": "1-12 (3)",
+     "timestamp": 1774547068432,
+     "overnum": 17.6,
+     "ovrbatnames": [],
+     "ovrbowlnames": [],
+     "batstrikername": "Mohammad Ali",
+     "batnonstrikername": "Riley Meredith",
+     "bowlname": "Mustafizur Rahman",
+     "battingteamname": "HYDK"
+    },
+    "commentaryformats": [
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     }
+    ],
+    "videotype": "",
+    "videourl": "",
+    "videoid": 0,
+    "ballnbr": 108,
+    "planid": 0,
+    "imageid": 0,
+    "premiumvideourl": "",
+    "ispremiumfree": false,
+    "batteamscore": 0,
+    "boundarytracker": false
+   }
+  },
+  {
+   "commentary": {
+    "commtxt": "Mustafizur Rahman to Riley Meredith, no run,slower short ball outside off - Meredith gets an under-edge on the pull to the on-side",
+    "timestamp": 1774547020481,
+    "overnum": 17.5,
+    "inningsid": 2,
+    "eventtype": "NONE",
+    "commentaryformats": [
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     }
+    ],
+    "videotype": "",
+    "videourl": "",
+    "videoid": 0,
+    "ballnbr": 107,
+    "planid": 0,
+    "imageid": 0,
+    "premiumvideourl": "",
+    "ispremiumfree": false,
+    "batteamscore": 0,
+    "boundarytracker": false
+   }
+  },
+  {
+   "commentary": {
+    "commtxt": "Mustafizur Rahman to Riley Meredith, no run, slower ball outside off - Meredith backs away and mistimes it back at the bowler",
+    "timestamp": 1774546988737,
+    "overnum": 17.4,
+    "inningsid": 2,
+    "eventtype": "NONE",
+    "commentaryformats": [
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     }
+    ],
+    "videotype": "",
+    "videourl": "",
+    "videoid": 0,
+    "ballnbr": 106,
+    "planid": 0,
+    "imageid": 0,
+    "premiumvideourl": "",
+    "ispremiumfree": false,
+    "batteamscore": 0,
+    "boundarytracker": false
+   }
+  },
+  {
+   "commentary": {
+    "commtxt": "Mustafizur Rahman to Mohammad Ali, 1 run, banged in short by Mustafizur - Mohammad Ali gets on top of the bounce and pulls it over square leg",
+    "timestamp": 1774546961863,
+    "overnum": 17.3,
+    "inningsid": 2,
+    "eventtype": "NONE",
+    "commentaryformats": [
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     }
+    ],
+    "videotype": "",
+    "videourl": "",
+    "videoid": 0,
+    "ballnbr": 105,
+    "planid": 0,
+    "imageid": 0,
+    "premiumvideourl": "",
+    "ispremiumfree": false,
+    "batteamscore": 0,
+    "boundarytracker": false
+   }
+  },
+  {
+   "commentary": {
+    "commtxt": "Mustafizur Rahman to Riley Meredith, 1 run, another slower off-cutter, steered backward of square on the off-side for a single",
+    "timestamp": 1774546922020,
+    "overnum": 17.2,
+    "inningsid": 2,
+    "eventtype": "NONE",
+    "commentaryformats": [
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     }
+    ],
+    "videotype": "",
+    "videourl": "",
+    "videoid": 0,
+    "ballnbr": 104,
+    "planid": 0,
+    "imageid": 0,
+    "premiumvideourl": "",
+    "ispremiumfree": false,
+    "batteamscore": 0,
+    "boundarytracker": false
+   }
+  },
+  {
+   "commentary": {
+    "commtxt": "Mustafizur Rahman to Riley Meredith, no run, the slower cutter from Mustafizur, pushed across the right-hander and Meredith is undone by the angle as he drove, bounces through to the keeper",
+    "timestamp": 1774546872451,
+    "overnum": 17.1,
+    "inningsid": 2,
+    "eventtype": "NONE",
+    "commentaryformats": [
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     }
+    ],
+    "videotype": "",
+    "videourl": "",
+    "videoid": 0,
+    "ballnbr": 103,
+    "planid": 0,
+    "imageid": 0,
+    "premiumvideourl": "",
+    "ispremiumfree": false,
+    "batteamscore": 0,
+    "boundarytracker": false
+   }
+  },
+  {
+   "commentary": {
+    "commtxt": "B0$",
+    "timestamp": 1774546862654,
+    "overnum": 0,
+    "inningsid": 2,
+    "eventtype": "NONE",
+    "commentaryformats": [
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "bold",
+      "value": [
+       {
+        "id": "B0$",
+        "value": "Mustafizur Rahman [2.0-0-9-1] is back into the attack"
+       }
+      ]
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     }
+    ],
+    "videotype": "",
+    "videourl": "",
+    "videoid": 0,
+    "ballnbr": 0,
+    "planid": 0,
+    "imageid": 0,
+    "premiumvideourl": "",
+    "ispremiumfree": false,
+    "batteamscore": 0,
+    "boundarytracker": false
+   }
+  },
+  {
+   "commentary": {
+    "commtxt": "Ubaid Shah to Riley Meredith, 1 run, slower ball outside off - Meredith backs away and then plays a one-handed swipe through mid-wicket",
+    "timestamp": 1774546822311,
+    "overnum": 16.6,
+    "inningsid": 2,
+    "eventtype": "over-break",
+    "oversep": {
+     "score": 115,
+     "wickets": 9,
+     "inningsid": 2,
+     "oversummary": "1 Wd 2 1 1 1 1 ",
+     "runs": 8,
+     "batstrikerdetails": "4(3)",
+     "batnonstrikerdetails": "11(13)",
+     "bowldetails": "2-27 (4)",
+     "timestamp": 1774546822313,
+     "overnum": 16.6,
+     "ovrbatnames": [],
+     "ovrbowlnames": [],
+     "batstrikername": "Mohammad Ali",
+     "batnonstrikername": "Riley Meredith",
+     "bowlname": "Ubaid Shah",
+     "battingteamname": "HYDK"
+    },
+    "commentaryformats": [
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     },
+     {
+      "type": "",
+      "value": []
+     }
+    ],
+    "videotype": "",
+    "videourl": "",
+    "videoid": 0,
+    "ballnbr": 102,
+    "planid": 0,
+    "imageid": 0,
+    "premiumvideourl": "",
+    "ispremiumfree": false,
+    "batteamscore": 0,
+    "boundarytracker": false
+   }
+  }
+ ],
+ "matchheaders": {
+  "state": "Complete",
+  "status": "Hyderabad Kingsmen need 73 runs in 3 balls",
+  "matchformat": "T20",
+  "matchstarttimestamp": 1774533600000,
+  "teamdetails": {
+   "batteamid": 3114,
+   "batteamname": "HYDK",
+   "bowlteamid": 333,
+   "bowlteamname": "LHQ"
+  },
+  "momplayers": {
+   "player": [
+    {
+     "id": "10863",
+     "name": "Fakhar Zaman",
+     "captain": false,
+     "role": "",
+     "keeper": false,
+     "teamname": "Pakistan",
+     "isheader": false,
+     "imageId": 0,
+     "battingStyle": "",
+     "bowlingStyle": "",
+     "faceimageid": 846057,
+     "countryimageid": 0,
+     "playingxichange": "",
+     "inmatchchange": "",
+     "isoverseas": false,
+     "battingsummary": "",
+     "bowlingsummary": ""
+    }
+   ],
+   "category": ""
+  },
+  "mosplayers": {
+   "player": [],
+   "category": ""
+  },
+  "winningteamid": 333,
+  "revisedtarget": 0,
+  "matchendtimestamp": 1774547654089,
+  "seriesid": 11537,
+  "matchdesc": "1st Match",
+  "seriesname": "Pakistan Super League 2026",
+  "alerttype": "auto",
+  "tossresults": {
+   "tosswinnerid": 333,
+   "tosswinnername": "Lahore Qalandars",
+   "decision": "Batting"
+  },
+  "livestreamenabled": false,
+  "team1": {
+   "teamid": 333,
+   "teamname": "Lahore Qalandars",
+   "teamsname": "LHQ",
+   "isfullmember": false,
+   "isassociated": false,
+   "isleagueteam": false,
+   "iswomenteam": false,
+   "isheader": false,
+   "isactive": false,
+   "teampriority": "",
+   "isvideopresent": false,
+   "imageid": 0,
+   "countryname": "",
+   "belongsto": "",
+   "teamcolor": "",
+   "isdefaultimage": false
+  },
+  "team2": {
+   "teamid": 3114,
+   "teamname": "Hyderabad Kingsmen",
+   "teamsname": "HYDK",
+   "isfullmember": false,
+   "isassociated": false,
+   "isleagueteam": false,
+   "iswomenteam": false,
+   "isheader": false,
+   "isactive": false,
+   "teampriority": "",
+   "isvideopresent": false,
+   "imageid": 0,
+   "countryname": "",
+   "belongsto": "",
+   "teamcolor": "",
+   "isdefaultimage": false
+  }
+ },
+ "appindex": {
+  "seotitle": "LHQ vs HYDK 1st Match,Pakistan Super League 2026 | Cricbuzz.com",
+  "weburl": "http://www.cricbuzz.com/live-cricket-scores/148962/lhq-vs-hydk-1st-match-pakistan-super-league-2026"
+ },
+ "matchvideos": [
+  {
+   "infratype": "Content_Promotion - Video",
+   "headline": "Match Forecast: PSL - Lahore Qalandars vs Hyderabad Kingsmen, 1st Match",
+   "commtimestamp": 1774432704846,
+   "eventtimestamp": 0,
+   "content": [],
+   "itemid": "1_tsvnendq",
+   "embedcode": "",
+   "applinkurl": "cricbuzz://video?id=1_tsvnendq&name=Match Forecast: PSL - Lahore Qalandars vs Hyderabad Kingsmen, 1st Match",
+   "inningsid": 0,
+   "imageid": 883256,
+   "context": "",
+   "islive": false,
+   "mappingid": "1_tsvnendq",
+   "videourl": "https://cdnapisec.kaltura.com/p/1999781/sp/199978100/playManifest/entryId/1_tsvnendq/format/applehttp/protocol/https/a.m3u8?ks=djJ8MTk5OTc4MXxZdj_kU9vZIrmkqIA7r6eObPmSpGpFySa-sgFUm99fP0Qn9eLvYaZBO9_8LBI0Qt5cbMDVA0G5-yxbYQHdz9VSk0WLKwmLkvjXLgZQbGoiNEHnUVijbVAQvRk3cTEU1nQ=",
+   "adtag": "vast-Match-Forecast",
+   "category": [
+    {
+     "id": 53,
+     "name": "Match Forecast",
+     "imageid": 803739,
+     "videocount": 0,
+     "imagehash": ""
+    }
+   ],
+   "language": "English",
+   "planid": 0,
+   "premiumvideourl": "",
+   "videoid": 167035,
+   "videotype": "Match Forecast",
+   "batsmanid": 0,
+   "bowlerid": 0,
+   "tags": [
+    {
+     "itemname": "Pakistan Super League 2026, 1st Match",
+     "itemtype": "match",
+     "itemid": 148962,
+     "imagehash": ""
+    },
+    {
+     "itemname": "Lahore Qalandars",
+     "itemtype": "team",
+     "itemid": 333,
+     "imagehash": ""
+    },
+    {
+     "itemname": "Hyderabad Kingsmen",
+     "itemtype": "team",
+     "itemid": 3114,
+     "imagehash": ""
+    },
+    {
+     "itemname": "Shaheen Afridi",
+     "itemtype": "player",
+     "itemid": 12160,
+     "imagehash": ""
+    },
+    {
+     "itemname": "Saim Ayub",
+     "itemtype": "player",
+     "itemid": 14241,
+     "imagehash": ""
+    },
+    {
+     "itemname": "Pakistan Super League 2026",
+     "itemtype": "series",
+     "itemid": 11537,
+     "imagehash": ""
+    }
+   ],
+   "ispremiumfree": false,
+   "assetkey": "",
+   "starttime": 0,
+   "endtime": 0,
+   "isloginrequired": false,
+   "haslivestreamfreeminutes": false,
+   "freeminutebeginmessage": {
+    "title": "",
+    "message": ""
+   },
+   "freeminuteexpiredmessage": {
+    "title": "",
+    "message": ""
+   }
+  }
+ ],
+ "responselastupdated": 0,
+ "buzz": {
+  "imageids": [
+   1121188,
+   1121428,
+   1120148
+  ],
+  "position": 2,
+  "applink": "cricbuzz://buzz",
+  "isbuzzenabled": true
+ },
+ "partnersstrip": {
+  "team1sname": "LHQ",
+  "team2sname": "HYDK",
+  "header": "Back your predictions & Win big with Melbet 💰",
+  "title": "Back your predictions & Win big with Melbet 💰",
+  "ctalabel": "Bet Now",
+  "imageid": 1082339,
+  "applink": "http://play1xgame.com/BZnkpqPP",
+  "weblink": "",
+  "partnername": "Melbet WPP PK",
+  "striptype": "WPP",
+  "disclaimer": "",
+  "skintype": 2,
+  "requireddata": [
+   "WINPERCENT"
+  ],
+  "lightimageid": 1082339,
+  "darkimageid": 1082340
+ }
+}

@@ -88,7 +88,9 @@ export function buildPlayerFromSquadEntry(p, teamId) {
     bowlingStyle: p.bowlingStyle ?? p.bowling_style ?? null,
     jerseyNumber: p.jerseyNumber ?? p.jersey_number ?? null,
     height: p.height ?? null,
-    role: roleFromSportradarType(p),
+    // normalizeSquad (psl.js) hands over an already-mapped `role`; reading only the raw
+    // `type` field stored every PSL squad player as "player".
+    role: p.role && p.role !== 'player' ? p.role : roleFromSportradarType(p),
     profileUrl: p.profileUrl ?? p.profile_url ?? resolveProfileUrlFromPayload(p),
   };
 }

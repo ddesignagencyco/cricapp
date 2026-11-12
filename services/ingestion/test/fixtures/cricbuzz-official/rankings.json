@@ -1,0 +1,188 @@
+{
+ "rank": [
+  {
+   "id": "12086",
+   "rank": "1",
+   "name": "Abhishek Sharma",
+   "country": "India",
+   "rating": "889",
+   "points": "889",
+   "lastUpdatedOn": "2026-11-12",
+   "trend": "Flat",
+   "faceImageId": "846031",
+   "countryId": "2"
+  },
+  {
+   "id": "13625",
+   "rank": "2",
+   "name": "Sahibzada Farhan",
+   "country": "Pakistan",
+   "rating": "883",
+   "points": "883",
+   "lastUpdatedOn": "2026-11-12",
+   "trend": "Flat",
+   "faceImageId": "846069",
+   "countryId": "3"
+  },
+  {
+   "id": "10276",
+   "rank": "3",
+   "name": "Ishan Kishan",
+   "country": "India",
+   "rating": "862",
+   "points": "862",
+   "lastUpdatedOn": "2026-11-12",
+   "trend": "Flat",
+   "faceImageId": "846036",
+   "countryId": "2"
+  },
+  {
+   "id": "12201",
+   "rank": "4",
+   "name": "Harry Brook",
+   "country": "England",
+   "rating": "793",
+   "points": "793",
+   "lastUpdatedOn": "2026-11-12",
+   "trend": "Flat",
+   "faceImageId": "848570",
+   "countryId": "9"
+  },
+  {
+   "id": "2258",
+   "rank": "5",
+   "name": "Jos Buttler",
+   "country": "England",
+   "rating": "789",
+   "points": "789",
+   "lastUpdatedOn": "2026-11-12",
+   "trend": "Flat",
+   "faceImageId": "848523",
+   "countryId": "9"
+  },
+  {
+   "id": "20538",
+   "rank": "5",
+   "name": "Dewald Brevis",
+   "country": "South Africa",
+   "rating": "789",
+   "points": "789",
+   "lastUpdatedOn": "2026-11-12",
+   "trend": "Flat",
+   "faceImageId": "846104",
+   "countryId": "11"
+  },
+  {
+   "id": "9428",
+   "rank": "7",
+   "name": "Shreyas Iyer",
+   "country": "India",
+   "rating": "777",
+   "points": "777",
+   "lastUpdatedOn": "2026-11-12",
+   "trend": "Flat",
+   "faceImageId": "616518",
+   "countryId": "2"
+  },
+  {
+   "id": "10479",
+   "rank": "8",
+   "name": "Philip Salt",
+   "country": "England",
+   "rating": "775",
+   "points": "775",
+   "lastUpdatedOn": "2026-11-12",
+   "trend": "Flat",
+   "faceImageId": "848522",
+   "countryId": "9"
+  },
+  {
+   "id": "10384",
+   "rank": "9",
+   "name": "Shai Hope",
+   "country": "West Indies",
+   "rating": "759",
+   "points": "759",
+   "lastUpdatedOn": "2026-11-12",
+   "trend": "Flat",
+   "faceImageId": "845520",
+   "countryId": "10"
+  },
+  {
+   "id": "13682",
+   "rank": "10",
+   "name": "Pathum Nissanka",
+   "country": "Sri Lanka",
+   "rating": "720",
+   "points": "720",
+   "lastUpdatedOn": "2026-11-12",
+   "trend": "Flat",
+   "faceImageId": "847160",
+   "countryId": "5"
+  },
+  {
+   "id": "14504",
+   "rank": "11",
+   "name": "Tilak Varma",
+   "country": "India",
+   "rating": "710",
+   "points": "710",
+   "lastUpdatedOn": "2026-11-12",
+   "trend": "Flat",
+   "faceImageId": "846029",
+   "countryId": "2"
+  },
+  {
+   "id": "6250",
+   "rank": "12",
+   "name": "Mitchell Marsh",
+   "country": "Australia",
+   "rating": "706",
+   "points": "706",
+   "lastUpdatedOn": "2026-11-12",
+   "trend": "Flat",
+   "faceImageId": "845760",
+   "countryId": "4"
+  },
+  {
+   "id": "9443",
+   "rank": "13",
+   "name": "Tim Seifert",
+   "country": "New Zealand",
+   "rating": "701",
+   "points": "701",
+   "lastUpdatedOn": "2026-11-12",
+   "trend": "Flat",
+   "faceImageId": "845504",
+   "countryId": "13"
+  },
+  {
+   "id": "8497",
+   "rank": "14",
+   "name": "Travis Head",
+   "country": "Australia",
+   "rating": "679",
+   "points": "679",
+   "lastUpdatedOn": "2026-11-12",
+   "trend": "Flat",
+   "faceImageId": "845768",
+   "countryId": "4"
+  },
+  {
+   "id": "19636",
+   "rank": "15",
+   "name": "Jacob Bethell",
+   "country": "England",
+   "rating": "658",
+   "points": "658",
+   "lastUpdatedOn": "2026-11-12",
+   "trend": "Flat",
+   "faceImageId": "848524",
+   "countryId": "9"
+  }
+ ],
+ "appIndex": {
+  "seoTitle": "ICC Cricket Rankings - Top 100 Batter | Cricbuzz.com",
+  "webURL": "www.cricbuzz.com/cricket-stats/icc-rankings"
+ }
+}

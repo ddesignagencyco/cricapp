@@ -23,6 +23,9 @@ const apiHostname = (() => {
 
 const nextConfig = {
   reactStrictMode: true,
+  // The floating "N" route badge sat over the mobile header logo during device testing;
+  // compile and runtime errors still surface without it. Development only.
+  devIndicators: false,
   images: {
     formats: ['image/avif', 'image/webp'],
     // Next 16 coerces any `quality` prop outside this list to the closest

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { toRoster, toProfile, toStatTable, hasActivity, roleType, isoDate, rawPlayerId } from '../src/providers/cricbuzzPlayer.js';
+import { toProfile, toStatTable, hasActivity, roleType, isoDate, rawPlayerId } from '../src/providers/cricbuzzPlayer.js';
 import { buildPlayerFromProfile } from '../src/playerMeta.js';
 
 const fx = (n) => JSON.parse(readFileSync(new URL(`./fixtures/cricbuzzplayer/${n}.json`, import.meta.url), 'utf8'));
@@ -55,24 +55,6 @@ test('a profile saved without the stats responses is marked incomplete for a lat
   assert.equal(toProfile('1', fx('info'), null, fx('batting'), fx('bowling')).cricbuzz.statsComplete, true);
 });
 
-test('a team roster maps ids, roles, styles and photos; entries without an id are dropped', () => {
-  const r = toRoster('cb:team:3', [
-    { id: '8359', name: 'Babar Azam', imageId: '846059', role: 'Batsman', battingStyle: 'Right Handed Bat', bowlingStyle: 'Right-arm offbreak' },
-    { id: '9', name: 'Keeper', role: 'WK-Batsman', imageId: null },
-    { name: 'No id' },
-  ]);
-  assert.equal(r.team_id, 'cb:team:3');
-  assert.equal(r.players.length, 2);
-  assert.deepEqual(r.players[0], {
-    id: 'cb:player:8359', name: 'Babar Azam', role: 'batsman',
-    batting_style: 'Right Handed Bat', bowling_style: 'Right-arm offbreak',
-    avatar_url: 'https://static.cricbuzz.com/a/img/v1/152x152/i1/c846059/i.jpg',
-  });
-  assert.equal(r.players[1].role, 'wicketkeeper');
-  assert.equal(r.players[1].avatar_url, null);
-  assert.deepEqual(toRoster('cb:team:3', { status: 'error' }).players, []);
-});
-
 import { normalizeScard, toStatistics } from '../src/providers/cricbuzz.js';
 
 test('a scorecard with batters keyed by slot is read like the list layout', () => {
@@ -99,9 +81,9 @@ function fx2(n) {
   return JSON.parse(readFileSync(new URL(`./fixtures/cricbuzz/${n}.json`, import.meta.url), 'utf8'));
 }
 
-import { toRoster as toRosterU, roleFromSection } from '../src/providers/cricbuzzu.js';
+import { toRoster as toRosterU, roleFromSection } from '../src/providers/cricbuzzRef.js';
 
-test('unofficial host roster: section headings give the role of the players after them', () => {
+test('team roster (teams/v1/{id}/players): section headings give the role of the players after them', () => {
   const r = toRosterU('cb:team:3', {
     player: [
       { name: 'BATSMEN', imageId: 1 },
@@ -120,7 +102,7 @@ test('unofficial host roster: section headings give the role of the players afte
   assert.deepEqual(toRosterU('cb:team:129', {}).players, []);
 });
 
-import { teamForSquadName } from '../src/providers/cricbuzzu.js';
+import { teamForSquadName } from '../src/providers/cricbuzzRef.js';
 
 test('an announced squad belongs to the team with the longest matching name', () => {
   const teams = [
@@ -132,4 +114,29 @@ test('an announced squad belongs to the team with the longest matching name', ()
   assert.equal(teamForSquadName('Australia Test Squad', teams).id, 'cb:team:4');
   assert.equal(teamForSquadName('India U19 ODI Squad', teams).id, 'cb:team:130');
   assert.equal(teamForSquadName('Nepal Squad', teams), null);
+});
+
+const official = (n) =>
+  JSON.parse(readFileSync(new URL(`./fixtures/cricbuzz-official/${n}.json`, import.meta.url), 'utf8'));
+
+test('official profile responses (stats/v1/player/{id}, /career, /batting, /bowling) map to a full profile', () => {
+  const p = toProfile('8359', official('player-info'), official('player-career'), official('player-batting'), official('player-bowling'));
+  assert.equal(p.player.id, 'cb:player:8359');
+  assert.equal(p.player.name, 'Babar Azam');
+  assert.equal(p.player.date_of_birth, '1994-10-15');
+  assert.equal(p.player.type, 'batsman');
+  assert.equal(p.player.nationality, 'Pakistan');
+  assert.ok(p.cricbuzz.bio.length > 500);
+  assert.ok(p.cricbuzz.career.t20.debut.includes('2016'));
+  assert.deepEqual(p.cricbuzz.batting.formats, ['Test', 'ODI', 'T20', 'IPL']);
+  assert.equal(p.cricbuzz.batting.rows.find((r) => r.label === 'Runs').values[0], '4821');
+  assert.equal(p.cricbuzz.statsComplete, true);
+});
+
+test('the official team roster is grouped by role headings', () => {
+  const r = toRosterU('cb:team:3', official('team-players'));
+  assert.ok(r.players.length >= 40);
+  assert.equal(r.players[0].role, 'batsman');
+  assert.ok(r.players.some((x) => x.role === 'wicketkeeper'));
+  assert.ok(r.players.some((x) => x.role === 'bowler'));
 });

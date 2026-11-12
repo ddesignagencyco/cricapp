@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildPlayerFromLineupEntry, buildPlayerFromProfile } from '../src/playerMeta.js';
+import { buildPlayerFromLineupEntry, buildPlayerFromProfile, buildPlayerFromSquadEntry } from '../src/playerMeta.js';
 
 describe('playerMeta', () => {
   it('maps lineup country_code and birth', () => {
@@ -37,4 +37,11 @@ describe('playerMeta', () => {
     assert.equal(row.jerseyNumber, 49);
     assert.equal(row.battingStyle, 'right_handed_batsman');
   });
+});
+
+it("a PSL squad entry keeps the role normalizeSquad mapped", () => {
+  const row = buildPlayerFromSquadEntry({ playerId: "cb:player:15037", playerName: "Haider Ali", role: "batsman" }, "cb:team:330");
+  assert.equal(row.role, "batsman");
+  const none = buildPlayerFromSquadEntry({ playerId: "cb:player:1", playerName: "X", role: null }, "cb:team:330");
+  assert.equal(none.role, "player");
 });

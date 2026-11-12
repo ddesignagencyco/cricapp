@@ -4,9 +4,10 @@ import { rapidGet } from './rapidHttp.js';
  * Cricbuzz Cricket (RapidAPI, cricketapilive) → SportsRadar-shaped JSON.
  *
  * The rest of the pipeline reads SportsRadar's shape, so this module only translates.
- * Response shapes are mapped from the provider's documented endpoints and have not been
- * checked against a live response yet — keep all field access in this file so a
- * correction stays local.
+ * Shapes are checked against recorded official responses (test/fixtures/cricbuzz,
+ * test/fixtures/cricbuzz-official); keep all field access in this file so a correction
+ * stays local. Reference data, profiles and the timeline live in the sibling cricbuzz*
+ * modules, all on the same host, cache and budget.
  */
 
 const LIVE_TTL_S = Number(process.env.RAPIDAPI_LIVE_TTL_S || 60);
@@ -355,176 +356,101 @@ export function toStatistics(info, scard) {
   };
 }
 
+/** The official Cricbuzz Cricket listing on RapidAPI — the only host this app reads match data from. */
+export const HOST = () => process.env.RAPIDAPI_CRICBUZZ_HOST || 'cricbuzz-cricket.p.rapidapi.com';
+
 /**
- * One adapter per Cricbuzz Cricket RapidAPI host. Both hosts serve the same endpoints and
- * JSON, so a second host is a second free-tier quota: each instance spends its own budget
- * but they share one response cache (`cacheNamespace`), so a fallback to the second host
- * costs nothing when the first already fetched the same page.
+ * Monthly request budget, enforced locally before RapidAPI's own cap. Set it to the plan:
+ * Basic 200, Pro 20000, Ultra 300000 (leave headroom for retries and manual tests).
  */
-export function createCricbuzz({ provider, host, budgetLimit, cacheNamespace = 'cricbuzz', endpoints = (logical) => ({ path: logical, query: {} }), teamResults = false }) {
-  // Call sites name an endpoint by its Cricbuzz Cricket path (the "logical" path); `endpoints`
-  // turns that into the real URL for hosts that lay the same data out differently. The logical
-  // path is also the cache key, so every host shares one cached response.
-  const get = (logical, ttlSeconds) => {
-    const { path, query } = endpoints(logical);
-    return rapidGet({
-      provider,
-      cacheNamespace,
-      cacheKeyPath: logical,
-      host: host(),
-      path,
-      query,
-      ttlSeconds,
-      budget: { period: 'month', limit: budgetLimit() },
-    });
-  };
+export const BUDGET = () => ({ period: 'month', limit: Number(process.env.RAPIDAPI_CRICBUZZ_MONTHLY_BUDGET || 200) });
 
-  async function fetchLiveSchedule() {
-    const data = await get('matches/v1/live', LIVE_TTL_S);
-    return flattenMatches(data).map((m) => toSportEvent(m.matchInfo));
+/** GET an official Cricbuzz Cricket path through the shared response cache and budget. */
+export function cricbuzzGet(path, ttlSeconds, query = {}) {
+  return rapidGet({ provider: 'cricbuzz', host: HOST(), path, query, ttlSeconds, budget: BUDGET() });
+}
+
+const get = (path, ttlSeconds) => cricbuzzGet(path, ttlSeconds);
+
+export async function fetchLiveSchedule() {
+  const data = await get('matches/v1/live', LIVE_TTL_S);
+  return flattenMatches(data).map((m) => toSportEvent(m.matchInfo));
+}
+
+/** The list entry for a match. The poller has just fetched the live list, so that lookup is a cache hit. */
+export async function findMatchInfo(id) {
+  const want = Number(rawMatchId(id));
+  for (const [kind, ttl] of [['live', LIVE_TTL_S], ['recent', LIST_TTL_S], ['upcoming', LIST_TTL_S]]) {
+    const hit = flattenMatches(await get(`matches/v1/${kind}`, ttl)).find((m) => Number(m.matchInfo.matchId) === want);
+    if (hit) return hit.matchInfo;
   }
+  throw new Error(`cricbuzz match ${id} not found in the live, recent or upcoming lists`);
+}
 
-  /** The list entry for a match. The poller has just fetched the live list, so that lookup is a cache hit. */
-  async function findMatchInfo(id) {
-    const want = Number(rawMatchId(id));
-    for (const [kind, ttl] of [['live', LIVE_TTL_S], ['recent', LIST_TTL_S], ['upcoming', LIST_TTL_S]]) {
-      const hit = flattenMatches(await get(`matches/v1/${kind}`, ttl)).find((m) => Number(m.matchInfo.matchId) === want);
-      if (hit) return hit.matchInfo;
-    }
-    throw new Error(`cricbuzz match ${id} not found in the live, recent or upcoming lists`);
-  }
+export async function fetchMatchSummary(id) {
+  const info = await findMatchInfo(id);
+  const scard = normalizeScard(await get(`mcenter/v1/${rawMatchId(id)}/scard`, LIVE_TTL_S));
+  return toSummary(info, scard);
+}
 
-  async function fetchMatchSummary(id) {
-    const info = await findMatchInfo(id);
-    const scard = normalizeScard(await get(`mcenter/v1/${rawMatchId(id)}/scard`, LIVE_TTL_S));
-    return toSummary(info, scard);
-  }
+async function allListed() {
+  const [live, recent, upcoming] = await Promise.all(
+    ['live', 'recent', 'upcoming'].map((k) => get(`matches/v1/${k}`, LIST_TTL_S)),
+  );
+  const seen = new Set();
+  return [...flattenMatches(live), ...flattenMatches(recent), ...flattenMatches(upcoming)].filter((m) => {
+    const id = m.matchInfo.matchId;
+    if (seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  });
+}
 
-  async function allListed() {
-    const [live, recent, upcoming] = await Promise.all(
-      ['live', 'recent', 'upcoming'].map((k) => get(`matches/v1/${k}`, LIST_TTL_S)),
-    );
-    const seen = new Set();
-    return [...flattenMatches(live), ...flattenMatches(recent), ...flattenMatches(upcoming)].filter((m) => {
-      const id = m.matchInfo.matchId;
-      if (seen.has(id)) return false;
-      seen.add(id);
-      return true;
-    });
-  }
+export async function fetchDailySchedule(date) {
+  const matches = (await allListed()).filter((m) => onDate(m, date));
+  return { sport_events: matches.map((m) => toSportEvent(m.matchInfo)) };
+}
 
-
-  async function fetchDailySchedule(date) {
-    const matches = (await allListed()).filter((m) => onDate(m, date));
-    return { sport_events: matches.map((m) => toSportEvent(m.matchInfo)) };
-  }
-
-  async function fetchDailyResults(date) {
-    const matches = (await allListed()).filter(
-      (m) => onDate(m, date) && mapState(m.matchInfo.state, m.matchInfo.status).status === 'closed',
-    );
-    return {
-      results: matches.map((m) => {
-        const { status, matchStatus } = mapState(m.matchInfo.state, m.matchInfo.status);
-        return {
-          sport_event: toSportEvent(m.matchInfo),
-          sport_event_status: {
-            status,
-            match_status: matchStatus,
-            match_result_text: m.matchInfo.status ?? null,
-            ...(m.matchScore ? { period_scores: periodsFromMatchScore(m.matchScore) } : {}),
-          },
-        };
-      }),
-    };
-  }
-
-  /** List entry + scorecard for a match: the raw material for the timeline's scorecard. */
-  async function fetchScorecardBundle(id, hint = null) {
-    // A match that has left the provider's recent list can still be read when the caller knows
-    // its two sides ({ team1, team2 } in the provider's own field names).
-    const info = hint ? await findMatchInfo(id).catch(() => hint) : await findMatchInfo(id);
-    const scard = await get(`mcenter/v1/${rawMatchId(id)}/scard`, LIVE_TTL_S);
-    return { info, scard };
-  }
-
-  /** `{ competitors, statistics }` for the web scorecard (what a timeline payload carries). */
-  async function fetchMatchScorecard(id, hint = null) {
-    const { info, scard } = await fetchScorecardBundle(id, hint);
-    return toStatistics(info, scard);
-  }
-
-  /** A team's recent finished games. Only offered by hosts that have the endpoint (`teamResults`). */
-  async function fetchTeamResults(teamId) {
-    const id = String(teamId).replace(PREFIX.team, '');
-    return toTeamResults(await get(`teams/${id}/results`, LIST_TTL_S));
-  }
-
+export async function fetchDailyResults(date) {
+  const matches = (await allListed()).filter(
+    (m) => onDate(m, date) && mapState(m.matchInfo.state, m.matchInfo.status).status === 'closed',
+  );
   return {
-    fetchLiveSchedule, fetchMatchSummary, fetchDailySchedule, fetchDailyResults,
-    findMatchInfo, fetchScorecardBundle, fetchMatchScorecard,
-    ...(teamResults && { fetchTeamResults }),
+    results: matches.map((m) => {
+      const { status, matchStatus } = mapState(m.matchInfo.state, m.matchInfo.status);
+      return {
+        sport_event: toSportEvent(m.matchInfo),
+        sport_event_status: {
+          status,
+          match_status: matchStatus,
+          match_result_text: m.matchInfo.status ?? null,
+          ...(m.matchScore ? { period_scores: periodsFromMatchScore(m.matchScore) } : {}),
+        },
+      };
+    }),
   };
 }
 
-const primary = createCricbuzz({
-  provider: 'cricbuzz',
-  host: () => process.env.RAPIDAPI_CRICBUZZ_HOST || 'cricbuzz-cricket.p.rapidapi.com',
-  budgetLimit: () => Number(process.env.RAPIDAPI_CRICBUZZ_MONTHLY_BUDGET || 200),
-});
-
-/**
- * cricbuzz-real-time-cricket-api: the same data and Cricbuzz ids, with the match list and the
- * scorecard at different URLs (its list is `match/list?type=…`, its scorecard
- * `match/get-scorecard?matchId=…`; the scorecard JSON is identical). A third quota pool.
- */
-const realTimeEndpoints = (logical) => {
-  let m = logical.match(/^matches\/v1\/(live|recent|upcoming)$/);
-  if (m) return { path: 'match/list', query: { type: m[1] } };
-  m = logical.match(/^mcenter\/v1\/(\d+)\/scard$/);
-  if (m) return { path: 'match/get-scorecard', query: { matchId: m[1] } };
-  m = logical.match(/^teams\/(\d+)\/results$/);
-  if (m) return { path: 'team/get-results', query: { teamId: m[1] } };
-  throw new Error(`cricbuzz3 has no endpoint for ${logical}`);
-};
-
-export const cricbuzz3 = createCricbuzz({
-  provider: 'cricbuzz3',
-  host: () => process.env.RAPIDAPI_CRICBUZZ3_HOST || 'cricbuzz-real-time-cricket-api.p.rapidapi.com',
-  budgetLimit: () => Number(process.env.RAPIDAPI_CRICBUZZ3_MONTHLY_BUDGET || 250),
-  endpoints: realTimeEndpoints,
-  teamResults: true,
-});
-
-/** cricbuzz-cricket2: same endpoints and shape, its own 100-request free plan. */
-export const cricbuzz2 = createCricbuzz({
-  provider: 'cricbuzz2',
-  host: () => process.env.RAPIDAPI_CRICBUZZ2_HOST || 'cricbuzz-cricket2.p.rapidapi.com',
-  budgetLimit: () => Number(process.env.RAPIDAPI_CRICBUZZ2_MONTHLY_BUDGET || 100),
-});
-
-export const { fetchLiveSchedule, fetchMatchSummary, fetchDailySchedule, fetchDailyResults, fetchMatchScorecard } = primary;
-
-/** Scorecard payload for the timeline (`sport_event.competitors` + `statistics`), trying both hosts. */
-export async function cricbuzzStatistics(id) {
-  let bundle;
-  try {
-    bundle = await primary.fetchScorecardBundle(id);
-  } catch (err) {
-    bundle = await cricbuzz2.fetchScorecardBundle(id).catch(() => {
-      throw err;
-    });
-  }
-  return toStatistics(bundle.info, bundle.scard);
+/** List entry + scorecard for a match: the raw material for the timeline's scorecard. */
+export async function fetchScorecardBundle(id, hint = null) {
+  // A match that has left the provider's recent list can still be read when the caller knows
+  // its two sides ({ team1, team2 } in the provider's own field names).
+  const info = hint ? await findMatchInfo(id).catch(() => hint) : await findMatchInfo(id);
+  const scard = await get(`mcenter/v1/${rawMatchId(id)}/scard`, LIVE_TTL_S);
+  return { info, scard };
 }
 
-/** List entry (teams, start time) for a Cricbuzz match, trying both hosts. Used to map ids across providers. */
-export async function cricbuzzMatchInfo(id) {
-  try {
-    return await primary.findMatchInfo(id);
-  } catch (err) {
-    return cricbuzz2.findMatchInfo(id).catch(() => {
-      throw err;
-    });
-  }
+/** `{ competitors, statistics }` for the web scorecard (what a timeline payload carries). */
+export async function fetchMatchScorecard(id, hint = null) {
+  const { info, scard } = await fetchScorecardBundle(id, hint);
+  return toStatistics(info, scard);
 }
+
+/** A team's recent finished games (`teams/v1/{id}/results`); head-to-head is built from these. */
+export async function fetchTeamResults(teamId) {
+  const id = String(teamId).replace(PREFIX.team, '');
+  return toTeamResults(await get(`teams/v1/${id}/results`, LIST_TTL_S));
+}
+
+/** Scorecard payload for the timeline (`sport_event.competitors` + `statistics`). */
+export const cricbuzzStatistics = fetchMatchScorecard;

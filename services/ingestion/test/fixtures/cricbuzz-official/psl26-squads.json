@@ -1,0 +1,62 @@
+{
+ "squads": [
+  {
+   "squadType": "T20",
+   "isHeader": true
+  },
+  {
+   "squadId": 114048,
+   "squadType": "Islamabad United",
+   "imageId": 883184,
+   "teamId": 330
+  },
+  {
+   "squadId": 114059,
+   "squadType": "Karachi Kings",
+   "imageId": 883188,
+   "teamId": 332
+  },
+  {
+   "squadId": 114070,
+   "squadType": "Lahore Qalandars",
+   "imageId": 883181,
+   "teamId": 333
+  },
+  {
+   "squadId": 114081,
+   "squadType": "Peshawar Zalmi",
+   "imageId": 883180,
+   "teamId": 334
+  },
+  {
+   "squadId": 114092,
+   "squadType": "Quetta Gladiators",
+   "imageId": 883182,
+   "teamId": 331
+  },
+  {
+   "squadId": 114103,
+   "squadType": "Hyderabad Kingsmen",
+   "imageId": 883179,
+   "teamId": 3114
+  },
+  {
+   "squadId": 114114,
+   "squadType": "Rawalpindiz",
+   "imageId": 883174,
+   "teamId": 3116
+  },
+  {
+   "squadId": 114125,
+   "squadType": "Multan Sultans",
+   "imageId": 883178,
+   "teamId": 437
+  }
+ ],
+ "appIndex": {
+  "seoTitle": "Squads - Pakistan Super League 2026 - Cricbuzz | Cricbuzz.com",
+  "webURL": "www.cricbuzz.com/cricket-series/"
+ },
+ "seriesName": "Pakistan Super League 2026",
+ "seriesId": 11537
+}

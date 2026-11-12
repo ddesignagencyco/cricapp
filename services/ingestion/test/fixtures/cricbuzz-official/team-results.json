@@ -1,0 +1,578 @@
+{
+ "teamMatchesData": [
+  {
+   "matchDetailsMap": {
+    "key": "Hong Kong Sixes 2026",
+    "match": [
+     {
+      "matchInfo": {
+       "matchId": 175220,
+       "seriesId": 13323,
+       "seriesName": "Hong Kong Sixes 2026",
+       "matchDesc": "Plate, Final",
+       "matchFormat": "T20",
+       "startDate": "1793513700000",
+       "endDate": "1793526300000",
+       "state": "Complete",
+       "status": "Pakistan won by 18 runs",
+       "team1": {
+        "teamId": 3,
+        "teamName": "Pakistan",
+        "teamSName": "PAK",
+        "imageId": 776308
+       },
+       "team2": {
+        "teamId": 304,
+        "teamName": "Oman",
+        "teamSName": "OMAN",
+        "imageId": 776328
+       },
+       "venueInfo": {
+        "id": 454,
+        "ground": "Mission Road Ground",
+        "city": "Mong Kok",
+        "timezone": "+08:00"
+       },
+       "currBatTeamId": 3,
+       "seriesStartDt": "1793318400000",
+       "seriesEndDt": "1793664000000",
+       "isTimeAnnounced": true,
+       "hideScoreStatus": "Match completed"
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 154,
+         "wickets": 4,
+         "overs": 6
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 136,
+         "wickets": 4,
+         "overs": 6
+        }
+       }
+      }
+     },
+     {
+      "matchInfo": {
+       "matchId": 175170,
+       "seriesId": 13323,
+       "seriesName": "Hong Kong Sixes 2026",
+       "matchDesc": "Plate, Semi Final 2",
+       "matchFormat": "T20",
+       "startDate": "1793427300000",
+       "endDate": "1793439900000",
+       "state": "Complete",
+       "status": "Pakistan won by 6 wkts ",
+       "team1": {
+        "teamId": 8,
+        "teamName": "Hong Kong, China",
+        "teamSName": "HKC",
+        "imageId": 776271
+       },
+       "team2": {
+        "teamId": 3,
+        "teamName": "Pakistan",
+        "teamSName": "PAK",
+        "imageId": 776308
+       },
+       "venueInfo": {
+        "id": 454,
+        "ground": "Mission Road Ground",
+        "city": "Mong Kok",
+        "timezone": "+08:00"
+       },
+       "currBatTeamId": 3,
+       "seriesStartDt": "1793318400000",
+       "seriesEndDt": "1793664000000",
+       "isTimeAnnounced": true,
+       "hideScoreStatus": "Match completed"
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 106,
+         "wickets": 3,
+         "overs": 6
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 107,
+         "overs": 4.3
+        }
+       }
+      }
+     },
+     {
+      "matchInfo": {
+       "matchId": 175120,
+       "seriesId": 13323,
+       "seriesName": "Hong Kong Sixes 2026",
+       "matchDesc": "Group C",
+       "matchFormat": "T20",
+       "startDate": "1793340900000",
+       "endDate": "1793353500000",
+       "state": "Complete",
+       "status": "Pakistan won by 4 wkts",
+       "team1": {
+        "teamId": 2,
+        "teamName": "India",
+        "teamSName": "IND",
+        "imageId": 776162
+       },
+       "team2": {
+        "teamId": 3,
+        "teamName": "Pakistan",
+        "teamSName": "PAK",
+        "imageId": 776308
+       },
+       "venueInfo": {
+        "id": 454,
+        "ground": "Mission Road Ground",
+        "city": "Mong Kok",
+        "timezone": "+08:00"
+       },
+       "currBatTeamId": 3,
+       "seriesStartDt": "1793318400000",
+       "seriesEndDt": "1793664000000",
+       "isTimeAnnounced": true,
+       "hideScoreStatus": "Match completed"
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 88,
+         "wickets": 5,
+         "overs": 6
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 91,
+         "wickets": 2,
+         "overs": 3.5
+        }
+       }
+      }
+     },
+     {
+      "matchInfo": {
+       "matchId": 175091,
+       "seriesId": 13323,
+       "seriesName": "Hong Kong Sixes 2026",
+       "matchDesc": "Group C",
+       "matchFormat": "T20",
+       "startDate": "1793327700000",
+       "endDate": "1793340300000",
+       "state": "Complete",
+       "status": "United Arab Emirates won by 1 wkts ",
+       "team1": {
+        "teamId": 3,
+        "teamName": "Pakistan",
+        "teamSName": "PAK",
+        "imageId": 776308
+       },
+       "team2": {
+        "teamId": 7,
+        "teamName": "United Arab Emirates",
+        "teamSName": "UAE",
+        "imageId": 776242
+       },
+       "venueInfo": {
+        "id": 454,
+        "ground": "Mission Road Ground",
+        "city": "Mong Kok",
+        "timezone": "+08:00"
+       },
+       "currBatTeamId": 7,
+       "seriesStartDt": "1793318400000",
+       "seriesEndDt": "1793664000000",
+       "isTimeAnnounced": true,
+       "hideScoreStatus": "Match completed"
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 106,
+         "wickets": 2,
+         "overs": 6
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 109,
+         "wickets": 5,
+         "overs": 6
+        }
+       }
+      }
+     }
+    ],
+    "seriesId": 13323
+   }
+  },
+  {
+   "adDetail": {
+    "name": "native_news_index_random_1",
+    "layout": "native_large",
+    "position": 1
+   }
+  },
+  {
+   "matchDetailsMap": {
+    "key": "Pakistan ODI Tri-Series, 2026",
+    "match": [
+     {
+      "matchInfo": {
+       "matchId": 170761,
+       "seriesId": 13047,
+       "seriesName": "Pakistan ODI Tri-Series, 2026",
+       "matchDesc": "Final",
+       "matchFormat": "ODI",
+       "startDate": "1793433600000",
+       "endDate": "1793462400000",
+       "state": "Complete",
+       "status": "Pakistan won by 3 wkts",
+       "team1": {
+        "teamId": 5,
+        "teamName": "Sri Lanka",
+        "teamSName": "SL",
+        "imageId": 776254
+       },
+       "team2": {
+        "teamId": 3,
+        "teamName": "Pakistan",
+        "teamSName": "PAK",
+        "imageId": 776308
+       },
+       "venueInfo": {
+        "id": 26,
+        "ground": "Gaddafi Stadium",
+        "city": "Lahore",
+        "timezone": "+05:00"
+       },
+       "currBatTeamId": 3,
+       "seriesStartDt": "1792281600000",
+       "seriesEndDt": "1793577600000",
+       "isTimeAnnounced": true,
+       "hideScoreStatus": "Match completed"
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 325,
+         "wickets": 8,
+         "overs": 50
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 331,
+         "wickets": 7,
+         "overs": 48
+        }
+       }
+      }
+     },
+     {
+      "matchInfo": {
+       "matchId": 170737,
+       "seriesId": 13047,
+       "seriesName": "Pakistan ODI Tri-Series, 2026",
+       "matchDesc": "5th Match",
+       "matchFormat": "ODI",
+       "startDate": "1793088000000",
+       "endDate": "1793116800000",
+       "state": "Complete",
+       "status": "Sri Lanka won by 8 wkts",
+       "team1": {
+        "teamId": 3,
+        "teamName": "Pakistan",
+        "teamSName": "PAK",
+        "imageId": 776308
+       },
+       "team2": {
+        "teamId": 5,
+        "teamName": "Sri Lanka",
+        "teamSName": "SL",
+        "imageId": 776254
+       },
+       "venueInfo": {
+        "id": 26,
+        "ground": "Gaddafi Stadium",
+        "city": "Lahore",
+        "timezone": "+05:00"
+       },
+       "currBatTeamId": 5,
+       "seriesStartDt": "1792281600000",
+       "seriesEndDt": "1793577600000",
+       "isTimeAnnounced": true,
+       "hideScoreStatus": "Match completed"
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 110,
+         "wickets": 10,
+         "overs": 25
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 114,
+         "wickets": 2,
+         "overs": 18.1
+        }
+       }
+      }
+     },
+     {
+      "matchInfo": {
+       "matchId": 170733,
+       "seriesId": 13047,
+       "seriesName": "Pakistan ODI Tri-Series, 2026",
+       "matchDesc": "4th Match",
+       "matchFormat": "ODI",
+       "startDate": "1792915200000",
+       "endDate": "1792944000000",
+       "state": "Complete",
+       "status": "Pakistan won by 1 wkt",
+       "team1": {
+        "teamId": 9,
+        "teamName": "England",
+        "teamSName": "ENG",
+        "imageId": 776237
+       },
+       "team2": {
+        "teamId": 3,
+        "teamName": "Pakistan",
+        "teamSName": "PAK",
+        "imageId": 776308
+       },
+       "venueInfo": {
+        "id": 26,
+        "ground": "Gaddafi Stadium",
+        "city": "Lahore",
+        "timezone": "+05:00"
+       },
+       "currBatTeamId": 3,
+       "seriesStartDt": "1792281600000",
+       "seriesEndDt": "1793577600000",
+       "isTimeAnnounced": true,
+       "hideScoreStatus": "Match completed"
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 241,
+         "wickets": 10,
+         "overs": 46.4
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 243,
+         "wickets": 9,
+         "overs": 47
+        }
+       }
+      }
+     },
+     {
+      "matchInfo": {
+       "matchId": 170723,
+       "seriesId": 13047,
+       "seriesName": "Pakistan ODI Tri-Series, 2026",
+       "matchDesc": "2nd Match",
+       "matchFormat": "ODI",
+       "startDate": "1792483200000",
+       "endDate": "1792512000000",
+       "state": "Complete",
+       "status": "Pakistan won by 87 runs",
+       "team1": {
+        "teamId": 3,
+        "teamName": "Pakistan",
+        "teamSName": "PAK",
+        "imageId": 776308
+       },
+       "team2": {
+        "teamId": 9,
+        "teamName": "England",
+        "teamSName": "ENG",
+        "imageId": 776237
+       },
+       "venueInfo": {
+        "id": 25,
+        "ground": "Rawalpindi Cricket Stadium",
+        "city": "Rawalpindi",
+        "timezone": "+05:00"
+       },
+       "currBatTeamId": 3,
+       "seriesStartDt": "1792281600000",
+       "seriesEndDt": "1793577600000",
+       "isTimeAnnounced": true,
+       "hideScoreStatus": "Match completed"
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 302,
+         "wickets": 9,
+         "overs": 50
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 215,
+         "wickets": 10,
+         "overs": 38.4
+        }
+       }
+      }
+     },
+     {
+      "matchInfo": {
+       "matchId": 170720,
+       "seriesId": 13047,
+       "seriesName": "Pakistan ODI Tri-Series, 2026",
+       "matchDesc": "1st Match",
+       "matchFormat": "ODI",
+       "startDate": "1792310400000",
+       "endDate": "1792339200000",
+       "state": "Complete",
+       "status": "Pakistan won by 37 runs",
+       "team1": {
+        "teamId": 3,
+        "teamName": "Pakistan",
+        "teamSName": "PAK",
+        "imageId": 776308
+       },
+       "team2": {
+        "teamId": 5,
+        "teamName": "Sri Lanka",
+        "teamSName": "SL",
+        "imageId": 776254
+       },
+       "venueInfo": {
+        "id": 25,
+        "ground": "Rawalpindi Cricket Stadium",
+        "city": "Rawalpindi",
+        "timezone": "+05:00"
+       },
+       "currBatTeamId": 3,
+       "seriesStartDt": "1792281600000",
+       "seriesEndDt": "1793577600000",
+       "isTimeAnnounced": true,
+       "hideScoreStatus": "Match completed"
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 305,
+         "wickets": 10,
+         "overs": 49
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 268,
+         "wickets": 10,
+         "overs": 48.1
+        }
+       }
+      }
+     }
+    ],
+    "seriesId": 13047
+   }
+  },
+  {
+   "matchDetailsMap": {
+    "key": "Sri Lanka tour of Pakistan, 2026",
+    "match": [
+     {
+      "matchInfo": {
+       "matchId": 170697,
+       "seriesId": 13037,
+       "seriesName": "Sri Lanka tour of Pakistan, 2026",
+       "matchDesc": "3rd T20I",
+       "matchFormat": "T20",
+       "startDate": "1791896400000",
+       "endDate": "1791909000000",
+       "state": "Complete",
+       "status": "Sri Lanka won by 8 wkts",
+       "team1": {
+        "teamId": 3,
+        "teamName": "Pakistan",
+        "teamSName": "PAK",
+        "imageId": 776308
+       },
+       "team2": {
+        "teamId": 5,
+        "teamName": "Sri Lanka",
+        "teamSName": "SL",
+        "imageId": 776254
+       },
+       "venueInfo": {
+        "id": 25,
+        "ground": "Rawalpindi Cricket Stadium",
+        "city": "Rawalpindi",
+        "timezone": "+05:00"
+       },
+       "currBatTeamId": 5,
+       "seriesStartDt": "1791504000000",
+       "seriesEndDt": "1795392000000",
+       "isTimeAnnounced": true,
+       "hideScoreStatus": "Match completed"
+      },
+      "matchScore": {
+       "team1Score": {
+        "inngs1": {
+         "inningsId": 1,
+         "runs": 168,
+         "wickets": 8,
+         "overs": 20
+        }
+       },
+       "team2Score": {
+        "inngs1": {
+         "inningsId": 2,
+         "runs": 172,
+         "wickets": 2,
+         "overs": 17.1
+        }
+       }
+      }
+     }
+    ],
+    "seriesId": 13037
+   }
+  }
+ ],
+ "appIndex": {
+  "seoTitle": "Pakistan Cricket Team live scores, fixtures - Cricbuzz | Cricbuzz.com",
+  "webURL": "www.cricbuzz.com/cricket-team/"
+ }
+}

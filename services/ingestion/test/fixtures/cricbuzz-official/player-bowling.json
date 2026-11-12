@@ -1,0 +1,150 @@
+{
+ "headers": [
+  "ROWHEADER",
+  "Test",
+  "ODI",
+  "T20",
+  "IPL"
+ ],
+ "values": [
+  {
+   "values": [
+    "Matches",
+    "67",
+    "148",
+    "144",
+    "0"
+   ]
+  },
+  {
+   "values": [
+    "Innings",
+    "8",
+    "0",
+    "0",
+    "0"
+   ]
+  },
+  {
+   "values": [
+    "Balls",
+    "90",
+    "0",
+    "0",
+    "0"
+   ]
+  },
+  {
+   "values": [
+    "Runs",
+    "42",
+    "0",
+    "0",
+    "0"
+   ]
+  },
+  {
+   "values": [
+    "Maidens",
+    "2",
+    "0",
+    "0",
+    "0"
+   ]
+  },
+  {
+   "values": [
+    "Wickets",
+    "2",
+    "0",
+    "0",
+    "0"
+   ]
+  },
+  {
+   "values": [
+    "Avg",
+    "21.0",
+    "0.0",
+    "0.0",
+    "0.0"
+   ]
+  },
+  {
+   "values": [
+    "Eco",
+    "2.8",
+    "0",
+    "0",
+    "0"
+   ]
+  },
+  {
+   "values": [
+    "SR",
+    "45.0",
+    "0.0",
+    "0.0",
+    "0.0"
+   ]
+  },
+  {
+   "values": [
+    "BBI",
+    "1/1",
+    "-/-",
+    "-/-",
+    "-/-"
+   ]
+  },
+  {
+   "values": [
+    "BBM",
+    "1/2",
+    "-/-",
+    "-/-",
+    "-/-"
+   ]
+  },
+  {
+   "values": [
+    "4w",
+    "0",
+    "0",
+    "0",
+    "0"
+   ]
+  },
+  {
+   "values": [
+    "5w",
+    "0",
+    "0",
+    "0",
+    "0"
+   ]
+  },
+  {
+   "values": [
+    "10w",
+    "0",
+    "0",
+    "0",
+    "0"
+   ]
+  }
+ ],
+ "appIndex": {
+  "seoTitle": "Babar Azam Profile - Cricbuzz | Cricbuzz.com",
+  "webURL": "http://www.cricbuzz.com/profiles/8359/babar-azam"
+ },
+ "seriesSpinner": [
+  {
+   "seriesName": "Career"
+  },
+  {
+   "seriesId": 13037,
+   "seriesName": "Sri Lanka tour of Pakistan, 2026"
+  }
+ ]
+}

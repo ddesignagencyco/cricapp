@@ -1,0 +1,168 @@
+{
+ "headers": [
+  "ROWHEADER",
+  "Test",
+  "ODI",
+  "T20",
+  "IPL"
+ ],
+ "values": [
+  {
+   "values": [
+    "Matches",
+    "67",
+    "148",
+    "144",
+    "0"
+   ]
+  },
+  {
+   "values": [
+    "Innings",
+    "123",
+    "145",
+    "136",
+    "0"
+   ]
+  },
+  {
+   "values": [
+    "Runs",
+    "4821",
+    "6744",
+    "4596",
+    "0"
+   ]
+  },
+  {
+   "values": [
+    "Balls",
+    "8671",
+    "7811",
+    "3590",
+    "0"
+   ]
+  },
+  {
+   "values": [
+    "Highest",
+    "196",
+    "158",
+    "122",
+    "0"
+   ]
+  },
+  {
+   "values": [
+    "Average",
+    "43.04",
+    "52.28",
+    "38.95",
+    "0"
+   ]
+  },
+  {
+   "values": [
+    "SR",
+    "55.60",
+    "86.34",
+    "128.03",
+    "0"
+   ]
+  },
+  {
+   "values": [
+    "Not Out",
+    "11",
+    "16",
+    "18",
+    "0"
+   ]
+  },
+  {
+   "values": [
+    "Fours",
+    "575",
+    "627",
+    "477",
+    "0"
+   ]
+  },
+  {
+   "values": [
+    "Sixes",
+    "28",
+    "69",
+    "80",
+    "0"
+   ]
+  },
+  {
+   "values": [
+    "Ducks",
+    "8",
+    "6",
+    "10",
+    "0"
+   ]
+  },
+  {
+   "values": [
+    "50s",
+    "35",
+    "38",
+    "39",
+    "0"
+   ]
+  },
+  {
+   "values": [
+    "100s",
+    "9",
+    "20",
+    "3",
+    "0"
+   ]
+  },
+  {
+   "values": [
+    "200s",
+    "0",
+    "0",
+    "0",
+    "0"
+   ]
+  },
+  {
+   "values": [
+    "300s",
+    "0",
+    "0",
+    "0",
+    "0"
+   ]
+  },
+  {
+   "values": [
+    "400s",
+    "0",
+    "0",
+    "0",
+    "0"
+   ]
+  }
+ ],
+ "appIndex": {
+  "seoTitle": "Babar Azam Profile - Cricbuzz | Cricbuzz.com",
+  "webURL": "http://www.cricbuzz.com/profiles/8359/babar-azam"
+ },
+ "seriesSpinner": [
+  {
+   "seriesName": "Career"
+  },
+  {
+   "seriesId": 13037,
+   "seriesName": "Sri Lanka tour of Pakistan, 2026"
+  }
+ ]
+}

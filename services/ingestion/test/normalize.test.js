@@ -356,3 +356,43 @@ describe("normalizeMatch — stoppages stay live", () => {
     assert.equal(match.status, MATCH_STATUS.UPCOMING);
   });
 });
+
+describe("normalizeMatch — Test match without a scorecard", () => {
+  // PAK v SL, 2026: the third innings under way while the scorecard request had failed,
+  // so only the innings totals are known. Showed "PAK 491/1" and "SL 0/0" before.
+  const raw = {
+    sport_event: {
+      id: "cb:match:170703",
+      competitors: [
+        { id: "cb:team:3", name: "Pakistan", abbreviation: "PAK", qualifier: "home" },
+        { id: "cb:team:5", name: "Sri Lanka", abbreviation: "SL", qualifier: "away" },
+      ],
+    },
+    sport_event_status: {
+      status: "live",
+      match_status: "interrupted",
+      current_inning: 3,
+      display_overs: 21.2,
+      display_score: "PAK 57/1",
+      period_scores: [
+        { number: 1, home_score: 434, home_wickets: 9, display_overs: 106.3 },
+        { number: 2, away_score: 446, away_wickets: 10, display_overs: 117.2 },
+        { number: 3, home_score: 57, home_wickets: 1, display_overs: 21.2 },
+      ],
+    },
+  };
+
+  it("bats the side named by the current innings, not 'away after the first innings'", () => {
+    const match = normalizeMatch(PROVIDERS.SPORTRADAR, raw);
+    assert.equal(match.currentInnings.battingTeam, "PAK");
+    assert.equal(match.currentInnings.runs, 57);
+    assert.equal(match.currentInnings.wickets, 1);
+  });
+
+  it("each side's headline is its latest innings, never innings added together", () => {
+    const match = normalizeMatch(PROVIDERS.SPORTRADAR, raw);
+    assert.equal(match.teamScores.home.score, "57/1");
+    assert.equal(match.teamScores.away.score, "446/10");
+    assert.equal(match.teamScores.away.overs, "117.2");
+  });
+});

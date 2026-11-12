@@ -1,18 +1,17 @@
-import { rapidGet } from './rapidHttp.js';
 import { ProviderUnsupportedError } from './errors.js';
 import { PSL_SEASONS } from '../schemas.js';
+import { cricbuzzGet } from './cricbuzz.js';
 
 /**
- * unofficial-cricbuzz (RapidAPI) → SportsRadar-shaped JSON, for reference data: the
- * tournament catalogue, PSL fixtures / standings / leaders / squads for every season,
- * and team and player images.
+ * Official Cricbuzz Cricket (RapidAPI) → SportsRadar-shaped JSON, for reference data: the
+ * tournament catalogue, PSL fixtures / standings / leaders / squads for every season, and
+ * team rosters and images.
  *
- * It speaks Cricbuzz ids, the same id space as the live Cricbuzz Cricket hosts, so a
- * tournament, a fixture and a live match all share ids (`cb:*`). Shapes come from
- * recorded responses (test/fixtures/cricbuzzu/).
+ * Same host, response cache and budget as the match data in cricbuzz.js, and the same id
+ * space (`cb:*`), so a tournament, a fixture and a live match all share ids. Shapes come
+ * from recorded responses (test/fixtures/cricbuzz-official/).
  */
 
-const HOST = () => process.env.RAPIDAPI_CRICBUZZU_HOST || 'unofficial-cricbuzz.p.rapidapi.com';
 const REF_TTL_S = () => Number(process.env.RAPIDAPI_REF_TTL_S || 86400);
 
 const IMG = (imageId, size = '152x152') =>
@@ -23,15 +22,8 @@ const teamId = (id) => (id == null ? null : `${PREFIX.team}${id}`);
 const playerId = (id) => (id == null ? null : `${PREFIX.player}${id}`);
 const CRICKET = { id: 'sr:sport:21', name: 'Cricket' };
 
-function get(path, query, ttlSeconds = REF_TTL_S()) {
-  return rapidGet({
-    provider: 'cricbuzzu',
-    host: HOST(),
-    path,
-    query,
-    ttlSeconds,
-    budget: { period: 'month', limit: Number(process.env.RAPIDAPI_CRICBUZZU_MONTHLY_BUDGET || 500) },
-  });
+function get(path, query = {}, ttlSeconds = REF_TTL_S()) {
+  return cricbuzzGet(path, ttlSeconds, query);
 }
 
 /**
@@ -60,7 +52,7 @@ export function seriesIdFor(id) {
   if (mapped) return Number(mapped);
   const m = s.match(/^cb:(?:season|tournament):(\d+)$/);
   if (m) return Number(m[1]);
-  throw new ProviderUnsupportedError(`cricbuzzu has no series for ${s} (set CRICBUZZ_SERIES_MAP)`);
+  throw new ProviderUnsupportedError(`cricbuzz has no series for ${s} (set CRICBUZZ_SERIES_MAP)`);
 }
 
 const titleCase = (name) =>
@@ -75,9 +67,9 @@ const iso = (ms) => (Number(ms) > 0 ? new Date(Number(ms)).toISOString() : null)
 const MATCH_TYPES = ['international', 'league', 'domestic', 'women'];
 const CATEGORY_NAME = { international: 'International', league: 'League', domestic: 'Domestic', women: 'Women' };
 
-/** `{ seriesMap: [{ date, series: [...] }] }` → flat series list. */
+/** `{ seriesMapProto: [{ date, series: [...] }] }` → flat series list. */
 function flattenSeries(payload) {
-  return (payload?.seriesMap ?? []).flatMap((g) => g.series ?? []);
+  return (payload?.seriesMapProto ?? []).flatMap((g) => g.series ?? []);
 }
 
 export function toTournament(series, matchType) {
@@ -108,8 +100,8 @@ async function catalogue() {
     .filter(Boolean);
   const seen = new Map();
   for (const matchType of MATCH_TYPES) {
-    const lists = [await get('series/list', { matchType })];
-    for (const year of years) lists.push(await get('series/list-archives', { matchType, year }));
+    const lists = [await get(`series/v1/${matchType}`)];
+    for (const year of years) lists.push(await get(`series/v1/archives/${matchType}`, { year }));
     for (const payload of lists) {
       for (const s of flattenSeries(payload)) {
         if (s?.id != null && !seen.has(s.id)) seen.set(s.id, { series: s, matchType });
@@ -198,10 +190,11 @@ export async function fetchTournamentSeasons(tournamentId) {
 
 // ------------------------------------------------------------------- matches
 
+/** `series/v1/{id}`: `{ matchDetails: [{ matchDetailsMap: { match: [...] } }] }` (some entries are ads). */
 const flattenMatches = (payload) =>
-  (payload?.adWrapper ?? []).flatMap((w) => w.matchDetails?.matches ?? []).filter((m) => m?.matchInfo);
+  (payload?.matchDetails ?? []).flatMap((d) => d.matchDetailsMap?.match ?? []).filter((m) => m?.matchInfo);
 
-const seriesMatches = (seriesId) => get('series/get-matches', { seriesId }).then(flattenMatches);
+const seriesMatches = (seriesId) => get(`series/v1/${seriesId}`).then(flattenMatches);
 
 /** League-stage fixtures only ("1st Match" …), i.e. what a points table counts. */
 const isLeagueMatch = (info) => /^\d+(st|nd|rd|th) match$/i.test(String(info.matchDesc ?? '').trim());
@@ -383,7 +376,7 @@ function standingsEnvelope(rows, { derived }) {
 
 export async function fetchSeasonStandingsRaw(seasonId) {
   const sid = seriesIdFor(seasonId);
-  const [table, matches] = await Promise.all([get('series/get-points-table', { seriesId: sid }), seriesMatches(sid)]);
+  const [table, matches] = await Promise.all([get(`stats/v1/series/${sid}/points-table`), seriesMatches(sid)]);
   const infos = new Map();
   for (const { matchInfo } of matches) for (const t of [matchInfo.team1, matchInfo.team2]) infos.set(t.teamId, t);
   const asTeam = (t) => ({ id: teamId(t.teamId), name: titleCase(t.teamName), abbreviation: t.teamSName, logo_url: IMG(t.imageId) });
@@ -404,7 +397,7 @@ export async function fetchSeasonStandingsRaw(seasonId) {
     return standingsEnvelope(rows, { derived: false });
   }
   const rows = deriveStandings(matches).map((r) => ({ ...r, team: asTeam(r.team) }));
-  if (!rows.length) throw new ProviderUnsupportedError(`cricbuzzu has no standings for ${seasonId}`);
+  if (!rows.length) throw new ProviderUnsupportedError(`cricbuzz has no standings for ${seasonId}`);
   return standingsEnvelope(rows, { derived: true });
 }
 
@@ -430,7 +423,8 @@ const LEADER_SPECS = {
 };
 
 export function toLeaderList(stats, valueHeader, field) {
-  const block = stats?.t20Stats?.[0] ?? Object.values(stats ?? {}).find(Array.isArray)?.[0];
+  // One `<format>StatsList` object per response (t20StatsList for the PSL): { headers, values }.
+  const block = Object.values(stats ?? {}).find((v) => v && Array.isArray(v.headers));
   const headers = block?.headers ?? [];
   const col = headers.indexOf(valueHeader) + 1; // values[0] is the player id; headers start at the name
   if (!col) return [];
@@ -448,7 +442,7 @@ export async function fetchSeasonLeaders(seasonId) {
   const sid = seriesIdFor(seasonId);
   const out = { batting: {}, bowling: {}, fielding: {} };
   for (const [statsType, [group, key, header, field]] of Object.entries(LEADER_SPECS)) {
-    const stats = await get('series/get-stats', { seriesId: sid, statsType });
+    const stats = await get(`stats/v1/series/${sid}`, { statsType });
     out[group][key] = toLeaderList(stats, header, field);
   }
   return out;
@@ -488,15 +482,19 @@ export async function fetchSeasonSquad(seasonId, wantedTeamId) {
   // squads are listed by team name; the id → name link comes from the fixtures
   const teams = (await fetchTournamentInfo(seasonId)).groups[0].teams;
   const team = teams.find((t) => t.id === `${PREFIX.team}${want}`);
-  if (!team) throw new ProviderUnsupportedError(`cricbuzzu: team ${wantedTeamId} not in ${seasonId}`);
-  const list = await get('series/get-squads', { seriesId: sid });
-  const squad = (list?.squadAnnouncedList ?? []).find((s) => s.squadId && squadNameKey(s.squadType) === squadNameKey(team.name));
-  if (!squad) throw new ProviderUnsupportedError(`cricbuzzu: no squad for ${team.name} in ${seasonId}`);
-  const players = await get('series/get-players', { seriesId: sid, squadId: squad.squadId });
+  if (!team) throw new ProviderUnsupportedError(`cricbuzz: team ${wantedTeamId} not in ${seasonId}`);
+  const list = await get(`series/v1/${sid}/squads`);
+  // Squads carry the team id; the name match covers older series that leave it out.
+  const squads = (list?.squads ?? []).filter((s) => s.squadId && !s.isHeader);
+  const squad =
+    squads.find((s) => String(s.teamId) === want) ??
+    squads.find((s) => squadNameKey(s.squadType) === squadNameKey(team.name));
+  if (!squad) throw new ProviderUnsupportedError(`cricbuzz: no squad for ${team.name} in ${seasonId}`);
+  const players = await get(`series/v1/${sid}/squads/${squad.squadId}`);
   return { team, players: toSquadPlayers(players) };
 }
 
-/** Section headings in `teams/get-players` ("BATSMEN", "ALL ROUNDERS"…) → the app's role names. */
+/** Section headings in `teams/v1/{id}/players` ("BATSMEN", "ALL ROUNDER"…) → the app's role names. */
 export function roleFromSection(heading) {
   const s = String(heading ?? '').toLowerCase();
   if (/keeper|wk/.test(s)) return 'wicketkeeper';
@@ -507,7 +505,7 @@ export function roleFromSection(heading) {
 }
 
 /**
- * A team's squad (`teams/get-players`, one request). The list is grouped: an entry without an
+ * A team's squad (`teams/v1/{id}/players`, one request). The list is grouped: an entry without an
  * id is a section heading whose role applies to the players that follow it.
  */
 export function toRoster(teamIdValue, raw) {
@@ -533,10 +531,10 @@ export function toRoster(teamIdValue, raw) {
 
 export async function fetchTeamRoster(id) {
   const m = String(id).match(/^cb:team:(\d+)$/);
-  if (!m) throw new ProviderUnsupportedError(`cricbuzzu rosters need a cb:team id, got ${id}`);
-  const raw = await get('teams/get-players', { teamId: m[1] }, 7 * 86400);
+  if (!m) throw new ProviderUnsupportedError(`cricbuzz rosters need a cb:team id, got ${id}`);
+  const raw = await get(`teams/v1/${m[1]}/players`, {}, 7 * 86400);
   const roster = toRoster(id, raw);
-  if (!roster.players.length) throw new Error(`cricbuzzu returned no squad for ${id}`);
+  if (!roster.players.length) throw new Error(`cricbuzz returned no squad for ${id}`);
   return roster;
 }
 
@@ -563,15 +561,15 @@ export function teamForSquadName(squadType, teams) {
  */
 export async function fetchSeriesSquads(tournamentId, teams, { perTeam = 2 } = {}) {
   const sid = seriesIdFor(tournamentId);
-  const list = await get('series/get-squads', { seriesId: sid }, 7 * 86400);
+  const list = await get(`series/v1/${sid}/squads`, {}, 7 * 86400);
   const taken = new Map();
   const out = new Map();
-  for (const s of list?.squadAnnouncedList ?? []) {
+  for (const s of list?.squads ?? []) {
     if (!s.squadId || s.isHeader) continue;
-    const team = teamForSquadName(s.squadType, teams);
+    const team = teams.find((t) => t.id === `${PREFIX.team}${s.teamId}`) ?? teamForSquadName(s.squadType, teams);
     if (!team || (taken.get(team.id) ?? 0) >= perTeam) continue;
     taken.set(team.id, (taken.get(team.id) ?? 0) + 1);
-    const players = toSquadPlayers(await get('series/get-players', { seriesId: sid, squadId: s.squadId }, 7 * 86400));
+    const players = toSquadPlayers(await get(`series/v1/${sid}/squads/${s.squadId}`, {}, 7 * 86400));
     const prev = out.get(team.id) ?? [];
     const seen = new Set(prev.map((p) => p.id));
     out.set(team.id, [...prev, ...players.filter((p) => !seen.has(p.id))]);
