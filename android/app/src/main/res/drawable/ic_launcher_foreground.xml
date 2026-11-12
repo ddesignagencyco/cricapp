@@ -3,21 +3,21 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- white cricket ball on the brand-blue background -->
+    <!-- blue ball (same mark as the onboarding / in-app logo) -->
     <path
-        android:fillColor="#FFFFFF"
+        android:fillColor="#3B68FC"
         android:pathData="M54,24 a30,30 0 1,0 0,60 a30,30 0 1,0 0,-60 Z" />
-    <!-- blue seam -->
+    <!-- white seam -->
     <path
         android:fillColor="#00000000"
-        android:strokeColor="#1D3FA8"
+        android:strokeColor="#FFFFFF"
         android:strokeWidth="3.2"
         android:strokeLineCap="round"
         android:pathData="M48,28 C 58,42 58,66 48,80" />
-    <!-- blue stitches -->
+    <!-- white stitches -->
     <path
         android:fillColor="#00000000"
-        android:strokeColor="#1D3FA8"
+        android:strokeColor="#FFFFFF"
         android:strokeWidth="2.4"
         android:strokeLineCap="round"
         android:pathData="M46,33 l9,2.6 M48,44 l9,1.6 M49,55 l9,0 M48,66 l9,-1.8 M46,77 l9,-2.6" />

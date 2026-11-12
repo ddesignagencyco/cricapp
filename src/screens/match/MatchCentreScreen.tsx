@@ -518,7 +518,8 @@ function SquadsTab({ match }: { match: Match }) {
   return (
     <Body bottomInset contentStyle={{ paddingTop: space.lg }}>
       <View style={{ paddingHorizontal: space.lg, marginBottom: space.md }}>
-        <Segmented value={side} onChange={setSide} options={[match.teamA, match.teamB].map(id => ({ key: id, label: team(id).name }))} />
+        {/* Short codes keep both options balanced; long names squish the segmented control. */}
+        <Segmented value={side} onChange={setSide} options={[match.teamA, match.teamB].map(id => ({ key: id, label: team(id).short }))} />
       </View>
       {!data && error ? (
         <ErrorState error={error} onRetry={refresh} />

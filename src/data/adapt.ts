@@ -6,6 +6,9 @@ import { player, rememberAuthor, rememberPlayer, rememberSeries, rememberTeam, r
  * the API host, and drop formats React Native's <Image> can't render (SVG), so
  * a broken or placeholder asset becomes "no image" instead of a blank box.
  */
+/** Cricbuzz serves one shared grey silhouette for players with no headshot. */
+const NO_HEADSHOT = /\/c174146\//;
+
 export function mediaUrl(u?: string | null): string | undefined {
   if (!u) return undefined;
   const abs = /^https?:\/\//i.test(u) ? u : `${API_URL}${u.startsWith('/') ? '' : '/'}${u}`;
@@ -724,7 +727,7 @@ export function toPlayer(p: RawPlayer, fallbackTeam?: string): Player {
     age: Number.isFinite(age) ? age : undefined,
     slug: slugify(name),
     nationality: p.nationality ?? undefined,
-    photo: mediaUrl(p.profileUrl),
+    photo: p.profileUrl && !NO_HEADSHOT.test(p.profileUrl) ? mediaUrl(p.profileUrl) : undefined,
     stats: {},
     recent: [],
   });
