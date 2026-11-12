@@ -129,7 +129,7 @@ export default function SearchResultsBody() {
       <header className="mb-8 rounded-md border border-lborder bg-card p-5 sm:p-6">
         <p className="text-xs font-semibold uppercase tracking-wider text-accent">Search archive</p>
         <h1 className="mt-1 text-2xl font-semibold tracking-tight text-mtext sm:text-3xl">
-          {debouncedQuery ? `Results for “${debouncedQuery}”` : 'Search PakCricZone'}
+          {debouncedQuery ? `Results for “${debouncedQuery}”` : 'Search CriczApp'}
         </h1>
         <p className="mt-1 text-sm text-stext">
           {debouncedQuery && results
@@ -318,7 +318,7 @@ function SearchCard({
       {avatar}
       <span className="min-w-0 flex-1">
         <span className="block truncate text-sm font-semibold text-mtext group-hover:text-accent">{title}</span>
-        <span className="block truncate text-xs text-stext">{subtitle || 'PakCricZone'}</span>
+        <span className="block truncate text-xs text-stext">{subtitle || 'CriczApp'}</span>
       </span>
       <ArrowRight size={14} className="shrink-0 text-stext opacity-0 transition-opacity group-hover:opacity-100" />
     </Link>

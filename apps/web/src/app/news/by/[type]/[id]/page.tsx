@@ -70,7 +70,7 @@ export async function generateMetadata({
   const label = TYPE_LABEL[type];
   return {
     title: `${label} news`,
-    description: `All ${label.toLowerCase()} stories from the PAK CRICZONE newsroom, newest first.`,
+    description: `All ${label.toLowerCase()} stories from the CriczApp newsroom, newest first.`,
   };
 }
 

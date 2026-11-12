@@ -3,7 +3,7 @@ import SearchResultsBody from '../../components/boards/SearchResultsBody';
 
 export const metadata = {
   title: 'Search',
-  description: 'Search players, teams, matches and tournaments on PAK CRICZONE.',
+  description: 'Search players, teams, matches and tournaments on CriczApp.',
 };
 
 export default function SearchPage() {

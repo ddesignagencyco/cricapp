@@ -43,13 +43,13 @@ function isStreamingUrl(url: string): boolean {
 /** "Photos, shorts and videos" → "photos-shorts-and-videos", capped so the name stays valid on every OS. */
 export function mediaFileName(title: string | null | undefined, url: string, fallbackExt = 'jpg'): string {
   const fromUrl = extensionFrom(url);
-  const base = (title || 'pakcriczone-media')
+  const base = (title || 'criczapp-media')
     .toLowerCase()
     .replace(/\.[a-z0-9]{2,5}$/, '')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .slice(0, 60);
-  return `${base || 'pakcriczone-media'}.${fromUrl || fallbackExt}`;
+  return `${base || 'criczapp-media'}.${fromUrl || fallbackExt}`;
 }
 
 function openInNewTab(url: string): void {

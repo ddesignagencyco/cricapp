@@ -7,6 +7,7 @@ import MatchCard from '../../components/MatchCard';
 const MatchTickerBar = dynamic(() => import('../../components/MatchTickerBar'));
 const LiveNowSection = dynamic(() => import('../../components/LiveNowSection'));
 import SectionHeader from '../../components/SectionHeader';
+import WatchNowSection from '../../components/WatchNowSection';
 import CricketHero from '../../components/CricketHero';
 import PslSpotlight from '../../components/PslSpotlight';
 import RecentResultCard from '../../components/RecentResultCard';
@@ -24,7 +25,6 @@ import AdSlot from '../../components/advertisements/AdSlot';
 import AdMultiplex from '../../components/advertisements/AdMultiplex';
 import RemoteImage from '../../components/RemoteImage';
 import NewsCopy from '../../components/NewsCopy';
-import { StatusBadge } from '../../components/Badge';
 
 import { fetchLiveMatches, fetchMatches } from '../../services/matches';
 import { fetchNews } from '../../services/news';
@@ -125,35 +125,7 @@ export default async function HomePage() {
       <div className="flex flex-col gap-12 pt-12 pb-12">
       <LiveNowSection matches={live} />
 
-      {liveStreams.length > 0 && (
-        <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
-          <SectionHeader title="Watch Now" subtitle="Live right now" icon="video" to="/streams" actionLabel="All streams" />
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {liveStreams.slice(0, 3).map((stream) => (
-              <Link key={stream.id} href="/streams" className="card-diamond card-interactive group overflow-hidden rounded-md border border-lborder bg-card">
-                <div className="flex items-center border-b border-lborder px-3 py-2">
-                  {/* The list is already live-only; the badge still reads the row's
-                      own status so it can never contradict the filter. */}
-                  <StatusBadge status={stream.status || 'live'} />
-                </div>
-                <div className="relative aspect-video bg-[var(--color-skeleton)]">
-                  {stream.image ? (
-                    <RemoteImage src={stream.image} alt={stream.title} fill sizes="400px" fit="contain" className="news-image" />
-                  ) : (
-                    <div className="grid h-full place-items-center media-fallback text-stext">▶</div>
-                  )}
-                  <span className="absolute inset-0 grid place-items-center">
-                    <span className="grid h-11 w-11 place-items-center rounded-full bg-black/55 text-sm text-white">▶</span>
-                  </span>
-                </div>
-                <div className="p-3">
-                  <p className="line-clamp-2 text-sm font-semibold text-mtext group-hover:text-accent">{stream.title}</p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
+      <WatchNowSection streams={liveStreams} />
 
       {/* Upcoming Matches */}
       <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">

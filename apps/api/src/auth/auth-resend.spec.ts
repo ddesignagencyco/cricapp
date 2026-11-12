@@ -158,7 +158,7 @@ describe('AuthModule forgot-password with Resend (live)', () => {
       .send({ email: TEST_EMAIL })
       .expect(200);
 
-    expect(MockMailerService.lastMail?.subject).toContain('PakCricZone');
+    expect(MockMailerService.lastMail?.subject).toContain('CriczApp');
     expect(MockMailerService.lastMail?.html).toContain('Confirm your email');
     expect(MockMailerService.lastMail?.html).toContain('Verify email address');
     expect(MockMailerService.lastMail?.html).not.toContain('Reset Code');

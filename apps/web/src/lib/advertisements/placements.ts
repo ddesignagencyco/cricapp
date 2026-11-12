@@ -1,3 +1,5 @@
+import { isCompanyPath } from '../companyPages';
+
 export type DummyAdSize =
   | 'leaderboard'
   | 'tablet-banner'
@@ -174,14 +176,7 @@ const AUTH_PREFIXES = [
 export function shouldHideDummyAds(pathname: string): boolean {
   if (pathname.startsWith('/admin')) return true;
   if (pathname === '/404' || pathname === '/_not-found') return true;
-  if (
-    pathname.startsWith('/editorial/') ||
-    pathname === '/about' ||
-    pathname === '/privacy' ||
-    pathname === '/terms'
-  ) {
-    return true;
-  }
+  if (isCompanyPath(pathname)) return true;
   return AUTH_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 }
 

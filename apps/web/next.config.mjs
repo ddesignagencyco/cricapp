@@ -50,6 +50,10 @@ const nextConfig = {
     return [
       { source: '/admin/media', destination: '/admin/gallery', permanent: false },
       { source: '/compare', destination: '/teams', permanent: false },
+      // Company pages moved from /editorial/<slug> to the site root.
+      { source: '/editorial/editorial-policy', destination: '/editorial-policy', permanent: true },
+      { source: '/editorial/corrections', destination: '/corrections', permanent: true },
+      { source: '/editorial/:slug(about|privacy|terms|disclaimer|cookie-policy)', destination: '/:slug', permanent: true },
     ];
   },
 };

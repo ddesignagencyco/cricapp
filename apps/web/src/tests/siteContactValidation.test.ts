@@ -230,7 +230,7 @@ describe('isValidWorkingHours', () => {
 
 function form(overrides: Partial<SiteContactForm> = {}): SiteContactForm {
   return {
-    email: 'hello@pakcriczone.com',
+    email: 'hello@criczapp.com',
     supportEmail: '',
     phone: '+923001234567',
     whatsapp: '',
@@ -307,7 +307,7 @@ describe('validateSiteContact', () => {
 
   it('flags a social link on the wrong network', () => {
     const errors = validateSiteContact(
-      form({ socials: [{ platform: 'facebook', value: 'https://instagram.com/pakcriczone' }] }),
+      form({ socials: [{ platform: 'facebook', value: 'https://instagram.com/criczapp' }] }),
     );
     expect(errors.socials).toBeDefined();
     expect(errors.socialsByIndex?.[0]).toMatch(/facebook/i);
@@ -317,7 +317,7 @@ describe('validateSiteContact', () => {
     const errors = validateSiteContact(
       form({
         socials: [
-          { platform: 'facebook', value: 'https://facebook.com/pakcriczone' },
+          { platform: 'facebook', value: 'https://facebook.com/criczapp' },
           { platform: 'facebook', value: 'https://facebook.com/other' },
         ],
       }),

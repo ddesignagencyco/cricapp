@@ -6,7 +6,7 @@ import { fetchEditorialPage } from '../../services/editorial';
 export const metadata = {
   title: 'About',
   description:
-    'Learn about PAK CRICZONE — your home for live cricket scores, PSL fixtures, teams, players and in-depth statistics.',
+    'Learn about CriczApp — your home for live cricket scores, PSL fixtures, teams, players and in-depth statistics.',
 };
 
 export default async function AboutPage() {
@@ -15,12 +15,12 @@ export default async function AboutPage() {
 
   return (
     <EditorialLayout
-      title="About PAK CRICZONE"
+      title="About CriczApp"
       slug="about"
       intro="Your home for live cricket scores, PSL fixtures, teams, players and in-depth analysis — built for fans who follow every ball."
     >
       <p>
-        PAK CRICZONE is your destination for cricket coverage in Pakistan and beyond. From live
+        CriczApp is your destination for cricket coverage in Pakistan and beyond. From live
         ball-by-ball scores and PSL fixtures to player profiles and historical statistics, we bring
         the game closer to you.
       </p>
@@ -37,7 +37,7 @@ export default async function AboutPage() {
 
       <h2 id="our-story">Our story</h2>
       <p>
-        PAK CRICZONE was created to fill the gap for a dedicated, fan-first cricket platform focused
+        CriczApp was created to fill the gap for a dedicated, fan-first cricket platform focused
         on Pakistani cricket. Starting with PSL coverage, we aim to expand into full international
         reporting, fantasy insights and community features.
       </p>

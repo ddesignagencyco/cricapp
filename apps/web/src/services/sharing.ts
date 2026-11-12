@@ -22,7 +22,7 @@ export function getShareLink(type: ShareType, id: string): Promise<ShareLink> {
   return apiGet<ShareLink>(`/share/${type}/${encodeURIComponent(id)}`);
 }
 
-const SITE_ORIGIN = 'https://pakcriczone.com';
+const SITE_ORIGIN = 'https://criczapp.com';
 
 /** OG tags for crawlers. Do not call getShareLink here — that endpoint tracks a share. */
 export function sharePageMetadata(input: {
@@ -57,7 +57,7 @@ export function sharePageMetadata(input: {
       description: input.ogDescription || description,
       url: input.path,
       type: input.ogType || 'website',
-      siteName: 'PAK CRICZONE',
+      siteName: 'CriczApp',
       images: image ? [{ url: image }] : undefined,
     },
     twitter: {

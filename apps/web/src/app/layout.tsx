@@ -46,27 +46,27 @@ const nastaliq = Noto_Nastaliq_Urdu({
 });
 
 export const metadata = {
-  metadataBase: new URL('https://pakcriczone.com'),
+  metadataBase: new URL('https://criczapp.com'),
   title: {
-    default: 'PAK CRICZONE — Cricket Live Scores & PSL Hub',
-    template: '%s | PAK CRICZONE',
+    default: 'CriczApp — Cricket Live Scores & PSL Hub',
+    template: '%s | CriczApp',
   },
   description:
-    'PAK CRICZONE — Every Run. Every Ball. Live. Pakistan cricket live scores, PSL teams, matches, scoreboards and player statistics.',
+    'CriczApp — Every Run. Every Ball. Live. Pakistan cricket live scores, PSL teams, matches, scoreboards and player statistics.',
   keywords: ['cricket', 'PSL', 'Pakistan Super League', 'live scores', 'PSL 2026', 'cricket scores'],
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    siteName: 'PAK CRICZONE',
-    title: 'PAK CRICZONE — Cricket Live Scores & PSL Hub',
+    siteName: 'CriczApp',
+    title: 'CriczApp — Cricket Live Scores & PSL Hub',
     description: 'Live cricket scores, PSL fixtures, teams, players and statistics.',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'PAK CRICZONE — Cricket Live Scores & PSL Hub',
+    title: 'CriczApp — Cricket Live Scores & PSL Hub',
     description: 'Live cricket scores, PSL fixtures, teams, players and statistics.',
   },
-  icons: { icon: '/favicon.svg' },
+  icons: { icon: '/favicon.svg', apple: '/apple-touch-icon.png' },
 };
 
 export const viewport = {
@@ -103,8 +103,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           data={{
             '@context': 'https://schema.org',
             '@type': 'WebSite',
-            name: 'PAK CRICZONE',
-            url: 'https://pakcriczone.com',
+            name: 'CriczApp',
+            url: 'https://criczapp.com',
             description: 'Cricket live scores, PSL fixtures, teams, players and statistics.',
           }}
         />

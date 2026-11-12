@@ -142,7 +142,7 @@ export default function NewsBoard({
         </div>
         <h1 className="mt-1 text-2xl font-semibold tracking-tight text-mtext">News & Updates</h1>
         <p className="mt-2 max-w-2xl text-sm text-stext">
-          Match reports, PSL stories, team roster updates, and tactical analysis from the PAK CRICZONE team.
+          Match reports, PSL stories, team roster updates, and tactical analysis from the CriczApp team.
         </p>
       </header>
 

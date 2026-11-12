@@ -171,7 +171,7 @@ describe('Newsletter campaigns (integration)', () => {
       .send({ type: 'breaking_news', newsId: article.id })
       .expect(200);
     expect(preview.body.subject).toBe('🚨 Pakistan name new captain');
-    expect(preview.body.html).toContain('PakCricZone');
+    expect(preview.body.html).toContain('CriczApp');
 
     await ctx.agent
       .post('/admin/newsletter/campaigns/test')

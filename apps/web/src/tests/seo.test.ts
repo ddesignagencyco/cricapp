@@ -26,7 +26,7 @@ const news = fetchNews as jest.MockedFunction<typeof fetchNews>;
 const authors = fetchPublicAuthors as jest.MockedFunction<typeof fetchPublicAuthors>;
 const stories = fetchStories as jest.MockedFunction<typeof fetchStories>;
 
-const BASE = 'https://pakcriczone.com';
+const BASE = 'https://criczapp.com';
 
 const noStories = { items: [], total: 0, totalPages: 1 };
 

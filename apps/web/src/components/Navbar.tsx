@@ -37,6 +37,7 @@ import RemoteImage from './RemoteImage';
 import { useTheme } from './ThemeProvider';
 import { useAuth } from './AuthProvider';
 import { getInitials } from '../utils/helpers';
+import { preloadWhenIdle } from '../utils/preloadWhenIdle';
 
 type NavItem = {
   to: string;
@@ -66,8 +67,11 @@ const exploreItems: NavItem[] = [
 
 const navItems = [...liveItems, ...exploreItems];
 
-// Search (services/search + results UI) loads on first open, never upfront.
-const SearchBar = dynamic(() => import('./SearchBar'), { ssr: false });
+// Search (services/search + results UI) stays out of the initial bundle, but is
+// fetched once the page is idle and on first touch: loading it only on tap made
+// the search icon look dead for seconds on slow mobile networks.
+const loadSearchBar = () => import('./SearchBar');
+const SearchBar = dynamic(loadSearchBar, { ssr: false });
 
 function avatarHue(name: string) {
   let h = 0;
@@ -106,6 +110,8 @@ export default function Navbar() {
     setSearchOpen(false);
     setMenuOpen(false);
   }, [pathname]);
+
+  useEffect(() => preloadWhenIdle(loadSearchBar), []);
 
   useEffect(() => {
     const onToggle = () => {
@@ -205,6 +211,7 @@ export default function Navbar() {
 
           <button
             type="button"
+            onPointerDown={() => void loadSearchBar()}
             onClick={() => {
               setSearchOpen((s) => !s);
               setMobileOpen(false);
@@ -217,9 +224,11 @@ export default function Navbar() {
           {isAuthenticated && user ? (
             <div
               ref={menuRef}
-              className="relative hidden lg:block"
-              onMouseEnter={openMenu}
-              onMouseLeave={closeMenuSoon}
+              className="relative"
+              // Hover-to-open is for mouse only: on touch the emulated mouseenter
+              // opened the menu and the tap's click toggled it straight shut.
+              onPointerEnter={(event) => event.pointerType === 'mouse' && openMenu()}
+              onPointerLeave={(event) => event.pointerType === 'mouse' && closeMenuSoon()}
             >
               <button
                 type="button"
@@ -295,9 +304,11 @@ export default function Navbar() {
           ) : (
             <div
               ref={menuRef}
-              className="relative hidden lg:block"
-              onMouseEnter={openMenu}
-              onMouseLeave={closeMenuSoon}
+              className="relative"
+              // Hover-to-open is for mouse only: on touch the emulated mouseenter
+              // opened the menu and the tap's click toggled it straight shut.
+              onPointerEnter={(event) => event.pointerType === 'mouse' && openMenu()}
+              onPointerLeave={(event) => event.pointerType === 'mouse' && closeMenuSoon()}
             >
               <button
                 type="button"
@@ -319,7 +330,7 @@ export default function Navbar() {
                   className="elev-overlay z-[60] w-72 overflow-hidden rounded-md border border-lborder bg-elevated"
                 >
                   <div className="border-b border-lborder bg-elevated/70 px-3.5 py-3.5">
-                    <p className="text-sm font-semibold text-mtext">Welcome to PakCricZone</p>
+                    <p className="text-sm font-semibold text-mtext">Welcome to CriczApp</p>
                     <p className="mt-1 text-xs leading-relaxed text-stext">
                       Sign in to save favorites, comment on matches, and follow live scores.
                     </p>
@@ -370,26 +381,33 @@ export default function Navbar() {
         <>
           <button
             type="button"
-            className="fixed inset-x-0 top-14 bottom-14 z-[25] bg-black/50 lg:hidden"
+            tabIndex={-1}
+            className="mobile-drawer-scrim fixed inset-0 z-[90] bg-black/50 lg:hidden"
             aria-label="Close menu"
             onClick={closeMobile}
           />
           <div
             id="mobile-navigation"
-            className="fixed inset-x-0 top-14 bottom-14 z-[30] overflow-y-auto border-t border-lborder bg-primary text-mtext lg:hidden"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Browse"
+            className="mobile-drawer fixed inset-y-0 right-0 z-[95] flex w-[min(20rem,86vw)] flex-col border-l border-lborder bg-primary text-mtext shadow-2xl lg:hidden"
           >
-            <div className="mx-auto max-w-7xl px-4 pb-8 pt-4 sm:px-6">
-              <div className="mb-3 flex items-center justify-between">
-                <p className="text-sm font-bold text-mtext">Browse</p>
+            <div className="flex h-14 shrink-0 items-center justify-between border-b border-lborder px-4">
+              <p className="text-base font-bold text-mtext">Browse</p>
+              <div className="flex items-center gap-1">
                 <button
                   type="button"
+                  autoFocus
                   onClick={closeMobile}
-                  className="grid h-9 w-9 place-items-center rounded text-stext hover:bg-[var(--color-row-hover)] hover:text-mtext"
-                  aria-label="Close more menu"
+                  className="grid h-9 w-9 place-items-center rounded-md text-stext hover:bg-[var(--color-row-hover)] hover:text-mtext"
+                  aria-label="Close menu"
                 >
                   <X size={18} />
                 </button>
               </div>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-4">
               <MobileSection label="Live">
                 {liveItems.map((item) => (
                   <MobileNavLink key={item.to} item={item} active={isActive(item.to)} />
@@ -402,56 +420,7 @@ export default function Navbar() {
                 ))}
               </MobileSection>
 
-              <MobileSection label="Account">
-                {isAuthenticated && user ? (
-                  <>
-                    <div className="mb-1 flex items-center gap-3 rounded border border-lborder bg-card px-3 py-3">
-                      <ProfileAvatar name={displayName} src={user.avatarUrl} hue={hue} size={40} />
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-mtext">{user.displayName || user.username}</p>
-                        <p className="truncate text-xs text-stext">@{user.username}</p>
-                        <p className="truncate text-xs font-medium text-muted-foreground">{user.email}</p>
-                      </div>
-                    </div>
-                    <MobileNavLink item={{ to: '/profile', label: 'Profile', icon: User }} active={pathname.startsWith('/profile')} />
-                    <MobileNavLink item={{ to: '/favorites', label: 'Favorites', icon: Heart }} active={pathname.startsWith('/favorites')} />
-                    <MobileNavLink item={{ to: '/settings/notifications', label: 'Notifications', icon: Bell }} active={pathname.startsWith('/settings/notifications')} />
-                    {isAdmin && (
-                      <MobileNavLink item={{ to: '/admin', label: 'CMS Dashboard', icon: LayoutDashboard }} active={pathname.startsWith('/admin')} />
-                    )}
-                    <button
-                      type="button"
-                      onClick={handleLogout}
-                      className="flex w-full items-center gap-3 rounded px-3 py-3 text-left text-sm font-semibold text-danger hover:bg-[var(--color-row-hover)]"
-                    >
-                      <span className="grid h-9 w-9 place-items-center rounded bg-danger/10">
-                        <LogOut size={16} />
-                      </span>
-                      Sign out
-                    </button>
-                  </>
-                ) : (
-                  <div className="space-y-2 rounded border border-lborder bg-card p-3">
-                    <p className="text-sm font-semibold text-mtext">Welcome to PakCricZone</p>
-                    <p className="text-xs text-stext">Sign in to save favorites and comment on matches.</p>
-                    <Link
-                      href="/login"
-                      className="btn-brand flex items-center justify-center gap-2 rounded px-4 py-2.5 text-sm font-semibold"
-                    >
-                      <LogIn size={16} />
-                      Sign in
-                    </Link>
-                    <Link
-                      href="/register"
-                      className="flex items-center justify-center gap-2 rounded px-4 py-2.5 text-sm font-semibold text-mtext"
-                      style={{ border: '1px solid var(--color-lborder)' }}
-                    >
-                      <UserPlus size={16} />
-                      Create account
-                    </Link>
-                  </div>
-                )}
-              </MobileSection>
+
             </div>
           </div>
         </>

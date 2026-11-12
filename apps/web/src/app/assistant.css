@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PCZ Assistant panel
+   CriczApp Assistant panel
    --------------------------------------------------------------------------
    Lives in its own stylesheet, imported after `globals.css`, so it never edits
    the shared sheet and cannot be clobbered by changes elsewhere.

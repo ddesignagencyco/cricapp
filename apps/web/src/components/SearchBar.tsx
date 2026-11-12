@@ -127,7 +127,7 @@ export default function SearchBar({ autoFocus = false, onDone }: SearchBarProps)
         <div className="flex items-center gap-3 border-b border-lborder px-4 py-3">
           <div className="min-w-0 flex-1">
             <label id="global-search-title" htmlFor="global-search-input" className="sr-only">
-              Search PakCricZone
+              Search CriczApp
             </label>
             <SearchField
               ref={inputRef}
@@ -158,7 +158,7 @@ export default function SearchBar({ autoFocus = false, onDone }: SearchBarProps)
 
         <div className="max-h-[min(60vh,520px)] overflow-y-auto p-2 sm:p-3">
           {!query.trim() && (
-            <p className="px-3 py-10 text-center text-sm font-medium text-stext">Search across the PakCricZone archive.</p>
+            <p className="px-3 py-10 text-center text-sm font-medium text-stext">Search across the CriczApp archive.</p>
           )}
           {loading && (
             <div className="space-y-2 p-2">
@@ -303,7 +303,7 @@ function ResultButton({
       {avatar}
       <span className="min-w-0 flex-1">
         <span className="block truncate text-sm font-semibold text-mtext">{title}</span>
-        <span className="block truncate text-xs text-stext">{subtitle || 'PakCricZone'}</span>
+        <span className="block truncate text-xs text-stext">{subtitle || 'CriczApp'}</span>
       </span>
     </button>
   );

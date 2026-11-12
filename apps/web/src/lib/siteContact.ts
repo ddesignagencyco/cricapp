@@ -264,7 +264,7 @@ export function validateSocialValue(platform: string, value: string): string {
   if (domains) {
     if (!onDomain(url.hostname, domains)) return `Use a ${domains[0]} link.`;
     // A bare domain is the network's home page, not this site's profile.
-    if (url.pathname.replace(/\/+$/, '') === '') return 'Add the page or profile path, e.g. /pakcriczone.';
+    if (url.pathname.replace(/\/+$/, '') === '') return 'Add the page or profile path, e.g. /criczapp.';
   }
   return '';
 }

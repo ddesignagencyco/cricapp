@@ -236,7 +236,7 @@ describe('policy issue presentation', () => {
       isGamblingPolicyIssue({
         resourceName: '',
         entityType: 'SITE',
-        site: 'pakcriczone.com',
+        site: 'criczapp.com',
         siteSection: null,
         uri: null,
         action: 'WARNED',
@@ -255,7 +255,7 @@ describe('policy issue presentation', () => {
       isGamblingPolicyIssue({
         resourceName: '',
         entityType: 'SITE',
-        site: 'pakcriczone.com',
+        site: 'criczapp.com',
         siteSection: null,
         uri: null,
         action: 'WARNED',

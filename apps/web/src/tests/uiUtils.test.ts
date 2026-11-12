@@ -140,7 +140,7 @@ describe('socialHref', () => {
   });
 
   it('adds a scheme to a bare handle', () => {
-    expect(socialHref('x', 'pakcriczone')).toBe('https://pakcriczone');
+    expect(socialHref('x', 'criczapp')).toBe('https://criczapp');
   });
 
   it('builds a wa.me link from the digits of a whatsapp number', () => {
@@ -148,7 +148,7 @@ describe('socialHref', () => {
   });
 
   it('strips a leading @ from a telegram handle', () => {
-    expect(socialHref('telegram', '@pakcriczone')).toBe('https://t.me/pakcriczone');
+    expect(socialHref('telegram', '@criczapp')).toBe('https://t.me/criczapp');
   });
 
   it('returns an empty string for a blank value', () => {

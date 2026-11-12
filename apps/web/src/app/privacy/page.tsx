@@ -7,7 +7,7 @@ import type { AdConfig } from '../../lib/advertisements/registry';
 export const metadata = {
   title: 'Privacy Policy',
   description:
-    'Privacy policy for PAK CRICZONE — how we collect, use and protect your information.',
+    'Privacy policy for CriczApp — how we collect, use and protect your information.',
 };
 
 type Section = { id: string; title: string; text: string };
@@ -44,7 +44,7 @@ const TRAILING_SECTIONS: Section[] = [
   {
     id: 'your-rights',
     title: 'Your Rights',
-    text: 'You have the right to access, correct or delete your personal data. To exercise these rights, please contact us at privacy@pakcriczone.com.',
+    text: 'You have the right to access, correct or delete your personal data. To exercise these rights, please contact us at privacy@criczapp.com.',
   },
   {
     id: 'changes-to-this-policy',
@@ -68,12 +68,12 @@ function sectionsFor(ads: AdConfig): Section[] {
     ? {
         id: 'cookies-tracking',
         title: 'Cookies & Tracking',
-        text: 'PAK CRICZONE uses cookies to maintain your session preferences and analyse traffic. While advertising is enabled we also use Google AdSense, which places third-party cookies and similar technologies to serve ads based on your prior visits to this and other websites. You can control or remove cookies through your browser settings, and you can opt out of personalised advertising at Google Ads Settings and of third-party vendor cookies at aboutads.info.',
+        text: 'CriczApp uses cookies to maintain your session preferences and analyse traffic. While advertising is enabled we also use Google AdSense, which places third-party cookies and similar technologies to serve ads based on your prior visits to this and other websites. You can control or remove cookies through your browser settings, and you can opt out of personalised advertising at Google Ads Settings and of third-party vendor cookies at aboutads.info.',
       }
     : {
         id: 'cookies-tracking',
         title: 'Cookies & Tracking',
-        text: 'PAK CRICZONE uses cookies to maintain your session preferences and analyse traffic. You can control cookie settings through your browser. We do not use third-party advertising trackers.',
+        text: 'CriczApp uses cookies to maintain your session preferences and analyse traffic. You can control cookie settings through your browser. We do not use third-party advertising trackers.',
       };
 
   const advertising: Section[] = advertisingLive
@@ -101,7 +101,7 @@ export default async function PrivacyPage() {
       title="Privacy Policy"
       slug="privacy"
       updatedAt="2026-09-02"
-      intro="At PAK CRICZONE, your privacy is important to us. This policy explains how we collect, use and protect your information when you use our website and services."
+      intro="At CriczApp, your privacy is important to us. This policy explains how we collect, use and protect your information when you use our website and services."
       toc={sections.map((section) => ({ id: section.id, label: section.title }))}
     >
       {sections.map((section) => (
@@ -112,7 +112,7 @@ export default async function PrivacyPage() {
       ))}
       <p>
         If you have any questions about this Privacy Policy, please contact us at{' '}
-        <a href="mailto:privacy@pakcriczone.com">privacy@pakcriczone.com</a>.
+        <a href="mailto:privacy@criczapp.com">privacy@criczapp.com</a>.
       </p>
     </EditorialLayout>
   );

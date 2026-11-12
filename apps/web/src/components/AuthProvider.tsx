@@ -18,6 +18,17 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+/** Set by the API next to the HttpOnly session cookie; see `AUTH_HINT_COOKIE_NAME` there. */
+const AUTH_HINT_COOKIE = 'cz_signed_in';
+
+function hasSessionHint(): boolean {
+  return document.cookie.split(';').some((part) => part.trim().startsWith(`${AUTH_HINT_COOKIE}=`));
+}
+
+function clearSessionHint(): void {
+  document.cookie = `${AUTH_HINT_COOKIE}=; Max-Age=0; path=/`;
+}
+
 export function useAuth(): AuthContextValue {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error('useAuth must be used inside AuthProvider');
@@ -29,6 +40,13 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
+    // No hint cookie means nobody signed in on this browser: skip the probe that
+    // would 401 (and log a console error) on every anonymous page view.
+    if (!hasSessionHint()) {
+      setUser(null);
+      setLoading(false);
+      return;
+    }
     try {
       const me = await getCurrentUser();
       setUser(me);
@@ -38,6 +56,8 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
       }
       setUser(null);
       clearFavoriteCache();
+      // The session expired or was revoked; stop probing until the next sign-in.
+      if (error instanceof ApiError && error.status === 401) clearSessionHint();
     } finally {
       setLoading(false);
     }

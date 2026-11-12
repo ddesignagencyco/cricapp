@@ -61,7 +61,7 @@ export class NewsService {
 
   private articleHref(language: string, slug: string): string {
     const baseUrl = this.config
-      .get<string>('PUBLIC_WEB_URL', 'https://pakcriczone.com')
+      .get<string>('PUBLIC_WEB_URL', 'https://criczapp.com')
       .replace(/\/$/, '');
     return `${baseUrl}${language === 'ur' ? '/ur' : ''}/news/${encodeURIComponent(slug)}`;
   }
@@ -474,14 +474,14 @@ export class NewsService {
           ? {
               '@type': 'Person',
               name: article.authorRef.name,
-              url: `${this.config.get<string>('PUBLIC_WEB_URL', 'https://pakcriczone.com').replace(/\/$/, '')}/authors/${article.authorRef.slug}`,
+              url: `${this.config.get<string>('PUBLIC_WEB_URL', 'https://criczapp.com').replace(/\/$/, '')}/authors/${article.authorRef.slug}`,
             }
           : article.author
             ? { '@type': 'Person', name: article.author }
-            : { '@type': 'Organization', name: 'PakCricZone' },
+            : { '@type': 'Organization', name: 'CriczApp' },
         publisher: {
           '@type': 'Organization',
-          name: 'PakCricZone',
+          name: 'CriczApp',
         },
       },
     };
@@ -514,7 +514,7 @@ export class NewsService {
   <loc>${escapeXml(this.articleHref(article.language, article.slug))}</loc>
   <news:news>
     <news:publication>
-      <news:name>PakCricZone</news:name>
+      <news:name>CriczApp</news:name>
       <news:language>${article.language}</news:language>
     </news:publication>
     <news:publication_date>${article.publishedAt!.toISOString()}</news:publication_date>

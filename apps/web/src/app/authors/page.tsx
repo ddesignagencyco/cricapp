@@ -3,7 +3,7 @@ import { fetchPublicAuthors } from '../../services/authors';
 
 export const metadata = {
   title: 'Authors',
-  description: 'Writers and editorial bylines from the PAK CRICZONE newsroom.',
+  description: 'Writers and editorial bylines from the CriczApp newsroom.',
 };
 
 export default async function AuthorsPage() {

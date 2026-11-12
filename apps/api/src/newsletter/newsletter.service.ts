@@ -75,7 +75,7 @@ export class NewsletterService {
     void this.mailer
       .sendMail({
         to: subscriber.email,
-        subject: 'Welcome to the PakCricZone newsletter',
+        subject: 'Welcome to the CriczApp newsletter',
         html: welcome.html,
         text: welcome.text,
         headers: {

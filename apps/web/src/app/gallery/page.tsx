@@ -2,7 +2,7 @@ import GalleryBoard, { type GalleryTab } from '../../components/boards/GalleryBo
 
 export const metadata = {
   title: 'Gallery',
-  description: 'Images, shorts and videos from PakCricZone.',
+  description: 'Images, shorts and videos from CriczApp.',
 };
 
 export default async function GalleryPage({

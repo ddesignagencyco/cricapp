@@ -9,6 +9,7 @@ import MobileBottomNav from './MobileBottomNav';
 import AssistantLauncher from './assistant/AssistantLauncher';
 import AdSlot from './advertisements/AdSlot';
 import { shouldHideDummyAds } from '../lib/advertisements/placements';
+import { isCompanyPath } from '../lib/companyPages';
 
 // First-visit newsletter invite. `ssr: false` + lazy loading keeps it out of
 // the critical bundle, and it renders nothing for returning visitors.
@@ -16,15 +17,6 @@ const NewsletterModal = dynamic(() => import('./NewsletterModal'), { ssr: false 
 
 function isNewsArticlePath(pathname: string) {
   return /^\/(ur\/)?news\/.+/.test(pathname) || pathname.startsWith('/cricket-news/');
-}
-
-function isEditorialPath(pathname: string) {
-  return (
-    pathname.startsWith('/editorial/') ||
-    pathname === '/about' ||
-    pathname === '/privacy' ||
-    pathname === '/terms'
-  );
 }
 
 function showGlobalTopAd(pathname: string) {
@@ -35,7 +27,7 @@ function showGlobalTopAd(pathname: string) {
   if (pathname.startsWith('/authors/')) return false;
   if (pathname.startsWith('/teams/') && pathname !== '/teams') return false;
   if (pathname.startsWith('/players/') && pathname !== '/players') return false;
-  if (isEditorialPath(pathname)) return false;
+  if (isCompanyPath(pathname)) return false;
   // These pages place their own banner right after the intro; the global one on top
   // put two ads in the first phone screen (Better Ads mobile density).
   if (pathname === '/players' || pathname === '/teams') return false;

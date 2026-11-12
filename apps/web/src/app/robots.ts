@@ -19,6 +19,6 @@ export default function robots(): MetadataRoute.Robots {
         '/settings/',
       ],
     },
-    sitemap: 'https://pakcriczone.com/sitemap.xml',
+    sitemap: 'https://criczapp.com/sitemap.xml',
   };
 }

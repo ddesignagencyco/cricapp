@@ -14,7 +14,7 @@ import {
 import type { FallOfWicketEntry } from '../../../lib/matchScorecardData';
 import type { MatchTimeline } from '../../../services/matches';
 
-const SITE = 'https://pakcriczone.com';
+const SITE = 'https://criczapp.com';
 
 /**
  * The match page's metadata, built from the match itself.

@@ -20,7 +20,7 @@ export class SiteSocialLinkDto {
   @MaxLength(64)
   platform!: string;
 
-  @ApiProperty({ example: 'https://facebook.com/pakcriczone' })
+  @ApiProperty({ example: 'https://facebook.com/criczapp' })
   @IsString()
   @MaxLength(512)
   value!: string;
@@ -112,13 +112,13 @@ export class AdConfigResponseDto {
 }
 
 export class UpdateSiteSettingsDto {
-  @ApiPropertyOptional({ example: 'hello@pakcriczone.com' })
+  @ApiPropertyOptional({ example: 'hello@criczapp.com' })
   @IsOptional()
   @IsEmail()
   @MaxLength(320)
   email?: string;
 
-  @ApiPropertyOptional({ example: 'feedback@pakcriczone.com' })
+  @ApiPropertyOptional({ example: 'feedback@criczapp.com' })
   @IsOptional()
   @IsEmail()
   @MaxLength(320)

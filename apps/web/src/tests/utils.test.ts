@@ -204,7 +204,7 @@ describe('mediaFileName', () => {
   });
 
   it('falls back to a generic name and the given extension', () => {
-    expect(mediaFileName('', 'https://cdn.example.com/render', 'mp4')).toBe('pakcriczone-media.mp4');
+    expect(mediaFileName('', 'https://cdn.example.com/render', 'mp4')).toBe('criczapp-media.mp4');
   });
 
   it('strips characters that are illegal in a filename', () => {

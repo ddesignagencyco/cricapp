@@ -6,7 +6,7 @@ import HideAds from '../components/advertisements/HideAds';
 
 export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
-    console.error('PAK CRICZONE page error:', error);
+    console.error('CriczApp page error:', error);
   }, [error]);
 
   return (

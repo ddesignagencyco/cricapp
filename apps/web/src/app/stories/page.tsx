@@ -9,7 +9,7 @@ const PAGE_SIZE = 20;
 export const metadata = sharePageMetadata({
   title: 'Stories',
   description:
-    'Short-form cricket clips and moments from PAK CRICZONE — quick hits, highlights and reactions.',
+    'Short-form cricket clips and moments from CriczApp — quick hits, highlights and reactions.',
   path: '/stories',
 });
 

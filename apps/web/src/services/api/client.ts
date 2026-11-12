@@ -89,6 +89,42 @@ function buildQuery(params?: Record<string, string | number | boolean | undefine
   return str ? `?${str}` : '';
 }
 
+/* ─── Server-side cache policy ────────────────────────────── */
+
+/**
+ * Seconds the Next.js data cache may reuse a server-side GET, by API path.
+ *
+ * Without this, every render of a dynamic page (news, team and player detail,
+ * tournaments, PSL, gallery…) hit the API — and Postgres — again for data that
+ * changes a few times a day. Live and match endpoints are deliberately absent:
+ * they stay uncached. Server fetches never forward the visitor's cookies, so
+ * these responses are identical for everyone and safe to share. An explicit
+ * `cache` or `revalidate` on a call always wins; browser requests ignore `next`.
+ */
+const SERVER_REVALIDATE: ReadonlyArray<readonly [prefix: string, seconds: number]> = [
+  ['/teams', 3600],
+  ['/tournaments', 3600],
+  ['/tours', 3600],
+  ['/authors', 3600],
+  ['/head-to-head', 3600],
+  ['/players', 900],
+  ['/editorial-pages', 600],
+  ['/psl', 300],
+  ['/gallery', 300],
+  ['/stories', 300],
+  ['/schedules', 300],
+  ['/news', 120],
+  ['/streams', 60],
+];
+
+export function defaultRevalidate(path: string): number | undefined {
+  if (typeof window !== 'undefined') return undefined;
+  const match = SERVER_REVALIDATE.find(
+    ([prefix]) => path === prefix || path.startsWith(`${prefix}/`) || path.startsWith(`${prefix}?`)
+  );
+  return match?.[1];
+}
+
 /* ─── Core fetch wrapper ──────────────────────────────────── */
 
 async function request<T>(
@@ -120,8 +156,10 @@ async function request<T>(
 
   // Next.js caching options (only work in server components)
   if (cache !== undefined) init.cache = cache;
-  if (revalidate !== undefined) {
-    (init as Record<string, unknown>).next = { revalidate };
+  const effectiveRevalidate =
+    revalidate ?? (cache === undefined && method === 'GET' ? defaultRevalidate(path) : undefined);
+  if (effectiveRevalidate !== undefined) {
+    (init as Record<string, unknown>).next = { revalidate: effectiveRevalidate };
   }
 
   const res = await fetch(url, init);

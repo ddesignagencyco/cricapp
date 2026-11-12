@@ -12,14 +12,14 @@ import {
 
 describe('isValidEmail', () => {
   it('accepts a normal address and treats empty as optional', () => {
-    expect(isValidEmail('hello@pakcriczone.com')).toBe(true);
+    expect(isValidEmail('hello@criczapp.com')).toBe(true);
     expect(isValidEmail('')).toBe(true);
   });
 
   it('rejects a missing domain or stray spaces', () => {
     expect(isValidEmail('hello@')).toBe(false);
-    expect(isValidEmail('hello pakcriczone.com')).toBe(false);
-    expect(isValidEmail('@pakcriczone.com')).toBe(false);
+    expect(isValidEmail('hello criczapp.com')).toBe(false);
+    expect(isValidEmail('@criczapp.com')).toBe(false);
   });
 });
 

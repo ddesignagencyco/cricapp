@@ -42,7 +42,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   if (!story) return { title: 'Story' };
   return sharePageMetadata({
     title: story.title,
-    description: story.caption || `${story.title} — Stories from PAK CRICZONE.`,
+    description: story.caption || `${story.title} — Stories from CriczApp.`,
     image: story.posterUrl,
     path: `/stories/${id}`,
     ogType: 'video.other',

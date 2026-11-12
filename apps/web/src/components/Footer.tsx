@@ -10,6 +10,7 @@ import {
   type SiteSettings,
 } from '../services/siteSettings';
 import { phoneHref, whatsappHref } from '../lib/socialPlatforms';
+import { COMPANY_PAGES } from '../lib/companyPages';
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -25,11 +26,7 @@ const footerCols = [
     title: 'Company',
     span: 'lg:col-span-3',
     links: [
-      { label: 'About', to: '/about' },
-      { label: 'Editorial Policy', to: '/editorial/editorial-policy' },
-      { label: 'Corrections', to: '/editorial/corrections' },
-      { label: 'Privacy Policy', to: '/privacy' },
-      { label: 'Terms of Service', to: '/terms' },
+      ...COMPANY_PAGES.map((page) => ({ label: page.label, to: page.href })),
     ],
   },
   {
@@ -182,7 +179,7 @@ export default function Footer({ settings }: { settings?: SiteSettings | null })
 
       <div className="border-t border-lborder">
         <div className="mx-auto flex max-w-7xl flex-col items-center gap-1.5 px-4 py-5 text-center text-xs text-stext sm:flex-row sm:justify-between sm:px-6 sm:text-left">
-          <p>&copy; {CURRENT_YEAR} PakCricZone. All rights reserved.</p>
+          <p>&copy; {CURRENT_YEAR} CriczApp. All rights reserved.</p>
           <p className="text-muted-foreground">Every run. Every ball. Live.</p>
         </div>
       </div>

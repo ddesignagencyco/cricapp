@@ -36,7 +36,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const title = media.title || 'Gallery media';
   return sharePageMetadata({
     title,
-    description: media.caption || media.title || 'Photos, shorts and videos from PakCricZone.',
+    description: media.caption || media.title || 'Photos, shorts and videos from CriczApp.',
     image: media.thumbnailUrl || media.url,
     path: `/gallery/${id}`,
   });

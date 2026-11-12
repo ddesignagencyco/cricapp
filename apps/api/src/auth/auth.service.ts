@@ -158,36 +158,36 @@ export class AuthService {
     const appUrl = this.config.get<string>('APP_URL', 'http://localhost:3000');
     const html = renderEmail({
       appUrl,
-      title: 'Reset your PakCricZone password',
+      title: 'Reset your CriczApp password',
       preheader: `Use this secure link or code to choose a new password. It expires at ${expiryTime}.`,
-      reason: 'You received this email because a password reset was requested for your PakCricZone account.',
+      reason: 'You received this email because a password reset was requested for your CriczApp account.',
       bodyHtml: `
         <h1 style="margin:0 0 6px;font-size:24px;line-height:1.3;color:${BRAND.ink};">Reset your password</h1>
         <p style="margin:0 0 4px;">Hi <strong style="color:${BRAND.ink};">${safeUsername}</strong>,</p>
-        <p style="margin:0;">We received a request to reset the password for your PakCricZone account. Click the button below to choose a new one.</p>
+        <p style="margin:0;">We received a request to reset the password for your CriczApp account. Click the button below to choose a new one.</p>
         ${emailButton(resetLink, 'Reset password')}
-        <p style="margin:0;text-align:center;">Using the PakCricZone app? Enter this code instead:</p>
+        <p style="margin:0;text-align:center;">Using the CriczApp app? Enter this code instead:</p>
         ${emailCode(code, 'Reset code')}
         ${emailNote(`This link and code expire at <strong>${expiryTime}</strong> on <strong>${expiryDate}</strong> and can only be used once. Never share the code with anyone.`)}
         ${emailNote("<strong>Didn't request this?</strong> You can safely ignore this email. Your password stays the same and your account is secure.", 'warning')}
         ${emailLinkFallback(resetLink)}`,
     });
 
-    const text = `Reset your PakCricZone password
+    const text = `Reset your CriczApp password
 
 Hi ${username},
 
 We received a request to reset your password. Use this secure link:
 ${resetLink}
 
-Using the PakCricZone app? Enter this code instead: ${code}
+Using the CriczApp app? Enter this code instead: ${code}
 
 This link and code expire at ${expiryTime} on ${expiryDate} and can only be used once.
 Never share the code with anyone.
 
 Didn't request this? Ignore this email. Your password stays the same.
 
-PakCricZone — Every run. Every ball. Live.`;
+CriczApp — Every run. Every ball. Live.`;
 
     return { html, text };
   }
@@ -226,7 +226,7 @@ PakCricZone — Every run. Every ball. Live.`;
 
     await this.mailer.sendMail({
       to: user.email,
-      subject: 'Reset your PakCricZone password',
+      subject: 'Reset your CriczApp password',
       html,
       text,
     });
@@ -381,30 +381,30 @@ PakCricZone — Every run. Every ball. Live.`;
     const appUrl = this.config.get<string>('APP_URL', 'http://localhost:3000');
     const html = renderEmail({
       appUrl,
-      title: 'Verify your PakCricZone email',
+      title: 'Verify your CriczApp email',
       preheader: 'One click (or one code) to activate your account and start following live cricket.',
-      reason: 'You received this email because someone signed up for PakCricZone with this address.',
+      reason: 'You received this email because someone signed up for CriczApp with this address.',
       bodyHtml: `
         <h1 style="margin:0 0 6px;font-size:24px;line-height:1.3;color:${BRAND.ink};">Confirm your email</h1>
         <p style="margin:0 0 4px;">Hi <strong style="color:${BRAND.ink};">${safeUsername}</strong>,</p>
-        <p style="margin:0;">Welcome to PakCricZone! Confirm your email address to activate your account and start following live matches, your favourite teams and players, and the latest cricket news.</p>
+        <p style="margin:0;">Welcome to CriczApp! Confirm your email address to activate your account and start following live matches, your favourite teams and players, and the latest cricket news.</p>
         ${emailButton(verifyLink, 'Verify email address')}
-        <p style="margin:0;text-align:center;">Using the PakCricZone app? Enter this code instead:</p>
+        <p style="margin:0;text-align:center;">Using the CriczApp app? Enter this code instead:</p>
         ${emailCode(code, 'Verification code')}
-        ${emailNote('This link and code expire in <strong>24 hours</strong> and can only be used once. If you did not create a PakCricZone account, you can safely ignore this email.')}
+        ${emailNote('This link and code expire in <strong>24 hours</strong> and can only be used once. If you did not create a CriczApp account, you can safely ignore this email.')}
         ${emailLinkFallback(verifyLink)}`,
     });
-    const text = `Welcome to PakCricZone, ${username}!
+    const text = `Welcome to CriczApp, ${username}!
 
 Confirm your email address to activate your account:
 ${verifyLink}
 
-Using the PakCricZone app? Enter this code instead: ${code}
+Using the CriczApp app? Enter this code instead: ${code}
 
 This link and code expire in 24 hours and can only be used once.
-If you did not create a PakCricZone account, ignore this email.
+If you did not create a CriczApp account, ignore this email.
 
-PakCricZone — Every run. Every ball. Live.`;
+CriczApp — Every run. Every ball. Live.`;
     return { html, text };
   }
 
@@ -437,7 +437,7 @@ PakCricZone — Every run. Every ball. Live.`;
 
     await this.mailer.sendMail({
       to: email,
-      subject: 'Verify your PakCricZone email',
+      subject: 'Verify your CriczApp email',
       html,
       text,
     });

@@ -22,7 +22,7 @@ const HIGHLIGHTS = [
 
 function BrandLockup() {
   return (
-    <Link href="/" className="inline-flex items-center gap-2.5" aria-label="PAK CRICZONE home">
+    <Link href="/" className="inline-flex items-center gap-2.5" aria-label="CriczApp home">
       <Image
         src="/brand/logo.png"
         alt=""
@@ -32,8 +32,8 @@ function BrandLockup() {
         className="h-10 w-auto object-contain sm:h-11"
       />
       <span className="text-xl font-black tracking-tight sm:text-2xl">
-        <span className="text-white">PAK CRIC</span>
-        <span className="text-accent2">ZONE</span>
+        <span className="text-white">Cricz</span>
+        <span className="text-accent2">App</span>
       </span>
     </Link>
   );
@@ -73,7 +73,7 @@ export default function AuthShell({ title, subtitle, children, footer }: AuthShe
                 <span className="text-on-media-accent block">Live.</span>
               </h2>
               <p className="text-on-media-muted mt-3 max-w-sm text-sm leading-relaxed">
-                Join thousands of fans tracking Pakistan cricket and the PSL on PAK CRICZONE.
+                Join thousands of fans tracking Pakistan cricket and the PSL on CriczApp.
               </p>
 
               <ul className="mt-7 space-y-4">

@@ -1,5 +1,5 @@
 /**
- * The one branded shell every PakCricZone email renders inside.
+ * The one branded shell every CriczApp email renders inside.
  *
  * Email clients are not browsers: Outlook ignores CSS gradients and most of
  * `<style>`, Gmail strips classes, and many clients block images until asked. So this
@@ -10,7 +10,7 @@
  */
 
 export const BRAND = {
-  name: 'PakCricZone',
+  name: 'CriczApp',
   blue: '#3B68FC',
   blueDark: '#2A4FE0',
   ink: '#0F172A',

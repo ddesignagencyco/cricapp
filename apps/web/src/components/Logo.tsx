@@ -57,7 +57,7 @@ export default function Logo({ to = '/', size = 'md', priority = false }: LogoPr
         href={to}
         className="group relative block w-36 shrink-0 overflow-hidden sm:w-44 lg:w-52"
         style={{ aspectRatio: '1337 / 681' }}
-        aria-label="PAK CRICZONE home"
+        aria-label="CriczApp home"
       >
         <Image
           src="/brand/logo.png"
@@ -78,7 +78,7 @@ export default function Logo({ to = '/', size = 'md', priority = false }: LogoPr
     <Link
       href={to}
       className="group inline-flex max-w-full shrink-0 items-center"
-      aria-label="PAK CRICZONE home"
+      aria-label="CriczApp home"
     >
       <Image
         src="/brand/logo.png"

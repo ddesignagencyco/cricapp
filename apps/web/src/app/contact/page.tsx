@@ -5,7 +5,7 @@ import { loadSiteSettings } from '../../services/siteSettings';
 export const metadata = {
   title: 'Contact',
   description:
-    'Get in touch with the PAK CRICZONE team for feedback, partnerships or general enquiries.',
+    'Get in touch with the CriczApp team for feedback, partnerships or general enquiries.',
 };
 
 export default async function ContactPage() {

@@ -96,10 +96,10 @@ export default function NewsletterUnsubscribeBody({ token, manage = false }: { t
       <div className="mx-auto max-w-lg px-4 py-16 text-center">
         <h1 className="text-2xl font-semibold text-mtext">Newsletter</h1>
         <p className="mt-3 text-sm text-stext">
-          This link is not valid any more. Use the unsubscribe link in your most recent PakCricZone email.
+          This link is not valid any more. Use the unsubscribe link in your most recent CriczApp email.
         </p>
         <Link href="/" className="btn-brand mt-6 inline-block rounded-md px-5 py-2.5 text-sm font-semibold">
-          Go to PakCricZone
+          Go to CriczApp
         </Link>
       </div>
     );

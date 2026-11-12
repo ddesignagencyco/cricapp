@@ -1,16 +1,16 @@
 export const SOCIAL_PLATFORMS = [
-  { id: 'facebook', label: 'Facebook', placeholder: 'https://facebook.com/pakcriczone' },
-  { id: 'instagram', label: 'Instagram', placeholder: 'https://instagram.com/pakcriczone' },
-  { id: 'x', label: 'X (Twitter)', placeholder: 'https://x.com/pakcriczone' },
-  { id: 'youtube', label: 'YouTube', placeholder: 'https://youtube.com/@pakcriczone' },
-  { id: 'tiktok', label: 'TikTok', placeholder: 'https://tiktok.com/@pakcriczone' },
-  { id: 'linkedin', label: 'LinkedIn', placeholder: 'https://linkedin.com/company/pakcriczone' },
-  { id: 'threads', label: 'Threads', placeholder: 'https://threads.net/@pakcriczone' },
-  { id: 'telegram', label: 'Telegram', placeholder: 'https://t.me/pakcriczone' },
+  { id: 'facebook', label: 'Facebook', placeholder: 'https://facebook.com/criczapp' },
+  { id: 'instagram', label: 'Instagram', placeholder: 'https://instagram.com/criczapp' },
+  { id: 'x', label: 'X (Twitter)', placeholder: 'https://x.com/criczapp' },
+  { id: 'youtube', label: 'YouTube', placeholder: 'https://youtube.com/@criczapp' },
+  { id: 'tiktok', label: 'TikTok', placeholder: 'https://tiktok.com/@criczapp' },
+  { id: 'linkedin', label: 'LinkedIn', placeholder: 'https://linkedin.com/company/criczapp' },
+  { id: 'threads', label: 'Threads', placeholder: 'https://threads.net/@criczapp' },
+  { id: 'telegram', label: 'Telegram', placeholder: 'https://t.me/criczapp' },
   { id: 'whatsapp', label: 'WhatsApp', placeholder: '+923001234567' },
   { id: 'discord', label: 'Discord', placeholder: 'https://discord.gg/invite' },
-  { id: 'snapchat', label: 'Snapchat', placeholder: 'https://snapchat.com/add/pakcriczone' },
-  { id: 'reddit', label: 'Reddit', placeholder: 'https://reddit.com/r/pakcriczone' },
+  { id: 'snapchat', label: 'Snapchat', placeholder: 'https://snapchat.com/add/criczapp' },
+  { id: 'reddit', label: 'Reddit', placeholder: 'https://reddit.com/r/criczapp' },
 ] as const;
 
 export type SocialPlatformId = (typeof SOCIAL_PLATFORMS)[number]['id'];

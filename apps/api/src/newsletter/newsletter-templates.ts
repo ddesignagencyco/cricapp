@@ -252,7 +252,7 @@ function textBlock(title: string, lines: string[]): string {
 }
 
 function textFooter(r: Recipient): string {
-  return `\n—\nPakCricZone · Every run. Every ball. Live.\nUnsubscribe: ${r.unsubscribeUrl}`;
+  return `\n—\nCriczApp · Every run. Every ball. Live.\nUnsubscribe: ${r.unsubscribeUrl}`;
 }
 
 const resultLine = (x: ResultRow) =>
@@ -284,7 +284,7 @@ export function renderDailyDigest(c: DigestContent, r: Recipient, now = new Date
     title: subject,
     preheader,
     edition: `Daily digest · ${editionDate(c.date)}`,
-    reason: 'You receive the daily digest because you subscribed to the PakCricZone newsletter.',
+    reason: 'You receive the daily digest because you subscribed to the CriczApp newsletter.',
     unsubscribeUrl: r.unsubscribeUrl,
     preferencesUrl: r.preferencesUrl,
     bodyHtml: `
@@ -295,7 +295,7 @@ ${c.pakistanStories.length ? `${sectionTitle('Pakistan cricket', '🇵🇰')}${s
 ${favouritesBlock(r)}
 ${c.results.length ? `${sectionTitle('Latest results', '🏆')}${resultCards(c.results.slice(0, 4), r)}` : ''}
 ${c.fixtures.length ? `${sectionTitle("Today's fixtures", '🗓️')}${fixtureCards(c.fixtures.slice(0, 4), r)}` : ''}
-${emailButton(r.link(`${r.appUrl}/news`), 'Read more on PakCricZone')}`,
+${emailButton(r.link(`${r.appUrl}/news`), 'Read more on CriczApp')}`,
   });
   const text = `Today in cricket · ${editionDate(c.date)}
 ${textBlock('Top stories', c.stories.slice(0, 5).map((s) => `- ${s.title}\n  ${s.url}`))}${textBlock('Results', c.results.slice(0, 4).map(resultLine))}${textBlock("Today's fixtures", c.fixtures.slice(0, 4).map(fixtureLine))}${textFooter(r)}`;
@@ -316,7 +316,7 @@ export function renderWeeklyRoundup(c: WeeklyContent, r: Recipient, now = new Da
     title: subject,
     preheader,
     edition: `Weekly roundup · ${c.weekLabel}`,
-    reason: 'You receive the weekly roundup because you subscribed to the PakCricZone newsletter.',
+    reason: 'You receive the weekly roundup because you subscribed to the CriczApp newsletter.',
     unsubscribeUrl: r.unsubscribeUrl,
     preferencesUrl: r.preferencesUrl,
     bodyHtml: `
@@ -365,7 +365,7 @@ export function renderMatchPreview(c: PreviewContent, r: Recipient, now = new Da
     title: subject,
     preheader,
     edition: 'Match preview',
-    reason: 'You receive match previews because you subscribed to the PakCricZone newsletter.',
+    reason: 'You receive match previews because you subscribed to the CriczApp newsletter.',
     unsubscribeUrl: r.unsubscribeUrl,
     preferencesUrl: r.preferencesUrl,
     bodyHtml: `
@@ -417,7 +417,7 @@ export function renderPslUpdate(c: PslContent, r: Recipient): RenderedNewsletter
     title: subject,
     preheader,
     edition: 'PSL update',
-    reason: 'You receive PSL updates because you subscribed to the PakCricZone newsletter.',
+    reason: 'You receive PSL updates because you subscribed to the CriczApp newsletter.',
     unsubscribeUrl: r.unsubscribeUrl,
     preferencesUrl: r.preferencesUrl,
     bodyHtml: `
@@ -442,7 +442,7 @@ export function renderBreakingNews(c: { story: Story; related?: Story[] }, r: Re
     title: subject,
     preheader,
     edition: 'Breaking news',
-    reason: 'You receive breaking news because you subscribed to the PakCricZone newsletter.',
+    reason: 'You receive breaking news because you subscribed to the CriczApp newsletter.',
     unsubscribeUrl: r.unsubscribeUrl,
     preferencesUrl: r.preferencesUrl,
     bodyHtml: `
@@ -467,17 +467,17 @@ export function renderReengagement(c: { stories: Story[]; fixtures: FixtureRow[]
     title: subject,
     preheader,
     edition: 'Catch-up',
-    reason: 'You receive this because you subscribed to the PakCricZone newsletter.',
+    reason: 'You receive this because you subscribed to the CriczApp newsletter.',
     unsubscribeUrl: r.unsubscribeUrl,
     preferencesUrl: r.preferencesUrl,
     bodyHtml: `
 ${intro('We miss you at the crease 👋', 'A lot has happened since you last checked in. Here are the highlights.')}
 ${c.stories.length ? `${sectionTitle("What you missed", '🔥')}${storyList(c.stories.slice(0, 5), r, now)}` : ''}
 ${c.fixtures.length ? `${sectionTitle('Coming up', '🗓️')}${fixtureCards(c.fixtures.slice(0, 3), r)}` : ''}
-${emailButton(r.link(`${r.appUrl}/`), 'Catch up on PakCricZone')}
+${emailButton(r.link(`${r.appUrl}/`), 'Catch up on CriczApp')}
 <p style="margin:0;${FONT}font-size:13px;line-height:1.55;color:${BRAND.muted};text-align:center;">Not interested any more? No hard feelings — you can unsubscribe below.</p>`,
   });
-  const text = `Here's what you missed on PakCricZone
+  const text = `Here's what you missed on CriczApp
 ${textBlock('Top stories', c.stories.slice(0, 5).map((s) => `- ${s.title}\n  ${s.url}`))}${textFooter(r)}`;
   return { subject, preheader, html, text };
 }

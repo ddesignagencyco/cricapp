@@ -260,7 +260,7 @@ export class NewsletterCampaignService implements OnModuleInit, OnModuleDestroy 
     return {
       'List-Unsubscribe': `<${oneClick}>`,
       'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-      'X-PakCricZone-Campaign': 'newsletter',
+      'X-CriczApp-Campaign': 'newsletter',
     };
   }
 

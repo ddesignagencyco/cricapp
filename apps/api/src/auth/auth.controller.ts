@@ -20,8 +20,10 @@ import {
   UpdateProfileDto,
 } from './dto/auth.dto.js';
 import {
+  AUTH_HINT_COOKIE_NAME,
   authCookieName,
   authCookieOptions,
+  authHintCookieOptions,
 } from './auth-cookie.js';
 
 @ApiTags('auth')
@@ -58,6 +60,7 @@ export class AuthController {
       token,
       authCookieOptions(this.config),
     );
+    response.cookie(AUTH_HINT_COOKIE_NAME, '1', authHintCookieOptions(this.config));
     return { user };
   }
 
@@ -71,6 +74,9 @@ export class AuthController {
     const options = authCookieOptions(this.config);
     delete options.maxAge;
     response.clearCookie(authCookieName(this.config), options);
+    const hintOptions = authHintCookieOptions(this.config);
+    delete hintOptions.maxAge;
+    response.clearCookie(AUTH_HINT_COOKIE_NAME, hintOptions);
     return { message: 'Logged out successfully.' };
   }
 

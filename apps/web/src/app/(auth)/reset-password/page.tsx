@@ -4,7 +4,7 @@ import AuthShell from '../../../components/auth/AuthShell';
 
 export const metadata = {
   title: 'Reset password',
-  description: 'Set a new PakCricZone password.',
+  description: 'Set a new CriczApp password.',
   robots: { index: false, follow: false },
 };
 

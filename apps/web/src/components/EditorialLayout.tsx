@@ -1,15 +1,8 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { CalendarClock, ChevronRight, FileText, MessageSquare } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CalendarClock, ChevronRight, FileText, MessageSquare } from 'lucide-react';
 import EditorialToc from './EditorialToc';
-
-export const EDITORIAL_PAGES = [
-  { slug: 'about', href: '/about', label: 'About' },
-  { slug: 'privacy', href: '/privacy', label: 'Privacy Policy' },
-  { slug: 'terms', href: '/terms', label: 'Terms of Service' },
-  { slug: 'editorial-policy', href: '/editorial/editorial-policy', label: 'Editorial Policy' },
-  { slug: 'corrections', href: '/editorial/corrections', label: 'Corrections' },
-] as const;
+import { COMPANY_PAGES as EDITORIAL_PAGES } from '../lib/companyPages';
 
 export type EditorialTocItem = { id: string; label: string };
 
@@ -89,7 +82,7 @@ export default function EditorialLayout({
               <div className="flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/10 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-accent">
                   <FileText size={11} aria-hidden="true" />
-                  PAK CRICZONE
+                  CriczApp
                 </span>
                 {updated ? (
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-2.5 py-1 text-[11px] font-medium text-stext">
@@ -131,18 +124,26 @@ export default function EditorialLayout({
 
           {prev || next ? (
             <nav
-              className="mt-12 grid max-w-3xl gap-3 border-t border-lborder pt-6 sm:grid-cols-2"
+              className="mt-12 flex max-w-3xl items-center justify-between gap-4 border-t border-lborder pt-5"
               aria-label="Other company pages"
             >
               {prev ? (
                 <Link
                   href={prev.href}
-                  className="group flex min-w-0 flex-col gap-0.5 rounded-xl border border-lborder bg-card px-4 py-3 transition-colors hover:border-accent/40 hover:bg-row-hover"
+                  rel="prev"
+                  className="group -ml-2 inline-flex min-w-0 items-center gap-2.5 rounded-lg px-2 py-1.5 transition-colors hover:bg-row-hover"
                 >
-                  <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-stext">
-                    Previous
+                  <ArrowLeft
+                    size={16}
+                    aria-hidden="true"
+                    className="shrink-0 text-stext transition-transform group-hover:-translate-x-0.5 group-hover:text-accent"
+                  />
+                  <span className="flex min-w-0 flex-col leading-tight">
+                    <span className="text-[11px] font-medium text-stext">Previous</span>
+                    <span className="truncate text-sm font-semibold text-mtext group-hover:text-accent">
+                      {prev.label}
+                    </span>
                   </span>
-                  <span className="truncate text-sm font-semibold text-mtext">{prev.label}</span>
                 </Link>
               ) : (
                 <span aria-hidden="true" />
@@ -150,12 +151,20 @@ export default function EditorialLayout({
               {next ? (
                 <Link
                   href={next.href}
-                  className="group flex min-w-0 flex-col items-end gap-0.5 rounded-xl border border-lborder bg-card px-4 py-3 text-right transition-colors hover:border-accent/40 hover:bg-row-hover sm:col-start-2"
+                  rel="next"
+                  className="group -mr-2 inline-flex min-w-0 items-center gap-2.5 rounded-lg px-2 py-1.5 text-right transition-colors hover:bg-row-hover"
                 >
-                  <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-stext">
-                    Next
+                  <span className="flex min-w-0 flex-col leading-tight">
+                    <span className="text-[11px] font-medium text-stext">Next</span>
+                    <span className="truncate text-sm font-semibold text-mtext group-hover:text-accent">
+                      {next.label}
+                    </span>
                   </span>
-                  <span className="truncate text-sm font-semibold text-mtext">{next.label}</span>
+                  <ArrowRight
+                    size={16}
+                    aria-hidden="true"
+                    className="shrink-0 text-stext transition-transform group-hover:translate-x-0.5 group-hover:text-accent"
+                  />
                 </Link>
               ) : null}
             </nav>

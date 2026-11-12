@@ -250,7 +250,7 @@ export default function AssistantPanel({
               </span>
               <div className="min-w-0">
                 <h2 id="assistant-title" className="text-white truncate text-[15px] font-semibold tracking-tight">
-                  PCZ Assistant
+                  CriczApp Assistant
                 </h2>
                 <p className="truncate text-xs text-brand-fg/85">Online · Typically replies instantly</p>
               </div>
@@ -291,7 +291,7 @@ export default function AssistantPanel({
               <div className="pcz-chat-bubble-bot max-w-[85%] rounded-2xl rounded-bl-md px-4 py-3 text-sm leading-relaxed text-mtext">
                 <p className="font-semibold">Hi there 👋</p>
                 <p className="mt-1 text-stext">
-                  I&apos;m the PCZ Assistant. Ask in your own words, or tap one of the questions below.
+                  I&apos;m the CriczApp Assistant. Ask in your own words, or tap one of the questions below.
                 </p>
               </div>
             </div>
@@ -361,7 +361,7 @@ export default function AssistantPanel({
                     ) : null}
                   </div>
                   <div className="flex items-center gap-2 pl-1 text-[11px] text-stext">
-                    <span>PCZ Assistant</span>
+                    <span>CriczApp Assistant</span>
                     <span aria-hidden>·</span>
                     <time dateTime={new Date(item.at).toISOString()}>{formatMessageTime(item.at)}</time>
                     {item.reply ? (

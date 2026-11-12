@@ -27,11 +27,11 @@ describe('isValidMapsUrl — host checks', () => {
 
 describe('validateSocialValue — host checks', () => {
   it('accepts profile links on the network itself', () => {
-    expect(validateSocialValue('facebook', 'https://www.facebook.com/pakcriczone')).toBe('');
-    expect(validateSocialValue('facebook', 'facebook.com/pakcriczone')).toBe('');
-    expect(validateSocialValue('x', 'https://twitter.com/pakcriczone')).toBe('');
+    expect(validateSocialValue('facebook', 'https://www.facebook.com/criczapp')).toBe('');
+    expect(validateSocialValue('facebook', 'facebook.com/criczapp')).toBe('');
+    expect(validateSocialValue('x', 'https://twitter.com/criczapp')).toBe('');
     expect(validateSocialValue('youtube', 'https://youtu.be/dQw4w9WgXcQ')).toBe('');
-    expect(validateSocialValue('instagram', 'https://m.instagram.com/pakcriczone/')).toBe('');
+    expect(validateSocialValue('instagram', 'https://m.instagram.com/criczapp/')).toBe('');
   });
 
   it('rejects other domains that merely contain the network name', () => {
@@ -44,11 +44,11 @@ describe('validateSocialValue — host checks', () => {
   it('needs a profile path, a real scheme and no spaces', () => {
     expect(validateSocialValue('facebook', 'https://facebook.com')).toMatch(/profile path/);
     expect(validateSocialValue('facebook', 'javascript:alert(1)')).toBe('Use an https link.');
-    expect(validateSocialValue('facebook', 'facebook.com/pak criczone')).toMatch(/spaces/);
+    expect(validateSocialValue('facebook', 'facebook.com/cricz app')).toMatch(/spaces/);
   });
 
   it('keeps WhatsApp numbers and Telegram handles', () => {
     expect(validateSocialValue('whatsapp', '+92 300 1234567')).toBe('');
-    expect(validateSocialValue('telegram', '@pakcriczone')).toBe('');
+    expect(validateSocialValue('telegram', '@criczapp')).toBe('');
   });
 });

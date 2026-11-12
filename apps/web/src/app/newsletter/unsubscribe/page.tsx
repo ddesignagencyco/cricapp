@@ -2,7 +2,7 @@ import NewsletterUnsubscribeBody from '../../../components/boards/NewsletterUnsu
 
 export const metadata = {
   title: 'Email preferences',
-  description: 'Manage or unsubscribe from PAK CRICZONE newsletter emails.',
+  description: 'Manage or unsubscribe from CriczApp newsletter emails.',
   robots: { index: false, follow: false },
 };
 

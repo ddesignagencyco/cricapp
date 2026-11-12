@@ -377,7 +377,7 @@ describe('sharing service', () => {
   it('sets the open graph url from the path', () => {
     expect(sharePageMetadata({ title: 'T', path: '/matches/m1' }).openGraph).toMatchObject({
       url: '/matches/m1',
-      siteName: 'PAK CRICZONE',
+      siteName: 'CriczApp',
     });
   });
 });

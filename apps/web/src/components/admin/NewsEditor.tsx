@@ -668,7 +668,7 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
                     bylineAutoRef.current = false;
                     set('author', e.target.value);
                   }}
-                  placeholder="PakCricZone Editorial"
+                  placeholder="CriczApp Editorial"
                   style={{ paddingLeft: '2rem' }}
                 />
               </div>

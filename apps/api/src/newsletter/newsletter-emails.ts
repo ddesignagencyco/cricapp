@@ -23,13 +23,13 @@ export function buildNewsletterWelcomeEmail({
 }): { html: string; text: string } {
   const html = renderEmail({
     appUrl,
-    title: 'Welcome to the PakCricZone newsletter',
+    title: 'Welcome to the CriczApp newsletter',
     preheader: "You're in! Weekly cricket digests, match-day previews and the big results.",
-    reason: 'You received this email because you subscribed to the PakCricZone newsletter.',
+    reason: 'You received this email because you subscribed to the CriczApp newsletter.',
     unsubscribeUrl,
     bodyHtml: `
       <h1 style="margin:0 0 6px;font-size:24px;line-height:1.3;color:${BRAND.ink};">You're in! 🏏</h1>
-      <p style="margin:0 0 24px;">Thanks for subscribing to the PakCricZone newsletter. Here's what you can expect in your inbox:</p>
+      <p style="margin:0 0 24px;">Thanks for subscribing to the CriczApp newsletter. Here's what you can expect in your inbox:</p>
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
         ${benefit('📰', 'Weekly digest', 'The top stories, last week\'s results and the week ahead, every Monday.')}
         ${benefit('🗓️', 'Match-day previews', 'Pakistan and PSL fixtures with head-to-head records and win predictions.')}
@@ -39,7 +39,7 @@ export function buildNewsletterWelcomeEmail({
       <p style="margin:0;font-size:13px;line-height:1.55;color:${BRAND.muted};text-align:center;">Changed your mind? You can unsubscribe at any time with the link at the bottom of every email.</p>`,
   });
 
-  const text = `You're in! Welcome to the PakCricZone newsletter.
+  const text = `You're in! Welcome to the CriczApp newsletter.
 
 Here's what to expect:
 - Weekly digest: top stories, last week's results and the week ahead, every Monday.
@@ -50,7 +50,7 @@ Follow live scores: ${appUrl}/matches?tab=live
 
 Unsubscribe at any time: ${unsubscribeUrl}
 
-PakCricZone — Every run. Every ball. Live.`;
+CriczApp — Every run. Every ball. Live.`;
 
   return { html, text };
 }

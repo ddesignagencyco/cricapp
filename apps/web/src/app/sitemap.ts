@@ -7,8 +7,9 @@ import { newsHref } from '../utils/newsConstraints';
 import { fetchTournaments } from '../services/tournaments';
 import { fetchPublicAuthors } from '../services/authors';
 import { fetchStories, type StoriesPageResult } from '../services/stories';
+import { COMPANY_PAGES } from '../lib/companyPages';
 
-const baseUrl = 'https://pakcriczone.com';
+const baseUrl = 'https://criczapp.com';
 
 const staticRoutes = [
   '',
@@ -27,8 +28,7 @@ const staticRoutes = [
   '/about',
   '/authors',
   '/contact',
-  '/privacy',
-  '/terms',
+  ...COMPANY_PAGES.map((page) => page.href).filter((href) => href !== '/about'),
 ];
 
 /** Deep-linked stories are only discoverable from a crawl if they are listed. */

@@ -12,6 +12,7 @@ import {
   type EditorialPageSummary,
 } from '../../../../services/editorial';
 import { isEmptyRichText } from '../../../../utils/newsConstraints';
+import { COMPANY_PAGES } from '../../../../lib/companyPages';
 
 function toEditorHtml(content: string) {
   const text = content.trim();
@@ -23,13 +24,7 @@ function toEditorHtml(content: string) {
     .join('');
 }
 
-const PRESETS = [
-  { slug: 'about', title: 'About' },
-  { slug: 'privacy', title: 'Privacy Policy' },
-  { slug: 'terms', title: 'Terms of Service' },
-  { slug: 'editorial-policy', title: 'Editorial Policy' },
-  { slug: 'corrections', title: 'Corrections' },
-];
+const PRESETS = COMPANY_PAGES.map((page) => ({ slug: page.slug, title: page.label }));
 
 export default function AdminEditorialPage() {
   const [pages, setPages] = useState<EditorialPageSummary[]>([]);

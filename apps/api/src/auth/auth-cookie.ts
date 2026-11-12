@@ -3,6 +3,18 @@ import type { ConfigService } from '@nestjs/config';
 
 export const DEFAULT_AUTH_COOKIE_NAME = 'cricapp_access_token';
 
+/**
+ * Readable companion to the HttpOnly session cookie. It carries no secret, only
+ * "a session exists", so the web app can skip probing `GET /auth/me` for
+ * anonymous visitors (that probe 401s on every page view and Lighthouse reports
+ * it as a console error). Keep in sync with `AUTH_HINT_COOKIE` in the web app.
+ */
+export const AUTH_HINT_COOKIE_NAME = 'cz_signed_in';
+
+export function authHintCookieOptions(config: ConfigService): CookieOptions {
+  return { ...authCookieOptions(config), httpOnly: false };
+}
+
 export function authCookieName(config: ConfigService): string {
   return config.get<string>('AUTH_COOKIE_NAME', DEFAULT_AUTH_COOKIE_NAME);
 }

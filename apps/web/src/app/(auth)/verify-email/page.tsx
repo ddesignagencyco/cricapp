@@ -3,7 +3,7 @@ import AuthShell from '../../../components/auth/AuthShell';
 
 export const metadata = {
   title: 'Verify email',
-  description: 'Verify your PakCricZone email address.',
+  description: 'Verify your CriczApp email address.',
   robots: { index: false, follow: false },
 };
 

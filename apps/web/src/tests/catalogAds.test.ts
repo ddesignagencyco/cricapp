@@ -149,7 +149,10 @@ describe('shouldHideDummyAds', () => {
     expect(shouldHideDummyAds('/about')).toBe(true);
     expect(shouldHideDummyAds('/privacy')).toBe(true);
     expect(shouldHideDummyAds('/terms')).toBe(true);
-    expect(shouldHideDummyAds('/editorial/about')).toBe(true);
+    expect(shouldHideDummyAds('/editorial-policy')).toBe(true);
+    expect(shouldHideDummyAds('/corrections')).toBe(true);
+    expect(shouldHideDummyAds('/disclaimer')).toBe(true);
+    expect(shouldHideDummyAds('/cookie-policy')).toBe(true);
   });
 
   it('hides ads on every auth route and its sub-paths', () => {

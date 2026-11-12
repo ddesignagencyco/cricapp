@@ -22,7 +22,7 @@ export async function newsArticleMetadata(id: string) {
   }
   const meta = sharePageMetadata({
     title: item?.title || 'News',
-    description: item?.excerpt || 'Cricket news and analysis from PAK CRICZONE.',
+    description: item?.excerpt || 'Cricket news and analysis from CriczApp.',
     path: item ? newsHref(item) : `/news/${id}`,
   });
   return {

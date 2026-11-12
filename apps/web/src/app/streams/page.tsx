@@ -2,7 +2,7 @@ import LiveStreamsBoard from '../../components/boards/LiveStreamsBoard';
 
 export const metadata = {
   title: 'Live Streams',
-  description: 'Watch cricket live streams published by PakCricZone.',
+  description: 'Watch cricket live streams published by CriczApp.',
 };
 
 export default function StreamsPage() {

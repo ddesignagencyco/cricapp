@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const author = data?.author;
   return sharePageMetadata({
     title: author?.name || 'Author',
-    description: author?.bio || `News by ${author?.name || 'this writer'} on PAK CRICZONE.`,
+    description: author?.bio || `News by ${author?.name || 'this writer'} on CriczApp.`,
     path: `/authors/${slug}`,
   });
 }

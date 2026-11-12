@@ -6,7 +6,7 @@ import { newsListPath } from '../../utils/newsConstraints';
 export const metadata = {
   title: 'News',
   description:
-    'Match reports, PSL updates and analysis from the PAK CRICZONE newsroom.',
+    'Match reports, PSL updates and analysis from the CriczApp newsroom.',
 };
 
 const PAGE_SIZE = 12;

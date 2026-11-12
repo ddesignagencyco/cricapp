@@ -10,7 +10,7 @@ export interface TrackedStatsData {
   } | null;
 }
 
-const dash = (v: number | null | undefined, dp = 2) => (v == null ? '—' : v.toFixed(dp));
+const dash = (v: number | null | undefined, dp = 2) => (v === null || v === undefined ? '—' : v.toFixed(dp));
 
 function Grid({ title, cells }: { title: string; cells: Array<[string, string | number]> }) {
   return (
