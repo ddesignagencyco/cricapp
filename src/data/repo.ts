@@ -20,6 +20,7 @@ import {
   type RawTimelineEvent,
 } from './adapt';
 import { allSeries, playerName, rememberSeries, rememberTeam, seriesOf, team, venueLabel } from './refs';
+import { prefetch } from '../utils/prefetch';
 import type {
   Article,
   Ball,
@@ -116,7 +117,9 @@ async function matchList(status: 'live' | 'upcoming' | 'completed', limit = 60, 
     status === 'live' ? list<RawMatch>('/matches/live') : list<RawMatch>('/matches', { status, limit, ...extra }),
     primeTeams(),
   ]);
-  return rows.map(toMatch);
+  const matches = rows.map(toMatch);
+  prefetch(matches.flatMap(m => [team(m.teamA).logoUrl, team(m.teamB).logoUrl]));
+  return matches;
 }
 
 /*
@@ -458,12 +461,19 @@ export const repo = {
       teamIds: a.teamIds,
       route: { name: 'Article', id: a.id },
     }));
+    const shorts = toShorts(gallery);
+    // Warm the cache for what the first screen shows: match crests and story covers.
+    prefetch([
+      ...[...live, ...upcoming, ...results].flatMap(m => [team(m.teamA).logoUrl, team(m.teamB).logoUrl]),
+      ...shorts.map(s => s.photo),
+      ...banners.map(b => b.photo),
+    ]);
     return {
       live,
       upcoming: upcoming.sort(byStart),
       results,
       stories,
-      shorts: toShorts(gallery),
+      shorts,
       banners,
     };
   },
@@ -688,10 +698,12 @@ export const repo = {
       matchList('completed', 30, { q: t.name }),
     ]);
     const tm = rememberTeam({ id: t.id, name: t.name, short: t.abbr, logoUrl: t.logoUrl });
+    const roster = squad.map(p => toPlayer(p, t.id));
+    prefetch([tm.logoUrl, ...roster.map(p => p.photo)]);
     const mine = (m: Match) => [m.teamA, m.teamB].some(x => x === t.id || team(x).name === t.name);
     return {
       team: tm,
-      squad: squad.map(p => toPlayer(p, t.id)),
+      squad: roster,
       fixtures: [...live, ...upcoming].filter(mine).sort(byStart),
       results: results.filter(mine),
       news,
@@ -799,7 +811,9 @@ export const repo = {
   /** A team's registered squad only (the match centre doesn't need its fixtures or news). */
   async squad(id: string) {
     const apiId = id.startsWith('code:') ? id.slice(5) : id;
-    return (await list<RawPlayer>(`/teams/${seg(apiId)}/players`)).map(p => toPlayer(p, id));
+    const roster = (await list<RawPlayer>(`/teams/${seg(apiId)}/players`)).map(p => toPlayer(p, id));
+    prefetch(roster.map(p => p.photo));
+    return roster;
   },
 
   /** Just the team record (name, code, logo), registered for lookups. */
