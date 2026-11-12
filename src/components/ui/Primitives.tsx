@@ -77,19 +77,29 @@ export function LiveIndicator({ label = 'LIVE', size = 'sm' }: { label?: string;
   const dot = size === 'md' ? 8 : 6;
   return (
     <View style={styles.row} accessibilityLabel="Live">
-      <View style={{ width: dot * 2.4, height: dot * 2.4, alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ width: dot * 2.6, height: dot * 2.6, alignItems: 'center', justifyContent: 'center' }}>
+        {/* Expanding "ping" ring. */}
         <Animated.View
           style={{
             position: 'absolute',
-            width: dot * 2.4,
-            height: dot * 2.4,
-            borderRadius: dot * 1.2,
+            width: dot * 2.6,
+            height: dot * 2.6,
+            borderRadius: dot * 1.3,
             backgroundColor: colors.live,
-            opacity: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.45, 0] }),
-            transform: [{ scale: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] }) }],
+            opacity: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.55, 0] }),
+            transform: [{ scale: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.45, 1] }) }],
           }}
         />
-        <View style={{ width: dot, height: dot, borderRadius: dot / 2, backgroundColor: colors.live }} />
+        {/* Solid dot that blinks so "live" is unmistakable. */}
+        <Animated.View
+          style={{
+            width: dot,
+            height: dot,
+            borderRadius: dot / 2,
+            backgroundColor: colors.live,
+            opacity: pulse.interpolate({ inputRange: [0, 0.5, 1], outputRange: [1, 0.25, 1] }),
+          }}
+        />
       </View>
       <AppText variant={size === 'md' ? 'label' : 'micro'} weight="700" color="live" style={{ marginLeft: 2 }}>
         {label}
