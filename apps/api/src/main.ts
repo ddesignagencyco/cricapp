@@ -2,6 +2,8 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module.js';
+import { LandingService } from './landing/landing.service.js';
+import { RequestMetricsService } from './common/request-metrics.service.js';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -71,11 +73,57 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);
 
+  const landing = app.get(LandingService);
+  landing.setApiSurface({
+    paths: Object.keys(document.paths ?? {}).length,
+    operations: Object.values(document.paths ?? {}).reduce(
+      (total, pathItem) =>
+        total +
+        Object.keys(pathItem ?? {}).filter((key) =>
+          ['get', 'post', 'put', 'patch', 'delete', 'options', 'head', 'trace'].includes(key),
+        ).length,
+      0,
+    ),
+    tags: (document.tags ?? []).map((tag) => tag.name).filter(Boolean),
+  });
+
+  // The Nest global prefix is `/api`, which would put a controller's root route
+  // at `/api` instead of `/`. The public landing page is registered on the
+  // underlying Express instance before Nest mounts its 404 handler, so the bare
+  // origin serves it while every Nest route keeps the `/api` contract.
+  const metrics = app.get(RequestMetricsService);
+  const http = app.getHttpAdapter().getInstance() as {
+    get(path: string, handler: (req: unknown, res: any) => void): void;
+  };
+  http.get('/', (_req, res) => {
+    const started = Date.now();
+    res.on('finish', () => metrics.record(res.statusCode ?? 500, Date.now() - started));
+
+    landing
+      .render()
+      .then((html) => {
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.setHeader('Cache-Control', 'no-store');
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+        res.end(html);
+      })
+      .catch((error: unknown) => {
+        logger.error(
+          `Landing page failed: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        res.statusCode = 500;
+        res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+        res.end('CriczApp API is running. See /api for health or /docs for the API reference.');
+      });
+  });
+
   app.enableShutdownHooks();
 
   const port = parseInt(process.env.API_PORT ?? '3001', 10);
   await app.listen(port);
   logger.log(`@cricapp/api listening on http://localhost:${port}/api`);
+  logger.log(`Developer landing page: http://localhost:${port}/`);
   logger.log(`Swagger UI: http://localhost:${port}/docs`);
 }
 

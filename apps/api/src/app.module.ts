@@ -35,6 +35,8 @@ import { SiteSettingsModule } from './site-settings/site-settings.module.js';
 import { AdSenseModule } from './adsense/adsense.module.js';
 import { SportradarModule } from './sportradar/sportradar.module.js';
 import { RequestLogger } from './common/request-logger.middleware.js';
+import { MetricsModule } from './common/metrics.module.js';
+import { LandingModule } from './landing/landing.module.js';
 
 @Module({
   imports: [
@@ -82,8 +84,11 @@ import { RequestLogger } from './common/request-logger.middleware.js';
     GalleryModule,
     SiteSettingsModule,
     AdSenseModule,
+    MetricsModule,
+    LandingModule,
   ],
   providers: [
+    RequestLogger,
     { provide: APP_GUARD, useClass: ThrottlerGuard },
   ],
 })
