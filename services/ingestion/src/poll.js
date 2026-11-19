@@ -5,6 +5,7 @@ import {
   saveMatch,
   saveMatchSummary,
   saveMatchTimeline,
+  syncMatchSummaryFromTimeline,
   publishMatchState,
   publishEvents,
   pruneStaleLiveMatchRedisSet,
@@ -13,6 +14,7 @@ import {
 import { getCallStats } from './providers/index.js';
 import { pickLiveIds } from './liveSelection.js';
 import redis, { redisKeys } from './redis.js';
+import { query } from './db.js';
 import {
   fetchLiveSchedule,
   fetchMatchSummary,
@@ -79,6 +81,7 @@ async function maybeSnapshotLiveTimeline(matchId) {
   try {
     const raw = await fetchMatchTimeline(matchId);
     await saveMatchTimeline(matchId, raw);
+    await syncMatchSummaryFromTimeline(matchId, raw);
   } catch (err) {
     await logSnapshotNotRefreshed(matchId, 'fetch_failed', err);
   }
@@ -150,9 +153,19 @@ const FOLLOW_UP_MAX_MS = 6 * 24 * 60 * 60 * 1000;
  * over, at which point `publishMatchState` removes them from the live set.
  */
 async function heldLiveIds(scheduleIds) {
-  const held = await redis.smembers(redisKeys.liveMatches()).catch(() => []);
+  const [held, dbLive] = await Promise.all([
+    redis.smembers(redisKeys.liveMatches()).catch(() => []),
+    query(
+      `SELECT match_id FROM matches WHERE status IN ('live', 'interrupted', 'suspended')`,
+    ).catch(() => ({ rows: [] })),
+  ]);
+  // A row can stay "live" while its `matches:live` membership is gone (pruned by an
+  // empty/failed schedule fetch, a Redis flush, or a lost SADD). Nothing re-added it,
+  // so the score froze at the last poll and only the daily sync fixed it. The database
+  // is the durable live index: follow every id it still calls in play.
+  const candidates = new Set([...held, ...dbLive.rows.map((r) => r.match_id)]);
   const ids = [];
-  for (const id of held) {
+  for (const id of candidates) {
     if (scheduleIds.has(id)) continue;
     const previous = await readPrevious(id).catch(() => null);
     const scheduledAt = Date.parse(previous?.scheduled ?? '');

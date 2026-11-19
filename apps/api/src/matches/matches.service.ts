@@ -253,6 +253,72 @@ export class MatchesService {
     };
   }
 
+  /** Redis live snapshots for a page of matches, keyed by match id. */
+  private async cachedStates(matchIds: string[]): Promise<Map<string, CanonicalMatch>> {
+    const map = new Map<string, CanonicalMatch>();
+    if (matchIds.length === 0) return map;
+    const raws = await this.redis.cached.mget(...matchIds.map((id) => redisKeys.matchState(id)));
+    raws.forEach((raw, i) => {
+      if (!raw) return;
+      try {
+        map.set(matchIds[i], JSON.parse(raw) as CanonicalMatch);
+      } catch {
+        // A malformed snapshot is ignored; the DB summary is still served.
+      }
+    });
+    return map;
+  }
+
+  /**
+   * A row summary overlaid with its Redis live snapshot, preferring whichever source has
+   * bowled more overs so a card can never go backwards.
+   *
+   * The ingestion worker writes the match row and the Redis snapshot from the same poll.
+   * The detail endpoint has always read the snapshot; the list endpoints did not, which is
+   * how a card could sit at 194/5 (row) while the match page showed 284/8 (snapshot).
+   */
+  private overlayCached(
+    summary: MatchSummary,
+    row: Match,
+    cached: CanonicalMatch | null | undefined,
+  ): MatchSummary {
+    if (!cached) return summary;
+    // Overs decide freshness; at the same over the later write wins. The row is written
+    // after the snapshot in a poll, so this also stops a just-updated row losing to the
+    // snapshot it was derived from.
+    const cachedAt = cached.updatedAt ? Date.parse(cached.updatedAt) : Number.NaN;
+    const preferCached =
+      cached.displayOvers != null &&
+      (summary.displayOvers == null ||
+        cached.displayOvers > summary.displayOvers ||
+        (cached.displayOvers === summary.displayOvers &&
+          Number.isFinite(cachedAt) &&
+          cachedAt > row.updatedAt.getTime()));
+    const pick = <T>(
+      fromRow: T | null | undefined,
+      fromCached: T | null | undefined,
+    ): T | null =>
+      preferCached ? (fromCached ?? fromRow ?? null) : (fromRow ?? fromCached ?? null);
+    const teamScores = pick(summary.teamScores, cached.teamScores) as TeamScores | null;
+    return {
+      ...summary,
+      displayScore: pick(summary.displayScore, cached.displayScore),
+      displayOvers: pick(summary.displayOvers, cached.displayOvers),
+      currentInnings: pick(summary.currentInnings, cached.currentInnings),
+      currentInning: pick(summary.currentInning, cached.currentInning),
+      lastEvent: pick(summary.lastEvent, cached.lastEvent) ?? summary.lastEvent,
+      matchStatus: pick(summary.matchStatus, cached.matchStatus),
+      winnerId: pick(summary.winnerId, cached.winnerId),
+      tossWonBy: pick(summary.tossWonBy, cached.tossWonBy),
+      tossDecision: pick(summary.tossDecision, cached.tossDecision),
+      periodScores: pick(summary.periodScores, cached.periodScores),
+      teamScores,
+      teams: teamScores ? this.buildTeamsField(row, teamScores) : summary.teams,
+      revision: summary.revision ?? cached.revision ?? null,
+      updatedAt: summary.updatedAt ?? cached.updatedAt ?? null,
+    };
+  }
+
   private async enrichFromStoredSummary(row: Match): Promise<Partial<MatchSummary>> {
     const needsScores = !row.teamScores;
     const needsResult = !row.resultText;
@@ -361,8 +427,14 @@ export class MatchesService {
       .map((id) => byId.get(id))
       .filter((r): r is Match => r !== undefined);
 
+    const caches = await this.cachedStates(ordered.map((r) => r.matchId));
     const total = Number(countRows[0]?.count ?? 0);
-    return createPaginatedResponse(ordered.map((r) => this.toSummary(r)), total, page, limit);
+    return createPaginatedResponse(
+      ordered.map((r) => this.overlayCached(this.toSummary(r), r, caches.get(r.matchId))),
+      total,
+      page,
+      limit,
+    );
   }
 
   async search(params: {
@@ -422,8 +494,14 @@ export class MatchesService {
       .map((id) => byId.get(id))
       .filter((r): r is Match => r !== undefined);
 
+    const caches = await this.cachedStates(ordered.map((r) => r.matchId));
     const total = Number(countRows[0]?.count ?? 0);
-    return createPaginatedResponse(ordered.map((r) => this.toSummary(r)), total, page, limit);
+    return createPaginatedResponse(
+      ordered.map((r) => this.overlayCached(this.toSummary(r), r, caches.get(r.matchId))),
+      total,
+      page,
+      limit,
+    );
   }
 
   /**
@@ -454,6 +532,7 @@ export class MatchesService {
       }),
     );
     const revisionMap = await this.revisionMetaFor(rows.map((r) => r.matchId));
+    const caches = await this.cachedStates(rows.map((r) => r.matchId));
     for (const s of summaries) {
       const meta = revisionMap.get(s.matchId);
       if (meta) {
@@ -461,13 +540,17 @@ export class MatchesService {
         s.updatedAt = meta.updatedAt;
       }
     }
+    const rowsById = new Map(rows.map((r) => [r.matchId, r]));
+    const live = summaries.map((s) =>
+      this.overlayCached(s, rowsById.get(s.matchId)!, caches.get(s.matchId)),
+    );
 
     const authoritativeIds = new Set(rows.map((row) => row.matchId));
     const staleIds = liveIds.filter((id) => !authoritativeIds.has(id));
     if (staleIds.length > 0) {
       await this.redis.cached.srem(redisKeys.liveMatches(), ...staleIds);
     }
-    return { data: summaries };
+    return { data: live };
   }
 
   async getMany(matchIds: string[]): Promise<MatchSummary[]> {
@@ -475,7 +558,8 @@ export class MatchesService {
     const rows = await this.prisma.match.findMany({
       where: { matchId: { in: matchIds } },
     });
-    return rows.map((r) => this.toSummary(r));
+    const caches = await this.cachedStates(rows.map((r) => r.matchId));
+    return rows.map((r) => this.overlayCached(this.toSummary(r), r, caches.get(r.matchId)));
   }
 
   async getById(matchId: string): Promise<MatchSummary> {
@@ -493,14 +577,7 @@ export class MatchesService {
         ? this.buildTeamsField(row, mergedScores)
         : summary.teams;
       if (cached) {
-        return {
-          ...cached,
-          teams: mergedTeams,
-          teamScores: mergedScores,
-          result: summary.result,
-          revision: meta.revision ?? (typeof cached.revision === 'number' ? cached.revision : null),
-          updatedAt: meta.updatedAt ?? cached.updatedAt ?? null,
-        };
+        return this.overlayCached(summary, row, cached);
       }
       return { ...summary, teams: mergedTeams, teamScores: mergedScores };
     }
@@ -615,6 +692,45 @@ export class MatchesService {
     };
   }
 
+  /**
+   * Fold a freshly fetched live timeline back into the match row.
+   *
+   * The timeline endpoint can refresh on demand while the worker is not following the
+   * match. Without this the page advanced (284/8) but the row — and therefore every list
+   * card — stayed at the score from the last poll (194/5). The cached live snapshot is
+   * dropped so the next read takes the just-written row rather than the old score.
+   */
+  private async syncSummaryFromTimeline(
+    matchRow: Match,
+    payload: Record<string, unknown>,
+  ): Promise<void> {
+    const status = sportEventStatusFromPayload(payload);
+    const teamScores = teamScoresFromSportEventPayload(payload);
+    if (!status && !teamScores) return;
+
+    const data: Prisma.MatchUpdateInput = {};
+    if (status?.displayScore != null) data.displayScore = status.displayScore;
+    if (status?.displayOvers != null) data.displayOvers = status.displayOvers;
+    if (status?.currentInning != null) data.currentInning = status.currentInning;
+    if (status?.periodScores != null) {
+      data.periodScores = status.periodScores as Prisma.InputJsonValue;
+    }
+    if (status?.matchResultText != null) data.resultText = status.matchResultText;
+    if (teamScores) {
+      data.teamScores = teamScores as unknown as Prisma.InputJsonValue;
+      data.teams = this.buildTeamsField(matchRow, teamScores) as unknown as Prisma.InputJsonValue;
+    }
+    try {
+      await this.prisma.match.update({ where: { matchId: matchRow.matchId }, data });
+      await this.redis.cached.del(redisKeys.matchState(matchRow.matchId));
+    } catch (err) {
+      this.logger.warn('timeline write-back failed', {
+        matchId: matchRow.matchId,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
+
   private logStaleNotRefreshed(
     matchId: string,
     reason: StaleNotRefreshedReason,
@@ -674,6 +790,7 @@ export class MatchesService {
           try {
             const fresh = await this.sportradar.fetchMatchTimeline(matchId);
             await this.upsertTimelinePayload(matchId, fresh);
+            await this.syncSummaryFromTimeline(matchRow, dedupeTimelineEvents(fresh));
             return this.buildTimelineResponse(matchId, null, dedupeTimelineEvents(fresh), since ?? null)!;
           } catch (err) {
             if (err instanceof ServiceUnavailableException) throw err;
@@ -702,6 +819,7 @@ export class MatchesService {
       try {
         const fresh = await this.sportradar.fetchMatchTimeline(matchId);
         await this.upsertTimelinePayload(matchId, fresh);
+        await this.syncSummaryFromTimeline(matchRow, dedupeTimelineEvents(fresh));
         return this.buildTimelineResponse(matchId, null, dedupeTimelineEvents(fresh), since ?? null)!;
       } catch (err) {
         if (err instanceof ServiceUnavailableException) throw err;

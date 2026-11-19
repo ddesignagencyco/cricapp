@@ -747,6 +747,121 @@ export async function saveMatchTimeline(matchId, payload) {
   return 1;
 }
 
+/**
+ * Fold a live timeline's status block back onto the match row.
+ *
+ * The timeline is fetched after the summary in the same cycle, so it can be a ball
+ * ahead. Only the display fields move — status and result stay owned by the summary —
+ * and only forward, so an older snapshot can never pull the card back. `team_scores`
+ * is rebuilt from the same `period_scores` so the headline and the two side scores
+ * always describe one instant.
+ */
+export async function syncMatchSummaryFromTimeline(matchId, payload) {
+  const event = payload?.sport_event ?? payload ?? {};
+  const status = payload?.sport_event_status ?? event.sport_event_status ?? null;
+  if (!status) return 0;
+
+  const num = (v) => (v != null && !Number.isNaN(Number(v)) ? Number(v) : null);
+  const overs = num(status.display_overs);
+  const score = status.display_score != null ? String(status.display_score) : null;
+  const periods = Array.isArray(status.period_scores) ? status.period_scores : null;
+  if (score == null && overs == null) return 0;
+
+  const { rows } = await query(
+    'SELECT display_score, display_overs, current_innings, team_scores FROM matches WHERE match_id = $1',
+    [matchId],
+  );
+  const previous = rows[0];
+  if (!previous) return 0;
+  const previousOvers = num(previous.display_overs);
+  if (previousOvers != null && overs != null && overs < previousOvers) return 0;
+
+  const displayScore = keepScorePrefix(previous.display_score, score);
+  const teamScores = periods ? mergeTeamScores(periods, previous.team_scores) : null;
+  const currentInnings = updateInningsOvers(previous.current_innings, displayScore, overs);
+
+  const result = await query(
+    `UPDATE matches SET
+       display_score = COALESCE($2, display_score),
+       display_overs = COALESCE($3, display_overs),
+       current_inning = COALESCE($4, current_inning),
+       period_scores = COALESCE($5::jsonb, period_scores),
+       team_scores = COALESCE($6::jsonb, team_scores),
+       current_innings = COALESCE($7::jsonb, current_innings),
+       updated_at = NOW()
+     WHERE match_id = $1
+       AND ($3::double precision IS NULL OR display_overs IS NULL OR $3 >= display_overs)`,
+    [
+      matchId,
+      displayScore,
+      overs,
+      num(status.current_inning),
+      status.period_scores ? JSON.stringify(status.period_scores) : null,
+      teamScores ? JSON.stringify(teamScores) : null,
+      currentInnings ? JSON.stringify(currentInnings) : null,
+    ],
+  );
+  return result.rowCount;
+}
+
+/** The summary score carries the batting side ("SL 273/7"); the timeline does not. */
+function keepScorePrefix(previousScore, nextScore) {
+  if (typeof previousScore !== 'string' || typeof nextScore !== 'string') return nextScore;
+  if (!/^\d+\/\d+$/.test(nextScore)) return nextScore;
+  const prefix = previousScore.match(/^(\S+)\s+\d+\/\d+$/)?.[1];
+  return prefix ? `${prefix} ${nextScore}` : nextScore;
+}
+
+/**
+ * Each side's headline is its latest innings (never a sum of innings), copying the
+ * id/code/name already stored so the row keeps its identity.
+ */
+function mergeTeamScores(periods, previous) {
+  const prev = previous && typeof previous === 'object' ? previous : {};
+  const side = (key) => {
+    const base = prev[key] ?? { id: '', code: '', name: '', score: '', overs: '', oversBalls: null };
+    let runs = null;
+    let wickets = null;
+    let overs = '';
+    let oversBalls = null;
+    for (const inning of periods) {
+      const hasRuns = inning[`${key}_score`] != null;
+      const hasWickets = inning[`${key}_wickets`] != null;
+      if (!hasRuns && !hasWickets) continue;
+      const r = Number(inning[`${key}_score`]);
+      const w = Number(inning[`${key}_wickets`]);
+      runs = Number.isNaN(r) ? 0 : r;
+      wickets = Number.isNaN(w) ? null : w;
+      if (inning.display_overs != null && !Number.isNaN(Number(inning.display_overs))) {
+        overs = String(inning.display_overs);
+        oversBalls = Number(inning.display_overs);
+      }
+    }
+    if (runs == null) return base;
+    return {
+      ...base,
+      score: wickets != null ? `${runs}/${wickets}` : String(runs),
+      overs,
+      oversBalls,
+    };
+  };
+  return { home: side('home'), away: side('away') };
+}
+
+/** Keep the JSON the web reads (`currentInnings.runs/wickets/overs`) on the same ball. */
+function updateInningsOvers(current, displayScore, overs) {
+  if (!current || typeof current !== 'object' || Array.isArray(current)) return null;
+  if (typeof current.runs !== 'number') return null;
+  const pair = typeof displayScore === 'string' ? displayScore.match(/(\d+)\/(\d+)\s*$/) : null;
+  if (!pair) return null;
+  const next = { ...current, runs: Number(pair[1]), wickets: Number(pair[2]) };
+  if (overs != null) next.overs = overs;
+  const runs = next.runs;
+  const balls = overs != null ? Math.floor(overs) * 6 + Math.round((overs % 1) * 10) : null;
+  if (balls && balls > 0) next.runRate = Math.round((runs / balls) * 600) / 100;
+  return next;
+}
+
 /** Current stored revision for a match, or null when no timeline is stored. */
 export async function currentMatchTimelineRevision(matchId) {
   try {
