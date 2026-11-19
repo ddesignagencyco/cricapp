@@ -34,10 +34,11 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
  *
  * Session advisory locks need a real session, so this prefers `PREDICTION_LOCK_DATABASE_URL`
  * or `DIRECT_URL` (direct / session-mode connection) over a transaction-pooled
- * `DATABASE_URL`. A short retry covers the edge function's momentary probe; a lock that
- * stays held means another worker is already running, and this one must not start.
+ * `DATABASE_URL`. Retrying covers the edge function's momentary probe and a rolling
+ * deploy where the old worker still holds the lock; a lock held for the whole wait
+ * means another worker is already running, and this one must not start.
  */
-export async function acquireWorkerLock({ log, attempts = 5, delayMs = 2000 } = {}) {
+export async function acquireWorkerLock({ log, attempts = 60, delayMs = 2000 } = {}) {
   const connectionString =
     process.env.PREDICTION_LOCK_DATABASE_URL || process.env.DIRECT_URL || process.env.DATABASE_URL;
   const client = new pg.Client({ connectionString });

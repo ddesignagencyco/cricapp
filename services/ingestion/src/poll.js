@@ -152,7 +152,7 @@ const FOLLOW_UP_MAX_MS = 6 * 24 * 60 * 60 * 1000;
  * daily sync corrected it. These are polled until their own summary says the match is
  * over, at which point `publishMatchState` removes them from the live set.
  */
-async function heldLiveIds(scheduleIds) {
+async function heldLiveIds(providerLiveIds) {
   const [held, dbLive] = await Promise.all([
     redis.smembers(redisKeys.liveMatches()).catch(() => []),
     query(
@@ -166,7 +166,7 @@ async function heldLiveIds(scheduleIds) {
   const candidates = new Set([...held, ...dbLive.rows.map((r) => r.match_id)]);
   const ids = [];
   for (const id of candidates) {
-    if (scheduleIds.has(id)) continue;
+    if (providerLiveIds.has(id)) continue;
     const previous = await readPrevious(id).catch(() => null);
     const scheduledAt = Date.parse(previous?.scheduled ?? '');
     if (Number.isFinite(scheduledAt) && Date.now() - scheduledAt > FOLLOW_UP_MAX_MS) {
@@ -181,7 +181,8 @@ async function heldLiveIds(scheduleIds) {
 export async function pollOnce() {
   const liveEvents = await fetchLiveSchedule();
   const scheduleIds = pickLiveIds(liveEvents, IN_PLAY_STATUSES, MAX_LIVE_MATCHES);
-  const liveIds = [...scheduleIds, ...(await heldLiveIds(new Set(scheduleIds)))];
+  const providerLiveIds = new Set(liveEvents.map((e) => e.id));
+  const liveIds = [...scheduleIds, ...(await heldLiveIds(providerLiveIds))];
 
   for (const id of liveIds) {
     try {
