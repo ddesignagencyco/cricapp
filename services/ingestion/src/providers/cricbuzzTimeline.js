@@ -117,6 +117,15 @@ export function parseBall(c) {
 
 const playerRef = (name) => ({ id: null, name: name ?? null });
 
+/** Cricbuzz writes overs as `22.6` (22 completed overs plus 6 balls). */
+function oversToBalls(value) {
+  if (value == null) return null;
+  const m = String(value).trim().match(/^(\d+)(?:\.(\d))?$/);
+  if (!m) return null;
+  const balls = Number(m[2] ?? 0);
+  return Number(m[1]) * 6 + (balls <= 6 ? balls : 0);
+}
+
 /**
  * Parsed deliveries (any order, may repeat) → SportsRadar-style timeline payload.
  * `basePeriods` (from the match list's `matchScore`) supplies innings whose commentary was
@@ -199,6 +208,13 @@ export function toCommTimeline(entries, matchId, scorecard = null, basePeriods =
   const byInning = new Map(base);
   for (const [inning, s] of scores) {
     const side = sideOf(inning);
+    const previous = byInning.get(inning);
+    const previousBalls = oversToBalls(previous?.display_overs);
+    const nextBalls = oversToBalls(s.overs);
+    // A windowed commentary response starts part-way through an innings. Its derived
+    // total is only the runs/wickets seen in that window, so it must not replace a
+    // fuller total already supplied by the match list.
+    if (previous && previousBalls != null && nextBalls != null && nextBalls < previousBalls) continue;
     byInning.set(inning, { number: inning, [`${side}_score`]: s.runs, [`${side}_wickets`]: s.wickets, display_overs: s.overs });
   }
   const period_scores = [...byInning.values()].sort((a, b) => a.number - b.number);

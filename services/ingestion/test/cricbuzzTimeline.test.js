@@ -199,4 +199,13 @@ describe('innings list completeness', () => {
     // the third innings is the fresher commentary value, on the side the list names
     assert.equal(t.sport_event_status.period_scores[2].home_score, 57);
   });
+
+  it('does not let a partial commentary window replace a fuller innings total', () => {
+    const base = [{ number: 1, home_score: 139, home_wickets: 10, display_overs: '35.3' }];
+    const entries = [{ commtxt: 'Bowler to Batter, 1 run', ballnbr: 1, overnum: 22.6, inningsid: 1, timestamp: 1 }];
+    const t = toCommTimeline(entries, 'cb:match:177137', null, base);
+    assert.equal(t.sport_event_status.period_scores[0].home_score, 139);
+    assert.equal(t.sport_event_status.period_scores[0].home_wickets, 10);
+    assert.equal(t.sport_event_status.period_scores[0].display_overs, '35.3');
+  });
 });
