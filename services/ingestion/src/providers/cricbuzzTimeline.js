@@ -200,6 +200,33 @@ export function toCommTimeline(entries, matchId, scorecard = null, basePeriods =
   // The batting side comes from the list's innings when known; otherwise odd innings are
   // "home" and even "away", the convention the summary uses too.
   const base = new Map((basePeriods ?? []).map((p) => [Number(p.number), p]));
+  // The live-list `matchScore` is often a truncated window. The scorecard's statistics
+  // carry the completed innings totals, so they are authoritative when available.
+  for (const inn of scorecard?.statistics?.innings ?? []) {
+    const number = Number(inn.number);
+    if (!Number.isFinite(number)) continue;
+    const battingId = String(inn.batting_team ?? inn.battingTeam ?? '');
+    const competitor = (scorecard?.competitors ?? []).find((c) => String(c.id) === battingId);
+    const side = competitor?.qualifier === 'away' ? 'away' : competitor?.qualifier === 'home' ? 'home' : number % 2 === 1 ? 'home' : 'away';
+    const batter = (inn.teams ?? []).find((t) => String(t.id) === battingId);
+    const runs = Number(batter?.runs);
+    if (!Number.isFinite(runs)) continue;
+    const previous = base.get(number);
+    const previousOvers = oversToBalls(previous?.display_overs);
+    const statsOvers = oversToBalls(inn.overs_completed);
+    const displayOvers =
+      previousOvers != null && (statsOvers == null || previousOvers >= statsOvers)
+        ? previous.display_overs
+        : String(inn.overs_completed ?? 0);
+    base.set(number, {
+      number,
+      [`${side}_score`]: runs,
+      ...(Number.isFinite(Number(batter?.wickets_lost))
+        ? { [`${side}_wickets`]: Number(batter.wickets_lost) }
+        : {}),
+      display_overs: displayOvers,
+    });
+  }
   const sideOf = (inning) => {
     const p = base.get(inning);
     if (p && ('away_score' in p) !== ('home_score' in p)) return 'away_score' in p ? 'away' : 'home';

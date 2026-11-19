@@ -47,7 +47,7 @@
  * name).
  */
 
-import { currentRunRate, formatCricketOvers, oversToBalls } from './cricketMath';
+import { currentRunRate, formatCricketOvers, isFurtherAlong, oversToBalls } from './cricketMath';
 
 export type SideQualifier = 'home' | 'away';
 
@@ -260,7 +260,12 @@ export function readPeriodScores(
   if (fromRow.length === 0) return fromTimeline;
   const byNumber = new Map<number, PeriodScore>();
   for (const p of fromRow) byNumber.set(p.number, p);
-  for (const p of fromTimeline) byNumber.set(p.number, p);
+  for (const p of fromTimeline) {
+    const current = byNumber.get(p.number);
+    // A windowed commentary feed can carry an older, partial innings total. Keep the
+    // source that has bowled more balls; at equal overs the timeline's newer write wins.
+    if (!current || !isFurtherAlong(current.displayOvers, p.displayOvers)) byNumber.set(p.number, p);
+  }
   return [...byNumber.values()].sort((a, b) => a.number - b.number);
 }
 
