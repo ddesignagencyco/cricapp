@@ -59,6 +59,7 @@ async function captureLiveTimelineDelta(matchId) {
     .set(SEQ_KEY(matchId), newSeq)
     .rpush(BUF_KEY(matchId), ...entries)
     .exec();
+  await syncMatchSummaryFromTimeline(matchId, data);
 }
 
 /**
