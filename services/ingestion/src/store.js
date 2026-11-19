@@ -708,6 +708,12 @@ export async function saveMatchSummary(matchId, payload) {
     event.scheduled ?? null,
     JSON.stringify(payload ?? {}),
   ]);
+  const teams = (event.competitors ?? [])
+    .map((comp) => buildTeamFromCompetitor(comp, event))
+    .filter(Boolean);
+  if (teams.length > 0) {
+    await saveTeamsPlayers({ teams, players: [] });
+  }
   const match = recordToMatch({
     eventId: matchId,
     status: event.status ?? statusBlock.status ?? statusBlock.match_status ?? null,

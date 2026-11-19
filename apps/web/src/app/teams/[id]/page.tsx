@@ -24,19 +24,19 @@ export default async function TeamDetailPage({ params }: { params: Promise<{ id:
   const { id } = await params;
   const [team, roster, schedule, results, relatedNews] = await Promise.all([
     fetchTeamById(id),
-    fetchTeamRosterPage(id, { page: 1, limit: 40 }),
-    fetchTeamSchedule(id, { page: 1, limit: 50 }),
-    fetchTeamResults(id, { page: 1, limit: 50 }),
+    fetchTeamRosterPage(id, { page: 1, limit: 40 }).catch(() => null),
+    fetchTeamSchedule(id, { page: 1, limit: 50 }).catch(() => []),
+    fetchTeamResults(id, { page: 1, limit: 50 }).catch(() => []),
     fetchNews({ teamId: id, limit: 6 }).catch(() => []),
   ]);
   if (!team) {
-    return notFound();
+    notFound();
   }
   return (
     <TeamDetailBody
       team={team}
-      players={roster.items || []}
-      playerTotal={roster.total}
+      players={roster?.items || []}
+      playerTotal={roster?.total ?? 0}
       schedule={schedule || []}
       results={results || []}
       relatedNews={relatedNews}
