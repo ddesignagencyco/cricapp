@@ -1,9 +1,12 @@
 import { QuotaExceededError, ProviderAuthError } from './errors.js';
 
 const REQUEST_TIMEOUT_MS = Number(process.env.RAPIDAPI_TIMEOUT_MS || 15000);
-// BASIC plans reject two calls inside the same second ("exceeded the rate limit per
-// second" – a 429 even with monthly quota left), so real calls are spaced out per host.
-const minIntervalMs = () => Number(process.env.RAPIDAPI_MIN_INTERVAL_MS || 1200);
+// Real calls are spaced per host to stay under the provider's per-second limit.
+// Default 200ms (~5 rps). Tune with RAPIDAPI_MIN_INTERVAL_MS to match your RapidAPI plan.
+const minIntervalMs = () => {
+  const value = Number(process.env.RAPIDAPI_MIN_INTERVAL_MS ?? 200);
+  return Number.isFinite(value) && value >= 0 ? value : 200;
+};
 
 const stats = { calls: 0, cacheHits: 0, quotaBlocked: 0, lastError: null };
 
@@ -71,7 +74,9 @@ async function spendBudget(s, provider, budget) {
  */
 export async function rapidGet({ provider, cacheNamespace = provider, cacheKeyPath, host, path, query = {}, ttlSeconds = 60, budget }) {
   const apiKey = process.env.RAPIDAPI_KEY;
+  const rapidHost = String(host || '').trim();
   if (!apiKey) throw new ProviderAuthError(`${provider}: RAPIDAPI_KEY is not set`);
+  if (!rapidHost) throw new ProviderAuthError(`${provider}: RapidAPI host is not set`);
 
   const s = await getStore();
   const qs = new URLSearchParams(
@@ -89,15 +94,19 @@ export async function rapidGet({ provider, cacheNamespace = provider, cacheKeyPa
 
   await spendBudget(s, provider, budget);
 
-  const url = `https://${host}/${path}${qs ? `?${qs}` : ''}`;
+  const url = `https://${rapidHost}/${path}${qs ? `?${qs}` : ''}`;
 
   const attempt = () =>
-    spaced(host, async () => {
+    spaced(rapidHost, async () => {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
       try {
         return await fetch(url, {
-          headers: { 'x-rapidapi-key': apiKey, 'x-rapidapi-host': host },
+          headers: {
+            // RapidAPI requires these headers to match the subscribed endpoint exactly.
+            'x-rapidapi-key': apiKey,
+            'x-rapidapi-host': rapidHost,
+          },
           signal: controller.signal,
         });
       } finally {

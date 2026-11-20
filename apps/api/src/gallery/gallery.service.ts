@@ -188,10 +188,24 @@ export class GalleryService {
   async remove(id: string) {
     const media = await this.prisma.galleryMedia.findUnique({ where: { id } });
     if (!media) throw new NotFoundException('Gallery media not found');
-    await this.media.destroy(
-      media.publicId,
-      media.resourceType as 'image' | 'video',
-    );
+
+    const isExternal =
+      typeof media.publicId === 'string' &&
+      (media.publicId.startsWith('cricbuzz:') || media.publicId.startsWith('ext:'));
+
+    if (!isExternal) {
+      try {
+        await this.media.destroy(
+          media.publicId,
+          media.resourceType as 'image' | 'video',
+        );
+      } catch (error) {
+        // External or legacy records without a Cloudinary asset should still be removable.
+        const message = error instanceof Error ? error.message : String(error);
+        if (!/not configured|not found/i.test(message)) throw error;
+      }
+    }
+
     await this.prisma.galleryMedia.delete({ where: { id } });
     return { deleted: true };
   }

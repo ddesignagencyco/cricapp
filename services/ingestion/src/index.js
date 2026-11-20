@@ -6,6 +6,7 @@ import { pollOnce } from './poll.js';
 import { syncPsAll } from './pslSync.js';
 import { startReferenceSync } from './refSync.js';
 import { startNewsSync } from './newsSync.js';
+import { startGallerySync } from './gallerySync.js';
 import { startStreamsSync } from './streamsSync.js';
 import { startOddsSync } from './oddsSync.js';
 import { createLogger } from './logger.js';
@@ -107,9 +108,20 @@ async function shutdown() {
 process.on('SIGINT', shutdown);
 process.on('SIGTERM', shutdown);
 
+const provider = process.env.DATA_PROVIDER || PROVIDERS.SPORTRADAR;
 log.info('starting ingestion service', {
-  provider: process.env.DATA_PROVIDER || PROVIDERS.SPORTRADAR,
+  provider,
   pollIntervalMs: { live: POLL_INTERVAL_LIVE_MS, idle: POLL_INTERVAL_IDLE_MS },
+  rapidapi: ['cricbuzz', 'auto'].includes(String(provider).toLowerCase())
+    ? {
+        host:
+          process.env.RAPIDAPI_CRICBUZZ_HOST ||
+          process.env.RAPIDAPI_HOST ||
+          'cricbuzz-cricket.p.rapidapi.com',
+        keyConfigured: Boolean(process.env.RAPIDAPI_KEY),
+        minIntervalMs: Number(process.env.RAPIDAPI_MIN_INTERVAL_MS ?? 200),
+      }
+    : undefined,
 });
 
 const refSyncOptions = () => ({
@@ -156,8 +168,9 @@ const PSL_START_DELAY_MS = Number(process.env.PSL_START_DELAY_MS ?? 0);
 
 ping()
   .then(async () => {
-    // RSS/streams do not use the Sportradar quota.
+    // RSS/news/gallery/streams can run independently of the Sportradar quota.
     startNewsSync().catch((err) => log.error('news sync start failed', { error: err.message }));
+    startGallerySync().catch((err) => log.error('gallery sync start failed', { error: err.message }));
     startStreamsSync();
     startOddsSync();
 

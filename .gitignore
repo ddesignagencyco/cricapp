@@ -15,6 +15,9 @@ out/
 coverage/
 *.tsbuildinfo
 
+# Local-only Docker Compose overrides (host-specific port mappings)
+docker-compose.override.yml
+
 # Logs and OS
 *.log
 npm-debug.log*
