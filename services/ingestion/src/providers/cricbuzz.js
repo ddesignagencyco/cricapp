@@ -11,7 +11,7 @@ import { rapidGet } from './rapidHttp.js';
  */
 
 const LIVE_TTL_S = Number(process.env.RAPIDAPI_LIVE_TTL_S || 60);
-const LIST_TTL_S = Number(process.env.RAPIDAPI_LIST_TTL_S || 21600);
+const LIST_TTL_S = Number(process.env.RAPIDAPI_LIST_TTL_S || 300);
 
 const PREFIX = { match: 'cb:match:', team: 'cb:team:', tournament: 'cb:tournament:' };
 const matchId = (id) => `${PREFIX.match}${rawMatchId(id)}`;
@@ -258,15 +258,15 @@ export function normalizeScard(scard) {
         ...inn,
         batsman: keyedBat
           ? slots(inn.batsman.batsmenData).map((b) => ({
-              id: b.batId, name: b.batName, runs: b.runs, balls: b.balls, fours: b.fours, sixes: b.sixes,
-              strkrate: b.strikeRate, outdec: b.outDesc, iscaptain: b.isCaptain, iskeeper: b.isKeeper,
-            }))
+            id: b.batId, name: b.batName, runs: b.runs, balls: b.balls, fours: b.fours, sixes: b.sixes,
+            strkrate: b.strikeRate, outdec: b.outDesc, iscaptain: b.isCaptain, iskeeper: b.isKeeper,
+          }))
           : inn.batsman,
         bowler: keyedBowl
           ? slots(inn.bowler.bowlersData).map((b) => ({
-              id: b.bowlerId, name: b.bowlName, overs: b.overs, maidens: b.maidens, runs: b.runs,
-              wickets: b.wickets, economy: b.economy, dots: b.dots, balls: b.balls,
-            }))
+            id: b.bowlerId, name: b.bowlName, overs: b.overs, maidens: b.maidens, runs: b.runs,
+            wickets: b.wickets, economy: b.economy, dots: b.dots, balls: b.balls,
+          }))
           : inn.bowler,
       };
     }),
