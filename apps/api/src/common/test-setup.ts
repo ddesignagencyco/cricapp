@@ -25,6 +25,8 @@ class MockRedisService {
       sadd: async () => null,
       srem: async () => null,
       keys: async () => [],
+      mget: async (..._keys: string[]) => [] as (string | null)[],
+      info: async () => 'redis_version:7.0.0',
       ping: async () => 'PONG',
       oddsMatch: (matchId: string) => null,
     };
