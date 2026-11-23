@@ -31,7 +31,7 @@ async function bootstrap() {
   );
 
   const config = new DocumentBuilder()
-    .setTitle('CricApp API')
+    .setTitle('CriczApp API')
     .setDescription(
       'Read API for cricket matches, teams and players. Data is persisted by the ingestion service from Sportradar.',
     )

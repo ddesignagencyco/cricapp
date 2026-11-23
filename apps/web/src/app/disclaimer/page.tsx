@@ -51,7 +51,7 @@ export default function DisclaimerPage() {
       footer={
         <p>
           Questions about this disclaimer can be sent to{' '}
-          <a href="mailto:legal@criczapp.com">legal@criczapp.com</a>.
+          <a href="mailto:info@criczapp.com">info@criczapp.com</a>.
         </p>
       }
     />

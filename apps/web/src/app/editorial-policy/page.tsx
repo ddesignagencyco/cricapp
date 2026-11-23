@@ -61,7 +61,7 @@ export default function EditorialPolicyPage() {
       footer={
         <p>
           Questions about our editorial standards can be sent to{' '}
-          <a href="mailto:hello@criczapp.com">hello@criczapp.com</a>.
+          <a href="mailto:info@criczapp.com">info@criczapp.com</a>.
         </p>
       }
     />

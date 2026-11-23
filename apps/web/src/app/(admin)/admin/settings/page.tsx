@@ -374,7 +374,7 @@ export default function SettingsPage() {
                 autoComplete="email"
                 inputMode="email"
                 maxLength={320}
-                placeholder="hello@criczapp.com"
+                placeholder="info@criczapp.com"
                 {...invalidProps(errors.email, `${fid('email')}-error`)}
               />
             </Field>
@@ -388,7 +388,7 @@ export default function SettingsPage() {
                 autoComplete="email"
                 inputMode="email"
                 maxLength={320}
-                placeholder="feedback@criczapp.com"
+                placeholder="info@criczapp.com"
                 {...invalidProps(errors.supportEmail, `${fid('supportEmail')}-error`)}
               />
             </Field>

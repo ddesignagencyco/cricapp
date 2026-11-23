@@ -76,7 +76,7 @@ export default async function TermsPage() {
       ))}
       <p>
         For questions about these Terms, contact us at{' '}
-        <a href="mailto:legal@criczapp.com">legal@criczapp.com</a>.
+        <a href="mailto:info@criczapp.com">info@criczapp.com</a>.
       </p>
     </EditorialLayout>
   );

@@ -11,7 +11,7 @@ const sections: PolicySection[] = [
   {
     id: 'reporting-an-error',
     title: 'Reporting an Error',
-    text: 'If you spot a mistake in a score, statistic, player profile or news story, email feedback@criczapp.com with the page link, what is wrong and, where possible, a source for the correct information. You can also reach us through the Contact page.',
+    text: 'If you spot a mistake in a score, statistic, player profile or news story, email info@criczapp.com with the page link, what is wrong and, where possible, a source for the correct information. You can also reach us through the Contact page.',
   },
   {
     id: 'how-we-review',
@@ -31,7 +31,7 @@ const sections: PolicySection[] = [
   {
     id: 'removal-requests',
     title: 'Updates & Removal Requests',
-    text: 'We do not remove accurate published stories on request, but we will update a story when new facts emerge. Legal, privacy or copyright removal requests should be sent to legal@criczapp.com.',
+    text: 'We do not remove accurate published stories on request, but we will update a story when new facts emerge. Legal, privacy or copyright removal requests should be sent to info@criczapp.com.',
   },
 ];
 
@@ -45,7 +45,7 @@ export default function CorrectionsPage() {
       sections={sections}
       footer={
         <p>
-          Report an error at <a href="mailto:feedback@criczapp.com">feedback@criczapp.com</a>.
+          Report an error at <a href="mailto:info@criczapp.com">info@criczapp.com</a>.
         </p>
       }
     />
