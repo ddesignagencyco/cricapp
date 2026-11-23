@@ -44,7 +44,7 @@ const TRAILING_SECTIONS: Section[] = [
   {
     id: 'your-rights',
     title: 'Your Rights',
-    text: 'You have the right to access, correct or delete your personal data. To exercise these rights, please contact us at privacy@criczapp.com.',
+    text: 'You have the right to access, correct or delete your personal data. To exercise these rights, please contact us at info@criczapp.com.',
   },
   {
     id: 'changes-to-this-policy',
@@ -112,7 +112,7 @@ export default async function PrivacyPage() {
       ))}
       <p>
         If you have any questions about this Privacy Policy, please contact us at{' '}
-        <a href="mailto:privacy@criczapp.com">privacy@criczapp.com</a>.
+        <a href="mailto:info@criczapp.com">info@criczapp.com</a>.
       </p>
     </EditorialLayout>
   );

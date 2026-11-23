@@ -21,7 +21,7 @@ export class MailerService {
 
   constructor(private readonly config: ConfigService) {
     this.provider = this.config.get<string>('EMAIL_PROVIDER', 'console');
-    this.from = this.config.get<string>('EMAIL_FROM', 'noreply@cricapp.com');
+    this.from = this.config.get<string>('EMAIL_FROM', 'noreply@criczapp.com');
 
     if (this.provider === 'smtp') {
       const secure = this.config.get<string>('SMTP_SECURE', 'false') === 'true';

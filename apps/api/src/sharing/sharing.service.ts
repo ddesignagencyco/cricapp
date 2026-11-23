@@ -5,7 +5,7 @@ import {
   type ShareTargetType,
 } from './dto/sharing.dto.js';
 
-const BASE_URL = process.env.APP_URL ?? 'https://cricapp.com';
+const BASE_URL = process.env.APP_URL ?? 'https://criczapp.com';
 
 @Injectable()
 export class SharingService {
@@ -18,7 +18,7 @@ export class SharingService {
     const shareType = type as ShareTargetType;
     await this.trackShare(shareType, id);
 
-    let ogTitle = 'CricApp';
+    let ogTitle = 'CriczApp';
     let ogDescription = 'Cricket scores, news and live streams';
     let ogImage: string | undefined;
 
@@ -27,7 +27,7 @@ export class SharingService {
         const match = await this.prisma.match.findUnique({ where: { matchId: id } });
         if (match) {
           const names = match.teamNames as Record<string, string>;
-          ogTitle = `${names?.home ?? 'Home'} vs ${names?.away ?? 'Away'} — CricApp`;
+          ogTitle = `${names?.home ?? 'Home'} vs ${names?.away ?? 'Away'} — CriczApp`;
           ogDescription = match.displayScore ?? `Scheduled: ${match.scheduled ?? 'TBD'}`;
         }
         break;
@@ -37,7 +37,7 @@ export class SharingService {
           where: { OR: [{ id }, { slug: id }] },
         });
         if (article) {
-          ogTitle = `${article.title} — CricApp`;
+          ogTitle = `${article.title} — CriczApp`;
           ogDescription = article.summary ?? article.title;
         }
         break;
@@ -45,7 +45,7 @@ export class SharingService {
       case 'player': {
         const player = await this.prisma.player.findUnique({ where: { id } });
         if (player) {
-          ogTitle = `${player.fullName} — CricApp`;
+          ogTitle = `${player.fullName} — CriczApp`;
           ogDescription = `${player.role ?? 'Player'} • ${player.nationality ?? ''}`;
         }
         break;
@@ -55,7 +55,7 @@ export class SharingService {
           where: { OR: [{ id }, { abbr: id }] },
         });
         if (team) {
-          ogTitle = `${team.name} — CricApp`;
+          ogTitle = `${team.name} — CriczApp`;
           ogDescription = `${team.country ?? ''} • ${team.abbr}`;
         }
         break;
@@ -65,7 +65,7 @@ export class SharingService {
           where: { id, purpose: 'gallery' },
         });
         if (media) {
-          ogTitle = `${media.title ?? 'Gallery image'} — CricApp`;
+          ogTitle = `${media.title ?? 'Gallery image'} — CriczApp`;
           ogDescription = media.caption ?? media.title ?? 'Cricket gallery media';
           ogImage = media.thumbnailUrl ?? media.url;
         }
@@ -74,7 +74,7 @@ export class SharingService {
       case 'tour': {
         const tour = await this.prisma.tour.findUnique({ where: { id } });
         if (tour) {
-          ogTitle = `${tour.name} — CricApp`;
+          ogTitle = `${tour.name} — CriczApp`;
           ogDescription = 'Cricket tour schedules, tournaments and results';
         }
         break;
@@ -84,7 +84,7 @@ export class SharingService {
           where: { id },
         });
         if (tournament) {
-          ogTitle = `${tournament.name} — CricApp`;
+          ogTitle = `${tournament.name} — CriczApp`;
           ogDescription = [
             tournament.type,
             tournament.gender,

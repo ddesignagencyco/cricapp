@@ -757,7 +757,7 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
               </p>
               <p className="break-all text-[11px]" style={{ color: 'var(--admin-text-muted)' }}>
                 {form.canonicalUrl.trim() ||
-                  `cricapp.com/${form.language === 'ur' ? 'ur/' : ''}news/${form.slug || slugifyNews(form.title) || '…'}`}
+                  `criczapp.com/${form.language === 'ur' ? 'ur/' : ''}news/${form.slug || slugifyNews(form.title) || '…'}`}
               </p>
               <p className="mt-1 line-clamp-2 break-words text-xs" style={{ color: 'var(--admin-text-secondary)' }}>
                 {form.metaDescription.trim() || form.summary.trim() || 'Meta description appears here. Leave it blank and the summary is used.'}

@@ -51,7 +51,7 @@ export default function CookiePolicyPage() {
       footer={
         <p>
           See our <a href="/privacy">Privacy Policy</a> for how we handle personal information, or
-          contact <a href="mailto:privacy@criczapp.com">privacy@criczapp.com</a>.
+          contact <a href="mailto:info@criczapp.com">info@criczapp.com</a>.
         </p>
       }
     />

@@ -7,7 +7,7 @@ import {
   resolveNarrativeProvider,
 } from '../common/narrative-provider.util.js';
 
-const SYSTEM_PROMPT = `You are CricApp's cricket assistant — warm, knowledgeable, and brief, like a friend who knows the stats desk.
+const SYSTEM_PROMPT = `You are CriczApp's cricket assistant — warm, knowledgeable, and brief, like a friend who knows the stats desk.
 
 Rules:
 - Answer the user's actual question in natural spoken English (2–5 sentences).
