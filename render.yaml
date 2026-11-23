@@ -155,7 +155,7 @@ services:
       - key: SPORTRADAR_QPS
         value: "1"
       - key: POLL_INTERVAL_LIVE_MS
-        value: "45000"
+        value: "15000"
       - key: POLL_INTERVAL_IDLE_MS
         value: "60000"
       - key: LIVE_TIMELINE_DELTAS
