@@ -1,4 +1,4 @@
-import { currentRunRate, formatCricketOvers, formatRate } from './cricketMath';
+import { currentRunRate, formatCricketOvers, formatRate, isFurtherAlong } from './cricketMath';
 
 export type ScoreSide = { code: string; name: string; raw?: string; score: string; overs: string };
 
@@ -132,11 +132,27 @@ export function buildMatchScoreboard(input: {
     }
 
     if (battingIsHome) {
-      homeScore = scoreLine;
-      if (oversLabel) homeOvers = oversLabel;
+      const existingParsed = parseScore(homeScore);
+      const isBehind =
+        existingParsed &&
+        (existingParsed.runs > innRuns ||
+          (existingParsed.runs === innRuns &&
+            (existingParsed.wickets ?? 0) > (Number.isFinite(innWkts) ? innWkts : 0)));
+      if (!isBehind) {
+        homeScore = scoreLine;
+        if (oversLabel && !isFurtherAlong(homeOvers, oversLabel)) homeOvers = oversLabel;
+      }
     } else {
-      awayScore = scoreLine;
-      if (oversLabel) awayOvers = oversLabel;
+      const existingParsed = parseScore(awayScore);
+      const isBehind =
+        existingParsed &&
+        (existingParsed.runs > innRuns ||
+          (existingParsed.runs === innRuns &&
+            (existingParsed.wickets ?? 0) > (Number.isFinite(innWkts) ? innWkts : 0)));
+      if (!isBehind) {
+        awayScore = scoreLine;
+        if (oversLabel && !isFurtherAlong(awayOvers, oversLabel)) awayOvers = oversLabel;
+      }
     }
   }
 

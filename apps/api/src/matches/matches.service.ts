@@ -720,6 +720,18 @@ export class MatchesService {
       data.teamScores = teamScores as unknown as Prisma.InputJsonValue;
       data.teams = this.buildTeamsField(matchRow, teamScores) as unknown as Prisma.InputJsonValue;
     }
+    if (status?.displayScore != null) {
+      const pair = String(status.displayScore).match(/(\d+)\/(\d+)\s*$/);
+      if (pair) {
+        const prev = (matchRow.currentInnings as Record<string, unknown>) ?? {};
+        const runs = Number(pair[1]);
+        const wickets = Number(pair[2]);
+        const overs = status.displayOvers != null ? Number(status.displayOvers) : prev.overs;
+        const balls = typeof overs === 'number' ? Math.floor(overs) * 6 + Math.round((overs % 1) * 10) : null;
+        const runRate = balls && balls > 0 ? Math.round((runs / balls) * 600) / 100 : prev.runRate;
+        data.currentInnings = { ...prev, runs, wickets, overs, runRate } as Prisma.InputJsonValue;
+      }
+    }
     try {
       await this.prisma.match.update({ where: { matchId: matchRow.matchId }, data });
       await this.redis.cached.del(redisKeys.matchState(matchRow.matchId));
@@ -771,6 +783,14 @@ export class MatchesService {
     const storedPayload = row?.payload as Record<string, unknown> | undefined;
 
     if (storedPayload && matchRow) {
+      const timelineStatus = sportEventStatusFromPayload(storedPayload);
+      if (
+        timelineStatus?.displayOvers != null &&
+        (matchRow.displayOvers == null || timelineStatus.displayOvers > matchRow.displayOvers)
+      ) {
+        await this.syncSummaryFromTimeline(matchRow, storedPayload);
+      }
+
       const stale = isLiveTimelineBehindMatch(
         {
           status: matchRow.status,
