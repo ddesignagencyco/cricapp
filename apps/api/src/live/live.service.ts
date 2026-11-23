@@ -116,6 +116,10 @@ export class LiveService implements OnModuleInit, OnModuleDestroy {
 
   async subscribeToMatch(matchId: string): Promise<void> {
     if (this.subscribed.has(matchId)) return;
+    if (this.subscribed.size >= 200) {
+      const oldest = this.subscribed.values().next().value;
+      if (oldest) this.subscribed.delete(oldest);
+    }
     if (!this.patternSubscribed) {
       await this.redis.subscriber.subscribe(redisKeys.matchChannel(matchId));
     }

@@ -226,6 +226,16 @@ export class AdSenseService {
   private async cached<T>(key: string, ttl: number, factory: () => Promise<T>): Promise<T> {
     const existing = this.cache.get(key);
     if (existing && existing.expiresAt > Date.now()) return existing.promise as Promise<T>;
+    if (this.cache.size >= 100) {
+      const now = Date.now();
+      for (const [k, v] of this.cache) {
+        if (v.expiresAt <= now) this.cache.delete(k);
+      }
+      if (this.cache.size >= 100) {
+        const firstKey = this.cache.keys().next().value;
+        if (firstKey) this.cache.delete(firstKey);
+      }
+    }
     const promise = factory();
     this.cache.set(key, { promise, expiresAt: Date.now() + ttl });
     try {

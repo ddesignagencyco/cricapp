@@ -322,6 +322,7 @@ function isBehindCurrentState(prev: Record<string, unknown>, incoming: Record<st
  * this map instead means a newly mounted surface starts at the newest score any other
  * surface already showed.
  */
+const MAX_REMEMBERED_SNAPSHOTS = 100;
 const latestLive = new Map<string, Record<string, unknown>>();
 
 /** Records a snapshot; only ever moves a match forward. */
@@ -330,6 +331,12 @@ export function rememberLiveSnapshot(row: unknown): void {
   const id = normalizeMatchId(String(row.matchId ?? row.id ?? ''));
   if (!id) return;
   const known = latestLive.get(id);
+  if (latestLive.has(id)) {
+    latestLive.delete(id);
+  } else if (latestLive.size >= MAX_REMEMBERED_SNAPSHOTS) {
+    const oldestKey = latestLive.keys().next().value;
+    if (oldestKey) latestLive.delete(oldestKey);
+  }
   latestLive.set(id, known ? mergeMatchLivePayload(known, row) : { ...row });
 }
 
