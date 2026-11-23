@@ -162,8 +162,15 @@ async function request<T>(
     (init as Record<string, unknown>).next = { revalidate: effectiveRevalidate };
   }
 
-  const res = await fetch(url, init);
-  return handleResponse<T>(res);
+  try {
+    const res = await fetch(url, init);
+    return await handleResponse<T>(res);
+  } catch (err) {
+    if (typeof window === 'undefined') {
+      console.error(`[API Fetch Error] ${method} ${url}:`, err);
+    }
+    throw err;
+  }
 }
 
 /* ─── Public API ──────────────────────────────────────────── */

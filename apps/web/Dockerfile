@@ -43,7 +43,8 @@ FROM base AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production \
-    NEXT_TELEMETRY_DISABLED=1
+    NEXT_TELEMETRY_DISABLED=1 \
+    NODE_OPTIONS="--max-old-space-size=400"
 
 RUN groupadd --system --gid 1001 cricapp && \
     useradd --system --uid 1001 --gid cricapp cricapp

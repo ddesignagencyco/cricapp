@@ -27,6 +27,8 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: NODE_OPTIONS
+        value: "--max-old-space-size=400"
       - key: API_PORT
         value: "10000"
       - key: REDIS_URL
@@ -97,6 +99,8 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: NODE_OPTIONS
+        value: "--max-old-space-size=400"
       # Public URL of cricapp-api. Baked into the client bundle at build time: redeploy after changing it.
       # "same-origin": the browser calls /api on this site and the server forwards it to API_URL, so the
       # sign-in cookie stays first-party (the site and API are on different onrender.com hosts).
@@ -121,6 +125,8 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: NODE_OPTIONS
+        value: "--max-old-space-size=400"
       - key: REDIS_URL
         fromService:
           type: keyvalue
@@ -153,13 +159,19 @@ services:
       - key: POLL_INTERVAL_IDLE_MS
         value: "60000"
       - key: LIVE_TIMELINE_DELTAS
-        value: "true"
+        value: "false"
+      - key: POLL_MAX_LIVE_MATCHES
+        value: "4"
+      - key: RAPIDAPI_COMM_BACKFILL_PAGES
+        value: "0"
+      - key: RAPIDAPI_LIST_TTL_S
+        value: "300"
       - key: PSL_SEASONS
         sync: false
       - key: PSL_SYNC_INTERVAL_MS
         sync: false
       - key: REFERENCE_SYNC_INTERVAL_MS
-        value: "3600000"
+        value: "86400000"
       - key: REFERENCE_SYNC_PAST_DAYS
         value: "2"
       - key: REFERENCE_SYNC_FUTURE_DAYS

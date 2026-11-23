@@ -27,6 +27,9 @@ const nextConfig = {
   // compile and runtime errors still surface without it. Development only.
   devIndicators: false,
   images: {
+    // Drop 2048 and 3840 to stop 4K image transformations from blowing memory on crawls
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     formats: ['image/avif', 'image/webp'],
     // Next 16 coerces any `quality` prop outside this list to the closest
     // entry (85/90 silently became 75 before this existed). 75 = default for
