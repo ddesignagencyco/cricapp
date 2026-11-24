@@ -1,5 +1,6 @@
+import Image from 'next/image';
 import Link from 'next/link';
-import { Download, Mail, MapPin, Phone } from 'lucide-react';
+import { Mail, MapPin, Phone } from 'lucide-react';
 import Logo from './Logo';
 import SiteSocialLinks from './SiteSocialLinks';
 import SocialBrandIcon from './admin/SocialBrandIcon';
@@ -155,23 +156,35 @@ export default function Footer({ settings }: { settings?: SiteSettings | null })
             <p className="mb-4 max-w-[14rem] text-sm leading-relaxed text-stext">
               Live scores, news and more on the go.
             </p>
-            <div className="flex w-full max-w-[14rem] flex-col gap-2">
-              <button
-                type="button"
-                disabled
-                className="inline-flex w-full cursor-not-allowed items-center justify-center gap-2 rounded bg-secondary px-3 py-2.5 text-xs font-semibold text-[var(--color-text-disabled)] ring-1 ring-lborder"
+            <div className="flex flex-wrap items-center gap-2.5 sm:flex-col sm:items-start">
+              <span
+                title="App Store — Coming soon"
+                aria-label="Download on the App Store (coming soon)"
+                className="inline-block select-none transition-opacity hover:opacity-90"
               >
-                <Download size={14} aria-hidden="true" />
-                App Store soon
-              </button>
-              <button
-                type="button"
-                disabled
-                className="inline-flex w-full cursor-not-allowed items-center justify-center gap-2 rounded bg-secondary px-3 py-2.5 text-xs font-semibold text-[var(--color-text-disabled)] ring-1 ring-lborder"
+                <Image
+                  src="/download/app_store.png"
+                  alt="Download on the App Store"
+                  width={240}
+                  height={80}
+                  sizes="144px"
+                  className="h-11 w-auto object-contain"
+                />
+              </span>
+              <span
+                title="Google Play — Coming soon"
+                aria-label="Get it on Google Play (coming soon)"
+                className="inline-block select-none transition-opacity hover:opacity-90"
               >
-                <Download size={14} aria-hidden="true" />
-                Google Play soon
-              </button>
+                <Image
+                  src="/download/play_store.png"
+                  alt="Get it on Google Play"
+                  width={240}
+                  height={80}
+                  sizes="144px"
+                  className="h-11 w-auto object-contain"
+                />
+              </span>
             </div>
           </div>
         </div>

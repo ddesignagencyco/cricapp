@@ -55,7 +55,7 @@ export function heroSvg({ title, category, label, scoreline }) {
 <text x="72" y="120" font-family="system-ui, sans-serif" font-size="26" font-weight="700" letter-spacing="5" fill="#ffffff" opacity="0.85">${esc((label ?? category ?? '').toUpperCase())}</text>
 ${text}
 ${scoreline ? `<text x="72" y="${300 + lines.length * 74 + 24}" font-family="system-ui, sans-serif" font-size="34" fill="#ffffff" opacity="0.9">${esc(scoreline)}</text>` : ''}
-<text x="72" y="580" font-family="system-ui, sans-serif" font-size="24" letter-spacing="4" fill="#ffffff" opacity="0.7">CRICAPP</text>
+<text x="72" y="580" font-family="system-ui, sans-serif" font-size="24" letter-spacing="4" fill="#ffffff" opacity="0.7">CRICZAPP</text>
 </svg>`;
 }
 
@@ -80,7 +80,7 @@ export function posterSvg({ title, category, label, sub }) {
 <text x="400" y="86" text-anchor="middle" font-family="system-ui, sans-serif" font-size="26" font-weight="700" letter-spacing="5" fill="#ffffff" opacity="0.85">${esc((label ?? category ?? '').toUpperCase())}</text>
 ${text}
 ${subText}
-<text x="400" y="750" text-anchor="middle" font-family="system-ui, sans-serif" font-size="24" letter-spacing="4" fill="#ffffff" opacity="0.7">CRICAPP</text>
+<text x="400" y="750" text-anchor="middle" font-family="system-ui, sans-serif" font-size="24" letter-spacing="4" fill="#ffffff" opacity="0.7">CRICZAPP</text>
 </svg>`;
 }
 

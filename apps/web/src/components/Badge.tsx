@@ -3,7 +3,7 @@ import LiveIndicator, { BlinkingDot } from './LiveIndicator';
 
 export { BlinkingDot };
 
-type PaletteName = 'primary' | 'success' | 'warning' | 'danger' | 'neutral';
+type PaletteName = 'primary' | 'info' | 'success' | 'warning' | 'danger' | 'neutral';
 
 /**
  * Each tone pairs a solid foreground with its own pre-mixed soft surface.
@@ -15,6 +15,11 @@ const palettes: Record<PaletteName, { fg: string; bg: string; ring: string }> = 
     fg: 'var(--color-badge-primary-fg)',
     bg: 'var(--color-badge-primary-bg)',
     ring: 'var(--color-badge-primary-fg)',
+  },
+  info: {
+    fg: 'var(--color-badge-info-fg)',
+    bg: 'var(--color-badge-info-bg)',
+    ring: 'var(--color-badge-info-fg)',
   },
   success: {
     fg: 'var(--color-badge-success-fg)',
@@ -41,9 +46,9 @@ const palettes: Record<PaletteName, { fg: string; bg: string; ring: string }> = 
 const tonePalette: Record<string, PaletteName> = {
   primary: 'primary',
   accent: 'primary',
-  info: 'primary',
-  upcoming: 'primary',
-  in_review: 'primary',
+  info: 'info',
+  upcoming: 'info',
+  in_review: 'info',
   playoffs: 'primary',
   success: 'success',
   completed: 'success',

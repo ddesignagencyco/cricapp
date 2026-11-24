@@ -1,9 +1,9 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import Link from 'next/link';
 import Image from 'next/image';
 import { Activity, BarChart3, Bell, Trophy } from 'lucide-react';
+import Logo from '../Logo';
 import { BlinkingDot } from '../LiveIndicator';
 
 interface AuthShellProps {
@@ -21,22 +21,7 @@ const HIGHLIGHTS = [
 ];
 
 function BrandLockup() {
-  return (
-    <Link href="/" className="inline-flex items-center gap-2.5" aria-label="CriczApp home">
-      <Image
-        src="/brand/logo.png"
-        alt=""
-        aria-hidden="true"
-        width={120}
-        height={48}
-        className="h-10 w-auto object-contain sm:h-11"
-      />
-      <span className="text-xl font-black tracking-tight sm:text-2xl">
-        <span className="text-white">Cricz</span>
-        <span className="text-accent2">App</span>
-      </span>
-    </Link>
-  );
+  return <Logo to="/" size="lg" variant="dark" />;
 }
 
 export default function AuthShell({ title, subtitle, children, footer }: AuthShellProps) {

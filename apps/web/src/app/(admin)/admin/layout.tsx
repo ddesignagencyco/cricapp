@@ -137,8 +137,8 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       className={`flex h-full min-h-0 w-full shrink-0 flex-col transition-[width] duration-200 ${rail ? 'lg:w-[72px]' : 'lg:w-[240px]'}`}
       style={{ width: rail ? '72px' : 'min(240px, 84vw)', background: 'var(--admin-sidebar)' }}
     >
-      <div className="flex h-14 shrink-0 items-center justify-center overflow-hidden px-2" style={{ borderBottom: '1px solid var(--admin-sidebar-border)' }}>
-        <Logo to="/admin" size={rail ? 'sm' : 'lg'} />
+      <div className="flex h-16 shrink-0 items-center justify-center overflow-hidden px-3" style={{ borderBottom: '1px solid var(--admin-sidebar-border)' }}>
+        <Logo to="/admin" size={rail ? 'sm' : 'md'} variant={rail ? 'icon' : 'dark'} />
       </div>
 
       <nav className={`flex-1 overflow-y-auto no-scrollbar py-3 space-y-0.5 ${rail ? 'px-2' : 'px-3'}`} aria-label="Admin sections">

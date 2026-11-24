@@ -7,14 +7,14 @@ import SiteSelect from '../ui/SiteSelect';
 import ToolDiamondIcon from './ToolDiamondIcon';
 
 const toolFieldBase =
-  'w-full rounded-md border border-lborder bg-secondary px-3 py-2.5 text-sm font-semibold text-mtext outline-none transition-colors focus:border-[var(--color-focus-ring)] focus:ring-2 focus:ring-[var(--color-focus-ring)]/25';
+  'w-full rounded-md border border-lborder bg-[var(--color-input)] px-3 py-2.5 text-sm font-semibold text-mtext outline-none transition-colors focus:border-[var(--color-focus-ring)] focus:ring-2 focus:ring-[var(--color-focus-ring)]/25';
 
 export const toolInputClass = `${toolFieldBase} font-mono tabular-nums`;
 
 export const toolTextInputClass = toolFieldBase;
 
 export const toolSelectClass =
-  'w-full rounded-md border border-lborder bg-secondary px-3 py-2.5 text-sm font-semibold text-mtext outline-none focus:border-[var(--color-focus-ring)] focus:ring-2 focus:ring-[var(--color-focus-ring)]/25';
+  'w-full rounded-md border border-lborder bg-[var(--color-input)] px-3 py-2.5 text-sm font-semibold text-mtext outline-none focus:border-[var(--color-focus-ring)] focus:ring-2 focus:ring-[var(--color-focus-ring)]/25';
 
 export function Field({
   label,
@@ -201,7 +201,7 @@ export function ToolPanel({
             <button
               type="button"
               onClick={onReset}
-              className="rounded-md border border-lborder px-4 py-2 text-xs font-semibold text-stext transition-colors hover:bg-secondary hover:text-mtext"
+              className="btn-secondary rounded-md px-4 py-2 text-xs font-semibold"
             >
               Reset
             </button>

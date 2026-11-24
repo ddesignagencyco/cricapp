@@ -9,6 +9,7 @@ import {
   Award,
   Bell,
   Calendar,
+  ChevronDown,
   Globe,
   Heart,
   Home,
@@ -44,6 +45,26 @@ type NavItem = {
   label: string;
   icon: ComponentType<{ size?: number; className?: string }>;
 };
+
+const primaryNavItems: NavItem[] = [
+  { to: '/', label: 'Home', icon: Home },
+  { to: '/matches', label: 'Matches', icon: Activity },
+  { to: '/schedules', label: 'Schedule', icon: Calendar },
+  { to: '/psl', label: 'PSL', icon: Trophy },
+  { to: '/news', label: 'News', icon: Newspaper },
+  { to: '/predictions', label: 'Predictions', icon: Sparkles },
+  { to: '/tools', label: 'Tools', icon: Wrench },
+];
+
+const secondaryNavItems: NavItem[] = [
+  { to: '/teams', label: 'Teams', icon: Shield },
+  { to: '/players', label: 'Players', icon: UserRound },
+  { to: '/tournaments', label: 'Tournaments', icon: Award },
+  { to: '/tours', label: 'Tours', icon: Globe },
+  { to: '/streams', label: 'Streams', icon: Radio },
+  { to: '/gallery', label: 'Gallery', icon: Images },
+  { to: '/authors', label: 'Authors', icon: PenLine },
+];
 
 const liveItems: NavItem[] = [
   { to: '/', label: 'Home', icon: Home },
@@ -83,8 +104,11 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const moreRef = useRef<HTMLDivElement>(null);
   const menuCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const moreCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const openMenu = () => {
     if (menuCloseTimer.current) clearTimeout(menuCloseTimer.current);
@@ -100,6 +124,16 @@ export default function Navbar() {
     if (menuCloseTimer.current) clearTimeout(menuCloseTimer.current);
     setMenuOpen((open) => !open);
   };
+
+  const openMore = () => {
+    if (moreCloseTimer.current) clearTimeout(moreCloseTimer.current);
+    setMoreOpen(true);
+  };
+
+  const closeMoreSoon = () => {
+    if (moreCloseTimer.current) clearTimeout(moreCloseTimer.current);
+    moreCloseTimer.current = setTimeout(() => setMoreOpen(false), 140);
+  };
   const pathname = usePathname();
   const router = useRouter();
   const { theme, toggle, mounted } = useTheme();
@@ -109,6 +143,7 @@ export default function Navbar() {
     setMobileOpen(false);
     setSearchOpen(false);
     setMenuOpen(false);
+    setMoreOpen(false);
   }, [pathname]);
 
   useEffect(() => preloadWhenIdle(loadSearchBar), []);
@@ -118,6 +153,7 @@ export default function Navbar() {
       setMobileOpen((open) => !open);
       setMenuOpen(false);
       setSearchOpen(false);
+      setMoreOpen(false);
     };
     window.addEventListener('pcz:toggle-menu', onToggle);
     return () => window.removeEventListener('pcz:toggle-menu', onToggle);
@@ -130,10 +166,12 @@ export default function Navbar() {
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) setMoreOpen(false);
     };
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setMenuOpen(false);
+        setMoreOpen(false);
         setSearchOpen(false);
         setMobileOpen(false);
       }
@@ -171,34 +209,88 @@ export default function Navbar() {
 
   return (
     <>
-    <header className="site-chrome sticky top-0 z-40 h-14 shrink-0 border-b">
+    <header className="site-chrome sticky top-0 z-40 h-16 w-full shrink-0 border-b">
       <a
         href="#main-content"
         className="btn-brand fixed left-3 top-3 z-50 -translate-y-20 rounded px-3 py-2 text-sm font-medium focus:translate-y-0"
       >
         Skip to content
       </a>
-      <nav className="mx-auto flex h-full max-w-7xl items-center justify-between gap-3 px-4 sm:px-6">
-        <Logo size="lg" priority />
+      <nav className="mx-auto flex h-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        <div className="flex shrink-0 items-center">
+          <Logo size="lg" variant="auto" priority />
+        </div>
 
-        <div className="hidden items-center gap-1 lg:flex">
-          {navItems.map((item) => (
+        <div className="hidden items-center justify-center gap-1 xl:gap-2 lg:flex">
+          {primaryNavItems.map((item) => (
             <Link
               key={item.to}
               href={item.to}
               aria-current={isActive(item.to) ? 'page' : undefined}
-              className={`site-nav-link relative px-3 py-2 text-sm font-medium transition-colors ${isActive(item.to)
-                ? 'text-accent after:absolute after:inset-x-2 after:-bottom-1 after:h-0.5 after:rounded-full after:bg-accent'
-                : 'text-stext hover:text-mtext'
-                }`}
+              className={`site-nav-link relative px-2.5 py-1.5 text-sm font-medium transition-colors ${
+                isActive(item.to)
+                  ? 'text-accent after:absolute after:inset-x-2 after:-bottom-1 after:h-0.5 after:rounded-full after:bg-accent'
+                  : 'text-stext hover:text-mtext'
+              }`}
             >
               {item.label}
             </Link>
           ))}
+
+          <div
+            ref={moreRef}
+            className="relative"
+            onPointerEnter={(event) => event.pointerType === 'mouse' && openMore()}
+            onPointerLeave={(event) => event.pointerType === 'mouse' && closeMoreSoon()}
+          >
+            <button
+              type="button"
+              onClick={() => setMoreOpen((o) => !o)}
+              className={`site-nav-link relative flex items-center gap-1 px-2.5 py-1.5 text-sm font-medium transition-colors ${
+                secondaryNavItems.some((item) => isActive(item.to))
+                  ? 'text-accent after:absolute after:inset-x-2 after:-bottom-1 after:h-0.5 after:rounded-full after:bg-accent'
+                  : 'text-stext hover:text-mtext'
+              }`}
+              aria-expanded={moreOpen}
+              aria-haspopup="menu"
+            >
+              More
+              <ChevronDown size={14} className={`transition-transform duration-150 ${moreOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {moreOpen && (
+              <div className="absolute right-0 top-full z-50 pt-2">
+                <div
+                  role="menu"
+                  className="elev-overlay w-44 overflow-hidden rounded-md border border-lborder bg-card p-1 shadow-lg"
+                >
+                  {secondaryNavItems.map((item) => {
+                    const Icon = item.icon;
+                    const active = isActive(item.to);
+                    return (
+                      <Link
+                        key={item.to}
+                        href={item.to}
+                        role="menuitem"
+                        onClick={() => setMoreOpen(false)}
+                        className={`flex items-center gap-2 rounded-md px-3 py-2 text-xs font-semibold transition-colors ${
+                          active
+                            ? 'bg-accent/10 text-accent'
+                            : 'text-stext hover:bg-[var(--color-row-hover)] hover:text-mtext'
+                        }`}
+                      >
+                        <Icon size={14} />
+                        {item.label}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="flex items-center gap-1.5">
-          {mounted && (
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+          {mounted ? (
             <button
               type="button"
               onClick={toggle}
@@ -207,6 +299,8 @@ export default function Navbar() {
             >
               {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
             </button>
+          ) : (
+            <span className="h-9 w-9 shrink-0" aria-hidden="true" />
           )}
 
           <button
@@ -393,8 +487,8 @@ export default function Navbar() {
             aria-label="Browse"
             className="mobile-drawer fixed inset-y-0 right-0 z-[95] flex w-[min(20rem,86vw)] flex-col border-l border-lborder bg-primary text-mtext shadow-2xl lg:hidden"
           >
-            <div className="flex h-14 shrink-0 items-center justify-between border-b border-lborder px-4">
-              <p className="text-base font-bold text-mtext">Browse</p>
+            <div className="flex h-16 shrink-0 items-center justify-between border-b border-lborder px-4">
+              <Logo size="md" variant="auto" />
               <div className="flex items-center gap-1">
                 <button
                   type="button"
