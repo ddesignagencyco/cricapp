@@ -81,17 +81,17 @@ export default function PslSpotlight({ standings = [] }: PslSpotlightProps) {
             </Link>
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto no-scrollbar">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-lborder text-xs uppercase tracking-wider text-stext">
-                  <th className="px-2 py-2.5 sm:px-4 text-center">#</th>
-                  <th className="px-2 py-2.5 sm:px-4">Team</th>
-                  <th className="px-2 py-2.5 sm:px-4 text-center">P</th>
-                  <th className="px-2 py-2.5 sm:px-4 text-center">W</th>
-                  <th className="hidden px-2 py-2.5 text-center sm:table-cell sm:px-4">L</th>
-                  <th className="px-2 py-2.5 sm:px-4 text-center">NRR</th>
-                  <th className="px-2 py-2.5 sm:px-4 text-center">PTS</th>
+                <tr className="border-b border-lborder bg-card/60 text-xs font-bold uppercase tracking-wider text-stext">
+                  <th className="px-2 py-3 sm:px-4 text-center">#</th>
+                  <th className="px-2 py-3 sm:px-4">Team</th>
+                  <th className="px-2 py-3 sm:px-4 text-center">P</th>
+                  <th className="px-2 py-3 sm:px-4 text-center">W</th>
+                  <th className="hidden px-2 py-3 text-center sm:table-cell sm:px-4">L</th>
+                  <th className="px-2 py-3 sm:px-4 text-center">NRR</th>
+                  <th className="px-2 py-3 sm:px-4 text-center">PTS</th>
                 </tr>
               </thead>
               <tbody>
@@ -105,14 +105,14 @@ export default function PslSpotlight({ standings = [] }: PslSpotlightProps) {
                       <td className="px-2 py-2.5 sm:px-4">
                         <div className="flex items-center gap-2">
                           <TeamLogo teamId={row.teamId} name={row.teamName} code={row.teamAbbr} size="md" link={false} />
-                          <span className="text-sm font-semibold text-mtext">{row.teamName}</span>
+                          <span className="truncate max-w-[120px] sm:max-w-none text-sm font-semibold text-mtext">{row.teamName}</span>
                           <span className="hidden text-xs font-medium uppercase text-muted-foreground sm:inline">{row.teamAbbr}</span>
                         </div>
                       </td>
                       <td className="px-2 py-2.5 sm:px-4 text-center font-mono text-sm font-medium tabular-nums text-stext">{row.played ?? 0}</td>
                       <td className="px-2 py-2.5 sm:px-4 text-center font-mono text-sm font-semibold tabular-nums text-accent">{row.won ?? 0}</td>
                       <td className="hidden px-2 py-2.5 text-center font-mono text-sm font-medium tabular-nums text-danger sm:table-cell sm:px-4">{row.lost ?? 0}</td>
-                      <td className={`px-4 py-2.5 text-center font-mono text-sm font-semibold tabular-nums ${(row.netRunRate ?? 0) >= 0 ? 'text-accent' : 'text-danger'}`}>
+                      <td className={`px-2 py-2.5 sm:px-4 text-center font-mono text-sm font-semibold tabular-nums ${(row.netRunRate ?? 0) >= 0 ? 'text-accent' : 'text-danger'}`}>
                         {row.netRunRate ?? 0}
                       </td>
                       <td className="px-2 py-2.5 sm:px-4 text-center font-mono text-sm font-semibold tabular-nums text-mtext">{row.points ?? 0}</td>
