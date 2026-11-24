@@ -49,7 +49,7 @@ export default function MatchCardCompact({ match }: MatchCardCompactProps) {
           {tournament || 'Match'}
         </p>
         <p className="shrink-0 text-xs">
-          {date ? <span className="font-semibold tabular-nums text-accent">{date}</span> : null}
+          {date ? <span className="font-medium tabular-nums text-stext">{date}</span> : null}
           {time ? <span className="font-semibold tabular-nums text-mtext">{date ? ' · ' : ''}{time}</span> : null}
         </p>
       </div>

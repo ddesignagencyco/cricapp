@@ -83,7 +83,7 @@ async function seedSuperAdmin(): Promise<void> {
         email,
         username,
         passwordHash,
-        displayName: 'CricApp Superadmin',
+        displayName: 'CriczApp Superadmin',
         isAdmin: true,
         isSuperAdmin: true,
         emailVerified: true,

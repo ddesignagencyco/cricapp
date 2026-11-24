@@ -177,7 +177,7 @@ export function batterSpotlight(s) {
     html: [
       p(`${playerLink(s.id, s.name)} has scored ${s.runs} runs in ${plural(s.innings, 'innings', 'innings')} across ${plural(s.matches, 'tracked match', 'tracked matches')}${avg ? `, at an average of ${avg}` : ''}${sr ? ` and a strike rate of ${sr}` : ''}.`),
       p(`His highest score in that sample is ${s.highest}${s.highestNotOut ? ' not out' : ''}, with ${s.fours} fours and ${s.sixes} sixes${s.fifties || s.hundreds ? `, including ${plural(s.fifties, 'fifty', 'fifties')} and ${plural(s.hundreds, 'hundred')}` : ''}.`.replace('His', 'The')),
-      p('These figures cover only the matches CricApp has stored scorecards for, so they are a snapshot and not career totals. The full profile, with biography and recent form, is on the player page.'),
+      p('These figures cover only the matches CriczApp has stored scorecards for, so they are a snapshot and not career totals. The full profile, with biography and recent form, is on the player page.'),
     ].join('\n'),
     category: 'analysis',
     label: 'By the numbers',
@@ -271,7 +271,7 @@ const li = (m, extra) => `<li>${matchLink(m.match_id, (m.team_names ?? []).join(
 export function cricketToday(live, finished, next, now = new Date()) {
   if (!live.length && !finished.length && !next.length) return null;
   const day = when(now);
-  const parts = [p(`CricApp's round-up of the cricket on ${day}, written from the match data we hold at ${utcStamp(now)}. Live scores change quickly, so open a match page for the current state.`)];
+  const parts = [p(`CriczApp's round-up of the cricket on ${day}, written from the match data we hold at ${utcStamp(now)}. Live scores change quickly, so open a match page for the current state.`)];
   if (live.length) {
     parts.push('<h2>Live now</h2>', `<ul>${live.map((m) => { const { home, away } = sides(m); return li(m, [sideScore(home), sideScore(away)].filter(Boolean).join(' · ') || 'yet to start'); }).join('')}</ul>`);
   }
@@ -302,7 +302,7 @@ export function tournamentWatch(name, tournamentId, rows) {
   if (!name || rows.length < 2) return null;
   const by = (s) => rows.filter((m) => m.status === s);
   const live = by('live'), done = by('completed'), next = by('upcoming');
-  const parts = [p(`${esc(name)} currently has ${plural(rows.length, 'match')} on CricApp: ${live.length} live, ${done.length} completed and ${next.length} upcoming.`)];
+  const parts = [p(`${esc(name)} currently has ${plural(rows.length, 'match')} on CriczApp: ${live.length} live, ${done.length} completed and ${next.length} upcoming.`)];
   if (live.length) parts.push('<h2>Live</h2>', `<ul>${live.map((m) => li(m, [sideScore(sides(m).home), sideScore(sides(m).away)].filter(Boolean).join(' · ') || 'yet to start')).join('')}</ul>`);
   if (done.length) parts.push('<h2>Results</h2>', `<ul>${done.map((m) => li(m, esc(m.result_text ?? ''))).join('')}</ul>`);
   if (next.length) parts.push('<h2>Fixtures</h2>', `<ul>${next.map((m) => li(m, when(m.scheduled))).join('')}</ul>`);
@@ -333,9 +333,9 @@ export function busiestCompetitions(rows, now = new Date()) {
   return {
     slug: `analysis-busiest-competitions-${now.toISOString().slice(0, 10)}`,
     title: 'By the numbers: where the cricket is right now',
-    summary: `${top[0][0]} has the most matches on CricApp (${top[0][1]}), among ${counts.size} competitions in the data.`,
+    summary: `${top[0][0]} has the most matches on CriczApp (${top[0][1]}), among ${counts.size} competitions in the data.`,
     html: [
-      p(`CricApp holds ${plural(rows.length, 'match')} across ${plural(counts.size, 'competition')} in its current window: ${state('live')} live, ${state('completed')} completed and ${state('upcoming')} upcoming.`),
+      p(`CriczApp holds ${plural(rows.length, 'match')} across ${plural(counts.size, 'competition')} in its current window: ${state('live')} live, ${state('completed')} completed and ${state('upcoming')} upcoming.`),
       '<h2>Most matches in the window</h2>',
       `<ol>${top.map(([n, c]) => `<li>${esc(n)} — ${plural(c, 'match')}</li>`).join('')}</ol>`,
       p('Counts cover the fixtures our data provider lists for the current days, not full seasons.'),

@@ -222,7 +222,7 @@ function TickerCard({ match }: { match: any }) {
       )}
 
       <div className="mt-2 flex items-center gap-1.5 border-t border-lborder pt-1.5 text-xs">
-        <span className="shrink-0 font-semibold tabular-nums text-accent">{formatShortDate(match)}</span>
+        <span className="shrink-0 font-medium tabular-nums text-stext">{formatShortDate(match)}</span>
         {scheduleTime(match) ? (
           <span suppressHydrationWarning className="shrink-0 font-semibold tabular-nums text-mtext">{scheduleTime(match)}</span>
         ) : null}

@@ -148,12 +148,12 @@ export default async function HomePage() {
           ahead of the standings and news sections. */}
       <HomeStoriesRail />
 
+      {/* PSL Spotlight (Points Table & Season Standings) */}
+      <PslSpotlight standings={pslStandings} />
+
       <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
         <AdSlot placement="home-mid" />
       </section>
-
-      {/* PSL Spotlight */}
-      <PslSpotlight standings={pslStandings} />
 
       {/* PSL Top Performers */}
       {pslLeaders.length > 0 && (
