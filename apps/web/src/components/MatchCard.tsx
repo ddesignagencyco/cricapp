@@ -143,7 +143,7 @@ export default function MatchCard({
               className={`flex flex-wrap items-center gap-x-3 gap-y-1 text-stext ${dense ? 'text-[10px]' : 'text-xs'}`}
             >
               {date ? (
-                <span className="inline-flex items-center gap-1 font-semibold tabular-nums text-accent">
+                <span className="inline-flex items-center gap-1 font-medium tabular-nums text-stext">
                   <Calendar size={12} aria-hidden />
                   {date}
                 </span>
@@ -176,7 +176,7 @@ export default function MatchCard({
             ) : (
               <>
                 {date && (
-                  <span className="inline-flex items-center gap-1 font-semibold tabular-nums text-accent">
+                  <span className="inline-flex items-center gap-1 font-medium tabular-nums text-stext">
                     <Calendar size={12} aria-hidden />
                     {date}
                   </span>

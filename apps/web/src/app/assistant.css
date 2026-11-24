@@ -1,30 +1,11 @@
 /* ==========================================================================
    CriczApp Assistant panel
-   --------------------------------------------------------------------------
-   Lives in its own stylesheet, imported after `globals.css`, so it never edits
-   the shared sheet and cannot be clobbered by changes elsewhere.
-
-   Everything is scoped to the three `.pcz-assistant-*` classes used by
-   `components/assistant/AssistantPanel.tsx`. Colours come from the same tokens
-   the rest of the site uses, so both themes are covered by one rule set.
    ========================================================================== */
 
-/* --- Header band -------------------------------------------------------- */
-
-/*
- * The panel header was a flat `--color-brand` fill, which read as a generic
- * blue slab above a near-black card. A shallow brand gradient plus a hairline
- * of light at the top edge separates the header from the conversation below
- * and gives the panel the same "filled chrome" treatment as the site header.
- */
 .pcz-assistant-head {
   position: relative;
-  background-image: linear-gradient(
-    135deg,
-    var(--color-assistant-header) 0%,
-    var(--color-brand-hover) 100%
-  );
-  color: var(--color-brand-fg);
+  background-image: linear-gradient(180deg, #15963C 0%, #0D6E2B 100%);
+  color: #FFFFFF;
 }
 
 .pcz-assistant-head::after {
@@ -33,42 +14,27 @@
   inset-inline: 0;
   bottom: 0;
   height: 1px;
-  background-color: rgb(255 255 255 / 0.22);
+  background-color: rgb(255 255 255 / 0.18);
 }
 
-/* White disc behind the bot glyph: an inverse mark on a filled surface. */
 .pcz-assistant-head__badge {
-  background-color: var(--color-brand-fg);
-  box-shadow: 0 1px 2px rgb(0 0 0 / 0.24);
+  background-color: #FFFFFF;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.2);
 }
 
-/* --- User bubble -------------------------------------------------------- */
-
-/*
- * Mirrors the header so a question reads as "mine" and an answer reads as
- * "from the desk", without needing a separate colour on every state.
- */
 .pcz-assistant-bubble-user {
-  background-image: linear-gradient(
-    135deg,
-    var(--color-assistant-header) 0%,
-    var(--color-brand-hover) 100%
-  );
-  color: var(--color-brand-fg);
+  background-image: linear-gradient(180deg, #15963C 0%, #0D6E2B 100%);
+  color: #FFFFFF;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .pcz-assistant-head,
   .pcz-assistant-bubble-user {
     background-image: none;
-    background-color: var(--color-assistant-header);
+    background-color: #0F7E31;
   }
 }
-/* --- Chat widget ---------------------------------------------------------
- * Laid out like a site support chat: a floating window on wider screens (the page
- * is not dimmed), full screen on phones, the agent greets first, quick replies sit
- * under the latest message, and a typing indicator shows while an answer loads.
- */
+
 .pcz-chat-window {
   animation: pcz-chat-in 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
@@ -76,8 +42,8 @@
 @media (min-width: 640px) {
   .pcz-chat-window {
     box-shadow:
-      0 24px 48px -12px rgb(16 24 40 / 0.28),
-      0 4px 12px rgb(16 24 40 / 0.08);
+      0 24px 48px -12px rgb(6 21 47 / 0.28),
+      0 4px 12px rgb(6 21 47 / 0.08);
     transform-origin: bottom right;
   }
 }
@@ -89,38 +55,38 @@
   }
 }
 
-/* A soft wash behind the conversation so white bubbles read as cards. */
 .pcz-chat-body {
-  background-color: color-mix(in srgb, var(--color-brand) 4%, var(--color-card));
+  background-color: var(--color-background);
 }
 
 .pcz-chat-bubble-bot {
   background-color: var(--color-card);
   border: 1px solid var(--color-border);
-  box-shadow: 0 1px 2px rgb(16 24 40 / 0.05);
+  box-shadow: 0 1px 2px rgb(6 21 47 / 0.05);
 }
 
 .pcz-chat-avatar {
-  background-image: linear-gradient(135deg, var(--color-assistant-header) 0%, var(--color-brand-hover) 100%);
+  background-image: linear-gradient(180deg, #15963C 0%, #0D6E2B 100%);
 }
 
 .pcz-chat-online {
-  box-shadow: 0 0 0 2px var(--color-assistant-header);
+  box-shadow: 0 0 0 2px #0D6E2B;
 }
 
 .pcz-chat-chip {
-  border: 1px solid color-mix(in srgb, var(--color-brand) 45%, var(--color-border));
+  border: 1px solid var(--color-border-strong);
   background-color: var(--color-card);
-  color: var(--color-brand);
+  color: var(--color-text-primary);
 }
 
 .pcz-chat-chip:hover {
+  border-color: var(--color-brand);
   background-color: var(--color-brand);
-  color: var(--color-brand-fg);
+  color: #FFFFFF;
 }
 
 .pcz-chat-send {
-  background-image: linear-gradient(135deg, var(--color-assistant-header) 0%, var(--color-brand-hover) 100%);
+  background-image: linear-gradient(180deg, #15963C 0%, #0D6E2B 100%);
 }
 
 .pcz-chat-typing {
@@ -152,11 +118,6 @@
   }
 }
 
-/*
- * The structured answer card is rendered for every API reply, but for plain text
- * answers each section inside renders nothing. Hide empty sections, and the card
- * itself when none of them has content — it used to show as an empty outlined bar.
- */
 .pcz-answer-card > :empty {
   display: none;
 }

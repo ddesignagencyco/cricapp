@@ -48,8 +48,8 @@ const STREAMS = [
 const PAGES = [
   {
     slug: 'about',
-    title: 'About CricApp',
-    content: '<p>CricApp is a cricket platform for live scores, scorecards, tournament tables, squads, player profiles, predictions and news.</p><p>Match data comes from licensed cricket data providers and is refreshed continuously while matches are live.</p>',
+    title: 'About CriczApp',
+    content: '<p>CriczApp is a cricket platform for live scores, scorecards, tournament tables, squads, player profiles, predictions and news.</p><p>Match data comes from licensed cricket data providers and is refreshed continuously while matches are live.</p>',
   },
   {
     slug: 'editorial-standards',
@@ -201,7 +201,7 @@ for (const e of topBowl) {
 
 const dedupe = (rows, key) => { const seen = new Set(); return rows.filter((r) => (seen.has(key(r)) ? false : (seen.add(key(r)), true))); };
 const totals = dedupe(best.totals.sort((a, b) => b.runs - a.runs), (r) => `${r.matchId}${r.team}`).slice(0, 5);
-if (totals.length >= 3) articles.push(recordList({ slug: 'records-highest-team-totals-tracked', title: 'The highest team totals in the matches we track', summary: `${totals[0].team} lead the list with ${totals[0].runs}/${totals[0].wkts}.`, intro: 'The five biggest innings totals across the scorecards stored on CricApp:', label: 'Records', items: totals.map((t) => ({ matchId: t.matchId, text: `${t.team} ${t.runs}/${t.wkts} (${nm(t.matchId)})` })) }));
+if (totals.length >= 3) articles.push(recordList({ slug: 'records-highest-team-totals-tracked', title: 'The highest team totals in the matches we track', summary: `${totals[0].team} lead the list with ${totals[0].runs}/${totals[0].wkts}.`, intro: 'The five biggest innings totals across the scorecards stored on CriczApp:', label: 'Records', items: totals.map((t) => ({ matchId: t.matchId, text: `${t.team} ${t.runs}/${t.wkts} (${nm(t.matchId)})` })) }));
 const scores = dedupe(best.scores.sort((a, b) => b.runs - a.runs), (r) => `${r.matchId}${r.name}`).slice(0, 5);
 if (scores.length >= 3) articles.push(recordList({ slug: 'records-highest-individual-scores-tracked', title: 'The highest individual scores in the matches we track', summary: `${scores[0].name} top the list with ${scores[0].runs}${scores[0].no ? '*' : ''}.`, intro: 'The five highest individual innings across the stored scorecards:', label: 'Records', items: scores.map((s) => ({ matchId: s.matchId, text: `${s.name} ${s.runs}${s.no ? '*' : ''} off ${s.balls} balls (${nm(s.matchId)})` })) }));
 const spells = dedupe(best.spells.sort((a, b) => b.w - a.w || a.r - b.r), (r) => `${r.matchId}${r.name}`).slice(0, 5);
@@ -217,7 +217,7 @@ for (const a of articles) {
   const r = await q(
     `INSERT INTO news_articles (id, title, slug, summary, content, image_url, author, author_id, source, category_id, language,
                                meta_title, meta_description, published_at, is_published, created_at, updated_at)
-     VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, 'CricApp', $8, 'en', $1, $3, $9, true, NOW(), NOW())
+     VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, 'CriczApp', $8, 'en', $1, $3, $9, true, NOW(), NOW())
      ON CONFLICT (slug) DO UPDATE SET title = EXCLUDED.title, summary = EXCLUDED.summary, content = EXCLUDED.content,
        image_url = EXCLUDED.image_url, author = EXCLUDED.author, author_id = EXCLUDED.author_id, category_id = EXCLUDED.category_id,
        meta_title = EXCLUDED.meta_title, meta_description = EXCLUDED.meta_description, published_at = EXCLUDED.published_at,

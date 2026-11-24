@@ -50,11 +50,11 @@ export default function MobileBottomNav() {
               <Link
                 href={item.to}
                 aria-current={active ? 'page' : undefined}
-                className={`flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 text-[11px] font-semibold ${
-                  active ? 'text-accent' : 'text-stext'
+                className={`relative flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 text-[11px] font-semibold transition-colors ${
+                  active ? 'text-accent' : 'text-stext hover:text-mtext'
                 }`}
               >
-                <Icon size={18} />
+                <Icon size={18} strokeWidth={active ? 2.3 : 1.9} />
                 {item.label}
               </Link>
             </li>
@@ -65,7 +65,7 @@ export default function MobileBottomNav() {
             type="button"
             onClick={toggleMore}
             className={`flex min-h-14 w-full flex-col items-center justify-center gap-0.5 px-1 text-[11px] font-semibold ${
-              moreOpen ? 'text-white' : 'text-white/70'
+              moreOpen ? 'text-accent' : 'text-stext'
             }`}
             aria-label={moreOpen ? 'Close browse menu' : 'Open browse menu'}
             aria-expanded={moreOpen}

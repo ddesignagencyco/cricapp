@@ -60,16 +60,25 @@ function toEditorialHtml(page: EditorialPage): { html: string; toc: EditorialToc
   return decorateHeadings(stripLeadingMeta(raw, page.title));
 }
 
+function normalizeBrandContent(text: string): string {
+  if (!text) return text;
+  return text
+    .replace(/About CricApp/g, 'About CriczApp')
+    .replace(/\bCricApp\b/g, 'CriczApp');
+}
+
 export default function EditorialDocument({ page }: { page: EditorialPage }) {
-  const { html, toc } = toEditorialHtml(page);
+  const normalizedTitle = normalizeBrandContent(page.title);
+  const normalizedContent = normalizeBrandContent(page.content);
+  const { html, toc } = toEditorialHtml({ ...page, title: normalizedTitle, content: normalizedContent });
   const hasBody = html.replace(/<[^>]+>/g, '').trim().length > 0;
 
   return (
-    <EditorialLayout title={page.title} slug={page.slug} updatedAt={page.updatedAt} toc={toc}>
+    <EditorialLayout title={normalizedTitle} slug={page.slug} updatedAt={page.updatedAt} toc={toc}>
       {hasBody ? (
         <div dangerouslySetInnerHTML={{ __html: html }} />
       ) : (
-        <EmptyState title={page.title} message="This page has no published content yet." />
+        <EmptyState title={normalizedTitle} message="This page has no published content yet." />
       )}
     </EditorialLayout>
   );

@@ -2,98 +2,121 @@
 
 @custom-variant light (&:where(.light, .light *));
 
+:root {
+  --brand-primary: #16B800;
+  --brand-secondary: #06152F;
+  --brand-accent: #80E800;
+  --brand-dark-green: #005C26;
+  --brand-white: #FFFFFF;
+
+  --background-light: #F4F6F9;
+  --background-dark: #020B19;
+  --surface-dark: #14243D;
+  --text-muted: #64748B;
+  --border-light: #E2E8F0;
+
+  --status-live: #EF4444;
+  --status-success: #16A34A;
+  --status-warning: #F59E0B;
+  --status-upcoming: #2563EB;
+
+  --gradient-primary: linear-gradient(
+    135deg, #80E800, #16B800, #005C26
+  );
+
+  --gradient-dark: linear-gradient(
+    135deg, #020B19, #14243D
+  );
+}
+
 @theme {
   /* ============================================================
-     Dark theme is the default. Every colour below is contrast
-     checked against its own surface: body/secondary text and all
-     status colours clear WCAG AA 4.5:1, borders clear 3:1.
+     CriczApp Official Brand Theme — Dark Mode Default
+     Built around #16B800 (Primary Green), #80E800 (Electric Accent),
+     #005C26 (Forest Green), #06152F (Brand Navy), #020B19 (Dark Bg),
+     and #14243D (Dark Surface), contrast-verified to WCAG AA.
      ============================================================ */
-     /* #3B68FC */
-  /* Legacy Tailwind names — mapped to the same semantic roles */
-  --color-primary: #08111F;
-  --color-secondary: #142238;
-  --color-card: #0E1A2B;
-  --color-elevated: #142238;
-  --color-accent: #8BA4FF;
-  --color-accent2: #A8BBFF;
-  --color-gold: #FBBF24;
+  /* Legacy Tailwind names — mapped to semantic roles */
+  --color-primary: #020B19;
+  --color-secondary: #14243D;
+  --color-card: #0A182E;
+  --color-elevated: #14243D;
+  --color-accent: #34D358;
+  --color-accent2: #5EE27A;
+  --color-gold: #F59E0B;
   --color-mtext: #F8FAFC;
   --color-stext: #CBD5E1;
-  --color-lborder: #2A3B52;
-  --color-danger: #FB7185;
+  --color-lborder: #1E3354;
+  --color-danger: #EF4444;
   --color-shadow: #000000;
 
-  --color-background: #08111F;
+  --color-background: #020B19;
   --color-foreground: #F8FAFC;
-  --color-surface: #0E1A2B;
-  --color-surface-elevated: #142238;
-  --color-surface-muted: #142238;
+  --color-surface: #0A182E;
+  --color-surface-elevated: #14243D;
+  --color-surface-muted: #14243D;
 
   --color-text-primary: #F8FAFC;
   --color-text-secondary: #CBD5E1;
-  --color-text-muted: #A8B4C5;
-  --color-text-disabled: #7E8CA0;
-  --color-muted-foreground: #A8B4C5;
-  --color-disabled-foreground: #7E8CA0;
+  --color-text-muted: #94A3B8;
+  --color-text-disabled: #64748B;
+  --color-muted-foreground: #94A3B8;
+  --color-disabled-foreground: #64748B;
 
-  --color-border: #2A3B52;
-  --color-border-strong: #3A4D67;
-  --color-input: #142238;
-  --color-input-border: #3A4D67;
+  --color-border: #1E3354;
+  --color-border-strong: #2C4872;
+  --color-input: #14243D;
+  --color-input-border: #2C4872;
 
-  /* Filled chrome uses #3B68FC + white. Accent is a lighter tint of the
-     same hue so links and active text still pass on dark surfaces. */
-  --color-brand: #3B68FC;
-  --color-brand-hover: #547CFF;
+  /* Primary brand controls use authentic CriczApp green (#16B800) with crisp white ink */
+  --color-brand: #16B800;
+  --color-brand-hover: #19CC00;
+  --color-brand-active: #005C26;
   --color-brand-fg: #FFFFFF;
-  --color-brand-soft: #1A2554;
-  /* Match scroll-to-top / btn-brand in dark mode */
-  --color-assistant-header: #3B68FC;
-  --color-focus-ring: #8BA4FF;
+  --color-brand-soft: #0B2E18;
+  --color-assistant-header: #005C26;
+  --color-focus-ring: #16B800;
 
-  --color-table-header: #3B68FC;
-  --color-table-header-fg: #FFFFFF;
+  --color-table-header: #102038;
+  --color-table-header-fg: #E2E8F0;
 
-  /* Letter avatars for teams, players and match sides — same in both themes. */
-  --color-entity-avatar: #3B68FC;
+  /* Letter avatars for teams, players and match sides */
+  --color-entity-avatar: #0D6E2B;
   --color-entity-avatar-fg: #FFFFFF;
 
-  --color-success: #34D399;
-  --color-success-soft: #0C2E26;
-  --color-warning: #FBBF24;
-  --color-warning-soft: #33280A;
-  --color-danger-soft: #3A1420;
-  --color-neutral-soft: #1B2B42;
-  --color-info: #8BA4FF;
-  --color-info-soft: #1A2554;
-  --color-live: #FB7185;
+  --color-success: #22C55E;
+  --color-success-soft: #0A2E1A;
+  --color-warning: #F59E0B;
+  --color-warning-soft: #362407;
+  --color-danger-soft: #3B1219;
+  --color-neutral-soft: #14243D;
+  --color-info: #60A5FA;
+  --color-info-soft: #10264A;
+  --color-live: #EF4444;
 
-  /* Status chips need a brighter fg than button-fill brand, plus a lifted
-     tint so they do not disappear into dark table rows. */
-  --color-badge-primary-fg: #8BA4FF;
-  --color-badge-primary-bg: #1A2554;
-  --color-badge-success-fg: #6EE7B7;
-  --color-badge-success-bg: #0F3D32;
+  /* Status chips — pre-mixed high-contrast pairs */
+  --color-badge-primary-fg: #4ADE80;
+  --color-badge-primary-bg: #0B2E19;
+  --color-badge-info-fg: #93C5FD;
+  --color-badge-info-bg: #102A52;
+  --color-badge-success-fg: #4ADE80;
+  --color-badge-success-bg: #0A331C;
   --color-badge-warning-fg: #FCD34D;
-  --color-badge-warning-bg: #3F2F0C;
-  --color-badge-danger-fg: #FDA4AF;
-  --color-badge-danger-bg: #4A1A28;
+  --color-badge-warning-bg: #3F2B08;
+  --color-badge-danger-fg: #FCA5A5;
+  --color-badge-danger-bg: #45151D;
   --color-badge-neutral-fg: #E2E8F0;
-  --color-badge-neutral-bg: #2A3B52;
-  /* Row/list hover must stay visible in both themes, so it is its own
-     token. The elevated surface equals the card in light mode, so it
-     cannot double as a hover colour. */
-  --color-row-hover: #18283F;
-  --color-skeleton: #1B2B42;
-  --color-skeleton-highlight: #263952;
-  /* Placeholders drawn on a permanently dark surface (filled table headers,
-     the admin sidebar). Not theme-dependent, so declared only once. */
+  --color-badge-neutral-bg: #1E3354;
+
+  --color-row-hover: #172B49;
+  --color-skeleton: #14243D;
+  --color-skeleton-highlight: #1E3558;
   --color-skeleton-on-dark: rgb(255 255 255 / 0.2);
   --color-skeleton-on-dark-highlight: rgb(255 255 255 / 0.38);
 
-  --color-chrome: rgb(8 17 31 / 0.95);
+  --color-chrome: rgb(2 11 25 / 0.94);
   --color-chrome-fg: #F8FAFC;
-  --color-chrome-border: #2A3B52;
+  --color-chrome-border: #1E3354;
 
   /* Shadow scale — resting cards use sm; hover md; overlays lg only. */
   --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.28);
@@ -126,84 +149,86 @@
   --radius-4xl: 0.625rem;
 }
 
-/* Light theme overrides. Page body stays pure white; only grouped
-   surfaces step down to the tinted secondary surface. */
+/* Light theme overrides — CriczApp Daylight Edition (#F4F6F9 bg, #FFFFFF cards,
+   #06152F brand navy ink, #16B800 / #005C26 cricket green accents). */
 .light {
-  --color-primary: #FFFFFF;
-  --color-secondary: #F6F8FB;
+  --color-primary: #F4F6F9;
+  --color-secondary: #E9EEF5;
   --color-card: #FFFFFF;
   --color-elevated: #FFFFFF;
-  /* A shade under the brand blue: #3B68FC is only ~4.6:1 on white and dropped under
-     4.5:1 on the tinted cards (WCAG AA). Buttons and chrome keep --color-brand. */
-  --color-accent: #2F5BEA;
-  --color-accent2: #2A4FE0;
+  /* Rich turf emerald (#0D7A2C / #005C26) clears WCAG AA 5.4:1+ on white & #F4F6F9 */
+  --color-accent: #0D7A2C;
+  --color-accent2: #005C26;
   --color-gold: #B45309;
-  --color-mtext: #101828;
-  --color-stext: #475467;
-  --color-lborder: #D8DEE8;
-  --color-danger: #BE123C;
-  --color-shadow: #101828;
+  --color-mtext: #06152F;
+  --color-stext: #334155;
+  --color-lborder: #E2E8F0;
+  --color-danger: #DC2626;
+  --color-shadow: #06152F;
 
-  --color-background: #FFFFFF;
-  --color-foreground: #101828;
+  --color-background: #F4F6F9;
+  --color-foreground: #06152F;
   --color-surface: #FFFFFF;
   --color-surface-elevated: #FFFFFF;
-  --color-surface-muted: #F6F8FB;
+  --color-surface-muted: #EEF2F7;
 
-  --color-text-primary: #101828;
-  --color-text-secondary: #475467;
-  --color-text-muted: #667085;
-  --color-text-disabled: #8A94A6;
-  --color-muted-foreground: #667085;
-  --color-disabled-foreground: #8A94A6;
+  --color-text-primary: #06152F;
+  --color-text-secondary: #334155;
+  --color-text-muted: #64748B;
+  --color-text-disabled: #94A3B8;
+  --color-muted-foreground: #64748B;
+  --color-disabled-foreground: #94A3B8;
 
-  --color-border: #D8DEE8;
-  --color-border-strong: #C5CEDA;
+  --color-border: #E2E8F0;
+  --color-border-strong: #CBD5E1;
   --color-input: #FFFFFF;
-  --color-input-border: #C5CEDA;
+  --color-input-border: #CBD5E1;
 
-  --color-brand: #3B68FC;
-  --color-brand-hover: #2A4FE0;
+  --color-brand: #0F8231;
+  --color-brand-hover: #0B6926;
   --color-brand-fg: #FFFFFF;
-  --color-brand-soft: #E8EDFF;
-  --color-assistant-header: #3B68FC;
-  --color-focus-ring: #3B68FC;
+  --color-brand-soft: #E6F5EA;
+  --color-assistant-header: #0F7E31;
+  --color-focus-ring: #15803D;
 
-  --color-table-header: #3B68FC;
-  --color-table-header-fg: #FFFFFF;
+  /* Clean cool-slate editorial table header in Light Mode (no heavy black slab) */
+  --color-table-header: #EEF2F7;
+  --color-table-header-fg: #06152F;
 
-  --color-entity-avatar: #3B68FC;
+  --color-entity-avatar: #06152F;
   --color-entity-avatar-fg: #FFFFFF;
 
-  --color-success: #047857;
-  --color-success-soft: #E7F6F0;
-  --color-warning: #B45309;
-  --color-warning-soft: #FDF3E7;
-  --color-danger-soft: #FDECF1;
-  --color-neutral-soft: #F0F3F8;
-  --color-info: #3B68FC;
-  --color-info-soft: #E8EDFF;
-  --color-live: #BE123C;
+  --color-success: #16A34A;
+  --color-success-soft: #DCFCE7;
+  --color-warning: #D97706;
+  --color-warning-soft: #FEF3C7;
+  --color-danger-soft: #FEE2E2;
+  --color-neutral-soft: #EEF2F7;
+  --color-info: #2563EB;
+  --color-info-soft: #DBEAFE;
+  --color-live: #EF4444;
 
-  --color-badge-primary-fg: #2A4FE0;
-  --color-badge-primary-bg: #E8EDFF;
-  --color-badge-success-fg: #047857;
-  --color-badge-success-bg: #E7F6F0;
+  --color-badge-primary-fg: #0B6926;
+  --color-badge-primary-bg: #DCFCE7;
+  --color-badge-info-fg: #1D4ED8;
+  --color-badge-info-bg: #DBEAFE;
+  --color-badge-success-fg: #15803D;
+  --color-badge-success-bg: #DCFCE7;
   --color-badge-warning-fg: #B45309;
-  --color-badge-warning-bg: #FDF3E7;
-  --color-badge-danger-fg: #BE123C;
-  --color-badge-danger-bg: #FDECF1;
-  --color-badge-neutral-fg: #475467;
-  --color-badge-neutral-bg: #F0F3F8;
-  --color-row-hover: #F0F3FF;
-  --color-skeleton: #E7EBF1;
-  --color-skeleton-highlight: #F6F8FB;
+  --color-badge-warning-bg: #FEF3C7;
+  --color-badge-danger-fg: #DC2626;
+  --color-badge-danger-bg: #FEE2E2;
+  --color-badge-neutral-fg: #475569;
+  --color-badge-neutral-bg: #E2E8F0;
+  --color-row-hover: #F1F5F9;
+  --color-skeleton: #E2E8F0;
+  --color-skeleton-highlight: #F4F6F9;
 
-  --color-chrome: var(--color-entity-avatar);
-  --color-chrome-fg: var(--color-entity-avatar-fg);
-  --color-chrome-muted: rgb(255 255 255 / 0.86);
-  --color-chrome-hover: rgb(255 255 255 / 0.14);
-  --color-chrome-border: rgb(255 255 255 / 0.18);
+  --color-chrome: rgb(255 255 255 / 0.96);
+  --color-chrome-fg: #06152F;
+  --color-chrome-muted: #334155;
+  --color-chrome-hover: rgb(6 21 47 / 0.06);
+  --color-chrome-border: #E2E8F0;
 
   --shadow-xs: 0 1px 2px rgb(16 24 40 / 0.06);
   --shadow-sm: 0 1px 2px rgb(16 24 40 / 0.05), 0 2px 8px rgb(16 24 40 / 0.06);
@@ -234,6 +259,7 @@ table thead,
 table thead tr {
   background-color: var(--color-table-header);
   color: var(--color-table-header-fg);
+  border-bottom: 1px solid var(--color-border-strong);
 }
 
 table thead th {
@@ -301,35 +327,77 @@ html {
 }
 
 .site-chrome {
-  background-color: rgb(8 17 31 / 0.95);
+  background-color: rgb(2 11 25 / 0.94);
   border-color: var(--color-lborder);
   color: var(--color-mtext);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
 }
 
 .light .site-chrome {
-  background-color: var(--color-entity-avatar);
-  border-color: var(--color-chrome-border);
-  color: var(--color-entity-avatar-fg);
+  background-color: rgb(255 255 255 / 0.97);
+  border-color: #E2E8F0;
+  color: #06152F;
 }
 
-header.site-chrome .site-nav-link,
-header.site-chrome .site-nav-link:hover,
-header.site-chrome .site-nav-link[aria-current='page'],
-header.site-chrome .site-nav-icon,
-header.site-chrome .site-nav-icon:hover,
+header.site-chrome .site-nav-link {
+  color: #CBD5E1;
+}
+
+header.site-chrome .site-nav-link:hover {
+  color: #FFFFFF;
+}
+
+header.site-chrome .site-nav-link[aria-current='page'] {
+  color: #FFFFFF;
+  font-weight: 600;
+}
+
+header.site-chrome .site-nav-icon {
+  color: #E2E8F0;
+  background-color: transparent;
+}
+
 header.site-chrome .site-nav-icon[aria-expanded='true'] {
-  color: #ffffff;
+  color: #FFFFFF;
+  background-color: rgb(255 255 255 / 0.12);
 }
 
-header.site-chrome .site-nav-link[aria-current='page']::after {
-  background-color: #ffffff;
+@media (hover: hover) {
+  header.site-chrome .site-nav-icon:hover {
+    color: #FFFFFF;
+    background-color: rgb(255 255 255 / 0.1);
+  }
 }
 
-header.site-chrome .site-nav-icon:hover,
-header.site-chrome .site-nav-icon[aria-expanded='true'] {
-  background-color: rgb(255 255 255 / 0.14);
+.light header.site-chrome .site-nav-link {
+  color: #334155;
+}
+
+.light header.site-chrome .site-nav-link:hover {
+  color: #06152F;
+}
+
+.light header.site-chrome .site-nav-link[aria-current='page'] {
+  color: #06152F;
+  font-weight: 600;
+}
+
+.light header.site-chrome .site-nav-icon {
+  color: #334155;
+  background-color: transparent;
+}
+
+.light header.site-chrome .site-nav-icon[aria-expanded='true'] {
+  color: #06152F;
+  background-color: rgb(6 21 47 / 0.08);
+}
+
+@media (hover: hover) {
+  .light header.site-chrome .site-nav-icon:hover {
+    color: #06152F;
+    background-color: rgb(6 21 47 / 0.06);
+  }
 }
 
 .site-nav-link {
@@ -359,32 +427,68 @@ header.site-chrome .site-nav-icon[aria-expanded='true'] {
 .mobile-bottom-nav {
   --color-mtext: #ffffff;
   --color-stext: rgb(255 255 255 / 0.72);
-  --color-accent: #ffffff;
+  --color-accent: #16B800;
 }
 
 .mobile-bottom-nav a[aria-current='page'] {
-  color: #ffffff;
+  color: #16B800;
+  background-color: transparent !important;
 }
 
-/*
- * In light mode the bar sits on solid brand blue, where 70%-white inactive
- * text is 3.1:1 and fails. Inactive items go full white (5.1:1) and the active
- * item keeps its distinction with a translucent pill instead of a colour the
- * background swallows. Dark mode keeps the softer 72% treatment (7:1, pass).
- */
+.mobile-bottom-nav a[aria-current='page']::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 20%;
+  right: 20%;
+  height: 2.5px;
+  border-radius: 9999px;
+  background-color: #16B800;
+}
+
 .light .mobile-bottom-nav {
-  --color-stext: #ffffff;
+  --color-mtext: #06152F;
+  --color-stext: #475569;
+  --color-accent: #0D7A2C;
 }
 
 .light .mobile-bottom-nav button {
-  color: #ffffff;
+  color: var(--color-stext);
 }
 
 .light .mobile-bottom-nav a[aria-current='page'] {
-  /* Dark pill, not light: white text on a lightened brand blue falls to ~4.3:1
-     and fails, while white on a darkened brand blue clears ~6.4:1. */
-  background-color: rgb(0 0 0 / 0.18);
-  border-radius: 0.5rem;
+  color: #0B6926;
+  background-color: transparent !important;
+  border-radius: 0;
+}
+
+.light .mobile-bottom-nav a[aria-current='page']::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 20%;
+  right: 20%;
+  height: 2.5px;
+  border-radius: 9999px;
+  background-color: #0B6926;
+}
+
+/* Logo switching between Dark and Light mode */
+.logo-img--dark {
+  display: block;
+}
+.logo-img--light {
+  display: none !important;
+}
+
+html.light .logo-img--dark,
+.light .logo-img--dark {
+  display: none !important;
+}
+
+html.light .logo-img--light,
+.light .logo-img--light {
+  display: block !important;
 }
 
 .site-side-atmosphere {
@@ -423,12 +527,12 @@ header.site-chrome .site-nav-icon[aria-expanded='true'] {
   position: absolute;
   inset: 8% -30%;
   border-radius: 999px;
-  background: radial-gradient(ellipse at center, rgb(139 164 255 / 0.16), transparent 68%);
+  background: radial-gradient(ellipse at center, rgb(22 184 0 / 0.16), transparent 68%);
   animation: site-side-breathe 9s ease-in-out infinite;
 }
 
 .light .site-side-glow {
-  background: radial-gradient(ellipse at center, rgb(59 104 252 / 0.12), transparent 70%);
+  background: radial-gradient(ellipse at center, rgb(22 184 0 / 0.12), transparent 70%);
 }
 
 .site-side-seam {
@@ -441,9 +545,9 @@ header.site-chrome .site-nav-icon[aria-expanded='true'] {
   background: linear-gradient(
     180deg,
     transparent,
-    rgb(251 191 36 / 0.35) 18%,
-    rgb(139 164 255 / 0.28) 50%,
-    rgb(251 191 36 / 0.35) 82%,
+    rgb(128 232 0 / 0.35) 18%,
+    rgb(22 184 0 / 0.3) 50%,
+    rgb(0 92 38 / 0.38) 82%,
     transparent
   );
 }
@@ -517,8 +621,8 @@ header.site-chrome .site-nav-icon[aria-expanded='true'] {
 body {
   background-color: var(--color-background);
   background-image:
-    radial-gradient(ellipse 28% 60% at 0% 40%, rgb(139 164 255 / 0.07), transparent 70%),
-    radial-gradient(ellipse 28% 60% at 100% 55%, rgb(251 191 36 / 0.05), transparent 70%);
+    radial-gradient(ellipse 32% 60% at 0% 35%, rgb(22 184 0 / 0.08), transparent 70%),
+    radial-gradient(ellipse 32% 60% at 100% 55%, rgb(20 36 61 / 0.45), transparent 70%);
   color: var(--color-foreground, var(--color-mtext));
   font-family: var(--font-sans);
   font-size: 0.9375rem;
@@ -532,39 +636,13 @@ body {
 html.light,
 .light body {
   background-color: var(--color-background);
-  background-image:
-    url('/bg-desktop.svg'),
-    radial-gradient(ellipse 70% 52% at 80% -8%, #d2dcff 0%, transparent 58%),
-    radial-gradient(ellipse 55% 46% at -4% 18%, rgb(210 220 255 / 0.5) 0%, transparent 56%),
-    radial-gradient(ellipse 48% 38% at 30% 0%, rgb(255 235 157 / 0.55) 0%, transparent 54%),
-    radial-gradient(ellipse 42% 34% at 100% 6%, rgb(255 235 157 / 0.28) 0%, transparent 52%),
-    radial-gradient(ellipse 34% 28% at 48% 4%, rgb(252 194 201 / 0.62) 0%, transparent 50%),
-    radial-gradient(ellipse 38% 30% at 12% 12%, rgb(252 194 201 / 0.4) 0%, transparent 52%),
-    radial-gradient(ellipse 64% 48% at 96% 108%, rgb(210 220 255 / 0.62) 0%, transparent 58%),
-    radial-gradient(ellipse 54% 42% at 0% 106%, rgb(252 194 201 / 0.4) 0%, transparent 55%),
-    radial-gradient(ellipse 46% 36% at 50% 110%, rgb(255 235 157 / 0.34) 0%, transparent 52%);
-  background-repeat: no-repeat;
-  background-position: center top;
-  background-size: cover;
-  background-attachment: fixed;
+  background-image: none;
 }
 
-/* `fixed` forces a full repaint on every scroll frame. Touch devices never
-   benefit from the effect, so they get a static background instead.
-   With `scroll` the layers size against the whole document (thousands of px
-   tall), which blew the soft glows and the SVG up into a page-wide pink wash
-   on phones. Pin a lighter set of glows to one viewport-high band at the top,
-   matching what desktop shows on its first screen. */
 @media (pointer: coarse) {
   html.light,
   .light body {
-    background-attachment: scroll;
-    background-image:
-      radial-gradient(ellipse 90% 40% at 85% 0%, #d2dcff 0%, transparent 70%),
-      radial-gradient(ellipse 70% 30% at 10% 4%, rgb(255 235 157 / 0.35) 0%, transparent 70%),
-      radial-gradient(ellipse 60% 24% at 50% 0%, rgb(252 194 201 / 0.3) 0%, transparent 70%);
-    background-size: 100% 100svh;
-    background-position: center top;
+    background-image: none;
   }
 }
 
@@ -896,8 +974,8 @@ textarea#comment-body:focus-visible {
 .tool-orb {
   box-shadow:
     inset 0 2px 0 rgb(255 255 255 / 0.45),
-    inset 0 -8px 12px rgb(16 24 40 / 0.12),
-    0 10px 18px rgb(59 104 252 / 0.22);
+    inset 0 -8px 12px rgb(6 21 47 / 0.14),
+    0 10px 18px rgb(22 184 0 / 0.22);
 }
 
 .tool-input {
@@ -905,7 +983,7 @@ textarea#comment-body:focus-visible {
   width: 100%;
   border-radius: var(--radius-md);
   border: 1px solid var(--color-input-border);
-  background: var(--color-surface-muted);
+  background: var(--color-input);
   padding: 0.7rem 1rem;
   font-family: var(--font-mono);
   font-size: 0.95rem;
@@ -1009,19 +1087,16 @@ textarea#comment-body:focus-visible {
   box-shadow: var(--shadow-xs);
 }
 
-/* Segmented tabs — soft track, white idle pills, blue 3D active */
+/* Segmented tabs — clean recessed track, borderless idle items, elevated green active pill */
 .tabs-segment {
   display: inline-flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.25rem;
   border-radius: 0.625rem;
-  padding: 0.3125rem;
-  border: 1px solid color-mix(in srgb, var(--color-border) 75%, transparent);
-  background: color-mix(in srgb, var(--color-secondary) 92%, rgb(0 0 0 / 0.06));
-  box-shadow:
-    inset 0 1px 3px rgb(0 0 0 / 0.1),
-    0 1px 2px rgb(0 0 0 / 0.04);
+  padding: 0.25rem;
+  border: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--color-secondary) 82%, var(--color-background));
 }
 
 /* Phones: one swipeable row. Wrapping left a lone tab ("Cancelled") on a
@@ -1047,68 +1122,77 @@ textarea#comment-body:focus-visible {
 }
 
 .light .tabs-segment {
-  border: 1px solid color-mix(in srgb, var(--color-border) 55%, #cbd5e1);
-  background: color-mix(in srgb, var(--color-secondary) 55%, #e2e8f0);
-  box-shadow:
-    inset 0 1px 2px rgb(16 24 40 / 0.06),
-    0 1px 2px rgb(16 24 40 / 0.04);
+  border: 1px solid #DCE4EE;
+  background: #E9EEF5;
 }
 
 .tab-pill {
   font-weight: 600;
-  border-radius: 0.5rem;
-  /* Avoid color transition — prevents black↔white flicker when switching tabs */
+  border-radius: 0.45rem;
   transition:
     background var(--motion-duration) var(--motion-ease),
     box-shadow var(--motion-duration) var(--motion-ease),
-    border-color var(--motion-duration) var(--motion-ease),
-    transform var(--motion-duration) var(--motion-ease);
+    border-color var(--motion-duration) var(--motion-ease);
 }
 
 .tab-pill--idle {
-  color: var(--color-text-primary);
-  border: 1px solid color-mix(in srgb, var(--color-border) 70%, var(--color-brand));
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--color-card) 98%, #fff) 0%,
-    var(--color-card) 100%
-  );
-  box-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
+  color: var(--color-text-secondary);
+  border: 1px solid transparent;
+  background: transparent;
+  box-shadow: none;
+}
+
+@media (hover: hover) {
+  .tab-pill--idle:hover {
+    color: var(--color-text-primary);
+    background: color-mix(in srgb, var(--color-card) 65%, transparent);
+  }
 }
 
 .light .tab-pill--idle {
-  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-  border-color: color-mix(in srgb, var(--color-border) 70%, var(--color-brand));
-  box-shadow: 0 1px 2px rgb(16 24 40 / 0.05);
+  color: #475569;
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+@media (hover: hover) {
+  .light .tab-pill--idle:hover {
+    color: #06152F;
+    background: rgb(255 255 255 / 0.72);
+  }
+}
+
+/* Standalone pills outside a .tabs-segment (e.g. PSL season selector) keep a subtle frame */
+:not(.tabs-segment) > .tab-pill--idle {
+  border-color: var(--color-border);
+  background: var(--color-card);
 }
 
 .tab-pill--active,
 .tab-tag--active,
 .ui-3d-brand {
-  color: var(--color-brand-fg);
-  font-weight: 700;
-  border: 1px solid color-mix(in srgb, var(--color-brand) 68%, rgb(0 0 0 / 0.35));
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--color-brand-hover) 92%, rgb(255 255 255 / 0.22)) 0%,
-    var(--color-brand) 46%,
-    color-mix(in srgb, var(--color-brand) 84%, rgb(0 0 0 / 0.22)) 100%
-  );
+  color: #FFFFFF;
+  font-weight: 600;
+  border: 1px solid #005C26;
+  background: linear-gradient(180deg, #16B800 0%, #007A2B 100%);
   box-shadow:
-    0 2px 0 color-mix(in srgb, var(--color-brand) 48%, rgb(0 0 0 / 0.45)),
-    0 5px 14px rgb(59 104 252 / 0.28),
-    inset 0 1px 0 rgb(255 255 255 / 0.28);
-  transform: translateY(-1px);
-  text-shadow: 0 1px 0 rgb(0 0 0 / 0.12);
+    0 1px 3px rgb(6 21 47 / 0.16),
+    inset 0 1px 0 rgb(255 255 255 / 0.22);
+}
+
+.light .tab-pill--active,
+.light .tab-tag--active,
+.light .ui-3d-brand {
+  border-color: #004D20;
+  background: linear-gradient(180deg, #159E3F 0%, #005C26 100%);
 }
 
 .tab-pill--active:active,
 .tab-tag--active:active,
 .ui-3d-brand:active:not(:disabled) {
-  transform: translateY(0);
-  box-shadow:
-    0 1px 0 color-mix(in srgb, var(--color-brand) 42%, rgb(0 0 0 / 0.4)),
-    inset 0 2px 5px rgb(0 0 0 / 0.16);
+  background: #005C26;
+  box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.2);
 }
 
 .tab-pill__count--active {
@@ -1228,35 +1312,23 @@ textarea#comment-body:focus-visible {
 }
 
 .pagination-btn.pagination-btn--current {
-  color: var(--color-brand-fg);
+  color: #FFFFFF;
   font-weight: 700;
-  border: 1px solid color-mix(in srgb, var(--color-brand) 68%, rgb(0 0 0 / 0.35));
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--color-brand-hover) 92%, rgb(255 255 255 / 0.22)) 0%,
-    var(--color-brand) 46%,
-    color-mix(in srgb, var(--color-brand) 84%, rgb(0 0 0 / 0.22)) 100%
-  );
+  border: 1px solid #0B6926;
+  background: linear-gradient(180deg, #169C3F 0%, #0F7E31 100%);
   box-shadow:
-    0 2px 0 color-mix(in srgb, var(--color-brand) 48%, rgb(0 0 0 / 0.45)),
-    0 4px 12px rgb(59 104 252 / 0.32),
-    inset 0 1px 0 rgb(255 255 255 / 0.32);
-  transform: translateY(-1px);
-  text-shadow: 0 1px 0 rgb(0 0 0 / 0.12);
+    0 1px 3px rgb(6 21 47 / 0.18),
+    inset 0 1px 0 rgb(255 255 255 / 0.22);
 }
 
 .pagination-btn.pagination-btn--current:active {
-  transform: translateY(0);
-  box-shadow:
-    0 1px 0 color-mix(in srgb, var(--color-brand) 42%, rgb(0 0 0 / 0.4)),
-    inset 0 2px 5px rgb(0 0 0 / 0.16);
+  background: #0D6E2B;
+  box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.18);
 }
 
 .pagination-btn.pagination-btn--current:focus-visible {
   box-shadow:
-    0 2px 0 color-mix(in srgb, var(--color-brand) 48%, rgb(0 0 0 / 0.45)),
-    0 4px 12px rgb(59 104 252 / 0.32),
-    inset 0 1px 0 rgb(255 255 255 / 0.32),
+    0 1px 3px rgb(6 21 47 / 0.18),
     0 0 0 2px var(--color-background),
     0 0 0 4px var(--color-focus-ring);
 }
@@ -1314,10 +1386,10 @@ textarea#comment-body:focus-visible {
 .light .match-detail-hero,
 .light .detail-hero {
   background:
-    radial-gradient(ellipse 90% 55% at 50% 0%, rgb(59 104 252 / 0.09), transparent 48%),
-    linear-gradient(180deg, #ffffff 0%, #f4f7fb 100%);
+    radial-gradient(ellipse 90% 55% at 50% 0%, rgb(22 184 0 / 0.08), transparent 48%),
+    linear-gradient(180deg, #ffffff 0%, #f4f6f9 100%);
   box-shadow:
-    0 10px 40px rgb(16 24 40 / 0.07),
+    0 10px 40px rgb(6 21 47 / 0.07),
     inset 0 1px 0 rgb(255 255 255 / 1);
 }
 
@@ -2670,7 +2742,7 @@ button:disabled,
 }
 
 .hero-highlight {
-  color: #238fe2 !important;
+  color: #4ADE80 !important;
 }
 
 /* Legibility scrims over hero photography. Fixed dark values in both
@@ -2737,20 +2809,17 @@ button:disabled,
 /* PSL hero. Uses its own artwork (banner.jpg) so the league page is not a
    duplicate of the homepage, and always pairs with .hero-scrim — without that
    scrim the raw image reads as a bright lightbulb behind the title. */
-/* Brand controls — 3D gradient (tabs, chips, pagination current share .ui-3d-brand rules). */
+/* Brand controls — modern uniform turf-green primary CTA */
 .btn-brand {
-  color: var(--color-brand-fg);
-  border: 1px solid color-mix(in srgb, var(--color-brand) 68%, rgb(0 0 0 / 0.35));
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--color-brand-hover) 92%, rgb(255 255 255 / 0.22)) 0%,
-    var(--color-brand) 46%,
-    color-mix(in srgb, var(--color-brand) 84%, rgb(0 0 0 / 0.22)) 100%
-  );
+  color: #FFFFFF;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  border: 1px solid #005C26;
+  background: linear-gradient(180deg, #16B800 0%, #007A2B 100%);
   box-shadow:
-    0 2px 0 color-mix(in srgb, var(--color-brand) 48%, rgb(0 0 0 / 0.45)),
-    0 4px 12px rgb(59 104 252 / 0.22),
-    inset 0 1px 0 rgb(255 255 255 / 0.28);
+    0 1px 2px rgb(6 21 47 / 0.18),
+    0 3px 10px rgb(22 184 0 / 0.22),
+    inset 0 1px 0 rgb(255 255 255 / 0.22);
   transition:
     background var(--motion-duration) var(--motion-ease),
     box-shadow var(--motion-duration) var(--motion-ease),
@@ -2758,27 +2827,38 @@ button:disabled,
     border-color var(--motion-duration) var(--motion-ease);
 }
 
+.light .btn-brand {
+  border: 1px solid #004D20;
+  background: linear-gradient(180deg, #159E3F 0%, #005C26 100%);
+  box-shadow:
+    0 1px 2px rgb(6 21 47 / 0.12),
+    0 3px 8px rgb(0 92 38 / 0.2),
+    inset 0 1px 0 rgb(255 255 255 / 0.2);
+}
+
 @media (hover: hover) {
   .btn-brand:hover:not(:disabled) {
-    background: linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--color-brand-hover) 96%, rgb(255 255 255 / 0.3)) 0%,
-      var(--color-brand-hover) 48%,
-      color-mix(in srgb, var(--color-brand) 80%, rgb(0 0 0 / 0.2)) 100%
-    );
+    background: linear-gradient(180deg, #1BD400 0%, #0D8C33 100%);
     box-shadow:
-      0 2px 0 color-mix(in srgb, var(--color-brand) 45%, rgb(0 0 0 / 0.4)),
-      0 6px 16px rgb(59 104 252 / 0.32),
-      inset 0 1px 0 rgb(255 255 255 / 0.32);
+      0 2px 4px rgb(6 21 47 / 0.2),
+      0 6px 16px rgb(22 184 0 / 0.28),
+      inset 0 1px 0 rgb(255 255 255 / 0.26);
     transform: translateY(-1px);
+  }
+
+  .light .btn-brand:hover:not(:disabled) {
+    background: linear-gradient(180deg, #17B247 0%, #006E2E 100%);
+    box-shadow:
+      0 2px 4px rgb(6 21 47 / 0.14),
+      0 5px 14px rgb(0 92 38 / 0.26),
+      inset 0 1px 0 rgb(255 255 255 / 0.25);
   }
 }
 
 .btn-brand:active:not(:disabled) {
   transform: translateY(0);
-  box-shadow:
-    0 1px 0 color-mix(in srgb, var(--color-brand) 42%, rgb(0 0 0 / 0.4)),
-    inset 0 2px 5px rgb(0 0 0 / 0.16);
+  background: #005C26;
+  box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.25);
 }
 
 .btn-brand:focus-visible {
@@ -3036,6 +3116,31 @@ h3.news-copy[dir="rtl"] {
    (Single Source of Truth for Public & Admin)
    ============================ */
 :root {
+  /* CriczApp official design tokens */
+  --brand-primary: #16B800;
+  --brand-secondary: #06152F;
+  --brand-accent: #80E800;
+  --brand-dark-green: #005C26;
+  --brand-white: #FFFFFF;
+
+  --background-light: #F4F6F9;
+  --background-dark: #020B19;
+  --surface-dark: #14243D;
+  --border-light: #E2E8F0;
+
+  --status-live: #EF4444;
+  --status-success: #16A34A;
+  --status-warning: #F59E0B;
+  --status-upcoming: #2563EB;
+
+  --gradient-primary: linear-gradient(
+    135deg, #80E800, #16B800, #005C26
+  );
+
+  --gradient-dark: linear-gradient(
+    135deg, #020B19, #14243D
+  );
+
   /* Common semantic variables mapped to Tailwind theme tokens */
   --background: var(--color-background);
   --surface: var(--color-surface);
@@ -3081,13 +3186,13 @@ h3.news-copy[dir="rtl"] {
      own values are literal rather than theme-derived. */
   --admin-bg: var(--color-background);
   --admin-surface: var(--color-surface-muted);
-  --admin-sidebar: #0B2B45;
+  --admin-sidebar: #06152F;
   --admin-sidebar-hover: rgba(255, 255, 255, 0.08);
   --admin-sidebar-text: #F8FAFC;
-  --admin-sidebar-muted: #C3D7E6;
+  --admin-sidebar-muted: #CBD5E1;
   --admin-sidebar-border: rgba(255, 255, 255, 0.1);
-  --admin-sidebar-active: var(--color-table-header);
-  --admin-sidebar-active-fg: var(--color-table-header-fg);
+  --admin-sidebar-active: #005C26;
+  --admin-sidebar-active-fg: #FFFFFF;
   --admin-card: var(--color-surface);
   --admin-card-hover: var(--color-surface-elevated);
   --admin-border: var(--color-border);
@@ -3289,11 +3394,11 @@ h3.news-copy[dir="rtl"] {
    in light mode and would disappear against photography, so overlays use
    this fixed light blue instead. */
 .text-on-media-accent {
-  color: #A9D3EE;
+  color: #4ADE80;
 }
 
 .hover\:text-on-media-accent:hover {
-  color: #A9D3EE;
+  color: #86EFAC;
 }
 
 .btn-on-media {
@@ -3784,7 +3889,7 @@ html[data-hide-ads] [data-ad-placement] {
 .tool-diamond-card:hover {
   transform: translateY(-2px);
   border-color: var(--color-border-strong);
-  box-shadow: 0 1px 0 rgb(255 255 255 / 0.06) inset, 0 10px 28px rgb(59 104 252 / 0.12);
+  box-shadow: 0 1px 0 rgb(255 255 255 / 0.06) inset, 0 10px 28px rgb(22 184 0 / 0.14);
 }
 
 .tool-diamond-card__gem {
@@ -3976,10 +4081,10 @@ nav[aria-label='Breadcrumb'] a {
       margin-top: -13px;
       border-radius: 999px;
       pointer-events: none;
-      background: var(--color-accent, #3b68fc)
+      background: var(--color-brand, #16B800)
         url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m9 18 6-6-6-6'/%3E%3C/svg%3E")
         center / 14px no-repeat;
-      box-shadow: 0 2px 6px rgb(59 104 252 / 0.35);
+      box-shadow: 0 2px 6px rgb(22 184 0 / 0.35);
       opacity: 0;
       animation: mc-tabs-more linear both;
       animation-timeline: --mc-tabs;

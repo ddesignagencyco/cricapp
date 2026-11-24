@@ -66,11 +66,19 @@ export const metadata = {
     title: 'CriczApp — Cricket Live Scores & PSL Hub',
     description: 'Live cricket scores, PSL fixtures, teams, players and statistics.',
   },
-  icons: { icon: '/favicon.svg', apple: '/apple-touch-icon.png' },
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/brand/favicon.png', type: 'image/png' },
+      { url: '/favicon.png', sizes: '64x64', type: 'image/png' },
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+    ],
+    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
+  },
 };
 
 export const viewport = {
-  themeColor: '#07111F',
+  themeColor: '#020B19',
   width: 'device-width' as const,
   initialScale: 1,
 };
