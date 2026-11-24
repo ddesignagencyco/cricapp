@@ -68,13 +68,12 @@ const hash = (s) => [...String(s)].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >
 /* ---------- authors ---------- */
 const authorBySlug = new Map();
 for (const a of AUTHORS) {
-  writeAsset(`${PUBLIC}/seed/authors/${a.slug}.svg`, avatarSvg(a.name, a.hue));
   const r = await q(
     `INSERT INTO authors (id, name, slug, bio, avatar_url, created_at, updated_at)
      VALUES (gen_random_uuid(), $1, $2, $3, $4, NOW(), NOW())
      ON CONFLICT (slug) DO UPDATE SET name = EXCLUDED.name, bio = EXCLUDED.bio, avatar_url = EXCLUDED.avatar_url, updated_at = NOW()
      RETURNING id`,
-    [a.name, a.slug, a.bio, `/seed/authors/${a.slug}.svg`],
+    [a.name, a.slug, a.bio, null],
   );
   authorBySlug.set(a.slug, { id: r.rows[0].id, name: a.name, cats: a.cats });
 }
@@ -213,7 +212,6 @@ EXPLAINERS.forEach((e, i) => articles.push({ ...e, label: 'Explainer', scoreline
 let written = 0;
 for (const a of articles) {
   const author = authorFor(a.category, a.slug);
-  writeAsset(`${PUBLIC}/seed/news/${a.slug}.svg`, heroSvg({ title: a.title, category: a.category, label: a.label, scoreline: a.scoreline }));
   const r = await q(
     `INSERT INTO news_articles (id, title, slug, summary, content, image_url, author, author_id, source, category_id, language,
                                meta_title, meta_description, published_at, is_published, created_at, updated_at)
@@ -223,7 +221,7 @@ for (const a of articles) {
        meta_title = EXCLUDED.meta_title, meta_description = EXCLUDED.meta_description, published_at = EXCLUDED.published_at,
        is_published = true, updated_at = NOW()
      RETURNING id`,
-    [a.title, a.slug, a.summary, a.html, `/seed/news/${a.slug}.svg`, author.name, author.id, categoryId.get(a.category) ?? null, a.publishedAt],
+    [a.title, a.slug, a.summary, a.html, null, author.name, author.id, categoryId.get(a.category) ?? null, a.publishedAt],
   );
   const id = r.rows[0].id;
   await q(`DELETE FROM news_article_teams WHERE article_id = $1`, [id]);
@@ -235,20 +233,8 @@ for (const a of articles) {
   written += 1;
 }
 
-/* ---------- gallery: its own posters (the public gallery hides images that articles already use) ---------- */
+/* ---------- gallery: seed images omitted ---------- */
 let gallery = 0;
-for (const a of articles.filter((x) => /^(match-report|match-result|match-preview|tournament-watch)-/.test(x.slug)).slice(0, 24)) {
-  const file = `/seed/gallery/${a.slug}.svg`;
-  const teams = a.title.replace(/^Preview:\s*/, '').split(': ')[0];
-  writeAsset(`${PUBLIC}${file}`, posterSvg({ title: teams, category: a.category, label: a.label, sub: a.scoreline }));
-  await q(
-    `INSERT INTO gallery_media (id, title, caption, type, purpose, url, public_id, resource_type, width, height, format, created_at, updated_at)
-     VALUES (gen_random_uuid(), $1, $2, 'image', 'gallery', $3, $4, 'image', 800, 800, 'svg', NOW(), NOW())
-     ON CONFLICT (public_id) DO UPDATE SET title = EXCLUDED.title, caption = EXCLUDED.caption, url = EXCLUDED.url, width = EXCLUDED.width, height = EXCLUDED.height, updated_at = NOW()`,
-    [a.label + ': ' + (a.scoreline || a.title), a.summary, file, `seed-gallery-${a.slug}`],
-  );
-  gallery += 1;
-}
 
 /* ---------- streams ---------- */
 let streams = 0;
