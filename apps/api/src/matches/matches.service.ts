@@ -269,9 +269,52 @@ export class MatchesService {
     return map;
   }
 
+  private oversToBalls(overs: number | null | undefined): number | null {
+    if (overs == null || !Number.isFinite(overs) || overs < 0) return null;
+    const whole = Math.floor(overs);
+    const balls = Math.round((overs - whole) * 10);
+    return whole * 6 + Math.min(balls, 5);
+  }
+
+  private parseRunsFromScore(displayScore: string | null | undefined, currentInnings?: CurrentInnings | null): number | null {
+    if (currentInnings?.runs != null && Number.isFinite(currentInnings.runs)) {
+      return currentInnings.runs;
+    }
+    const m = String(displayScore ?? '').match(/(\d+)\s*\/\s*\d+\s*$/);
+    return m ? Number(m[1]) : null;
+  }
+
   /**
-   * A row summary overlaid with its Redis live snapshot, preferring whichever source has
-   * bowled more overs so a card can never go backwards.
+   * Compare two live snapshots by (currentInning, oversToBalls, runs).
+   * Returns > 0 if `candidate` is strictly ahead of `baseline`, < 0 if behind, 0 if tied/incomparable.
+   */
+  private compareLiveProgress(
+    baseline: { currentInning?: number | null; displayOvers?: number | null; displayScore?: string | null; currentInnings?: CurrentInnings | null },
+    candidate: { currentInning?: number | null; displayOvers?: number | null; displayScore?: string | null; currentInnings?: CurrentInnings | null },
+  ): number {
+    const baseInning = baseline.currentInning ?? null;
+    const candInning = candidate.currentInning ?? null;
+    if (baseInning != null && candInning != null && candInning !== baseInning) {
+      return candInning > baseInning ? 1 : -1;
+    }
+    const baseBalls = this.oversToBalls(baseline.displayOvers);
+    const candBalls = this.oversToBalls(candidate.displayOvers);
+    if (candBalls != null && baseBalls == null) return 1;
+    if (candBalls == null && baseBalls != null) return -1;
+    if (candBalls != null && baseBalls != null && candBalls !== baseBalls) {
+      return candBalls > baseBalls ? 1 : -1;
+    }
+    const baseRuns = this.parseRunsFromScore(baseline.displayScore, baseline.currentInnings);
+    const candRuns = this.parseRunsFromScore(candidate.displayScore, candidate.currentInnings);
+    if (candRuns != null && baseRuns != null && candRuns !== baseRuns) {
+      return candRuns > baseRuns ? 1 : -1;
+    }
+    return 0;
+  }
+
+  /**
+   * A row summary overlaid with its Redis live snapshot, preferring whichever source is
+   * further ahead by (currentInning, overs, runs) so a card can never go backwards.
    *
    * The ingestion worker writes the match row and the Redis snapshot from the same poll.
    * The detail endpoint has always read the snapshot; the list endpoints did not, which is
@@ -283,17 +326,22 @@ export class MatchesService {
     cached: CanonicalMatch | null | undefined,
   ): MatchSummary {
     if (!cached) return summary;
-    // Overs decide freshness; at the same over the later write wins. The row is written
-    // after the snapshot in a poll, so this also stops a just-updated row losing to the
-    // snapshot it was derived from.
+    // Never let a stale live snapshot override a completed/cancelled DB row.
+    if (
+      (summary.status === MATCH_STATUS.COMPLETED || String(summary.status) === MATCH_STATUS.CANCELLED) &&
+      cached.status === MATCH_STATUS.LIVE
+    ) {
+      return summary;
+    }
+    // (Inning, overs, runs) decide freshness; on a tie the later write wins.
+    const progress = this.compareLiveProgress(summary, cached);
     const cachedAt = cached.updatedAt ? Date.parse(cached.updatedAt) : Number.NaN;
     const preferCached =
-      cached.displayOvers != null &&
-      (summary.displayOvers == null ||
-        cached.displayOvers > summary.displayOvers ||
-        (cached.displayOvers === summary.displayOvers &&
-          Number.isFinite(cachedAt) &&
-          cachedAt > row.updatedAt.getTime()));
+      progress > 0 ||
+      (progress === 0 &&
+        cached.displayOvers != null &&
+        Number.isFinite(cachedAt) &&
+        cachedAt > row.updatedAt.getTime());
     const pick = <T>(
       fromRow: T | null | undefined,
       fromCached: T | null | undefined,
@@ -785,8 +833,19 @@ export class MatchesService {
     if (storedPayload && matchRow) {
       const timelineStatus = sportEventStatusFromPayload(storedPayload);
       if (
-        timelineStatus?.displayOvers != null &&
-        (matchRow.displayOvers == null || timelineStatus.displayOvers > matchRow.displayOvers)
+        timelineStatus &&
+        this.compareLiveProgress(
+          {
+            currentInning: matchRow.currentInning,
+            displayOvers: matchRow.displayOvers,
+            displayScore: matchRow.displayScore,
+          },
+          {
+            currentInning: timelineStatus.currentInning,
+            displayOvers: timelineStatus.displayOvers,
+            displayScore: timelineStatus.displayScore,
+          },
+        ) > 0
       ) {
         await this.syncSummaryFromTimeline(matchRow, storedPayload);
       }
