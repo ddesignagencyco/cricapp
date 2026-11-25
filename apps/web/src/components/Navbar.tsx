@@ -49,11 +49,13 @@ type NavItem = {
 const primaryNavItems: NavItem[] = [
   { to: '/', label: 'Home', icon: Home },
   { to: '/matches', label: 'Matches', icon: Activity },
+  { to: '/streams', label: 'Streams', icon: Radio },
   { to: '/schedules', label: 'Schedule', icon: Calendar },
   { to: '/psl', label: 'PSL', icon: Trophy },
   { to: '/news', label: 'News', icon: Newspaper },
   { to: '/predictions', label: 'Predictions', icon: Sparkles },
   { to: '/tools', label: 'Tools', icon: Wrench },
+  { to: '/gallery', label: 'Gallery', icon: Images },
 ];
 
 const secondaryNavItems: NavItem[] = [
@@ -61,17 +63,15 @@ const secondaryNavItems: NavItem[] = [
   { to: '/players', label: 'Players', icon: UserRound },
   { to: '/tournaments', label: 'Tournaments', icon: Award },
   { to: '/tours', label: 'Tours', icon: Globe },
-  { to: '/streams', label: 'Streams', icon: Radio },
-  { to: '/gallery', label: 'Gallery', icon: Images },
   { to: '/authors', label: 'Authors', icon: PenLine },
 ];
 
 const liveItems: NavItem[] = [
   { to: '/', label: 'Home', icon: Home },
   { to: '/matches', label: 'Matches', icon: Activity },
-  { to: '/predictions', label: 'Predictions', icon: Sparkles },
   { to: '/streams', label: 'Streams', icon: Radio },
   { to: '/schedules', label: 'Schedule', icon: Calendar },
+  { to: '/predictions', label: 'Predictions', icon: Sparkles },
 ];
 
 const exploreItems: NavItem[] = [
@@ -81,9 +81,9 @@ const exploreItems: NavItem[] = [
   { to: '/tours', label: 'Tours', icon: Globe },
   { to: '/tournaments', label: 'Tournaments', icon: Award },
   { to: '/tools', label: 'Tools', icon: Wrench },
+  { to: '/gallery', label: 'Gallery', icon: Images },
   { to: '/news', label: 'News', icon: Newspaper },
   { to: '/authors', label: 'Authors', icon: PenLine },
-  { to: '/gallery', label: 'Gallery', icon: Images },
 ];
 
 const navItems = [...liveItems, ...exploreItems];
