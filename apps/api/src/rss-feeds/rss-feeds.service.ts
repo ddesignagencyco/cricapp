@@ -16,6 +16,7 @@ import {
   buildAttributionHtml,
   buildSourceGuid,
   evaluateTopicFilter,
+  extractArticleFromHtml,
   fetchFeedXmlSafe,
   fetchSourceArticleDetails,
   parseRssOrAtomXml,
@@ -250,6 +251,19 @@ export class RssFeedsService implements OnModuleInit, OnModuleDestroy {
           extractedParagraphs = fetched.paragraphs;
           if (fetched.ogImage && isSmallThumb(coverImage)) coverImage = fetched.ogImage;
         }
+        // If RSS XML already carried full body (e.g. <content:encoded>), extract paragraphs from it too
+        if (extractedParagraphs.length < 2 && item.content) {
+          const fromRssHtml = extractArticleFromHtml(item.content).paragraphs;
+          if (fromRssHtml.length >= 2) {
+            extractedParagraphs = fromRssHtml;
+          } else if (rssContentText.length > 320) {
+            extractedParagraphs = rssContentText
+              .split(/\n{2,}|(?<=[.!?])\s+(?=[A-Z])/)
+              .map((s) => s.trim())
+              .filter((s) => s.length >= 40)
+              .slice(0, 25);
+          }
+        }
 
         const summaryText = (rssSummaryText || extractedParagraphs[0] || item.title).slice(0, 320);
         const contentText = extractedParagraphs.length
@@ -261,7 +275,7 @@ export class RssFeedsService implements OnModuleInit, OnModuleDestroy {
           summaryText,
           feed.name,
           item.link || null,
-          extractedParagraphs.slice(0, 6),
+          extractedParagraphs.slice(0, 25),
         );
         let metaTitle = title.slice(0, 70);
         let metaDescription = (summaryText || title).slice(0, 160);
