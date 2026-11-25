@@ -69,10 +69,18 @@ services:
       - key: SUPERADMIN_PASSWORD
         sync: false
       - key: EMAIL_PROVIDER
-        value: resend
+        value: smtp
       - key: EMAIL_FROM
         sync: false
-      - key: RESEND_API_KEY
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_SECURE
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
         sync: false
       - key: CLOUDINARY_CLOUD_NAME
         sync: false
