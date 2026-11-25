@@ -1,11 +1,12 @@
 'use client';
 
-import { useMemo, Fragment } from 'react';
+import { useEffect, useMemo, useRef, useState, Fragment } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
   ArrowRight,
   Calendar,
+  ChevronDown,
   Clock,
   Newspaper,
   Flame,
@@ -59,6 +60,20 @@ interface Props {
   loadError?: boolean;
 }
 
+const CORE_CATEGORY_ORDER = [
+  'breaking',
+  'psl',
+  'pakistan-cricket',
+  'international',
+  'match-news',
+  'analysis',
+  'features',
+  'interviews',
+  'records',
+  'explainers',
+];
+const MAX_VISIBLE_CATEGORIES = 7;
+
 export default function NewsBoard({
   items,
   categories = [],
@@ -73,6 +88,23 @@ export default function NewsBoard({
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [moreOpen, setMoreOpen] = useState(false);
+  const moreRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) setMoreOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMoreOpen(false);
+    };
+    document.addEventListener('mousedown', onClick);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onClick);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, []);
 
   const safeItems = useMemo(() => items || [], [items]);
 
@@ -87,36 +119,58 @@ export default function NewsBoard({
     return safeItems.filter((n) => (featured ? n.id !== featured.id : true));
   }, [safeItems, featured]);
 
-  // ONLY display explicitly created categories (from DB / backend)
-  const categoryTabs = useMemo(() => {
-    const tabs = [{ key: 'all', label: 'All Stories' }];
+  // Prioritize core editorial categories so the filter bar stays a crisp single row;
+  // any overflow categories live cleanly inside the "More" dropdown.
+  const { primaryTabs, overflowTabs } = useMemo(() => {
+    const allCats: { key: string; label: string }[] = [];
     const seen = new Set<string>();
 
-    // 1. First add all categories created in DB (passed via props)
     for (const c of categories) {
-      if (c && c.name && !seen.has(c.name.toLowerCase())) {
-        seen.add(c.name.toLowerCase());
-        tabs.push({ key: c.slug, label: c.name });
+      if (c && c.name && !seen.has(c.slug.toLowerCase())) {
+        seen.add(c.slug.toLowerCase());
+        allCats.push({ key: c.slug, label: c.name });
       }
     }
 
-    // 2. Fallback: If categories prop is empty, only add categories that actually exist on articles
-    if (tabs.length === 1) {
+    if (allCats.length === 0) {
       for (const item of safeItems) {
         const cat = getCategoryName(item.category);
         if (cat && !seen.has(cat.toLowerCase())) {
           seen.add(cat.toLowerCase());
-          tabs.push({ key: cat, label: cat });
+          allCats.push({ key: cat, label: cat });
         }
       }
     }
 
-    return tabs;
-  }, [categories, safeItems]);
+    allCats.sort((a, b) => {
+      const ia = CORE_CATEGORY_ORDER.indexOf(a.key.toLowerCase());
+      const ib = CORE_CATEGORY_ORDER.indexOf(b.key.toLowerCase());
+      if (ia !== -1 && ib !== -1) return ia - ib;
+      if (ia !== -1) return -1;
+      if (ib !== -1) return 1;
+      return a.label.localeCompare(b.label);
+    });
+
+    const visible = allCats.slice(0, MAX_VISIBLE_CATEGORIES);
+    const overflow = allCats.slice(MAX_VISIBLE_CATEGORIES);
+
+    // If the user selected a category from the overflow menu, surface it in the visible row.
+    const selectedOverflowIdx = overflow.findIndex((t) => t.key === selectedCategory);
+    if (selectedOverflowIdx !== -1) {
+      const [picked] = overflow.splice(selectedOverflowIdx, 1);
+      visible.push(picked);
+    }
+
+    return {
+      primaryTabs: [{ key: 'all', label: 'All Stories' }, ...visible],
+      overflowTabs: overflow,
+    };
+  }, [categories, safeItems, selectedCategory]);
 
   const filtered = restArticles;
 
   const updateQuery = (nextCategory: string, nextPage = 1) => {
+    setMoreOpen(false);
     const params = new URLSearchParams(searchParams.toString());
     if (nextCategory === 'all') params.delete('category');
     else params.set('category', nextCategory);
@@ -146,14 +200,52 @@ export default function NewsBoard({
         </p>
       </header>
 
-      <div className="mb-6 flex flex-col gap-3 border-y border-lborder py-3 sm:flex-row sm:items-start sm:justify-between">
-        {categoryTabs.length > 1 ? (
-          <Tabs
-            tabs={categoryTabs}
-            active={selectedCategory}
-            onChange={(category) => updateQuery(category)}
-            variant="tags"
-          />
+      <div className="mb-6 flex flex-col gap-3 border-y border-lborder py-3 sm:flex-row sm:items-center sm:justify-between">
+        {primaryTabs.length > 1 ? (
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <Tabs
+              tabs={primaryTabs}
+              active={selectedCategory}
+              onChange={(category) => updateQuery(category)}
+              variant="tags"
+            />
+            {overflowTabs.length > 0 && (
+              <div ref={moreRef} className="relative">
+                <button
+                  type="button"
+                  onClick={() => setMoreOpen((o) => !o)}
+                  aria-expanded={moreOpen}
+                  aria-haspopup="menu"
+                  className="inline-flex items-center gap-1 rounded-md border border-lborder bg-card px-2.5 py-1.5 text-xs font-semibold text-stext transition-colors hover:border-accent/40 hover:text-mtext"
+                >
+                  More ({overflowTabs.length})
+                  <ChevronDown size={13} className={`transition-transform ${moreOpen ? 'rotate-180' : ''}`} />
+                </button>
+                {moreOpen && (
+                  <div
+                    role="menu"
+                    className="elev-overlay absolute left-0 top-full z-30 mt-1.5 max-h-72 w-60 overflow-y-auto rounded-md border border-lborder bg-card p-1.5 shadow-lg"
+                  >
+                    {overflowTabs.map((tab) => (
+                      <button
+                        key={tab.key}
+                        type="button"
+                        role="menuitem"
+                        onClick={() => updateQuery(tab.key)}
+                        className={`block w-full truncate rounded px-2.5 py-1.5 text-left text-xs font-medium transition-colors ${
+                          selectedCategory === tab.key
+                            ? 'bg-accent/15 font-semibold text-accent'
+                            : 'text-mtext hover:bg-[var(--color-row-hover)]'
+                        }`}
+                      >
+                        {tab.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         ) : (
           <p className="text-xs font-medium uppercase tracking-wider text-stext">Language</p>
         )}
@@ -279,7 +371,7 @@ export default function NewsBoard({
               <h2 className="text-lg font-semibold text-mtext">
                 {selectedCategory === 'all'
                   ? 'More cricket stories'
-                  : categoryTabs.find((tab) => tab.key === selectedCategory)?.label || 'More stories'}
+                  : [...primaryTabs, ...overflowTabs].find((tab) => tab.key === selectedCategory)?.label || 'More stories'}
               </h2>
             </div>
             <span className="text-xs text-stext">{total} published</span>

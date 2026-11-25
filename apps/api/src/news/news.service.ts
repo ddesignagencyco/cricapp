@@ -197,7 +197,7 @@ export class NewsService {
       this.prisma.newsArticle.findMany({
         where,
         include: articleInclude,
-        orderBy: [{ publishedAt: 'desc' }, { createdAt: 'desc' }],
+        orderBy: [{ publishedAt: { sort: 'desc', nulls: 'last' } }, { createdAt: 'desc' }, { id: 'desc' }],
         skip,
         take: limit,
       }),
@@ -618,7 +618,7 @@ ${urls}
       this.prisma.newsArticle.findMany({
         where,
         include: articleInclude,
-        orderBy: [{ publishedAt: 'desc' }, { createdAt: 'desc' }],
+        orderBy: [{ publishedAt: { sort: 'desc', nulls: 'last' } }, { createdAt: 'desc' }, { id: 'desc' }],
         skip,
         take: limit,
       }),

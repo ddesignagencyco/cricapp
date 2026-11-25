@@ -231,7 +231,25 @@ function normalizeCricbuzzStory(story, detail) {
     s.author ||
     s.source ||
     'Cricbuzz';
-  const context = s.context || d.context || s.storyType || 'Cricket News';
+  const rawContext = String(s.context || d.context || s.storyType || '').trim();
+  const hay = `${rawContext} ${title}`.toLowerCase();
+  const categoryName = /\bpsl\b|pakistan super league/.test(hay)
+    ? 'PSL'
+    : /\bpakistan\b|\bpcb\b/.test(hay)
+      ? 'Pakistan Cricket'
+      : /\bipl\b/.test(hay)
+        ? 'IPL'
+        : /interview/.test(hay)
+          ? 'Interviews'
+          : /analysis|tactic|preview|review/.test(hay)
+            ? 'Analysis'
+            : /feature|profile/.test(hay)
+              ? 'Features'
+              : /record|stat/.test(hay)
+                ? 'Records'
+                : /tour|test|odi|t20|world cup|icc|wtc|ashes/.test(hay)
+                  ? 'International'
+                  : 'Match News';
   const detailContent = detail ? contentFromCricbuzzDetail(detail) : '';
   const content = detailContent || (intro ? `<p>${htmlEscape(String(intro).trim())}</p>` : `<p>${htmlEscape(title)}</p>`);
 
@@ -243,7 +261,7 @@ function normalizeCricbuzzStory(story, detail) {
     imageUrl,
     author,
     source: 'Cricbuzz',
-    categoryName: context || 'Cricket News',
+    categoryName,
     publishedAt,
   };
 }

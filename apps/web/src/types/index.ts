@@ -354,6 +354,7 @@ export interface SearchResults {
   teams: Team[];
   matches: Match[];
   tournaments: TournamentApi[];
+  news?: NewsArticle[];
 }
 
 /* ─── PSL ─────────────────────────────────────────────────── */
