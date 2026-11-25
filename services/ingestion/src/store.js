@@ -31,8 +31,19 @@ export async function saveMatch(match) {
        END,
        teams = EXCLUDED.teams,
        team_names = EXCLUDED.team_names,
-       -- a blank score must not wipe one already stored (the results list carries none)
+       -- a stale live poll must never roll a live match row backwards in inning/overs
        team_scores = CASE
+         WHEN matches.status = 'live' AND EXCLUDED.status = 'live'
+          AND (
+            COALESCE(EXCLUDED.current_inning, 0) < COALESCE(matches.current_inning, 0)
+            OR (
+              COALESCE(EXCLUDED.current_inning, 0) = COALESCE(matches.current_inning, 0)
+              AND matches.display_overs IS NOT NULL
+              AND EXCLUDED.display_overs IS NOT NULL
+              AND EXCLUDED.display_overs < matches.display_overs
+            )
+          )
+         THEN matches.team_scores
          WHEN COALESCE(EXCLUDED.team_scores->'home'->>'score', '') = ''
           AND COALESCE(EXCLUDED.team_scores->'away'->>'score', '') = ''
           AND (COALESCE(matches.team_scores->'home'->>'score', '') <> ''
@@ -44,21 +55,89 @@ export async function saveMatch(match) {
       tournament_id = COALESCE(EXCLUDED.tournament_id, matches.tournament_id),
        venue = COALESCE(EXCLUDED.venue, matches.venue),
        scheduled = COALESCE(EXCLUDED.scheduled, matches.scheduled),
-       current_innings = COALESCE(EXCLUDED.current_innings, matches.current_innings),
-       last_event = COALESCE(EXCLUDED.last_event, matches.last_event),
-       display_score = COALESCE(EXCLUDED.display_score, matches.display_score),
+       current_innings = CASE
+         WHEN matches.status = 'live' AND EXCLUDED.status = 'live'
+          AND (
+            COALESCE(EXCLUDED.current_inning, 0) < COALESCE(matches.current_inning, 0)
+            OR (
+              COALESCE(EXCLUDED.current_inning, 0) = COALESCE(matches.current_inning, 0)
+              AND matches.display_overs IS NOT NULL
+              AND EXCLUDED.display_overs IS NOT NULL
+              AND EXCLUDED.display_overs < matches.display_overs
+            )
+          )
+         THEN matches.current_innings
+         ELSE COALESCE(EXCLUDED.current_innings, matches.current_innings)
+       END,
+       last_event = CASE
+         WHEN matches.status = 'live' AND EXCLUDED.status = 'live'
+          AND (
+            COALESCE(EXCLUDED.current_inning, 0) < COALESCE(matches.current_inning, 0)
+            OR (
+              COALESCE(EXCLUDED.current_inning, 0) = COALESCE(matches.current_inning, 0)
+              AND matches.display_overs IS NOT NULL
+              AND EXCLUDED.display_overs IS NOT NULL
+              AND EXCLUDED.display_overs < matches.display_overs
+            )
+          )
+         THEN matches.last_event
+         ELSE COALESCE(EXCLUDED.last_event, matches.last_event)
+       END,
+       display_score = CASE
+         WHEN matches.status = 'live' AND EXCLUDED.status = 'live'
+          AND (
+            COALESCE(EXCLUDED.current_inning, 0) < COALESCE(matches.current_inning, 0)
+            OR (
+              COALESCE(EXCLUDED.current_inning, 0) = COALESCE(matches.current_inning, 0)
+              AND matches.display_overs IS NOT NULL
+              AND EXCLUDED.display_overs IS NOT NULL
+              AND EXCLUDED.display_overs < matches.display_overs
+            )
+          )
+         THEN matches.display_score
+         ELSE COALESCE(EXCLUDED.display_score, matches.display_score)
+       END,
        match_status = COALESCE(EXCLUDED.match_status, matches.match_status),
        result_text = COALESCE(EXCLUDED.result_text, matches.result_text),
        winner_id = COALESCE(EXCLUDED.winner_id, matches.winner_id),
        toss_won_by = COALESCE(EXCLUDED.toss_won_by, matches.toss_won_by),
        toss_decision = COALESCE(EXCLUDED.toss_decision, matches.toss_decision),
-       current_inning = COALESCE(EXCLUDED.current_inning, matches.current_inning),
+       current_inning = CASE
+         WHEN matches.status = 'live' AND EXCLUDED.status = 'live'
+          AND COALESCE(EXCLUDED.current_inning, 0) < COALESCE(matches.current_inning, 0)
+         THEN matches.current_inning
+         ELSE COALESCE(EXCLUDED.current_inning, matches.current_inning)
+       END,
        -- an empty innings list must not wipe one already stored
        period_scores = CASE
          WHEN EXCLUDED.period_scores IS NULL OR EXCLUDED.period_scores::text IN ('[]', 'null') THEN matches.period_scores
+         WHEN matches.status = 'live' AND EXCLUDED.status = 'live'
+          AND (
+            COALESCE(EXCLUDED.current_inning, 0) < COALESCE(matches.current_inning, 0)
+            OR (
+              COALESCE(EXCLUDED.current_inning, 0) = COALESCE(matches.current_inning, 0)
+              AND matches.display_overs IS NOT NULL
+              AND EXCLUDED.display_overs IS NOT NULL
+              AND EXCLUDED.display_overs < matches.display_overs
+            )
+          )
+         THEN matches.period_scores
          ELSE EXCLUDED.period_scores
        END,
-       display_overs = COALESCE(EXCLUDED.display_overs, matches.display_overs),
+       display_overs = CASE
+         WHEN matches.status = 'live' AND EXCLUDED.status = 'live'
+          AND (
+            COALESCE(EXCLUDED.current_inning, 0) < COALESCE(matches.current_inning, 0)
+            OR (
+              COALESCE(EXCLUDED.current_inning, 0) = COALESCE(matches.current_inning, 0)
+              AND matches.display_overs IS NOT NULL
+              AND EXCLUDED.display_overs IS NOT NULL
+              AND EXCLUDED.display_overs < matches.display_overs
+            )
+          )
+         THEN matches.display_overs
+         ELSE COALESCE(EXCLUDED.display_overs, matches.display_overs)
+       END,
        updated_at = NOW()`,
     [
       match.matchId,
@@ -774,13 +853,17 @@ export async function syncMatchSummaryFromTimeline(matchId, payload) {
   if (score == null && overs == null) return 0;
 
   const { rows } = await query(
-    'SELECT display_score, display_overs, current_innings, team_scores FROM matches WHERE match_id = $1',
+    'SELECT display_score, display_overs, current_inning, current_innings, team_scores FROM matches WHERE match_id = $1',
     [matchId],
   );
   const previous = rows[0];
   if (!previous) return 0;
+  const previousInning = num(previous.current_inning);
+  const nextInning = num(status.current_inning);
+  if (previousInning != null && nextInning != null && nextInning < previousInning) return 0;
+  const sameInning = previousInning == null || nextInning == null || nextInning === previousInning;
   const previousOvers = num(previous.display_overs);
-  if (previousOvers != null && overs != null && overs < previousOvers) return 0;
+  if (sameInning && previousOvers != null && overs != null && overs < previousOvers) return 0;
 
   const displayScore = keepScorePrefix(previous.display_score, score);
   const teamScores = periods ? mergeTeamScores(periods, previous.team_scores) : null;
@@ -796,17 +879,27 @@ export async function syncMatchSummaryFromTimeline(matchId, payload) {
        current_innings = COALESCE($7::jsonb, current_innings),
        updated_at = NOW()
      WHERE match_id = $1
-       AND ($3::double precision IS NULL OR display_overs IS NULL OR $3 >= display_overs)`,
+       AND (
+         ($4::int IS NOT NULL AND current_inning IS NOT NULL AND $4::int > current_inning)
+         OR (
+           ($4::int IS NULL OR current_inning IS NULL OR $4::int = current_inning)
+           AND ($3::double precision IS NULL OR display_overs IS NULL OR $3 >= display_overs)
+         )
+       )`,
     [
       matchId,
       displayScore,
       overs,
-      num(status.current_inning),
+      nextInning,
       status.period_scores ? JSON.stringify(status.period_scores) : null,
       teamScores ? JSON.stringify(teamScores) : null,
       currentInnings ? JSON.stringify(currentInnings) : null,
     ],
   );
+  if (result.rowCount > 0) {
+    // Drop the older Redis live snapshot so API reads pick up the fresher DB row.
+    await redis.del(redisKeys.matchState(matchId)).catch(() => {});
+  }
   return result.rowCount;
 }
 

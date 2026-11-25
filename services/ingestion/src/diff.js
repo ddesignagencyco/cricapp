@@ -91,3 +91,80 @@ export function hasMatchChanged(previous, next) {
   if (lastEventKey(previous.lastEvent) !== lastEventKey(next.lastEvent)) return true;
   return false;
 }
+
+function oversToBalls(overs) {
+  if (overs == null || !Number.isFinite(Number(overs))) return null;
+  const n = Number(overs);
+  if (n < 0) return null;
+  const whole = Math.floor(n);
+  const balls = Math.round((n - whole) * 10);
+  return whole * 6 + Math.min(balls, 5);
+}
+
+function extractInningNumber(match) {
+  const n = match?.currentInning;
+  if (n != null && Number.isFinite(Number(n)) && Number(n) > 0) return Number(n);
+  if (Array.isArray(match?.periodScores) && match.periodScores.length > 0) {
+    return match.periodScores.length;
+  }
+  return null;
+}
+
+function extractRuns(match) {
+  const innRuns = match?.currentInnings?.runs;
+  if (innRuns != null && Number.isFinite(Number(innRuns))) return Number(innRuns);
+  const m = String(match?.displayScore ?? "").match(/(\d+)\s*\/\s*\d+\s*$/);
+  return m ? Number(m[1]) : null;
+}
+
+/**
+ * True when `next` is provably older than `previous` for an in-play match.
+ *
+ * Upstream RapidAPI / Cricbuzz edge caches occasionally serve a response from
+ * an earlier over (e.g. 80/2 after we already persisted 112/3). Writing that
+ * back into Postgres + Redis makes the score jump backwards on page refresh.
+ *
+ * Only guards live → live (and completed → live) transitions; a match moving
+ * from live → completed always wins so final results are never blocked.
+ */
+export function isLiveSnapshotBehind(previous, next) {
+  if (!previous || !next) return false;
+  if (
+    (previous.status === MATCH_STATUS.COMPLETED || previous.status === MATCH_STATUS.CANCELLED) &&
+    next.status === MATCH_STATUS.LIVE
+  ) {
+    return true;
+  }
+  if (previous.status !== MATCH_STATUS.LIVE || next.status !== MATCH_STATUS.LIVE) {
+    return false;
+  }
+
+  const prevInning = extractInningNumber(previous);
+  const nextInning = extractInningNumber(next);
+  if (prevInning != null && nextInning != null) {
+    if (nextInning < prevInning) return true;
+    if (nextInning > prevInning) return false;
+  }
+
+  // If batting team changed without an explicit inning number, treat it as a new innings.
+  const prevBat = previous.currentInnings?.battingTeam;
+  const nextBat = next.currentInnings?.battingTeam;
+  if (prevInning == null && nextInning == null && prevBat && nextBat && prevBat !== nextBat) {
+    return false;
+  }
+
+  const prevBalls = oversToBalls(previous.displayOvers ?? previous.currentInnings?.overs);
+  const nextBalls = oversToBalls(next.displayOvers ?? next.currentInnings?.overs);
+  if (prevBalls != null && nextBalls != null) {
+    if (nextBalls < prevBalls) return true;
+    if (nextBalls > prevBalls) return false;
+  }
+
+  const prevRuns = extractRuns(previous);
+  const nextRuns = extractRuns(next);
+  if (prevRuns != null && nextRuns != null && nextRuns < prevRuns) {
+    return true;
+  }
+
+  return false;
+}

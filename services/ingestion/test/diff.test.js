@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { EVENT_TYPES, MATCH_STATUS } from "@cricapp/shared-types";
-import { diffMatch, hasMatchChanged } from "../src/diff.js";
+import { diffMatch, hasMatchChanged, isLiveSnapshotBehind } from "../src/diff.js";
 
 const base = {
   matchId: "sr:match:1",
@@ -82,5 +82,86 @@ describe("diffMatch", () => {
     };
     assert.equal(hasMatchChanged(base, next), true);
     assert.equal(hasMatchChanged(base, { ...base, currentInnings: { ...base.currentInnings } }), false);
+  });
+});
+
+describe("isLiveSnapshotBehind", () => {
+  it("rejects a stale live poll with fewer overs in the same innings (112/3 -> 80/2)", () => {
+    const prev = {
+      ...base,
+      currentInning: 1,
+      displayOvers: 14.2,
+      displayScore: "India 112/3",
+      currentInnings: { ...base.currentInnings, runs: 112, wickets: 3, overs: 14.2 },
+    };
+    const stale = {
+      ...base,
+      currentInning: 1,
+      displayOvers: 10.1,
+      displayScore: "India 80/2",
+      currentInnings: { ...base.currentInnings, runs: 80, wickets: 2, overs: 10.1 },
+    };
+    assert.equal(isLiveSnapshotBehind(prev, stale), true);
+  });
+
+  it("rejects a stale live poll with fewer runs at the same over", () => {
+    const prev = {
+      ...base,
+      currentInning: 1,
+      displayOvers: 14.2,
+      displayScore: "India 112/3",
+      currentInnings: { ...base.currentInnings, runs: 112, wickets: 3, overs: 14.2 },
+    };
+    const stale = {
+      ...base,
+      currentInning: 1,
+      displayOvers: 14.2,
+      displayScore: "India 108/3",
+      currentInnings: { ...base.currentInnings, runs: 108, wickets: 3, overs: 14.2 },
+    };
+    assert.equal(isLiveSnapshotBehind(prev, stale), true);
+  });
+
+  it("allows advancing to a new innings even though overs reset", () => {
+    const prev = {
+      ...base,
+      currentInning: 1,
+      displayOvers: 20.0,
+      displayScore: "India 185/6",
+      currentInnings: { ...base.currentInnings, runs: 185, wickets: 6, overs: 20.0 },
+    };
+    const next = {
+      ...base,
+      currentInning: 2,
+      displayOvers: 1.2,
+      displayScore: "Australia 12/0",
+      currentInnings: { battingTeam: "Australia", runs: 12, wickets: 0, overs: 1.2, runRate: 9.0 },
+    };
+    assert.equal(isLiveSnapshotBehind(prev, next), false);
+  });
+
+  it("rejects an older innings snapshot even if its overs number is larger", () => {
+    const prev = {
+      ...base,
+      currentInning: 2,
+      displayOvers: 12.3,
+      displayScore: "Australia 112/2",
+      currentInnings: { battingTeam: "Australia", runs: 112, wickets: 2, overs: 12.3, runRate: 8.96 },
+    };
+    const stale = {
+      ...base,
+      currentInning: 1,
+      displayOvers: 20.0,
+      displayScore: "India 185/6",
+      currentInnings: { battingTeam: "India", runs: 185, wickets: 6, overs: 20.0, runRate: 9.25 },
+    };
+    assert.equal(isLiveSnapshotBehind(prev, stale), true);
+  });
+
+  it("always allows live -> completed and rejects completed -> live", () => {
+    const live = { ...base, currentInning: 2, displayOvers: 19.4 };
+    const completed = { ...base, status: MATCH_STATUS.COMPLETED, currentInning: 2, displayOvers: 19.4 };
+    assert.equal(isLiveSnapshotBehind(live, completed), false);
+    assert.equal(isLiveSnapshotBehind(completed, live), true);
   });
 });

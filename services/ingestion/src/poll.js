@@ -1,6 +1,6 @@
 import { PROVIDERS } from './schemas.js';
 import { normalizeMatch } from './normalize.js';
-import { diffMatch, hasMatchChanged } from './diff.js';
+import { diffMatch, hasMatchChanged, isLiveSnapshotBehind } from './diff.js';
 import {
   saveMatch,
   saveMatchSummary,
@@ -109,17 +109,28 @@ async function processLiveMatch(id) {
   const next = normalizeMatch(PROVIDERS.SPORTRADAR, summary);
   const previous = await readPrevious(next.matchId);
 
-  const events = diffMatch(previous, next);
-  const changed = hasMatchChanged(previous, next);
+  if (isLiveSnapshotBehind(previous, next)) {
+    console.warn(`[ingest] skipping stale live snapshot for ${next.matchId}`, {
+      prevInning: previous?.currentInning ?? null,
+      nextInning: next.currentInning ?? null,
+      prevOvers: previous?.displayOvers ?? previous?.currentInnings?.overs ?? null,
+      nextOvers: next.displayOvers ?? next.currentInnings?.overs ?? null,
+      prevScore: previous?.displayScore ?? null,
+      nextScore: next.displayScore ?? null,
+    });
+  } else {
+    const events = diffMatch(previous, next);
+    const changed = hasMatchChanged(previous, next);
 
-  await saveMatchSummary(next.matchId, summary);
-  await saveMatch(next);
-  await publishMatchState(next, { broadcast: changed });
-  if (events.length) {
-    await publishEvents(events);
-    console.log(`[ingest] ${next.matchId}: ${events.map((e) => e.type).join(', ')}`);
-  } else if (changed) {
-    console.log(`[ingest] ${next.matchId}: snapshot`);
+    await saveMatchSummary(next.matchId, summary);
+    await saveMatch(next);
+    await publishMatchState(next, { broadcast: changed });
+    if (events.length) {
+      await publishEvents(events);
+      console.log(`[ingest] ${next.matchId}: ${events.map((e) => e.type).join(', ')}`);
+    } else if (changed) {
+      console.log(`[ingest] ${next.matchId}: snapshot`);
+    }
   }
 
   if (next.status === 'live') {
