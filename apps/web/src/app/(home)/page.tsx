@@ -184,9 +184,9 @@ export default async function HomePage() {
             {newsList[0] && (
               <Link
                 href={newsHref(newsList[0])}
-                className="news-card card-interactive card-featured group flex h-full flex-col overflow-hidden rounded-md"
+                className="news-card card-interactive card-featured group flex h-full flex-col overflow-hidden rounded-md lg:h-[448px]"
               >
-                <div className="news-card-media relative aspect-[16/9] w-full overflow-hidden bg-secondary lg:aspect-auto lg:min-h-[260px] lg:flex-1">
+                <div className="news-card-media relative aspect-[16/9] w-full shrink-0 overflow-hidden bg-secondary lg:aspect-auto lg:h-0 lg:min-h-0 lg:flex-1">
                   {newsList[0].image ? (
                     <RemoteImage
                       src={newsList[0].image}
@@ -194,6 +194,7 @@ export default async function HomePage() {
                       fill
                       sizes="(min-width: 1024px) 55vw, 100vw"
                       fit="cover"
+                      objectPosition="top"
                       className="news-image object-cover object-top"
                     />
                   ) : (
@@ -212,22 +213,22 @@ export default async function HomePage() {
                 <div className="shrink-0 p-4 sm:p-5">
                   <NewsCopy as="h3" language={newsList[0].language} text={newsList[0].title} className="line-clamp-2 text-base font-bold leading-snug text-mtext group-hover:text-accent sm:text-lg">{newsList[0].title}</NewsCopy>
                   {newsList[0].excerpt && (
-                    <NewsCopy language={newsList[0].language} text={newsList[0].excerpt} className="mt-2 line-clamp-2 text-xs leading-relaxed text-stext sm:text-sm">{newsList[0].excerpt}</NewsCopy>
+                    <NewsCopy language={newsList[0].language} text={newsList[0].excerpt} className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-stext sm:text-sm">{newsList[0].excerpt}</NewsCopy>
                   )}
-                  <p className="mt-3 text-xs text-stext">{newsList[0].date} • {newsList[0].readTime}</p>
+                  <p className="mt-2.5 text-xs text-stext">{newsList[0].date} • {newsList[0].readTime}</p>
                 </div>
               </Link>
             )}
-            <div className="flex flex-col justify-between gap-2.5">
+            <div className="grid grid-cols-1 gap-2.5 lg:h-[448px] lg:grid-rows-4">
               {newsList.slice(1, 5).map((item) => (
                 <Link
                   key={item.id}
                   href={newsHref(item)}
-                  className="news-card card-interactive group flex gap-3 overflow-hidden rounded-md p-2.5 sm:gap-4 sm:p-3"
+                  className="news-card card-interactive group flex h-full items-center gap-3 overflow-hidden rounded-md p-2.5 sm:gap-4 sm:p-3"
                 >
                   <div className="news-card-media relative h-16 w-20 shrink-0 overflow-hidden rounded-md bg-secondary sm:h-20 sm:w-24">
                     {item.image ? (
-                      <RemoteImage src={item.image} alt={item.title} fill sizes="96px" fit="cover" className="news-image object-cover object-top" />
+                      <RemoteImage src={item.image} alt={item.title} fill sizes="96px" fit="cover" objectPosition="top" className="news-image object-cover object-top" />
                     ) : (
                       <div className="h-full w-full media-fallback" />
                     )}

@@ -6,13 +6,17 @@ import { useDebouncedValue } from '../../../../hooks/useDebouncedValue';
 import { useMatchesQuery } from '../../../../queries/useDirectoryQueries';
 import type { Match } from '../../../../types';
 import Pagination from '../../../../components/admin/AdminPagination';
-import { AdminPageHeader, LoadingState, EmptyState, StatusBadge, AdminSearchField, AdminEntityLink, ScoreLine } from '../../../../components/admin/AdminShared';
+import { AdminPageHeader, LoadingState, EmptyState, StatusBadge, AdminSearchField, AdminSortableHeader, AdminEntityLink, ScoreLine, type SortDirection } from '../../../../components/admin/AdminShared';
 import { sideScoreLine } from '../../../../lib/matchScoreboard';
+
+type MatchSortKey = 'home' | 'away' | 'tournament' | 'venue' | 'date' | 'status';
 
 export default function MatchesPage() {
   const [page, setPage] = useState(1);
   const [filterStatus, setFilterStatus] = useState('all');
   const [query, setQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'default' | MatchSortKey>('default');
+  const [sortOrder, setSortOrder] = useState<SortDirection>('asc');
   const limit = 20;
   const debouncedQuery = useDebouncedValue(query, 350);
   const matchesQuery = useMatchesQuery({
@@ -20,12 +24,28 @@ export default function MatchesPage() {
     page,
     q: debouncedQuery.trim() || undefined,
     status: filterStatus === 'all' ? undefined : filterStatus,
+    sortBy: sortBy === 'default' ? undefined : sortBy,
+    sortOrder: sortBy === 'default' ? undefined : sortOrder,
   });
   const matches = matchesQuery.data?.items || [];
   const total = matchesQuery.data?.total || 0;
   const totalPages = Math.max(1, matchesQuery.data?.totalPages || Math.ceil(total / limit));
 
-  useEffect(() => { setPage(1); }, [filterStatus, debouncedQuery]);
+  useEffect(() => { setPage(1); }, [filterStatus, debouncedQuery, sortBy, sortOrder]);
+
+  const toggleSort = (key: MatchSortKey) => {
+    if (sortBy === key) {
+      if (sortOrder === 'asc') {
+        setSortOrder('desc');
+      } else {
+        setSortBy('default');
+        setSortOrder('asc');
+      }
+    } else {
+      setSortBy(key);
+      setSortOrder(key === 'date' ? 'desc' : 'asc');
+    }
+  };
 
   const getTeamInfo = (m: Match) => {
     const teams = m.teams;
@@ -90,12 +110,12 @@ export default function MatchesPage() {
             <table className="w-full text-left text-xs">
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--admin-border)', background: 'var(--admin-table-header)' }}>
-                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Home</th>
-                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Away</th>
-                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Tournament</th>
-                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Venue</th>
-                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Date</th>
-                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Status</th>
+                  <AdminSortableHeader label="Home" sortKey="home" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} />
+                  <AdminSortableHeader label="Away" sortKey="away" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} />
+                  <AdminSortableHeader label="Tournament" sortKey="tournament" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} />
+                  <AdminSortableHeader label="Venue" sortKey="venue" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} />
+                  <AdminSortableHeader label="Date" sortKey="date" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} />
+                  <AdminSortableHeader label="Status" sortKey="status" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} />
                 </tr>
               </thead>
               <tbody>

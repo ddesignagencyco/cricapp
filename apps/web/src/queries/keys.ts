@@ -18,6 +18,8 @@ export interface MatchesQueryParams {
   q?: string;
   status?: string;
   tournament?: string;
+  sortBy?: string;
+  sortOrder?: string;
   page?: number;
   limit?: number;
 }

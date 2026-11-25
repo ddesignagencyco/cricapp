@@ -3,7 +3,7 @@
 import { type ReactNode, forwardRef, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
-import { AlertCircle, Check, ChevronDown } from 'lucide-react';
+import { AlertCircle, ArrowDown, ArrowUp, ArrowUpDown, Check, ChevronDown } from 'lucide-react';
 import Badge, { StatusBadge as SharedStatusBadge } from '../Badge';
 import { getInitials } from '../../utils/helpers';
 import RemoteImage from '../RemoteImage';
@@ -739,5 +739,49 @@ export function AdminToggle({
         style={{ transform: checked ? 'translateX(16px)' : 'translateX(0)' }}
       />
     </button>
+  );
+}
+
+export type SortDirection = 'asc' | 'desc';
+
+export function AdminSortableHeader<K extends string>({
+  label,
+  sortKey,
+  activeKey,
+  direction,
+  onSort,
+  className = 'px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider',
+}: {
+  label: string;
+  sortKey: K;
+  activeKey: string;
+  direction: SortDirection;
+  onSort: (_key: K) => void;
+  className?: string;
+}) {
+  const active = activeKey === sortKey;
+  return (
+    <th
+      className={className}
+      style={{ color: active ? 'var(--admin-accent)' : 'var(--admin-text-secondary)' }}
+      aria-sort={active ? (direction === 'asc' ? 'ascending' : 'descending') : 'none'}
+    >
+      <button
+        type="button"
+        onClick={() => onSort(sortKey)}
+        className="inline-flex cursor-pointer items-center gap-1.5 uppercase tracking-wider transition-opacity hover:opacity-80"
+      >
+        <span>{label}</span>
+        {active ? (
+          direction === 'asc' ? (
+            <ArrowUp size={12} className="shrink-0" />
+          ) : (
+            <ArrowDown size={12} className="shrink-0" />
+          )
+        ) : (
+          <ArrowUpDown size={12} className="shrink-0 opacity-45" />
+        )}
+      </button>
+    </th>
   );
 }

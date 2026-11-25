@@ -1,17 +1,19 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Trash2, Users } from 'lucide-react';
 import {
   AdminAvatar,
   AdminSearchField,
+  AdminSortableHeader,
   AdminPageHeader,
   AdminToggle,
   ConfirmDialog,
   EmptyState,
   ErrorState,
   LoadingState,
+  type SortDirection,
 } from '../../../../components/admin/AdminShared';
 import Badge from '../../../../components/Badge';
 import AdminPagination from '../../../../components/admin/AdminPagination';
@@ -28,22 +30,7 @@ const ROLE_FILTERS = [
 ] as const;
 
 type RoleFilter = (typeof ROLE_FILTERS)[number]['key'];
-
-function roleRank(user: AdminUser) {
-  if (user.isSuperAdmin) return 0;
-  if (user.isAdmin) return 1;
-  return 2;
-}
-
-function sortUsers(list: AdminUser[]) {
-  return [...list].sort((a, b) => {
-    const rank = roleRank(a) - roleRank(b);
-    if (rank !== 0) return rank;
-    const an = (a.displayName || a.username || '').toLowerCase();
-    const bn = (b.displayName || b.username || '').toLowerCase();
-    return an.localeCompare(bn);
-  });
-}
+type UserSortKey = 'role' | 'name' | 'email' | 'verified';
 
 type PendingAction =
   | { kind: 'delete'; user: AdminUser }
@@ -99,13 +86,6 @@ function confirmCopy(action: PendingAction): { title: string; message: string; c
   }
 }
 
-function matchesRole(user: AdminUser, role: RoleFilter) {
-  if (role === 'all') return true;
-  if (role === 'superadmin') return Boolean(user.isSuperAdmin);
-  if (role === 'admin') return Boolean(user.isAdmin) && !user.isSuperAdmin;
-  return !user.isAdmin && !user.isSuperAdmin;
-}
-
 export default function UsersPage() {
   const [q, setQ] = useState('');
   const [page, setPage] = useState(1);
@@ -116,34 +96,59 @@ export default function UsersPage() {
   const [error, setError] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('all');
+  const [sortBy, setSortBy] = useState<UserSortKey>('role');
+  const [sortOrder, setSortOrder] = useState<SortDirection>('desc');
   const [pending, setPending] = useState<PendingAction | null>(null);
   const { user: me } = useAuth();
 
-  const load = (nextPage = page, query = q) => {
-    setLoading(true);
-    setError(false);
-    fetchAdminUsers({ page: nextPage, limit: LIMIT, q: query || undefined })
-      .then((res) => {
-        setUsers(sortUsers(res.items));
-        setTotal(res.total);
-        setTotalPages(Math.max(1, res.totalPages));
-        setPage(nextPage);
+  const load = useCallback(
+    (nextPage = page) => {
+      setLoading(true);
+      setError(false);
+      fetchAdminUsers({
+        page: nextPage,
+        limit: LIMIT,
+        q: q.trim() || undefined,
+        role: roleFilter === 'all' ? undefined : roleFilter,
+        sortBy,
+        sortOrder,
       })
-      .catch(() => setError(true))
-      .finally(() => setLoading(false));
-  };
+        .then((res) => {
+          setUsers(res.items);
+          setTotal(res.total);
+          setTotalPages(Math.max(1, res.totalPages));
+          setPage(nextPage);
+        })
+        .catch(() => setError(true))
+        .finally(() => setLoading(false));
+    },
+    [page, q, roleFilter, sortBy, sortOrder],
+  );
 
   useEffect(() => {
-    load(1, '');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    const timer = window.setTimeout(() => load(page), 300);
+    return () => window.clearTimeout(timer);
+  }, [load, page]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [q, roleFilter, sortBy, sortOrder]);
+
+  const toggleSort = (key: UserSortKey) => {
+    if (sortBy === key) {
+      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortBy(key);
+      setSortOrder(key === 'role' || key === 'verified' ? 'desc' : 'asc');
+    }
+  };
 
   const patch = async (user: AdminUser, input: { isAdmin?: boolean; emailVerified?: boolean }) => {
     if (user.isSuperAdmin) return;
     setBusyId(user.id);
     try {
       const updated = await updateAdminUser(user.id, input);
-      setUsers((list) => sortUsers(list.map((item) => (item.id === user.id ? { ...item, ...updated } : item))));
+      setUsers((list) => list.map((item) => (item.id === user.id ? { ...item, ...updated } : item)));
       toast.success('User updated.');
     } catch {
       toast.error('Could not update this user.');
@@ -188,7 +193,7 @@ export default function UsersPage() {
     setPending(null);
   };
 
-  const visible = users.filter((user) => matchesRole(user, roleFilter));
+  const visible = users;
   const confirm = pending ? confirmCopy(pending) : null;
 
   return (
@@ -224,7 +229,7 @@ export default function UsersPage() {
       {loading ? (
         <LoadingState variant="people" />
       ) : error ? (
-        <ErrorState message="Could not load users." onRetry={() => load(page, q)} />
+        <ErrorState message="Could not load users." onRetry={() => load(page)} />
       ) : visible.length === 0 ? (
         <EmptyState icon={<Users size={28} />} title="No users found" />
       ) : (
@@ -233,10 +238,38 @@ export default function UsersPage() {
             <table className="w-full text-left text-sm">
               <thead>
                 <tr style={{ background: 'var(--admin-table-header)', borderBottom: '1px solid var(--admin-border)' }}>
-                  <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>User</th>
-                  <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Email</th>
-                  <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Admin</th>
-                  <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Verified</th>
+                  <AdminSortableHeader
+                    label="User"
+                    sortKey="name"
+                    activeKey={sortBy}
+                    direction={sortOrder}
+                    onSort={toggleSort}
+                    className="px-4 py-3 text-xs font-bold uppercase tracking-wider"
+                  />
+                  <AdminSortableHeader
+                    label="Email"
+                    sortKey="email"
+                    activeKey={sortBy}
+                    direction={sortOrder}
+                    onSort={toggleSort}
+                    className="px-4 py-3 text-xs font-bold uppercase tracking-wider"
+                  />
+                  <AdminSortableHeader
+                    label="Admin"
+                    sortKey="role"
+                    activeKey={sortBy}
+                    direction={sortOrder}
+                    onSort={toggleSort}
+                    className="px-4 py-3 text-xs font-bold uppercase tracking-wider"
+                  />
+                  <AdminSortableHeader
+                    label="Verified"
+                    sortKey="verified"
+                    activeKey={sortBy}
+                    direction={sortOrder}
+                    onSort={toggleSort}
+                    className="px-4 py-3 text-xs font-bold uppercase tracking-wider"
+                  />
                   <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Actions</th>
                 </tr>
               </thead>
@@ -324,7 +357,7 @@ export default function UsersPage() {
             </table>
           </div>
           <div className="flex justify-center px-4 py-3 sm:justify-end" style={{ borderTop: '1px solid var(--admin-border)' }}>
-            <AdminPagination page={page} totalPages={totalPages} total={total} limit={LIMIT} onPageChange={(p) => load(p, q)} />
+            <AdminPagination page={page} totalPages={totalPages} total={total} limit={LIMIT} onPageChange={(p) => setPage(p)} />
           </div>
         </div>
       )}

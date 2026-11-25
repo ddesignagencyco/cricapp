@@ -291,6 +291,16 @@ export class NewsListQuery extends PaginationQuery {
   @IsOptional()
   @IsString()
   authorId?: string;
+
+  @ApiPropertyOptional({ enum: ['date', 'title', 'author', 'category', 'status'], default: 'date' })
+  @IsOptional()
+  @IsIn(['date', 'title', 'author', 'category', 'status'])
+  sortBy?: 'date' | 'title' | 'author' | 'category' | 'status';
+
+  @ApiPropertyOptional({ enum: ['asc', 'desc'], default: 'desc' })
+  @IsOptional()
+  @IsIn(['asc', 'desc'])
+  sortOrder?: 'asc' | 'desc';
 }
 
 export class NewsCategoryDto {

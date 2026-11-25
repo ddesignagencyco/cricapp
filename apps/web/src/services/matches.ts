@@ -31,6 +31,8 @@ export interface MatchesListParams {
    * could list another competition's fixtures.
    */
   tournamentId?: string;
+  sortBy?: 'default' | 'home' | 'away' | 'tournament' | 'venue' | 'date' | 'status';
+  sortOrder?: 'asc' | 'desc';
   page?: number;
   limit?: number;
 }

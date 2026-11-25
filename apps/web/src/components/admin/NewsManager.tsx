@@ -22,13 +22,14 @@ import {
   type NewsArticleAdmin,
   type NewsCategory,
 } from '../../services/newsAdmin';
-import { AdminAvatar, AdminSearchField, AdminSelect, ConfirmDialog, ErrorState, LoadingState } from './AdminShared';
+import { AdminAvatar, AdminSearchField, AdminSelect, AdminSortableHeader, ConfirmDialog, ErrorState, LoadingState, type SortDirection } from './AdminShared';
 import Pagination from './AdminPagination';
 import RemoteImage from '../RemoteImage';
 import { newsHref, otherNewsLanguage } from '../../utils/newsConstraints';
 import NewsCopy from '../NewsCopy';
 
 const PAGE_SIZE = 20;
+type NewsSortKey = 'date' | 'title' | 'author' | 'category' | 'status';
 
 export default function NewsManager() {
   const [articles, setArticles] = useState<NewsArticleAdmin[]>([]);
@@ -38,6 +39,8 @@ export default function NewsManager() {
   const [query, setQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
   const [filterStatus, setFilterStatus] = useState<'all' | 'published' | 'draft'>('all');
+  const [sortBy, setSortBy] = useState<NewsSortKey>('date');
+  const [sortOrder, setSortOrder] = useState<SortDirection>('desc');
   const [busyId, setBusyId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<NewsArticleAdmin | null>(null);
   const [page, setPage] = useState(1);
@@ -53,6 +56,8 @@ export default function NewsManager() {
         page,
         q: query.trim() || undefined,
         category: filterCategory === 'all' ? undefined : filterCategory,
+        sortBy,
+        sortOrder,
       }),
       fetchNewsCategories().catch(() => [] as NewsCategory[]),
     ])
@@ -67,14 +72,23 @@ export default function NewsManager() {
         setError('Could not load news. Check the API connection and try again.');
       })
       .finally(() => setLoading(false));
-  }, [filterCategory, page, query]);
+  }, [filterCategory, page, query, sortBy, sortOrder]);
 
   useEffect(() => {
     const timer = window.setTimeout(load, 300);
     return () => window.clearTimeout(timer);
   }, [load]);
 
-  useEffect(() => { setPage(1); }, [query, filterCategory, filterStatus]);
+  useEffect(() => { setPage(1); }, [query, filterCategory, filterStatus, sortBy, sortOrder]);
+
+  const toggleSort = (key: NewsSortKey) => {
+    if (sortBy === key) {
+      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortBy(key);
+      setSortOrder(key === 'date' ? 'desc' : 'asc');
+    }
+  };
 
   const togglePublish = async (article: NewsArticleAdmin) => {
     setBusyId(article.id);
@@ -176,11 +190,11 @@ export default function NewsManager() {
             <table className="w-full text-left text-xs">
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--admin-border)', background: 'var(--admin-table-header)' }}>
-                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>News</th>
-                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Author</th>
-                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Category</th>
-                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Status</th>
-                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Date</th>
+                  <AdminSortableHeader label="News" sortKey="title" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} />
+                  <AdminSortableHeader label="Author" sortKey="author" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} />
+                  <AdminSortableHeader label="Category" sortKey="category" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} />
+                  <AdminSortableHeader label="Status" sortKey="status" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} />
+                  <AdminSortableHeader label="Date" sortKey="date" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} />
                   <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Actions</th>
                 </tr>
               </thead>

@@ -286,7 +286,7 @@ export default function NewsBoard({
           className="group mb-10 block overflow-hidden rounded-md border border-lborder bg-card transition-colors hover:border-border-strong"
         >
           <div className="grid md:grid-cols-[minmax(0,1.45fr)_minmax(280px,1fr)] md:items-stretch">
-            <div className="relative aspect-[16/9] w-full overflow-hidden bg-secondary md:aspect-auto md:min-h-[320px] md:max-h-[420px]">
+            <div className="relative aspect-[16/9] w-full overflow-hidden bg-secondary md:aspect-auto md:h-[340px] lg:h-[380px]">
               {featured.image ? (
                 <RemoteImage
                   src={featured.image}
@@ -294,6 +294,7 @@ export default function NewsBoard({
                   fill
                   sizes="(min-width: 768px) 55vw, 100vw"
                   fit="cover"
+                  objectPosition="top"
                   className="news-image object-cover object-top"
                 />
               ) : (

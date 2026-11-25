@@ -74,6 +74,8 @@ export interface NewsAdminListParams {
   matchId?: string;
   seriesId?: string;
   authorId?: string;
+  sortBy?: 'date' | 'title' | 'author' | 'category' | 'status';
+  sortOrder?: 'asc' | 'desc';
 }
 
 export async function fetchNewsAdmin(
