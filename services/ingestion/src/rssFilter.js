@@ -84,10 +84,96 @@ export function buildSourceGuid(feedUrl, item) {
   return `rss:${crypto.createHash('sha256').update(key).digest('hex').slice(0, 32)}`;
 }
 
-export function buildAttributionHtml(summaryText, sourceName, sourceUrl) {
-  const body = summaryText ? `<p>${htmlEscape(summaryText)}</p>` : '';
+export function buildAttributionHtml(summaryText, sourceName, sourceUrl, paragraphs = []) {
+  const cleanParas = Array.isArray(paragraphs)
+    ? paragraphs.map((p) => String(p || '').trim()).filter(Boolean)
+    : [];
+  const body = cleanParas.length
+    ? cleanParas.map((p) => `<p>${htmlEscape(p)}</p>`).join('\n')
+    : summaryText
+      ? `<p>${htmlEscape(summaryText)}</p>`
+      : '';
   const link = sourceUrl
     ? `<a href="${htmlEscape(sourceUrl)}" target="_blank" rel="noopener noreferrer nofollow">${htmlEscape(sourceName)}</a>`
     : htmlEscape(sourceName);
   return `${body}\n<p class="rss-attribution"><em>Originally reported by ${link}.</em></p>`.trim();
+}
+
+const BOILERPLATE_RX =
+  /^(sign in|log in|subscribe|cookie|privacy policy|terms of|share this|follow us|advertisement|related topics|more on this story|watch:|listen:|get the latest|external link|bbc is not responsible|copyright|all rights reserved)/i;
+
+function unescapeEntities(text) {
+  return String(text || '')
+    .replace(/&#x([0-9a-f]+);/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
+    .replace(/&#(\d+);/g, (_, dec) => String.fromCharCode(Number(dec)))
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&nbsp;/gi, ' ');
+}
+
+function extractMetaImage(html) {
+  const patterns = [
+    /<meta[^>]+(?:property|name)=["'](?:og:image|twitter:image)["'][^>]+content=["'](https?:\/\/[^"']+)["']/i,
+    /<meta[^>]+content=["'](https?:\/\/[^"']+)["'][^>]+(?:property|name)=["'](?:og:image|twitter:image)["']/i,
+  ];
+  for (const rx of patterns) {
+    const m = String(html).match(rx);
+    if (m?.[1]) return unescapeEntities(m[1]).trim();
+  }
+  return null;
+}
+
+export function extractArticleFromHtml(html) {
+  const ogImage = extractMetaImage(html);
+  const articleMatch = String(html).match(/<article(?:\s[^>]*)?>([\s\S]*?)<\/article>/i);
+  const mainMatch = String(html).match(/<main(?:\s[^>]*)?>([\s\S]*?)<\/main>/i);
+  let region = articleMatch?.[1] || mainMatch?.[1] || String(html);
+
+  region = region
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<nav[\s\S]*?<\/nav>/gi, ' ')
+    .replace(/<footer[\s\S]*?<\/footer>/gi, ' ')
+    .replace(/<aside[\s\S]*?<\/aside>/gi, ' ')
+    .replace(/<figcaption[\s\S]*?<\/figcaption>/gi, ' ');
+
+  const seen = new Set();
+  const paragraphs = [];
+  for (const m of region.matchAll(/<p(?:\s[^>]*)?>([\s\S]*?)<\/p>/gi)) {
+    const text = unescapeEntities(stripHtmlToText(m[1])).trim();
+    if (text.length < 45) continue;
+    if (BOILERPLATE_RX.test(text)) continue;
+    const key = text.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    paragraphs.push(text);
+    if (paragraphs.length >= 8) break;
+  }
+
+  return { paragraphs, ogImage };
+}
+
+export async function fetchSourceArticleDetails(url, timeoutMs = 12000) {
+  if (!url || !/^https?:\/\//i.test(url)) return { paragraphs: [], ogImage: null };
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; CriczAppBot/1.0; +https://criczapp.com)',
+        Accept: 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.8',
+      },
+    });
+    if (!res.ok) return { paragraphs: [], ogImage: null };
+    const html = await res.text();
+    return extractArticleFromHtml(html);
+  } catch {
+    return { paragraphs: [], ogImage: null };
+  } finally {
+    clearTimeout(timer);
+  }
 }

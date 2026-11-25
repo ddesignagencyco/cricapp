@@ -14,6 +14,7 @@ import {
   buildAttributionHtml,
   buildSourceGuid,
   extractFirstImgSrc,
+  fetchSourceArticleDetails,
   matchesTopicFilter,
   sanitizeRssHtml,
   stripHtmlToText,
@@ -491,11 +492,29 @@ export async function syncDbRssFeed(feed) {
         continue;
       }
 
-      const summaryText = stripHtmlToText(raw.summary || raw.content).slice(0, 320);
-      const contentText = stripHtmlToText(raw.content || raw.summary);
+      const rssSummaryText = stripHtmlToText(raw.summary || raw.content);
+      const rssContentText = stripHtmlToText(raw.content || raw.summary);
+      let extractedParagraphs = [];
+      let coverImage = raw.enclosureUrl || raw.mediaThumbnail || null;
+      const isSmallThumb = (u) => !u || /\/(1[0-9]{2}|2[0-9]{2})\//i.test(u);
+      if (raw.link && (rssContentText.length < 600 || isSmallThumb(coverImage))) {
+        const fetched = await fetchSourceArticleDetails(raw.link);
+        extractedParagraphs = fetched.paragraphs;
+        if (fetched.ogImage && isSmallThumb(coverImage)) coverImage = fetched.ogImage;
+      }
+
+      const summaryText = (rssSummaryText || extractedParagraphs[0] || raw.title).slice(0, 320);
+      const contentText = extractedParagraphs.length
+        ? extractedParagraphs.join('\n\n')
+        : rssContentText;
       let title = stripHtmlToText(raw.title) || 'Untitled';
       let summary = summaryText || null;
-      let htmlContent = buildAttributionHtml(summaryText, feed.name, raw.link || null);
+      let htmlContent = buildAttributionHtml(
+        summaryText,
+        feed.name,
+        raw.link || null,
+        extractedParagraphs.slice(0, 6),
+      );
       let metaTitle = title.slice(0, 70);
       let metaDescription = (summaryText || title).slice(0, 160);
 
@@ -504,6 +523,7 @@ export async function syncDbRssFeed(feed) {
           title,
           summary: summaryText,
           contentText,
+          paragraphs: extractedParagraphs,
           sourceName: feed.name,
           sourceUrl: raw.link || null,
           language: feed.language || 'en',
@@ -515,15 +535,18 @@ export async function syncDbRssFeed(feed) {
         metaDescription = rewritten.metaDescription;
       } else if (feed.rewrite_mode === 'raw') {
         const cleanRaw = sanitizeRssHtml(raw.content || raw.summary);
-        htmlContent = cleanRaw
-          ? `${cleanRaw}\n${buildAttributionHtml('', feed.name, raw.link || null)}`
-          : htmlContent;
+        htmlContent =
+          extractedParagraphs.length > 1
+            ? buildAttributionHtml(summaryText, feed.name, raw.link || null, extractedParagraphs)
+            : cleanRaw
+              ? `${cleanRaw}\n${buildAttributionHtml('', feed.name, raw.link || null)}`
+              : htmlContent;
       }
 
       const hash = crypto.createHash('sha256').update(sourceGuid).digest('hex').slice(0, 8);
       const slug = `${slugify(title) || 'story'}-${hash}`;
       const publishedAt = parseRssDate(raw.pubDate) || new Date().toISOString();
-      const imageUrl = raw.enclosureUrl || raw.mediaThumbnail || null;
+      const imageUrl = coverImage;
       const articleId = crypto.randomUUID();
 
       const res = await query(

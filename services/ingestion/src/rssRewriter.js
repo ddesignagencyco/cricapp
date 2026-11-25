@@ -22,15 +22,17 @@ export async function rewriteRssItem({
   title,
   summary,
   contentText,
+  paragraphs = [],
   sourceName,
   sourceUrl,
   language = 'en',
 }) {
-  const fallbackSummary = (summary || contentText || title || '').slice(0, 320);
+  const fallbackParagraphs = Array.isArray(paragraphs) ? paragraphs.slice(0, 6) : [];
+  const fallbackSummary = (summary || fallbackParagraphs[0] || contentText || title || '').slice(0, 320);
   const fallback = {
     title,
     summary: fallbackSummary,
-    htmlContent: buildAttributionHtml(fallbackSummary, sourceName, sourceUrl),
+    htmlContent: buildAttributionHtml(fallbackSummary, sourceName, sourceUrl, fallbackParagraphs),
     metaTitle: String(title || '').slice(0, 70),
     metaDescription: fallbackSummary.slice(0, 160),
     usedAi: false,

@@ -76,12 +76,14 @@ export function htmlEscape(text: string): string {
 
 function unescapeXml(text: string): string {
   return text
+    .replace(/&#x([0-9a-f]+);/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
+    .replace(/&#(\d+);/g, (_, dec) => String.fromCharCode(Number(dec)))
     .replace(/&amp;/g, '&')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
     .replace(/&apos;/g, "'")
-    .replace(/&#39;/g, "'");
+    .replace(/&nbsp;/gi, ' ');
 }
 
 function extractTag(xml: string, tag: string): string | null {
@@ -260,14 +262,101 @@ export function buildAttributionHtml(
   summaryText: string,
   sourceName: string,
   sourceUrl: string | null,
+  paragraphs?: string[],
 ): string {
-  const body = summaryText
-    ? `<p>${htmlEscape(summaryText)}</p>`
-    : '';
+  const cleanParas = (paragraphs || []).map((p) => p.trim()).filter(Boolean);
+  const body = cleanParas.length
+    ? cleanParas.map((p) => `<p>${htmlEscape(p)}</p>`).join('\n')
+    : summaryText
+      ? `<p>${htmlEscape(summaryText)}</p>`
+      : '';
   const sourceLink = sourceUrl
     ? `<a href="${htmlEscape(sourceUrl)}" target="_blank" rel="noopener noreferrer nofollow">${htmlEscape(sourceName)}</a>`
     : htmlEscape(sourceName);
   return `${body}\n<p class="rss-attribution"><em>Originally reported by ${sourceLink}.</em></p>`.trim();
+}
+
+const BOILERPLATE_RX =
+  /^(sign in|log in|subscribe|cookie|privacy policy|terms of|share this|follow us|advertisement|related topics|more on this story|watch:|listen:|get the latest|external link|bbc is not responsible|copyright|all rights reserved)/i;
+
+function extractMetaImage(html: string): string | null {
+  const patterns = [
+    /<meta[^>]+(?:property|name)=["'](?:og:image|twitter:image)["'][^>]+content=["'](https?:\/\/[^"']+)["']/i,
+    /<meta[^>]+content=["'](https?:\/\/[^"']+)["'][^>]+(?:property|name)=["'](?:og:image|twitter:image)["']/i,
+  ];
+  for (const rx of patterns) {
+    const m = html.match(rx);
+    if (m?.[1]) return unescapeXml(m[1]).trim();
+  }
+  return null;
+}
+
+export function extractArticleFromHtml(html: string): {
+  paragraphs: string[];
+  ogImage: string | null;
+} {
+  const ogImage = extractMetaImage(html);
+  const articleMatch = html.match(/<article(?:\s[^>]*)?>([\s\S]*?)<\/article>/i);
+  const mainMatch = html.match(/<main(?:\s[^>]*)?>([\s\S]*?)<\/main>/i);
+  let region = articleMatch?.[1] || mainMatch?.[1] || html;
+
+  // Strip non-body chrome before reading paragraphs
+  region = region
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<nav[\s\S]*?<\/nav>/gi, ' ')
+    .replace(/<footer[\s\S]*?<\/footer>/gi, ' ')
+    .replace(/<aside[\s\S]*?<\/aside>/gi, ' ')
+    .replace(/<figcaption[\s\S]*?<\/figcaption>/gi, ' ');
+
+  const seen = new Set<string>();
+  const paragraphs: string[] = [];
+  for (const m of region.matchAll(/<p(?:\s[^>]*)?>([\s\S]*?)<\/p>/gi)) {
+    const text = unescapeXml(stripHtmlToText(m[1])).trim();
+    if (text.length < 45) continue;
+    if (BOILERPLATE_RX.test(text)) continue;
+    const key = text.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    paragraphs.push(text);
+    if (paragraphs.length >= 8) break;
+  }
+
+  return { paragraphs, ogImage };
+}
+
+/**
+ * Fetches the linked source article page to extract full body paragraphs and
+ * a high-resolution `og:image` when the RSS XML only provides a short teaser.
+ */
+export async function fetchSourceArticleDetails(
+  url: string | null | undefined,
+  timeoutMs = 12000,
+): Promise<{ paragraphs: string[]; ogImage: string | null }> {
+  if (!url) return { paragraphs: [], ogImage: null };
+  try {
+    assertSafeFeedUrl(url);
+  } catch {
+    return { paragraphs: [], ogImage: null };
+  }
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; CriczAppBot/1.0; +https://criczapp.com)',
+        Accept: 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.8',
+      },
+    });
+    if (!res.ok) return { paragraphs: [], ogImage: null };
+    const html = await res.text();
+    return extractArticleFromHtml(html);
+  } catch {
+    return { paragraphs: [], ogImage: null };
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 export async function fetchFeedXmlSafe(url: string, timeoutMs = 15000): Promise<string> {
@@ -307,6 +396,7 @@ export async function rewriteRssItemWithAi(input: {
   title: string;
   summary: string;
   contentText: string;
+  paragraphs?: string[];
   sourceName: string;
   sourceUrl: string | null;
   language: string;
@@ -317,11 +407,12 @@ export async function rewriteRssItemWithAi(input: {
     opencodeKey: process.env.OPENCODE_API_KEY,
   });
 
-  const fallbackSummary = (input.summary || input.contentText || input.title).slice(0, 320);
+  const fallbackParagraphs = (input.paragraphs || []).slice(0, 6);
+  const fallbackSummary = (input.summary || fallbackParagraphs[0] || input.contentText || input.title).slice(0, 320);
   const fallback: RewrittenArticle = {
     title: input.title,
     summary: fallbackSummary,
-    htmlContent: buildAttributionHtml(fallbackSummary, input.sourceName, input.sourceUrl),
+    htmlContent: buildAttributionHtml(fallbackSummary, input.sourceName, input.sourceUrl, fallbackParagraphs),
     metaTitle: input.title.slice(0, 70),
     metaDescription: fallbackSummary.slice(0, 160),
     usedAi: false,

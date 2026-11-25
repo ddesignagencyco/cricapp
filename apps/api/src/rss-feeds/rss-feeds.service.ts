@@ -15,6 +15,7 @@ import {
   buildSourceGuid,
   evaluateTopicFilter,
   fetchFeedXmlSafe,
+  fetchSourceArticleDetails,
   parseRssOrAtomXml,
   rewriteRssItemWithAi,
   sanitizeRssHtml,
@@ -192,11 +193,30 @@ export class RssFeedsService {
           continue;
         }
 
-        const summaryText = stripHtmlToText(item.summary || item.content).slice(0, 320);
-        const contentText = stripHtmlToText(item.content || item.summary);
+        const rssSummaryText = stripHtmlToText(item.summary || item.content);
+        const rssContentText = stripHtmlToText(item.content || item.summary);
+        // Fetch full article body + og:image when RSS XML only provides a short teaser or lacks a cover image.
+        let extractedParagraphs: string[] = [];
+        let coverImage = item.imageUrl;
+        const isSmallThumb = (u: string | null) => !u || /\/(1[0-9]{2}|2[0-9]{2})\//i.test(u);
+        if (item.link && (rssContentText.length < 600 || isSmallThumb(coverImage))) {
+          const fetched = await fetchSourceArticleDetails(item.link);
+          extractedParagraphs = fetched.paragraphs;
+          if (fetched.ogImage && isSmallThumb(coverImage)) coverImage = fetched.ogImage;
+        }
+
+        const summaryText = (rssSummaryText || extractedParagraphs[0] || item.title).slice(0, 320);
+        const contentText = extractedParagraphs.length
+          ? extractedParagraphs.join('\n\n')
+          : rssContentText;
         let title = item.title;
         let summary = summaryText || null;
-        let htmlContent = buildAttributionHtml(summaryText, feed.name, item.link || null);
+        let htmlContent = buildAttributionHtml(
+          summaryText,
+          feed.name,
+          item.link || null,
+          extractedParagraphs.slice(0, 6),
+        );
         let metaTitle = title.slice(0, 70);
         let metaDescription = (summaryText || title).slice(0, 160);
 
@@ -205,6 +225,7 @@ export class RssFeedsService {
             title: item.title,
             summary: summaryText,
             contentText,
+            paragraphs: extractedParagraphs,
             sourceName: feed.name,
             sourceUrl: item.link || null,
             language: feed.language,
@@ -216,9 +237,12 @@ export class RssFeedsService {
           metaDescription = rewritten.metaDescription;
         } else if (feed.rewriteMode === 'raw') {
           const cleanRaw = sanitizeRssHtml(item.content || item.summary);
-          htmlContent = cleanRaw
-            ? `${cleanRaw}\n${buildAttributionHtml('', feed.name, item.link || null)}`
-            : htmlContent;
+          htmlContent =
+            extractedParagraphs.length > 1
+              ? buildAttributionHtml(summaryText, feed.name, item.link || null, extractedParagraphs)
+              : cleanRaw
+                ? `${cleanRaw}\n${buildAttributionHtml('', feed.name, item.link || null)}`
+                : htmlContent;
         }
 
         const hash = crypto.createHash('sha256').update(sourceGuid).digest('hex').slice(0, 8);
@@ -232,7 +256,7 @@ export class RssFeedsService {
             slug,
             summary,
             content: htmlContent,
-            imageUrl: item.imageUrl,
+            imageUrl: coverImage,
             author: feed.authorRef?.name || item.author || feed.name,
             authorId: feed.authorId || null,
             source: feed.name,
