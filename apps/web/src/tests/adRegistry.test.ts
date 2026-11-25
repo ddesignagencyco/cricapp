@@ -231,19 +231,14 @@ describe('shouldRenderAd', () => {
     expect(shouldRenderAd(config, 'home-mid', '/')).toBe(true);
   });
 
-  it('blocks a shared placement on a gambling route unless the admin opted in', () => {
-    // Gating only the prediction-detail placements would not be enough: the sidebar
-    // and the global top banner render on these pages too.
+  it('renders shared placements on /odds and /predictions like all other pages', () => {
     const config = configWith({
       mode: 'house',
       placements: { 'layout-sidebar': { enabled: true, slotId: null } },
     });
-    expect(shouldRenderAd(config, 'layout-sidebar', '/odds')).toBe(false);
-    expect(shouldRenderAd(config, 'global-top', '/predictions/match-1')).toBe(false);
+    expect(shouldRenderAd(config, 'layout-sidebar', '/odds')).toBe(true);
+    expect(shouldRenderAd(config, 'global-top', '/predictions/match-1')).toBe(true);
     expect(shouldRenderAd(config, 'layout-sidebar', '/news')).toBe(true);
-
-    const optedIn = configWith({ mode: 'house', gamblingAds: true });
-    expect(shouldRenderAd(optedIn, 'layout-sidebar', '/odds')).toBe(true);
   });
 
   it('honours a disabled placement even where ads are otherwise allowed', () => {
@@ -287,7 +282,7 @@ describe('the unconfigured default', () => {
     expect(Object.keys(EMPTY_AD_CONFIG.defaultSlots).sort()).toEqual([...AD_SIZES].sort());
   });
 
-  it('exposes exactly the three documented modes', () => {
-    expect([...AD_MODES]).toEqual(['off', 'house', 'adsense']);
+  it('exposes the four documented modes', () => {
+    expect([...AD_MODES]).toEqual(['off', 'house', 'adsense', 'adsterra']);
   });
 });

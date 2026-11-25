@@ -104,6 +104,10 @@ export class SiteSettingsService {
         select: { ads: true },
       });
       const base = current ? normalizeAdConfig(current.ads) : { ...EMPTY_AD_CONFIG };
+      const incomingAdsterra =
+        dto.ads.adsterra && typeof dto.ads.adsterra === 'object'
+          ? (dto.ads.adsterra as Record<string, unknown>)
+          : null;
       ads = normalizeAdConfig({
         ...base,
         ...(dto.ads.mode !== undefined ? { mode: dto.ads.mode } : {}),
@@ -115,6 +119,38 @@ export class SiteSettingsService {
           ? { placements: mergePlacements(base.placements, dto.ads.placements) }
           : {}),
         ...(dto.ads.gamblingAds !== undefined ? { gamblingAds: dto.ads.gamblingAds } : {}),
+        ...(incomingAdsterra
+          ? {
+              adsterra: {
+                ...base.adsterra,
+                ...(incomingAdsterra.scriptHost !== undefined
+                  ? { scriptHost: incomingAdsterra.scriptHost }
+                  : {}),
+                ...(incomingAdsterra.socialBarUrl !== undefined
+                  ? { socialBarUrl: incomingAdsterra.socialBarUrl }
+                  : {}),
+                ...(incomingAdsterra.popunderUrl !== undefined
+                  ? { popunderUrl: incomingAdsterra.popunderUrl }
+                  : {}),
+                ...(incomingAdsterra.defaultKeys && typeof incomingAdsterra.defaultKeys === 'object'
+                  ? {
+                      defaultKeys: {
+                        ...base.adsterra.defaultKeys,
+                        ...(incomingAdsterra.defaultKeys as Record<string, unknown>),
+                      },
+                    }
+                  : {}),
+                ...(incomingAdsterra.placements && typeof incomingAdsterra.placements === 'object'
+                  ? {
+                      placements: {
+                        ...base.adsterra.placements,
+                        ...(incomingAdsterra.placements as Record<string, unknown>),
+                      },
+                    }
+                  : {}),
+              },
+            }
+          : {}),
       });
     }
 

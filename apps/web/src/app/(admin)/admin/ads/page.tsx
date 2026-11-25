@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { BadgeDollarSign, ShieldAlert } from 'lucide-react';
+import { BadgeDollarSign, ExternalLink, ShieldAlert } from 'lucide-react';
 import AdConfigPanel from '../../../../components/admin/AdConfigPanel';
 import AdSenseEarningsPanel from '../../../../components/admin/AdSenseEarningsPanel';
 import AdSensePolicyPanel from '../../../../components/admin/AdSensePolicyPanel';
@@ -21,27 +21,28 @@ import {
 import { siteSettingsKeys } from '../../../../queries/keys';
 import { adSenseErrorMessage } from '../../../../services/adsense';
 import { useSiteSettingsQuery } from '../../../../queries/useDirectoryQueries';
-import type { AdConfig } from '../../../../lib/advertisements/registry';
+import type { AdConfig, AdMode } from '../../../../lib/advertisements/registry';
 
 export default function AdminAdsPage() {
   const queryClient = useQueryClient();
   const settingsQuery = useSiteSettingsQuery();
   const statusQuery = useAdSenseStatusQuery();
   const [includeArchived, setIncludeArchived] = useState(false);
+  const [activeModeOverride, setActiveModeOverride] = useState<AdMode | null>(null);
 
   const status = statusQuery.data;
   const configured = status?.configured === true;
+  const activeMode = activeModeOverride ?? settingsQuery.data?.ads.mode ?? 'house';
+  const showAdsenseSections = activeMode === 'adsense';
 
-  // Only fetch the unit list once we know the Management API is set up, so the panel
-  // does not fire a request that is guaranteed to 503.
-  const adUnitsQuery = useAdSenseAdUnitsQuery(includeArchived, configured);
+  // Only fetch the unit list once we know the Management API is set up AND AdSense is relevant.
+  const adUnitsQuery = useAdSenseAdUnitsQuery(includeArchived, configured && showAdsenseSections);
 
   const onSaved = (next: AdConfig) => {
+    setActiveModeOverride(null);
     queryClient.setQueryData(siteSettingsKeys.current(), (previous: Record<string, unknown> | undefined) =>
-      previous ? { ...previous, ads: next } : previous,
+      previous ? { ...previous, ads: next, updatedAt: new Date().toISOString() } : previous,
     );
-    // The AdSense panels read the publisher id server-side to pick an ad client, so
-    // invalidate them after a change rather than leaving a stale selection on screen.
     void queryClient.invalidateQueries({ queryKey: ['admin-adsense'] });
   };
 
@@ -49,7 +50,23 @@ export default function AdminAdsPage() {
     <div className="space-y-8">
       <AdminPageHeader
         title="Ads Manager"
-        subtitle="Choose where ads appear on the site, then check how they are performing."
+        subtitle="Switch ad networks (Off, Placeholder, Adsterra, Google AdSense), configure keys, and control page visibility."
+        actions={
+          <a
+            href="/ads-preview"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition-colors"
+            style={{
+              border: '1px solid var(--admin-border)',
+              background: 'var(--admin-card)',
+              color: 'var(--admin-text)',
+            }}
+          >
+            Preview all ad formats
+            <ExternalLink size={13} aria-hidden />
+          </a>
+        }
       />
 
       {settingsQuery.isError ? (
@@ -58,17 +75,16 @@ export default function AdminAdsPage() {
         <LoadingState variant="form" />
       ) : (
         <>
-          <AdSenseStatusCard
-            verified={adUnitsQuery.isSuccess ? true : adUnitsQuery.isError ? false : undefined}
-          />
+          {showAdsenseSections ? (
+            <AdSenseStatusCard
+              verified={adUnitsQuery.isSuccess ? true : adUnitsQuery.isError ? false : undefined}
+            />
+          ) : null}
 
           <div className="space-y-3">
-            <SectionHeading
-              title="Ad delivery"
-              hint="Saved to site settings and used by every page. Nothing below this heading needs AdSense credentials."
-            />
             <AdConfigPanel
               config={settingsQuery.data.ads}
+              updatedAt={settingsQuery.data.updatedAt}
               adUnits={adUnitsQuery.data?.adUnits ?? []}
               includeArchived={includeArchived}
               onToggleArchived={() => setIncludeArchived((prev) => !prev)}
@@ -80,31 +96,34 @@ export default function AdminAdsPage() {
                 />
               }
               onSaved={onSaved}
+              onModeChange={setActiveModeOverride}
             />
           </div>
 
-          <div className="space-y-3">
-            <SectionHeading
-              title="AdSense reporting"
-              hint="Read-only. Earnings and policy data comes straight from Google and needs API credentials to be set."
-            />
-            {configured ? (
-              <>
-                <AdSensePolicyPanel enabled={configured} />
-                <AdSenseEarningsPanel enabled={configured} />
-              </>
-            ) : (
-              <CardPanel>
-                <div className="p-4">
-                  <EmptyState
-                    icon={<ShieldAlert size={28} />}
-                    title="AdSense reporting is not configured"
-                    message="Set ADSENSE_SERVICE_ACCOUNT_JSON or ADSENSE_SERVICE_ACCOUNT_FILE on the API service, and grant the service account access to the AdSense account under Account → Users and permissions. The ad delivery settings above work without it — only this section needs it."
-                  />
-                </div>
-              </CardPanel>
-            )}
-          </div>
+          {showAdsenseSections ? (
+            <div className="space-y-3">
+              <SectionHeading
+                title="AdSense reporting"
+                hint="Read-only. Earnings and policy data comes straight from Google and needs API credentials to be set."
+              />
+              {configured ? (
+                <>
+                  <AdSensePolicyPanel enabled={configured} />
+                  <AdSenseEarningsPanel enabled={configured} />
+                </>
+              ) : (
+                <CardPanel>
+                  <div className="p-4">
+                    <EmptyState
+                      icon={<ShieldAlert size={28} />}
+                      title="AdSense reporting is not configured"
+                      message="Set ADSENSE_SERVICE_ACCOUNT_JSON or ADSENSE_SERVICE_ACCOUNT_FILE on the API service, and grant the service account access to the AdSense account under Account → Users and permissions. The ad delivery settings above work without it — only this section needs it."
+                    />
+                  </div>
+                </CardPanel>
+              )}
+            </div>
+          ) : null}
         </>
       )}
     </div>

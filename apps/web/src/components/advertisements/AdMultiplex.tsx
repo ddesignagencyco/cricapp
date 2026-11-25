@@ -1,6 +1,9 @@
 'use client';
 
+import { usePathname } from 'next/navigation';
 import AdSlot from './AdSlot';
+import { useAdConfig } from './AdProvider';
+import { shouldRenderAd } from '../../lib/advertisements/registry';
 
 export type AdMultiplexProps = {
   placement?: string;
@@ -9,19 +12,13 @@ export type AdMultiplexProps = {
   className?: string;
 };
 
-/**
- * Multiplex (matched-content style) advertisement (requirements §5).
- *
- * Renders the official AdSense `autorelaxed` format — never a hand-built grid
- * of fake ads. Use after article content / before related articles, or at the
- * bottom of long listing pages.
- *
- * NOTE: Multiplex needs its own ad unit created in the AdSense dashboard
- * (Ads → By ad unit → Multiplex). Pass its id via `slot`, or map the
- * placement to one in site-settings once saved. Until a unit exists the slot
- * collapses to nothing in `adsense` mode by design.
- */
 export default function AdMultiplex({ placement = 'home-multiplex', slot, className = '' }: AdMultiplexProps) {
+  const config = useAdConfig();
+  const pathname = usePathname() ?? '/';
+  const explicit = slot?.trim() || null;
+
+  if (!shouldRenderAd(config, placement, pathname, explicit)) return null;
+
   return (
     <section
       aria-label="Advertisement"

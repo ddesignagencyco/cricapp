@@ -1,6 +1,9 @@
 'use client';
 
+import { usePathname } from 'next/navigation';
 import AdSlot from './AdSlot';
+import { useAdConfig } from './AdProvider';
+import { shouldRenderAd } from '../../lib/advertisements/registry';
 
 export type AdSideRailProps = {
   placement?: string;
@@ -8,18 +11,13 @@ export type AdSideRailProps = {
   className?: string;
 };
 
-/**
- * Desktop-only side-rail advertisement (requirements §8).
- *
- * - hidden below `lg` (1024px), fixed 300px column on wide screens
- * - never overlaps article content, header or navigation
- * - never creates horizontal scrolling (`max-w-full`, `min-w-0`, overflow hidden)
- * - does not narrow the main column: the parent grid owns the 300px track
- *
- * Place inside the sidebar column of a two-column layout, not on every page —
- * content-heavy article/detail pages only.
- */
 export default function AdSideRail({ placement = 'layout-sidebar', slot, className = '' }: AdSideRailProps) {
+  const config = useAdConfig();
+  const pathname = usePathname() ?? '/';
+  const explicit = slot?.trim() || null;
+
+  if (!shouldRenderAd(config, placement, pathname, explicit)) return null;
+
   return (
     <div className={`hidden w-[300px] max-w-full shrink-0 lg:block ${className}`.trim()}>
       <div className="w-full min-w-0 max-w-full overflow-hidden">

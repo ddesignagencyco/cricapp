@@ -7,9 +7,11 @@ import { useAdConfig } from './AdProvider';
 import { resolveDummyAdCreative } from '../../lib/advertisements/placements';
 import { resolvePublisherId } from '../../lib/advertisements/adsConfig';
 import {
+  DEFAULT_ADSTERRA_HOST,
   adPlacement,
   adPlacementSize,
   resolveAdSlotId,
+  resolveAdsterraKey,
   shouldRenderAd,
   type AdSize,
 } from '../../lib/advertisements/registry';
@@ -237,6 +239,64 @@ function AdSenseUnit({
  * Note there is deliberately no site badge in `adsense` mode: AdSense renders its
  * own "Ad" label above the creative, so ours would duplicate it.
  */
+const ADSTERRA_DIMENSIONS: Record<AdSize, { width: number; height: number }> = {
+  leaderboard: { width: 728, height: 90 },
+  'tablet-banner': { width: 468, height: 60 },
+  'mobile-banner': { width: 320, height: 50 },
+  'medium-rectangle': { width: 300, height: 250 },
+  // Adsterra does not offer 336x280; Banner 300x250 serves these slots cleanly.
+  'large-rectangle': { width: 300, height: 250 },
+  'half-page': { width: 160, height: 600 },
+};
+
+/**
+ * Renders an Adsterra banner inside an isolated `srcDoc` iframe so multiple
+ * slots on the same page never overwrite each other's `window.atOptions`.
+ */
+function AdsterraUnit({
+  placement,
+  zoneKey,
+  scriptHost,
+  size,
+  className,
+  inFeed,
+}: {
+  placement: string;
+  zoneKey: string;
+  scriptHost: string;
+  size: AdSize;
+  className: string;
+  inFeed: boolean;
+}) {
+  const { width, height } = ADSTERRA_DIMENSIONS[size];
+  const hideOnMobile = size === 'half-page';
+  const safeHost = scriptHost || DEFAULT_ADSTERRA_HOST;
+  const srcDoc = `<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;padding:0;overflow:hidden;background:transparent;display:flex;justify-content:center;align-items:center;}</style></head><body><script>atOptions=${JSON.stringify({ key: zoneKey, format: 'iframe', height, width, params: {} })};</script><script src="https://${encodeURIComponent(safeHost)}/${encodeURIComponent(zoneKey)}/invoke.js"></script></body></html>`;
+
+  return (
+    <aside
+      data-ad-placement={placement}
+      data-ad-network="adsterra"
+      aria-label="Advertisement"
+      className={`relative mx-auto flex w-full min-w-0 max-w-full items-center justify-center overflow-hidden ${
+        inFeed ? 'h-full' : ''
+      } ${hideOnMobile ? 'hidden lg:flex' : ''} ${className}`.trim()}
+    >
+      <iframe
+        title={`Adsterra advertisement (${placement})`}
+        srcDoc={srcDoc}
+        width={width}
+        height={height}
+        scrolling="no"
+        frameBorder="0"
+        sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation"
+        className="max-w-full border-0"
+        style={{ width, height, maxWidth: '100%' }}
+      />
+    </aside>
+  );
+}
+
 const EXPLICIT_SLOT_RE = /^\d{10,20}$/;
 
 export default function AdSlot({ placement, size, className = '', inFeed, slot, format, layout }: AdSlotProps) {
@@ -259,6 +319,21 @@ export default function AdSlot({ placement, size, className = '', inFeed, slot, 
 
   if (config.mode === 'house') {
     return <HouseAd size={resolvedSize} placement={placement} className={className} inFeed={resolvedInFeed} />;
+  }
+
+  if (config.mode === 'adsterra') {
+    const zoneKey = resolveAdsterraKey(placement, resolvedSize, config);
+    if (!zoneKey) return null;
+    return (
+      <AdsterraUnit
+        placement={placement}
+        zoneKey={zoneKey}
+        scriptHost={config.adsterra?.scriptHost || DEFAULT_ADSTERRA_HOST}
+        size={resolvedSize}
+        className={className}
+        inFeed={resolvedInFeed}
+      />
+    );
   }
   // `shouldRenderAd` already guarantees a non-null slot id in adsense mode.
   const slotId = explicit ?? resolveAdSlotId(placement, resolvedSize, config);

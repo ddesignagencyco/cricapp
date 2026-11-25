@@ -84,6 +84,15 @@ export class AdConfigDto {
   @IsOptional()
   @IsBoolean()
   gamblingAds?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Adsterra publisher settings (scriptHost, defaultKeys, placements, socialBarUrl, popunderUrl).',
+    type: 'object',
+    additionalProperties: true,
+  })
+  @IsOptional()
+  @IsObject()
+  adsterra?: Record<string, unknown>;
 }
 
 export class AdPlacementResponseDto {
@@ -109,6 +118,9 @@ export class AdConfigResponseDto {
 
   @ApiProperty({ description: 'Whether ads are opted in on the /odds and /predictions routes.' })
   gamblingAds!: boolean;
+
+  @ApiProperty({ type: 'object', additionalProperties: true })
+  adsterra!: Record<string, unknown>;
 }
 
 export class UpdateSiteSettingsDto {

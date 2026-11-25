@@ -98,15 +98,9 @@ describe('mode gating', () => {
 });
 
 describe('route and placement gating', () => {
-  it('hides a shared placement on a gambling route until the admin opts in', () => {
+  it('renders a shared placement on /predictions and /odds like all other pages', () => {
     pathname = '/predictions';
     const { container } = renderSlot(configWith({ mode: 'house' }), 'layout-sidebar');
-    expect(container.querySelector('[data-ad-placement]')).toBeNull();
-  });
-
-  it('shows it once gamblingAds is on', () => {
-    pathname = '/predictions';
-    const { container } = renderSlot(configWith({ mode: 'house', gamblingAds: true }), 'layout-sidebar');
     expect(container.querySelector('[data-ad-placement]')).not.toBeNull();
   });
 

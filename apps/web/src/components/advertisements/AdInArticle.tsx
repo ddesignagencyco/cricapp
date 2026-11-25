@@ -1,6 +1,9 @@
 'use client';
 
+import { usePathname } from 'next/navigation';
 import AdSlot from './AdSlot';
+import { useAdConfig } from './AdProvider';
+import { shouldRenderAd } from '../../lib/advertisements/registry';
 
 export type AdInArticleProps = {
   placement?: string;
@@ -9,15 +12,13 @@ export type AdInArticleProps = {
   className?: string;
 };
 
-/**
- * In-article fluid advertisement (requirements §9).
- *
- * Uses the `fluid` format so the creative flows with the article width instead
- * of forcing a fixed 336px box on narrow phones. Render at most once per
- * article, after several paragraphs — never after every paragraph and never
- * adjacent to interactive controls (favorite/share buttons).
- */
 export default function AdInArticle({ placement = 'news-detail-inarticle', slot, className = '' }: AdInArticleProps) {
+  const config = useAdConfig();
+  const pathname = usePathname() ?? '/';
+  const explicit = slot?.trim() || null;
+
+  if (!shouldRenderAd(config, placement, pathname, explicit)) return null;
+
   return (
     <div className={`my-8 flex w-full min-w-0 max-w-full justify-center overflow-hidden ${className}`.trim()}>
       <AdSlot placement={placement} slot={slot} format="fluid" className="w-full" />
