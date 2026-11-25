@@ -213,7 +213,7 @@ export default async function HomePage() {
                 <div className="shrink-0 p-4 sm:p-5">
                   <NewsCopy as="h3" language={newsList[0].language} text={newsList[0].title} className="line-clamp-2 text-base font-bold leading-snug text-mtext group-hover:text-accent sm:text-lg">{newsList[0].title}</NewsCopy>
                   {newsList[0].excerpt && (
-                    <NewsCopy language={newsList[0].language} text={newsList[0].excerpt} className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-stext sm:text-sm">{newsList[0].excerpt}</NewsCopy>
+                    <NewsCopy language={newsList[0].language} text={newsList[0].excerpt} className="news-copy-card mt-1.5 line-clamp-2 text-xs leading-relaxed text-stext sm:text-sm">{newsList[0].excerpt}</NewsCopy>
                   )}
                   <p className="mt-2.5 text-xs text-stext">{newsList[0].date} • {newsList[0].readTime}</p>
                 </div>
@@ -241,7 +241,7 @@ export default async function HomePage() {
                           ? String((item.category as any).name)
                           : 'News'}
                     </span>
-                    <NewsCopy as="h4" language={item.language} text={item.title} className="mt-1 line-clamp-2 text-sm font-bold leading-snug text-mtext group-hover:text-accent">{item.title}</NewsCopy>
+                    <NewsCopy as="h4" language={item.language} text={item.title} className="news-copy-card mt-1 line-clamp-2 text-sm font-bold leading-snug text-mtext group-hover:text-accent">{item.title}</NewsCopy>
                     <p className="mt-1 text-[11px] text-stext">{item.date} • {item.readTime}</p>
                   </div>
                 </Link>

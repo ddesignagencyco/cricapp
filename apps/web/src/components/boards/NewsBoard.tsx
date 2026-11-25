@@ -460,7 +460,7 @@ function ArticleCard({ item, language }: { item: NewsArticle; language: 'en' | '
           as="h3"
           language={(item.language as string | undefined) || language}
           text={item.title}
-          className="line-clamp-2 text-base font-semibold leading-snug text-mtext transition-colors group-hover:text-accent"
+          className="news-copy-card line-clamp-2 text-base font-semibold leading-snug text-mtext transition-colors group-hover:text-accent"
         >
           {item.title}
         </NewsCopy>
@@ -469,7 +469,7 @@ function ArticleCard({ item, language }: { item: NewsArticle; language: 'en' | '
           <NewsCopy
             language={(item.language as string | undefined) || language}
             text={item.excerpt}
-            className="mt-2 line-clamp-2 text-sm leading-relaxed text-stext"
+            className="news-copy-card mt-2 line-clamp-2 text-sm leading-relaxed text-stext"
           >
             {item.excerpt}
           </NewsCopy>

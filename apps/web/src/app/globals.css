@@ -2932,11 +2932,13 @@ h3.news-copy[dir="rtl"] {
   }
 }
 
+h4.news-copy[lang="ur"],
+h4.news-copy[dir="rtl"],
 .news-copy-card[lang="ur"],
 .news-copy-card[dir="rtl"] {
-  font-size: 0.8125rem !important;
-  line-height: 1.7 !important;
-  font-weight: 600 !important;
+  font-family: "Noto Naskh Arabic", var(--font-urdu), var(--font-sans);
+  font-size: 0.875rem !important;
+  line-height: 1.65 !important;
   letter-spacing: 0 !important;
 }
 

@@ -639,12 +639,18 @@ function NewsFavCard({
           as="h3"
           language={news?.language}
           text={name}
-          className="line-clamp-2 text-sm font-semibold text-mtext transition-colors group-hover:text-accent"
+          className="news-copy-card line-clamp-2 text-sm font-semibold text-mtext transition-colors group-hover:text-accent"
         >
           {name}
         </NewsCopy>
         {news?.excerpt && (
-          <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-stext">{news.excerpt}</p>
+          <NewsCopy
+            language={news?.language}
+            text={news.excerpt}
+            className="news-copy-card mt-1.5 line-clamp-2 text-xs leading-relaxed text-stext"
+          >
+            {news.excerpt}
+          </NewsCopy>
         )}
         <div className="mt-3 flex items-center gap-3 text-[11px] text-stext">
           {news?.date && <span>{news.date}</span>}
@@ -753,7 +759,7 @@ function AuthorFavCard({
             alt={name}
             width={48}
             height={48}
-            className="h-12 w-12 shrink-0 rounded-full bg-entity-avatar object-cover"
+            className="avatar-3d h-12 w-12 shrink-0 rounded-full bg-entity-avatar object-cover"
           />
         ) : (
           <EntityAvatar className="h-12 w-12 text-sm">{getInitials(name)}</EntityAvatar>
