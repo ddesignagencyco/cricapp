@@ -94,7 +94,10 @@ export function emailLinkFallback(href: string): string {
 }
 
 export function renderEmail(input: EmailLayoutInput): string {
-  const { appUrl, title, preheader, bodyHtml, reason, unsubscribeUrl, preferencesUrl } = input;
+  const { title, preheader, bodyHtml, reason, unsubscribeUrl, preferencesUrl } = input;
+  const appUrl = input.appUrl.replace(/\/$/, '');
+  const isLocal = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(appUrl);
+  const logoUrl = `${isLocal ? 'https://criczapp.com' : appUrl}/brand/logo-dark.png`;
   const year = new Date().getFullYear();
   const link = (path: string, label: string) =>
     `<a href="${appUrl}${path}" style="color:${BRAND.body};text-decoration:none;font-weight:600;">${label}</a>`;
@@ -118,11 +121,12 @@ export function renderEmail(input: EmailLayoutInput): string {
       <tr><td bgcolor="${BRAND.accent}" style="background:${BRAND.accent};height:3px;font-size:0;line-height:0;">&nbsp;</td></tr>
 
       <!-- Sleek Brand Navy Header -->
-      <tr><td bgcolor="${BRAND.navy}" style="background:${BRAND.navy};padding:22px 28px;">
+      <tr><td bgcolor="${BRAND.navy}" style="background:${BRAND.navy};padding:20px 28px;">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
           <td valign="middle" style="font-family:${EMAIL_FONT};">
-            <div style="font-size:20px;font-weight:800;letter-spacing:-0.3px;color:#FFFFFF;">Cricz<span style="color:${BRAND.accent};">App</span></div>
-            <div style="font-size:11px;font-weight:500;letter-spacing:0.8px;text-transform:uppercase;color:#94A3B8;margin-top:3px;">Every Run · Every Ball · Live</div>
+            <a href="${appUrl}" target="_blank" style="display:inline-block;text-decoration:none;">
+              <img src="${escapeHtml(logoUrl)}" alt="${BRAND.name}" height="36" style="display:block;height:36px;width:auto;max-width:170px;border:0;outline:none;text-decoration:none;font-family:${EMAIL_FONT};font-size:20px;font-weight:800;color:#FFFFFF;" />
+            </a>
           </td>
           ${input.edition ? `<td valign="middle" align="right" style="font-family:${EMAIL_FONT};font-size:11px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:#CBD5E1;">${escapeHtml(input.edition)}</td>` : ''}
         </tr></table>
