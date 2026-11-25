@@ -25,13 +25,21 @@ import { newsHref, newsListPath } from '../../utils/newsConstraints';
 import { authorAvatarFromArticle } from '../../services/authors';
 
 const categoryTone: Record<string, string> = {
+  Breaking: 'danger',
   'Match Report': 'live',
-  'PSL News': 'upcoming',
-  'Team News': 'neutral',
-  International: 'neutral',
-  Statistics: 'gold',
+  'Match News': 'primary',
+  PSL: 'primary',
+  'PSL News': 'primary',
+  'Pakistan Cricket': 'success',
+  International: 'info',
+  'Team News': 'info',
+  Analysis: 'warning',
+  Records: 'warning',
+  Statistics: 'warning',
+  Features: 'accent',
   Editorials: 'accent',
-  Interviews: 'live',
+  Interviews: 'info',
+  Explainers: 'success',
 };
 
 function getCategoryName(category: unknown): string {

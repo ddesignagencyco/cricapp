@@ -3,7 +3,7 @@
 import { type ReactNode, forwardRef, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
-import { Check, ChevronDown } from 'lucide-react';
+import { AlertCircle, Check, ChevronDown } from 'lucide-react';
 import Badge, { StatusBadge as SharedStatusBadge } from '../Badge';
 import { getInitials } from '../../utils/helpers';
 import RemoteImage from '../RemoteImage';
@@ -187,18 +187,27 @@ export function ErrorState({
 }) {
   return (
     <div
-      className="rounded-lg p-6 text-center"
-      style={{ border: '1px solid var(--admin-danger)', background: 'var(--admin-danger-bg)' }}
+      className="flex flex-col items-center justify-center rounded-xl px-6 py-10 text-center"
+      style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}
     >
-      <p className="text-sm font-semibold" style={{ color: 'var(--admin-danger)' }}>
+      <div
+        className="mb-3 grid h-10 w-10 place-items-center rounded-full"
+        style={{ background: 'var(--admin-danger-bg)', color: 'var(--admin-danger)' }}
+        aria-hidden="true"
+      >
+        <AlertCircle size={20} />
+      </div>
+      <p className="text-sm font-semibold" style={{ color: 'var(--admin-text)' }}>
         {message}
+      </p>
+      <p className="mt-1 max-w-sm text-xs" style={{ color: 'var(--admin-text-muted)' }}>
+        The server may be restarting or temporarily unreachable.
       </p>
       {onRetry && (
         <button
           type="button"
           onClick={onRetry}
-          className="mt-3 rounded-md px-4 py-1.5 text-xs font-bold text-white"
-          style={{ background: 'var(--admin-danger)' }}
+          className="btn-brand mt-4 rounded-md px-4 py-1.5 text-xs font-semibold text-white"
         >
           Try again
         </button>

@@ -3,6 +3,8 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  type OnModuleDestroy,
+  type OnModuleInit,
 } from '@nestjs/common';
 import crypto from 'node:crypto';
 import { redisKeys } from '@cricapp/shared-types';
@@ -29,13 +31,57 @@ function cleanKeywords(list?: string[]): string[] {
 }
 
 @Injectable()
-export class RssFeedsService {
+export class RssFeedsService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(RssFeedsService.name);
+  private schedulerTimer: ReturnType<typeof setInterval> | null = null;
+  private schedulerRunning = false;
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
   ) {}
+
+  onModuleInit() {
+    if (process.env.NODE_ENV === 'test' || process.env.RSS_AUTO_SYNC === 'false') return;
+    // Check due feeds every 5 minutes so enabled RSS feeds stay synced automatically.
+    this.schedulerTimer = setInterval(() => {
+      void this.syncDueFeeds();
+    }, 5 * 60 * 1000);
+    this.schedulerTimer.unref?.();
+  }
+
+  onModuleDestroy() {
+    if (this.schedulerTimer) {
+      clearInterval(this.schedulerTimer);
+      this.schedulerTimer = null;
+    }
+  }
+
+  async syncDueFeeds() {
+    if (this.schedulerRunning) return;
+    this.schedulerRunning = true;
+    try {
+      const enabledFeeds = await this.prisma.rssFeedSource.findMany({
+        where: { enabled: true },
+        orderBy: { createdAt: 'asc' },
+      });
+      const now = Date.now();
+      for (const feed of enabledFeeds) {
+        const intervalMs = Math.max(5, feed.pollIntervalMinutes) * 60 * 1000;
+        const lastMs = feed.lastSyncedAt ? feed.lastSyncedAt.getTime() : 0;
+        if (now - lastMs < intervalMs) continue;
+        try {
+          await this.syncOne(feed.id);
+        } catch (err) {
+          this.logger.warn(`Scheduled RSS sync failed for ${feed.name}: ${err instanceof Error ? err.message : String(err)}`);
+        }
+      }
+    } catch (err) {
+      this.logger.debug(`RSS scheduler skipped: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      this.schedulerRunning = false;
+    }
+  }
 
   async list() {
     const feeds = await this.prisma.rssFeedSource.findMany({

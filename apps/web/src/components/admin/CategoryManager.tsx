@@ -193,15 +193,6 @@ export default function CategoryManager() {
             </span>
           </div>
 
-          {articlesFailed && !loading && (
-            <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg p-3 text-xs" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-warning-bg)', color: 'var(--admin-warning)' }}>
-              <span className="min-w-0 break-words">News counts are unavailable because the news could not be loaded.</span>
-              <button type="button" onClick={load} className="rounded px-2 py-1 font-semibold" style={{ color: 'var(--admin-accent)' }}>
-                Retry
-              </button>
-            </div>
-          )}
-
           {/* Table */}
           {loading ? (
             <LoadingState variant="table" />

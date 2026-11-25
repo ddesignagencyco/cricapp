@@ -1,9 +1,17 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
-import { useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type DragEvent, type FormEvent } from 'react';
 import toast from 'react-hot-toast';
-import { ImageIcon, Trash2, Upload } from 'lucide-react';
+import {
+  CloudUpload,
+  Film,
+  ImageIcon,
+  Loader2,
+  Trash2,
+  Upload,
+  X,
+} from 'lucide-react';
 import {
   AdminField,
   AdminInput,
@@ -32,13 +40,22 @@ const FILTERS: { key: '' | GalleryMediaType; label: string }[] = [
   { key: 'video', label: 'Videos' },
 ];
 
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 export default function AdminGalleryPage() {
   const [busy, setBusy] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [dragOver, setDragOver] = useState(false);
   const [type, setType] = useState<GalleryMediaType>('image');
   const [filter, setFilter] = useState<'' | GalleryMediaType>('');
   const [title, setTitle] = useState('');
   const [caption, setCaption] = useState('');
   const [file, setFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
@@ -48,58 +65,85 @@ export default function AdminGalleryPage() {
   const total = galleryQuery.data?.total || 0;
   const totalPages = Math.max(1, galleryQuery.data?.totalPages || Math.ceil(total / LIMIT));
 
-  const fileFitsType = (next: File, mediaType: GalleryMediaType) => {
-    const isImage = next.type.startsWith('image/');
-    return mediaType === 'image' ? isImage : !isImage;
-  };
+  useEffect(() => {
+    if (!file) {
+      setPreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    setPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
 
   const pickFile = (next: File | undefined) => {
     if (!next) return;
-    if (!fileFitsType(next, type)) {
-      toast.error(type === 'image' ? 'Choose an image file.' : 'Choose a video file.');
+    const isImage = next.type.startsWith('image/');
+    const isVideo = next.type.startsWith('video/');
+    if (!isImage && !isVideo) {
+      toast.error('Please choose an image or video file.');
       return;
     }
+    // Auto-switch media type to match the dropped file for frictionless UX
+    if (isImage && type !== 'image') setType('image');
+    if (isVideo && type === 'image') setType('video');
     setFile(next);
+    if (!title.trim()) {
+      const cleanName = next.name.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ').trim();
+      if (cleanName) setTitle(cleanName);
+    }
+  };
+
+  const onDrop = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(false);
+    if (busy) return;
+    const dropped = e.dataTransfer?.files?.[0];
+    pickFile(dropped);
   };
 
   const resetForm = () => {
     setTitle('');
     setCaption('');
     setFile(null);
+    setUploadProgress(0);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const onSubmit = async (event: FormEvent) => {
     event.preventDefault();
     if (!file) {
-      toast.error('Choose a file, then click Upload.');
+      toast.error('Drop or choose a file, then click Upload.');
       return;
     }
     setBusy(true);
+    setUploadProgress(5);
     try {
       await uploadGalleryMedia({
         file,
         type,
         title: title.trim() || undefined,
         caption: caption.trim() || undefined,
+        onProgress: (pct) => setUploadProgress(pct),
       });
       await queryClient.invalidateQueries({ queryKey: galleryKeys.lists() });
       setPage(1);
       resetForm();
-      toast.success('Media uploaded.');
-      if (filter !== type) setFilter(type);
+      toast.success('Media uploaded successfully!');
+      if (filter && filter !== type) setFilter('');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Upload failed.');
+      setUploadProgress(0);
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <AdminPageHeader
         title="Gallery"
-        subtitle="Images, shorts and videos on GET /gallery. Article covers pick images from here."
+        subtitle="Drag & drop images, shorts or videos. Newly uploaded media always appears first."
         actions={
           <div className="flex flex-wrap gap-1.5">
             {FILTERS.map((item) => (
@@ -127,69 +171,152 @@ export default function AdminGalleryPage() {
       />
 
       <form
-        className="flex flex-wrap items-end gap-2 rounded-lg p-3"
+        className="rounded-xl p-4 sm:p-5"
         style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}
         onSubmit={(event) => void onSubmit(event)}
       >
-        <div className="w-full shrink-0 sm:w-[7.5rem]">
-          <AdminField label="Type" required>
-            <AdminSelect
-              value={type}
-              onChange={(e) => {
-                const next = e.target.value as GalleryMediaType;
-                setType(next);
-                if (file && !fileFitsType(file, next)) {
-                  setFile(null);
-                  if (fileInputRef.current) fileInputRef.current.value = '';
-                }
-              }}
-            >
-              <option value="image">Image</option>
-              <option value="short">Short</option>
-              <option value="video">Video</option>
-            </AdminSelect>
-          </AdminField>
-        </div>
-        <div className="min-w-[10rem] flex-1">
-          <AdminField label="Title">
-            <AdminInput value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title" />
-          </AdminField>
-        </div>
-        <div className="min-w-[10rem] flex-1">
-          <AdminField label="Caption">
-            <AdminInput value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Caption" />
-          </AdminField>
-        </div>
-        <div className="w-full shrink-0 sm:w-[8.5rem]">
-          <AdminField label="File" required>
-            <label
-              className="inline-flex h-[38px] w-full cursor-pointer items-center justify-center gap-1.5 rounded-md px-2 text-xs font-semibold"
-              style={{ border: '1px dashed var(--admin-border)', color: 'var(--admin-accent)', background: 'var(--admin-input-bg)' }}
-              title={file?.name || 'Choose file'}
-            >
-              <Upload size={13} />
-              <span className="truncate">{file ? file.name : 'Choose'}</span>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept={type === 'image' ? 'image/*' : 'video/*'}
-                className="sr-only"
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.2fr_1fr]">
+          {/* Drag & Drop Zone */}
+          <div
+            onDragOver={(e) => {
+              e.preventDefault();
+              if (!busy) setDragOver(true);
+            }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={onDrop}
+            onClick={() => !busy && fileInputRef.current?.click()}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if ((e.key === 'Enter' || e.key === ' ') && !busy) fileInputRef.current?.click();
+            }}
+            className={`relative flex min-h-[168px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-4 text-center transition-all ${
+              dragOver ? 'scale-[1.01] border-accent bg-accent/10' : 'hover:border-accent/60'
+            }`}
+            style={{
+              borderColor: dragOver ? undefined : 'var(--admin-border)',
+              background: dragOver ? undefined : 'var(--admin-bg)',
+            }}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,video/*"
+              className="sr-only"
+              disabled={busy}
+              onChange={(e) => pickFile(e.target.files?.[0])}
+            />
+
+            {file && previewUrl ? (
+              <div className="flex w-full items-center gap-4 text-left">
+                <div className="relative h-24 w-32 shrink-0 overflow-hidden rounded-lg border border-lborder bg-black/20">
+                  {file.type.startsWith('image/') ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={previewUrl} alt={file.name} className="h-full w-full object-cover" />
+                  ) : (
+                    <video src={previewUrl} className="h-full w-full object-cover" muted />
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold" style={{ color: 'var(--admin-text)' }}>
+                    {file.name}
+                  </p>
+                  <p className="mt-0.5 text-xs" style={{ color: 'var(--admin-text-muted)' }}>
+                    {formatBytes(file.size)} · {file.type || type}
+                  </p>
+                  {!busy && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        resetForm();
+                      }}
+                      className="mt-2 inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] font-semibold text-danger hover:bg-danger/10"
+                    >
+                      <X size={12} /> Remove file
+                    </button>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <>
+                <div
+                  className="mb-2.5 grid h-11 w-11 place-items-center rounded-full"
+                  style={{ background: 'var(--admin-info-bg)', color: 'var(--admin-accent)' }}
+                >
+                  <CloudUpload size={22} />
+                </div>
+                <p className="text-sm font-semibold" style={{ color: 'var(--admin-text)' }}>
+                  Drag &amp; drop image or video here
+                </p>
+                <p className="mt-1 text-xs" style={{ color: 'var(--admin-text-muted)' }}>
+                  or click to browse · JPG, PNG, WebP, MP4, WebM
+                </p>
+              </>
+            )}
+          </div>
+
+          {/* Metadata & Upload Action */}
+          <div className="flex flex-col justify-between gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <AdminField label="Media Type" required>
+                <AdminSelect
+                  value={type}
+                  onChange={(e) => setType(e.target.value as GalleryMediaType)}
+                  aria-label="Media Type"
+                >
+                  <option value="image">Image</option>
+                  <option value="short">Short (Vertical Video)</option>
+                  <option value="video">Video</option>
+                </AdminSelect>
+              </AdminField>
+              <AdminField label="Title">
+                <AdminInput
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Match highlight or photo title"
+                  disabled={busy}
+                />
+              </AdminField>
+            </div>
+
+            <AdminField label="Caption">
+              <AdminInput
+                value={caption}
+                onChange={(e) => setCaption(e.target.value)}
+                placeholder="Optional short caption"
                 disabled={busy}
-                onChange={(e) => {
-                  pickFile(e.target.files?.[0]);
-                }}
               />
-            </label>
-          </AdminField>
+            </AdminField>
+
+            {busy && (
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-xs font-semibold" style={{ color: 'var(--admin-text)' }}>
+                  <span className="inline-flex items-center gap-1.5">
+                    <Loader2 size={13} className="animate-spin text-accent" />
+                    {uploadProgress < 99 ? `Uploading… ${uploadProgress}%` : 'Processing & optimizing…'}
+                  </span>
+                  <span className="tabular-nums text-accent">{uploadProgress}%</span>
+                </div>
+                <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
+                  <div
+                    className="h-full rounded-full bg-brand transition-all duration-200"
+                    style={{ width: `${Math.max(8, uploadProgress)}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={busy || !file}
+              className="btn-brand inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg px-4 text-xs font-bold text-white disabled:opacity-50"
+            >
+              {busy ? <Loader2 size={15} className="animate-spin" /> : <Upload size={15} />}
+              {busy ? `Uploading (${uploadProgress}%)…` : 'Upload to Gallery'}
+            </button>
+          </div>
         </div>
-        <button
-          type="submit"
-          disabled={busy || !file}
-          className="btn-brand inline-flex h-[38px] shrink-0 items-center gap-1.5 rounded-md px-3 text-xs font-bold disabled:opacity-50"
-        >
-          <Upload size={13} />
-          {busy ? 'Uploading…' : 'Upload'}
-        </button>
       </form>
 
       {galleryQuery.isPending ? (
@@ -197,42 +324,56 @@ export default function AdminGalleryPage() {
       ) : galleryQuery.isError ? (
         <ErrorState message="Could not load gallery." onRetry={() => void galleryQuery.refetch()} />
       ) : items.length === 0 ? (
-        <EmptyState icon={<ImageIcon size={28} />} title="No gallery media" message="Upload an image, short, or video." />
+        <EmptyState icon={<ImageIcon size={28} />} title="No gallery media" message="Drag & drop an image, short, or video above." />
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
             {items.map((item) => (
               <div
                 key={item.id}
-                className="overflow-hidden rounded-lg"
+                className="group overflow-hidden rounded-xl transition-shadow hover:shadow-md"
                 style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}
               >
-                {item.type === 'image' ? (
-                  <RemoteImage
-                    src={item.thumbnailUrl || item.url}
-                    alt={item.title || 'Gallery'}
-                    width={240}
-                    height={160}
-                    className="h-24 w-full object-cover"
-                  />
-                ) : (
-                  <video src={item.url} className="h-24 w-full object-cover" muted />
-                )}
-                <div className="flex items-center justify-between gap-1 px-2 py-1.5">
+                <div className="relative aspect-[4/3] w-full overflow-hidden bg-secondary">
+                  {item.type === 'image' ? (
+                    <RemoteImage
+                      src={item.thumbnailUrl || item.url}
+                      alt={item.title || 'Gallery'}
+                      width={360}
+                      height={270}
+                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                  ) : (
+                    <video src={item.url} className="h-full w-full object-cover" muted />
+                  )}
+                  <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-black/65 px-2 py-0.5 text-[10px] font-semibold capitalize text-white backdrop-blur-sm">
+                    {item.type === 'image' ? <ImageIcon size={10} /> : <Film size={10} />}
+                    {item.type}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-2 px-3 py-2">
                   <div className="min-w-0">
-                    <p className="truncate text-xs font-semibold" style={{ color: 'var(--admin-text)' }} title={item.title || item.type}>
+                    <p
+                      className="truncate text-xs font-semibold"
+                      style={{ color: 'var(--admin-text)' }}
+                      title={item.title || item.type}
+                    >
                       {item.title || item.type}
                     </p>
-                    <p className="text-[10px] capitalize" style={{ color: 'var(--admin-text-muted)' }}>{item.type}</p>
+                    {item.caption && (
+                      <p className="truncate text-[11px]" style={{ color: 'var(--admin-text-muted)' }}>
+                        {item.caption}
+                      </p>
+                    )}
                   </div>
                   <button
                     type="button"
                     onClick={() => setDeleteId(item.id)}
-                    className="grid h-7 w-7 shrink-0 place-items-center rounded-md"
+                    className="grid h-7 w-7 shrink-0 place-items-center rounded-md hover:bg-danger/10"
                     style={{ color: 'var(--admin-danger)' }}
                     title="Delete"
                   >
-                    <Trash2 size={13} />
+                    <Trash2 size={14} />
                   </button>
                 </div>
               </div>

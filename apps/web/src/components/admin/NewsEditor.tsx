@@ -236,7 +236,9 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
           try {
             copy = await translateNewsCopy(sourceCopy, sourceLang, target);
           } catch {
-            toast.error('Auto-translate failed. English text is filled — rewrite it in Urdu.');
+            toast.error('Auto-translate failed. English text is filled — rewrite it in Urdu.', {
+              id: 'auto-translate-error',
+            });
           }
           setSourceId(article.id);
           setForm({
