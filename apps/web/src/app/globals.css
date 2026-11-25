@@ -147,6 +147,9 @@
   --radius-2xl: 0.625rem;
   --radius-3xl: 0.625rem;
   --radius-4xl: 0.625rem;
+
+  /* Wider main container (~1504px) so grids, ticker and news show more content cleanly */
+  --container-7xl: 94rem;
 }
 
 /* Light theme overrides — CriczApp Daylight Edition (#F4F6F9 bg, #FFFFFF cards,
@@ -500,7 +503,7 @@ html.light .logo-img--light,
   display: none;
 }
 
-@media (min-width: 1536px) {
+@media (min-width: 1700px) {
   .site-side-atmosphere {
     display: block;
   }
@@ -515,11 +518,11 @@ html.light .logo-img--light,
 }
 
 .site-side-rail--left {
-  left: max(0.5rem, calc((100vw - 80rem) / 2 - 5.75rem));
+  left: max(0.5rem, calc((100vw - var(--container-7xl)) / 2 - 5.75rem));
 }
 
 .site-side-rail--right {
-  right: max(0.5rem, calc((100vw - 80rem) / 2 - 5.75rem));
+  right: max(0.5rem, calc((100vw - var(--container-7xl)) / 2 - 5.75rem));
   transform: scaleX(-1);
 }
 

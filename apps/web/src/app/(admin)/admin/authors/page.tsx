@@ -9,10 +9,12 @@ import {
   AdminIconButton,
   AdminInput,
   AdminPageHeader,
+  AdminSortableHeader,
   ConfirmDialog,
   EmptyState,
   ErrorState,
   LoadingState,
+  type SortDirection,
 } from '../../../../components/admin/AdminShared';
 import {
   createAdminAuthor,
@@ -36,6 +38,26 @@ export default function AuthorsPage() {
   const [file, setFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [deleteTarget, setDeleteTarget] = useState<AdminAuthor | null>(null);
+  const [sortBy, setSortBy] = useState<'name' | 'slug' | 'bio'>('name');
+  const [sortOrder, setSortOrder] = useState<SortDirection>('asc');
+
+  const toggleSort = (key: 'name' | 'slug' | 'bio') => {
+    if (sortBy === key) {
+      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortBy(key);
+      setSortOrder('asc');
+    }
+  };
+
+  const sortedAuthors = useMemo(() => {
+    const mul = sortOrder === 'desc' ? -1 : 1;
+    return [...authors].sort((a, b) => {
+      const av = (a[sortBy] || '').toLowerCase();
+      const bv = (b[sortBy] || '').toLowerCase();
+      return av.localeCompare(bv) * mul || a.name.localeCompare(b.name);
+    });
+  }, [authors, sortBy, sortOrder]);
 
   // Author identity is a free-text byline, so the same person can get two profiles.
   // The public /authors page lists every row in the table, so catch it at entry.
@@ -229,14 +251,14 @@ export default function AuthorsPage() {
             <table className="w-full text-left text-sm">
             <thead>
               <tr style={{ background: 'var(--admin-table-header)', borderBottom: '1px solid var(--admin-border)' }}>
-                <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Author</th>
-                <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Slug</th>
-                <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Bio</th>
+                <AdminSortableHeader label="Author" sortKey="name" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} className="px-4 py-3 text-xs font-bold uppercase tracking-wider" />
+                <AdminSortableHeader label="Slug" sortKey="slug" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} className="px-4 py-3 text-xs font-bold uppercase tracking-wider" />
+                <AdminSortableHeader label="Bio" sortKey="bio" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} className="px-4 py-3 text-xs font-bold uppercase tracking-wider" />
                 <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {authors.map((author) => (
+              {sortedAuthors.map((author) => (
                 <tr
                   key={author.id}
                   style={{

@@ -274,57 +274,196 @@ export function PageHeaderSkeleton({ subtitle = true }: { subtitle?: boolean }) 
 export function HomeSkeleton() {
   return (
     <div className="min-h-screen" aria-busy="true" aria-label="Loading">
-      <div className="border-b border-lborder bg-card px-4 py-2.5">
-        <div className="mx-auto flex max-w-7xl gap-3 overflow-hidden">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} width={180} height={28} />
-          ))}
-        </div>
-      </div>
-      <div className="relative h-64 sm:h-80">
-        <Skeleton height="100%" className="!block !rounded-none" />
-      </div>
-      <Page className="space-y-10">
-        <div>
-          <Skeleton width={160} height={22} />
-          <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-            <MatchCardSkeleton />
-            <MatchCardSkeleton />
-            <MatchCardSkeleton />
+      {/* Match Ticker Bar */}
+      <div className="border-b border-lborder">
+        <div className="mx-auto max-w-full px-4 sm:px-6">
+          <div className="flex items-center gap-2 py-3 sm:gap-3">
+            <Skeleton circle width={28} height={28} containerClassName="shrink-0" />
+            <div className="grid min-w-0 flex-1 grid-cols-1 gap-3 py-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Card
+                  key={i}
+                  className={`p-3 ${i >= 1 ? 'hidden sm:block' : ''} ${i >= 2 ? 'sm:hidden lg:block' : ''} ${i >= 3 ? 'lg:hidden xl:block' : ''}`}
+                >
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <Skeleton width="58%" height={10} />
+                    <Skeleton width={46} height={16} borderRadius={999} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <Skeleton circle width={22} height={22} />
+                      <Skeleton width="64%" height={12} containerClassName="flex-1" />
+                      <Skeleton width={38} height={12} containerClassName="shrink-0" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Skeleton circle width={22} height={22} />
+                      <Skeleton width="58%" height={12} containerClassName="flex-1" />
+                      <Skeleton width={38} height={12} containerClassName="shrink-0" />
+                    </div>
+                  </div>
+                  <div className="mt-2.5 flex items-center justify-between border-t border-lborder pt-1.5">
+                    <Skeleton width={88} height={9} />
+                    <Skeleton width={64} height={9} />
+                  </div>
+                </Card>
+              ))}
+            </div>
+            <Skeleton circle width={28} height={28} containerClassName="shrink-0" />
           </div>
         </div>
-        <div>
-          <Skeleton width={200} height={22} className="mt-2" />
-          <Skeleton width={280} height={12} className="mt-2" />
-          <div className="mt-4">
-            <MatchCardGridSkeleton count={3} />
+      </div>
+
+      {/* Cricket Hero */}
+      <section className="relative flex items-center overflow-hidden border-b border-lborder bg-secondary/40 sm:min-h-[360px]">
+        <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-12">
+          <div className="flex flex-col gap-5 sm:gap-8 lg:flex-row lg:items-center lg:justify-between">
+            <div className="max-w-2xl flex-1 space-y-4">
+              <Skeleton width="72%" height={44} />
+              <Skeleton width="86%" height={16} />
+              <Skeleton width="62%" height={16} />
+              <div className="flex flex-wrap gap-3 pt-2">
+                <Skeleton width={160} height={46} borderRadius={10} />
+                <Skeleton width={160} height={46} borderRadius={10} />
+              </div>
+            </div>
+            <div className="grid w-full grid-cols-2 gap-2.5 sm:max-w-sm sm:gap-4 lg:max-w-xs">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Card key={i} className="flex items-center gap-2.5 p-3 sm:flex-col sm:items-start sm:gap-2 sm:p-4">
+                  <Skeleton width={34} height={34} borderRadius={8} containerClassName="shrink-0" />
+                  <div className="w-full space-y-1.5">
+                    <Skeleton width="70%" height={13} />
+                    <Skeleton width="88%" height={10} />
+                  </div>
+                </Card>
+              ))}
+            </div>
           </div>
         </div>
-        <Card className="p-5">
-          <Skeleton width={140} height={18} />
-          <Skeleton height={180} className="mt-4" />
-        </Card>
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.15fr_0.85fr]">
-          <Card className="overflow-hidden">
+      </section>
+
+      {/* Main Homepage Sections */}
+      <div className="flex flex-col gap-12 pt-12 pb-12">
+        {/* Live Now */}
+        <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
+          <div className="mb-4 flex items-end justify-between gap-4">
+            <SkeletonTextBlock titleWidth={150} titleHeight={22} subtitleWidth={120} />
+            <Skeleton width={68} height={14} />
+          </div>
+          <MatchCardGridSkeleton count={3} />
+        </section>
+
+        {/* Upcoming Matches */}
+        <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
+          <div className="mb-4 flex items-end justify-between gap-4">
+            <SkeletonTextBlock titleWidth={190} titleHeight={22} subtitleWidth={210} />
+            <Skeleton width={68} height={14} />
+          </div>
+          <MatchCardGridSkeleton count={3} />
+        </section>
+
+        {/* PSL Spotlight + Points Table */}
+        <section className="mx-auto w-full max-w-7xl space-y-4 px-4 sm:px-6">
+          <Card className="overflow-hidden rounded-2xl">
             <Skeleton height={220} className="!block !rounded-none" />
-            <div className="p-5">
-              <Skeleton width="80%" height={18} />
-              <Skeleton count={2} className="mt-3" />
+            <div className="flex flex-col gap-3 p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex-1 space-y-2.5">
+                <div className="flex flex-wrap gap-4">
+                  <Skeleton width={120} height={12} />
+                  <Skeleton width={72} height={12} />
+                  <Skeleton width={80} height={12} />
+                </div>
+                <Skeleton width="75%" height={13} />
+              </div>
+              <Skeleton width={136} height={34} borderRadius={8} />
             </div>
           </Card>
-          <div className="space-y-2.5">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <Card key={i} className="flex gap-3 p-3">
-                <Skeleton width={80} height={64} />
-                <div className="min-w-0 flex-1">
-                  <Skeleton width={64} height={14} borderRadius={999} />
-                  <Skeleton width="90%" height={12} className="mt-2" />
-                </div>
-              </Card>
-            ))}
+
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-8">
+            <Card className="overflow-hidden rounded-2xl">
+              <div className="flex items-center justify-between border-b border-lborder px-4 py-3 sm:px-5">
+                <Skeleton width={110} height={15} />
+                <Skeleton width={68} height={12} />
+              </div>
+              <div className="divide-y divide-lborder px-4 sm:px-5">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="flex items-center justify-between gap-3 py-3">
+                    <div className="flex min-w-0 flex-1 items-center gap-2.5">
+                      <Skeleton width={16} height={12} />
+                      <Skeleton circle width={26} height={26} />
+                      <Skeleton width="42%" height={13} />
+                    </div>
+                    <div className="flex shrink-0 gap-4">
+                      <Skeleton width={22} height={12} />
+                      <Skeleton width={22} height={12} />
+                      <Skeleton width={38} height={12} />
+                      <Skeleton width={26} height={12} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+            <Card className="hidden p-4 lg:block">
+              <Skeleton height={250} />
+            </Card>
           </div>
-        </div>
-      </Page>
+        </section>
+
+        {/* Recent Results */}
+        <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
+          <div className="mb-4 flex items-end justify-between gap-4">
+            <SkeletonTextBlock titleWidth={165} titleHeight={22} subtitleWidth={150} />
+            <Skeleton width={68} height={14} />
+          </div>
+          <MatchCardGridSkeleton count={3} />
+        </section>
+
+        {/* Latest News (1 featured + 4 side cards matching lg:h-[448px]) */}
+        <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
+          <div className="mb-4 flex items-end justify-between gap-4">
+            <SkeletonTextBlock titleWidth={145} titleHeight={22} subtitleWidth={215} />
+            <Skeleton width={74} height={14} />
+          </div>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.15fr_0.85fr] lg:items-stretch">
+            <Card className="flex flex-col overflow-hidden lg:h-[448px]">
+              <div className="aspect-[16/9] w-full shrink-0 lg:aspect-auto lg:h-0 lg:min-h-0 lg:flex-1">
+                <Skeleton height="100%" className="!block !rounded-none" />
+              </div>
+              <div className="shrink-0 space-y-2.5 p-4 sm:p-5">
+                <Skeleton width="88%" height={18} />
+                <Skeleton width="96%" height={12} />
+                <Skeleton width="66%" height={12} />
+                <Skeleton width={130} height={11} className="mt-1" />
+              </div>
+            </Card>
+            <div className="grid grid-cols-1 gap-2.5 lg:h-[448px] lg:grid-rows-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Card key={i} className="flex h-full items-center gap-3 p-2.5 sm:gap-4 sm:p-3">
+                  <Skeleton width={96} height={76} borderRadius={8} containerClassName="shrink-0" />
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <Skeleton width={68} height={15} borderRadius={999} />
+                    <Skeleton width="92%" height={13} />
+                    <Skeleton width={110} height={10} />
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Newsletter */}
+        <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
+          <Card className="p-6 sm:p-8">
+            <div className="mx-auto flex max-w-xl flex-col items-center space-y-3 text-center">
+              <Skeleton width={210} height={22} />
+              <Skeleton width="82%" height={13} />
+              <div className="flex w-full max-w-md gap-2 pt-2">
+                <Skeleton height={42} containerClassName="flex-1" borderRadius={8} />
+                <Skeleton width={116} height={42} borderRadius={8} containerClassName="shrink-0" />
+              </div>
+            </div>
+          </Card>
+        </section>
+      </div>
     </div>
   );
 }

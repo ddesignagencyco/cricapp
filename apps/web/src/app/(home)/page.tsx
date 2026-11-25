@@ -260,10 +260,6 @@ export default async function HomePage() {
       <HomeGalleryStrip />
 
       <Newsletter />
-
-      <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
-        <AdSlot placement="home-footer" />
-      </section>
       </div>
     </div>
   );

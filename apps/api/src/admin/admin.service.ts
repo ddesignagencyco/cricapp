@@ -180,6 +180,10 @@ export class AdminService {
     return this.newsService.list(query, { includeUnpublished: true });
   }
 
+  async publishAllDraftNews() {
+    return this.newsService.publishAllDrafts();
+  }
+
   async listAuthors() {
     return this.newsService.listAuthors();
   }

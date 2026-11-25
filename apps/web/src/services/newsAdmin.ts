@@ -139,6 +139,10 @@ export async function deleteNews(id: string): Promise<void> {
   await apiDelete(`/news/${id}`, { headers: authHeaders() });
 }
 
+export function publishAllDraftNews(): Promise<{ published: number }> {
+  return apiPost<{ published: number }>('/admin/news/publish-all', {}, { headers: authHeaders() });
+}
+
 export function createCategory(name: string): Promise<NewsCategory> {
   return apiPost<NewsCategory>('/news/categories', { name }, { headers: authHeaders() });
 }

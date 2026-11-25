@@ -688,13 +688,17 @@ export function AdminAvatar({
   src?: string | null;
   size?: number;
 }) {
-  if (src) {
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  const canRenderImage = Boolean(src && failedSrc !== src);
+
+  if (canRenderImage && src) {
     return (
       <RemoteImage
         src={src}
         alt={name}
         width={size}
         height={size}
+        onError={() => setFailedSrc(src)}
         className="avatar-3d shrink-0 rounded-full bg-entity-avatar object-cover"
         style={{ width: size, height: size }}
       />

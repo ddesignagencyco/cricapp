@@ -33,6 +33,8 @@ export interface PlayersQueryParams {
   role?: string;
   status?: string;
   sort?: string;
+  sortBy?: string;
+  sortOrder?: string;
 }
 
 export interface TeamsQueryParams {
@@ -44,6 +46,8 @@ export interface TeamsQueryParams {
   category?: string;
   status?: string;
   sort?: string;
+  sortBy?: string;
+  sortOrder?: string;
   season?: string;
 }
 
@@ -57,6 +61,8 @@ export interface ToursQueryParams {
   country?: string;
   status?: string;
   sort?: string;
+  sortBy?: string;
+  sortOrder?: string;
   season?: string;
 }
 
@@ -72,6 +78,8 @@ export interface TournamentsQueryParams {
   gender?: string;
   status?: string;
   sort?: string;
+  sortBy?: string;
+  sortOrder?: string;
   season?: string;
 }
 

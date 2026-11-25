@@ -344,7 +344,7 @@ export default function RssFeedManager() {
                 checked={form.autoPublish}
                 onChange={(e) => setForm({ ...form, autoPublish: e.target.checked })}
               />
-              Auto-publish immediately (uncheck to save as Draft for review)
+              Publish automatically
             </label>
             <label className="inline-flex cursor-pointer items-center gap-2">
               <input

@@ -4,6 +4,8 @@ import type { TournamentApi, TournamentSeason, SportEventRecord } from '../types
 export interface TournamentsListParams {
   [key: string]: string | number | boolean | undefined;
   q?: string;
+  sortBy?: string;
+  sortOrder?: string;
   page?: number;
   limit?: number;
 }

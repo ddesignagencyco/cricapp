@@ -25,7 +25,7 @@ import {
   type NewsArticleAdmin,
   type NewsCategory,
 } from '../../services/newsAdmin';
-import { AdminField, AdminIconButton, AdminInput, AdminSearchField, ConfirmDialog, LoadingState } from './AdminShared';
+import { AdminField, AdminIconButton, AdminInput, AdminSearchField, AdminSortableHeader, ConfirmDialog, LoadingState, type SortDirection } from './AdminShared';
 import { BlinkingDot } from '../Badge';
 import NewsCopy from '../NewsCopy';
 
@@ -42,6 +42,17 @@ export default function CategoryManager() {
   const [editName, setEditName] = useState('');
   const [savingId, setSavingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<NewsCategory | null>(null);
+  const [sortBy, setSortBy] = useState<'name' | 'slug' | 'count' | 'live'>('name');
+  const [sortOrder, setSortOrder] = useState<SortDirection>('asc');
+
+  const toggleSort = (key: 'name' | 'slug' | 'count' | 'live') => {
+    if (sortBy === key) {
+      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortBy(key);
+      setSortOrder(key === 'count' || key === 'live' ? 'desc' : 'asc');
+    }
+  };
 
   const load = () => {
     setLoading(true);
@@ -127,11 +138,28 @@ export default function CategoryManager() {
 
   const filteredCategories = useMemo(() => {
     const q = search.toLowerCase().trim();
-    if (!q) return categories;
-    return categories.filter(
-      (c) => (c.name || '').toLowerCase().includes(q) || (c.slug || '').toLowerCase().includes(q)
-    );
-  }, [categories, search]);
+    const list = q
+      ? categories.filter(
+          (c) => (c.name || '').toLowerCase().includes(q) || (c.slug || '').toLowerCase().includes(q)
+        )
+      : [...categories];
+    const mul = sortOrder === 'desc' ? -1 : 1;
+    return list.sort((a, b) => {
+      if (sortBy === 'count') {
+        const ac = (articlesByCat.get(a.id) || []).length;
+        const bc = (articlesByCat.get(b.id) || []).length;
+        return (ac - bc) * mul || a.name.localeCompare(b.name);
+      }
+      if (sortBy === 'live') {
+        const al = (articlesByCat.get(a.id) || []).filter((x) => x.isPublished).length;
+        const bl = (articlesByCat.get(b.id) || []).filter((x) => x.isPublished).length;
+        return (al - bl) * mul || a.name.localeCompare(b.name);
+      }
+      const av = (sortBy === 'slug' ? a.slug || '' : a.name || '').toLowerCase();
+      const bv = (sortBy === 'slug' ? b.slug || '' : b.name || '').toLowerCase();
+      return av.localeCompare(bv) * mul;
+    });
+  }, [articlesByCat, categories, search, sortBy, sortOrder]);
 
   const selectedCategoryArticles = useMemo(() => {
     if (!selectedCatId) return [];
@@ -210,10 +238,10 @@ export default function CategoryManager() {
               <table className="w-full text-left text-xs">
                 <thead>
                   <tr style={{ borderBottom: '1px solid var(--admin-border)', background: 'var(--admin-table-header)' }}>
-                    <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Category</th>
-                    <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Slug</th>
-                    <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-center" style={{ color: 'var(--admin-text-secondary)' }}>News</th>
-                    <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-center" style={{ color: 'var(--admin-text-secondary)' }}>Status</th>
+                    <AdminSortableHeader label="Category" sortKey="name" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} />
+                    <AdminSortableHeader label="Slug" sortKey="slug" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} />
+                    <AdminSortableHeader label="News" sortKey="count" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} />
+                    <AdminSortableHeader label="Status" sortKey="live" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} />
                     <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Actions</th>
                   </tr>
                 </thead>

@@ -17,6 +17,7 @@ import toast from 'react-hot-toast';
 import {
   deleteNews,
   fetchNewsAdmin,
+  publishAllDraftNews,
   updateNews,
   fetchNewsCategories,
   type NewsArticleAdmin,
@@ -42,6 +43,8 @@ export default function NewsManager() {
   const [sortBy, setSortBy] = useState<NewsSortKey>('date');
   const [sortOrder, setSortOrder] = useState<SortDirection>('desc');
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [publishingAll, setPublishingAll] = useState(false);
+  const [confirmPublishAll, setConfirmPublishAll] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<NewsArticleAdmin | null>(null);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -103,6 +106,25 @@ export default function NewsManager() {
     }
   };
 
+  const handlePublishAll = async () => {
+    setPublishingAll(true);
+    try {
+      const res = await publishAllDraftNews();
+      const count = typeof res?.published === 'number' ? res.published : 0;
+      if (count > 0) {
+        toast.success(`Published ${count} draft ${count === 1 ? 'article' : 'articles'}.`);
+        load();
+      } else {
+        toast.success('All news articles are already published.');
+      }
+    } catch {
+      toast.error('Could not publish draft news.');
+    } finally {
+      setPublishingAll(false);
+      setConfirmPublishAll(false);
+    }
+  };
+
   const handleDelete = async () => {
     if (!deleteTarget) return;
     setBusyId(deleteTarget.id);
@@ -136,13 +158,29 @@ export default function NewsManager() {
             Draft, publish, edit and organize news.
           </p>
         </div>
-        <Link
-          href="/admin/news/new"
-          className="btn-brand inline-flex items-center gap-1.5 rounded-md px-4 py-2 text-xs font-bold transition-colors"
-        >
-          <FilePlus2 size={14} />
-          Create News
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            disabled={publishingAll}
+            onClick={() => setConfirmPublishAll(true)}
+            className="inline-flex items-center gap-1.5 rounded-md px-3.5 py-2 text-xs font-bold transition-colors disabled:opacity-50"
+            style={{
+              border: '1px solid var(--admin-border)',
+              background: 'var(--admin-card)',
+              color: 'var(--admin-text)',
+            }}
+          >
+            {publishingAll ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} style={{ color: 'var(--admin-success)' }} />}
+            Publish All Drafts
+          </button>
+          <Link
+            href="/admin/news/new"
+            className="btn-brand inline-flex items-center gap-1.5 rounded-md px-4 py-2 text-xs font-bold transition-colors"
+          >
+            <FilePlus2 size={14} />
+            Create News
+          </Link>
+        </div>
       </div>
 
       {/* Filters */}
@@ -319,6 +357,16 @@ export default function NewsManager() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmPublishAll}
+        title="Publish all draft news?"
+        message="All unpublished draft news articles will go live immediately."
+        confirmLabel="Publish All"
+        onConfirm={handlePublishAll}
+        onCancel={() => { if (!publishingAll) setConfirmPublishAll(false); }}
+        loading={publishingAll}
+      />
 
       <ConfirmDialog
         open={!!deleteTarget}

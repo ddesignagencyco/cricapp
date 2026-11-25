@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Check, Pencil, Plus, Radio, Trash2, X } from 'lucide-react';
 import {
@@ -11,11 +11,13 @@ import {
   AdminEntityLink,
   AdminPageHeader,
   AdminSelect,
+  AdminSortableHeader,
   ConfirmDialog,
   EmptyState,
   ErrorState,
   LoadingState,
   StatusBadge,
+  type SortDirection,
 } from '../../../../components/admin/AdminShared';
 import AdminPagination from '../../../../components/admin/AdminPagination';
 import { createStream, deleteStream, fetchStreamsPage, updateStream, type StreamInput } from '../../../../services/streams';
@@ -62,6 +64,26 @@ export default function AdminStreamsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<'title' | 'host' | 'status'>('title');
+  const [sortOrder, setSortOrder] = useState<SortDirection>('asc');
+
+  const toggleSort = (key: 'title' | 'host' | 'status') => {
+    if (sortBy === key) {
+      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortBy(key);
+      setSortOrder('asc');
+    }
+  };
+
+  const sortedItems = useMemo(() => {
+    const mul = sortOrder === 'desc' ? -1 : 1;
+    return [...items].sort((a, b) => {
+      const av = (sortBy === 'host' ? a.host || '' : sortBy === 'status' ? a.status || '' : a.title || '').toLowerCase();
+      const bv = (sortBy === 'host' ? b.host || '' : sortBy === 'status' ? b.status || '' : b.title || '').toLowerCase();
+      return av.localeCompare(bv) * mul || (a.title || '').localeCompare(b.title || '');
+    });
+  }, [items, sortBy, sortOrder]);
 
   const resetForm = () => {
     setForm(emptyForm);
@@ -401,14 +423,14 @@ export default function AdminStreamsPage() {
             <table className="w-full text-left text-sm">
               <thead>
                 <tr style={{ background: 'var(--admin-table-header)', borderBottom: '1px solid var(--admin-border)' }}>
-                  <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Stream</th>
-                  <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Provider</th>
-                  <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Status</th>
+                  <AdminSortableHeader label="Stream" sortKey="title" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} className="px-4 py-3 text-xs font-bold uppercase tracking-wider" />
+                  <AdminSortableHeader label="Provider" sortKey="host" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} className="px-4 py-3 text-xs font-bold uppercase tracking-wider" />
+                  <AdminSortableHeader label="Status" sortKey="status" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} className="px-4 py-3 text-xs font-bold uppercase tracking-wider" />
                   <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {items.map((stream) => (
+                {sortedItems.map((stream) => (
                   <tr
                     key={stream.id}
                     style={{ borderBottom: '1px solid var(--admin-border)' }}

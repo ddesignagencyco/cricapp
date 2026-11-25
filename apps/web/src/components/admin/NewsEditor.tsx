@@ -505,7 +505,7 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
             className="btn-brand inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-4 py-2 text-xs font-bold transition-colors disabled:opacity-50"
           >
             {saving ? <Loader2 size={12} className="shrink-0 animate-spin" /> : <Send size={12} className="shrink-0" />}
-            Publish Live
+            {mode === 'edit' ? 'Update News' : 'Publish Live'}
           </button>
         </div>
       </div>

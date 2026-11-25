@@ -66,7 +66,14 @@ export class TournamentsService {
     };
   }
 
-  async list(params?: { q?: string; page?: number; limit?: number; offset?: number }) {
+  async list(params?: {
+    q?: string;
+    sortBy?: string;
+    sortOrder?: string;
+    page?: number;
+    limit?: number;
+    offset?: number;
+  }) {
     const { page, limit, skip } = getPaginationOffset(params?.page, params?.limit, params?.offset);
 
     const where: Record<string, unknown> = {};
@@ -74,12 +81,18 @@ export class TournamentsService {
       where.name = { contains: params.q, mode: 'insensitive' };
     }
 
+    const dir: 'asc' | 'desc' = params?.sortOrder === 'desc' ? 'desc' : 'asc';
+    const orderBy: any[] =
+      params?.sortBy === 'type'
+        ? [{ type: { sort: dir, nulls: 'last' } }, { name: 'asc' }]
+        : [{ name: dir }, { id: 'asc' }];
+
     const [rows, total] = await Promise.all([
       this.prisma.tournament.findMany({
         where,
         take: limit,
         skip,
-        orderBy: [{ name: 'asc' }],
+        orderBy,
       }),
       this.prisma.tournament.count({ where }),
     ]);

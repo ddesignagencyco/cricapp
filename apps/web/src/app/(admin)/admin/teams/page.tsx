@@ -5,19 +5,47 @@ import { Users } from 'lucide-react';
 import { useDebouncedValue } from '../../../../hooks/useDebouncedValue';
 import { useTeamsQuery } from '../../../../queries/useDirectoryQueries';
 import Pagination from '../../../../components/admin/AdminPagination';
-import { AdminAvatar, AdminPageHeader, LoadingState, EmptyState, AdminSearchField, AdminEntityLink } from '../../../../components/admin/AdminShared';
+import {
+  AdminAvatar,
+  AdminPageHeader,
+  AdminSortableHeader,
+  LoadingState,
+  EmptyState,
+  AdminSearchField,
+  AdminEntityLink,
+  type SortDirection,
+} from '../../../../components/admin/AdminShared';
+
+type TeamSortKey = 'name' | 'abbr' | 'country' | 'manager' | 'players';
 
 export default function TeamsPage() {
   const [page, setPage] = useState(1);
   const [query, setQuery] = useState('');
+  const [sortBy, setSortBy] = useState<TeamSortKey>('name');
+  const [sortOrder, setSortOrder] = useState<SortDirection>('asc');
   const limit = 20;
   const debouncedQuery = useDebouncedValue(query, 350);
-  const teamsQuery = useTeamsQuery({ limit, page, q: debouncedQuery.trim() || undefined });
+  const teamsQuery = useTeamsQuery({
+    limit,
+    page,
+    q: debouncedQuery.trim() || undefined,
+    sortBy,
+    sortOrder,
+  });
   const teams = teamsQuery.data?.items || [];
   const total = teamsQuery.data?.total || 0;
   const totalPages = Math.max(1, teamsQuery.data?.totalPages || Math.ceil(total / limit));
 
-  useEffect(() => { setPage(1); }, [debouncedQuery]);
+  useEffect(() => { setPage(1); }, [debouncedQuery, sortBy, sortOrder]);
+
+  const toggleSort = (key: TeamSortKey) => {
+    if (sortBy === key) {
+      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortBy(key);
+      setSortOrder(key === 'players' ? 'desc' : 'asc');
+    }
+  };
 
   return (
     <div className="space-y-5">
@@ -44,11 +72,11 @@ export default function TeamsPage() {
             <table className="w-full min-w-[640px] text-left text-xs">
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--admin-border)', background: 'var(--admin-table-header)' }}>
-                  <th className="whitespace-nowrap px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Team</th>
-                  <th className="whitespace-nowrap px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Abbreviation</th>
-                  <th className="whitespace-nowrap px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Country</th>
-                  <th className="whitespace-nowrap px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Manager</th>
-                  <th className="whitespace-nowrap px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Total players</th>
+                  <AdminSortableHeader label="Team" sortKey="name" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} />
+                  <AdminSortableHeader label="Abbreviation" sortKey="abbr" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} />
+                  <AdminSortableHeader label="Country" sortKey="country" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} />
+                  <AdminSortableHeader label="Manager" sortKey="manager" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} />
+                  <AdminSortableHeader label="Total players" sortKey="players" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} />
                 </tr>
               </thead>
               <tbody>

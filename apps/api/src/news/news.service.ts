@@ -52,6 +52,22 @@ export class NewsService {
     await this.gallery.markEditorialByUrl(imageUrl);
   }
 
+  async publishAllDrafts(): Promise<{ publishedCount: number }> {
+    const now = new Date();
+    const publishedCount = await this.prisma.$transaction(async (tx) => {
+      const withDate = await tx.newsArticle.updateMany({
+        where: { isPublished: false, publishedAt: { not: null } },
+        data: { isPublished: true },
+      });
+      const withoutDate = await tx.newsArticle.updateMany({
+        where: { isPublished: false, publishedAt: null },
+        data: { isPublished: true, publishedAt: now },
+      });
+      return withDate.count + withoutDate.count;
+    });
+    return { publishedCount };
+  }
+
   private validateTitle(title: string): void {
     const wordCount = title.trim().split(/\s+/).filter(Boolean).length;
     if (wordCount === 0 || wordCount > 50) {

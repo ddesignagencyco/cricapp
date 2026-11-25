@@ -84,7 +84,14 @@ export class TeamsService {
     return out;
   }
 
-  async list(params?: { q?: string; page?: number; limit?: number; offset?: number }) {
+  async list(params?: {
+    q?: string;
+    sortBy?: string;
+    sortOrder?: string;
+    page?: number;
+    limit?: number;
+    offset?: number;
+  }) {
     const { page, limit, skip } = getPaginationOffset(params?.page, params?.limit, params?.offset);
 
     const where: Record<string, unknown> = {};
@@ -96,12 +103,33 @@ export class TeamsService {
       ];
     }
 
+    const dir: 'asc' | 'desc' = params?.sortOrder === 'desc' ? 'desc' : 'asc';
+    let orderBy: any[];
+    switch (params?.sortBy) {
+      case 'abbr':
+        orderBy = [{ abbr: dir }, { name: 'asc' }];
+        break;
+      case 'country':
+        orderBy = [{ country: dir }, { name: 'asc' }];
+        break;
+      case 'manager':
+        orderBy = [{ manager: dir }, { name: 'asc' }];
+        break;
+      case 'players':
+        orderBy = [{ players: { _count: dir } }, { name: 'asc' }];
+        break;
+      case 'name':
+      default:
+        orderBy = [{ name: dir }, { id: 'asc' }];
+        break;
+    }
+
     const [rows, total] = await Promise.all([
       this.prisma.team.findMany({
         where,
         take: limit,
         skip,
-        orderBy: [{ name: 'asc' }],
+        orderBy,
         include: { _count: { select: { players: true } } },
       }),
       this.prisma.team.count({ where }),

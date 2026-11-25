@@ -1,17 +1,19 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Inbox, Mail, X } from 'lucide-react';
 import {
   AdminAvatar,
   AdminPageHeader,
   AdminResultCount,
+  AdminSortableHeader,
   ConfirmDialog,
   EmptyState,
   ErrorState,
   LoadingState,
   StatusBadge,
+  type SortDirection,
 } from '../../../../components/admin/AdminShared';
 import AdminPagination from '../../../../components/admin/AdminPagination';
 import {
@@ -91,6 +93,34 @@ export default function AdminContactPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
   const [pending, setPending] = useState<{ item: ContactSubmission; next: ContactStatus } | null>(null);
+  const [sortBy, setSortBy] = useState<'from' | 'message' | 'date' | 'status'>('date');
+  const [sortOrder, setSortOrder] = useState<SortDirection>('desc');
+
+  const toggleSort = (key: 'from' | 'message' | 'date' | 'status') => {
+    if (sortBy === key) {
+      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortBy(key);
+      setSortOrder(key === 'date' ? 'desc' : 'asc');
+    }
+  };
+
+  const sortedItems = useMemo(() => {
+    const mul = sortOrder === 'desc' ? -1 : 1;
+    return [...items].sort((a, b) => {
+      if (sortBy === 'date') {
+        const at = a.createdAt ? Date.parse(a.createdAt) : 0;
+        const bt = b.createdAt ? Date.parse(b.createdAt) : 0;
+        return (at - bt) * mul;
+      }
+      const pick = (row: ContactSubmission) => {
+        if (sortBy === 'from') return (row.name || row.email || '').toLowerCase();
+        if (sortBy === 'message') return (row.message || '').toLowerCase();
+        return (row.status || '').toLowerCase();
+      };
+      return pick(a).localeCompare(pick(b)) * mul;
+    });
+  }, [items, sortBy, sortOrder]);
 
   const load = (nextPage = page, nextStatus = status) => {
     setLoading(true);
@@ -174,15 +204,15 @@ export default function AdminContactPage() {
             <table className="w-full text-left text-sm">
               <thead>
                 <tr style={{ background: 'var(--admin-table-header)', borderBottom: '1px solid var(--admin-border)' }}>
-                  <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>From</th>
-                  <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Message</th>
-                  <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Date</th>
-                  <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Status</th>
+                  <AdminSortableHeader label="From" sortKey="from" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} className="px-4 py-3 text-xs font-bold uppercase tracking-wider" />
+                  <AdminSortableHeader label="Message" sortKey="message" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} className="px-4 py-3 text-xs font-bold uppercase tracking-wider" />
+                  <AdminSortableHeader label="Date" sortKey="date" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} className="px-4 py-3 text-xs font-bold uppercase tracking-wider" />
+                  <AdminSortableHeader label="Status" sortKey="status" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} className="px-4 py-3 text-xs font-bold uppercase tracking-wider" />
                   <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {items.map((item) => {
+                {sortedItems.map((item) => {
                   const busy = busyId === item.id;
                   return (
                     <tr
