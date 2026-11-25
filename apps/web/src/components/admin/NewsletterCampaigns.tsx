@@ -6,16 +6,20 @@ import { Eye, Send, FlaskConical, RefreshCw } from 'lucide-react';
 import {
   AdminField,
   AdminSelect,
+  AdminSortableHeader,
+  AdminToggle,
   CardHeader,
   CardPanel,
   ConfirmDialog,
   StatCard,
+  type SortDirection,
 } from './AdminShared';
 import {
   fetchNewsletterCampaigns,
   previewNewsletterCampaign,
   sendNewsletterCampaign,
   sendNewsletterTest,
+  setNewsletterAutoSend,
   type NewsletterCampaignInput,
   type NewsletterCampaignOverview,
   type NewsletterPreview,
@@ -63,8 +67,32 @@ export default function NewsletterCampaigns() {
   const [matches, setMatches] = useState<Option[]>([]);
   const [stories, setStories] = useState<Option[]>([]);
   const [preview, setPreview] = useState<NewsletterPreview | null>(null);
-  const [busy, setBusy] = useState<'preview' | 'test' | 'send' | null>(null);
+  const [busy, setBusy] = useState<'preview' | 'test' | 'send' | 'autosend' | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [sortBy, setSortBy] = useState<'type' | 'subject' | 'sent' | 'failed' | 'lastSentAt'>('lastSentAt');
+  const [sortOrder, setSortOrder] = useState<SortDirection>('desc');
+
+  const toggleSort = (key: 'type' | 'subject' | 'sent' | 'failed' | 'lastSentAt') => {
+    if (sortBy === key) {
+      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortBy(key);
+      setSortOrder(key === 'lastSentAt' || key === 'sent' || key === 'failed' ? 'desc' : 'asc');
+    }
+  };
+
+  const toggleAutoSend = async (enabled: boolean) => {
+    setBusy('autosend');
+    try {
+      const res = await setNewsletterAutoSend(enabled);
+      setOverview((prev) => (prev ? { ...prev, autoSend: res.autoSend } : prev));
+      toast.success(res.autoSend ? 'Scheduled newsletters enabled.' : 'Scheduled newsletters paused.');
+    } catch (error) {
+      toast.error(errorText(error, 'Could not update scheduled sending.'));
+    } finally {
+      setBusy(null);
+    }
+  };
 
   const loadOverview = () => {
     fetchNewsletterCampaigns()
@@ -151,17 +179,53 @@ export default function NewsletterCampaigns() {
   const typeLabel = (value: string) => overview?.types.find((t) => t.type === value)?.label ?? value;
   const actionClass = 'inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-xs font-bold disabled:opacity-50';
 
+  const sortedCampaigns = useMemo(() => {
+    const list = [...(overview?.recentCampaigns ?? [])];
+    const mul = sortOrder === 'desc' ? -1 : 1;
+    return list.sort((a, b) => {
+      if (sortBy === 'sent') return (a.sent - b.sent) * mul;
+      if (sortBy === 'failed') return (a.failed - b.failed) * mul;
+      if (sortBy === 'lastSentAt') {
+        const at = a.lastSentAt ? Date.parse(a.lastSentAt) : 0;
+        const bt = b.lastSentAt ? Date.parse(b.lastSentAt) : 0;
+        return (at - bt) * mul;
+      }
+      const av = (sortBy === 'subject' ? a.subject || '' : typeLabel(a.type)).toLowerCase();
+      const bv = (sortBy === 'subject' ? b.subject || '' : typeLabel(b.type)).toLowerCase();
+      return av.localeCompare(bv) * mul;
+    });
+  }, [overview?.recentCampaigns, overview?.types, sortBy, sortOrder]);
+
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <StatCard label="Active subscribers" value={overview?.subscribers.active ?? '—'} icon={<Send size={16} />} />
         <StatCard label="Unsubscribed" value={overview?.subscribers.unsubscribed ?? '—'} icon={<RefreshCw size={16} />} />
-        <StatCard
-          label="Scheduled sending"
-          value={overview ? (overview.autoSend ? 'On' : 'Off') : '—'}
-          sub={overview?.autoSend ? 'Digests and previews go out on schedule.' : 'Nothing sends until you press Send.'}
-          icon={<FlaskConical size={16} />}
-        />
+        <div
+          className="min-w-0 rounded-lg p-3 sm:p-4"
+          style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}
+        >
+          <div className="flex items-center justify-between gap-2">
+            <span
+              className="min-w-0 truncate text-xs font-semibold uppercase tracking-wider"
+              style={{ color: 'var(--admin-text-secondary)' }}
+            >
+              Scheduled sending
+            </span>
+            <AdminToggle
+              checked={Boolean(overview?.autoSend)}
+              disabled={!overview || busy === 'autosend'}
+              onChange={() => void toggleAutoSend(!overview?.autoSend)}
+              label="Toggle scheduled newsletter sending"
+            />
+          </div>
+          <p className="mt-2 truncate text-2xl font-bold tabular-nums" style={{ color: 'var(--admin-text)' }}>
+            {overview ? (overview.autoSend ? 'On' : 'Off') : '—'}
+          </p>
+          <p className="mt-0.5 truncate text-xs" style={{ color: 'var(--admin-text-muted)' }}>
+            {overview?.autoSend ? 'Digests and previews send automatically on schedule.' : 'Paused — enable to send automatically.'}
+          </p>
+        </div>
       </div>
 
       <CardPanel>
@@ -249,17 +313,19 @@ export default function NewsletterCampaigns() {
           <table className="w-full min-w-[620px] text-left text-xs">
             <thead>
               <tr style={{ background: 'var(--admin-table-header)', borderBottom: '1px solid var(--admin-border)' }}>
-                {['Newsletter', 'Subject', 'Sent', 'Failed', 'Last sent'].map((h) => (
-                  <th key={h} className="whitespace-nowrap px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>{h}</th>
-                ))}
+                <AdminSortableHeader label="Newsletter" sortKey="type" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} />
+                <AdminSortableHeader label="Subject" sortKey="subject" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} />
+                <AdminSortableHeader label="Sent" sortKey="sent" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} />
+                <AdminSortableHeader label="Failed" sortKey="failed" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} />
+                <AdminSortableHeader label="Last sent" sortKey="lastSentAt" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} />
               </tr>
             </thead>
             <tbody>
-              {!overview?.recentCampaigns.length ? (
+              {!sortedCampaigns.length ? (
                 <tr>
                   <td colSpan={5} className="px-4 py-8 text-center" style={{ color: 'var(--admin-text-muted)' }}>No newsletters sent yet.</td>
                 </tr>
-              ) : overview.recentCampaigns.map((c) => (
+              ) : sortedCampaigns.map((c) => (
                 <tr key={`${c.type}|${c.issueKey}`} style={{ borderBottom: '1px solid var(--admin-border)' }}>
                   <td className="whitespace-nowrap px-4 py-2.5 font-semibold" style={{ color: 'var(--admin-text)' }}>{typeLabel(c.type)}</td>
                   <td className="max-w-[22rem] truncate px-4 py-2.5" style={{ color: 'var(--admin-text-secondary)' }} title={c.subject ?? undefined}>{c.subject ?? '—'}</td>

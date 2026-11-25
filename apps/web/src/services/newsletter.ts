@@ -1,4 +1,4 @@
-import { apiGet, apiPost, apiPut, extractPage } from './api/client';
+import { apiGet, apiPatch, apiPost, apiPut, extractPage } from './api/client';
 import { authHeaders } from './auth';
 
 export interface NewsletterSubscriber {
@@ -99,6 +99,10 @@ export interface NewsletterPreview {
 
 export function fetchNewsletterCampaigns(): Promise<NewsletterCampaignOverview> {
   return apiGet('/admin/newsletter/campaigns');
+}
+
+export function setNewsletterAutoSend(enabled: boolean): Promise<{ autoSend: boolean }> {
+  return apiPatch('/admin/newsletter/auto-send', { enabled });
 }
 
 export function previewNewsletterCampaign(input: NewsletterCampaignInput): Promise<NewsletterPreview> {

@@ -82,45 +82,55 @@ export default function PslSpotlight({ standings = [] }: PslSpotlightProps) {
           </div>
 
           <div className="overflow-x-auto no-scrollbar">
-            <table className="w-full text-left text-sm">
+            <table className="w-full min-w-[520px] text-left text-sm">
               <thead>
                 <tr className="border-b border-lborder bg-card/60 text-xs font-bold uppercase tracking-wider text-stext">
-                  <th className="px-2 py-3 sm:px-4 text-center">#</th>
-                  <th className="px-2 py-3 sm:px-4">Team</th>
-                  <th className="px-2 py-3 sm:px-4 text-center">P</th>
-                  <th className="px-2 py-3 sm:px-4 text-center">W</th>
-                  <th className="hidden px-2 py-3 text-center sm:table-cell sm:px-4">L</th>
-                  <th className="px-2 py-3 sm:px-4 text-center">NRR</th>
-                  <th className="px-2 py-3 sm:px-4 text-center">PTS</th>
+                  <th className="px-2 py-3 sm:px-3.5 text-center">#</th>
+                  <th className="px-2 py-3 sm:px-3.5">Team</th>
+                  <th className="px-2 py-3 sm:px-3 text-center" title="Matches Played">Played</th>
+                  <th className="px-2 py-3 sm:px-3 text-center" title="Won">Won</th>
+                  <th className="px-2 py-3 sm:px-3 text-center" title="Lost">Lost</th>
+                  <th className="hidden px-2 py-3 text-center md:table-cell sm:px-3" title="Tied">Tied</th>
+                  <th className="hidden px-2 py-3 text-center sm:table-cell sm:px-3" title="No Result">NR</th>
+                  <th className="px-2 py-3 sm:px-3 text-center" title="Net Run Rate">NRR</th>
+                  <th className="px-2 py-3 sm:px-3.5 text-center" title="Points">Points</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.length > 0 ? (
-                  rows.map((row, i) => (
-                    <tr
-                      key={row.teamId || i}
-                      className="border-b border-lborder transition-colors last:border-0 hover:bg-[var(--color-row-hover)]"
-                    >
-                      <td className="px-2 py-2.5 sm:px-4 text-center font-mono text-sm font-medium tabular-nums text-muted-foreground">{i + 1}</td>
-                      <td className="px-2 py-2.5 sm:px-4">
-                        <div className="flex items-center gap-2">
-                          <TeamLogo teamId={row.teamId} name={row.teamName} code={row.teamAbbr} size="md" link={false} />
-                          <span className="truncate max-w-[120px] sm:max-w-none text-sm font-semibold text-mtext">{row.teamName}</span>
-                          <span className="hidden text-xs font-medium uppercase text-muted-foreground sm:inline">{row.teamAbbr}</span>
-                        </div>
-                      </td>
-                      <td className="px-2 py-2.5 sm:px-4 text-center font-mono text-sm font-medium tabular-nums text-stext">{row.played ?? 0}</td>
-                      <td className="px-2 py-2.5 sm:px-4 text-center font-mono text-sm font-semibold tabular-nums text-accent">{row.won ?? 0}</td>
-                      <td className="hidden px-2 py-2.5 text-center font-mono text-sm font-medium tabular-nums text-danger sm:table-cell sm:px-4">{row.lost ?? 0}</td>
-                      <td className={`px-2 py-2.5 sm:px-4 text-center font-mono text-sm font-semibold tabular-nums ${(row.netRunRate ?? 0) >= 0 ? 'text-accent' : 'text-danger'}`}>
-                        {row.netRunRate ?? 0}
-                      </td>
-                      <td className="px-2 py-2.5 sm:px-4 text-center font-mono text-sm font-semibold tabular-nums text-mtext">{row.points ?? 0}</td>
-                    </tr>
-                  ))
+                  rows.map((row, i) => {
+                    const nrr = typeof row.netRunRate === 'number' ? row.netRunRate : Number(row.netRunRate ?? 0);
+                    const nrrLabel = Number.isFinite(nrr)
+                      ? `${nrr > 0 ? '+' : ''}${nrr.toFixed(3)}`
+                      : '0.000';
+                    return (
+                      <tr
+                        key={row.teamId || i}
+                        className="border-b border-lborder transition-colors last:border-0 hover:bg-[var(--color-row-hover)]"
+                      >
+                        <td className="px-2 py-2.5 sm:px-3.5 text-center font-mono text-sm font-medium tabular-nums text-muted-foreground">{i + 1}</td>
+                        <td className="px-2 py-2.5 sm:px-3.5">
+                          <div className="flex items-center gap-2">
+                            <TeamLogo teamId={row.teamId} name={row.teamName} code={row.teamAbbr} size="md" link={false} />
+                            <span className="truncate max-w-[120px] sm:max-w-none text-sm font-semibold text-mtext">{row.teamName}</span>
+                            <span className="hidden text-xs font-medium uppercase text-muted-foreground sm:inline">{row.teamAbbr}</span>
+                          </div>
+                        </td>
+                        <td className="px-2 py-2.5 sm:px-3 text-center font-mono text-sm font-medium tabular-nums text-stext">{row.played ?? 0}</td>
+                        <td className="px-2 py-2.5 sm:px-3 text-center font-mono text-sm font-semibold tabular-nums text-accent">{row.won ?? 0}</td>
+                        <td className="px-2 py-2.5 sm:px-3 text-center font-mono text-sm font-medium tabular-nums text-danger">{row.lost ?? 0}</td>
+                        <td className="hidden px-2 py-2.5 text-center font-mono text-sm font-medium tabular-nums text-stext md:table-cell sm:px-3">{row.tied ?? 0}</td>
+                        <td className="hidden px-2 py-2.5 text-center font-mono text-sm font-medium tabular-nums text-stext sm:table-cell sm:px-3">{row.noResult ?? 0}</td>
+                        <td className={`px-2 py-2.5 sm:px-3 text-center font-mono text-sm font-semibold tabular-nums ${nrr >= 0 ? 'text-accent' : 'text-danger'}`}>
+                          {nrrLabel}
+                        </td>
+                        <td className="px-2 py-2.5 sm:px-3.5 text-center font-mono text-sm font-bold tabular-nums text-mtext">{row.points ?? 0}</td>
+                      </tr>
+                    );
+                  })
                 ) : (
                   <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-xs text-stext">
+                    <td colSpan={9} className="px-4 py-8 text-center text-xs text-stext">
                       No standings data available.
                     </td>
                   </tr>

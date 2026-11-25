@@ -63,6 +63,7 @@ export type CampaignResult = {
 
 const TZ = 'Asia/Karachi';
 const LOCK_KEY = 'newsletter:scheduler:lock';
+const AUTO_SEND_KEY = 'newsletter:auto_send';
 const TICK_MS = 5 * 60_000;
 
 /**
@@ -97,6 +98,28 @@ export class NewsletterCampaignService implements OnModuleInit, OnModuleDestroy 
     return String(this.config.get('NEWSLETTER_AUTO_SEND', 'false')).toLowerCase() === 'true';
   }
 
+  async isAutoSendEnabled(): Promise<boolean> {
+    if (process.env.NODE_ENV === 'test') return this.autoSend;
+    try {
+      const stored = await this.redis.cached.get(AUTO_SEND_KEY);
+      if (stored === 'true') return true;
+      if (stored === 'false') return false;
+    } catch {
+      // Fall back to env setting if Redis is unavailable.
+    }
+    return this.autoSend;
+  }
+
+  async setAutoSend(enabled: boolean): Promise<{ autoSend: boolean }> {
+    await this.redis.cached.set(AUTO_SEND_KEY, enabled ? 'true' : 'false').catch(() => null);
+    this.logger.log(`Newsletter scheduled auto-send switched ${enabled ? 'ON' : 'OFF'}.`);
+    if (enabled && !this.timer && process.env.NODE_ENV !== 'test') {
+      this.timer = setInterval(() => void this.tick(), TICK_MS);
+      this.timer.unref?.();
+    }
+    return { autoSend: enabled };
+  }
+
   private num(key: string, fallback: number): number {
     const v = Number(this.config.get(key, fallback));
     return Number.isFinite(v) && v >= 0 ? v : fallback;
@@ -109,8 +132,14 @@ export class NewsletterCampaignService implements OnModuleInit, OnModuleDestroy 
   /* ─── Scheduler ─── */
 
   onModuleInit() {
-    if (!this.autoSend || process.env.NODE_ENV === 'test') return;
-    this.logger.log('Newsletter auto-send is ON; checking the schedule every 5 minutes.');
+    if (process.env.NODE_ENV === 'test') return;
+    void this.isAutoSendEnabled().then((enabled) => {
+      this.logger.log(
+        enabled
+          ? 'Newsletter auto-send is ON; checking the schedule every 5 minutes.'
+          : 'Newsletter auto-send is OFF (can be enabled from Admin → Newsletter).',
+      );
+    });
     this.timer = setInterval(() => void this.tick(), TICK_MS);
     this.timer.unref?.();
   }
@@ -122,6 +151,7 @@ export class NewsletterCampaignService implements OnModuleInit, OnModuleDestroy 
   /** One scheduler pass. A Redis lock keeps a second API instance from sending too. */
   async tick(now = new Date()): Promise<CampaignResult[]> {
     if (this.running) return [];
+    if (!(await this.isAutoSendEnabled())) return [];
     const got = await this.redis.cached.set(LOCK_KEY, String(process.pid), 'EX', 20 * 60, 'NX').catch(() => null);
     if (got !== 'OK') return [];
     this.running = true;
@@ -420,8 +450,9 @@ export class NewsletterCampaignService implements OnModuleInit, OnModuleDestroy 
       if (row.status === 'failed') entry.failed += row._count._all;
       campaigns.set(key, entry);
     }
+    const autoSend = await this.isAutoSendEnabled();
     return {
-      autoSend: this.autoSend,
+      autoSend,
       subscribers: { active, unsubscribed },
       types: NEWSLETTER_TYPES.map((type) => ({ type, ...NEWSLETTER_TYPE_INFO[type], automatic: type !== 'breaking_news' })),
       recentCampaigns: [...campaigns.values()].slice(0, 30),

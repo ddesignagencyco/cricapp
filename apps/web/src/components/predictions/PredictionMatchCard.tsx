@@ -98,7 +98,7 @@ export default function PredictionMatchCard({ match, predictions }: Props) {
   const meters = [
     confidence !== null && confidence > 0 ? { label: 'Confidence', value: confidence } : null,
   ].filter((row): row is { label: string; value: number } => row !== null);
-  const factsAll = [
+  const contextFacts = [
     situation.requiredRuns !== null && situation.requiredRuns > 0
       ? { label: situation.inning === 2 ? 'Target' : 'Need', value: String(situation.requiredRuns) }
       : null,
@@ -106,11 +106,8 @@ export default function PredictionMatchCard({ match, predictions }: Props) {
       ? { label: 'Score band', value: `${range?.low}–${range?.high}` }
       : null,
     toss ? { label: 'Toss', value: toss } : null,
-    when ? { label: 'When', value: when } : null,
     format ? { label: 'Format', value: format } : null,
-    ground ? { label: 'Venue', value: ground } : null,
   ].filter((row): row is { label: string; value: string } => row !== null);
-  const facts = factsAll.slice(0, 4);
 
   return (
     <Link
@@ -146,7 +143,7 @@ export default function PredictionMatchCard({ match, predictions }: Props) {
       </div>
 
       {situation.scoreLine ? (
-        <div className="mb-4">
+        <div className="mb-3.5">
           <p className="truncate text-xl font-black tabular-nums tracking-tight text-mtext">
             {situation.scoreLine}
           </p>
@@ -187,20 +184,40 @@ export default function PredictionMatchCard({ match, predictions }: Props) {
         <p className="text-sm text-stext">Chance of winning not ready yet</p>
       )}
 
-      {facts.length > 0 ? (
-        <div className="mt-auto grid grid-cols-2 gap-x-5 gap-y-3 border-t border-lborder/80 pt-5">
-          {facts.map((fact) => (
-            <div key={fact.label} className="min-w-0">
-              <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-stext">{fact.label}</p>
-              <p className="mt-0.5 truncate text-xs font-semibold text-mtext" title={fact.value}>
-                {fact.value}
+      {/* Pinned footer: optional Toss/Target strip above a uniform 2-column When | Venue footer */}
+      <div className="mt-auto pt-4">
+        {contextFacts.length > 0 ? (
+          <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-md bg-surface-muted/70 px-2.5 py-2 text-xs">
+            {contextFacts.slice(0, 2).map((fact) => (
+              <div key={fact.label} className="flex min-w-0 items-center gap-1.5">
+                <span className="shrink-0 text-[10px] font-bold uppercase tracking-[0.1em] text-stext">
+                  {fact.label}:
+                </span>
+                <span className="truncate font-semibold text-mtext" title={fact.value}>
+                  {fact.value}
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : null}
+
+        {(when || ground) ? (
+          <div className="grid grid-cols-2 items-start gap-x-4 border-t border-lborder/80 pt-3.5">
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-stext">When</p>
+              <p className="mt-0.5 truncate text-xs font-semibold tabular-nums text-mtext" title={when || undefined}>
+                {when || 'TBA'}
               </p>
             </div>
-          ))}
-        </div>
-      ) : (
-        <div className="mt-auto" />
-      )}
+            <div className="min-w-0 text-right">
+              <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-stext">Venue</p>
+              <p className="mt-0.5 truncate text-xs font-semibold text-mtext" title={ground || undefined}>
+                {ground || 'TBA'}
+              </p>
+            </div>
+          </div>
+        ) : null}
+      </div>
     </Link>
   );
 }

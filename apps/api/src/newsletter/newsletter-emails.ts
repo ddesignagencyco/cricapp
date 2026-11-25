@@ -1,14 +1,12 @@
-import { BRAND, emailButton, renderEmail } from '../mailer/email-layout.js';
+import { BRAND, EMAIL_FONT, emailButton, renderEmail } from '../mailer/email-layout.js';
 
-/** One "what you'll get" row: an icon tile, a title and a line of detail. */
-function benefit(icon: string, title: string, detail: string): string {
+/** Editorial benefit row with a crisp green index marker (no pill/circle bloat). */
+function benefit(index: string, title: string, detail: string): string {
   return `<tr>
-  <td valign="top" style="width:44px;padding:0 0 16px;">
-    <div style="width:36px;height:36px;line-height:36px;text-align:center;border-radius:10px;background:#EEF3FF;font-size:18px;">${icon}</div>
-  </td>
-  <td valign="top" style="padding:0 0 16px 12px;font-family:Segoe UI,Arial,sans-serif;">
-    <div style="font-size:15px;font-weight:700;color:${BRAND.ink};">${title}</div>
-    <div style="font-size:14px;line-height:1.55;color:${BRAND.body};">${detail}</div>
+  <td valign="top" style="width:32px;padding:12px 0;border-bottom:1px solid ${BRAND.border};font-family:${EMAIL_FONT};font-size:12px;font-weight:700;letter-spacing:0.5px;color:${BRAND.green};">${index}</td>
+  <td valign="top" style="padding:12px 0 12px 8px;border-bottom:1px solid ${BRAND.border};font-family:${EMAIL_FONT};">
+    <div style="font-size:14px;font-weight:700;color:${BRAND.ink};">${title}</div>
+    <div style="margin-top:2px;font-size:13px;line-height:1.55;color:${BRAND.body};">${detail}</div>
   </td>
 </tr>`;
 }
@@ -24,27 +22,28 @@ export function buildNewsletterWelcomeEmail({
   const html = renderEmail({
     appUrl,
     title: 'Welcome to the CriczApp newsletter',
-    preheader: "You're in! Weekly cricket digests, match-day previews and the big results.",
+    preheader: "You're subscribed — daily cricket digests, match-day previews and key results.",
+    edition: 'Welcome',
     reason: 'You received this email because you subscribed to the CriczApp newsletter.',
     unsubscribeUrl,
     bodyHtml: `
-      <h1 style="margin:0 0 6px;font-size:24px;line-height:1.3;color:${BRAND.ink};">You're in! 🏏</h1>
-      <p style="margin:0 0 24px;">Thanks for subscribing to the CriczApp newsletter. Here's what you can expect in your inbox:</p>
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-        ${benefit('📰', 'Weekly digest', 'The top stories, last week\'s results and the week ahead, every Monday.')}
-        ${benefit('🗓️', 'Match-day previews', 'Pakistan and PSL fixtures with head-to-head records and win predictions.')}
-        ${benefit('⚡', 'Big results', 'The results and news that matter, never more than one a day.')}
+      <h1 style="margin:0 0 8px;font-family:${EMAIL_FONT};font-size:22px;font-weight:700;letter-spacing:-0.3px;line-height:1.3;color:${BRAND.ink};">Welcome to CriczApp</h1>
+      <p style="margin:0 0 20px;font-family:${EMAIL_FONT};font-size:14px;line-height:1.6;color:${BRAND.body};">Thanks for subscribing to the CriczApp newsletter. Here is what you will receive in your inbox:</p>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top:1px solid ${BRAND.border};">
+        ${benefit('01', 'Daily & Weekly Digests', 'Top cricket stories, match results, and upcoming fixtures curated cleanly.')}
+        ${benefit('02', 'Match-Day Previews', 'Pakistan and PSL fixtures with head-to-head context and win probability breakdowns.')}
+        ${benefit('03', 'PSL & Breaking Updates', 'Standings shifts, top performers, and verified breaking stories without inbox clutter.')}
       </table>
-      ${emailButton(`${appUrl}/matches?tab=live`, 'Follow live scores')}
-      <p style="margin:0;font-size:13px;line-height:1.55;color:${BRAND.muted};text-align:center;">Changed your mind? You can unsubscribe at any time with the link at the bottom of every email.</p>`,
+      ${emailButton(`${appUrl}/matches?tab=live`, 'Follow Live Scores')}
+      <p style="margin:0;font-family:${EMAIL_FONT};font-size:12px;line-height:1.55;color:${BRAND.muted};text-align:center;">You can manage your preferences or unsubscribe at any time using the link below.</p>`,
   });
 
-  const text = `You're in! Welcome to the CriczApp newsletter.
+  const text = `Welcome to the CriczApp newsletter.
 
-Here's what to expect:
-- Weekly digest: top stories, last week's results and the week ahead, every Monday.
-- Match-day previews: Pakistan and PSL fixtures with head-to-head records and win predictions.
-- Big results: the results and news that matter, never more than one a day.
+Here is what you will receive:
+- Daily & Weekly Digests: top cricket stories, match results, and upcoming fixtures.
+- Match-Day Previews: Pakistan and PSL fixtures with head-to-head records and win predictions.
+- PSL & Breaking Updates: standings shifts, top performers, and verified breaking stories.
 
 Follow live scores: ${appUrl}/matches?tab=live
 

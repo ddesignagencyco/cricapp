@@ -1,4 +1,4 @@
-import { IsEmail, IsIn, IsObject, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsBoolean, IsEmail, IsIn, IsObject, IsOptional, IsString, IsUUID } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginationQuery } from '../../common/dto/pagination.query.js';
 import { NEWSLETTER_TYPES, type NewsletterType } from '../newsletter-templates.js';
@@ -63,4 +63,10 @@ export class NewsletterTestDto extends NewsletterCampaignDto {
   @IsOptional()
   @IsEmail()
   to?: string;
+}
+
+export class NewsletterAutoSendDto {
+  @ApiProperty({ description: 'Enable or disable automatic scheduled newsletter delivery' })
+  @IsBoolean()
+  enabled: boolean;
 }

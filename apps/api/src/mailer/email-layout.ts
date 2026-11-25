@@ -1,23 +1,38 @@
 /**
- * The one branded shell every CriczApp email renders inside.
+ * Shared branded shell for every CriczApp email (auth, welcome, newsletters).
  *
- * Email clients are not browsers: Outlook ignores CSS gradients and most of
- * `<style>`, Gmail strips classes, and many clients block images until asked. So this
- * is table-based HTML with inline styles and solid-colour fallbacks, the logo has alt
- * text, and every email also gets a plain-text part.
+ * Uses table-based HTML with inline styles and solid-colour fallbacks so emails
+ * render cleanly in Gmail, Outlook, Apple Mail and mobile clients.
  *
- * Colours match the site: brand blue #3B68FC (hover #2A4FE0), ink #0F172A.
+ * Brand palette matches CriczApp:
+ * - Header: Brand Navy (#06152F) with a 3px CriczApp Green (#16B800) accent bar
+ * - Primary actions & links: Turf Emerald (#0D7A2C, dark #005C26)
+ * - Surface: Crisp White (#FFFFFF) on Cool Slate (#F4F6F9)
+ * - Geometry: Subtle architectural corners (4px–6px) and clean sans typography
  */
+
+export const EMAIL_FONT =
+  "-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,Helvetica,Arial,sans-serif";
+export const EMAIL_MONO =
+  "ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'Courier New',monospace";
 
 export const BRAND = {
   name: 'CriczApp',
-  blue: '#3B68FC',
-  blueDark: '#2A4FE0',
-  ink: '#0F172A',
+  navy: '#06152F',
+  navySoft: '#0F2547',
+  green: '#0D7A2C',
+  greenDark: '#005C26',
+  accent: '#16B800',
+  softBg: '#F0F7F2',
+  // Aliases kept so existing callers stay compatible with the brand refresh.
+  blue: '#0D7A2C',
+  blueDark: '#005C26',
+  ink: '#06152F',
   body: '#334155',
   muted: '#64748B',
   border: '#E2E8F0',
-  page: '#F1F5FB',
+  borderStrong: '#CBD5E1',
+  page: '#F4F6F9',
 };
 
 export function escapeHtml(value: string): string {
@@ -46,43 +61,43 @@ export type EmailLayoutInput = {
   edition?: string;
 };
 
-/** A full-width primary button, rendered as a table so Outlook keeps the padding. */
+/** Primary CTA button, rendered as a table so Outlook preserves padding and corners. */
 export function emailButton(href: string, label: string): string {
-  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:28px auto;">
-  <tr><td align="center" bgcolor="${BRAND.blue}" style="border-radius:10px;background:${BRAND.blue};background-image:linear-gradient(135deg,${BRAND.blue},${BRAND.blueDark});">
-    <a href="${href}" target="_blank" style="display:inline-block;padding:14px 34px;font-family:Segoe UI,Arial,sans-serif;font-size:15px;font-weight:700;color:#FFFFFF;text-decoration:none;border-radius:10px;">${escapeHtml(label)}</a>
+  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:26px auto;">
+  <tr><td align="center" bgcolor="${BRAND.green}" style="background:${BRAND.green};border-radius:6px;">
+    <a href="${href}" target="_blank" style="display:inline-block;padding:12px 28px;font-family:${EMAIL_FONT};font-size:14px;font-weight:600;letter-spacing:0.2px;color:#FFFFFF;text-decoration:none;border-radius:6px;">${escapeHtml(label)}</a>
   </td></tr>
 </table>`;
 }
 
-/** A soft call-out box (security notes, expiry notes). */
+/** Structured editorial call-out box (security notes, expiry reminders). */
 export function emailNote(html: string, tone: 'info' | 'warning' = 'info'): string {
-  const bg = tone === 'warning' ? '#FFF7E6' : '#EEF3FF';
-  const bar = tone === 'warning' ? '#F59E0B' : BRAND.blue;
-  const ink = tone === 'warning' ? '#7A4A00' : '#1E3A8A';
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:20px 0;">
-  <tr><td style="background:${bg};border-left:4px solid ${bar};border-radius:0 8px 8px 0;padding:14px 16px;font-family:Segoe UI,Arial,sans-serif;font-size:13px;line-height:1.55;color:${ink};">${html}</td></tr>
+  const bg = tone === 'warning' ? '#FFFBEB' : '#F8FAFC';
+  const bar = tone === 'warning' ? '#D97706' : BRAND.green;
+  const ink = tone === 'warning' ? '#78350F' : BRAND.body;
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:18px 0;">
+  <tr><td style="background:${bg};border:1px solid ${BRAND.border};border-left:3px solid ${bar};border-radius:4px;padding:12px 16px;font-family:${EMAIL_FONT};font-size:13px;line-height:1.55;color:${ink};">${html}</td></tr>
 </table>`;
 }
 
-/** A one-time code shown big and spaced so it is easy to read off and type into the app. */
+/** One-time verification or reset code in a crisp monospace block. */
 export function emailCode(code: string, label: string): string {
-  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:8px auto 4px;">
-  <tr><td align="center" style="font-family:Segoe UI,Arial,sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${BRAND.muted};padding-bottom:8px;">${escapeHtml(label)}</td></tr>
-  <tr><td align="center" bgcolor="${BRAND.page}" style="background:${BRAND.page};border:1px dashed ${BRAND.border};border-radius:10px;padding:14px 26px;font-family:Consolas,Menlo,Courier New,monospace;font-size:30px;font-weight:700;letter-spacing:8px;color:${BRAND.ink};">${escapeHtml(code)}</td></tr>
+  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:14px auto 8px;">
+  <tr><td align="center" style="font-family:${EMAIL_FONT};font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:${BRAND.muted};padding-bottom:8px;">${escapeHtml(label)}</td></tr>
+  <tr><td align="center" bgcolor="#F8FAFC" style="background:#F8FAFC;border:1px solid ${BRAND.borderStrong};border-radius:6px;padding:14px 28px;font-family:${EMAIL_MONO};font-size:28px;font-weight:700;letter-spacing:8px;color:${BRAND.ink};">${escapeHtml(code)}</td></tr>
 </table>`;
 }
 
-/** The fallback link under a button, for clients that block buttons. */
+/** Fallback link under a CTA button for restricted mail clients. */
 export function emailLinkFallback(href: string): string {
-  return `<p style="margin:0;font-family:Segoe UI,Arial,sans-serif;font-size:12px;line-height:1.5;color:${BRAND.muted};">Button not working? Copy this link into your browser:<br><a href="${href}" style="color:${BRAND.blue};word-break:break-all;">${escapeHtml(href)}</a></p>`;
+  return `<p style="margin:20px 0 0;padding-top:16px;border-top:1px solid ${BRAND.border};font-family:${EMAIL_FONT};font-size:12px;line-height:1.55;color:${BRAND.muted};">Button not working? Copy and paste this link into your browser:<br><a href="${href}" style="color:${BRAND.green};word-break:break-all;text-decoration:underline;">${escapeHtml(href)}</a></p>`;
 }
 
 export function renderEmail(input: EmailLayoutInput): string {
   const { appUrl, title, preheader, bodyHtml, reason, unsubscribeUrl, preferencesUrl } = input;
   const year = new Date().getFullYear();
   const link = (path: string, label: string) =>
-    `<a href="${appUrl}${path}" style="color:${BRAND.muted};text-decoration:none;font-weight:600;">${label}</a>`;
+    `<a href="${appUrl}${path}" style="color:${BRAND.body};text-decoration:none;font-weight:600;">${label}</a>`;
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -96,42 +111,44 @@ export function renderEmail(input: EmailLayoutInput): string {
 <body style="margin:0;padding:0;background:${BRAND.page};-webkit-text-size-adjust:100%;">
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">${escapeHtml(preheader)}</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${BRAND.page};">
-  <tr><td align="center" style="padding:32px 12px;">
-    <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;">
+  <tr><td align="center" style="padding:28px 12px;">
+    <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;border:1px solid ${BRAND.border};border-radius:6px;overflow:hidden;background:#FFFFFF;">
 
-      <!-- Header -->
-      <tr><td bgcolor="${BRAND.blue}" style="background:${BRAND.blue};background-image:linear-gradient(135deg,${BRAND.blue},${BRAND.blueDark});border-radius:16px 16px 0 0;padding:22px 28px;">
-        <!-- Name only for now; the logo image is added once the site has a public URL. -->
+      <!-- Top Brand Accent Bar -->
+      <tr><td bgcolor="${BRAND.accent}" style="background:${BRAND.accent};height:3px;font-size:0;line-height:0;">&nbsp;</td></tr>
+
+      <!-- Sleek Brand Navy Header -->
+      <tr><td bgcolor="${BRAND.navy}" style="background:${BRAND.navy};padding:22px 28px;">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-          <td valign="middle" style="font-family:Segoe UI,Arial,sans-serif;">
-            <div style="font-size:22px;font-weight:800;letter-spacing:0.4px;color:#FFFFFF;">🏏 ${BRAND.name}</div>
-            <div style="font-size:12px;color:#DCE5FF;margin-top:3px;">Every run. Every ball. Live.</div>
+          <td valign="middle" style="font-family:${EMAIL_FONT};">
+            <div style="font-size:20px;font-weight:800;letter-spacing:-0.3px;color:#FFFFFF;">Cricz<span style="color:${BRAND.accent};">App</span></div>
+            <div style="font-size:11px;font-weight:500;letter-spacing:0.8px;text-transform:uppercase;color:#94A3B8;margin-top:3px;">Every Run · Every Ball · Live</div>
           </td>
-          ${input.edition ? `<td valign="middle" align="right" style="font-family:Segoe UI,Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#DCE5FF;">${escapeHtml(input.edition)}</td>` : ''}
+          ${input.edition ? `<td valign="middle" align="right" style="font-family:${EMAIL_FONT};font-size:11px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:#CBD5E1;">${escapeHtml(input.edition)}</td>` : ''}
         </tr></table>
       </td></tr>
 
-      <!-- Card -->
-      <tr><td bgcolor="#FFFFFF" style="background:#FFFFFF;padding:36px 32px 32px;border-left:1px solid ${BRAND.border};border-right:1px solid ${BRAND.border};font-family:Segoe UI,Arial,sans-serif;color:${BRAND.body};font-size:15px;line-height:1.65;">
+      <!-- Body Card -->
+      <tr><td bgcolor="#FFFFFF" style="background:#FFFFFF;padding:32px 28px 28px;font-family:${EMAIL_FONT};color:${BRAND.body};font-size:14px;line-height:1.65;">
         ${bodyHtml}
       </td></tr>
 
-      <!-- Footer -->
-      <tr><td bgcolor="#FFFFFF" style="background:#FFFFFF;border:1px solid ${BRAND.border};border-top:0;border-radius:0 0 16px 16px;padding:0 32px 28px;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-          <tr><td style="border-top:1px solid ${BRAND.border};padding-top:20px;text-align:center;font-family:Segoe UI,Arial,sans-serif;font-size:13px;">
-            ${link('/matches?tab=live', 'Live scores')}&nbsp;&nbsp;·&nbsp;&nbsp;${link('/news', 'News')}&nbsp;&nbsp;·&nbsp;&nbsp;${link('/psl', 'PSL')}&nbsp;&nbsp;·&nbsp;&nbsp;${link('/predictions', 'Predictions')}
-          </td></tr>
-        </table>
-      </td></tr>
-
-      <tr><td style="padding:20px 24px 0;text-align:center;font-family:Segoe UI,Arial,sans-serif;font-size:12px;line-height:1.6;color:${BRAND.muted};">
-        ${escapeHtml(reason)}
-        ${unsubscribeUrl ? `<br><a href="${unsubscribeUrl}" style="color:${BRAND.muted};text-decoration:underline;">Unsubscribe</a>` : ''}${preferencesUrl ? `&nbsp;·&nbsp;<a href="${preferencesUrl}" style="color:${BRAND.muted};text-decoration:underline;">Email preferences</a>` : ''}
-        <br>© ${year} ${BRAND.name}. All rights reserved.
+      <!-- Navigation Bar -->
+      <tr><td bgcolor="#F8FAFC" style="background:#F8FAFC;border-top:1px solid ${BRAND.border};padding:16px 28px;text-align:center;font-family:${EMAIL_FONT};font-size:12px;letter-spacing:0.2px;">
+        ${link('/matches?tab=live', 'Live Scores')}&nbsp;&nbsp;&middot;&nbsp;&nbsp;${link('/news', 'News')}&nbsp;&nbsp;&middot;&nbsp;&nbsp;${link('/psl', 'PSL')}&nbsp;&nbsp;&middot;&nbsp;&nbsp;${link('/predictions', 'Predictions')}
       </td></tr>
 
     </table>
+
+    <!-- Legal / Unsubscribe Footer -->
+    <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;">
+      <tr><td style="padding:18px 20px 0;text-align:center;font-family:${EMAIL_FONT};font-size:12px;line-height:1.6;color:${BRAND.muted};">
+        ${escapeHtml(reason)}
+        ${unsubscribeUrl ? `<br><a href="${unsubscribeUrl}" style="color:${BRAND.muted};text-decoration:underline;">Unsubscribe</a>` : ''}${preferencesUrl ? `&nbsp;&middot;&nbsp;<a href="${preferencesUrl}" style="color:${BRAND.muted};text-decoration:underline;">Manage preferences</a>` : ''}
+        <br>&copy; ${year} ${BRAND.name}. All rights reserved.
+      </td></tr>
+    </table>
+
   </td></tr>
 </table>
 </body>

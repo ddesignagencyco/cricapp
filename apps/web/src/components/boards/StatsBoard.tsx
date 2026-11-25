@@ -41,7 +41,7 @@ const valueHeaders: Record<string, string> = {
   top_fours: '4s',
   top_fifties: '50s',
   top_hundreds: '100s',
-  top_wickets: 'Wkts',
+  top_wickets: 'Wickets',
   top_economy: 'Econ',
   top_maidens: 'Mdns',
   top_dot_balls: 'Dots',
