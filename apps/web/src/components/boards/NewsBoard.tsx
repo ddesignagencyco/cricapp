@@ -285,17 +285,16 @@ export default function NewsBoard({
           href={newsHref(featured)}
           className="group mb-10 block overflow-hidden rounded-md border border-lborder bg-card transition-colors hover:border-border-strong"
         >
-          <div className="grid md:grid-cols-[minmax(0,1.45fr)_minmax(280px,1fr)]">
-            <div className="bg-secondary">
+          <div className="grid md:grid-cols-[minmax(0,1.45fr)_minmax(280px,1fr)] md:items-stretch">
+            <div className="relative aspect-[16/9] w-full overflow-hidden bg-secondary md:aspect-auto md:min-h-[320px] md:max-h-[420px]">
               {featured.image ? (
                 <RemoteImage
                   src={featured.image}
                   alt={featured.title}
-                  width={1600}
-                  height={900}
+                  fill
                   sizes="(min-width: 768px) 55vw, 100vw"
-                  fit="contain"
-                  className="news-image h-auto w-full"
+                  fit="cover"
+                  className="news-image object-cover object-top"
                 />
               ) : (
                 <div className="relative flex h-full min-h-[260px] w-full items-center justify-center media-fallback">

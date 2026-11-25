@@ -19,10 +19,8 @@ import { siteSettingsKeys } from '../../../../queries/keys';
 import { useSiteSettingsQuery } from '../../../../queries/useDirectoryQueries';
 import { SOCIAL_PLATFORMS } from '../../../../lib/socialPlatforms';
 import {
-  COUNTRY_OPTIONS,
   DEFAULT_COUNTRY,
   WEEK_DAYS,
-  countryByName,
   emptyWorkingHours,
   formatWorkingHoursLabel,
   hasErrors,
@@ -206,7 +204,7 @@ export default function SettingsPage() {
   useEffect(() => {
     const settings = settingsQuery.data;
     if (!settings) return;
-    const country = settings.country || DEFAULT_COUNTRY;
+    const country = DEFAULT_COUNTRY;
     setForm({
       email: settings.email || '',
       supportEmail: settings.supportEmail || '',
@@ -215,7 +213,7 @@ export default function SettingsPage() {
       whatsapp: toE164(settings.whatsapp, country) || settings.whatsapp || '',
       address: settings.address || '',
       city: settings.city || '',
-      country: settings.country || DEFAULT_COUNTRY,
+      country,
       mapsUrl: settings.mapsUrl || '',
       hours: parseWorkingHours(settings.workingHours) || emptyWorkingHours(),
       socials: settings.socials?.length
@@ -228,13 +226,7 @@ export default function SettingsPage() {
 
   const usedPlatforms = useMemo(() => new Set(form.socials.map((item) => item.platform)), [form.socials]);
   const unusedPlatforms = SOCIAL_PLATFORMS.filter((item) => !usedPlatforms.has(item.id));
-  // Pre-built once at module load in `siteContact` — rebuilding 245 options per
-  // render would allocate on every keystroke.
-  const countryOptions = COUNTRY_OPTIONS;
-  const selectedCountry =
-    countryOptions.find((item) => item.value === form.country) ||
-    (form.country ? { value: form.country, label: form.country, dial: '', code: '' } : null);
-  const countryCode = countryByName(form.country)?.code;
+  const countryCode = 'PK';
 
   const uid = useId();
   const fid = (name: string) => `settings-${name}-${uid}`;
@@ -257,11 +249,6 @@ export default function SettingsPage() {
   };
 
   const hoursPreview = formatWorkingHoursLabel(serializeWorkingHours(form.hours));
-
-  const setCountry = (name: string) => {
-    setErrors((prev) => ({ ...prev, country: undefined, city: undefined }));
-    setForm((prev) => ({ ...prev, country: name, city: prev.country === name ? prev.city : '' }));
-  };
 
   const toggleDay = (day: WeekDayId) => {
     setForm((prev) => {
@@ -325,7 +312,7 @@ export default function SettingsPage() {
         whatsapp: toDisplayPhone(form.whatsapp),
         address: form.address.trim(),
         city: form.city.trim(),
-        country: form.country.trim(),
+        country: DEFAULT_COUNTRY,
         mapsUrl: form.mapsUrl.trim(),
         workingHours: serializeWorkingHours(form.hours),
         socials: form.socials
@@ -392,28 +379,26 @@ export default function SettingsPage() {
                 {...invalidProps(errors.supportEmail, `${fid('supportEmail')}-error`)}
               />
             </Field>
-            <Field id={fid('phone')} label="Phone" required hint="Pick the country, then type the number. It formats as you type and stops at that country’s length." error={errors.phone}>
+            <Field id={fid('phone')} label="Phone" required hint="Pakistan number (+92), 10 digits — e.g. 300 1234567." error={errors.phone}>
               <AdminPhoneInput
                 id={fid('phone')}
                 value={form.phone}
-                defaultCountry={countryCode}
                 onChange={(next) => setField('phone', next)}
                 onBlur={(current) => validateField('phone', current)}
                 invalid={Boolean(errors.phone)}
                 describedBy={errors.phone ? `${fid('phone')}-error` : undefined}
-                placeholder="Enter phone number"
+                placeholder="300 1234567"
               />
             </Field>
-            <Field id={fid('whatsapp')} label="WhatsApp" hint="Optional. The number customers can message." error={errors.whatsapp}>
+            <Field id={fid('whatsapp')} label="WhatsApp" hint="Optional. Pakistan number (+92) customers can message." error={errors.whatsapp}>
               <AdminPhoneInput
                 id={fid('whatsapp')}
                 value={form.whatsapp}
-                defaultCountry={countryCode}
                 onChange={(next) => setField('whatsapp', next)}
                 onBlur={(current) => validateField('whatsapp', current)}
                 invalid={Boolean(errors.whatsapp)}
                 describedBy={errors.whatsapp ? `${fid('whatsapp')}-error` : undefined}
-                placeholder="Enter phone number"
+                placeholder="300 1234567"
               />
             </Field>
           </div>
@@ -509,29 +494,14 @@ export default function SettingsPage() {
           </h2>
           <p className="mb-3 mt-1 text-xs" style={{ color: 'var(--admin-text-muted)' }}>Your office address, shown on the Contact page with a map link.</p>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <Field id={fid('country')} label="Country" required hint="Sets the city list and the default country for phone numbers." error={errors.country}>
-              <Select
-                instanceId={fid('country')}
-                inputId={fid('country')}
-                value={selectedCountry}
-                onChange={(option) => setCountry(option?.value || '')}
-                options={countryOptions}
-                isSearchable
-                placeholder="Select country"
-                classNamePrefix="react-select"
-                aria-invalid={Boolean(errors.country)}
-                aria-describedby={errors.country ? `${fid('country')}-error` : undefined}
-                styles={
-                  (errors.country
-                    ? {
-                        ...selectStyles,
-                        control: (base: Record<string, unknown>, state: { isFocused: boolean }) => ({
-                          ...selectStyles.control(base, state),
-                          borderColor: 'var(--admin-danger)',
-                        }),
-                      }
-                    : selectStyles) as never
-                }
+            <Field id={fid('country')} label="Country" required hint="Fixed to Pakistan." error={errors.country}>
+              <AdminInput
+                id={fid('country')}
+                value={DEFAULT_COUNTRY}
+                readOnly
+                disabled
+                aria-readonly="true"
+                style={{ opacity: 0.85, cursor: 'not-allowed', fontWeight: 600 }}
               />
             </Field>
             <Field id={fid('city')} label="City" required hint="Pick from the list or type a city that is missing." error={errors.city}>
@@ -649,11 +619,10 @@ export default function SettingsPage() {
                         <AdminPhoneInput
                           id={`social-value-${index}`}
                           value={item.value}
-                          defaultCountry={countryCode}
                           onChange={(next) => updateSocial(index, { value: next })}
                           invalid={Boolean(errors.socialsByIndex?.[index])}
                           describedBy={errors.socialsByIndex?.[index] ? `social-error-${index}` : undefined}
-                          placeholder="Enter WhatsApp number"
+                          placeholder="300 1234567"
                         />
                       ) : (
                         <AdminInput
