@@ -40,6 +40,14 @@ export class UnifiedSearchQuery {
   @Min(1)
   @Max(20)
   tournamentLimit?: number;
+
+  @ApiPropertyOptional({ default: 6, maximum: 20 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(20)
+  newsLimit?: number;
 }
 
 export class SearchResultsDto {
@@ -47,4 +55,5 @@ export class SearchResultsDto {
   @ApiProperty() teams: unknown[];
   @ApiProperty() matches: unknown[];
   @ApiProperty() tournaments: unknown[];
+  @ApiProperty() news: unknown[];
 }

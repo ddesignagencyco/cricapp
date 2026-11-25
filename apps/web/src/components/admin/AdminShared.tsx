@@ -3,7 +3,7 @@
 import { type ReactNode, forwardRef, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
-import { Check, ChevronDown } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, Check, ChevronDown } from 'lucide-react';
 import Badge, { StatusBadge as SharedStatusBadge } from '../Badge';
 import { getInitials } from '../../utils/helpers';
 import RemoteImage from '../RemoteImage';
@@ -12,6 +12,7 @@ import { AdminLoader, AdminTableSkeleton, type AdminLoadingVariant } from '../sk
 import useFocusTrap from '../../hooks/useFocusTrap';
 import SiteSelect, { selectChangeEvent } from '../ui/SiteSelect';
 import SearchField from '../SearchField';
+import StatusIllustration from '../StatusIllustration';
 
 export function AdminEntityLink({
   href,
@@ -143,7 +144,6 @@ export function LoadingState({
 /* ─── Empty State ──────────────────────────────────────────── */
 
 export function EmptyState({
-  icon,
   title,
   message,
   action,
@@ -158,11 +158,7 @@ export function EmptyState({
       className="rounded-lg border border-dashed p-6 text-center sm:p-10"
       style={{ borderColor: 'var(--admin-border)', background: 'var(--admin-card)' }}
     >
-      {icon && (
-        <div className="mx-auto mb-3" style={{ color: 'var(--admin-text-muted)' }}>
-          {icon}
-        </div>
-      )}
+      <StatusIllustration variant="empty" size="sm" className="mb-2" />
       <h3 className="break-words text-sm font-semibold" style={{ color: 'var(--admin-text)' }}>
         {title}
       </h3>
@@ -187,18 +183,21 @@ export function ErrorState({
 }) {
   return (
     <div
-      className="rounded-lg p-6 text-center"
-      style={{ border: '1px solid var(--admin-danger)', background: 'var(--admin-danger-bg)' }}
+      className="flex flex-col items-center justify-center rounded-xl px-6 py-10 text-center"
+      style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}
     >
-      <p className="text-sm font-semibold" style={{ color: 'var(--admin-danger)' }}>
+      <StatusIllustration variant="error" size="sm" className="mb-2" />
+      <p className="text-sm font-semibold" style={{ color: 'var(--admin-text)' }}>
         {message}
+      </p>
+      <p className="mt-1 max-w-sm text-xs" style={{ color: 'var(--admin-text-muted)' }}>
+        The server may be restarting or temporarily unreachable.
       </p>
       {onRetry && (
         <button
           type="button"
           onClick={onRetry}
-          className="mt-3 rounded-md px-4 py-1.5 text-xs font-bold text-white"
-          style={{ background: 'var(--admin-danger)' }}
+          className="btn-brand mt-4 rounded-md px-4 py-1.5 text-xs font-semibold text-white"
         >
           Try again
         </button>
@@ -679,13 +678,17 @@ export function AdminAvatar({
   src?: string | null;
   size?: number;
 }) {
-  if (src) {
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  const canRenderImage = Boolean(src && failedSrc !== src);
+
+  if (canRenderImage && src) {
     return (
       <RemoteImage
         src={src}
         alt={name}
         width={size}
         height={size}
+        onError={() => setFailedSrc(src)}
         className="avatar-3d shrink-0 rounded-full bg-entity-avatar object-cover"
         style={{ width: size, height: size }}
       />
@@ -730,5 +733,49 @@ export function AdminToggle({
         style={{ transform: checked ? 'translateX(16px)' : 'translateX(0)' }}
       />
     </button>
+  );
+}
+
+export type SortDirection = 'asc' | 'desc';
+
+export function AdminSortableHeader<K extends string>({
+  label,
+  sortKey,
+  activeKey,
+  direction,
+  onSort,
+  className = 'px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider',
+}: {
+  label: string;
+  sortKey: K;
+  activeKey: string;
+  direction: SortDirection;
+  onSort: (_key: K) => void;
+  className?: string;
+}) {
+  const active = activeKey === sortKey;
+  return (
+    <th
+      className={className}
+      style={{ color: active ? 'var(--admin-accent)' : 'var(--admin-text-secondary)' }}
+      aria-sort={active ? (direction === 'asc' ? 'ascending' : 'descending') : 'none'}
+    >
+      <button
+        type="button"
+        onClick={() => onSort(sortKey)}
+        className="inline-flex cursor-pointer items-center gap-1.5 uppercase tracking-wider transition-opacity hover:opacity-80"
+      >
+        <span>{label}</span>
+        {active ? (
+          direction === 'asc' ? (
+            <ArrowUp size={12} className="shrink-0" />
+          ) : (
+            <ArrowDown size={12} className="shrink-0" />
+          )
+        ) : (
+          <ArrowUpDown size={12} className="shrink-0 opacity-45" />
+        )}
+      </button>
+    </th>
   );
 }

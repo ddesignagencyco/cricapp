@@ -46,11 +46,21 @@ const proseClass = `prose prose-sm max-w-none text-base leading-8 text-mtext tip
   prose-hr:border-lborder prose-hr:my-8`;
 
 const categoryTone: Record<string, string> = {
+  Breaking: 'danger',
   'Match Report': 'live',
-  'PSL News': 'upcoming',
-  'Team News': 'neutral',
-  International: 'neutral',
-  Statistics: 'gold',
+  'Match News': 'primary',
+  PSL: 'primary',
+  'PSL News': 'primary',
+  'Pakistan Cricket': 'success',
+  International: 'info',
+  'Team News': 'info',
+  Analysis: 'warning',
+  Records: 'warning',
+  Statistics: 'warning',
+  Features: 'accent',
+  Editorials: 'accent',
+  Interviews: 'info',
+  Explainers: 'success',
 };
 
 interface RelatedLink {

@@ -3,13 +3,14 @@
 import Link from 'next/link';
 import { Home, Search } from 'lucide-react';
 import HideAds from '../components/advertisements/HideAds';
+import StatusIllustration from '../components/StatusIllustration';
 
 export default function NotFound() {
   return (
-    <div className="mx-auto flex max-w-3xl flex-col items-center justify-center px-4 py-24 text-center">
+    <div className="mx-auto flex max-w-3xl flex-col items-center justify-center px-4 py-16 text-center sm:py-24">
       <HideAds />
-      <p className="font-mono text-7xl font-black text-accent/30">404</p>
-      <h1 className="mt-4 text-2xl font-black tracking-tight text-mtext">
+      <StatusIllustration variant="404" size="lg" />
+      <h1 className="mt-4 text-2xl font-black tracking-tight text-mtext sm:text-3xl">
         That page went for a duck
       </h1>
       <p className="mt-2 max-w-md text-sm text-stext">

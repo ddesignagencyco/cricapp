@@ -30,6 +30,7 @@ import {
   Sparkles,
   Megaphone,
   Globe,
+  Rss,
   PanelLeftClose,
   PanelLeftOpen,
 } from 'lucide-react';
@@ -44,6 +45,7 @@ const adminNav = [
   { to: '/admin/authors', label: 'Authors', icon: PenLine },
   { to: '/admin/categories', label: 'Categories', icon: Tag },
   { to: '/admin/news', label: 'News', icon: FileText },
+  { to: '/admin/rss-feeds', label: 'RSS Feeds', icon: Rss },
   { to: '/admin/streams', label: 'Streams', icon: Radio },
   { to: '/admin/gallery', label: 'Gallery', icon: ImageIcon },
   { to: '/admin/comments', label: 'Comments', icon: MessageSquare },

@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
 import { PaginationQuery } from '../../common/dto/pagination.query.js';
 
 export class ListToursQuery extends PaginationQuery {
@@ -8,6 +8,16 @@ export class ListToursQuery extends PaginationQuery {
   @IsString()
   @MaxLength(100)
   q?: string;
+
+  @ApiPropertyOptional({ enum: ['name', 'country', 'sport', 'tournaments'] })
+  @IsOptional()
+  @IsIn(['name', 'country', 'sport', 'tournaments'])
+  sortBy?: 'name' | 'country' | 'sport' | 'tournaments';
+
+  @ApiPropertyOptional({ enum: ['asc', 'desc'] })
+  @IsOptional()
+  @IsIn(['asc', 'desc'])
+  sortOrder?: 'asc' | 'desc';
 }
 
 export class TourDto {

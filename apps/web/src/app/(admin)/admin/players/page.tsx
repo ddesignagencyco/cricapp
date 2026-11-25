@@ -5,8 +5,19 @@ import { UserCircle } from 'lucide-react';
 import { useDebouncedValue } from '../../../../hooks/useDebouncedValue';
 import { usePlayersQuery } from '../../../../queries/useDirectoryQueries';
 import Pagination from '../../../../components/admin/AdminPagination';
-import { AdminAvatar, AdminPageHeader, LoadingState, EmptyState, AdminSearchField, AdminEntityLink } from '../../../../components/admin/AdminShared';
+import {
+  AdminAvatar,
+  AdminPageHeader,
+  AdminSortableHeader,
+  LoadingState,
+  EmptyState,
+  AdminSearchField,
+  AdminEntityLink,
+  type SortDirection,
+} from '../../../../components/admin/AdminShared';
 import { cap, formatPlayerName } from '../../../../utils/helpers';
+
+type PlayerSortKey = 'name' | 'team' | 'nationality' | 'role' | 'birth';
 
 /** "1998-10-04" → "4 Oct 1998"; read as UTC so the day never shifts by timezone. */
 function formatBirth(value: unknown): string {
@@ -19,14 +30,31 @@ function formatBirth(value: unknown): string {
 export default function PlayersPage() {
   const [page, setPage] = useState(1);
   const [query, setQuery] = useState('');
+  const [sortBy, setSortBy] = useState<PlayerSortKey>('name');
+  const [sortOrder, setSortOrder] = useState<SortDirection>('asc');
   const limit = 20;
   const debouncedQuery = useDebouncedValue(query, 350);
-  const playersQuery = usePlayersQuery({ limit, page, q: debouncedQuery.trim() || undefined });
+  const playersQuery = usePlayersQuery({
+    limit,
+    page,
+    q: debouncedQuery.trim() || undefined,
+    sortBy,
+    sortOrder,
+  });
   const players = playersQuery.data?.items || [];
   const total = playersQuery.data?.total || 0;
   const totalPages = Math.max(1, playersQuery.data?.totalPages || Math.ceil(total / limit));
 
-  useEffect(() => { setPage(1); }, [debouncedQuery]);
+  useEffect(() => { setPage(1); }, [debouncedQuery, sortBy, sortOrder]);
+
+  const toggleSort = (key: PlayerSortKey) => {
+    if (sortBy === key) {
+      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortBy(key);
+      setSortOrder(key === 'birth' ? 'desc' : 'asc');
+    }
+  };
 
   return (
     <div className="space-y-5">
@@ -53,26 +81,32 @@ export default function PlayersPage() {
             <table className="w-full min-w-[640px] text-left text-xs">
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--admin-border)', background: 'var(--admin-table-header)' }}>
-                  <th className="whitespace-nowrap px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Player</th>
-                  <th className="whitespace-nowrap px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Team</th>
-                  <th className="whitespace-nowrap px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Nationality</th>
-                  <th className="whitespace-nowrap px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Role</th>
-                  <th className="whitespace-nowrap px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Date of birth</th>
+                  <AdminSortableHeader label="Player" sortKey="name" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} />
+                  <AdminSortableHeader label="Team" sortKey="team" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} />
+                  <AdminSortableHeader label="Nationality" sortKey="nationality" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} />
+                  <AdminSortableHeader label="Role" sortKey="role" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} />
+                  <AdminSortableHeader label="Date of birth" sortKey="birth" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} />
                 </tr>
               </thead>
               <tbody>
                 {players.map((p) => {
-                  // Fields as the API sends them (Prisma Player): fullName, nationality, birth, team {id, name}.
+                  // Fields as the API sends them (Prisma Player): fullName, profileUrl, nationality, birth, team {id, name}.
                   const displayName = formatPlayerName(p.fullName || p.name);
                   const teamId = p.team?.id || p.teamId;
                   const teamName = p.team?.name || p.teamName;
+                  const photo =
+                    typeof p.profileUrl === 'string' && p.profileUrl
+                      ? p.profileUrl
+                      : typeof p.image === 'string' && p.image
+                        ? p.image
+                        : null;
                   return (
                     <tr key={p.id} style={{ borderBottom: '1px solid var(--admin-border)' }}
                       onMouseEnter={(e) => e.currentTarget.style.background = 'var(--admin-table-row-hover)'}
                       onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
                       <td className="px-4 py-2.5" style={{ color: 'var(--admin-text)' }}>
                         <div className="flex min-w-0 items-center gap-2.5">
-                          <span className="shrink-0"><AdminAvatar name={displayName} src={typeof p.image === 'string' ? p.image : null} size={28} /></span>
+                          <span className="shrink-0"><AdminAvatar name={displayName} src={photo} size={28} /></span>
                           <div className="min-w-0 max-w-[10rem] sm:max-w-[14rem]">
                             {p.id ? (
                               <span className="block truncate" title={displayName}><AdminEntityLink href={`/players/${p.id}`}>{displayName}</AdminEntityLink></span>

@@ -1,12 +1,7 @@
 import Link from 'next/link';
 import RemoteImage from './RemoteImage';
+import EntityAvatar from './EntityAvatar';
 import { getInitials } from '../utils/helpers';
-
-function hueFromName(name: string) {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  return Math.abs(hash % 360);
-}
 
 export default function PersonAvatar({
   name,
@@ -21,7 +16,6 @@ export default function PersonAvatar({
 }) {
   const seed = name.trim() || '?';
   const photo = src?.trim() || '';
-  const hue = hueFromName(seed);
   const fontSize = Math.max(9, Math.round(size * 0.36));
 
   if (photo) {
@@ -31,25 +25,23 @@ export default function PersonAvatar({
         alt={seed}
         width={size}
         height={size}
-        className={`avatar-3d shrink-0 rounded-full bg-secondary object-cover ${className}`}
+        className={`avatar-3d shrink-0 rounded-full bg-entity-avatar object-cover ${className}`}
         style={{ width: size, height: size }}
       />
     );
   }
 
   return (
-    <span
-      className={`avatar-3d grid shrink-0 place-items-center rounded-full font-semibold text-white ${className}`}
+    <EntityAvatar
+      className={className}
       style={{
         width: size,
         height: size,
         fontSize,
-        backgroundImage: `linear-gradient(135deg, hsl(${hue}, 68%, 46%), hsl(${(hue + 38) % 360}, 72%, 32%))`,
       }}
-      aria-hidden="true"
     >
       {getInitials(seed)}
-    </span>
+    </EntityAvatar>
   );
 }
 

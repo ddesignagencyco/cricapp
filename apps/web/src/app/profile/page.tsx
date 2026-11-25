@@ -191,10 +191,10 @@ export default function ProfilePage() {
                   alt=""
                   width={112}
                   height={112}
-                  className="h-28 w-28 rounded-full border border-lborder object-cover"
+                  className="avatar-3d h-28 w-28 rounded-full bg-entity-avatar object-cover"
                 />
               ) : (
-                <span className="grid h-28 w-28 place-items-center rounded-full bg-[var(--color-brand)] text-2xl font-semibold text-[var(--color-brand-fg)]">
+                <span className="avatar-3d grid h-28 w-28 place-items-center rounded-full bg-entity-avatar text-2xl font-semibold text-entity-avatar-fg">
                   {initials}
                 </span>
               )}

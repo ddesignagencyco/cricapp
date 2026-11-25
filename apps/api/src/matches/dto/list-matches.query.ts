@@ -34,4 +34,14 @@ export class ListMatchesQuery extends PaginationQuery {
   @IsString()
   @MaxLength(100)
   tournamentId?: string;
+
+  @ApiPropertyOptional({ enum: ['default', 'home', 'away', 'tournament', 'venue', 'date', 'status'], default: 'default' })
+  @IsOptional()
+  @IsIn(['default', 'home', 'away', 'tournament', 'venue', 'date', 'status'])
+  sortBy?: 'default' | 'home' | 'away' | 'tournament' | 'venue' | 'date' | 'status';
+
+  @ApiPropertyOptional({ enum: ['asc', 'desc'], default: 'asc' })
+  @IsOptional()
+  @IsIn(['asc', 'desc'])
+  sortOrder?: 'asc' | 'desc';
 }

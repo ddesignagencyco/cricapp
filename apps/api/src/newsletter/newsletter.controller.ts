@@ -7,6 +7,7 @@ import {
   Logger,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
   Put,
   Query,
@@ -26,6 +27,7 @@ import { Throttle } from '@nestjs/throttler';
 import { AdminGuard } from '../auth/admin.guard.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import {
+  NewsletterAutoSendDto,
   NewsletterCampaignDto,
   NewsletterListQuery,
   NewsletterPreferencesDto,
@@ -130,6 +132,13 @@ export class NewsletterAdminController {
   @ApiOperation({ summary: 'Newsletter types, auto-send status and recent campaigns' })
   overview() {
     return this.campaigns.overview();
+  }
+
+  @Patch('auto-send')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Toggle scheduled automatic newsletter sending on or off' })
+  setAutoSend(@Body() dto: NewsletterAutoSendDto) {
+    return this.campaigns.setAutoSend(dto.enabled);
   }
 
   @Post('campaigns/preview')

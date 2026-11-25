@@ -27,22 +27,51 @@ export class AdminService {
     const limit = query.limit ?? 20;
     const skip = (page - 1) * limit;
 
-    const where = query.q
-      ? {
-          OR: [
-            { email: { contains: query.q, mode: 'insensitive' as const } },
-            { username: { contains: query.q, mode: 'insensitive' as const } },
-            { displayName: { contains: query.q, mode: 'insensitive' as const } },
-          ],
-        }
-      : {};
+    const where: Record<string, unknown> = {};
+    if (query.q) {
+      where.OR = [
+        { email: { contains: query.q, mode: 'insensitive' as const } },
+        { username: { contains: query.q, mode: 'insensitive' as const } },
+        { displayName: { contains: query.q, mode: 'insensitive' as const } },
+      ];
+    }
+    if (query.role === 'superadmin') {
+      where.isSuperAdmin = true;
+    } else if (query.role === 'admin') {
+      where.isAdmin = true;
+      where.isSuperAdmin = false;
+    } else if (query.role === 'user') {
+      where.isAdmin = false;
+      where.isSuperAdmin = false;
+    }
+
+    const dir: 'asc' | 'desc' = query.sortOrder === 'asc' ? 'asc' : 'desc';
+    let orderBy: any[];
+    switch (query.sortBy) {
+      case 'name':
+        orderBy = [{ displayName: dir }, { username: dir }, { id: 'asc' }];
+        break;
+      case 'email':
+        orderBy = [{ email: dir }, { id: 'asc' }];
+        break;
+      case 'verified':
+        orderBy = [{ emailVerified: dir }, { displayName: 'asc' }, { id: 'asc' }];
+        break;
+      case 'role':
+        orderBy = [{ isSuperAdmin: dir }, { isAdmin: dir }, { displayName: 'asc' }, { id: 'asc' }];
+        break;
+      case 'createdAt':
+      default:
+        orderBy = [{ createdAt: query.sortOrder === 'asc' ? 'asc' : 'desc' }, { id: 'desc' }];
+        break;
+    }
 
     const [data, total] = await Promise.all([
       this.prisma.user.findMany({
         where,
         skip,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy,
         select: {
           id: true,
           email: true,
@@ -149,6 +178,10 @@ export class AdminService {
 
   async listNews(query: NewsListQuery) {
     return this.newsService.list(query, { includeUnpublished: true });
+  }
+
+  async publishAllDraftNews() {
+    return this.newsService.publishAllDrafts();
   }
 
   async listAuthors() {

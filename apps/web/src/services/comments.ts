@@ -13,7 +13,7 @@ export interface CommentItem {
   body: string;
   createdAt: string;
   updatedAt: string;
-  user: { id: string; username: string; displayName: string | null } | null;
+  user: { id: string; username: string; displayName: string | null; avatarUrl?: string | null } | null;
 }
 
 export interface ReactionCounts {

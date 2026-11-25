@@ -188,6 +188,12 @@ export function isValidPhone(value: string, countryName?: string): boolean {
   if (raw.length > PHONE_MAX) return false;
   const country = countryName ? countryByName(countryName) : null;
   try {
+    if (country?.code === 'PK') {
+      const parsed = parsePhoneNumberFromString(raw, 'PK');
+      if (!parsed || parsed.country !== 'PK' || !parsed.isValid()) return false;
+      const national = parsed.nationalNumber ?? '';
+      return national.length >= 9 && national.length <= 10;
+    }
     if (country) return isValidPhoneNumber(raw, country.code);
     return parsePhoneNumberFromString(raw)?.isValid() ?? false;
   } catch {
@@ -442,13 +448,11 @@ export function validateSiteContact(form: SiteContactForm): SiteContactErrors {
   if (form.supportEmail.trim() && !isValidEmail(form.supportEmail)) {
     errors.supportEmail = 'Enter a valid support email.';
   }
-  if (form.phone.trim() && !isValidPhone(form.phone, knownCountry ? country : undefined)) {
-    errors.phone = knownCountry
-      ? 'Enter a valid number for the selected country.'
-      : 'Select a country so the number can be checked.';
+  if (form.phone.trim() && !isValidPhone(form.phone, knownCountry ? country : 'Pakistan')) {
+    errors.phone = 'Enter a valid Pakistan number (e.g. +92 300 1234567).';
   }
-  if (form.whatsapp.trim() && !isValidWhatsapp(form.whatsapp, knownCountry ? country : undefined)) {
-    errors.whatsapp = 'Enter a valid WhatsApp number.';
+  if (form.whatsapp.trim() && !isValidWhatsapp(form.whatsapp, knownCountry ? country : 'Pakistan')) {
+    errors.whatsapp = 'Enter a valid Pakistan WhatsApp number (e.g. +92 300 1234567).';
   }
   if (form.address.trim() && !isValidAddress(form.address)) {
     errors.address = 'Enter a street address, not a link.';

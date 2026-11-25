@@ -1,7 +1,7 @@
 import { apiGet } from './api/client';
-import type { Match, Player, SearchResults, Team, TournamentApi } from '../types/index';
+import type { Match, NewsArticle, Player, SearchResults, Team, TournamentApi } from '../types/index';
 
-const emptyResults = (): SearchResults => ({ players: [], teams: [], matches: [], tournaments: [] });
+const emptyResults = (): SearchResults => ({ players: [], teams: [], matches: [], tournaments: [], news: [] });
 
 function asArray<T>(value: unknown): T[] {
   return Array.isArray(value) ? (value as T[]) : [];
@@ -12,6 +12,7 @@ const SEARCH_LIMITS = {
   teamLimit: 20,
   matchLimit: 20,
   tournamentLimit: 20,
+  newsLimit: 20,
 } as const;
 
 /**
@@ -55,5 +56,6 @@ export async function searchAll(query: string, signal?: AbortSignal): Promise<Se
     teams: asArray<Team>(res?.teams),
     matches: asArray<Match>(res?.matches),
     tournaments: asArray<TournamentApi>(res?.tournaments),
+    news: asArray<NewsArticle>(res?.news),
   };
 }

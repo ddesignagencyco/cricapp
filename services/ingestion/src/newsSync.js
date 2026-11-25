@@ -10,6 +10,17 @@ import {
   fetchNewsDetail,
   cricbuzzImageUrl,
 } from './cricbuzzContent.js';
+import {
+  buildAttributionHtml,
+  buildSourceGuid,
+  extractFirstImgSrc,
+  fetchSourceArticleDetails,
+  matchesTopicFilter,
+  sanitizeRssHtml,
+  stripHtmlToText,
+} from './rssFilter.js';
+import { rewriteRssItem } from './rssRewriter.js';
+import { linkRssArticleEntities } from './rssEntityLinker.js';
 
 const log = createLogger('news');
 
@@ -56,39 +67,65 @@ function extractAttr(xml, tag, attr) {
   return m ? m[1] : null;
 }
 
+function extractAllTags(xml, tag) {
+  const out = [];
+  const rx = new RegExp(`<${tag}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/${tag}>`, 'gi');
+  for (const m of String(xml).matchAll(rx)) {
+    let text = m[1].trim();
+    text = text.replace(/<!\[CDATA\[(.*?)\]\]>/s, '$1');
+    const clean = unescapeHtml(text).trim();
+    if (clean) out.push(clean);
+  }
+  return out;
+}
+
 function parseFeed(xml) {
   const items = [];
 
   // RSS 2.0
-  for (const match of String(xml).matchAll(/<item>([\s\S]*?)<\/item>/g)) {
+  for (const match of String(xml).matchAll(/<item(?:\s[^>]*)?>([\s\S]*?)<\/item>/gi)) {
     const block = match[1];
+    const summary = extractTag(block, 'description');
+    const content = extractTag(block, 'content:encoded');
     items.push({
       title: extractTag(block, 'title'),
       link: extractTag(block, 'link'),
-      summary: extractTag(block, 'description'),
-      content: extractTag(block, 'content:encoded'),
-      pubDate: extractTag(block, 'pubDate'),
+      summary,
+      content,
+      pubDate: extractTag(block, 'pubDate') || extractTag(block, 'dc:date'),
       guid: extractTag(block, 'guid'),
-      author: extractTag(block, 'author') || extractTag(block, 'dc:creator'),
-      enclosureUrl: extractAttr(block, 'enclosure', 'url'),
+      author: extractTag(block, 'dc:creator') || extractTag(block, 'author'),
+      enclosureUrl:
+        extractAttr(block, 'media:content', 'url') ||
+        extractAttr(block, 'enclosure', 'url') ||
+        extractFirstImgSrc(content) ||
+        extractFirstImgSrc(summary),
       mediaThumbnail: extractAttr(block, 'media:thumbnail', 'url'),
+      categories: extractAllTags(block, 'category'),
     });
   }
 
   // Atom
   if (!items.length) {
-    for (const match of String(xml).matchAll(/<entry>([\s\S]*?)<\/entry>/g)) {
+    for (const match of String(xml).matchAll(/<entry(?:\s[^>]*)?>([\s\S]*?)<\/entry>/gi)) {
       const block = match[1];
+      const summary = extractTag(block, 'summary');
+      const content = extractTag(block, 'content');
       items.push({
         title: extractTag(block, 'title'),
         link: extractAttr(block, 'link', 'href'),
-        summary: extractTag(block, 'summary'),
-        content: extractTag(block, 'content'),
+        summary,
+        content,
         pubDate: extractTag(block, 'published') || extractTag(block, 'updated'),
         guid: extractTag(block, 'id'),
         author: extractTag(block, 'name'),
-        enclosureUrl: extractAttr(block, 'enclosure', 'url') || extractAttr(block, 'link', 'href'),
+        enclosureUrl:
+          extractAttr(block, 'media:content', 'url') ||
+          extractAttr(block, 'enclosure', 'url') ||
+          extractFirstImgSrc(content) ||
+          extractFirstImgSrc(summary),
         mediaThumbnail: extractAttr(block, 'media:thumbnail', 'url'),
+        categories: extractAllTags(block, 'category'),
       });
     }
   }
@@ -194,7 +231,25 @@ function normalizeCricbuzzStory(story, detail) {
     s.author ||
     s.source ||
     'Cricbuzz';
-  const context = s.context || d.context || s.storyType || 'Cricket News';
+  const rawContext = String(s.context || d.context || s.storyType || '').trim();
+  const hay = `${rawContext} ${title}`.toLowerCase();
+  const categoryName = /\bpsl\b|pakistan super league/.test(hay)
+    ? 'PSL'
+    : /\bpakistan\b|\bpcb\b/.test(hay)
+      ? 'Pakistan Cricket'
+      : /\bipl\b/.test(hay)
+        ? 'IPL'
+        : /interview/.test(hay)
+          ? 'Interviews'
+          : /analysis|tactic|preview|review/.test(hay)
+            ? 'Analysis'
+            : /feature|profile/.test(hay)
+              ? 'Features'
+              : /record|stat/.test(hay)
+                ? 'Records'
+                : /tour|test|odi|t20|world cup|icc|wtc|ashes/.test(hay)
+                  ? 'International'
+                  : 'Match News';
   const detailContent = detail ? contentFromCricbuzzDetail(detail) : '';
   const content = detailContent || (intro ? `<p>${htmlEscape(String(intro).trim())}</p>` : `<p>${htmlEscape(title)}</p>`);
 
@@ -206,7 +261,7 @@ function normalizeCricbuzzStory(story, detail) {
     imageUrl,
     author,
     source: 'Cricbuzz',
-    categoryName: context || 'Cricket News',
+    categoryName,
     publishedAt,
   };
 }
@@ -421,7 +476,194 @@ export async function syncCricbuzzNews() {
   return { source: 'Cricbuzz', fetched: stories.length, inserted, updated, duplicates };
 }
 
+export async function syncDbRssFeed(feed) {
+  const ttlMs = Math.max(5, Number(feed.poll_interval_minutes || 30)) * 60 * 1000;
+  if (!(await shouldSync('rss-db', feed.id))) {
+    log.debug('db rss feed skipped (fresh)', { id: feed.id, name: feed.name });
+    return null;
+  }
+
+  try {
+    const xml = await fetchFeedXml(feed.url);
+    const maxItems = Math.max(1, Math.min(50, Number(feed.max_items_per_poll || 10)));
+    const entries = parseFeed(xml).slice(0, maxItems);
+
+    let inserted = 0;
+    let skippedFilter = 0;
+    let skippedDup = 0;
+
+    for (const raw of entries) {
+      if (!raw?.title) continue;
+      const filter = matchesTopicFilter(raw, feed.include_keywords, feed.exclude_keywords);
+      if (!filter.matched) {
+        skippedFilter += 1;
+        continue;
+      }
+
+      const sourceGuid = buildSourceGuid(feed.url, raw);
+      const dup = await query(
+        `SELECT id FROM news_articles WHERE source_guid = $1 OR ($2::text IS NOT NULL AND source_url = $2)`,
+        [sourceGuid, raw.link || null],
+      );
+      if (dup.rows.length > 0) {
+        skippedDup += 1;
+        continue;
+      }
+
+      const rssSummaryText = stripHtmlToText(raw.summary || raw.content);
+      const rssContentText = stripHtmlToText(raw.content || raw.summary);
+      let extractedParagraphs = [];
+      let coverImage = raw.enclosureUrl || raw.mediaThumbnail || null;
+      const isSmallThumb = (u) => !u || /\/(1[0-9]{2}|2[0-9]{2})\//i.test(u);
+      if (raw.link && (rssContentText.length < 600 || isSmallThumb(coverImage))) {
+        const fetched = await fetchSourceArticleDetails(raw.link);
+        extractedParagraphs = fetched.paragraphs;
+        if (fetched.ogImage && isSmallThumb(coverImage)) coverImage = fetched.ogImage;
+      }
+
+      const summaryText = (rssSummaryText || extractedParagraphs[0] || raw.title).slice(0, 320);
+      const contentText = extractedParagraphs.length
+        ? extractedParagraphs.join('\n\n')
+        : rssContentText;
+      let title = stripHtmlToText(raw.title) || 'Untitled';
+      let summary = summaryText || null;
+      let htmlContent = buildAttributionHtml(
+        summaryText,
+        feed.name,
+        raw.link || null,
+        extractedParagraphs.slice(0, 6),
+      );
+      let metaTitle = title.slice(0, 70);
+      let metaDescription = (summaryText || title).slice(0, 160);
+
+      if (feed.rewrite_mode === 'ai_rewrite') {
+        const rewritten = await rewriteRssItem({
+          title,
+          summary: summaryText,
+          contentText,
+          paragraphs: extractedParagraphs,
+          sourceName: feed.name,
+          sourceUrl: raw.link || null,
+          language: feed.language || 'en',
+        });
+        title = rewritten.title;
+        summary = rewritten.summary;
+        htmlContent = rewritten.htmlContent;
+        metaTitle = rewritten.metaTitle;
+        metaDescription = rewritten.metaDescription;
+      } else if (feed.rewrite_mode === 'raw') {
+        const cleanRaw = sanitizeRssHtml(raw.content || raw.summary);
+        htmlContent =
+          extractedParagraphs.length > 1
+            ? buildAttributionHtml(summaryText, feed.name, raw.link || null, extractedParagraphs)
+            : cleanRaw
+              ? `${cleanRaw}\n${buildAttributionHtml('', feed.name, raw.link || null)}`
+              : htmlContent;
+      }
+
+      const hash = crypto.createHash('sha256').update(sourceGuid).digest('hex').slice(0, 8);
+      const slug = `${slugify(title) || 'story'}-${hash}`;
+      const publishedAt = parseRssDate(raw.pubDate) || new Date().toISOString();
+      const imageUrl = coverImage;
+      const articleId = crypto.randomUUID();
+
+      const res = await query(
+        `INSERT INTO news_articles (
+           id, title, slug, summary, content, image_url, author, author_id,
+           source, source_guid, source_url, canonical_url, category_id, language,
+           meta_title, meta_description, published_at, is_published, created_at, updated_at
+         )
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,NOW(),NOW())
+         ON CONFLICT (slug) DO NOTHING`,
+        [
+          articleId,
+          title,
+          slug,
+          summary,
+          htmlContent,
+          imageUrl,
+          feed.author_name || raw.author || feed.name,
+          feed.author_id || null,
+          feed.name,
+          sourceGuid,
+          raw.link || null,
+          raw.link || null,
+          feed.category_id || null,
+          feed.language || 'en',
+          metaTitle,
+          metaDescription,
+          publishedAt,
+          Boolean(feed.auto_publish),
+        ],
+      );
+
+      if (res.rowCount > 0) {
+        inserted += 1;
+        await linkRssArticleEntities(articleId, `${title} ${summaryText}`);
+      } else {
+        skippedDup += 1;
+      }
+    }
+
+    await query(
+      `UPDATE rss_feed_sources
+       SET last_synced_at = NOW(), last_status = 'ok', last_error = NULL,
+           articles_imported = articles_imported + $2, updated_at = NOW()
+       WHERE id = $1`,
+      [feed.id, inserted],
+    );
+    await markSynced('rss-db', feed.id, ttlMs);
+    if (inserted > 0 && feed.auto_publish) {
+      await redis.del(redisKeys.newsList());
+    }
+
+    log.info('db rss feed synced', {
+      name: feed.name,
+      entries: entries.length,
+      inserted,
+      skippedFilter,
+      skippedDup,
+    });
+    return { source: feed.name, entries: entries.length, inserted, skippedFilter, skippedDup };
+  } catch (err) {
+    log.error('db rss feed sync failed', { name: feed.name, url: feed.url, error: err.message });
+    await query(
+      `UPDATE rss_feed_sources
+       SET last_synced_at = NOW(), last_status = 'error', last_error = $2, updated_at = NOW()
+       WHERE id = $1`,
+      [feed.id, String(err.message || err).slice(0, 500)],
+    ).catch(() => {});
+    return null;
+  }
+}
+
+async function syncDbRssSources() {
+  let rows = [];
+  try {
+    const res = await query(
+      `SELECT f.*, a.name AS author_name
+       FROM rss_feed_sources f
+       LEFT JOIN authors a ON a.id = f.author_id
+       WHERE f.enabled = true
+       ORDER BY f.created_at ASC`,
+    );
+    rows = res.rows || [];
+  } catch (err) {
+    // Table may not exist yet before migrations run.
+    log.debug('rss_feed_sources table unavailable', { error: err.message });
+    return [];
+  }
+
+  const results = [];
+  for (const feed of rows) {
+    const res = await syncDbRssFeed(feed);
+    if (res) results.push(res);
+  }
+  return results;
+}
+
 export async function syncAllNewsSources() {
+  const dbRssResults = await syncDbRssSources();
   const rssResults = await syncRssSources();
   let cricbuzzResult = null;
   try {
@@ -429,7 +671,8 @@ export async function syncAllNewsSources() {
   } catch (err) {
     log.error('cricbuzz news sync failed', { error: err.message });
   }
-  return cricbuzzResult ? [...rssResults, cricbuzzResult] : rssResults;
+  const combined = [...dbRssResults, ...rssResults];
+  return cricbuzzResult ? [...combined, cricbuzzResult] : combined;
 }
 
 export async function startNewsSync() {

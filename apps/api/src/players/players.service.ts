@@ -106,7 +106,15 @@ export class PlayersService {
     }
   }
 
-  async search(params?: { q?: string; team?: string; page?: number; limit?: number; offset?: number }) {
+  async search(params?: {
+    q?: string;
+    team?: string;
+    sortBy?: string;
+    sortOrder?: string;
+    page?: number;
+    limit?: number;
+    offset?: number;
+  }) {
     const { page, limit, skip } = getPaginationOffset(params?.page, params?.limit, params?.offset);
 
     const where: any = {};
@@ -122,12 +130,33 @@ export class PlayersService {
       where.team = { abbr: params.team };
     }
 
+    const dir: 'asc' | 'desc' = params?.sortOrder === 'desc' ? 'desc' : 'asc';
+    let orderBy: any[];
+    switch (params?.sortBy) {
+      case 'team':
+        orderBy = [{ team: { name: dir } }, { fullName: 'asc' }];
+        break;
+      case 'nationality':
+        orderBy = [{ nationality: { sort: dir, nulls: 'last' } }, { fullName: 'asc' }];
+        break;
+      case 'role':
+        orderBy = [{ role: { sort: dir, nulls: 'last' } }, { fullName: 'asc' }];
+        break;
+      case 'birth':
+        orderBy = [{ birth: { sort: dir, nulls: 'last' } }, { fullName: 'asc' }];
+        break;
+      case 'name':
+      default:
+        orderBy = [{ fullName: dir }, { id: 'asc' }];
+        break;
+    }
+
     const [rows, total] = await Promise.all([
       this.prisma.player.findMany({
         where,
         take: limit,
         skip,
-        orderBy: [{ fullName: 'asc' }],
+        orderBy,
         select: {
           id: true,
           fullName: true,

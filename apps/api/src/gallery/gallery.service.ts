@@ -93,7 +93,7 @@ export class GalleryService {
     const [rows, total] = await Promise.all([
       this.prisma.galleryMedia.findMany({
         where,
-        orderBy: { createdAt: 'desc' },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
         skip,
         take: limit,
       }),
@@ -113,7 +113,7 @@ export class GalleryService {
     const [rows, total] = await Promise.all([
       this.prisma.galleryMedia.findMany({
         where,
-        orderBy: { createdAt: 'desc' },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
         skip,
         take: limit,
       }),

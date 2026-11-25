@@ -52,6 +52,22 @@ export class NewsService {
     await this.gallery.markEditorialByUrl(imageUrl);
   }
 
+  async publishAllDrafts(): Promise<{ publishedCount: number }> {
+    const now = new Date();
+    const publishedCount = await this.prisma.$transaction(async (tx) => {
+      const withDate = await tx.newsArticle.updateMany({
+        where: { isPublished: false, publishedAt: { not: null } },
+        data: { isPublished: true },
+      });
+      const withoutDate = await tx.newsArticle.updateMany({
+        where: { isPublished: false, publishedAt: null },
+        data: { isPublished: true, publishedAt: now },
+      });
+      return withDate.count + withoutDate.count;
+    });
+    return { publishedCount };
+  }
+
   private validateTitle(title: string): void {
     const wordCount = title.trim().split(/\s+/).filter(Boolean).length;
     if (wordCount === 0 || wordCount > 50) {
@@ -192,12 +208,35 @@ export class NewsService {
   async list(query: NewsListQuery, opts?: { includeUnpublished?: boolean }) {
     const { page, limit, skip } = getPaginationOffset(query.page, query.limit, query.offset);
     const where = this.buildWhere(query, opts);
+    const dir: 'asc' | 'desc' = query.sortOrder === 'asc' ? 'asc' : 'desc';
+
+    let orderBy: any[];
+    switch (query.sortBy) {
+      case 'title':
+        orderBy = [{ title: dir }, { id: 'desc' }];
+        break;
+      case 'author':
+        orderBy = [{ author: dir }, { publishedAt: { sort: 'desc', nulls: 'last' } }, { id: 'desc' }];
+        break;
+      case 'category':
+        orderBy = [{ category: { name: dir } }, { publishedAt: { sort: 'desc', nulls: 'last' } }, { id: 'desc' }];
+        break;
+      case 'status':
+        orderBy = [{ isPublished: dir }, { publishedAt: { sort: 'desc', nulls: 'last' } }, { id: 'desc' }];
+        break;
+      case 'date':
+        orderBy = [{ publishedAt: { sort: dir, nulls: 'last' } }, { createdAt: dir }, { id: dir }];
+        break;
+      default:
+        orderBy = [{ publishedAt: { sort: 'desc', nulls: 'last' } }, { createdAt: 'desc' }, { id: 'desc' }];
+        break;
+    }
 
     const [rows, total] = await Promise.all([
       this.prisma.newsArticle.findMany({
         where,
         include: articleInclude,
-        orderBy: [{ publishedAt: 'desc' }, { createdAt: 'desc' }],
+        orderBy,
         skip,
         take: limit,
       }),
@@ -618,7 +657,7 @@ ${urls}
       this.prisma.newsArticle.findMany({
         where,
         include: articleInclude,
-        orderBy: [{ publishedAt: 'desc' }, { createdAt: 'desc' }],
+        orderBy: [{ publishedAt: { sort: 'desc', nulls: 'last' } }, { createdAt: 'desc' }, { id: 'desc' }],
         skip,
         take: limit,
       }),

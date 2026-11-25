@@ -154,11 +154,11 @@ export default function Badge({ children, tone = 'neutral', className = '', styl
   return (
     <span
       {...rest}
-      className={`inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-semibold capitalize leading-none ${classes}`}
+      className={`inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-bold capitalize leading-none tracking-wide ${classes}`}
       style={{
         background: current.bg,
         color: current.fg,
-        boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${current.ring} 45%, transparent)`,
+        boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${current.ring} 28%, transparent)`,
         ...style,
       }}
     >

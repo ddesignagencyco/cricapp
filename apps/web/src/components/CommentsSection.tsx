@@ -6,6 +6,8 @@ import { usePathname } from 'next/navigation';
 import { Flag, Loader2, MessageSquare, Send, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ReactionBar from './ReactionBar';
+import EntityAvatar from './EntityAvatar';
+import RemoteImage from './RemoteImage';
 import { CommentListSkeleton } from './skeletons/Skeletons';
 import { getInitials } from '../utils/helpers';
 import {
@@ -298,7 +300,7 @@ export default function CommentsSection({ targetType, targetId, refreshIntervalM
       {isAuthenticated ? (
         <form onSubmit={submit} noValidate className="mb-3 rounded-md border border-lborder bg-secondary/50 p-2.5">
           <div className="flex items-start gap-2.5">
-            <CommentAvatar name={composerName} />
+            <CommentAvatar name={composerName} src={user?.avatarUrl} />
             <label htmlFor="comment-body" className="sr-only">
               Comment
             </label>
@@ -362,7 +364,7 @@ export default function CommentsSection({ targetType, targetId, refreshIntervalM
                 }`}
               >
                 <div className="flex items-start gap-2.5">
-                  <CommentAvatar name={name} />
+                  <CommentAvatar name={name} src={comment.user?.avatarUrl} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
@@ -463,18 +465,23 @@ export default function CommentsSection({ targetType, targetId, refreshIntervalM
   );
 }
 
-function CommentAvatar({ name }: { name: string }) {
+function CommentAvatar({ name, src }: { name: string; src?: string | null }) {
   const seed = name.trim() || '?';
-  let hash = 0;
-  for (let i = 0; i < seed.length; i++) hash = seed.charCodeAt(i) + ((hash << 5) - hash);
-  const hue = Math.abs(hash % 360);
+  const photo = src?.trim() || '';
+  if (photo) {
+    return (
+      <RemoteImage
+        src={photo}
+        alt={seed}
+        width={28}
+        height={28}
+        className="avatar-3d h-7 w-7 shrink-0 rounded-full bg-entity-avatar object-cover"
+      />
+    );
+  }
   return (
-    <span
-      className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[10px] font-semibold text-white"
-      style={{ backgroundImage: `linear-gradient(135deg, hsl(${hue}, 68%, 46%), hsl(${(hue + 38) % 360}, 72%, 32%))` }}
-      aria-hidden="true"
-    >
+    <EntityAvatar className="h-7 w-7 text-[10px] font-bold">
       {getInitials(seed)}
-    </span>
+    </EntityAvatar>
   );
 }

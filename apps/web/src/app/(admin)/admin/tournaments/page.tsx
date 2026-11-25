@@ -7,17 +7,20 @@ import { useTournamentsQuery } from '../../../../queries/useDirectoryQueries';
 import type { TournamentApi } from '../../../../types';
 import Pagination from '../../../../components/admin/AdminPagination';
 import {
-  AdminAvatar,
   AdminChip,
   AdminPageHeader,
   AdminResultCount,
+  AdminSortableHeader,
   LoadingState,
   EmptyState,
   AdminSearchField,
   StatusBadge,
   AdminEntityLink,
+  type SortDirection,
 } from '../../../../components/admin/AdminShared';
 import { cap } from '../../../../utils/helpers';
+
+type TournamentSortKey = 'name' | 'type';
 
 function seasonLabel(t: TournamentApi) {
   return t.currentSeason?.name || String(t.currentSeason?.year || '') || '';
@@ -45,14 +48,31 @@ function tournamentStatus(t: TournamentApi): string {
 export default function TournamentsPage() {
   const [page, setPage] = useState(1);
   const [query, setQuery] = useState('');
+  const [sortBy, setSortBy] = useState<TournamentSortKey>('name');
+  const [sortOrder, setSortOrder] = useState<SortDirection>('asc');
   const limit = 20;
   const search = useDebouncedValue(query, 350).trim();
-  const tournamentsQuery = useTournamentsQuery({ limit, page, q: search || undefined });
+  const tournamentsQuery = useTournamentsQuery({
+    limit,
+    page,
+    q: search || undefined,
+    sortBy,
+    sortOrder,
+  });
   const tournaments = tournamentsQuery.data?.items || [];
   const total = tournamentsQuery.data?.total || 0;
   const totalPages = Math.max(1, tournamentsQuery.data?.totalPages || Math.ceil(total / limit));
 
-  useEffect(() => { setPage(1); }, [search]);
+  useEffect(() => { setPage(1); }, [search, sortBy, sortOrder]);
+
+  const toggleSort = (key: TournamentSortKey) => {
+    if (sortBy === key) {
+      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortBy(key);
+      setSortOrder('asc');
+    }
+  };
 
   return (
     <div className="space-y-5">
@@ -80,8 +100,8 @@ export default function TournamentsPage() {
             <table className="w-full text-left text-xs">
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--admin-border)', background: 'var(--admin-table-header)' }}>
-                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Tournament</th>
-                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Format</th>
+                  <AdminSortableHeader label="Tournament" sortKey="name" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} />
+                  <AdminSortableHeader label="Format" sortKey="type" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} />
                   <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Season</th>
                   <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Status</th>
                 </tr>
@@ -97,28 +117,19 @@ export default function TournamentsPage() {
                       onMouseEnter={(e) => e.currentTarget.style.background = 'var(--admin-table-row-hover)'}
                       onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
                       <td className="px-4 py-2.5" style={{ color: 'var(--admin-text)' }}>
-                        <div className="flex min-w-0 items-center gap-2.5">
-                          <span className="shrink-0">
-                            <AdminAvatar
-                              name={t.name}
-                              src={typeof t.logo === 'string' ? t.logo : typeof t.image === 'string' ? t.image : null}
-                              size={32}
-                            />
-                          </span>
-                          <div className="min-w-0 max-w-[10rem] sm:max-w-[16rem]">
-                            {t.id ? (
-                              <span className="block truncate" title={t.name}>
-                                <AdminEntityLink href={`/tournaments/${t.id}`} className="text-sm">
-                                  {t.name}
-                                </AdminEntityLink>
-                              </span>
-                            ) : (
-                              <p className="truncate text-sm font-semibold" style={{ color: 'var(--admin-text)' }}>{t.name}</p>
-                            )}
-                            <p className="mt-0.5 truncate text-[11px]" style={{ color: 'var(--admin-text-muted)' }}>
-                              {[gender, season].filter(Boolean).join(' · ') || 'No season data'}
-                            </p>
-                          </div>
+                        <div className="min-w-0 max-w-[12rem] sm:max-w-[18rem]">
+                          {t.id ? (
+                            <span className="block truncate" title={t.name}>
+                              <AdminEntityLink href={`/tournaments/${t.id}`} className="text-sm">
+                                {t.name}
+                              </AdminEntityLink>
+                            </span>
+                          ) : (
+                            <p className="truncate text-sm font-semibold" style={{ color: 'var(--admin-text)' }}>{t.name}</p>
+                          )}
+                          <p className="mt-0.5 truncate text-[11px]" style={{ color: 'var(--admin-text-muted)' }}>
+                            {[gender, season].filter(Boolean).join(' · ') || 'No season data'}
+                          </p>
                         </div>
                       </td>
                       <td className="px-4 py-2.5">

@@ -13,8 +13,10 @@
 
 /* ─── Contract (mirrors apps/api/src/site-settings/ad.config.ts) ─── */
 
-export const AD_MODES = ['off', 'house', 'adsense'] as const;
+export const AD_MODES = ['off', 'house', 'adsense', 'adsterra'] as const;
 export type AdMode = (typeof AD_MODES)[number];
+
+export const DEFAULT_ADSTERRA_HOST = 'www.highperformanceformat.com';
 
 export const AD_SIZES = [
   'leaderboard',
@@ -31,12 +33,29 @@ export type AdPlacementConfig = {
   slotId: string | null;
 };
 
+export type AdsterraConfig = {
+  scriptHost: string;
+  defaultKeys: Record<AdSize, string | null>;
+  placements: Record<string, string | null>;
+  socialBarUrl: string | null;
+  popunderUrl: string | null;
+};
+
+export type AdsterraConfigInput = {
+  scriptHost?: string;
+  defaultKeys?: Record<string, string>;
+  placements?: Record<string, string>;
+  socialBarUrl?: string;
+  popunderUrl?: string;
+};
+
 export type AdConfig = {
   mode: AdMode;
   clientId: string | null;
   defaultSlots: Record<AdSize, string | null>;
   placements: Record<string, AdPlacementConfig>;
   gamblingAds: boolean;
+  adsterra?: AdsterraConfig;
 };
 
 export type AdPlacementInput = {
@@ -50,6 +69,22 @@ export type AdConfigInput = {
   defaultSlots?: Partial<Record<AdSize, string>>;
   placements?: Record<string, AdPlacementInput>;
   gamblingAds?: boolean;
+  adsterra?: AdsterraConfigInput;
+};
+
+export const EMPTY_ADSTERRA_CONFIG: AdsterraConfig = {
+  scriptHost: DEFAULT_ADSTERRA_HOST,
+  defaultKeys: {
+    leaderboard: null,
+    'tablet-banner': null,
+    'mobile-banner': null,
+    'medium-rectangle': null,
+    'large-rectangle': null,
+    'half-page': null,
+  },
+  placements: {},
+  socialBarUrl: null,
+  popunderUrl: null,
 };
 
 /** Byte-identical to the API's `EMPTY_AD_CONFIG`, which is what an unconfigured site returns. */
@@ -66,6 +101,7 @@ export const EMPTY_AD_CONFIG: AdConfig = {
   },
   placements: {},
   gamblingAds: false,
+  adsterra: EMPTY_ADSTERRA_CONFIG,
 };
 
 /* ─── Placement registry ─── */
@@ -235,6 +271,18 @@ export function resolveAdSlotId(placement: string, size: AdSize, config: AdConfi
   return config.placements?.[placement]?.slotId ?? config.defaultSlots?.[size] ?? null;
 }
 
+export function resolveAdsterraKey(placement: string, size: AdSize, config: AdConfig): string | null {
+  const adsterra = config.adsterra;
+  if (!adsterra) return null;
+  const own = adsterra.placements?.[placement];
+  if (own) return own;
+  const direct = adsterra.defaultKeys?.[size];
+  if (direct) return direct;
+  // Adsterra has no 336x280 unit; large-rectangle slots use Banner 300x250.
+  if (size === 'large-rectangle') return adsterra.defaultKeys?.['medium-rectangle'] ?? null;
+  return null;
+}
+
 /**
  * The API normalises `enabled` to `rawValue.enabled !== false`, so a placement that
  * is absent from the map is on by default. Only an explicit `false` disables it.
@@ -250,15 +298,17 @@ export function adPlacementEnabled(placement: string, config: AdConfig): boolean
 export function shouldRenderAd(
   config: AdConfig,
   placement: string,
-  pathname: string,
+  _pathname: string,
   explicitSlotId?: string | null,
 ): boolean {
   if (!config || config.mode === 'off') return false;
-  if (isGamblingRoute(pathname) && !config.gamblingAds) return false;
   if (!adPlacementEnabled(placement, config)) return false;
   // An explicit `slot` prop (e.g. a dedicated Multiplex unit) satisfies the id
   // requirement on its own; only the stored-config path needs a resolved id.
   if (config.mode === 'adsense' && !explicitSlotId && !resolveAdSlotId(placement, adPlacementSize(placement), config)) {
+    return false;
+  }
+  if (config.mode === 'adsterra' && !resolveAdsterraKey(placement, adPlacementSize(placement), config)) {
     return false;
   }
   return true;
@@ -275,9 +325,48 @@ export function shouldRenderAd(
  */
 const AD_UNIT_ID_RE = /^\d{10,20}$/;
 const PUBLISHER_ID_RE = /^(ca-)?pub-\d{10,20}$/i;
+const ADSTERRA_KEY_RE = /^[a-z0-9]{16,64}$/i;
+const ADSTERRA_HOST_RE = /^[a-z0-9.-]+\.[a-z]{2,}$/i;
 
 export function isValidAdUnitId(value: string): boolean {
   return AD_UNIT_ID_RE.test(value.trim());
+}
+
+export function isValidAdsterraKey(value: string): boolean {
+  return ADSTERRA_KEY_RE.test(value.trim());
+}
+
+export function isValidAdsterraHost(value: string): boolean {
+  const clean = value.trim().replace(/^https?:\/\//i, '').split('/')[0]?.trim() ?? '';
+  return ADSTERRA_HOST_RE.test(clean);
+}
+
+export function isValidHttpsUrl(value: string): boolean {
+  try {
+    return new URL(value.trim()).protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Extracts an Adsterra zone key (and optional script host) if the admin pastes
+ * either a raw 32-char key or a full `<script>` invocation snippet.
+ */
+export function parseAdsterraInput(raw: string): { key: string; host: string | null } {
+  const trimmed = raw.trim();
+  if (!trimmed) return { key: '', host: null };
+  if (ADSTERRA_KEY_RE.test(trimmed)) return { key: trimmed, host: null };
+
+  const keyMatch =
+    trimmed.match(/['"]key['"]\s*:\s*['"]([a-z0-9]{16,64})['"]/i) ??
+    trimmed.match(/https?:\/\/[^/]+\/([a-z0-9]{16,64})\/invoke\.js/i);
+  const hostMatch = trimmed.match(/https?:\/\/([a-z0-9.-]+\.[a-z]{2,})\/[a-z0-9]{16,64}\/invoke\.js/i);
+
+  return {
+    key: keyMatch?.[1] ?? trimmed,
+    host: hostMatch?.[1] ?? null,
+  };
 }
 
 /**

@@ -83,6 +83,25 @@ function readTranslatedText(payload: unknown): string {
 }
 
 async function translateChunk(text: string, from: NewsLanguage, to: NewsLanguage): Promise<string> {
+  // Prefer the same-origin Next.js proxy (Google Translate primary + MyMemory fallback)
+  // in the browser so CORS and MyMemory daily limits never block Urdu translation.
+  if (typeof window !== 'undefined' && typeof window.location?.origin === 'string' && window.location.origin.startsWith('http')) {
+    try {
+      const proxyRes = await fetch('/api/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, from, to }),
+      });
+      if (proxyRes.ok) {
+        const payload = (await proxyRes.json()) as { translatedText?: string };
+        if (typeof payload?.translatedText === 'string' && payload.translatedText.trim()) {
+          return payload.translatedText.trim();
+        }
+      }
+    } catch {
+      // Fall through to direct MyMemory call (also keeps Jest unit tests working).
+    }
+  }
   const url = new URL(MYMEMORY_URL);
   url.searchParams.set('q', text);
   url.searchParams.set('langpair', `${from}|${to}`);

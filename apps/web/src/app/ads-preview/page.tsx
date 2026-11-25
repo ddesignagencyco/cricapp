@@ -68,8 +68,9 @@ export default function AdsPreviewPage() {
         <p className="text-xs font-bold uppercase tracking-widest text-accent">Testing only — not linked, not indexed</p>
         <h1 className="mt-1 text-2xl font-bold text-mtext">Ad format preview</h1>
         <p className="mt-1 text-sm text-stext">
-          Every section below is a live ad slot. In dummy mode you see placeholders; after approval the same slots
-          serve real Google ads with zero layout changes.
+          Every section below is a live ad slot connected to Ads Manager. In <strong>Off</strong> mode nothing renders;
+          in <strong>Placeholder</strong> mode you see built-in samples; in <strong>Adsterra</strong> or{' '}
+          <strong>Google AdSense</strong> mode the same slots serve live ads.
         </p>
       </header>
 

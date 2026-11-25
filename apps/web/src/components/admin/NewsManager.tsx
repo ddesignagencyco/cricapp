@@ -17,18 +17,20 @@ import toast from 'react-hot-toast';
 import {
   deleteNews,
   fetchNewsAdmin,
+  publishAllDraftNews,
   updateNews,
   fetchNewsCategories,
   type NewsArticleAdmin,
   type NewsCategory,
 } from '../../services/newsAdmin';
-import { AdminAvatar, AdminSearchField, AdminSelect, ConfirmDialog, ErrorState, LoadingState } from './AdminShared';
+import { AdminAvatar, AdminSearchField, AdminSelect, AdminSortableHeader, ConfirmDialog, EmptyState, ErrorState, LoadingState, type SortDirection } from './AdminShared';
 import Pagination from './AdminPagination';
 import RemoteImage from '../RemoteImage';
 import { newsHref, otherNewsLanguage } from '../../utils/newsConstraints';
 import NewsCopy from '../NewsCopy';
 
 const PAGE_SIZE = 20;
+type NewsSortKey = 'date' | 'title' | 'author' | 'category' | 'status';
 
 export default function NewsManager() {
   const [articles, setArticles] = useState<NewsArticleAdmin[]>([]);
@@ -38,7 +40,11 @@ export default function NewsManager() {
   const [query, setQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
   const [filterStatus, setFilterStatus] = useState<'all' | 'published' | 'draft'>('all');
+  const [sortBy, setSortBy] = useState<NewsSortKey>('date');
+  const [sortOrder, setSortOrder] = useState<SortDirection>('desc');
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [publishingAll, setPublishingAll] = useState(false);
+  const [confirmPublishAll, setConfirmPublishAll] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<NewsArticleAdmin | null>(null);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -53,6 +59,8 @@ export default function NewsManager() {
         page,
         q: query.trim() || undefined,
         category: filterCategory === 'all' ? undefined : filterCategory,
+        sortBy,
+        sortOrder,
       }),
       fetchNewsCategories().catch(() => [] as NewsCategory[]),
     ])
@@ -67,14 +75,23 @@ export default function NewsManager() {
         setError('Could not load news. Check the API connection and try again.');
       })
       .finally(() => setLoading(false));
-  }, [filterCategory, page, query]);
+  }, [filterCategory, page, query, sortBy, sortOrder]);
 
   useEffect(() => {
     const timer = window.setTimeout(load, 300);
     return () => window.clearTimeout(timer);
   }, [load]);
 
-  useEffect(() => { setPage(1); }, [query, filterCategory, filterStatus]);
+  useEffect(() => { setPage(1); }, [query, filterCategory, filterStatus, sortBy, sortOrder]);
+
+  const toggleSort = (key: NewsSortKey) => {
+    if (sortBy === key) {
+      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortBy(key);
+      setSortOrder(key === 'date' ? 'desc' : 'asc');
+    }
+  };
 
   const togglePublish = async (article: NewsArticleAdmin) => {
     setBusyId(article.id);
@@ -86,6 +103,25 @@ export default function NewsManager() {
       toast.error('Could not update news status.');
     } finally {
       setBusyId(null);
+    }
+  };
+
+  const handlePublishAll = async () => {
+    setPublishingAll(true);
+    try {
+      const res = await publishAllDraftNews();
+      const count = typeof res?.published === 'number' ? res.published : 0;
+      if (count > 0) {
+        toast.success(`Published ${count} draft ${count === 1 ? 'article' : 'articles'}.`);
+        load();
+      } else {
+        toast.success('All news articles are already published.');
+      }
+    } catch {
+      toast.error('Could not publish draft news.');
+    } finally {
+      setPublishingAll(false);
+      setConfirmPublishAll(false);
     }
   };
 
@@ -122,13 +158,29 @@ export default function NewsManager() {
             Draft, publish, edit and organize news.
           </p>
         </div>
-        <Link
-          href="/admin/news/new"
-          className="btn-brand inline-flex items-center gap-1.5 rounded-md px-4 py-2 text-xs font-bold transition-colors"
-        >
-          <FilePlus2 size={14} />
-          Create News
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            disabled={publishingAll}
+            onClick={() => setConfirmPublishAll(true)}
+            className="inline-flex items-center gap-1.5 rounded-md px-3.5 py-2 text-xs font-bold transition-colors disabled:opacity-50"
+            style={{
+              border: '1px solid var(--admin-border)',
+              background: 'var(--admin-card)',
+              color: 'var(--admin-text)',
+            }}
+          >
+            {publishingAll ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} style={{ color: 'var(--admin-success)' }} />}
+            Publish All Drafts
+          </button>
+          <Link
+            href="/admin/news/new"
+            className="btn-brand inline-flex items-center gap-1.5 rounded-md px-4 py-2 text-xs font-bold transition-colors"
+          >
+            <FilePlus2 size={14} />
+            Create News
+          </Link>
+        </div>
       </div>
 
       {/* Filters */}
@@ -166,21 +218,18 @@ export default function NewsManager() {
       ) : error ? (
         <ErrorState message={error} onRetry={load} />
       ) : filtered.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-10 text-center" style={{ borderColor: 'var(--admin-border)', background: 'var(--admin-card)' }}>
-          <FileText size={28} className="mx-auto mb-2" style={{ color: 'var(--admin-text-muted)' }} />
-          <p className="break-words text-xs" style={{ color: 'var(--admin-text-secondary)' }}>No news match your criteria.</p>
-        </div>
+        <EmptyState title="No news found" message="No news match your criteria." />
       ) : (
         <div className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
           <div className="table-scroll">
             <table className="w-full text-left text-xs">
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--admin-border)', background: 'var(--admin-table-header)' }}>
-                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>News</th>
-                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Author</th>
-                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Category</th>
-                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Status</th>
-                  <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Date</th>
+                  <AdminSortableHeader label="News" sortKey="title" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} />
+                  <AdminSortableHeader label="Author" sortKey="author" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} />
+                  <AdminSortableHeader label="Category" sortKey="category" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} />
+                  <AdminSortableHeader label="Status" sortKey="status" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} />
+                  <AdminSortableHeader label="Date" sortKey="date" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} />
                   <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Actions</th>
                 </tr>
               </thead>
@@ -305,6 +354,16 @@ export default function NewsManager() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmPublishAll}
+        title="Publish all draft news?"
+        message="All unpublished draft news articles will go live immediately."
+        confirmLabel="Publish All"
+        onConfirm={handlePublishAll}
+        onCancel={() => { if (!publishingAll) setConfirmPublishAll(false); }}
+        loading={publishingAll}
+      />
 
       <ConfirmDialog
         open={!!deleteTarget}

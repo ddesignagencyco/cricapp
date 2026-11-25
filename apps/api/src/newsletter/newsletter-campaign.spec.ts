@@ -136,7 +136,7 @@ describe('Newsletter campaigns (integration)', () => {
     expect(first).toMatchObject({ eligible: 1, sent: 1, failed: 0 });
     expect(sent).toHaveLength(1);
     expect(sent[0].to).toBe('one@example.com');
-    expect(sent[0].subject).toBe('🚨 Pakistan name new captain');
+    expect(sent[0].subject).toBe('Breaking: Pakistan name new captain');
     expect(sent[0].headers?.['List-Unsubscribe']).toMatch(/\/api\/newsletter\/unsubscribe\/one-click\?token=/);
     expect(sent[0].headers?.['List-Unsubscribe-Post']).toBe('List-Unsubscribe=One-Click');
     expect(sent[0].html).toContain('Unsubscribe');
@@ -170,7 +170,7 @@ describe('Newsletter campaigns (integration)', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ type: 'breaking_news', newsId: article.id })
       .expect(200);
-    expect(preview.body.subject).toBe('🚨 Pakistan name new captain');
+    expect(preview.body.subject).toBe('Breaking: Pakistan name new captain');
     expect(preview.body.html).toContain('CriczApp');
 
     await ctx.agent

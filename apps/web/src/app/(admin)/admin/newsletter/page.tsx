@@ -1,15 +1,17 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Mail } from 'lucide-react';
 import {
   AdminSearchField,
   AdminPageHeader,
   AdminSelect,
+  AdminSortableHeader,
   EmptyState,
   ErrorState,
   LoadingState,
   StatusBadge,
+  type SortDirection,
 } from '../../../../components/admin/AdminShared';
 import { fetchNewsletterSubscribers, type NewsletterSubscriber } from '../../../../services/newsletter';
 import NewsletterCampaigns from '../../../../components/admin/NewsletterCampaigns';
@@ -20,6 +22,26 @@ export default function AdminNewsletterPage() {
   const [error, setError] = useState(false);
   const [status, setStatus] = useState('');
   const [q, setQ] = useState('');
+  const [sortBy, setSortBy] = useState<'email' | 'status'>('email');
+  const [sortOrder, setSortOrder] = useState<SortDirection>('asc');
+
+  const toggleSort = (key: 'email' | 'status') => {
+    if (sortBy === key) {
+      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortBy(key);
+      setSortOrder('asc');
+    }
+  };
+
+  const sortedItems = useMemo(() => {
+    const mul = sortOrder === 'desc' ? -1 : 1;
+    return [...items].sort((a, b) => {
+      const av = (sortBy === 'status' ? a.status : a.email || '').toLowerCase();
+      const bv = (sortBy === 'status' ? b.status : b.email || '').toLowerCase();
+      return av.localeCompare(bv) * mul || a.email.localeCompare(b.email);
+    });
+  }, [items, sortBy, sortOrder]);
 
   const load = () => {
     setLoading(true);
@@ -77,12 +99,12 @@ export default function AdminNewsletterPage() {
             <table className="w-full text-left text-sm">
               <thead>
                 <tr style={{ background: 'var(--admin-table-header)', borderBottom: '1px solid var(--admin-border)' }}>
-                  <th className="px-4 py-3 text-xs font-bold uppercase" style={{ color: 'var(--admin-text-secondary)' }}>Email</th>
-                  <th className="px-4 py-3 text-xs font-bold uppercase" style={{ color: 'var(--admin-text-secondary)' }}>Status</th>
+                  <AdminSortableHeader label="Email" sortKey="email" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} className="px-4 py-3 text-xs font-bold uppercase" />
+                  <AdminSortableHeader label="Status" sortKey="status" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} className="px-4 py-3 text-xs font-bold uppercase" />
                 </tr>
               </thead>
               <tbody>
-                {items.map((item) => (
+                {sortedItems.map((item) => (
                   <tr key={item.id} style={{ borderBottom: '1px solid var(--admin-border)' }}>
                     <td className="max-w-[11rem] truncate px-4 py-3 sm:max-w-none" style={{ color: 'var(--admin-text)' }} title={item.email}>{item.email}</td>
                     <td className="whitespace-nowrap px-4 py-3"><StatusBadge status={item.status} /></td>

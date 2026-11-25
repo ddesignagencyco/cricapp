@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 import Logo from './Logo';
 import RemoteImage from './RemoteImage';
+import EntityAvatar from './EntityAvatar';
 import { useTheme } from './ThemeProvider';
 import { useAuth } from './AuthProvider';
 import { getInitials } from '../utils/helpers';
@@ -49,11 +50,13 @@ type NavItem = {
 const primaryNavItems: NavItem[] = [
   { to: '/', label: 'Home', icon: Home },
   { to: '/matches', label: 'Matches', icon: Activity },
+  { to: '/streams', label: 'Streams', icon: Radio },
   { to: '/schedules', label: 'Schedule', icon: Calendar },
   { to: '/psl', label: 'PSL', icon: Trophy },
   { to: '/news', label: 'News', icon: Newspaper },
   { to: '/predictions', label: 'Predictions', icon: Sparkles },
   { to: '/tools', label: 'Tools', icon: Wrench },
+  { to: '/gallery', label: 'Gallery', icon: Images },
 ];
 
 const secondaryNavItems: NavItem[] = [
@@ -61,17 +64,15 @@ const secondaryNavItems: NavItem[] = [
   { to: '/players', label: 'Players', icon: UserRound },
   { to: '/tournaments', label: 'Tournaments', icon: Award },
   { to: '/tours', label: 'Tours', icon: Globe },
-  { to: '/streams', label: 'Streams', icon: Radio },
-  { to: '/gallery', label: 'Gallery', icon: Images },
   { to: '/authors', label: 'Authors', icon: PenLine },
 ];
 
 const liveItems: NavItem[] = [
   { to: '/', label: 'Home', icon: Home },
   { to: '/matches', label: 'Matches', icon: Activity },
-  { to: '/predictions', label: 'Predictions', icon: Sparkles },
   { to: '/streams', label: 'Streams', icon: Radio },
   { to: '/schedules', label: 'Schedule', icon: Calendar },
+  { to: '/predictions', label: 'Predictions', icon: Sparkles },
 ];
 
 const exploreItems: NavItem[] = [
@@ -81,9 +82,9 @@ const exploreItems: NavItem[] = [
   { to: '/tours', label: 'Tours', icon: Globe },
   { to: '/tournaments', label: 'Tournaments', icon: Award },
   { to: '/tools', label: 'Tools', icon: Wrench },
+  { to: '/gallery', label: 'Gallery', icon: Images },
   { to: '/news', label: 'News', icon: Newspaper },
   { to: '/authors', label: 'Authors', icon: PenLine },
-  { to: '/gallery', label: 'Gallery', icon: Images },
 ];
 
 const navItems = [...liveItems, ...exploreItems];
@@ -93,12 +94,6 @@ const navItems = [...liveItems, ...exploreItems];
 // the search icon look dead for seconds on slow mobile networks.
 const loadSearchBar = () => import('./SearchBar');
 const SearchBar = dynamic(loadSearchBar, { ssr: false });
-
-function avatarHue(name: string) {
-  let h = 0;
-  for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
-  return Math.abs(h % 360);
-}
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -203,7 +198,6 @@ export default function Navbar() {
 
   const isActive = (to: string) => (to === '/' ? pathname === '/' : pathname.startsWith(to));
   const displayName = (user?.displayName || user?.username || user?.email || '').trim();
-  const hue = avatarHue(displayName);
 
   const closeMobile = () => setMobileOpen(false);
 
@@ -342,7 +336,7 @@ export default function Navbar() {
                 >
                   <div className="border-b border-lborder bg-elevated/70 px-3.5 py-3.5">
                     <div className="flex items-center gap-3">
-                      <ProfileAvatar name={displayName} src={user.avatarUrl} hue={hue} size={40} />
+                      <ProfileAvatar name={displayName} src={user.avatarUrl} size={40} />
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-semibold text-mtext">{user.displayName || user.username}</p>
                         <p className="truncate text-xs text-stext">@{user.username}</p>
@@ -526,12 +520,10 @@ export default function Navbar() {
 function ProfileAvatar({
   name,
   src,
-  hue,
   size,
 }: {
   name: string;
   src?: string | null;
-  hue: number;
   size: number;
 }) {
   if (src) {
@@ -541,22 +533,18 @@ function ProfileAvatar({
         alt={name}
         width={size}
         height={size}
-        className="shrink-0 rounded-full object-cover ring-1 ring-lborder"
+        className="avatar-3d shrink-0 rounded-full bg-entity-avatar object-cover"
         style={{ width: size, height: size }}
       />
     );
   }
   return (
-    <span
-      className="grid shrink-0 place-items-center rounded-full text-xs font-bold text-white ring-1 ring-white/10"
-      style={{
-        width: size,
-        height: size,
-        backgroundImage: `linear-gradient(135deg, hsl(${hue}, 75%, 50%), hsl(${(hue + 40) % 360}, 85%, 35%))`,
-      }}
+    <EntityAvatar
+      className="text-xs font-bold"
+      style={{ width: size, height: size }}
     >
       {getInitials(name)}
-    </span>
+    </EntityAvatar>
   );
 }
 

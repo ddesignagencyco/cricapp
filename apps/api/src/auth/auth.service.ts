@@ -162,14 +162,14 @@ export class AuthService {
       preheader: `Use this secure link or code to choose a new password. It expires at ${expiryTime}.`,
       reason: 'You received this email because a password reset was requested for your CriczApp account.',
       bodyHtml: `
-        <h1 style="margin:0 0 6px;font-size:24px;line-height:1.3;color:${BRAND.ink};">Reset your password</h1>
-        <p style="margin:0 0 4px;">Hi <strong style="color:${BRAND.ink};">${safeUsername}</strong>,</p>
-        <p style="margin:0;">We received a request to reset the password for your CriczApp account. Click the button below to choose a new one.</p>
+        <h1 style="margin:0 0 10px;font-size:21px;font-weight:700;letter-spacing:-0.02em;line-height:1.3;color:${BRAND.ink};">Reset your password</h1>
+        <p style="margin:0 0 8px;">Hi <strong style="color:${BRAND.ink};">${safeUsername}</strong>,</p>
+        <p style="margin:0;">We received a request to reset the password for your CriczApp account. Use the button below to pick a new one.</p>
         ${emailButton(resetLink, 'Reset password')}
-        <p style="margin:0;text-align:center;">Using the CriczApp app? Enter this code instead:</p>
+        <p style="margin:0;font-size:13.5px;color:${BRAND.muted};">Or enter this one-time code in the app:</p>
         ${emailCode(code, 'Reset code')}
-        ${emailNote(`This link and code expire at <strong>${expiryTime}</strong> on <strong>${expiryDate}</strong> and can only be used once. Never share the code with anyone.`)}
-        ${emailNote("<strong>Didn't request this?</strong> You can safely ignore this email. Your password stays the same and your account is secure.", 'warning')}
+        ${emailNote(`This link and code expire at <strong>${expiryTime}</strong> on <strong>${expiryDate}</strong> and can only be used once. Do not share this code with anyone.`)}
+        ${emailNote("<strong>Didn't request this?</strong> You can ignore this email. Your password will not change.", 'warning')}
         ${emailLinkFallback(resetLink)}`,
     });
 
@@ -385,13 +385,13 @@ CriczApp — Every run. Every ball. Live.`;
       preheader: 'One click (or one code) to activate your account and start following live cricket.',
       reason: 'You received this email because someone signed up for CriczApp with this address.',
       bodyHtml: `
-        <h1 style="margin:0 0 6px;font-size:24px;line-height:1.3;color:${BRAND.ink};">Confirm your email</h1>
-        <p style="margin:0 0 4px;">Hi <strong style="color:${BRAND.ink};">${safeUsername}</strong>,</p>
-        <p style="margin:0;">Welcome to CriczApp! Confirm your email address to activate your account and start following live matches, your favourite teams and players, and the latest cricket news.</p>
-        ${emailButton(verifyLink, 'Verify email address')}
-        <p style="margin:0;text-align:center;">Using the CriczApp app? Enter this code instead:</p>
+        <h1 style="margin:0 0 10px;font-size:21px;font-weight:700;letter-spacing:-0.02em;line-height:1.3;color:${BRAND.ink};">Confirm your email address</h1>
+        <p style="margin:0 0 8px;">Hi <strong style="color:${BRAND.ink};">${safeUsername}</strong>,</p>
+        <p style="margin:0;">Welcome to CriczApp. Confirm your email address to activate your account and follow live matches, favourite teams, and cricket news.</p>
+        ${emailButton(verifyLink, 'Verify email')}
+        <p style="margin:0;font-size:13.5px;color:${BRAND.muted};">Or enter this one-time code in the app:</p>
         ${emailCode(code, 'Verification code')}
-        ${emailNote('This link and code expire in <strong>24 hours</strong> and can only be used once. If you did not create a CriczApp account, you can safely ignore this email.')}
+        ${emailNote('This link and code expire in <strong>24 hours</strong> and can only be used once. If you did not sign up for CriczApp, you can ignore this email.')}
         ${emailLinkFallback(verifyLink)}`,
     });
     const text = `Welcome to CriczApp, ${username}!

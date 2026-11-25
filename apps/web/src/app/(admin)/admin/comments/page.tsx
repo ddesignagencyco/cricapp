@@ -1,17 +1,19 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { ExternalLink, MessageSquare, Trash2, X } from 'lucide-react';
 import {
   AdminAvatar,
   AdminPageHeader,
+  AdminSortableHeader,
   ConfirmDialog,
   EmptyState,
   ErrorState,
   LoadingState,
   StatusBadge,
+  type SortDirection,
 } from '../../../../components/admin/AdminShared';
 import {
   fetchReportedComments,
@@ -45,6 +47,30 @@ export default function CommentsPage() {
   const [error, setError] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ReportedComment | null>(null);
+  const [sortBy, setSortBy] = useState<'reason' | 'body' | 'author' | 'target'>('reason');
+  const [sortOrder, setSortOrder] = useState<SortDirection>('desc');
+
+  const toggleSort = (key: 'reason' | 'body' | 'author' | 'target') => {
+    if (sortBy === key) {
+      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortBy(key);
+      setSortOrder('asc');
+    }
+  };
+
+  const sortedReports = useMemo(() => {
+    const mul = sortOrder === 'desc' ? -1 : 1;
+    return [...reports].sort((a, b) => {
+      const pick = (r: ReportedComment) => {
+        if (sortBy === 'body') return (r.comment?.body || '').toLowerCase();
+        if (sortBy === 'author') return (r.comment?.user?.displayName || r.comment?.user?.username || '').toLowerCase();
+        if (sortBy === 'target') return (r.comment?.targetType || '').toLowerCase();
+        return (r.reason || '').toLowerCase();
+      };
+      return pick(a).localeCompare(pick(b)) * mul;
+    });
+  }, [reports, sortBy, sortOrder]);
 
   const load = () => {
     setLoading(true);
@@ -100,15 +126,15 @@ export default function CommentsPage() {
             <table className="w-full text-left text-sm">
               <thead>
                 <tr style={{ background: 'var(--admin-table-header)', borderBottom: '1px solid var(--admin-border)' }}>
-                  <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Reason</th>
-                  <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Comment</th>
-                  <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Author</th>
-                  <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Target</th>
+                  <AdminSortableHeader label="Reason" sortKey="reason" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} className="px-4 py-3 text-xs font-bold uppercase tracking-wider" />
+                  <AdminSortableHeader label="Comment" sortKey="body" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} className="px-4 py-3 text-xs font-bold uppercase tracking-wider" />
+                  <AdminSortableHeader label="Author" sortKey="author" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} className="px-4 py-3 text-xs font-bold uppercase tracking-wider" />
+                  <AdminSortableHeader label="Target" sortKey="target" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} className="px-4 py-3 text-xs font-bold uppercase tracking-wider" />
                   <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {reports.map((report) => {
+                {sortedReports.map((report) => {
                   const href = targetHref(report.comment?.targetType, report.comment?.targetId, report.comment?.id);
                   const author = report.comment?.user?.displayName || report.comment?.user?.username || 'Unknown';
                   const busy = busyId === report.id;

@@ -333,9 +333,20 @@ export function predictionSituation(
 export function matchStatusLabel(status?: string | null): string {
   const raw = String(status || '').trim().toLowerCase();
   if (!raw) return '';
-  if (raw.includes('innings_break')) return 'Innings break';
-  if (raw.includes('first_innings')) return '1st innings';
-  if (raw.includes('second_innings')) return '2nd innings';
+  const compact = raw.replace(/[\s_-]+/g, '');
+  if (compact === 'inningsbreak' || raw.includes('innings_break')) return 'Innings Break';
+  if (compact === 'firstinnings' || raw.includes('first_innings')) return '1st Innings';
+  if (compact === 'secondinnings' || raw.includes('second_innings')) return '2nd Innings';
+  if (compact === 'inprogress' || compact === 'inplay') return 'In Progress';
+  if (compact === 'interrupted' || compact === 'raindelay' || compact === 'delay' || compact === 'delayed') {
+    return compact === 'raindelay' ? 'Rain Delay' : compact === 'interrupted' ? 'Interrupted' : 'Delayed';
+  }
+  if (compact === 'stumps') return 'Stumps';
+  if (compact === 'tea' || compact === 'teabreak') return 'Tea Break';
+  if (compact === 'lunch' || compact === 'lunchbreak') return 'Lunch Break';
+  if (compact === 'drinks' || compact === 'drinksbreak') return 'Drinks Break';
+  if (compact === 'abandoned' || compact === 'noresult') return compact === 'noresult' ? 'No Result' : 'Abandoned';
+  if (compact === 'postponed') return 'Postponed';
   switch (raw) {
     case 'live':
       return 'Live';
@@ -344,11 +355,15 @@ export function matchStatusLabel(status?: string | null): string {
     case 'not started':
       return 'Upcoming';
     case 'completed':
+    case 'ended':
       return 'Completed';
     case 'cancelled':
+    case 'canceled':
       return 'Cancelled';
     default:
-      return raw.replace(/_/g, ' ');
+      return raw
+        .replace(/[_-]+/g, ' ')
+        .replace(/\b\w/g, (ch) => ch.toUpperCase());
   }
 }
 
@@ -439,27 +454,51 @@ function readableTossWinner(
   const rec = (match || {}) as Record<string, unknown>;
   const teams = rec.teams;
   const isObj = !isNil(teams) && typeof teams === 'object' && !Array.isArray(teams);
-  const pair = isObj
+  const pair: { home?: Record<string, unknown>; away?: Record<string, unknown> } | null = isObj
     ? (teams as { home?: Record<string, unknown>; away?: Record<string, unknown> })
     : Array.isArray(teams)
       ? { home: { code: teams[0] }, away: { code: teams[1] } }
       : null;
-  const homeRaw = String(pair?.home?.code ?? '').trim();
-  const awayRaw = String(pair?.away?.code ?? '').trim();
+  const scores = (rec.teamScores && typeof rec.teamScores === 'object'
+    ? rec.teamScores
+    : null) as { home?: Record<string, unknown>; away?: Record<string, unknown> } | null;
+
+  const stripNs = (v: string) => v.replace(/^(?:sr|cb):[^:]+:/i, '').toLowerCase();
+  const homeCandidates = [
+    pair?.home?.id,
+    pair?.home?.code,
+    pair?.home?.abbr,
+    scores?.home?.id,
+    rec.homeTeamId,
+    sides.homeCode,
+    sides.homeName,
+  ]
+    .map((v) => (typeof v === 'string' || typeof v === 'number' ? String(v).trim() : ''))
+    .filter(Boolean);
+  const awayCandidates = [
+    pair?.away?.id,
+    pair?.away?.code,
+    pair?.away?.abbr,
+    scores?.away?.id,
+    rec.awayTeamId,
+    sides.awayCode,
+    sides.awayName,
+  ]
+    .map((v) => (typeof v === 'string' || typeof v === 'number' ? String(v).trim() : ''))
+    .filter(Boolean);
+
   const needle = value.toLowerCase();
-  // Also try the bare id/code with its namespace stripped, e.g. `195221`.
-  const homeKey = homeRaw.replace(/^sr:[^:]+:/i, '').toLowerCase();
-  const awayKey = awayRaw.replace(/^sr:[^:]+:/i, '').toLowerCase();
+  const needleStripped = stripNs(value);
 
-  if (value === homeRaw) return sides.homeName;
-  if (value === awayRaw) return sides.awayName;
-  if (needle && needle === homeKey) return sides.homeName;
-  if (needle && needle === awayKey) return sides.awayName;
-  if (needle === sides.homeCode.toLowerCase()) return sides.homeName;
-  if (needle === sides.awayCode.toLowerCase()) return sides.awayName;
+  if (homeCandidates.some((c) => c.toLowerCase() === needle || stripNs(c) === needleStripped)) {
+    return sides.homeName;
+  }
+  if (awayCandidates.some((c) => c.toLowerCase() === needle || stripNs(c) === needleStripped)) {
+    return sides.awayName;
+  }
 
-  // Anything still namespace-prefixed is an id we could not place. Never show it.
-  if (/^sr:/i.test(value)) return null;
+  // Anything still provider-namespaced (`sr:...` or `cb:...`) is an unresolved id — never show raw IDs.
+  if (/^(?:sr|cb):/i.test(value)) return null;
 
   return value.replace(/\bhome\b/i, sides.homeName).replace(/\baway\b/i, sides.awayName);
 }

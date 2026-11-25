@@ -5,9 +5,10 @@ import { PlayersModule } from '../players/players.module.js';
 import { TeamsModule } from '../teams/teams.module.js';
 import { MatchesModule } from '../matches/matches.module.js';
 import { TournamentsModule } from '../tournaments/tournaments.module.js';
+import { NewsModule } from '../news/news.module.js';
 
 @Module({
-  imports: [PlayersModule, TeamsModule, MatchesModule, TournamentsModule],
+  imports: [PlayersModule, TeamsModule, MatchesModule, TournamentsModule, NewsModule],
   controllers: [SearchController],
   providers: [SearchService],
 })

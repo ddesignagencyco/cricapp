@@ -173,7 +173,7 @@ function CodeField({
 export default function AuthForm({ mode, token = '', tokenId = '', initialEmail = '' }: AuthFormProps) {
   const router = useRouter();
   const params = useSearchParams();
-  const { refresh, isAuthenticated, loading: authLoading } = useAuth();
+  const { refresh, isAuthenticated, isAdmin, loading: authLoading } = useAuth();
   // Reset and verify arrive either from the email link or with a typed code.
   const fromLink = Boolean(token && tokenId);
   const usesCode = (mode === 'reset' || mode === 'verify') && !fromLink;
@@ -194,9 +194,13 @@ export default function AuthForm({ mode, token = '', tokenId = '', initialEmail 
   useEffect(() => {
     if (authLoading) return;
     if (isAuthenticated && (mode === 'login' || mode === 'register')) {
-      router.replace('/profile');
+      const returnTo = params.get('returnTo');
+      const safeTarget = returnTo ? safeReturnTo(returnTo) : '';
+      const allowedTarget =
+        safeTarget && (isAdmin || !safeTarget.startsWith('/admin')) ? safeTarget : '';
+      router.replace(allowedTarget || (isAdmin ? '/admin' : '/profile'));
     }
-  }, [authLoading, isAuthenticated, mode, router]);
+  }, [authLoading, isAuthenticated, isAdmin, mode, params, router]);
 
   useEffect(() => {
     if (mode !== 'verify' || !token || !tokenId) return;
@@ -258,7 +262,11 @@ export default function AuthForm({ mode, token = '', tokenId = '', initialEmail 
         await refresh();
         setSuccess(`Welcome back, ${user.displayName || user.username}.`);
         const returnTo = params.get('returnTo');
-        router.replace(returnTo ? safeReturnTo(returnTo) : user.isAdmin ? '/admin' : '/');
+        const isAdminRole = Boolean(user.isAdmin || user.isSuperAdmin);
+        const safeTarget = returnTo ? safeReturnTo(returnTo) : '';
+        const allowedTarget =
+          safeTarget && (isAdminRole || !safeTarget.startsWith('/admin')) ? safeTarget : '';
+        router.replace(allowedTarget || (isAdminRole ? '/admin' : '/profile'));
       } else if (mode === 'register') {
         const created = await register({ email: email.trim(), username: slugFromName(name, email), displayName: name.trim(), password });
         setSuccess(created.message || 'Account created. Check your email to verify your address before signing in.');

@@ -57,6 +57,13 @@ export class AdminController {
     return this.adminService.listNews(query);
   }
 
+  @Post('news/publish-all')
+  @ApiOperation({ summary: 'Publish all draft news articles (admin)' })
+  @ApiResponse({ status: 200, description: 'Count of published draft articles.' })
+  async publishAllDraftNews() {
+    return this.adminService.publishAllDraftNews();
+  }
+
   @Get('authors')
   @ApiOperation({ summary: 'List editorial authors' })
   @ApiResponse({ status: 200, description: 'Author list.' })

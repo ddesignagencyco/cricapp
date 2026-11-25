@@ -22,6 +22,21 @@ export class ListUsersQuery {
   @IsOptional()
   @IsString()
   q?: string;
+
+  @ApiPropertyOptional({ enum: ['all', 'superadmin', 'admin', 'user'] })
+  @IsOptional()
+  @IsIn(['all', 'superadmin', 'admin', 'user'])
+  role?: 'all' | 'superadmin' | 'admin' | 'user';
+
+  @ApiPropertyOptional({ enum: ['role', 'name', 'email', 'verified', 'createdAt'] })
+  @IsOptional()
+  @IsIn(['role', 'name', 'email', 'verified', 'createdAt'])
+  sortBy?: 'role' | 'name' | 'email' | 'verified' | 'createdAt';
+
+  @ApiPropertyOptional({ enum: ['asc', 'desc'] })
+  @IsOptional()
+  @IsIn(['asc', 'desc'])
+  sortOrder?: 'asc' | 'desc';
 }
 
 export class UpdateUserDto {

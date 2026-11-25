@@ -1,7 +1,9 @@
 import type { Prisma } from '../generated/prisma/client.js';
 
-export const AD_MODES = ['off', 'house', 'adsense'] as const;
+export const AD_MODES = ['off', 'house', 'adsense', 'adsterra'] as const;
 export type AdMode = (typeof AD_MODES)[number];
+
+export const DEFAULT_ADSTERRA_HOST = 'www.highperformanceformat.com';
 
 export const AD_SIZES = [
   'leaderboard',
@@ -16,6 +18,8 @@ export type AdSize = (typeof AD_SIZES)[number];
 export const AD_PLACEMENT_KEY_RE = /^[a-z0-9][a-z0-9-]{0,63}$/;
 const PUBLISHER_ID_RE = /^pub-\d{10,20}$/;
 const AD_UNIT_ID_RE = /^\d{10,20}$/;
+const ADSTERRA_KEY_RE = /^[a-z0-9]{16,64}$/i;
+const ADSTERRA_HOST_RE = /^[a-z0-9.-]+\.[a-z]{2,}$/i;
 
 /**
  * Best-effort mapping from an AdSense unit size to one of our placement sizes,
@@ -49,8 +53,21 @@ export type AdPlacementConfig = {
   slotId: string | null;
 };
 
+export type AdsterraConfig = {
+  /** Banner invoke.js script host (defaults to www.highperformanceformat.com). */
+  scriptHost: string;
+  /** Default Adsterra zone key per ad size. */
+  defaultKeys: Record<AdSize, string | null>;
+  /** Per-placement Adsterra zone key override. */
+  placements: Record<string, string | null>;
+  /** Optional global Adsterra Social Bar script URL. */
+  socialBarUrl: string | null;
+  /** Optional global Adsterra Popunder script URL. */
+  popunderUrl: string | null;
+};
+
 export type AdConfig = {
-  /** `off` renders nothing, `house` renders the built-in placeholders, `adsense` serves Google ads. */
+  /** `off` renders nothing, `house` renders built-in placeholders, `adsense` serves Google ads, `adsterra` serves Adsterra ads. */
   mode: AdMode;
   /** Google AdSense publisher id (`pub-…`). Empty when AdSense is not configured. */
   clientId: string | null;
@@ -59,6 +76,23 @@ export type AdConfig = {
   placements: Record<string, AdPlacementConfig>;
   /** Admin opt-in to serving any ads on the betting-adjacent routes. */
   gamblingAds: boolean;
+  /** Adsterra publisher configuration. */
+  adsterra: AdsterraConfig;
+};
+
+export const EMPTY_ADSTERRA_CONFIG: AdsterraConfig = {
+  scriptHost: DEFAULT_ADSTERRA_HOST,
+  defaultKeys: {
+    leaderboard: null,
+    'tablet-banner': null,
+    'mobile-banner': null,
+    'medium-rectangle': null,
+    'large-rectangle': null,
+    'half-page': null,
+  },
+  placements: {},
+  socialBarUrl: null,
+  popunderUrl: null,
 };
 
 export const EMPTY_AD_CONFIG: AdConfig = {
@@ -74,6 +108,7 @@ export const EMPTY_AD_CONFIG: AdConfig = {
   },
   placements: {},
   gamblingAds: false,
+  adsterra: EMPTY_ADSTERRA_CONFIG,
 };
 
 export function isValidAdPublisherId(value: string): boolean {
@@ -127,6 +162,66 @@ function normalizePlacements(value: unknown): Record<string, AdPlacementConfig> 
   return placements;
 }
 
+export function normalizeAdsterraKey(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  return ADSTERRA_KEY_RE.test(trimmed) ? trimmed : null;
+}
+
+export function normalizeAdsterraHost(value: unknown): string {
+  if (typeof value !== 'string') return DEFAULT_ADSTERRA_HOST;
+  const stripped = value
+    .trim()
+    .replace(/^https?:\/\//i, '')
+    .split('/')[0]
+    ?.trim();
+  return stripped && ADSTERRA_HOST_RE.test(stripped) ? stripped : DEFAULT_ADSTERRA_HOST;
+}
+
+export function normalizeAdScriptUrl(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  try {
+    const parsed = new URL(trimmed);
+    return parsed.protocol === 'https:' ? parsed.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
+function normalizeAdsterraDefaultKeys(value: unknown): Record<AdSize, string | null> {
+  const keys = { ...EMPTY_ADSTERRA_CONFIG.defaultKeys };
+  if (!isPlainObject(value)) return keys;
+  for (const size of AD_SIZES) {
+    keys[size] = normalizeAdsterraKey(value[size]);
+  }
+  return keys;
+}
+
+function normalizeAdsterraPlacements(value: unknown): Record<string, string | null> {
+  if (!isPlainObject(value)) return {};
+  const placements: Record<string, string | null> = {};
+  for (const [rawKey, rawVal] of Object.entries(value)) {
+    const key = rawKey.trim().toLowerCase();
+    if (!AD_PLACEMENT_KEY_RE.test(key)) continue;
+    const normalized = normalizeAdsterraKey(rawVal);
+    if (normalized) placements[key] = normalized;
+  }
+  return placements;
+}
+
+export function normalizeAdsterraConfig(value: unknown): AdsterraConfig {
+  if (!isPlainObject(value)) return { ...EMPTY_ADSTERRA_CONFIG, defaultKeys: { ...EMPTY_ADSTERRA_CONFIG.defaultKeys }, placements: {} };
+  return {
+    scriptHost: normalizeAdsterraHost(value.scriptHost),
+    defaultKeys: normalizeAdsterraDefaultKeys(value.defaultKeys),
+    placements: normalizeAdsterraPlacements(value.placements),
+    socialBarUrl: normalizeAdScriptUrl(value.socialBarUrl),
+    popunderUrl: normalizeAdScriptUrl(value.popunderUrl),
+  };
+}
+
 function normalizeMode(value: unknown): AdMode {
   return AD_MODES.includes(value as AdMode) ? (value as AdMode) : 'house';
 }
@@ -138,13 +233,21 @@ function normalizeMode(value: unknown): AdMode {
  * instead of blanking the site.
  */
 export function normalizeAdConfig(value: unknown): AdConfig {
-  if (!isPlainObject(value)) return { ...EMPTY_AD_CONFIG };
+  if (!isPlainObject(value)) {
+    return {
+      ...EMPTY_AD_CONFIG,
+      defaultSlots: { ...EMPTY_AD_CONFIG.defaultSlots },
+      placements: {},
+      adsterra: normalizeAdsterraConfig(undefined),
+    };
+  }
   return {
     mode: normalizeMode(value.mode),
     clientId: normalizePublisherId(value.clientId),
     defaultSlots: normalizeDefaultSlots(value.defaultSlots),
     placements: normalizePlacements(value.placements),
     gamblingAds: value.gamblingAds === true,
+    adsterra: normalizeAdsterraConfig(value.adsterra),
   };
 }
 

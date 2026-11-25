@@ -113,6 +113,7 @@ describe('SiteSettings ads (integration)', () => {
           'layout-sidebar': { enabled: false, slotId: '3456789012' },
         },
         gamblingAds: true,
+        adsterra: EMPTY_AD_CONFIG.adsterra,
       });
     });
 

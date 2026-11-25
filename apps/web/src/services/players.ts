@@ -5,6 +5,8 @@ export interface PlayersListParams {
   [key: string]: string | number | boolean | undefined;
   q?: string;
   team?: string;
+  sortBy?: string;
+  sortOrder?: string;
   page?: number;
   limit?: number;
 }

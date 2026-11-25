@@ -13,6 +13,7 @@ interface RemoteImageProps {
   title?: string;
   style?: CSSProperties;
   fit?: 'contain' | 'cover';
+  objectPosition?: CSSProperties['objectPosition'];
   /** Eager + preloaded for the LCP candidate only. Defaults to lazy. */
   priority?: boolean;
   /**
@@ -65,13 +66,15 @@ export default function RemoteImage({
   title,
   style,
   fit,
+  objectPosition,
   priority = false,
   quality = 85,
   onError,
 }: RemoteImageProps) {
   const objectFit = fit || (className?.includes('news-image') ? 'contain' : undefined);
+  const resolvedPosition = objectPosition ?? (className?.includes('object-top') ? 'top' : 'center');
   const mergedStyle: CSSProperties = {
-    ...(objectFit ? { objectFit, objectPosition: 'center' } : {}),
+    ...(objectFit ? { objectFit, objectPosition: resolvedPosition } : {}),
     ...style,
   };
   // Unknown hosts keep the old passthrough behaviour; trusted + local hosts go

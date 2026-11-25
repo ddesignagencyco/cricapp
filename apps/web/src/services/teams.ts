@@ -5,6 +5,8 @@ import { entityIdPath } from '../utils/entityId';
 export interface TeamsListParams {
   [key: string]: string | number | boolean | undefined;
   q?: string;
+  sortBy?: string;
+  sortOrder?: string;
   page?: number;
   limit?: number;
 }

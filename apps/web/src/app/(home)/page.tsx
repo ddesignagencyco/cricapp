@@ -180,27 +180,27 @@ export default async function HomePage() {
       {newsList.length > 0 && (
         <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
           <SectionHeader title="Latest News" subtitle="Stay updated with the cricket world" icon="newspaper" to="/news" actionLabel="All news" />
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.15fr_0.85fr]">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.15fr_0.85fr] lg:items-stretch">
             {newsList[0] && (
               <Link
                 href={newsHref(newsList[0])}
-                className="news-card card-interactive card-featured group overflow-hidden rounded-md"
+                className="news-card card-interactive card-featured group flex h-full flex-col overflow-hidden rounded-md lg:h-[448px]"
               >
-                <div className="news-card-media relative bg-secondary">
+                <div className="news-card-media relative aspect-[16/9] w-full shrink-0 overflow-hidden bg-secondary lg:aspect-auto lg:h-0 lg:min-h-0 lg:flex-1">
                   {newsList[0].image ? (
                     <RemoteImage
                       src={newsList[0].image}
                       alt={newsList[0].title}
-                      width={1600}
-                      height={900}
+                      fill
                       sizes="(min-width: 1024px) 55vw, 100vw"
-                      fit="contain"
-                      className="news-image h-auto w-full"
+                      fit="cover"
+                      objectPosition="top"
+                      className="news-image object-cover object-top"
                     />
                   ) : (
-                    <div className="h-48 w-full media-fallback sm:h-60" />
+                    <div className="h-full w-full media-fallback" />
                   )}
-                  <div className="absolute left-4 top-4">
+                  <div className="absolute left-4 top-4 z-10">
                     <span className="inline-block rounded-full bg-[var(--color-brand)] px-3 py-1 text-[10px] font-medium tracking-wide text-white">
                       {typeof newsList[0].category === 'string'
                         ? newsList[0].category
@@ -210,25 +210,25 @@ export default async function HomePage() {
                     </span>
                   </div>
                 </div>
-                <div className="p-4 sm:p-5">
-                  <NewsCopy as="h3" language={newsList[0].language} text={newsList[0].title} className="text-base font-bold leading-snug text-mtext group-hover:text-accent sm:text-lg">{newsList[0].title}</NewsCopy>
+                <div className="shrink-0 p-4 sm:p-5">
+                  <NewsCopy as="h3" language={newsList[0].language} text={newsList[0].title} className="line-clamp-2 text-base font-bold leading-snug text-mtext group-hover:text-accent sm:text-lg">{newsList[0].title}</NewsCopy>
                   {newsList[0].excerpt && (
-                    <NewsCopy language={newsList[0].language} text={newsList[0].excerpt} className="mt-2 line-clamp-2 text-xs leading-relaxed text-stext sm:text-sm">{newsList[0].excerpt}</NewsCopy>
+                    <NewsCopy language={newsList[0].language} text={newsList[0].excerpt} className="news-copy-card mt-1.5 line-clamp-2 text-xs leading-relaxed text-stext sm:text-sm">{newsList[0].excerpt}</NewsCopy>
                   )}
-                  <p className="mt-3 text-xs text-stext">{newsList[0].date} • {newsList[0].readTime}</p>
+                  <p className="mt-2.5 text-xs text-stext">{newsList[0].date} • {newsList[0].readTime}</p>
                 </div>
               </Link>
             )}
-            <div className="flex flex-col gap-2.5">
+            <div className="grid grid-cols-1 gap-2.5 lg:h-[448px] lg:grid-rows-4">
               {newsList.slice(1, 5).map((item) => (
                 <Link
                   key={item.id}
                   href={newsHref(item)}
-                  className="news-card card-interactive group flex gap-3 overflow-hidden rounded-md p-2.5 sm:gap-4 sm:p-3"
+                  className="news-card card-interactive group flex h-full items-center gap-3 overflow-hidden rounded-md p-2.5 sm:gap-4 sm:p-3"
                 >
                   <div className="news-card-media relative h-16 w-20 shrink-0 overflow-hidden rounded-md bg-secondary sm:h-20 sm:w-24">
                     {item.image ? (
-                      <RemoteImage src={item.image} alt={item.title} fill sizes="96px" fit="contain" className="news-image" />
+                      <RemoteImage src={item.image} alt={item.title} fill sizes="96px" fit="cover" objectPosition="top" className="news-image object-cover object-top" />
                     ) : (
                       <div className="h-full w-full media-fallback" />
                     )}
@@ -241,7 +241,7 @@ export default async function HomePage() {
                           ? String((item.category as any).name)
                           : 'News'}
                     </span>
-                    <NewsCopy as="h4" language={item.language} text={item.title} className="mt-1 line-clamp-2 text-sm font-bold leading-snug text-mtext group-hover:text-accent">{item.title}</NewsCopy>
+                    <NewsCopy as="h4" language={item.language} text={item.title} className="news-copy-card mt-1 line-clamp-2 text-sm font-bold leading-snug text-mtext group-hover:text-accent">{item.title}</NewsCopy>
                     <p className="mt-1 text-[11px] text-stext">{item.date} • {item.readTime}</p>
                   </div>
                 </Link>
@@ -260,10 +260,6 @@ export default async function HomePage() {
       <HomeGalleryStrip />
 
       <Newsletter />
-
-      <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
-        <AdSlot placement="home-footer" />
-      </section>
       </div>
     </div>
   );

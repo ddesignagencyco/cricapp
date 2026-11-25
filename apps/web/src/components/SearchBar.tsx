@@ -3,11 +3,12 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
-import { Calendar, Shield, Trophy, UserRound, X } from 'lucide-react';
+import { Calendar, Newspaper, Shield, Trophy, UserRound, X } from 'lucide-react';
 import SearchField from './SearchField';
 import toast from 'react-hot-toast';
 import { searchAll, searchRowId } from '../services/search';
-import type { Match, SearchResults, TournamentApi } from '../types/index';
+import type { Match, NewsArticle, SearchResults, TournamentApi } from '../types/index';
+import { newsHref } from '../utils/newsConstraints';
 import { PlayerSearchAvatar, TeamSearchAvatar, TypeSearchAvatar } from './SearchAvatars';
 import { Skeleton } from './skeletons/Skeletons';
 import useFocusTrap from '../hooks/useFocusTrap';
@@ -103,8 +104,14 @@ export default function SearchBar({ autoFocus = false, onDone }: SearchBarProps)
     [results]
   );
 
+  const newsItems: NewsArticle[] = results?.news ?? [];
+
   const total = results
-    ? results.players.length + results.teams.length + linkableMatches.length + results.tournaments.length
+    ? results.players.length +
+      results.teams.length +
+      linkableMatches.length +
+      results.tournaments.length +
+      newsItems.length
     : 0;
 
   if (typeof document === 'undefined') return null;
@@ -138,7 +145,7 @@ export default function SearchBar({ autoFocus = false, onDone }: SearchBarProps)
               onKeyDown={(event) => {
                 if (event.key === 'Enter' && query.trim()) go(`/search?q=${encodeURIComponent(query.trim())}`);
               }}
-              placeholder="Search players, teams, matches or tournaments"
+              placeholder="Search players, teams, matches, tournaments or news"
               autoFocus={autoFocus}
               inputClassName="sm:text-base"
             />
@@ -232,6 +239,25 @@ export default function SearchBar({ autoFocus = false, onDone }: SearchBarProps)
                     subtitle={tournamentSubtitle(item)}
                     avatar={<TypeSearchAvatar type="tournament" />}
                     onClick={() => go(`/tournaments/${item.id}`)}
+                  />
+                )}
+              />
+              <ResultGroup
+                title="News"
+                icon={<Newspaper size={14} />}
+                count={newsItems.length}
+                items={newsItems}
+                itemKey={(item, index) => String(item.id || item.slug || `news-${index}`)}
+                render={(item) => (
+                  <ResultButton
+                    title={item.title}
+                    subtitle={[strVal(item.category), item.source].filter(Boolean).join(' · ')}
+                    avatar={
+                      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-accent/15 text-accent">
+                        <Newspaper size={16} aria-hidden="true" />
+                      </span>
+                    }
+                    onClick={() => go(newsHref(item))}
                   />
                 )}
               />

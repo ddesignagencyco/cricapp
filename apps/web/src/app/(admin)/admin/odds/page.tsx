@@ -1,14 +1,16 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Activity, Clock3, Database, RefreshCw, Scale } from 'lucide-react';
 import {
   AdminChip,
   AdminPageHeader,
+  AdminSortableHeader,
   EmptyState,
   ErrorState,
   LoadingState,
   StatCard,
+  type SortDirection,
 } from '../../../../components/admin/AdminShared';
 import { isOddsSeedSource } from '../../../../lib/oddsDisplay';
 import { fetchAdminOddsSourceHealth } from '../../../../services/odds';
@@ -20,6 +22,17 @@ export default function AdminOddsPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const [checkedAt, setCheckedAt] = useState<Date | null>(null);
+  const [sortBy, setSortBy] = useState<'name' | 'slug' | 'mode' | 'license' | 'lastCapturedAt' | 'health'>('name');
+  const [sortOrder, setSortOrder] = useState<SortDirection>('asc');
+
+  const toggleSort = (key: 'name' | 'slug' | 'mode' | 'license' | 'lastCapturedAt' | 'health') => {
+    if (sortBy === key) {
+      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortBy(key);
+      setSortOrder(key === 'lastCapturedAt' ? 'desc' : 'asc');
+    }
+  };
 
   const load = useCallback(async () => {
     setRefreshing(true);
@@ -45,6 +58,29 @@ export default function AdminOddsPage() {
   }, [load]);
 
   const sources = health?.sources ?? [];
+  const sortedSources = useMemo(() => {
+    const mul = sortOrder === 'desc' ? -1 : 1;
+    return [...sources].sort((a, b) => {
+      if (sortBy === 'lastCapturedAt') {
+        const at = a.lastCapturedAt ? Date.parse(a.lastCapturedAt) : 0;
+        const bt = b.lastCapturedAt ? Date.parse(b.lastCapturedAt) : 0;
+        return (at - bt) * mul;
+      }
+      if (sortBy === 'mode') {
+        const am = isSeedSource(a.slug, a.name) ? 'seed' : 'live';
+        const bm = isSeedSource(b.slug, b.name) ? 'seed' : 'live';
+        return am.localeCompare(bm) * mul || a.name.localeCompare(b.name);
+      }
+      if (sortBy === 'health') {
+        const ah = `${a.isActive ? '1' : '0'}-${a.stale ? '0' : '1'}`;
+        const bh = `${b.isActive ? '1' : '0'}-${b.stale ? '0' : '1'}`;
+        return ah.localeCompare(bh) * mul || a.name.localeCompare(b.name);
+      }
+      const av = (sortBy === 'slug' ? a.slug : sortBy === 'license' ? a.licenseStatus : a.name).toLowerCase();
+      const bv = (sortBy === 'slug' ? b.slug : sortBy === 'license' ? b.licenseStatus : b.name).toLowerCase();
+      return av.localeCompare(bv) * mul;
+    });
+  }, [sources, sortBy, sortOrder]);
   const activeCount = sources.filter((source) => source.isActive).length;
   const staleCount = sources.filter((source) => source.stale).length;
   const seedCount = sources.filter((source) => isSeedSource(source.slug, source.name)).length;
@@ -137,26 +173,16 @@ export default function AdminOddsPage() {
                 <table className="w-full text-left text-xs">
                   <thead>
                     <tr style={{ borderBottom: '1px solid var(--admin-border)', background: 'var(--admin-table-header)' }}>
-                      {[
-                        { h: 'Source', cls: '' },
-                        { h: 'Slug', cls: '' },
-                        { h: 'Mode', cls: '' },
-                        { h: 'License', cls: '' },
-                        { h: 'Last price', cls: '' },
-                        { h: 'Health', cls: '' },
-                      ].map((heading) => (
-                        <th
-                          key={heading.h}
-                          className={`px-3 py-2.5 text-[11px] font-bold uppercase tracking-wider ${heading.cls}`}
-                          style={{ color: 'var(--admin-text-secondary)' }}
-                        >
-                          {heading.h}
-                        </th>
-                      ))}
+                      <AdminSortableHeader label="Source" sortKey="name" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} className="px-3 py-2.5 text-[11px] font-bold uppercase tracking-wider" />
+                      <AdminSortableHeader label="Slug" sortKey="slug" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} className="px-3 py-2.5 text-[11px] font-bold uppercase tracking-wider" />
+                      <AdminSortableHeader label="Mode" sortKey="mode" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} className="px-3 py-2.5 text-[11px] font-bold uppercase tracking-wider" />
+                      <AdminSortableHeader label="License" sortKey="license" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} className="px-3 py-2.5 text-[11px] font-bold uppercase tracking-wider" />
+                      <AdminSortableHeader label="Last price" sortKey="lastCapturedAt" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} className="px-3 py-2.5 text-[11px] font-bold uppercase tracking-wider" />
+                      <AdminSortableHeader label="Health" sortKey="health" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} className="px-3 py-2.5 text-[11px] font-bold uppercase tracking-wider" />
                     </tr>
                   </thead>
                   <tbody>
-                    {sources.map((source) => {
+                    {sortedSources.map((source) => {
                       const seed = isSeedSource(source.slug, source.name);
                       return (
                         <tr key={source.id} style={{ borderBottom: '1px solid var(--admin-border)' }}>

@@ -7,6 +7,8 @@ export interface ToursListParams {
   limit?: number;
   /** Name or country-code search (GET /tours?q=). */
   q?: string;
+  sortBy?: string;
+  sortOrder?: string;
 }
 
 export interface ToursPageResult {

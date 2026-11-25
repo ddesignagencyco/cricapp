@@ -74,6 +74,8 @@ export interface NewsAdminListParams {
   matchId?: string;
   seriesId?: string;
   authorId?: string;
+  sortBy?: 'date' | 'title' | 'author' | 'category' | 'status';
+  sortOrder?: 'asc' | 'desc';
 }
 
 export async function fetchNewsAdmin(
@@ -135,6 +137,10 @@ export function updateNews(id: string, input: Partial<NewsInput>): Promise<NewsA
 
 export async function deleteNews(id: string): Promise<void> {
   await apiDelete(`/news/${id}`, { headers: authHeaders() });
+}
+
+export function publishAllDraftNews(): Promise<{ published: number }> {
+  return apiPost<{ published: number }>('/admin/news/publish-all', {}, { headers: authHeaders() });
 }
 
 export function createCategory(name: string): Promise<NewsCategory> {

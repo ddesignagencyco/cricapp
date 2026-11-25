@@ -68,12 +68,13 @@ describe('grouping the placement switches', () => {
     expect(within(homeGroup()).getByText(`${homeRows}/${homeRows} on`)).toBeInTheDocument();
   });
 
-  it('turns a whole group on or off from its heading', async () => {
+  it('turns a whole group on or off from its heading toggle', async () => {
     const user = userEvent.setup();
     renderPanel();
     await user.click(groupHeading('Home page'));
 
-    await user.click(within(homeGroup()).getByRole('button', { name: 'Turn off every placement in Home page' }));
+    const groupToggle = within(homeGroup()).getByRole('switch', { name: 'Toggle all placements in Home page' });
+    await user.click(groupToggle);
     AD_PLACEMENTS.filter((row) => row.group === 'home').forEach((row) => {
       expect(within(homeGroup()).getByRole('switch', { name: `Enable ${row.label}` })).toHaveAttribute(
         'aria-checked',
@@ -87,18 +88,15 @@ describe('grouping the placement switches', () => {
         name: 'Enable List — bottom',
       }),
     ).toHaveAttribute('aria-checked', 'true');
-  });
 
-  it('disables the bulk button once the whole group already matches it', async () => {
-    const user = userEvent.setup();
-    renderPanel();
-    await user.click(groupHeading('Home page'));
-    expect(within(homeGroup()).getByRole('button', { name: 'Turn on every placement in Home page' })).toBeDisabled();
-    expect(within(homeGroup()).getByRole('button', { name: 'Turn off every placement in Home page' })).toBeEnabled();
-
-    await user.click(within(homeGroup()).getByRole('button', { name: 'Turn off every placement in Home page' }));
-    expect(within(homeGroup()).getByRole('button', { name: 'Turn on every placement in Home page' })).toBeEnabled();
-    expect(within(homeGroup()).getByRole('button', { name: 'Turn off every placement in Home page' })).toBeDisabled();
+    // Clicking the group toggle again turns them back on.
+    await user.click(groupToggle);
+    AD_PLACEMENTS.filter((row) => row.group === 'home').forEach((row) => {
+      expect(within(homeGroup()).getByRole('switch', { name: `Enable ${row.label}` })).toHaveAttribute(
+        'aria-checked',
+        'true',
+      );
+    });
   });
 });
 
@@ -200,7 +198,7 @@ describe('explaining what will actually render', () => {
 
   it('marks a row that has no ad unit of its own or inherited', async () => {
     const user = userEvent.setup();
-    renderPanel();
+    renderPanel(configWith({ mode: 'adsense' }));
     await user.click(groupHeading('Home page'));
     const row = within(homeGroup()).getByRole('switch', { name: 'Enable Mid page' }).closest('li') as HTMLElement;
     expect(within(row).getByText('no ad unit')).toBeInTheDocument();
@@ -209,7 +207,7 @@ describe('explaining what will actually render', () => {
   it('says where an inherited ad unit comes from', async () => {
     const user = userEvent.setup();
     renderPanel(
-      configWith({ defaultSlots: { ...EMPTY_AD_CONFIG.defaultSlots, leaderboard: '1111111111' } }),
+      configWith({ mode: 'adsense', defaultSlots: { ...EMPTY_AD_CONFIG.defaultSlots, leaderboard: '1111111111' } }),
     );
     await user.click(groupHeading('Home page'));
     const row = within(homeGroup()).getByRole('switch', { name: 'Enable Mid page' }).closest('li') as HTMLElement;
@@ -217,14 +215,10 @@ describe('explaining what will actually render', () => {
   });
 });
 
-describe('the gambling opt-in', () => {
-  it('is named the same thing to a screen reader as to the eye', () => {
-    // The two used to disagree, so the announcement and the on-screen words
-    // described different settings.
+describe('all-page delivery', () => {
+  it('does not show a duplicate gambling opt-in toggle since placements control all pages', () => {
     renderPanel();
-    const toggle = screen.getByRole('switch', { name: 'Allow ads on /odds and /predictions' });
-    expect(toggle).toHaveAttribute('aria-checked', 'false');
-    expect(screen.getByText('Allow ads on /odds and /predictions')).toBeInTheDocument();
+    expect(screen.queryByRole('switch', { name: 'Allow ads on /odds and /predictions' })).not.toBeInTheDocument();
   });
 });
 
@@ -232,7 +226,7 @@ describe('the ad unit list filter', () => {
   it('sits with the dropdowns it filters, not in a panel of its own', async () => {
     const user = userEvent.setup();
     const onToggleArchived = jest.fn();
-    renderPanel(EMPTY_AD_CONFIG, { includeArchived: false, onToggleArchived });
+    renderPanel(configWith({ mode: 'adsense' }), { includeArchived: false, onToggleArchived });
 
     const toggle = screen.getByRole('switch', { name: 'Show archived ad units in the dropdowns' });
     expect(toggle).toHaveAttribute('aria-checked', 'false');
@@ -241,7 +235,7 @@ describe('the ad unit list filter', () => {
   });
 
   it('shows the fetched unit count', () => {
-    renderPanel();
+    renderPanel(configWith({ mode: 'adsense' }));
     expect(screen.getByText('0 units listed')).toBeInTheDocument();
   });
 });

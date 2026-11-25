@@ -3,26 +3,95 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import toast from 'react-hot-toast';
-import { AlertTriangle, ChevronDown, Info, Search } from 'lucide-react';
+import {
+  AlertTriangle,
+  CheckCircle2,
+  ChevronDown,
+  Database,
+  Info,
+  Lock,
+  Pencil,
+  Search,
+} from 'lucide-react';
 import AdSlotPicker from './AdSlotPicker';
 import { AdminField, AdminInput, AdminToggle } from './AdminShared';
 import { saveAdConfig } from '../../services/siteSettings';
 import type { AdSenseAdUnit } from '../../services/adsense';
-import { AD_SIZE_DIMENSIONS, AD_SIZE_LABELS } from '../../lib/advertisements/placements';
+import { AD_SIZE_LABELS } from '../../lib/advertisements/placements';
 import {
   AD_MODES,
   AD_PLACEMENTS,
   AD_SIZES,
+  DEFAULT_ADSTERRA_HOST,
   UNREGISTERED_GROUP,
   groupAdPlacementRows,
   isValidAdUnitId,
+  isValidAdsterraHost,
+  isValidAdsterraKey,
+  isValidHttpsUrl,
   isValidPublisherId,
+  parseAdsterraInput,
   type AdConfig,
   type AdConfigInput,
   type AdMode,
   type AdPlacement,
   type AdSize,
 } from '../../lib/advertisements/registry';
+
+/* ─── Confirmed size metadata ─── */
+
+const CONFIRMED_SIZE_BADGE: Record<AdSize, string> = {
+  leaderboard: '728 × 90 px',
+  'tablet-banner': '468 × 60 px',
+  'mobile-banner': '320 × 50 px',
+  'medium-rectangle': '300 × 250 px',
+  'large-rectangle': '336 × 280 px',
+  'half-page': '160 × 600 px',
+};
+
+const ADSTERRA_SIZE_META: Partial<Record<AdSize, { unitName: string; tag: 'Recommended' | 'Mobile' | 'Optional'; hint: string }>> = {
+  leaderboard: {
+    unitName: 'Banner 728×90',
+    tag: 'Recommended',
+    hint: 'Top, mid-page & footer banners across the entire site.',
+  },
+  'medium-rectangle': {
+    unitName: 'Banner 300×250',
+    tag: 'Recommended',
+    hint: 'Sidebars, in-feed cards & in-article boxes (also covers 336×280 slots).',
+  },
+  'mobile-banner': {
+    unitName: 'Banner 320×50',
+    tag: 'Mobile',
+    hint: 'Dedicated mobile banner slots.',
+  },
+  'tablet-banner': {
+    unitName: 'Banner 468×60',
+    tag: 'Optional',
+    hint: 'Narrow banner for tablet widths.',
+  },
+  'half-page': {
+    unitName: 'Banner 160×600',
+    tag: 'Optional',
+    hint: 'Tall skyscraper for wide sidebars (PSL & predictions).',
+  },
+};
+
+const ADSTERRA_SIZES: AdSize[] = [
+  'leaderboard',
+  'medium-rectangle',
+  'mobile-banner',
+  'tablet-banner',
+  'half-page',
+];
+
+const CONFIRMED_SIZE_USAGE_COUNT: Record<AdSize, number> = AD_SIZES.reduce(
+  (acc, size) => {
+    acc[size] = AD_PLACEMENTS.filter((p) => p.size === size).length;
+    return acc;
+  },
+  {} as Record<AdSize, number>,
+);
 
 /* ─── Form state ─── */
 
@@ -33,34 +102,47 @@ export type AdsFormState = {
   defaultSlots: Record<AdSize, string>;
   placements: Record<string, { enabled: boolean; slotId: string }>;
   gamblingAds: boolean;
+  adsterra: {
+    scriptHost: string;
+    defaultKeys: Record<AdSize, string>;
+    placements: Record<string, string>;
+    socialBarUrl: string;
+    popunderUrl: string;
+  };
 };
 
 export type AdsFormErrors = {
   clientId?: string;
   defaultSlots?: Partial<Record<AdSize, string>>;
   placements?: Record<string, string>;
+  adsterra?: {
+    scriptHost?: string;
+    socialBarUrl?: string;
+    popunderUrl?: string;
+    defaultKeys?: Partial<Record<AdSize, string>>;
+    placements?: Record<string, string>;
+  };
 };
 
 export type AdPlacementRow = AdPlacement & { unregistered?: boolean };
 
-/** `house` is the AdSense term for the built-in creative; nobody outside the API says it. */
 const MODE_TITLES: Record<AdMode, string> = {
   off: 'Off',
   house: 'Placeholder',
+  adsterra: 'Adsterra',
   adsense: 'Google AdSense',
 };
 
 const MODE_DESCRIPTIONS: Record<AdMode, string> = {
-  off: 'No ad renders in any slot, on any page. The switches below stay editable so you can set up in advance.',
-  house: 'The built-in placeholder creative renders. This is the default, so the site looks unchanged.',
-  adsense: 'Real Google AdSense units render. A slot with no ad unit id renders nothing at all.',
+  off: 'No ad renders in any slot, on any page. Placement switches stay saved for later.',
+  house: 'Built-in CriczApp placeholder creatives render cleanly across every active slot.',
+  adsterra: 'Serve live Adsterra banners, Social Bar & Popunder without needing AdSense approval.',
+  adsense: 'Serve Google AdSense units. Requires an approved pub-… ID and numeric slot IDs.',
 };
 
 /**
  * Form state carries every placement in the registry plus any key the API already
- * holds that the registry does not know. Those extras render nowhere, but silently
- * dropping them from the payload would lose whatever an admin configured for them,
- * so they stay editable and are labelled as unregistered.
+ * holds that the registry does not know.
  */
 export function placementRowsFor(config: AdConfig): AdPlacementRow[] {
   const registered = AD_PLACEMENTS as ReadonlyArray<AdPlacement>;
@@ -79,18 +161,23 @@ export function placementRowsFor(config: AdConfig): AdPlacementRow[] {
 
 export function adsFormFromConfig(config: AdConfig): AdsFormState {
   const placements: AdsFormState['placements'] = {};
+  const adsterraPlacements: Record<string, string> = {};
+
   for (const row of placementRowsFor(config)) {
     const stored = config.placements?.[row.key];
     placements[row.key] = {
-      // The API normalises `enabled` to `rawValue.enabled !== false`, so a placement
-      // absent from the map is on.
       enabled: stored ? stored.enabled !== false : true,
       slotId: stored?.slotId ?? '',
     };
+    adsterraPlacements[row.key] = config.adsterra?.placements?.[row.key] ?? '';
   }
 
   const defaultSlots = {} as Record<AdSize, string>;
-  for (const size of AD_SIZES) defaultSlots[size] = config.defaultSlots?.[size] ?? '';
+  const defaultKeys = {} as Record<AdSize, string>;
+  for (const size of AD_SIZES) {
+    defaultSlots[size] = config.defaultSlots?.[size] ?? '';
+    defaultKeys[size] = config.adsterra?.defaultKeys?.[size] ?? '';
+  }
 
   return {
     mode: config.mode ?? 'house',
@@ -98,15 +185,16 @@ export function adsFormFromConfig(config: AdConfig): AdsFormState {
     defaultSlots,
     placements,
     gamblingAds: config.gamblingAds === true,
+    adsterra: {
+      scriptHost: config.adsterra?.scriptHost || DEFAULT_ADSTERRA_HOST,
+      defaultKeys,
+      placements: adsterraPlacements,
+      socialBarUrl: config.adsterra?.socialBarUrl ?? '',
+      popunderUrl: config.adsterra?.popunderUrl ?? '',
+    },
   };
 }
 
-/**
- * The API does not validate slot ids. `defaultSlots` and `placements` are
- * `Record<string, …>` without `@ValidateNested`, so class-validator never descends
- * into them and a bad id returns 200 with the value silently normalised to `null`.
- * Everything here has to be caught before submit.
- */
 export function validateAdsForm(state: AdsFormState): AdsFormErrors {
   const errors: AdsFormErrors = {};
 
@@ -128,19 +216,43 @@ export function validateAdsForm(state: AdsFormState): AdsFormErrors {
   }
   if (Object.keys(placements).length) errors.placements = placements;
 
+  // Adsterra validation
+  const adsterraErrors: NonNullable<AdsFormErrors['adsterra']> = {};
+  const hostVal = state.adsterra.scriptHost.trim();
+  if (hostVal && !isValidAdsterraHost(hostVal)) {
+    adsterraErrors.scriptHost = 'Enter a valid domain like www.highperformanceformat.com';
+  }
+  const socialBar = state.adsterra.socialBarUrl.trim();
+  if (socialBar && !isValidHttpsUrl(socialBar)) {
+    adsterraErrors.socialBarUrl = 'Must be a valid https:// script URL from Adsterra.';
+  }
+  const popunder = state.adsterra.popunderUrl.trim();
+  if (popunder && !isValidHttpsUrl(popunder)) {
+    adsterraErrors.popunderUrl = 'Must be a valid https:// script URL from Adsterra.';
+  }
+  const defaultKeysErr: Partial<Record<AdSize, string>> = {};
+  for (const size of AD_SIZES) {
+    const val = state.adsterra.defaultKeys[size].trim();
+    if (val && !isValidAdsterraKey(val)) {
+      defaultKeysErr[size] = 'Paste the 32-char Adsterra key or the full <script> tag.';
+    }
+  }
+  if (Object.keys(defaultKeysErr).length) adsterraErrors.defaultKeys = defaultKeysErr;
+
+  const adsterraPlacementsErr: Record<string, string> = {};
+  for (const [key, val] of Object.entries(state.adsterra.placements)) {
+    const trimmed = val.trim();
+    if (trimmed && !isValidAdsterraKey(trimmed)) {
+      adsterraPlacementsErr[key] = 'Paste a valid 16–64 char Adsterra zone key.';
+    }
+  }
+  if (Object.keys(adsterraPlacementsErr).length) adsterraErrors.placements = adsterraPlacementsErr;
+
+  if (Object.keys(adsterraErrors).length) errors.adsterra = adsterraErrors;
+
   return errors;
 }
 
-/**
- * An empty string is sent rather than omitted for slot ids: the server merges per
- * field and per placement key, so an explicit `''` is what clears a stored id (it
- * normalises to `null`), whereas omitting the key would leave the old value in place.
- *
- * `clientId` is the exception. `AdConfigDto.clientId` carries
- * `@Matches(/^(ca-)?pub-\d{10,20}$/i)` behind `@IsOptional()`, so `undefined` skips
- * validation but `''` does not and comes back as a 400. The key is therefore omitted
- * when the box is blank, which leaves the stored publisher id untouched.
- */
 export function toAdConfigInput(state: AdsFormState): AdConfigInput {
   const placements: AdConfigInput['placements'] = {};
   for (const [key, entry] of Object.entries(state.placements)) {
@@ -150,6 +262,14 @@ export function toAdConfigInput(state: AdsFormState): AdConfigInput {
   const defaultSlots: Record<string, string> = {};
   for (const size of AD_SIZES) defaultSlots[size] = state.defaultSlots[size].trim();
 
+  const defaultKeys: Record<string, string> = {};
+  for (const size of AD_SIZES) defaultKeys[size] = state.adsterra.defaultKeys[size].trim();
+
+  const adsterraPlacements: Record<string, string> = {};
+  for (const [key, val] of Object.entries(state.adsterra.placements)) {
+    adsterraPlacements[key] = val.trim();
+  }
+
   const clientId = state.clientId.trim();
 
   return {
@@ -158,22 +278,21 @@ export function toAdConfigInput(state: AdsFormState): AdConfigInput {
     defaultSlots,
     placements,
     gamblingAds: state.gamblingAds,
+    adsterra: {
+      scriptHost: state.adsterra.scriptHost.trim() || DEFAULT_ADSTERRA_HOST,
+      defaultKeys,
+      placements: adsterraPlacements,
+      socialBarUrl: state.adsterra.socialBarUrl.trim(),
+      popunderUrl: state.adsterra.popunderUrl.trim(),
+    },
   };
 }
 
-/**
- * Compared against the payload built from the config the API last returned, so
- * "unsaved changes" means "would change something on the server" rather than "some
- * key was touched". Both sides go through `toAdConfigInput`, which trims and omits
- * `clientId` identically, so a whitespace-only edit is correctly read as no change.
- *
- * Object keys are sorted first: the API merges per placement key, so key order
- * carries no meaning and `JSON.stringify`'s order sensitivity would light up a false
- * "Unsaved changes" on a map that was merely rebuilt in a new order. The payload
- * holds no arrays, so nothing order-sensitive is disturbed.
- */
 export function adsFormIsDirty(state: AdsFormState, savedConfig: AdConfig): boolean {
-  return canonicalAdConfigInput(toAdConfigInput(state)) !== canonicalAdConfigInput(toAdConfigInput(adsFormFromConfig(savedConfig)));
+  return (
+    canonicalAdConfigInput(toAdConfigInput(state)) !==
+    canonicalAdConfigInput(toAdConfigInput(adsFormFromConfig(savedConfig)))
+  );
 }
 
 function canonicalAdConfigInput(input: AdConfigInput): string {
@@ -186,7 +305,6 @@ function canonicalAdConfigInput(input: AdConfigInput): string {
   );
 }
 
-/** Only registered placements are counted — an unregistered key renders nowhere. */
 export function enabledPlacementCount(state: AdsFormState): { on: number; total: number } {
   const rows = AD_PLACEMENTS as ReadonlyArray<AdPlacement>;
   return {
@@ -197,20 +315,19 @@ export function enabledPlacementCount(state: AdsFormState): { on: number; total:
 
 export type PlacementSlotState = 'own' | 'inherited' | 'none';
 
-/**
- * Mirrors `resolveAdSlotId` over the uncommitted form, so a row can say where its
- * ad unit comes from *before* the admin saves.
- */
 export function placementSlotState(state: AdsFormState, key: string, size: AdSize): PlacementSlotState {
+  if (state.mode === 'adsterra') {
+    if (state.adsterra.placements[key]?.trim()) return 'own';
+    if (state.adsterra.defaultKeys[size]?.trim()) return 'inherited';
+    if (size === 'large-rectangle' && state.adsterra.defaultKeys['medium-rectangle']?.trim()) {
+      return 'inherited';
+    }
+    return 'none';
+  }
   if (state.placements[key]?.slotId.trim()) return 'own';
   return state.defaultSlots[size]?.trim() ? 'inherited' : 'none';
 }
 
-/**
- * In `adsense` mode a slot with no resolvable ad unit renders nothing at all
- * (`shouldRenderAd`), which reads as "my config did not save". Counting them lets
- * the panel say so up front instead.
- */
 export function countSlotsWithoutAdUnit(state: AdsFormState): number {
   const rows = AD_PLACEMENTS as ReadonlyArray<AdPlacement>;
   return rows.filter((row) => {
@@ -219,7 +336,6 @@ export function countSlotsWithoutAdUnit(state: AdsFormState): number {
   }).length;
 }
 
-/** Bulk action behind a group's "All on" / "All off". Keys outside the group are untouched. */
 export function setPlacementGroupEnabled(
   state: AdsFormState,
   keys: readonly string[],
@@ -243,66 +359,84 @@ export function filterPlacementRows(rows: readonly AdPlacementRow[], query: stri
   );
 }
 
+function extractScriptUrl(raw: string): string {
+  const trimmed = raw.trim();
+  if (!trimmed) return '';
+  const match = trimmed.match(/src\s*=\s*['"](https:\/\/[^'"]+)['"]/i);
+  return match?.[1] ?? trimmed;
+}
+
+function formatSyncTime(iso?: string | null): string {
+  if (!iso) return 'Not saved yet (using defaults)';
+  try {
+    return new Date(iso).toLocaleString();
+  } catch {
+    return iso;
+  }
+}
+
 /* ─── Panel ─── */
 
 export type AdConfigPanelProps = {
   config: AdConfig;
+  updatedAt?: string | null;
   adUnits: AdSenseAdUnit[];
-  /** Owns the "show archived units" filter because it drives a query, not a save. */
   includeArchived: boolean;
   onToggleArchived: () => void;
-  /** Message about the fetched ad unit list, shown next to the filter that changes it. */
   adUnitsNotice?: ReactNode;
   onSaved: (_next: AdConfig) => void;
+  onModeChange?: (_mode: AdMode) => void;
 };
 
 export default function AdConfigPanel({
   config,
+  updatedAt,
   adUnits,
   includeArchived,
   onToggleArchived,
   adUnitsNotice,
   onSaved,
+  onModeChange,
 }: AdConfigPanelProps) {
-  /**
-   * The last config known to be on the server. Tracked separately from the `config`
-   * prop because the page writes the saved value into the query cache and hands a new
-   * object back down: measuring "unsaved changes" against the prop would compare the
-   * freshly saved form against the config from before the save and keep claiming the
-   * form was dirty after it had been persisted.
-   */
   const [saved, setSaved] = useState<AdConfig>(config);
+  const [lastSyncedAt, setLastSyncedAt] = useState<string | null | undefined>(updatedAt);
   const [state, setState] = useState<AdsFormState>(() => adsFormFromConfig(config));
   const [errors, setErrors] = useState<AdsFormErrors>({});
   const [saving, setSaving] = useState(false);
   const [filter, setFilter] = useState('');
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
-  const [defaultsOpen, setDefaultsOpen] = useState(false);
+  const [openOverrides, setOpenOverrides] = useState<Record<string, boolean>>({});
+  const [unlockedFields, setUnlockedFields] = useState<Record<string, boolean>>({});
+  const [defaultsOpen, setDefaultsOpen] = useState(() => config.mode === 'adsterra' || config.mode === 'adsense');
 
-  /**
-   * Adopt a config that came from somewhere other than our own save — another tab,
-   * or the cache being refetched. Skipped when the incoming config is the one we
-   * already reconciled against, so an ordinary parent re-render cannot wipe edits
-   * that have not been submitted yet.
-   */
+  const isFieldLocked = (fieldId: string, savedValue: string | null | undefined) =>
+    Boolean(savedValue && savedValue.trim()) && !unlockedFields[fieldId];
+
+  const toggleFieldLock = (fieldId: string) =>
+    setUnlockedFields((prev) => ({ ...prev, [fieldId]: !prev[fieldId] }));
+
   const reconciledRef = useRef(JSON.stringify(config));
   useEffect(() => {
     const incoming = JSON.stringify(config);
     if (incoming === reconciledRef.current) return;
     reconciledRef.current = incoming;
     setSaved(config);
+    setLastSyncedAt(updatedAt);
     setState(adsFormFromConfig(config));
     setErrors({});
-  }, [config]);
+  }, [config, updatedAt]);
 
   const rows = useMemo(() => placementRowsFor(saved), [saved]);
   const isAdsense = state.mode === 'adsense';
+  const isAdsterra = state.mode === 'adsterra';
   const isOff = state.mode === 'off';
+  const isHouse = state.mode === 'house';
+
   const dirty = adsFormIsDirty(state, saved);
   const { on: enabledCount, total: totalPlacements } = enabledPlacementCount(state);
-  const missingAdUnits = isAdsense ? countSlotsWithoutAdUnit(state) : 0;
+  const missingKeysOrUnits = isAdsense || isAdsterra ? countSlotsWithoutAdUnit(state) : 0;
+  const readyPlacements = enabledCount - missingKeysOrUnits;
 
-  // A search must reveal matches in a collapsed group, otherwise typing finds nothing.
   const searching = filter.trim().length > 0;
   const visibleGroups = useMemo(
     () => groupAdPlacementRows(filterPlacementRows(rows, filter)),
@@ -319,6 +453,38 @@ export default function AdConfigPanel({
     }));
   };
 
+  const setAdsterraPlacementKey = (key: string, raw: string) => {
+    const parsed = parseAdsterraInput(raw);
+    setState((prev) => ({
+      ...prev,
+      adsterra: {
+        ...prev.adsterra,
+        ...(parsed.host ? { scriptHost: parsed.host } : {}),
+        placements: { ...prev.adsterra.placements, [key]: parsed.key },
+      },
+    }));
+  };
+
+  const setAdsterraDefaultKey = (size: AdSize, raw: string) => {
+    const parsed = parseAdsterraInput(raw);
+    setState((prev) => ({
+      ...prev,
+      adsterra: {
+        ...prev.adsterra,
+        ...(parsed.host ? { scriptHost: parsed.host } : {}),
+        defaultKeys: { ...prev.adsterra.defaultKeys, [size]: parsed.key },
+      },
+    }));
+  };
+
+  const handleModeSelect = (mode: AdMode) => {
+    setState((prev) => ({ ...prev, mode }));
+    if (mode === 'adsterra' || mode === 'adsense') {
+      setDefaultsOpen(true);
+    }
+    onModeChange?.(mode);
+  };
+
   const onSave = async (event: React.FormEvent) => {
     event.preventDefault();
     const nextErrors = validateAdsForm(state);
@@ -331,15 +497,15 @@ export default function AdConfigPanel({
     setSaving(true);
     try {
       const result = await saveAdConfig(toAdConfigInput(state));
-      // Reconcile from the server response rather than assuming the input round-tripped:
-      // a normalised-away value comes back as `null` and must be reflected in the form.
       const next = result.ads;
       reconciledRef.current = JSON.stringify(next);
       setSaved(next);
+      setLastSyncedAt(result.updatedAt);
       setState(adsFormFromConfig(next));
+      setUnlockedFields({});
       setErrors({});
       onSaved(next);
-      toast.success('Ad configuration saved.');
+      toast.success('Ad configuration saved to database.');
     } catch {
       toast.error('Could not save the ad configuration.');
     } finally {
@@ -349,68 +515,261 @@ export default function AdConfigPanel({
 
   const onDiscard = () => {
     setState(adsFormFromConfig(saved));
+    setUnlockedFields({});
     setErrors({});
+    onModeChange?.(saved.mode);
   };
 
   return (
     <form onSubmit={onSave} noValidate className="space-y-5">
-      {/* ── Delivery ── */}
+      {/* ── Live Sync & Overview Bar ── */}
+      <div
+        className="flex flex-wrap items-center justify-between gap-3 rounded-lg px-4 py-3 text-xs"
+        style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}
+      >
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="inline-flex items-center gap-1.5 font-semibold" style={{ color: 'var(--admin-text)' }}>
+            <Database size={14} aria-hidden style={{ color: 'var(--admin-accent)' }} />
+            Synced with backend database
+          </span>
+          <Badge tone={dirty ? 'warning' : 'success'}>
+            {dirty ? 'Unsaved changes' : 'In sync'}
+          </Badge>
+          <span style={{ color: 'var(--admin-text-muted)' }}>
+            Last saved: <span className="font-medium">{formatSyncTime(lastSyncedAt)}</span>
+          </span>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge tone="accent">Active: {MODE_TITLES[state.mode]}</Badge>
+          <Badge tone="neutral">
+            {isOff ? '0 active' : `${readyPlacements}/${totalPlacements} ready`}
+          </Badge>
+        </div>
+      </div>
+
+      {/* ── Delivery / Publisher Network ── */}
       <Panel>
         <PanelHeading
-          title="Delivery mode"
-          hint="Applies to every placement on the public site."
+          title="1. Ad Network & Delivery Mode"
+          hint="Choose which ad publisher runs on the public site. Only one network is active at a time."
         />
 
-        <div role="radiogroup" aria-label="Advertisement delivery mode" className="grid gap-2 sm:grid-cols-3">
+        <div role="radiogroup" aria-label="Advertisement delivery mode" className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
           {AD_MODES.map((mode) => {
             const selected = state.mode === mode;
             return (
               <label
                 key={mode}
-                className="flex cursor-pointer flex-col gap-1 rounded-md p-3 text-xs transition-colors"
+                className="flex cursor-pointer flex-col gap-1.5 rounded-md p-3 text-xs transition-colors"
                 style={{
                   border: `1px solid ${selected ? 'var(--admin-accent)' : 'var(--admin-border)'}`,
                   background: selected ? 'var(--admin-info-bg)' : 'var(--admin-input-bg)',
                 }}
               >
-                <span className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    name="ads-mode"
-                    value={mode}
-                    checked={selected}
-                    onChange={() => setState((prev) => ({ ...prev, mode }))}
-                  />
-                  <span className="text-sm font-semibold" style={{ color: 'var(--admin-text)' }}>
-                    {MODE_TITLES[mode]}
+                <span className="flex items-center justify-between gap-2">
+                  <span className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="ads-mode"
+                      value={mode}
+                      checked={selected}
+                      onChange={() => handleModeSelect(mode)}
+                    />
+                    <span className="text-sm font-semibold" style={{ color: 'var(--admin-text)' }}>
+                      {MODE_TITLES[mode]}
+                    </span>
                   </span>
-                  {selected ? <Badge tone="accent">{state.mode}</Badge> : null}
+                  {selected ? <Badge tone="accent">Selected</Badge> : null}
                 </span>
-                <span style={{ color: 'var(--admin-text-muted)' }}>{MODE_DESCRIPTIONS[mode]}</span>
+                <span className="leading-relaxed" style={{ color: 'var(--admin-text-muted)' }}>
+                  {MODE_DESCRIPTIONS[mode]}
+                </span>
               </label>
             );
           })}
         </div>
 
-        <div className="mt-4 grid gap-4 lg:grid-cols-2">
-          <div>
+        {isOff ? (
+          <Callout tone="info" icon={<Info size={14} aria-hidden />}>
+            Ads are off, so no slot will render regardless of the switches below. They stay editable
+            so you can set the site up before switching on.
+          </Callout>
+        ) : null}
+
+        {isHouse ? (
+          <Callout tone="info" icon={<Info size={14} aria-hidden />}>
+            Placeholder mode is active — built-in house banners render across all enabled placements without external scripts.
+          </Callout>
+        ) : null}
+
+        {(isAdsense || isAdsterra) && missingKeysOrUnits > 0 ? (
+          <Callout tone="warning" icon={<AlertTriangle size={14} aria-hidden />}>
+            {isAdsterra
+              ? `${missingKeysOrUnits} of ${enabledCount} placements have no Adsterra zone key yet and will stay hidden. Set a default key per size below.`
+              : `${missingKeysOrUnits} of ${enabledCount} placements have no ad unit id and will render nothing. Give them an id below, or set a default for their size.`}
+          </Callout>
+        ) : null}
+
+        {(isAdsense || isAdsterra) && enabledCount > 0 && missingKeysOrUnits === 0 ? (
+          <Callout tone="success" icon={<CheckCircle2 size={14} aria-hidden />}>
+            All {enabledCount} enabled placements have a valid {isAdsterra ? 'Adsterra key' : 'AdSense unit ID'} configured.
+          </Callout>
+        ) : null}
+      </Panel>
+
+      {/* ── Adsterra Configuration ── */}
+      {isAdsterra ? (
+        <Panel>
+          <PanelHeading
+            title="2. Adsterra Setup"
+            hint="Paste your Adsterra zone keys (or paste the full <script> snippet — the key and host are extracted automatically)."
+          />
+
+          <div className="grid gap-4 lg:grid-cols-3">
+            <AdminField
+              label="Banner script host"
+              htmlFor="adsterra-script-host"
+              hint={`Default: ${DEFAULT_ADSTERRA_HOST}. Change only if Adsterra gives you a custom anti-adblock domain.`}
+            >
+              <LockableFieldRow
+                locked={isFieldLocked('adsterra-script-host', saved.adsterra?.scriptHost)}
+                hasSaved={Boolean(saved.adsterra?.scriptHost)}
+                onToggleLock={() => toggleFieldLock('adsterra-script-host')}
+              >
+                <AdminInput
+                  id="adsterra-script-host"
+                  value={state.adsterra.scriptHost}
+                  readOnly={isFieldLocked('adsterra-script-host', saved.adsterra?.scriptHost)}
+                  onChange={(e) =>
+                    setState((prev) => ({
+                      ...prev,
+                      adsterra: { ...prev.adsterra, scriptHost: e.target.value },
+                    }))
+                  }
+                  placeholder={DEFAULT_ADSTERRA_HOST}
+                  style={{
+                    ...(isFieldLocked('adsterra-script-host', saved.adsterra?.scriptHost)
+                      ? { opacity: 0.75, cursor: 'not-allowed' }
+                      : {}),
+                    ...(errors.adsterra?.scriptHost ? { borderColor: 'var(--admin-danger)' } : {}),
+                  }}
+                />
+              </LockableFieldRow>
+              {errors.adsterra?.scriptHost ? (
+                <p className="mt-1.5 text-[11px] font-medium" style={{ color: 'var(--admin-danger)' }}>
+                  {errors.adsterra.scriptHost}
+                </p>
+              ) : null}
+            </AdminField>
+
+            <AdminField
+              label="Social Bar script URL (optional)"
+              htmlFor="adsterra-social-bar"
+              hint="Paste the https://.../invoke.js URL (or full <script> tag) from your Adsterra Social Bar unit."
+            >
+              <LockableFieldRow
+                locked={isFieldLocked('adsterra-social-bar', saved.adsterra?.socialBarUrl)}
+                hasSaved={Boolean(saved.adsterra?.socialBarUrl)}
+                onToggleLock={() => toggleFieldLock('adsterra-social-bar')}
+              >
+                <AdminInput
+                  id="adsterra-social-bar"
+                  value={state.adsterra.socialBarUrl}
+                  readOnly={isFieldLocked('adsterra-social-bar', saved.adsterra?.socialBarUrl)}
+                  onChange={(e) =>
+                    setState((prev) => ({
+                      ...prev,
+                      adsterra: { ...prev.adsterra, socialBarUrl: extractScriptUrl(e.target.value) },
+                    }))
+                  }
+                  placeholder="https://pl12345678.effectivegatecpm.com/.../invoke.js"
+                  style={{
+                    ...(isFieldLocked('adsterra-social-bar', saved.adsterra?.socialBarUrl)
+                      ? { opacity: 0.75, cursor: 'not-allowed' }
+                      : {}),
+                    ...(errors.adsterra?.socialBarUrl ? { borderColor: 'var(--admin-danger)' } : {}),
+                  }}
+                />
+              </LockableFieldRow>
+              {errors.adsterra?.socialBarUrl ? (
+                <p className="mt-1.5 text-[11px] font-medium" style={{ color: 'var(--admin-danger)' }}>
+                  {errors.adsterra.socialBarUrl}
+                </p>
+              ) : null}
+            </AdminField>
+
+            <AdminField
+              label="Popunder script URL (optional)"
+              htmlFor="adsterra-popunder"
+              hint="Optional global popunder script URL (or full <script> tag). Leave blank to disable."
+            >
+              <LockableFieldRow
+                locked={isFieldLocked('adsterra-popunder', saved.adsterra?.popunderUrl)}
+                hasSaved={Boolean(saved.adsterra?.popunderUrl)}
+                onToggleLock={() => toggleFieldLock('adsterra-popunder')}
+              >
+                <AdminInput
+                  id="adsterra-popunder"
+                  value={state.adsterra.popunderUrl}
+                  readOnly={isFieldLocked('adsterra-popunder', saved.adsterra?.popunderUrl)}
+                  onChange={(e) =>
+                    setState((prev) => ({
+                      ...prev,
+                      adsterra: { ...prev.adsterra, popunderUrl: extractScriptUrl(e.target.value) },
+                    }))
+                  }
+                  placeholder="https://pl12345678.effectivegatecpm.com/.../invoke.js"
+                  style={{
+                    ...(isFieldLocked('adsterra-popunder', saved.adsterra?.popunderUrl)
+                      ? { opacity: 0.75, cursor: 'not-allowed' }
+                      : {}),
+                    ...(errors.adsterra?.popunderUrl ? { borderColor: 'var(--admin-danger)' } : {}),
+                  }}
+                />
+              </LockableFieldRow>
+              {errors.adsterra?.popunderUrl ? (
+                <p className="mt-1.5 text-[11px] font-medium" style={{ color: 'var(--admin-danger)' }}>
+                  {errors.adsterra.popunderUrl}
+                </p>
+              ) : null}
+            </AdminField>
+          </div>
+        </Panel>
+      ) : null}
+
+      {/* ── Google AdSense Publisher ID (only in AdSense mode) ── */}
+      {isAdsense ? (
+        <Panel>
+          <PanelHeading
+            title="2. Google AdSense Credentials"
+            hint="Enter your approved AdSense publisher ID and map your AdSense unit IDs below."
+          />
+          <div className="max-w-lg">
             <AdminField
               label="AdSense publisher id"
               htmlFor="ads-client-id"
-              hint={
-                isAdsense
-                  ? 'Paste it straight from the AdSense dashboard. The ca- prefix is optional and is stripped on save.'
-                  : 'Only used in AdSense mode.'
-              }
+              hint="Paste it straight from the AdSense dashboard. The ca- prefix is optional and is stripped on save."
             >
-              <AdminInput
-                id="ads-client-id"
-                value={state.clientId}
-                aria-invalid={Boolean(errors.clientId) || undefined}
-                onChange={(event) => setState((prev) => ({ ...prev, clientId: event.target.value }))}
-                placeholder="pub-1234567890123456"
-                style={errors.clientId ? { borderColor: 'var(--admin-danger)' } : undefined}
-              />
+              <LockableFieldRow
+                locked={isFieldLocked('ads-client-id', saved.clientId)}
+                hasSaved={Boolean(saved.clientId)}
+                onToggleLock={() => toggleFieldLock('ads-client-id')}
+              >
+                <AdminInput
+                  id="ads-client-id"
+                  value={state.clientId}
+                  readOnly={isFieldLocked('ads-client-id', saved.clientId)}
+                  aria-invalid={Boolean(errors.clientId) || undefined}
+                  onChange={(event) => setState((prev) => ({ ...prev, clientId: event.target.value }))}
+                  placeholder="pub-1234567890123456"
+                  style={{
+                    ...(isFieldLocked('ads-client-id', saved.clientId)
+                      ? { opacity: 0.75, cursor: 'not-allowed' }
+                      : {}),
+                    ...(errors.clientId ? { borderColor: 'var(--admin-danger)' } : {}),
+                  }}
+                />
+              </LockableFieldRow>
             </AdminField>
 
             {errors.clientId ? (
@@ -421,126 +780,156 @@ export default function AdConfigPanel({
 
             {saved.clientId && !state.clientId.trim() ? (
               <p className="mt-2 text-[11px] font-medium" style={{ color: 'var(--admin-warning, var(--color-warning))' }}>
-                Clearing this box will not remove the stored publisher id — the API rejects an empty
-                clientId and keeps the previous value. Switch the mode to Off or Placeholder instead.
+                Clearing this box will not remove the stored publisher id — switch mode to Off, Placeholder, or Adsterra instead.
               </p>
             ) : null}
           </div>
+        </Panel>
+      ) : null}
 
-          {/* The switch and its caption are one control, so the visible text is also the
-              accessible name. The two used to disagree, which meant a screen reader
-              announced something different from the words on screen. */}
-          <div className="flex items-start gap-3 rounded-md p-3" style={{ border: '1px solid var(--admin-border)' }}>
-            <AdminToggle
-              checked={state.gamblingAds}
-              label="Allow ads on /odds and /predictions"
-              onChange={() => setState((prev) => ({ ...prev, gamblingAds: !prev.gamblingAds }))}
-            />
-            <div className="min-w-0">
-              <p className="text-xs font-semibold" style={{ color: 'var(--admin-text)' }}>
-                Allow ads on /odds and /predictions
-              </p>
-              <p className="mt-0.5 text-[11px] leading-snug" style={{ color: 'var(--admin-text-muted)' }}>
-                Off by default. This gates the shared placements too, so the sidebar and the global
-                top banner disappear on those routes as well.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {isOff ? (
-          <Callout tone="info" icon={<Info size={14} aria-hidden />}>
-            Ads are off, so no slot will render regardless of the switches below. They stay editable
-            so you can set the site up before switching on.
-          </Callout>
-        ) : null}
-
-        {isAdsense && missingAdUnits > 0 ? (
-          <Callout tone="warning" icon={<AlertTriangle size={14} aria-hidden />}>
-            {missingAdUnits} of {totalPlacements} placements have no ad unit id and will render nothing.
-            Give them an id below, or set a default for their size.
-          </Callout>
-        ) : null}
-      </Panel>
-
-      {/* ── Size defaults ── */}
-      <Panel>
-        <PanelHeading
-          title="Ad unit defaults"
-          hint="Used by any placement that has no ad unit id of its own."
-          action={
-            <button
-              type="button"
-              onClick={() => setDefaultsOpen((prev) => !prev)}
-              aria-expanded={defaultsOpen}
-              className="flex shrink-0 items-center gap-1.5 text-xs font-semibold"
-              style={{ color: 'var(--admin-accent)' }}
-            >
-              {defaultsOpen ? 'Hide' : 'Show'}
-              <ChevronDown
-                size={14}
-                aria-hidden
-                className="transition-transform"
-                style={{ transform: defaultsOpen ? 'rotate(180deg)' : 'none' }}
-              />
-            </button>
-          }
-        />
-
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px]">
-          <AdminToggle
-            checked={includeArchived}
-            label="Show archived ad units in the dropdowns"
-            onChange={onToggleArchived}
-          />
-          <span style={{ color: 'var(--admin-text-secondary)' }}>
-            Show archived ad units in the dropdowns
-          </span>
-          <span style={{ color: 'var(--admin-text-muted)' }}>
-            {adUnits.length} unit{adUnits.length === 1 ? '' : 's'} listed
-          </span>
-        </div>
-        {adUnitsNotice ? <div className="mt-2">{adUnitsNotice}</div> : null}
-
-        {defaultsOpen ? (
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            {AD_SIZES.map((size) => (
-              <AdminField
-                key={size}
-                label={AD_SIZE_LABELS[size].label}
-                hint={`${AD_SIZE_DIMENSIONS[size].label} · ${AD_SIZE_LABELS[size].hint}`}
-                htmlFor={`ads-default-${size}`}
+      {/* ── Confirmed Ad Sizes & Defaults ── */}
+      {(isAdsterra || isAdsense) ? (
+        <Panel>
+          <PanelHeading
+            title={isAdsterra ? '3. Confirmed Ad Sizes — Default Adsterra Keys' : '3. Confirmed Ad Sizes — Default AdSense Units'}
+            hint="Assign one key/unit per confirmed pixel size. Every placement matching that size inherits it automatically unless overridden below."
+            action={
+              <button
+                type="button"
+                onClick={() => setDefaultsOpen((prev) => !prev)}
+                aria-expanded={defaultsOpen}
+                className="flex shrink-0 items-center gap-1.5 text-xs font-semibold"
+                style={{ color: 'var(--admin-accent)' }}
               >
-                <AdSlotPicker
-                  id={`ads-default-${size}`}
-                  value={state.defaultSlots[size] || null}
-                  adUnits={adUnits}
-                  invalid={Boolean(errors.defaultSlots?.[size])}
-                  onChange={(value) =>
-                    setState((prev) => ({ ...prev, defaultSlots: { ...prev.defaultSlots, [size]: value ?? '' } }))
-                  }
+                {defaultsOpen ? 'Hide' : 'Show'}
+                <ChevronDown
+                  size={14}
+                  aria-hidden
+                  className="transition-transform"
+                  style={{ transform: defaultsOpen ? 'rotate(180deg)' : 'none' }}
                 />
-                {errors.defaultSlots?.[size] ? (
-                  <span className="mt-1.5 block text-[11px] font-medium" style={{ color: 'var(--admin-danger)' }}>
-                    {errors.defaultSlots[size]}
-                  </span>
-                ) : null}
-              </AdminField>
-            ))}
-          </div>
-        ) : null}
-      </Panel>
+              </button>
+            }
+          />
+
+          {isAdsense ? (
+            <>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px]">
+                <AdminToggle
+                  checked={includeArchived}
+                  label="Show archived ad units in the dropdowns"
+                  onChange={onToggleArchived}
+                />
+                <span style={{ color: 'var(--admin-text-secondary)' }}>
+                  Show archived ad units in the dropdowns
+                </span>
+                <span style={{ color: 'var(--admin-text-muted)' }}>
+                  {adUnits.length} unit{adUnits.length === 1 ? '' : 's'} listed
+                </span>
+              </div>
+              {adUnitsNotice ? <div className="mt-2">{adUnitsNotice}</div> : null}
+            </>
+          ) : null}
+
+          {defaultsOpen ? (
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {(isAdsterra ? ADSTERRA_SIZES : AD_SIZES).map((size) => {
+                const count =
+                  isAdsterra && size === 'medium-rectangle'
+                    ? CONFIRMED_SIZE_USAGE_COUNT['medium-rectangle'] + CONFIRMED_SIZE_USAGE_COUNT['large-rectangle']
+                    : CONFIRMED_SIZE_USAGE_COUNT[size];
+                const confirmedDims = CONFIRMED_SIZE_BADGE[size];
+                const adsterraMeta = isAdsterra ? ADSTERRA_SIZE_META[size] : undefined;
+                return (
+                  <div
+                    key={size}
+                    className="rounded-md p-3"
+                    style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-input-bg)' }}
+                  >
+                    <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                      <span className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: 'var(--admin-text)' }}>
+                        {adsterraMeta ? adsterraMeta.unitName : AD_SIZE_LABELS[size].label}
+                        {adsterraMeta ? (
+                          <Badge tone={adsterraMeta.tag === 'Recommended' ? 'accent' : 'neutral'}>
+                            {adsterraMeta.tag}
+                          </Badge>
+                        ) : null}
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        {isAdsterra && isValidAdsterraKey(state.adsterra.defaultKeys[size]) ? (
+                          <Badge tone="success">Ready</Badge>
+                        ) : null}
+                        <Badge tone="neutral">{confirmedDims}</Badge>
+                        <Badge tone="neutral">{count} slot{count === 1 ? '' : 's'}</Badge>
+                      </div>
+                    </div>
+                    <p className="mb-2 text-[11px]" style={{ color: 'var(--admin-text-muted)' }}>
+                      {adsterraMeta ? adsterraMeta.hint : AD_SIZE_LABELS[size].hint}
+                    </p>
+
+                    {isAdsterra ? (
+                      <>
+                        <LockableFieldRow
+                          locked={isFieldLocked(`adsterra-default-${size}`, saved.adsterra?.defaultKeys?.[size])}
+                          hasSaved={Boolean(saved.adsterra?.defaultKeys?.[size])}
+                          onToggleLock={() => toggleFieldLock(`adsterra-default-${size}`)}
+                        >
+                          <AdminInput
+                            id={`ads-default-${size}`}
+                            value={state.adsterra.defaultKeys[size]}
+                            readOnly={isFieldLocked(`adsterra-default-${size}`, saved.adsterra?.defaultKeys?.[size])}
+                            onChange={(e) => setAdsterraDefaultKey(size, e.target.value)}
+                            placeholder="Paste 32-char Adsterra key or <script>..."
+                            style={{
+                              ...(isFieldLocked(`adsterra-default-${size}`, saved.adsterra?.defaultKeys?.[size])
+                                ? { opacity: 0.75, cursor: 'not-allowed' }
+                                : {}),
+                              ...(errors.adsterra?.defaultKeys?.[size]
+                                ? { borderColor: 'var(--admin-danger)' }
+                                : {}),
+                            }}
+                          />
+                        </LockableFieldRow>
+                        {errors.adsterra?.defaultKeys?.[size] ? (
+                          <span className="mt-1.5 block text-[11px] font-medium" style={{ color: 'var(--admin-danger)' }}>
+                            {errors.adsterra.defaultKeys[size]}
+                          </span>
+                        ) : null}
+                      </>
+                    ) : (
+                      <>
+                        <AdSlotPicker
+                          id={`ads-default-${size}`}
+                          value={state.defaultSlots[size] || null}
+                          adUnits={adUnits}
+                          invalid={Boolean(errors.defaultSlots?.[size])}
+                          onChange={(value) =>
+                            setState((prev) => ({
+                              ...prev,
+                              defaultSlots: { ...prev.defaultSlots, [size]: value ?? '' },
+                            }))
+                          }
+                        />
+                        {errors.defaultSlots?.[size] ? (
+                          <span className="mt-1.5 block text-[11px] font-medium" style={{ color: 'var(--admin-danger)' }}>
+                            {errors.defaultSlots[size]}
+                          </span>
+                        ) : null}
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : null}
+        </Panel>
+      ) : null}
 
       {/* ── Placements ── */}
       <Panel>
         <PanelHeading
-          title="Placements"
-          hint={
-            <>
-              {enabledCount} of {totalPlacements} on. A placement with no ad unit of its own
-              inherits the default for its size.
-            </>
-          }
+          title={isAdsterra || isAdsense ? '4. Page Placements' : '2. Page Placements'}
+          hint={`${enabledCount} of ${totalPlacements} placements enabled across the site.`}
         />
 
         <div className="mb-3 flex flex-wrap items-center gap-3">
@@ -621,22 +1010,11 @@ export default function AdConfigPanel({
                     {groupOn}/{group.rows.length} on
                   </Badge>
 
-                  <span className="flex shrink-0 items-center gap-1">
-                    <BulkButton
-                      label={`Turn on every placement in ${group.label}`}
-                      disabled={groupOn === group.rows.length}
-                      onClick={() => setState((prev) => setPlacementGroupEnabled(prev, keys, true))}
-                    >
-                      All on
-                    </BulkButton>
-                    <BulkButton
-                      label={`Turn off every placement in ${group.label}`}
-                      disabled={groupOn === 0}
-                      onClick={() => setState((prev) => setPlacementGroupEnabled(prev, keys, false))}
-                    >
-                      All off
-                    </BulkButton>
-                  </span>
+                  <AdminToggle
+                    checked={groupOn > 0}
+                    label={`Toggle all placements in ${group.label}`}
+                    onChange={() => setState((prev) => setPlacementGroupEnabled(prev, keys, groupOn === 0))}
+                  />
                 </div>
 
                 <div hidden={!open} className="border-t px-3 py-2" style={{ borderColor: 'var(--admin-border)' }}>
@@ -644,15 +1022,26 @@ export default function AdConfigPanel({
                     {group.rows.map((row) => (
                       <PlacementRow
                         key={row.key}
+                        mode={state.mode}
                         row={row}
                         entry={state.placements[row.key] ?? { enabled: true, slotId: '' }}
+                        adsterraKey={state.adsterra.placements[row.key] ?? ''}
                         slotState={placementSlotState(state, row.key, row.size)}
-                        error={errors.placements?.[row.key]}
+                        overrideOpen={Boolean(openOverrides[row.key])}
+                        onToggleOverride={() =>
+                          setOpenOverrides((prev) => ({ ...prev, [row.key]: !prev[row.key] }))
+                        }
+                        error={
+                          isAdsterra
+                            ? errors.adsterra?.placements?.[row.key]
+                            : errors.placements?.[row.key]
+                        }
                         adUnits={adUnits}
                         onToggleEnabled={() =>
                           setPlacement(row.key, { enabled: state.placements[row.key]?.enabled === false })
                         }
                         onChangeSlotId={(slotId) => setPlacement(row.key, { slotId: slotId ?? '' })}
+                        onChangeAdsterraKey={(val) => setAdsterraPlacementKey(row.key, val)}
                       />
                     ))}
                   </ul>
@@ -691,7 +1080,7 @@ export default function AdConfigPanel({
           Discard changes
         </button>
         <p className="text-[11px]" style={{ color: 'var(--admin-text-muted)' }}>
-          {dirty ? 'Unsaved changes.' : 'Saved.'} Server-rendered pages pick this up within 60 seconds.
+          {dirty ? 'Unsaved changes.' : 'Saved.'} Public pages update within 60 seconds.
         </p>
       </div>
     </form>
@@ -701,78 +1090,180 @@ export default function AdConfigPanel({
 /* ─── Row ─── */
 
 function PlacementRow({
+  mode,
   row,
   entry,
+  adsterraKey,
   slotState,
+  overrideOpen,
+  onToggleOverride,
   error,
   adUnits,
   onToggleEnabled,
   onChangeSlotId,
+  onChangeAdsterraKey,
 }: {
+  mode: AdMode;
   row: AdPlacementRow;
   entry: { enabled: boolean; slotId: string };
+  adsterraKey: string;
   slotState: PlacementSlotState;
+  overrideOpen: boolean;
+  onToggleOverride: () => void;
   error?: string;
   adUnits: AdSenseAdUnit[];
   onToggleEnabled: () => void;
   onChangeSlotId: (_slotId: string | null) => void;
+  onChangeAdsterraKey: (_value: string) => void;
 }) {
   const enabled = entry.enabled !== false;
   const sizeLabel = AD_SIZE_LABELS[row.size];
+  const confirmedDims = CONFIRMED_SIZE_BADGE[row.size];
+  const showUnitInputs = mode === 'adsense' || mode === 'adsterra';
+  const hasCustomValue = mode === 'adsterra' ? Boolean(adsterraKey.trim()) : Boolean(entry.slotId.trim());
+  const showOverrideBox = showUnitInputs && (overrideOpen || hasCustomValue || Boolean(error));
 
   return (
-    <li className="flex flex-wrap items-center gap-3 py-2.5 sm:flex-nowrap">
-      <AdminToggle checked={enabled} label={`Enable ${row.label}`} onChange={onToggleEnabled} />
+    <li className="flex flex-col gap-2 py-2.5">
+      <div className="flex flex-wrap items-center gap-3 sm:flex-nowrap">
+        <AdminToggle checked={enabled} label={`Enable ${row.label}`} onChange={onToggleEnabled} />
 
-      <div className="min-w-0 flex-1 basis-48">
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span
-            className="truncate text-xs font-semibold"
-            style={{ color: enabled ? 'var(--admin-text)' : 'var(--admin-text-muted)' }}
-          >
-            {row.label}
+        <div className="min-w-0 flex-1 basis-48">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span
+              className="truncate text-xs font-semibold"
+              style={{ color: enabled ? 'var(--admin-text)' : 'var(--admin-text-muted)' }}
+            >
+              {row.label}
+            </span>
+            {row.inFeed ? <Badge tone="neutral">in feed</Badge> : null}
+            {showUnitInputs && enabled && slotState === 'none' ? (
+              <Badge tone="warning">{mode === 'adsterra' ? 'no key' : 'no ad unit'}</Badge>
+            ) : null}
+            {showUnitInputs && enabled && slotState === 'inherited' ? (
+              <Badge tone="neutral">size default</Badge>
+            ) : null}
+            {showUnitInputs && enabled && slotState === 'own' ? (
+              <Badge tone="success">custom</Badge>
+            ) : null}
+          </div>
+          <span className="block truncate font-mono text-[10px]" style={{ color: 'var(--admin-text-muted)' }}>
+            {row.key}
+            {row.unregistered ? ' · not in the registry, renders nowhere' : ''}
           </span>
-          {row.inFeed ? <Badge tone="neutral">in feed</Badge> : null}
-          {enabled && slotState === 'none' ? <Badge tone="warning">no ad unit</Badge> : null}
-          {enabled && slotState === 'inherited' ? <Badge tone="neutral">size default</Badge> : null}
         </div>
-        <span className="block truncate font-mono text-[10px]" style={{ color: 'var(--admin-text-muted)' }}>
-          {row.key}
-          {row.unregistered ? ' · not in the registry, renders nowhere' : ''}
-        </span>
-      </div>
 
-      <span
-        className="hidden w-40 shrink-0 text-[11px] lg:block"
-        style={{ color: 'var(--admin-text-secondary)' }}
-        title={`${sizeLabel.label} · ${AD_SIZE_DIMENSIONS[row.size].label}`}
-      >
-        {sizeLabel.label}
-        <span className="block text-[10px]" style={{ color: 'var(--admin-text-muted)' }}>
-          {AD_SIZE_DIMENSIONS[row.size].label}
-        </span>
-      </span>
-
-      <div className="min-w-0 flex-1 basis-64">
-        <AdSlotPicker
-          id={`ads-placement-${row.key}`}
-          value={entry.slotId || null}
-          adUnits={adUnits}
-          invalid={Boolean(error)}
-          disabled={!enabled}
-          onChange={onChangeSlotId}
-        />
-        {error ? (
-          <span className="mt-1.5 block text-[11px] font-medium" style={{ color: 'var(--admin-danger)' }}>
-            {error}
+        <span
+          className="shrink-0 text-right text-[11px]"
+          style={{ color: 'var(--admin-text-secondary)' }}
+          title={`${sizeLabel.label} · ${confirmedDims}`}
+        >
+          <span className="font-medium">{sizeLabel.label}</span>
+          <span className="ml-1.5 font-mono text-[10px]" style={{ color: 'var(--admin-text-muted)' }}>
+            ({confirmedDims})
           </span>
+        </span>
+
+        {showUnitInputs && !showOverrideBox ? (
+          <button
+            type="button"
+            disabled={!enabled}
+            onClick={onToggleOverride}
+            className="shrink-0 rounded px-2 py-1 text-[10px] font-semibold disabled:opacity-40"
+            style={{ border: '1px solid var(--admin-border)', color: 'var(--admin-text-secondary)' }}
+          >
+            Override
+          </button>
         ) : null}
       </div>
+
+      {showOverrideBox ? (
+        <div className="pl-11">
+          {mode === 'adsterra' ? (
+            <div className="flex items-center gap-2">
+              <AdminInput
+                id={`ads-placement-${row.key}`}
+                value={adsterraKey}
+                disabled={!enabled}
+                placeholder="Custom Adsterra key or <script>..."
+                onChange={(e) => onChangeAdsterraKey(e.target.value)}
+                style={error ? { borderColor: 'var(--admin-danger)' } : undefined}
+              />
+              {!hasCustomValue ? (
+                <button
+                  type="button"
+                  onClick={onToggleOverride}
+                  className="shrink-0 text-[11px]"
+                  style={{ color: 'var(--admin-text-muted)' }}
+                >
+                  Cancel
+                </button>
+              ) : null}
+            </div>
+          ) : (
+            <AdSlotPicker
+              id={`ads-placement-${row.key}`}
+              value={entry.slotId || null}
+              adUnits={adUnits}
+              invalid={Boolean(error)}
+              disabled={!enabled}
+              onChange={onChangeSlotId}
+            />
+          )}
+          {error ? (
+            <span className="mt-1.5 block text-[11px] font-medium" style={{ color: 'var(--admin-danger)' }}>
+              {error}
+            </span>
+          ) : null}
+        </div>
+      ) : null}
     </li>
   );
 }
 
 /* ─── Small parts ─── */
+
+function LockableFieldRow({
+  locked,
+  hasSaved,
+  onToggleLock,
+  children,
+}: {
+  locked: boolean;
+  hasSaved: boolean;
+  onToggleLock: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <div className="min-w-0 flex-1">{children}</div>
+      {hasSaved ? (
+        <button
+          type="button"
+          onClick={onToggleLock}
+          className="inline-flex shrink-0 items-center gap-1 rounded-md px-2.5 py-2 text-[11px] font-semibold transition-colors"
+          style={{
+            border: `1px solid ${locked ? 'var(--admin-border)' : 'var(--admin-accent)'}`,
+            color: locked ? 'var(--admin-text-secondary)' : 'var(--admin-accent)',
+            background: 'var(--admin-card)',
+          }}
+        >
+          {locked ? (
+            <>
+              <Pencil size={12} aria-hidden />
+              Edit
+            </>
+          ) : (
+            <>
+              <Lock size={12} aria-hidden />
+              Lock
+            </>
+          )}
+        </button>
+      ) : null}
+    </div>
+  );
+}
 
 function Panel({ children }: { children: ReactNode }) {
   return (
@@ -805,11 +1296,16 @@ function Callout({
   icon,
   children,
 }: {
-  tone: 'info' | 'warning';
+  tone: 'info' | 'warning' | 'success';
   icon: ReactNode;
   children: ReactNode;
 }) {
-  const color = tone === 'warning' ? 'var(--admin-warning, var(--color-warning))' : 'var(--admin-text-secondary)';
+  const color =
+    tone === 'warning'
+      ? 'var(--admin-warning, var(--color-warning))'
+      : tone === 'success'
+        ? 'var(--admin-success)'
+        : 'var(--admin-text-secondary)';
   return (
     <p
       className="mt-4 flex items-start gap-2 rounded-md px-3 py-2 text-[11px] font-medium leading-snug"
@@ -835,30 +1331,5 @@ function Badge({ tone, children }: { tone: 'accent' | 'neutral' | 'success' | 'w
     >
       {children}
     </span>
-  );
-}
-
-function BulkButton({
-  label,
-  onClick,
-  disabled,
-  children,
-}: {
-  label: string;
-  onClick: () => void;
-  disabled: boolean;
-  children: ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      aria-label={label}
-      className="rounded px-2 py-1 text-[10px] font-bold disabled:cursor-not-allowed disabled:opacity-40"
-      style={{ border: '1px solid var(--admin-border)', color: 'var(--admin-text-secondary)' }}
-    >
-      {children}
-    </button>
   );
 }

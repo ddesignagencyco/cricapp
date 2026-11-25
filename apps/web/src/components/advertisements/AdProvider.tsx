@@ -38,6 +38,8 @@ export default function AdProvider({
   const value = useMemo(() => config ?? EMPTY_AD_CONFIG, [config]);
 
   const clientId = value.mode === 'adsense' ? resolvePublisherId(value.clientId) : null;
+  const adsterraSocialBar = value.mode === 'adsterra' ? value.adsterra?.socialBarUrl : null;
+  const adsterraPopunder = value.mode === 'adsterra' ? value.adsterra?.popunderUrl : null;
 
   return (
     <AdConfigContext.Provider value={value}>
@@ -52,6 +54,12 @@ export default function AdProvider({
           />
           <AutoAds />
         </>
+      ) : null}
+      {adsterraSocialBar ? (
+        <Script id="adsterra-social-bar" src={adsterraSocialBar} strategy="afterInteractive" />
+      ) : null}
+      {adsterraPopunder ? (
+        <Script id="adsterra-popunder" src={adsterraPopunder} strategy="afterInteractive" />
       ) : null}
     </AdConfigContext.Provider>
   );

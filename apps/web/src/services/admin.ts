@@ -75,7 +75,14 @@ export interface ReportedComment {
 }
 
 export async function fetchAdminUsers(
-  params: { page?: number; limit?: number; q?: string } = {}
+  params: {
+    page?: number;
+    limit?: number;
+    q?: string;
+    role?: 'all' | 'superadmin' | 'admin' | 'user';
+    sortBy?: 'role' | 'name' | 'email' | 'verified' | 'createdAt';
+    sortOrder?: 'asc' | 'desc';
+  } = {}
 ): Promise<{ items: AdminUser[]; total: number; totalPages: number }> {
   const res = await apiGet('/admin/users', { page: 1, limit: 20, ...params }, { headers: authHeaders() });
   const { items, meta } = extractPage<AdminUser>(res);

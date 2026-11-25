@@ -153,6 +153,39 @@ function scheduledNow(): string {
   return `${new Date().toISOString().slice(0, 19)}+00:00`;
 }
 
+function matchOrderClause(sortBy?: string, sortOrder?: string): Prisma.Sql {
+  if (!sortBy || sortBy === 'default') return matchListOrder(scheduledNow());
+  const isAsc = sortOrder !== 'desc';
+  switch (sortBy) {
+    case 'home':
+      return isAsc
+        ? Prisma.sql`ORDER BY COALESCE(team_names->>0, '') ASC, match_id ASC`
+        : Prisma.sql`ORDER BY COALESCE(team_names->>0, '') DESC, match_id ASC`;
+    case 'away':
+      return isAsc
+        ? Prisma.sql`ORDER BY COALESCE(team_names->>1, '') ASC, match_id ASC`
+        : Prisma.sql`ORDER BY COALESCE(team_names->>1, '') DESC, match_id ASC`;
+    case 'tournament':
+      return isAsc
+        ? Prisma.sql`ORDER BY COALESCE(tournament, '') ASC, scheduled DESC NULLS LAST, match_id ASC`
+        : Prisma.sql`ORDER BY COALESCE(tournament, '') DESC, scheduled DESC NULLS LAST, match_id ASC`;
+    case 'venue':
+      return isAsc
+        ? Prisma.sql`ORDER BY COALESCE(venue, '') ASC, scheduled DESC NULLS LAST, match_id ASC`
+        : Prisma.sql`ORDER BY COALESCE(venue, '') DESC, scheduled DESC NULLS LAST, match_id ASC`;
+    case 'date':
+      return isAsc
+        ? Prisma.sql`ORDER BY scheduled ASC NULLS LAST, match_id ASC`
+        : Prisma.sql`ORDER BY scheduled DESC NULLS LAST, match_id ASC`;
+    case 'status':
+      return isAsc
+        ? Prisma.sql`ORDER BY status ASC, scheduled DESC NULLS LAST, match_id ASC`
+        : Prisma.sql`ORDER BY status DESC, scheduled DESC NULLS LAST, match_id ASC`;
+    default:
+      return matchListOrder(scheduledNow());
+  }
+}
+
 @Injectable()
 export class MatchesService {
   private readonly logger = new Logger(MatchesService.name);
@@ -408,6 +441,8 @@ export class MatchesService {
     status?: string;
     tournament?: string;
     tournamentId?: string;
+    sortBy?: string;
+    sortOrder?: string;
     page?: number;
     limit?: number;
     offset?: number;
@@ -431,6 +466,7 @@ export class MatchesService {
     const tournamentIdClause = params.tournamentId
       ? Prisma.sql`AND tournament_id = ${params.tournamentId}`
       : Prisma.empty;
+    const orderClause = matchOrderClause(params.sortBy, params.sortOrder);
 
     // Only the *order* needs raw SQL, so only the order comes from raw SQL.
     //
@@ -449,7 +485,7 @@ export class MatchesService {
           ${statusClause}
           ${tournamentClause}
           ${tournamentIdClause}
-          ${matchListOrder(scheduledNow())}
+          ${orderClause}
           LIMIT ${limit} OFFSET ${skip}
         `,
       ),
@@ -488,6 +524,8 @@ export class MatchesService {
   async search(params: {
     q?: string;
     status?: string;
+    sortBy?: string;
+    sortOrder?: string;
     page?: number;
     limit?: number;
     offset?: number;
@@ -509,6 +547,7 @@ export class MatchesService {
       )
       ${statusClause}
     `;
+    const orderClause = matchOrderClause(params.sortBy, params.sortOrder);
 
     // Same shape as `list`, and for the same reason: a raw `SELECT *` does not come back
     // with Prisma's field names, so `toSummary` would read `matchId` off a row that only
@@ -520,7 +559,7 @@ export class MatchesService {
           SELECT match_id
           FROM matches
           ${searchClause}
-          ${matchListOrder(scheduledNow())}
+          ${orderClause}
           LIMIT ${limit} OFFSET ${skip}
         `,
       ),

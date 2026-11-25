@@ -71,6 +71,8 @@ export function useToursQuery(params: ToursQueryParams) {
     page: Number(normalized.page || 1),
     limit: Number(normalized.limit || 20),
     q: typeof normalized.q === 'string' && normalized.q ? normalized.q : undefined,
+    sortBy: typeof normalized.sortBy === 'string' && normalized.sortBy ? normalized.sortBy : undefined,
+    sortOrder: typeof normalized.sortOrder === 'string' && normalized.sortOrder ? normalized.sortOrder : undefined,
   });
   return useQuery<ToursPageResult, Error>({
     queryKey: tourKeys.list(normalized),

@@ -1,13 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowRight, Calendar, Search, Shield, Trophy, UserRound, X } from 'lucide-react';
+import { ArrowRight, Calendar, Newspaper, Search, Shield, Trophy, UserRound, X } from 'lucide-react';
 import SearchField from '../SearchField';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { searchAll, searchRowId } from '../../services/search';
-import type { Match, SearchResults } from '../../types/index';
+import type { Match, NewsArticle, SearchResults } from '../../types/index';
+import { newsHref } from '../../utils/newsConstraints';
 import EmptyState from '../EmptyState';
 import AdBanner from '../advertisements/AdBanner';
 import { PlayerSearchAvatar, TeamSearchAvatar, TypeSearchAvatar } from '../SearchAvatars';
@@ -39,7 +40,7 @@ function tournamentSubtitle(item: { category?: unknown; gender?: unknown; type?:
   return [strVal(item.category), strVal(item.gender), strVal(item.type)].filter(Boolean).join(' · ');
 }
 
-type Filter = 'all' | 'players' | 'teams' | 'matches' | 'tournaments';
+type Filter = 'all' | 'players' | 'teams' | 'matches' | 'tournaments' | 'news';
 
 type SearchRow = { id?: string | null; matchId?: string | null };
 
@@ -113,14 +114,17 @@ export default function SearchResultsBody() {
     [results]
   );
 
+  const newsItems: NewsArticle[] = useMemo(() => results?.news ?? [], [results]);
+
   const counts = useMemo(() => {
-    if (!results) return { players: 0, teams: 0, matches: 0, tournaments: 0, total: 0 };
+    if (!results) return { players: 0, teams: 0, matches: 0, tournaments: 0, news: 0, total: 0 };
     const players = results.players.length;
     const teams = results.teams.length;
     const matches = linkableMatches.length;
     const tournaments = results.tournaments.length;
-    return { players, teams, matches, tournaments, total: players + teams + matches + tournaments };
-  }, [results, linkableMatches]);
+    const news = newsItems.length;
+    return { players, teams, matches, tournaments, news, total: players + teams + matches + tournaments + news };
+  }, [results, linkableMatches, newsItems]);
 
   const show = (key: Filter) => filter === 'all' || filter === key;
 
@@ -134,16 +138,16 @@ export default function SearchResultsBody() {
         <p className="mt-1 text-sm text-stext">
           {debouncedQuery && results
             ? `${counts.total} result${counts.total === 1 ? '' : 's'} found`
-            : 'Find players, teams, matches and tournaments.'}
+            : 'Find players, teams, matches, tournaments and news.'}
         </p>
 
         <SearchField
           wrapperClassName="mt-5 max-w-2xl"
           iconClassName="text-accent"
-          aria-label="Search players, teams, matches or tournaments"
+          aria-label="Search players, teams, matches, tournaments or news"
           value={inputVal}
           onChange={(e) => setInputVal(e.target.value)}
-          placeholder="Search players, teams, matches or tournaments…"
+          placeholder="Search players, teams, matches, tournaments or news…"
           inputClassName="py-3"
           trailing={
             inputVal ? (
@@ -176,6 +180,7 @@ export default function SearchResultsBody() {
             <FilterChip label="Teams" count={counts.teams} active={filter === 'teams'} onClick={() => setFilter('teams')} />
             <FilterChip label="Matches" count={counts.matches} active={filter === 'matches'} onClick={() => setFilter('matches')} />
             <FilterChip label="Tournaments" count={counts.tournaments} active={filter === 'tournaments'} onClick={() => setFilter('tournaments')} />
+            <FilterChip label="News" count={counts.news} active={filter === 'news'} onClick={() => setFilter('news')} />
           </div>
 
           <div className="space-y-8">
@@ -227,6 +232,23 @@ export default function SearchResultsBody() {
                     title={item.name}
                     subtitle={tournamentSubtitle(item)}
                     avatar={<TypeSearchAvatar type="tournament" />}
+                  />
+                ))}
+              </SearchSection>
+            )}
+            {show('news') && (
+              <SearchSection title="News" icon={<Newspaper size={16} />} count={counts.news}>
+                {newsItems.map((item, index) => (
+                  <SearchCard
+                    key={`${item.id || item.slug || 'news'}-${index}`}
+                    href={newsHref(item)}
+                    title={item.title}
+                    subtitle={[strVal(item.category), item.source].filter(Boolean).join(' · ')}
+                    avatar={
+                      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-accent/15 text-accent">
+                        <Newspaper size={16} aria-hidden="true" />
+                      </span>
+                    }
                   />
                 ))}
               </SearchSection>
