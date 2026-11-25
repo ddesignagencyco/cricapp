@@ -11,7 +11,6 @@ import {
   Pencil,
   Plus,
   Tag,
-  FolderArchive,
   Trash2,
   X,
 } from 'lucide-react';
@@ -25,7 +24,7 @@ import {
   type NewsArticleAdmin,
   type NewsCategory,
 } from '../../services/newsAdmin';
-import { AdminField, AdminIconButton, AdminInput, AdminSearchField, AdminSortableHeader, ConfirmDialog, LoadingState, type SortDirection } from './AdminShared';
+import { AdminField, AdminIconButton, AdminInput, AdminSearchField, AdminSortableHeader, ConfirmDialog, EmptyState, LoadingState, type SortDirection } from './AdminShared';
 import { BlinkingDot } from '../Badge';
 import NewsCopy from '../NewsCopy';
 
@@ -225,13 +224,10 @@ export default function CategoryManager() {
           {loading ? (
             <LoadingState variant="table" />
           ) : filteredCategories.length === 0 ? (
-            <div className="rounded-lg border border-dashed p-8 text-center" style={{ borderColor: 'var(--admin-border)', background: 'var(--admin-card)' }}>
-              <FolderArchive size={28} className="mx-auto mb-2" style={{ color: 'var(--admin-text-muted)' }} />
-              <h3 className="text-sm font-semibold" style={{ color: 'var(--admin-text)' }}>No categories found</h3>
-              <p className="mt-1 break-words text-xs" style={{ color: 'var(--admin-text-secondary)' }}>
-                {search ? `No results for "${search}".` : 'Create your first category above.'}
-              </p>
-            </div>
+            <EmptyState
+              title="No categories found"
+              message={search ? `No results for "${search}".` : 'Create your first category above.'}
+            />
           ) : (
             <div className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
               <div className="table-scroll">

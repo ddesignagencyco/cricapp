@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { WifiOff } from 'lucide-react';
+import StatusIllustration from './StatusIllustration';
 
 export default function ErrorState({
   title = 'Server unavailable',
@@ -18,11 +18,9 @@ export default function ErrorState({
   return (
     <div
       role="alert"
-      className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-lborder bg-card/40 px-6 py-14 text-center"
+      className="flex flex-col items-center justify-center gap-2.5 rounded-2xl border border-dashed border-lborder bg-card/40 px-6 py-12 text-center"
     >
-      <div className="grid h-14 w-14 place-items-center rounded-xl bg-elevated text-stext ring-1 ring-lborder">
-        <WifiOff size={24} aria-hidden="true" />
-      </div>
+      <StatusIllustration variant="error" size="md" />
       <h2 className="text-base font-bold text-mtext">{title}</h2>
       <p className="max-w-sm text-sm text-stext">{message}</p>
       <button

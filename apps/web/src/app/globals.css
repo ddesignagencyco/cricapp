@@ -4164,3 +4164,247 @@ nav[aria-label='Breadcrumb'] a {
     animation: none;
   }
 }
+
+/* ============================================================
+   Lottie-style animated illustrations (404, empty data, error)
+   ============================================================ */
+.status-anim-float-left {
+  animation: status-float 3.6s ease-in-out infinite;
+}
+
+.status-anim-float-right {
+  animation: status-float 3.6s ease-in-out 0.6s infinite;
+}
+
+.status-anim-ball-bounce {
+  animation: status-ball-bounce 2.6s cubic-bezier(0.37, 0, 0.63, 1) infinite;
+}
+
+.status-anim-ball-spin {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: status-spin-slow 12s linear infinite;
+}
+
+.status-anim-bail-left {
+  transform-box: fill-box;
+  transform-origin: right center;
+  animation: status-bail-left 2.6s ease-in-out infinite;
+}
+
+.status-anim-bail-right {
+  transform-box: fill-box;
+  transform-origin: left center;
+  animation: status-bail-right 2.6s ease-in-out infinite;
+}
+
+.status-anim-shadow-ball {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: status-shadow-ball 2.6s cubic-bezier(0.37, 0, 0.63, 1) infinite;
+}
+
+.status-anim-shadow-slow {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: status-shadow-slow 3.6s ease-in-out infinite;
+}
+
+.status-anim-cloud-a {
+  animation: status-cloud-drift 7s ease-in-out infinite;
+}
+
+.status-anim-cloud-b {
+  animation: status-cloud-drift 8.5s ease-in-out 1.4s infinite reverse;
+}
+
+.status-anim-sparkle-a {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: status-sparkle 2.8s ease-in-out infinite;
+}
+
+.status-anim-sparkle-b {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: status-sparkle 3.4s ease-in-out 0.9s infinite;
+}
+
+.status-anim-doc-bob {
+  animation: status-doc-bob 3.6s ease-in-out infinite;
+}
+
+.status-anim-lens-scan {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: status-lens-scan 4.2s ease-in-out infinite;
+}
+
+.status-anim-pulse-ring {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: status-pulse-ring 2.4s ease-out infinite;
+}
+
+.status-anim-plug-left {
+  animation: status-plug-left 3s ease-in-out infinite;
+}
+
+.status-anim-plug-right {
+  animation: status-plug-right 3s ease-in-out infinite;
+}
+
+@keyframes status-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-9px);
+  }
+}
+
+@keyframes status-ball-bounce {
+  0%,
+  100% {
+    transform: translateY(4px);
+  }
+  50% {
+    transform: translateY(-16px);
+  }
+}
+
+@keyframes status-spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes status-bail-left {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(-14deg);
+  }
+  50% {
+    transform: translate(-8px, -10px) rotate(-32deg);
+  }
+}
+
+@keyframes status-bail-right {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(14deg);
+  }
+  50% {
+    transform: translate(8px, -10px) rotate(32deg);
+  }
+}
+
+@keyframes status-shadow-ball {
+  0%,
+  100% {
+    transform: scaleX(1.06);
+    opacity: 0.3;
+  }
+  50% {
+    transform: scaleX(0.74);
+    opacity: 0.14;
+  }
+}
+
+@keyframes status-shadow-slow {
+  0%,
+  100% {
+    transform: scaleX(1);
+    opacity: 0.24;
+  }
+  50% {
+    transform: scaleX(0.84);
+    opacity: 0.14;
+  }
+}
+
+@keyframes status-cloud-drift {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(12px);
+  }
+}
+
+@keyframes status-sparkle {
+  0%,
+  100% {
+    transform: scale(0.75);
+    opacity: 0.35;
+  }
+  50% {
+    transform: scale(1.18);
+    opacity: 1;
+  }
+}
+
+@keyframes status-doc-bob {
+  0%,
+  100% {
+    transform: translateY(2px);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
+@keyframes status-lens-scan {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  33% {
+    transform: translate(-18px, -8px) rotate(-10deg);
+  }
+  66% {
+    transform: translate(8px, -12px) rotate(8deg);
+  }
+}
+
+@keyframes status-pulse-ring {
+  0% {
+    transform: scale(0.88);
+    opacity: 0.55;
+  }
+  100% {
+    transform: scale(1.38);
+    opacity: 0;
+  }
+}
+
+@keyframes status-plug-left {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(-5px);
+  }
+}
+
+@keyframes status-plug-right {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(5px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status-anim * {
+    animation: none !important;
+  }
+}

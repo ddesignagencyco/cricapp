@@ -23,7 +23,7 @@ import {
   type NewsArticleAdmin,
   type NewsCategory,
 } from '../../services/newsAdmin';
-import { AdminAvatar, AdminSearchField, AdminSelect, AdminSortableHeader, ConfirmDialog, ErrorState, LoadingState, type SortDirection } from './AdminShared';
+import { AdminAvatar, AdminSearchField, AdminSelect, AdminSortableHeader, ConfirmDialog, EmptyState, ErrorState, LoadingState, type SortDirection } from './AdminShared';
 import Pagination from './AdminPagination';
 import RemoteImage from '../RemoteImage';
 import { newsHref, otherNewsLanguage } from '../../utils/newsConstraints';
@@ -218,10 +218,7 @@ export default function NewsManager() {
       ) : error ? (
         <ErrorState message={error} onRetry={load} />
       ) : filtered.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-10 text-center" style={{ borderColor: 'var(--admin-border)', background: 'var(--admin-card)' }}>
-          <FileText size={28} className="mx-auto mb-2" style={{ color: 'var(--admin-text-muted)' }} />
-          <p className="break-words text-xs" style={{ color: 'var(--admin-text-secondary)' }}>No news match your criteria.</p>
-        </div>
+        <EmptyState title="No news found" message="No news match your criteria." />
       ) : (
         <div className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
           <div className="table-scroll">

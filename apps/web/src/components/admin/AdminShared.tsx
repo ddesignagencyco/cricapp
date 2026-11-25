@@ -3,7 +3,7 @@
 import { type ReactNode, forwardRef, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
-import { AlertCircle, ArrowDown, ArrowUp, ArrowUpDown, Check, ChevronDown } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, Check, ChevronDown } from 'lucide-react';
 import Badge, { StatusBadge as SharedStatusBadge } from '../Badge';
 import { getInitials } from '../../utils/helpers';
 import RemoteImage from '../RemoteImage';
@@ -12,6 +12,7 @@ import { AdminLoader, AdminTableSkeleton, type AdminLoadingVariant } from '../sk
 import useFocusTrap from '../../hooks/useFocusTrap';
 import SiteSelect, { selectChangeEvent } from '../ui/SiteSelect';
 import SearchField from '../SearchField';
+import StatusIllustration from '../StatusIllustration';
 
 export function AdminEntityLink({
   href,
@@ -143,7 +144,6 @@ export function LoadingState({
 /* ─── Empty State ──────────────────────────────────────────── */
 
 export function EmptyState({
-  icon,
   title,
   message,
   action,
@@ -158,11 +158,7 @@ export function EmptyState({
       className="rounded-lg border border-dashed p-6 text-center sm:p-10"
       style={{ borderColor: 'var(--admin-border)', background: 'var(--admin-card)' }}
     >
-      {icon && (
-        <div className="mx-auto mb-3" style={{ color: 'var(--admin-text-muted)' }}>
-          {icon}
-        </div>
-      )}
+      <StatusIllustration variant="empty" size="sm" className="mb-2" />
       <h3 className="break-words text-sm font-semibold" style={{ color: 'var(--admin-text)' }}>
         {title}
       </h3>
@@ -190,13 +186,7 @@ export function ErrorState({
       className="flex flex-col items-center justify-center rounded-xl px-6 py-10 text-center"
       style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}
     >
-      <div
-        className="mb-3 grid h-10 w-10 place-items-center rounded-full"
-        style={{ background: 'var(--admin-danger-bg)', color: 'var(--admin-danger)' }}
-        aria-hidden="true"
-      >
-        <AlertCircle size={20} />
-      </div>
+      <StatusIllustration variant="error" size="sm" className="mb-2" />
       <p className="text-sm font-semibold" style={{ color: 'var(--admin-text)' }}>
         {message}
       </p>

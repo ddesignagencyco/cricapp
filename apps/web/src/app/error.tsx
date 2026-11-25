@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import Link from 'next/link';
 import HideAds from '../components/advertisements/HideAds';
+import StatusIllustration from '../components/StatusIllustration';
 
 export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
@@ -10,10 +11,10 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
   }, [error]);
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col items-center justify-center px-4 py-24 text-center">
+    <div className="mx-auto flex max-w-3xl flex-col items-center justify-center px-4 py-16 text-center sm:py-24">
       <HideAds />
-      <p className="font-mono text-7xl font-black text-danger/30">500</p>
-      <h1 className="mt-4 text-2xl font-black tracking-tight text-mtext">
+      <StatusIllustration variant="error" size="lg" />
+      <h1 className="mt-4 text-2xl font-black tracking-tight text-mtext sm:text-3xl">
         Something went wrong
       </h1>
       <p className="mt-2 max-w-md text-sm text-stext">
