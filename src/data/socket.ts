@@ -22,6 +22,7 @@ interface LiveFrame {
 const snapshots = new Map<string, { match: Match; revision: number }>();
 const snapshotListeners = new Set<() => void>();
 const eventListeners = new Set<(matchId?: string) => void>();
+const watchedMatches = new Set<string>();
 let socket: Socket | null = null;
 let users = 0;
 
@@ -54,6 +55,12 @@ function connect() {
     reconnectionDelay: 2000,
     reconnectionDelayMax: 15000,
   });
+  socket.on('connect', () => {
+    // Re-join any active match rooms automatically after a network drop or resume.
+    watchedMatches.forEach(matchId => {
+      socket?.emit('subscribe:match', { matchId });
+    });
+  });
   socket.on('live:update', apply);
   socket.on('match:update', apply);
 }
@@ -71,16 +78,21 @@ export function onLiveEvent(listener: (matchId?: string) => void) {
   return () => {
     eventListeners.delete(listener);
     users = Math.max(0, users - 1);
-    if (!users) disconnect();
+    if (!users && !watchedMatches.size) disconnect();
   };
 }
 
 /** Join a match's room for its updates (match centre). */
 export function watchMatch(id: string) {
+  watchedMatches.add(id);
   connect();
-  socket?.emit('subscribe:match', { matchId: id });
+  if (socket?.connected) {
+    socket.emit('subscribe:match', { matchId: id });
+  }
   return () => {
+    watchedMatches.delete(id);
     socket?.emit('unsubscribe:match', { matchId: id });
+    if (!users && !watchedMatches.size) disconnect();
   };
 }
 

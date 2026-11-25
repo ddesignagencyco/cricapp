@@ -134,7 +134,7 @@ function ShortPage({
       <View style={[styles.top, { paddingTop: insets.top + 8 }]} pointerEvents="box-none">
         <Progress count={short.slides.length} index={slide} value={progress} />
         <View style={styles.headerRow} pointerEvents="box-none">
-          {short.teamIds[0] ? <TeamBadge id={short.teamIds[0]} size={32} /> : <View style={styles.brand}><BrandMark height={16} /></View>}
+          {short.teamIds[0] ? <TeamBadge id={short.teamIds[0]} size={32} /> : <View style={styles.brand}><BrandMark height={18} tone="light" /></View>}
           <View style={{ flex: 1, marginLeft: 10 }}>
             <AppText variant="label" weight="700" color="#FFFFFF" numberOfLines={1}>
               {short.title || 'Criczapp'}

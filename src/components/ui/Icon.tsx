@@ -123,6 +123,7 @@ export function Icon({ name, size = 22, color, style }: IconProps) {
   return (
     <Image
       source={SOURCES[name]}
+      fadeDuration={0}
       style={[{ width: size, height: size, tintColor: color }, style]}
       accessibilityIgnoresInvertColors
     />

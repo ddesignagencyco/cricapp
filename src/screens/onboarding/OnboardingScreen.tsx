@@ -20,12 +20,12 @@ import { storage } from '../../utils/storage';
 /** Artwork is 1080 × 1935 (from w2). */
 const RATIO = 1080 / 1935;
 
-/* Navy from the artwork's own corners, so the type belongs to the picture. */
-const NAVY = '#0C2A6B';
-const BODY = '#3A4A6B';
-const MUTED = '#55627D';
-const BLUE = '#3B68FC';
-const PAPER = '#F3F7FF';
+/* CriczApp Daylight palette for onboarding over the bright hero artwork. */
+const NAVY = '#06152F';
+const BODY = '#334155';
+const MUTED = '#64748B';
+const BLUE = '#0F8231';
+const PAPER = '#F4F6F9';
 
 type Seg = { t: string; accent?: boolean };
 type Feature = { icon: IconName; label: string; sub: string };
@@ -102,11 +102,11 @@ function Ball({ state }: { state: 'done' | 'current' | 'next' }) {
       style={[
         styles.ball,
         { width: size, height: size, borderRadius: size / 2 },
-        filled ? { backgroundColor: BLUE, borderColor: BLUE } : { borderColor: 'rgba(59,104,252,0.45)' },
+        filled ? { backgroundColor: BLUE, borderColor: BLUE } : { borderColor: 'rgba(15,130,49,0.45)' },
       ]}
     >
       {/* The seam: two stitched arcs, like the ball in the artwork. */}
-      <View style={[styles.seam, { width: size * 0.5, height: size * 1.4, borderRadius: size, borderColor: filled ? 'rgba(255,255,255,0.9)' : 'rgba(59,104,252,0.4)' }]} />
+      <View style={[styles.seam, { width: size * 0.5, height: size * 1.4, borderRadius: size, borderColor: filled ? 'rgba(255,255,255,0.9)' : 'rgba(15,130,49,0.4)' }]} />
     </View>
   );
 }
@@ -167,7 +167,7 @@ export default function OnboardingScreen() {
       <View style={[styles.bottomSolid, { height: height * 0.32 }]} />
 
       <View style={[styles.brand, { paddingTop: insets.top + space.lg }]} pointerEvents="none">
-        <BrandMark height={40} />
+        <BrandMark height={40} tone="dark" />
       </View>
 
       <Animated.FlatList
@@ -278,19 +278,14 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingVertical: 12,
     paddingHorizontal: 14,
-    borderWidth: StyleSheet.hairlineWidth * 2,
-    borderColor: 'rgba(12,42,107,0.08)',
-    shadowColor: '#0C2A6B',
-    shadowOpacity: 0.07,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 5 },
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(6,21,47,0.09)',
   },
   cardIcon: {
     width: 44,
     height: 44,
     borderRadius: 12,
-    backgroundColor: 'rgba(59,104,252,0.1)',
+    backgroundColor: 'rgba(15,130,49,0.1)',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,

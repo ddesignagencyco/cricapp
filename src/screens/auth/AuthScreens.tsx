@@ -635,7 +635,7 @@ const styles = StyleSheet.create({
   submit: {
     height: control.lg,
     borderRadius: radius.md,
-    backgroundColor: '#3B68FC',
+    backgroundColor: '#16B800',
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',

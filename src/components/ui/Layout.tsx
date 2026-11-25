@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useMemo, useRef, type ReactNode } from 'react';
 import {
+  Image,
   RefreshControl,
   ScrollView,
   StatusBar,
@@ -32,34 +33,31 @@ export function Screen({ children, style }: { children: ReactNode; style?: Style
   return <View style={[{ flex: 1, backgroundColor: colors.background }, style]}>{children}</View>;
 }
 
-/** Nominal aspect ratio (width / height) of the wordmark lockup. */
-export const LOGO_RATIO = 4.4;
+/** Nominal aspect ratio (width / height) of the CriczApp wordmark lockup (1200×340). */
+export const LOGO_RATIO = 1200 / 340;
+
+const LOGO_DARK = require('../../assets/images/logo-dark.png');
+const LOGO_LIGHT = require('../../assets/images/logo-light.png');
 
 /**
- * The Criczapp wordmark: a cricket-ball mark (a brand-blue disc with a white
- * seam) beside the name, with "app" picked out in brand blue. Drawn in views
- * and text so it stays crisp at any size and recolours with the theme.
- * `tone="light"` forces white letters for dark backgrounds (onboarding,
- * shorts); otherwise the name takes the theme's ink colour.
+ * The official CriczApp wordmark lockup.
+ * `tone="light"` forces white-ink (`logo-dark.png`) for dark surfaces;
+ * `tone="dark"` forces navy-ink (`logo-light.png`) for light surfaces;
+ * otherwise switches automatically with the active theme scheme.
  */
-export function BrandMark({ height = 28, tone }: { height?: number; tone?: 'light' | 'dark' }) {
+export function BrandMark({ height = 32, tone }: { height?: number; tone?: 'light' | 'dark' }) {
   const { colors } = useTheme();
-  const ink = tone === 'light' ? '#FFFFFF' : tone === 'dark' ? '#0C2A6B' : colors.text;
-  const d = height * 0.94; // ball diameter
-  const seam = Math.max(1.4, d * 0.075);
-  const size = height * 0.64; // cap height of the word
-  const letter = { fontSize: size, lineHeight: size * 1.06, letterSpacing: -height * 0.03 } as const;
+  const useLightInk = tone ? tone === 'light' : colors.scheme === 'dark';
+  const source = useLightInk ? LOGO_DARK : LOGO_LIGHT;
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center' }} accessibilityRole="image" accessibilityLabel="Criczapp">
-      <View style={{ width: d, height: d, borderRadius: d / 2, backgroundColor: colors.brand, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-        {/* seam: two stitched arcs across a blue ball */}
-        <View style={{ width: d * 0.46, height: d * 1.3, borderLeftWidth: seam, borderRightWidth: seam, borderColor: 'rgba(255,255,255,0.92)', borderRadius: d, transform: [{ rotate: '34deg' }] }} />
-      </View>
-      <View style={{ flexDirection: 'row', alignItems: 'baseline', marginLeft: height * 0.2 }}>
-        <AppText weight="700" color={ink} style={letter}>Cricz</AppText>
-        <AppText weight="700" color={colors.brand} style={letter}>app</AppText>
-      </View>
-    </View>
+    <Image
+      source={source}
+      resizeMode="contain"
+      fadeDuration={0}
+      accessibilityRole="image"
+      accessibilityLabel="CriczApp"
+      style={{ height, width: Math.round(height * LOGO_RATIO) }}
+    />
   );
 }
 

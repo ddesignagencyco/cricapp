@@ -1,12 +1,13 @@
 import React, {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from 'react';
-import { Appearance, StatusBar, useColorScheme } from 'react-native';
+import { StatusBar, useColorScheme } from 'react-native';
 import { dark, light, type Palette } from './colors';
 import { storage } from '../utils/storage';
 
@@ -27,33 +28,35 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [preference, setPref] = useState<ThemePreference>('system');
 
   useEffect(() => {
-    storage.get<ThemePreference>(KEY).then(v => v && setPref(v));
+    storage.get<ThemePreference>(KEY).then(v => {
+      if (v === 'dark' || v === 'light' || v === 'system') setPref(v);
+    });
   }, []);
 
-  // Drive the native night mode too, so system UI and cold start match the choice.
-  useEffect(() => {
-    Appearance.setColorScheme(preference === 'system' ? 'unspecified' : preference);
-  }, [preference]);
+  // Avoid calling Appearance.setColorScheme on Android: it triggers a native
+  // AppCompatDelegate night-mode activity reconfiguration that freezes the UI
+  // thread for 1–2s. ThemeContext + StatusBar handle instant switching cleanly.
+  const setPreference = useCallback((p: ThemePreference) => {
+    setPref(p);
+    storage.set(KEY, p);
+  }, []);
 
-  const value = useMemo<ThemeValue>(() => {
-    const isDark =
-      preference === 'system' ? system !== 'light' : preference === 'dark';
-    return {
+  const isDark =
+    preference === 'system' ? system !== 'light' : preference === 'dark';
+
+  const value = useMemo<ThemeValue>(
+    () => ({
       colors: isDark ? dark : light,
       isDark,
       preference,
-      setPreference: p => {
-        setPref(p);
-        storage.set(KEY, p);
-      },
-    };
-  }, [preference, system]);
+      setPreference,
+    }),
+    [isDark, preference, setPreference],
+  );
 
   return (
     <ThemeContext.Provider value={value}>
-      <StatusBar
-        barStyle={value.isDark ? 'light-content' : 'dark-content'}
-      />
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
       {children}
     </ThemeContext.Provider>
   );

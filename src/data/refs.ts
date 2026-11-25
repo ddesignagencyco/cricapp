@@ -127,7 +127,7 @@ export function rememberAuthor(name: string): Author {
   return a;
 }
 
-const unknownTeam = (id: string): Team => ({ id, name: 'TBC', short: 'TBC', color: '#3B68FC', kind: 'domestic', slug: 'tbc' });
+const unknownTeam = (id: string): Team => ({ id, name: 'TBC', short: 'TBC', color: '#0F8231', kind: 'domestic', slug: 'tbc' });
 
 export const team = (id: string): Team => teams.get(id) ?? unknownTeam(id);
 export const player = (id: string): Player | undefined => players.get(id);

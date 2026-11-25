@@ -13,9 +13,9 @@ import { TOOLS, type Tool } from '../../tools/catalog';
 /** Calculators fans use while following a match; odds maths stays out of the general list. */
 const GROUPS: Tool['group'][] = ['Run rates', 'Batting & bowling', 'Match situations'];
 
-const GROUP_COLOR: Record<string, string> = { Compare: '#7C5CFF', 'Run rates': '#3B68FC', 'Batting & bowling': '#1FA55B', 'Match situations': '#E39B12' };
+const GROUP_COLOR: Record<string, string> = { Compare: '#7C5CFF', 'Run rates': '#16B800', 'Batting & bowling': '#0F8231', 'Match situations': '#E39B12' };
 
-function Row({ icon, title, body, onPress, color = '#3B68FC' }: { icon: IconName; title: string; body: string; onPress: () => void; color?: string }) {
+function Row({ icon, title, body, onPress, color = '#16B800' }: { icon: IconName; title: string; body: string; onPress: () => void; color?: string }) {
   const { colors } = useTheme();
   return (
     <Touch onPress={onPress} style={styles.row} accessibilityLabel={title}>

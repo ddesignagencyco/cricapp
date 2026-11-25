@@ -91,7 +91,7 @@ export interface RawPerson {
 }
 
 export interface RawTimelineEvent {
-  id: number;
+  id: number | string;
   type: string;
   inning?: number;
   over_number?: number;
@@ -99,7 +99,13 @@ export interface RawTimelineEvent {
   display_overs?: string;
   display_score?: string;
   period_name?: string;
-  commentary?: { text?: string };
+  runs?: number;
+  extras?: number;
+  extra_runs?: number;
+  extra_type?: string;
+  extra_runs_type?: string;
+  text?: string;
+  commentary?: string | { text?: string };
   batting_params?: { striker?: RawPerson; runs_scored?: number; hit_to_boundary?: boolean };
   bowling_params?: { bowler?: RawPerson; extra_runs_type?: string; extra_runs_conceded?: number };
 }
@@ -499,12 +505,12 @@ export function toScorecard(t: RawTimeline): Innings[] {
     }));
 
     // Over-by-over runs and wickets for the charts, from this innings' balls.
-    const balls = evs.filter(e => e.inning === inn.number && e.over_number && ['ball', 'boundary', 'six', 'wicket'].includes(e.type));
+    const balls = evs.filter(e => e.inning === inn.number && e.over_number && DELIVERY_TYPES.has(e.type));
     const overRuns: number[] = [];
     const overWickets: number[] = [];
     for (const e of balls) {
       const o = (e.over_number ?? 1) - 1;
-      overRuns[o] = (overRuns[o] ?? 0) + (e.batting_params?.runs_scored ?? 0) + (e.bowling_params?.extra_runs_conceded ?? 0);
+      overRuns[o] = (overRuns[o] ?? 0) + runsOf(e) + extraRunsOf(e);
       overWickets[o] = (overWickets[o] ?? 0) + (e.type === 'wicket' ? 1 : 0);
     }
     const wides = bowls.reduce((n, p) => n + (p.statistics.wides ?? 0), 0);
@@ -526,27 +532,52 @@ export function toScorecard(t: RawTimeline): Innings[] {
   });
 }
 
+const DELIVERY_TYPES = new Set(['ball', 'boundary', 'four', 'six', 'wicket', 'wide', 'no_ball', 'bye', 'leg_bye']);
+
+function runsOf(e: RawTimelineEvent): number {
+  const raw = e.batting_params?.runs_scored ?? e.runs ?? 0;
+  return Number.isFinite(Number(raw)) ? Number(raw) : 0;
+}
+
+function extraRunsOf(e: RawTimelineEvent): number {
+  const raw = e.bowling_params?.extra_runs_conceded ?? e.extra_runs ?? e.extras ?? 0;
+  return Number.isFinite(Number(raw)) ? Number(raw) : 0;
+}
+
+function extraTypeOf(e: RawTimelineEvent): string | undefined {
+  const t = e.bowling_params?.extra_runs_type ?? e.extra_runs_type ?? e.extra_type;
+  if (t) return t;
+  if (e.type === 'wide' || e.type === 'no_ball' || e.type === 'bye' || e.type === 'leg_bye') return e.type;
+  return undefined;
+}
+
+function commentTextOf(e: RawTimelineEvent): string {
+  if (typeof e.commentary === 'string') return e.commentary;
+  return e.commentary?.text ?? e.text ?? '';
+}
+
 function outcomeOf(e: RawTimelineEvent): BallOutcome {
-  const extra = e.bowling_params?.extra_runs_type;
-  const runs = e.batting_params?.runs_scored ?? 0;
+  const extra = extraTypeOf(e);
+  const runs = runsOf(e);
+  const extraRuns = extraRunsOf(e);
   if (e.type === 'wicket') return { kind: 'wicket', text: 'W' };
   if (extra) {
     const label = extra === 'wide' ? 'wd' : extra === 'no_ball' ? 'nb' : extra === 'leg_bye' ? 'lb' : 'b';
-    return { kind: 'extra', label, runs: (e.bowling_params?.extra_runs_conceded ?? 0) + runs };
+    return { kind: 'extra', label, runs: extraRuns + runs };
   }
   if (e.type === 'six' || runs === 6) return { kind: 'six' };
-  if (e.type === 'boundary' || (runs === 4 && e.batting_params?.hit_to_boundary)) return { kind: 'four' };
+  if (e.type === 'boundary' || e.type === 'four' || runs === 4) return { kind: 'four' };
   return { kind: 'runs', runs };
 }
 
 /** Ball-by-ball commentary, newest first, plus per-over summaries. */
 export function toCommentary(t: RawTimeline): { balls: Ball[]; overs: OverSummary[] } {
-  const evs = events(t).filter(e => ['ball', 'boundary', 'six', 'wicket'].includes(e.type) && e.display_overs);
+  const evs = events(t).filter(e => DELIVERY_TYPES.has(e.type) && e.display_overs);
   const balls: Ball[] = evs.map(e => ({
     id: String(e.id),
     over: e.display_overs ?? '',
     outcome: outcomeOf(e),
-    text: e.commentary?.text ?? '',
+    text: commentTextOf(e),
     bowler: e.bowling_params?.bowler ? displayName(e.bowling_params.bowler.name) : '',
     batter: e.batting_params?.striker ? displayName(e.batting_params.striker.name) : '',
     inning: e.inning,
@@ -562,7 +593,7 @@ export function toCommentary(t: RawTimeline): { balls: Ball[]; overs: OverSummar
     const last = list[list.length - 1];
     overs.push({
       over: last.over_number ?? 0,
-      runs: list.reduce((n, e) => n + (e.batting_params?.runs_scored ?? 0) + (e.bowling_params?.extra_runs_conceded ?? 0), 0),
+      runs: list.reduce((n, e) => n + runsOf(e) + extraRunsOf(e), 0),
       wickets: list.filter(e => e.type === 'wicket').length,
       score: last.display_score ?? '',
       bowler: last.bowling_params?.bowler ? displayName(last.bowling_params.bowler.name) : '',

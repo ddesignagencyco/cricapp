@@ -98,7 +98,7 @@ function HubTile({
 
 /** Each shortcut has its own colour so the row reads at a glance. */
 const SHORTCUTS: { label: string; icon: IconName; route: RouteName; color: string }[] = [
-  { label: 'Schedule', icon: 'calendar', route: 'Schedule', color: '#3B68FC' },
+  { label: 'Schedule', icon: 'calendar', route: 'Schedule', color: '#16B800' },
   { label: 'Streams', icon: 'tv', route: 'Streams', color: '#9A5CF0' },
   { label: 'Gallery', icon: 'image', route: 'Gallery', color: '#F0478A' },
   { label: 'Tools', icon: 'calculator', route: 'Tools', color: '#14B8A6' },

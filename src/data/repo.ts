@@ -753,7 +753,7 @@ export const repo = {
       start: t?.currentSeason?.start_date ?? ms[0]?.startTime ?? '',
       end: t?.currentSeason?.end_date ?? ms[ms.length - 1]?.startTime ?? '',
       teamIds: [...new Set(ms.flatMap(m => [m.teamA, m.teamB]))],
-      color: known?.color ?? '#3B68FC',
+      color: known?.color ?? '#0F8231',
     });
     const info: SeriesInfo = {
       season: t?.currentSeason?.name,
@@ -936,7 +936,7 @@ export const repo = {
           start: '',
           end: '',
           teamIds: [],
-          color: '#3B68FC',
+          color: '#0F8231',
         }),
       ),
       articles,

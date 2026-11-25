@@ -54,20 +54,20 @@ export function SettingsScreen() {
     <Screen>
       <Header title="Settings" />
       <Body>
-        <View style={{ marginTop: space.sm }}>
-          <ProfilePass
-            actions={
-              user ? (
+        {user ? (
+          <View style={{ marginTop: space.sm, marginBottom: space.xl }}>
+            <ProfilePass
+              actions={
                 <>
                   <PassButton label="Edit profile" onPress={() => nav.navigate('EditProfile')} />
                   <PassButton label="Sign out" ghost onPress={signOut} />
                 </>
-              ) : undefined
-            }
-          />
-        </View>
+              }
+            />
+          </View>
+        ) : null}
 
-        <SectionHeader title="Appearance" style={{ marginTop: space.xxl }} />
+        <SectionHeader title="Appearance" style={{ marginTop: user ? 0 : space.sm }} />
         <View style={{ paddingHorizontal: space.lg }}>
           <Segmented<ThemePreference>
             value={preference}
