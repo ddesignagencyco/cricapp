@@ -343,6 +343,7 @@ model Author {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
   articles  NewsArticle[]
+  rssFeeds  RssFeedSource[]
 
   @@map("authors")
 }
@@ -353,8 +354,36 @@ model NewsCategory {
   slug      String   @unique
   createdAt DateTime @default(now()) @map("created_at")
   articles  NewsArticle[]
+  rssFeeds  RssFeedSource[]
 
   @@map("news_categories")
+}
+
+model RssFeedSource {
+  id                  String        @id @default(uuid())
+  name                String
+  url                 String        @unique
+  enabled             Boolean       @default(true)
+  categoryId          String?       @map("category_id")
+  authorId            String?       @map("author_id")
+  includeKeywords     String[]      @default([]) @map("include_keywords")
+  excludeKeywords     String[]      @default([]) @map("exclude_keywords")
+  rewriteMode         String        @default("summary_attribution") @map("rewrite_mode")
+  autoPublish         Boolean       @default(false) @map("auto_publish")
+  language            String        @default("en")
+  pollIntervalMinutes Int           @default(30) @map("poll_interval_minutes")
+  maxItemsPerPoll     Int           @default(10) @map("max_items_per_poll")
+  lastSyncedAt        DateTime?     @map("last_synced_at")
+  lastStatus          String?       @map("last_status")
+  lastError           String?       @map("last_error") @db.Text
+  articlesImported    Int           @default(0) @map("articles_imported")
+  createdAt           DateTime      @default(now()) @map("created_at")
+  updatedAt           DateTime      @updatedAt @map("updated_at")
+  category            NewsCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  authorRef           Author?       @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([enabled])
+  @@map("rss_feed_sources")
 }
 
 model NewsArticle {
@@ -367,6 +396,8 @@ model NewsArticle {
   author          String?
   authorId        String?  @map("author_id")
   source          String?
+  sourceGuid      String?  @unique @map("source_guid")
+  sourceUrl       String?  @map("source_url")
   categoryId      String?  @map("category_id")
   language        String   @default("en")
   metaTitle       String?  @map("meta_title")
