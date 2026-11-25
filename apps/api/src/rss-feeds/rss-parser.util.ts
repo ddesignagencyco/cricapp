@@ -342,7 +342,7 @@ export function extractArticleFromHtml(html: string): {
   // 1. ESPNcricinfo & similar portals render body blocks in `.ci-html-content` divs
   for (const m of html.matchAll(/<div[^>]+class=["'][^"']*ci-html-content[^"']*["'][^>]*>([\s\S]*?)<\/div>/gi)) {
     pushPara(m[1]);
-    if (paragraphs.length >= 10) break;
+    if (paragraphs.length >= 25) break;
   }
 
   // 2. Standard <article> / <main> <p> extraction (BBC Sport, Wisden, Dawn, etc.)
@@ -361,7 +361,7 @@ export function extractArticleFromHtml(html: string): {
 
     for (const m of region.matchAll(/<p(?:\s[^>]*)?>([\s\S]*?)<\/p>/gi)) {
       pushPara(m[1]);
-      if (paragraphs.length >= 10) break;
+      if (paragraphs.length >= 25) break;
     }
   }
 
@@ -369,7 +369,7 @@ export function extractArticleFromHtml(html: string): {
   if (paragraphs.length < 2) {
     for (const chunk of extractJsonLdArticleBody(html)) {
       pushPara(chunk);
-      if (paragraphs.length >= 10) break;
+      if (paragraphs.length >= 25) break;
     }
   }
 
@@ -385,7 +385,7 @@ export function extractArticleFromHtml(html: string): {
       .replace(/<figcaption[\s\S]*?<\/figcaption>/gi, ' ');
     for (const m of cleaned.matchAll(/<p(?:\s[^>]*)?>([\s\S]*?)<\/p>/gi)) {
       pushPara(m[1]);
-      if (paragraphs.length >= 10) break;
+      if (paragraphs.length >= 25) break;
     }
   }
 
@@ -475,7 +475,7 @@ export async function rewriteRssItemWithAi(input: {
     opencodeKey: process.env.OPENCODE_API_KEY,
   });
 
-  const fallbackParagraphs = (input.paragraphs || []).slice(0, 6);
+  const fallbackParagraphs = (input.paragraphs || []).slice(0, 25);
   const fallbackSummary = (input.summary || fallbackParagraphs[0] || input.contentText || input.title).slice(0, 320);
   const fallback: RewrittenArticle = {
     title: input.title,

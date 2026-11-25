@@ -289,7 +289,6 @@ function AdsterraUnit({
         height={height}
         scrolling="no"
         frameBorder="0"
-        sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation"
         className="max-w-full border-0"
         style={{ width, height, maxWidth: '100%' }}
       />
