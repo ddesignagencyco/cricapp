@@ -27,7 +27,7 @@ import {
   type RssRewriteMode,
 } from '../../services/rssFeedsAdmin';
 import { fetchNewsCategories, type NewsCategory } from '../../services/newsAdmin';
-import { AdminField, AdminInput, ConfirmDialog, LoadingState } from './AdminShared';
+import { AdminField, AdminInput, AdminSelect, ConfirmDialog, LoadingState } from './AdminShared';
 
 function parseCsvKeywords(raw: string): string[] {
   return [...new Set(raw.split(',').map((s) => s.trim()).filter(Boolean))];
@@ -293,15 +293,10 @@ export default function RssFeedManager() {
               />
             </AdminField>
             <AdminField label="Target Category">
-              <select
+              <AdminSelect
                 value={form.categoryId}
                 onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
-                className="w-full rounded-md px-3 py-2 text-sm"
-                style={{
-                  background: 'var(--admin-input-bg)',
-                  border: '1px solid var(--admin-border)',
-                  color: 'var(--admin-text)',
-                }}
+                aria-label="Target Category"
               >
                 <option value="">— Default / Uncategorized —</option>
                 {categories.map((c) => (
@@ -309,23 +304,18 @@ export default function RssFeedManager() {
                     {c.name}
                   </option>
                 ))}
-              </select>
+              </AdminSelect>
             </AdminField>
             <AdminField label="Content Mode">
-              <select
+              <AdminSelect
                 value={form.rewriteMode}
                 onChange={(e) => setForm({ ...form, rewriteMode: e.target.value as RssRewriteMode })}
-                className="w-full rounded-md px-3 py-2 text-sm"
-                style={{
-                  background: 'var(--admin-input-bg)',
-                  border: '1px solid var(--admin-border)',
-                  color: 'var(--admin-text)',
-                }}
+                aria-label="Content Mode"
               >
                 <option value="ai_rewrite">AI Original Rewrite (AdSense-safe, recommended)</option>
                 <option value="summary_attribution">Summary + Source Attribution</option>
                 <option value="raw">Sanitized Feed HTML + Attribution</option>
-              </select>
+              </AdminSelect>
             </AdminField>
             <AdminField label="Poll Interval (minutes)">
               <AdminInput
