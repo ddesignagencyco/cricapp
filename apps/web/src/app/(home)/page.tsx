@@ -115,11 +115,6 @@ export default async function HomePage() {
   return (
     <div className="min-h-screen">
       <MatchTickerBar matches={tickerMatches} />
-      <div className="border-b border-lborder sm:hidden">
-        <div className="mx-auto w-full max-w-7xl px-4 py-3">
-          <AdSlot placement="home-top-mobile" />
-        </div>
-      </div>
       <CricketHero match={heroMatch ?? undefined} />
 
       <div className="flex flex-col gap-12 pt-12 pb-12">

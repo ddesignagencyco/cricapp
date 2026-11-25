@@ -399,7 +399,7 @@ export default function MatchDetailBody({
 
 
   return (
-    <div className="mc-page mx-auto w-full max-w-[1280px] px-4 pb-10 pt-4 sm:px-6 sm:pt-5">
+    <div className="mc-page mx-auto w-full max-w-[1280px] px-4 pb-24 pt-4 sm:px-6 sm:pt-5 lg:pb-10">
       <div className="mb-4">
         <AdSlot placement="match-detail-leaderboard" />
       </div>

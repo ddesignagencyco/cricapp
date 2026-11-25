@@ -940,7 +940,7 @@ export default function MatchTimeline({
           </p>
           <p className="text-[11px] text-stext">Latest first</p>
         </div>
-        <ol className="max-h-[min(40rem,70vh)] overflow-y-auto overscroll-contain divide-y divide-lborder">
+        <ol className="max-h-[min(32rem,55vh)] overflow-y-auto overscroll-contain divide-y divide-lborder lg:max-h-[min(40rem,70vh)]">
           {shown.map((event, index) => {
             const prev = shown[index - 1];
             const showInnings = typeof event.inning === 'number' && event.inning !== prev?.inning;
@@ -977,11 +977,11 @@ export default function MatchTimeline({
           })}
         </ol>
         {remaining > 0 && (
-          <div className="border-t border-lborder px-3.5 py-3 text-center">
+          <div className="scroll-mb-24 border-t border-lborder bg-card px-3.5 py-3 text-center">
             <button
               type="button"
               onClick={() => setVisibleCount((count) => count + 30)}
-              className="rounded-full bg-secondary px-4 py-1.5 text-xs font-semibold text-mtext ring-1 ring-lborder hover:bg-card"
+              className="rounded-full bg-secondary px-4 py-2 text-xs font-semibold text-mtext ring-1 ring-lborder hover:bg-card"
             >
               Load more ({remaining} older)
             </button>
