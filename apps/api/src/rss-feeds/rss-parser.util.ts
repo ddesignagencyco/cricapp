@@ -275,7 +275,14 @@ export function buildAttributionHtml(
 }
 
 const BOILERPLATE_RX =
-  /^(sign in|log in|subscribe|cookie|privacy policy|terms of|share this|follow us|advertisement|related topics|more on this story|watch:|listen:|get the latest|external link|bbc is not responsible|copyright|all rights reserved)/i;
+  /^(sign in|log in|subscribe|cookie|privacy policy|terms of|share this|follow us|advertisement|related topics|more on this story|watch:|listen:|get the latest|external link|bbc is not responsible|copyright|all rights reserved|also read:|read more:)/i;
+
+export function isGenericPlaceholderImage(url: string | null | undefined): boolean {
+  if (!url) return true;
+  return /news\.google\.com|lh3\.googleusercontent\.com\/(J6_coFbogxhRI9iM864NL_liGXvsQp2AupsKei7z0cNNfDvGUmWUy20nuUhkREQyrpY4bEeIBuc|proxy\/)/i.test(
+    url,
+  );
+}
 
 function extractMetaImage(html: string): string | null {
   const patterns = [
@@ -284,13 +291,50 @@ function extractMetaImage(html: string): string | null {
   ];
   for (const rx of patterns) {
     const m = html.match(rx);
-    if (m?.[1]) return unescapeXml(m[1]).trim();
+    if (m?.[1]) {
+      const candidate = unescapeXml(m[1]).trim();
+      if (!isGenericPlaceholderImage(candidate)) return candidate;
+    }
   }
   return null;
 }
 
 const BROWSER_USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
+
+function extractNextDataArticleBody(html: string): string[] {
+  const m = html.match(/<script[^>]+id=["']__NEXT_DATA__["'][^>]*>([\s\S]*?)<\/script>/i);
+  if (!m?.[1]) return [];
+  const out: string[] = [];
+  const BODY_KEYS = new Set(['articleBody', 'body', 'content', 'contentHtml', 'html', 'storyContent', 'paragraphs']);
+  try {
+    const root = JSON.parse(m[1].trim());
+    const visit = (node: unknown, depth = 0) => {
+      if (!node || depth > 12 || out.length >= 25) return;
+      if (Array.isArray(node)) {
+        for (const item of node) visit(item, depth + 1);
+        return;
+      }
+      if (typeof node === 'object') {
+        for (const [k, v] of Object.entries(node as Record<string, unknown>)) {
+          if (BODY_KEYS.has(k) && typeof v === 'string' && v.length >= 60) {
+            const chunks = v
+              .split(/<\/p>|\n{2,}|\r\n\r\n/i)
+              .map((p) => unescapeXml(stripHtmlToText(p)).trim())
+              .filter((p) => p.length >= 45 && !BOILERPLATE_RX.test(p));
+            out.push(...chunks);
+          } else if (v && typeof v === 'object') {
+            visit(v, depth + 1);
+          }
+        }
+      }
+    };
+    visit(root);
+  } catch {
+    /* ignore malformed __NEXT_DATA__ */
+  }
+  return out.slice(0, 25);
+}
 
 function extractJsonLdArticleBody(html: string): string[] {
   const out: string[] = [];
@@ -343,6 +387,19 @@ export function extractArticleFromHtml(html: string): {
     if (paragraphs.length >= 25) break;
   }
 
+  // 1b. CMS editorial body containers (Dawn, Geo, Cricket Pakistan, WordPress/CricTracker/Wisden)
+  if (paragraphs.length < 2) {
+    const cmsRx =
+      /<(?:div|section)[^>]+class=["'][^"']*(?:story__content|article-content|article-body|entry-content|post-content|wp-block-post-content|td-post-content|story-detail|detail-content)[^"']*["'][^>]*>([\s\S]*?)<\/(?:div|section)>/gi;
+    for (const block of html.matchAll(cmsRx)) {
+      for (const p of block[1].matchAll(/<p(?:\s[^>]*)?>([\s\S]*?)<\/p>/gi)) {
+        pushPara(p[1]);
+        if (paragraphs.length >= 25) break;
+      }
+      if (paragraphs.length >= 25) break;
+    }
+  }
+
   // 2. Standard <article> / <main> <p> extraction (BBC Sport, Wisden, Dawn, etc.)
   if (paragraphs.length < 2) {
     const articleMatch = html.match(/<article(?:\s[^>]*)?>([\s\S]*?)<\/article>/i);
@@ -366,6 +423,14 @@ export function extractArticleFromHtml(html: string): {
   // 3. JSON-LD articleBody fallback
   if (paragraphs.length < 2) {
     for (const chunk of extractJsonLdArticleBody(html)) {
+      pushPara(chunk);
+      if (paragraphs.length >= 25) break;
+    }
+  }
+
+  // 3b. Next.js __NEXT_DATA__ payload fallback (ESPNcricinfo, Wisden, CricTracker, etc.)
+  if (paragraphs.length < 2) {
+    for (const chunk of extractNextDataArticleBody(html)) {
       pushPara(chunk);
       if (paragraphs.length >= 25) break;
     }

@@ -546,7 +546,7 @@ export async function syncDbRssFeed(feed) {
         summaryText,
         feed.name,
         raw.link || null,
-        extractedParagraphs.slice(0, 6),
+        extractedParagraphs.slice(0, 25),
       );
       let metaTitle = title.slice(0, 70);
       let metaDescription = (summaryText || title).slice(0, 160);
@@ -582,6 +582,11 @@ export async function syncDbRssFeed(feed) {
       const imageUrl = coverImage;
       const articleId = crypto.randomUUID();
 
+      const plainBodyLength = stripHtmlToText(htmlContent).length;
+      const hasSubstantialBody =
+        plainBodyLength >= 280 && (extractedParagraphs.length >= 2 || plainBodyLength >= 380);
+      const shouldPublish = Boolean(feed.auto_publish && hasSubstantialBody);
+
       const res = await query(
         `INSERT INTO news_articles (
            id, title, slug, summary, content, image_url, author, author_id,
@@ -608,7 +613,7 @@ export async function syncDbRssFeed(feed) {
           metaTitle,
           metaDescription,
           publishedAt,
-          Boolean(feed.auto_publish),
+          shouldPublish,
         ],
       );
 

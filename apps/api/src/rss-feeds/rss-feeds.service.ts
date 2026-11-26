@@ -322,6 +322,9 @@ export class RssFeedsService implements OnModuleInit, OnModuleDestroy {
         const slug = `${slugifyText(title) || 'story'}-${hash}`;
         const parsedDate = item.pubDate ? new Date(item.pubDate) : new Date();
         const publishedAt = Number.isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
+        const plainBodyLength = stripHtmlToText(htmlContent).length;
+        const hasSubstantialBody = plainBodyLength >= 280 && (extractedParagraphs.length >= 2 || plainBodyLength >= 380);
+        const shouldPublish = Boolean(feed.autoPublish && hasSubstantialBody);
 
         const created = await this.prisma.newsArticle.create({
           data: {
@@ -341,7 +344,7 @@ export class RssFeedsService implements OnModuleInit, OnModuleDestroy {
             metaTitle,
             metaDescription,
             publishedAt,
-            isPublished: feed.autoPublish,
+            isPublished: shouldPublish,
           },
           select: { id: true },
         });
