@@ -20,6 +20,8 @@ export interface AdminAuthor {
   slug: string;
   bio: string | null;
   avatarUrl: string | null;
+  articleCount?: number;
+  totalArticleCount?: number;
 }
 
 export interface AdminAnalytics {
@@ -137,6 +139,7 @@ export function fetchIngestionHealth(): Promise<IngestionHealth> {
   return apiGet<IngestionHealth>('/admin/ingestion-health', undefined, { headers: authHeaders() });
 }
 
-export async function deleteAdminAuthor(id: string): Promise<void> {
-  await apiDelete(`/admin/authors/${id}`, { headers: authHeaders() });
+export async function deleteAdminAuthor(id: string, reassignTo?: string): Promise<void> {
+  const qs = reassignTo ? `?reassignTo=${encodeURIComponent(reassignTo)}` : '';
+  await apiDelete(`/admin/authors/${id}${qs}`, { headers: authHeaders() });
 }

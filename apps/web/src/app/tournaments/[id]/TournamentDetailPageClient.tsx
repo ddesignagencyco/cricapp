@@ -310,7 +310,7 @@ export default function TournamentDetailPageClient({
   );
 
   return (
-    <div className="detail-page mx-auto max-w-7xl space-y-4 px-4 py-6 sm:space-y-5 sm:px-6 sm:py-8">
+    <div className="detail-page mx-auto max-w-site space-y-4 px-4 py-6 sm:space-y-5 sm:px-6 sm:py-8">
       <nav className="detail-breadcrumb" aria-label="Breadcrumb">
         <Link href="/tournaments" className="font-semibold text-accent transition-colors hover:text-mtext">
           Tournaments

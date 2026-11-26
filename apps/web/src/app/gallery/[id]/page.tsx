@@ -52,7 +52,7 @@ export default async function GalleryMediaPage({ params }: { params: Promise<{ i
   const preview = media.thumbnailUrl || media.url;
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+    <div className="mx-auto max-w-site px-4 py-8 sm:px-6">
       <nav aria-label="Breadcrumb" className="mb-5 flex items-center gap-1.5 text-xs text-stext">
         <Link href="/gallery" className="font-semibold text-accent hover:underline">
           Gallery

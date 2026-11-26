@@ -628,17 +628,30 @@ ${urls}
   }
 
   async listAuthors() {
-    const authors = await this.prisma.author.findMany({
-      orderBy: { name: 'asc' },
-      include: {
-        _count: {
-          select: { articles: { where: { isPublished: true } } },
+    const [authors, totalCounts] = await Promise.all([
+      this.prisma.author.findMany({
+        orderBy: { name: 'asc' },
+        include: {
+          _count: {
+            select: { articles: { where: { isPublished: true } } },
+          },
         },
-      },
-    });
+      }),
+      this.prisma.newsArticle.groupBy({
+        by: ['authorId'],
+        where: { authorId: { not: null } },
+        _count: { _all: true },
+      }),
+    ]);
+    const totalMap = new Map(
+      totalCounts
+        .filter((row) => row.authorId)
+        .map((row) => [row.authorId as string, row._count._all]),
+    );
     return authors.map(({ _count, ...author }) => ({
       ...author,
       articleCount: _count.articles,
+      totalArticleCount: totalMap.get(author.id) ?? 0,
     }));
   }
 
@@ -703,9 +716,43 @@ ${urls}
     return this.prisma.author.update({ where: { id }, data });
   }
 
-  async removeAuthor(id: string) {
+  async removeAuthor(id: string, reassignToAuthorId?: string) {
     const author = await this.prisma.author.findUnique({ where: { id } });
     if (!author) throw new NotFoundException(`Author ${id} not found`);
+
+    const [linkedArticles, linkedFeeds] = await Promise.all([
+      this.prisma.newsArticle.count({ where: { authorId: id } }),
+      this.prisma.rssFeedSource.count({ where: { authorId: id } }),
+    ]);
+
+    if (linkedArticles > 0 || linkedFeeds > 0) {
+      if (!reassignToAuthorId) {
+        throw new BadRequestException(
+          `Cannot delete author '${author.name}' because they have ${linkedArticles} linked post(s)${
+            linkedFeeds > 0 ? ` and ${linkedFeeds} RSS feed(s)` : ''
+          }. Reassign them to another author first.`,
+        );
+      }
+      if (reassignToAuthorId === id) {
+        throw new BadRequestException('Cannot reassign posts to the same author being deleted.');
+      }
+      const target = await this.prisma.author.findUnique({ where: { id: reassignToAuthorId } });
+      if (!target) throw new NotFoundException(`Target author ${reassignToAuthorId} not found`);
+
+      await this.prisma.$transaction([
+        this.prisma.newsArticle.updateMany({
+          where: { authorId: id },
+          data: { authorId: target.id, author: target.name },
+        }),
+        this.prisma.rssFeedSource.updateMany({
+          where: { authorId: id },
+          data: { authorId: target.id },
+        }),
+        this.prisma.author.delete({ where: { id } }),
+      ]);
+      return { deleted: true, reassignedTo: target.id, reassignedArticles: linkedArticles };
+    }
+
     await this.prisma.author.delete({ where: { id } });
     return { deleted: true };
   }

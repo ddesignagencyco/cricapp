@@ -63,7 +63,7 @@ function AutoAdsStatus() {
 
 export default function AdsPreviewPage() {
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6">
+    <div className="mx-auto w-full max-w-site px-4 py-8 sm:px-6">
       <header className="mb-6 rounded-md border border-dashed border-accent/50 bg-card p-4 sm:p-5">
         <p className="text-xs font-bold uppercase tracking-widest text-accent">Testing only — not linked, not indexed</p>
         <h1 className="mt-1 text-2xl font-bold text-mtext">Ad format preview</h1>

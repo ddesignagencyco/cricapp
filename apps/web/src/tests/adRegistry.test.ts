@@ -212,8 +212,15 @@ describe('shouldRenderAd', () => {
     });
   });
 
-  it('renders the placeholder in house mode even with no slot id configured', () => {
-    expect(shouldRenderAd(configWith({ mode: 'house' }), 'psl-half-page', '/psl')).toBe(true);
+  it('renders in adsterra mode when a zone key is configured', () => {
+    const config = configWith({
+      mode: 'adsterra',
+      adsterra: {
+        ...EMPTY_AD_CONFIG.adsterra,
+        defaultKeys: { ...EMPTY_AD_CONFIG.adsterra.defaultKeys, 'half-page': 'abc123def4567890' },
+      },
+    });
+    expect(shouldRenderAd(config, 'psl-half-page', '/psl')).toBe(true);
   });
 
   it('renders nothing in adsense mode when no slot id resolves', () => {
@@ -233,7 +240,13 @@ describe('shouldRenderAd', () => {
 
   it('renders shared placements on /odds and /predictions like all other pages', () => {
     const config = configWith({
-      mode: 'house',
+      mode: 'adsense',
+      clientId: 'pub-1234567890123456',
+      defaultSlots: {
+        ...EMPTY_AD_CONFIG.defaultSlots,
+        leaderboard: '1111111111',
+        'medium-rectangle': '2222222222',
+      },
       placements: { 'layout-sidebar': { enabled: true, slotId: null } },
     });
     expect(shouldRenderAd(config, 'layout-sidebar', '/odds')).toBe(true);
@@ -243,7 +256,9 @@ describe('shouldRenderAd', () => {
 
   it('honours a disabled placement even where ads are otherwise allowed', () => {
     const config = configWith({
-      mode: 'house',
+      mode: 'adsense',
+      clientId: 'pub-1234567890123456',
+      defaultSlots: { ...EMPTY_AD_CONFIG.defaultSlots, leaderboard: '1111111111' },
       placements: { 'news-list-bottom': { enabled: false, slotId: null } },
     });
     expect(shouldRenderAd(config, 'news-list-bottom', '/news')).toBe(false);
@@ -271,7 +286,7 @@ describe('client-side validation the API does not perform', () => {
 
 describe('the unconfigured default', () => {
   it('matches what the API returns for a site with nothing configured', () => {
-    expect(EMPTY_AD_CONFIG.mode).toBe('house');
+    expect(EMPTY_AD_CONFIG.mode).toBe('off');
     expect(EMPTY_AD_CONFIG.clientId).toBeNull();
     expect(EMPTY_AD_CONFIG.placements).toEqual({});
     expect(EMPTY_AD_CONFIG.gamblingAds).toBe(false);

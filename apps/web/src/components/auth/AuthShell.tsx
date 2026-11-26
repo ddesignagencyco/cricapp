@@ -26,7 +26,7 @@ function BrandLockup() {
 
 export default function AuthShell({ title, subtitle, children, footer }: AuthShellProps) {
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-10">
+    <div className="mx-auto w-full max-w-site px-4 py-6 sm:px-6 sm:py-10">
       <div className="elev-raised grid min-w-0 overflow-hidden rounded-2xl bg-card ring-1 ring-lborder lg:grid-cols-2">
         {/* Visual panel */}
         <aside className="relative h-44 overflow-hidden sm:h-56 lg:h-auto lg:min-h-[640px]">

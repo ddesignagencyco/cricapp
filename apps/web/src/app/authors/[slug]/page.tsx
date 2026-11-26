@@ -36,7 +36,7 @@ export default async function AuthorDetailPage({
   const { author, articles, totalPages } = data;
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6">
+    <div className="mx-auto max-w-site space-y-6 px-4 py-8 sm:px-6">
       <nav className="flex items-center gap-1.5 text-xs text-stext">
         <Link href="/authors" className="hover:text-accent">
           Authors

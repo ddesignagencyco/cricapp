@@ -23,7 +23,7 @@ const PSL_DATA = {
 export default function PslSpotlight({ standings = [] }: PslSpotlightProps) {
   const rows = standings.slice(0, 5);
   return (
-    <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
+    <section className="mx-auto w-full max-w-site px-4 sm:px-6">
       <div className="space-y-4">
         {/* PSL Spotlight */}
         <div className="overflow-hidden rounded-2xl bg-card ring-1 ring-lborder">
@@ -69,7 +69,6 @@ export default function PslSpotlight({ standings = [] }: PslSpotlightProps) {
         </div>
 
         {/* PSL Points Table */}
-        <div className="grid min-w-0 grid-cols-1 items-stretch gap-6 lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-8">
         <div className="min-w-0 overflow-hidden rounded-2xl bg-card ring-1 ring-lborder">
           <div className="flex items-center justify-between border-b border-lborder px-4 py-3 sm:px-5">
             <div className="flex items-center gap-2">
@@ -81,19 +80,19 @@ export default function PslSpotlight({ standings = [] }: PslSpotlightProps) {
             </Link>
           </div>
 
-          <div className="overflow-x-auto no-scrollbar">
-            <table className="w-full min-w-[520px] text-left text-sm">
+          <div className="table-scroll overflow-x-auto">
+            <table className="w-full min-w-[640px] text-left text-sm">
               <thead>
                 <tr className="border-b border-lborder bg-card/60 text-xs font-bold uppercase tracking-wider text-stext">
-                  <th className="px-2 py-3 sm:px-3.5 text-center">#</th>
-                  <th className="px-2 py-3 sm:px-3.5">Team</th>
-                  <th className="px-2 py-3 sm:px-3 text-center" title="Matches Played">Played</th>
-                  <th className="px-2 py-3 sm:px-3 text-center" title="Won">Won</th>
-                  <th className="px-2 py-3 sm:px-3 text-center" title="Lost">Lost</th>
-                  <th className="hidden px-2 py-3 text-center md:table-cell sm:px-3" title="Tied">Tied</th>
-                  <th className="hidden px-2 py-3 text-center sm:table-cell sm:px-3" title="No Result">NR</th>
-                  <th className="px-2 py-3 sm:px-3 text-center" title="Net Run Rate">NRR</th>
-                  <th className="px-2 py-3 sm:px-3.5 text-center" title="Points">Points</th>
+                  <th className="px-2.5 py-3 sm:px-3.5 text-center">#</th>
+                  <th className="px-2.5 py-3 sm:px-3.5">Team</th>
+                  <th className="px-2.5 py-3 sm:px-3 text-center" title="Matches Played">Played</th>
+                  <th className="px-2.5 py-3 sm:px-3 text-center" title="Won">Won</th>
+                  <th className="px-2.5 py-3 sm:px-3 text-center" title="Lost">Lost</th>
+                  <th className="px-2.5 py-3 sm:px-3 text-center" title="Tied">Tied</th>
+                  <th className="px-2.5 py-3 sm:px-3 text-center" title="No Result">NR</th>
+                  <th className="px-2.5 py-3 sm:px-3 text-center" title="Net Run Rate">NRR</th>
+                  <th className="px-2.5 py-3 sm:px-3.5 text-center" title="Points">Points</th>
                 </tr>
               </thead>
               <tbody>
@@ -116,11 +115,11 @@ export default function PslSpotlight({ standings = [] }: PslSpotlightProps) {
                             <span className="hidden text-xs font-medium uppercase text-muted-foreground sm:inline">{row.teamAbbr}</span>
                           </div>
                         </td>
-                        <td className="px-2 py-2.5 sm:px-3 text-center font-mono text-sm font-medium tabular-nums text-stext">{row.played ?? 0}</td>
-                        <td className="px-2 py-2.5 sm:px-3 text-center font-mono text-sm font-semibold tabular-nums text-accent">{row.won ?? 0}</td>
-                        <td className="px-2 py-2.5 sm:px-3 text-center font-mono text-sm font-medium tabular-nums text-danger">{row.lost ?? 0}</td>
-                        <td className="hidden px-2 py-2.5 text-center font-mono text-sm font-medium tabular-nums text-stext md:table-cell sm:px-3">{row.tied ?? 0}</td>
-                        <td className="hidden px-2 py-2.5 text-center font-mono text-sm font-medium tabular-nums text-stext sm:table-cell sm:px-3">{row.noResult ?? 0}</td>
+                        <td className="px-2.5 py-2.5 sm:px-3 text-center font-mono text-sm font-medium tabular-nums text-stext">{row.played ?? 0}</td>
+                        <td className="px-2.5 py-2.5 sm:px-3 text-center font-mono text-sm font-semibold tabular-nums text-accent">{row.won ?? 0}</td>
+                        <td className="px-2.5 py-2.5 sm:px-3 text-center font-mono text-sm font-medium tabular-nums text-danger">{row.lost ?? 0}</td>
+                        <td className="px-2.5 py-2.5 sm:px-3 text-center font-mono text-sm font-medium tabular-nums text-stext">{row.tied ?? 0}</td>
+                        <td className="px-2.5 py-2.5 sm:px-3 text-center font-mono text-sm font-medium tabular-nums text-stext">{row.noResult ?? 0}</td>
                         <td className={`px-2 py-2.5 sm:px-3 text-center font-mono text-sm font-semibold tabular-nums ${nrr >= 0 ? 'text-accent' : 'text-danger'}`}>
                           {nrrLabel}
                         </td>
@@ -137,10 +136,6 @@ export default function PslSpotlight({ standings = [] }: PslSpotlightProps) {
                 )}
               </tbody>
             </table>
-          </div>
-        </div>
-          <div className="lg:sticky lg:top-24 lg:self-start">
-            <AdSlot placement="home-sidebar" />
           </div>
         </div>
       </div>

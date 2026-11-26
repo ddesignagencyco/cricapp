@@ -23,6 +23,7 @@ import TopPerformers from '../../components/TopPerformers';
 const Newsletter = dynamic(() => import('../../components/Newsletter'));
 import AdSlot from '../../components/advertisements/AdSlot';
 import AdMultiplex from '../../components/advertisements/AdMultiplex';
+import EditorialSidebar from '../../components/boards/EditorialSidebar';
 import RemoteImage from '../../components/RemoteImage';
 import NewsCopy from '../../components/NewsCopy';
 
@@ -117,68 +118,68 @@ export default async function HomePage() {
       <MatchTickerBar matches={tickerMatches} />
       <CricketHero match={heroMatch ?? undefined} />
 
-      <div className="flex flex-col gap-12 pt-12 pb-12">
-      <LiveNowSection matches={live} />
+      <div className="mx-auto w-full max-w-site px-4 pt-10 pb-12 sm:px-6">
+        <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+          <div className="flex min-w-0 flex-col gap-12 [&>section]:max-w-none [&>section]:px-0">
+            <LiveNowSection matches={live} />
 
-      <WatchNowSection streams={liveStreams} />
+            <WatchNowSection streams={liveStreams} />
 
-      {/* Upcoming Matches */}
-      <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
-        <SectionHeader title="Upcoming Matches" subtitle="Don't miss the upcoming action" icon="calendar" to="/matches" actionLabel="View all" />
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {upcoming.length > 0 ? (
-            upcoming.map((m: any) => (
-              <MatchCard key={m.matchId || m.id} match={m} showVenue />
-            ))
-          ) : (
-            <p className="rounded-xl bg-card px-4 py-8 text-center text-sm text-stext ring-1 ring-lborder">
-              No upcoming matches right now.
-            </p>
-          )}
-        </div>
-      </section>
+            {/* Upcoming Matches */}
+            <section className="w-full">
+              <SectionHeader title="Upcoming Matches" subtitle="Don't miss the upcoming action" icon="calendar" to="/matches" actionLabel="View all" />
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                {upcoming.length > 0 ? (
+                  upcoming.map((m: any) => (
+                    <MatchCard key={m.matchId || m.id} match={m} showVenue />
+                  ))
+                ) : (
+                  <p className="rounded-xl bg-card px-4 py-8 text-center text-sm text-stext ring-1 ring-lborder">
+                    No upcoming matches right now.
+                  </p>
+                )}
+              </div>
+            </section>
 
-      {/* Cric Stories. Sits directly after the live and upcoming match blocks so
-          the fixtures and the short-form rail read as one run of "watch this",
-          ahead of the standings and news sections. */}
-      <HomeStoriesRail />
+            {/* Cric Stories */}
+            <HomeStoriesRail />
 
-      {/* PSL Spotlight (Points Table & Season Standings) */}
-      <PslSpotlight standings={pslStandings} />
+            {/* PSL Spotlight (Points Table & Season Standings) */}
+            <PslSpotlight standings={pslStandings} />
 
-      <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
-        <AdSlot placement="home-mid" />
-      </section>
+            <section className="w-full">
+              <AdSlot placement="home-mid" />
+            </section>
 
-      {/* PSL Top Performers */}
-      {pslLeaders.length > 0 && (
-        <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
-          <SectionHeader
-            title="Top Performers"
-            subtitle="Leading run scorers and wicket takers in the PSL"
-            icon="trendingup"
-            to="/psl"
-            actionLabel="All stats"
-          />
-          <TopPerformers leaders={pslLeaders} />
-        </section>
-      )}
+            {/* PSL Top Performers */}
+            {pslLeaders.length > 0 && (
+              <section className="w-full">
+                <SectionHeader
+                  title="Top Performers"
+                  subtitle="Leading run scorers and wicket takers in the PSL"
+                  icon="trendingup"
+                  to="/psl"
+                  actionLabel="All stats"
+                />
+                <TopPerformers leaders={pslLeaders} />
+              </section>
+            )}
 
-      {/* Recent Results */}
-      {completed.length > 0 && (
-        <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
-          <SectionHeader title="Recent Results" subtitle="Latest match outcomes" icon="trophy" to="/matches?tab=completed" actionLabel="View all" />
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-            {completed.map((m: any) => (
-              <RecentResultCard key={m.matchId || m.id} match={m} />
-            ))}
-          </div>
-        </section>
-      )}
+            {/* Recent Results */}
+            {completed.length > 0 && (
+              <section className="w-full">
+                <SectionHeader title="Recent Results" subtitle="Latest match outcomes" icon="trophy" to="/matches?tab=completed" actionLabel="View all" />
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                  {completed.map((m: any) => (
+                    <RecentResultCard key={m.matchId || m.id} match={m} />
+                  ))}
+                </div>
+              </section>
+            )}
 
       {/* News */}
       {newsList.length > 0 && (
-        <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
+        <section className="mx-auto w-full max-w-site px-4 sm:px-6">
           <SectionHeader title="Latest News" subtitle="Stay updated with the cricket world" icon="newspaper" to="/news" actionLabel="All news" />
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.15fr_0.85fr] lg:items-stretch">
             {newsList[0] && (
@@ -251,15 +252,21 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* Multiplex sits between the news block and the gallery strip so it never
-          stacks directly against the footer banner (§10). */}
-      <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
-        <AdMultiplex placement="home-multiplex" />
-      </section>
+            {/* Multiplex sits between the news block and the gallery strip */}
+            <section className="w-full">
+              <AdMultiplex placement="home-multiplex" />
+            </section>
 
-      <HomeGalleryStrip />
+            <HomeGalleryStrip />
 
-      <Newsletter />
+            <Newsletter />
+          </div>
+          <EditorialSidebar
+            topPlacement="home-sidebar"
+            bottomPlacement="home-skyscraper"
+            widget="topics"
+          />
+        </div>
       </div>
     </div>
   );

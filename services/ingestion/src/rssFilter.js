@@ -26,6 +26,7 @@ export function sanitizeRssHtml(html) {
     .replace(/<iframe[\s\S]*?<\/iframe>/gi, '')
     .replace(/<object[\s\S]*?<\/object>/gi, '')
     .replace(/<embed[^>]*>/gi, '')
+    .replace(/<a\b[^>]*>([\s\S]*?)<\/a>/gi, '$1')
     .replace(/\son[a-z]+\s*=\s*["'][^"']*["']/gi, '')
     .replace(/\sstyle\s*=\s*["'][^"']*["']/gi, '')
     .replace(/javascript:/gi, '')
@@ -84,7 +85,7 @@ export function buildSourceGuid(feedUrl, item) {
   return `rss:${crypto.createHash('sha256').update(key).digest('hex').slice(0, 32)}`;
 }
 
-export function buildAttributionHtml(summaryText, sourceName, sourceUrl, paragraphs = []) {
+export function buildAttributionHtml(summaryText, _sourceName, _sourceUrl, paragraphs = []) {
   const cleanParas = Array.isArray(paragraphs)
     ? paragraphs.map((p) => String(p || '').trim()).filter(Boolean)
     : [];
@@ -93,10 +94,7 @@ export function buildAttributionHtml(summaryText, sourceName, sourceUrl, paragra
     : summaryText
       ? `<p>${htmlEscape(summaryText)}</p>`
       : '';
-  const link = sourceUrl
-    ? `<a href="${htmlEscape(sourceUrl)}" target="_blank" rel="noopener noreferrer nofollow">${htmlEscape(sourceName)}</a>`
-    : htmlEscape(sourceName);
-  return `${body}\n<p class="rss-attribution"><em>Originally reported by ${link}.</em></p>`.trim();
+  return body.trim();
 }
 
 const BOILERPLATE_RX =

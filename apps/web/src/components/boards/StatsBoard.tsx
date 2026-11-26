@@ -56,6 +56,29 @@ export default function StatsBoard({ leaders = [] }: Props) {
   const [tab, setTab] = useState('batting');
   const grouped = leaders.filter((group) => group.category === tab);
 
+  // Index each stat group by playerId so flagship tables (Most Runs, Most Wickets)
+  // can display complete multi-column stats (Avg, HS, 4s, 6s, 50/100, Econ, Mdns).
+  const lookup = (statName: string) => {
+    const map = new Map<string, number | string>();
+    const group = grouped.find((g) => g.stat === statName);
+    for (const entry of group?.entries || []) {
+      if (entry.playerId) map.set(entry.playerId, entry.value);
+    }
+    return map;
+  };
+
+  const statMaps = {
+    avg: lookup('top_average'),
+    hs: lookup('highest_score'),
+    fours: lookup('top_fours'),
+    sixes: lookup('top_sixes'),
+    fifties: lookup('top_fifties'),
+    hundreds: lookup('top_hundreds'),
+    sr: lookup('top_strike_rate'),
+    econ: lookup('top_economy'),
+    maidens: lookup('top_maidens'),
+  };
+
   return (
     <>
       <div className="mb-6">
@@ -65,7 +88,12 @@ export default function StatsBoard({ leaders = [] }: Props) {
       {grouped.length > 0 ? (
         <div className="fade-in grid grid-cols-1 gap-6 pt-2 lg:grid-cols-2">
           {grouped.map((group) => (
-            <LeaderSection key={`${group.category}:${group.stat}`} stat={group.stat} entries={group.entries || []} />
+            <LeaderSection
+              key={`${group.category}:${group.stat}`}
+              stat={group.stat}
+              entries={group.entries || []}
+              statMaps={statMaps}
+            />
           ))}
         </div>
       ) : (
@@ -75,9 +103,24 @@ export default function StatsBoard({ leaders = [] }: Props) {
   );
 }
 
-function LeaderSection({ stat, entries }: { stat: string; entries: LeaderEntry[] }) {
+type StatMaps = {
+  avg: Map<string, number | string>;
+  hs: Map<string, number | string>;
+  fours: Map<string, number | string>;
+  sixes: Map<string, number | string>;
+  fifties: Map<string, number | string>;
+  hundreds: Map<string, number | string>;
+  sr: Map<string, number | string>;
+  econ: Map<string, number | string>;
+  maidens: Map<string, number | string>;
+};
+
+function LeaderSection({ stat, entries, statMaps }: { stat: string; entries: LeaderEntry[]; statMaps: StatMaps }) {
   const title = statLabels[stat] || titleCase(stat.replace(/_/g, ' '));
   const valueLabel = valueHeaders[stat] || 'Value';
+  const isDetailedRuns = stat === 'top_runs';
+  const isDetailedWickets = stat === 'top_wickets';
+  const isWide = isDetailedRuns || isDetailedWickets;
   const Icon =
     stat.includes('run') || stat.includes('score')
       ? Zap
@@ -89,7 +132,7 @@ function LeaderSection({ stat, entries }: { stat: string; entries: LeaderEntry[]
   const rows = [...entries].sort((a, b) => (a.rank ?? 999) - (b.rank ?? 999)).slice(0, 10);
 
   return (
-    <section className="overflow-hidden rounded-2xl bg-card ring-1 ring-lborder">
+    <section className={`overflow-hidden rounded-2xl bg-card ring-1 ring-lborder ${isWide ? 'lg:col-span-2' : ''}`}>
       <div className="flex items-center justify-between gap-3 border-b border-lborder px-4 py-3">
         <h3 className="flex min-w-0 items-center gap-2 text-sm font-bold text-mtext sm:text-base">
           <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-brand text-white">
@@ -102,17 +145,40 @@ function LeaderSection({ stat, entries }: { stat: string; entries: LeaderEntry[]
 
       {rows.length ? (
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[320px] text-left text-sm">
+          <table className={`w-full text-left text-sm ${isWide ? 'min-w-[600px]' : 'min-w-[320px]'}`}>
             <thead>
-              <tr className="border-b border-lborder text-xs uppercase tracking-wider">
+              <tr className="border-b border-lborder text-xs uppercase tracking-wider text-stext">
                 <th className="w-12 px-4 py-2.5">#</th>
                 <th className="px-4 py-2.5">Player</th>
-                <th className="px-4 py-2.5 text-right">{valueLabel}</th>
+                {isDetailedRuns ? (
+                  <>
+                    <th className="px-3 py-2.5 text-right">Avg</th>
+                    <th className="px-3 py-2.5 text-right">SR</th>
+                    <th className="px-3 py-2.5 text-right">HS</th>
+                    <th className="px-3 py-2.5 text-right">4s</th>
+                    <th className="px-3 py-2.5 text-right">6s</th>
+                    <th className="px-3 py-2.5 text-right">50/100</th>
+                  </>
+                ) : isDetailedWickets ? (
+                  <>
+                    <th className="px-3 py-2.5 text-right">Avg</th>
+                    <th className="px-3 py-2.5 text-right">Econ</th>
+                    <th className="px-3 py-2.5 text-right">Mdns</th>
+                  </>
+                ) : null}
+                <th className="px-4 py-2.5 text-right font-bold text-mtext">{valueLabel}</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((row, index) => {
                 const name = formatPlayerName(row.playerName);
+                const pid = row.playerId || '';
+                const fifties = statMaps.fifties.get(pid);
+                const hundreds = statMaps.hundreds.get(pid);
+                const milestones =
+                  fifties !== undefined || hundreds !== undefined
+                    ? `${fifties ?? 0}/${hundreds ?? 0}`
+                    : '—';
                 return (
                   <tr
                     key={`${row.playerId || stat}-${index}`}
@@ -145,7 +211,41 @@ function LeaderSection({ stat, entries }: { stat: string; entries: LeaderEntry[]
                         </span>
                       </Link>
                     </td>
-                    <td className="px-4 py-3 text-right align-middle font-mono text-base tabular-nums text-mtext">
+                    {isDetailedRuns ? (
+                      <>
+                        <td className="px-3 py-3 text-right align-middle font-mono text-xs tabular-nums text-stext">
+                          {statMaps.avg.has(pid) ? formatStatValue('top_average', statMaps.avg.get(pid)!) : '—'}
+                        </td>
+                        <td className="px-3 py-3 text-right align-middle font-mono text-xs tabular-nums text-stext">
+                          {statMaps.sr.has(pid) ? formatStatValue('top_strike_rate', statMaps.sr.get(pid)!) : '—'}
+                        </td>
+                        <td className="px-3 py-3 text-right align-middle font-mono text-xs tabular-nums text-stext">
+                          {statMaps.hs.has(pid) ? formatStatValue('highest_score', statMaps.hs.get(pid)!) : '—'}
+                        </td>
+                        <td className="px-3 py-3 text-right align-middle font-mono text-xs tabular-nums text-stext">
+                          {statMaps.fours.has(pid) ? formatStatValue('top_fours', statMaps.fours.get(pid)!) : '—'}
+                        </td>
+                        <td className="px-3 py-3 text-right align-middle font-mono text-xs tabular-nums text-stext">
+                          {statMaps.sixes.has(pid) ? formatStatValue('top_sixes', statMaps.sixes.get(pid)!) : '—'}
+                        </td>
+                        <td className="px-3 py-3 text-right align-middle font-mono text-xs tabular-nums text-stext">
+                          {milestones}
+                        </td>
+                      </>
+                    ) : isDetailedWickets ? (
+                      <>
+                        <td className="px-3 py-3 text-right align-middle font-mono text-xs tabular-nums text-stext">
+                          {statMaps.avg.has(pid) ? formatStatValue('top_average', statMaps.avg.get(pid)!) : '—'}
+                        </td>
+                        <td className="px-3 py-3 text-right align-middle font-mono text-xs tabular-nums text-stext">
+                          {statMaps.econ.has(pid) ? formatStatValue('top_economy', statMaps.econ.get(pid)!) : '—'}
+                        </td>
+                        <td className="px-3 py-3 text-right align-middle font-mono text-xs tabular-nums text-stext">
+                          {statMaps.maidens.has(pid) ? formatStatValue('top_maidens', statMaps.maidens.get(pid)!) : '—'}
+                        </td>
+                      </>
+                    ) : null}
+                    <td className="px-4 py-3 text-right align-middle font-mono text-base font-bold tabular-nums text-mtext">
                       {formatStatValue(stat, row.value)}
                     </td>
                   </tr>

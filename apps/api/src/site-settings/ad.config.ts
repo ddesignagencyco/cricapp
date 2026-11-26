@@ -96,7 +96,7 @@ export const EMPTY_ADSTERRA_CONFIG: AdsterraConfig = {
 };
 
 export const EMPTY_AD_CONFIG: AdConfig = {
-  mode: 'house',
+  mode: 'off',
   clientId: null,
   defaultSlots: {
     leaderboard: null,
@@ -223,7 +223,7 @@ export function normalizeAdsterraConfig(value: unknown): AdsterraConfig {
 }
 
 function normalizeMode(value: unknown): AdMode {
-  return AD_MODES.includes(value as AdMode) ? (value as AdMode) : 'house';
+  return AD_MODES.includes(value as AdMode) ? (value as AdMode) : 'off';
 }
 
 /**

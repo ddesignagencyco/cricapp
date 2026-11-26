@@ -9,6 +9,7 @@ import EmptyState from '../EmptyState';
 import ErrorState from '../ErrorState';
 import Pagination from '../Pagination';
 import AdSlot from '../advertisements/AdSlot';
+import EditorialSidebar from './EditorialSidebar';
 import { DirectoryGridSkeleton } from '../skeletons/Skeletons';
 import { useDebouncedUrlQuery } from '../../hooks/useDebouncedUrlQuery';
 import { fetchPlayersPage } from '../../services/players';
@@ -93,10 +94,6 @@ export default function PlayerDirectory() {
         countLabel="players"
       />
 
-      {!query.isPending && !query.isError && filtered.length > 0 ? (
-        <AdSlot placement="players-after-intro" />
-      ) : null}
-
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <SearchField
           wrapperClassName="max-w-md flex-1"
@@ -139,26 +136,30 @@ export default function PlayerDirectory() {
       ) : query.isError ? (
         <ErrorState message="Players are temporarily unavailable." onRetry={() => void query.refetch()} />
       ) : filtered.length > 0 ? (
-        <>
-          <div className="fade-in grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {filtered.map((p: Player, index) => (
-              <Fragment key={p.id}>
-                <PlayerCard player={p} />
-                {/* A banner after the 6th and 18th cards: a full row at both 2- and 3-column
-                    widths, and only between rows (never after the last card). */}
-                {(index === 5 || index === 17) && index < filtered.length - 1 ? (
-                  <div className="col-span-full py-1">
-                    <AdSlot placement="players-infeed" />
-                  </div>
-                ) : null}
-              </Fragment>
-            ))}
-          </div>
+        <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+          <div className="min-w-0">
+            <div className="fade-in grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {filtered.map((p: Player, index) => (
+                <Fragment key={p.id}>
+                  <PlayerCard player={p} />
+                  {(index + 1) % 6 === 0 && index < filtered.length - 1 ? (
+                    <div className="col-span-full py-1">
+                      <AdSlot placement="players-infeed" />
+                    </div>
+                  ) : null}
+                </Fragment>
+              ))}
+            </div>
 
-          <div className="pt-4">
-            <Pagination page={page} totalPages={totalPages} total={total} limit={LIMIT} onPageChange={handlePageChange} />
+            <div className="pt-4">
+              <Pagination page={page} totalPages={totalPages} total={total} limit={LIMIT} onPageChange={handlePageChange} />
+            </div>
           </div>
-        </>
+          <EditorialSidebar
+            topPlacement="players-sidebar"
+            bottomPlacement={filtered.length >= 14 ? 'players-skyscraper' : undefined}
+          />
+        </div>
       ) : (
         <EmptyState
           title="No players found"

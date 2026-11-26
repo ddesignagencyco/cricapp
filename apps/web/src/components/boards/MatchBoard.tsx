@@ -14,6 +14,7 @@ import ErrorState from '../ErrorState';
 import PageToolbar from '../PageToolbar';
 import Pagination from '../Pagination';
 import AdSlot from '../advertisements/AdSlot';
+import EditorialSidebar from './EditorialSidebar';
 import { MatchCardGridSkeleton } from '../skeletons/Skeletons';
 import { matchKeys, parsePositiveInt } from '../../queries/keys';
 import { useLiveMatchesQuery, useMatchDetailsQuery, useMatchesQuery, usePrefetchNextPage } from '../../queries/useDirectoryQueries';
@@ -169,24 +170,34 @@ export default function MatchBoard() {
           onRetry={() => void activeQuery.refetch()}
         />
       ) : visibleMatches.length > 0 ? (
-        <>
-          <div className="fade-in grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {visibleMatches.map((m, index) => (
-              <Fragment key={`${m.matchId || m.id || 'match'}-${index}`}>
-                <MatchCard match={m} />
-                {/* After six cards: a full row at both 2- and 3-column widths. */}
-                {visibleMatches.length > 6 && index === 5 ? (
-                  <div className="col-span-full py-1">
-                    <AdSlot placement="matches-infeed" />
-                  </div>
-                ) : null}
-              </Fragment>
-            ))}
+        <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+          <div className="min-w-0 space-y-6">
+            <div className="fade-in grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {visibleMatches.map((m, index) => (
+                <Fragment key={`${m.matchId || m.id || 'match'}-${index}`}>
+                  <MatchCard match={m} />
+                  {(index + 1) % 6 === 0 && index < visibleMatches.length - 1 ? (
+                    <div className="col-span-full py-2">
+                      <AdSlot placement="matches-infeed" />
+                    </div>
+                  ) : null}
+                </Fragment>
+              ))}
+            </div>
+            {visibleMatches.length > 0 && visibleMatches.length < 6 ? (
+              <div className="py-1">
+                <AdSlot placement="matches-infeed" />
+              </div>
+            ) : null}
+            {!liveEndpoint ? (
+              <Pagination page={page} totalPages={totalPages} total={total} limit={LIMIT} onPageChange={handlePageChange} />
+            ) : null}
           </div>
-          {!liveEndpoint ? (
-            <Pagination page={page} totalPages={totalPages} total={total} limit={LIMIT} onPageChange={handlePageChange} />
-          ) : null}
-        </>
+          <EditorialSidebar
+            topPlacement="matches-sidebar"
+            bottomPlacement={visibleMatches.length >= 14 ? 'matches-skyscraper' : undefined}
+          />
+        </div>
       ) : (
         <EmptyState
           title={`No ${tab} matches found`}

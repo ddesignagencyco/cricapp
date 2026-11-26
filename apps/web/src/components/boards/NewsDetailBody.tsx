@@ -97,7 +97,7 @@ export default function NewsDetailBody({ item, related = [], authorHref, related
     : (item.category && typeof item.category === 'object' && 'name' in item.category ? String((item.category as any).name) : '');
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+    <div className="mx-auto max-w-site px-4 py-8 sm:px-6">
       <nav className="mb-6 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-stext" aria-label="Breadcrumb">
         <Link href="/" className="hover:text-accent">Home</Link>
         <span>/</span>
@@ -108,61 +108,61 @@ export default function NewsDetailBody({ item, related = [], authorHref, related
         </NewsCopy>
       </nav>
 
+      <header className="mb-8">
+        <div className="flex flex-wrap items-center gap-2">
+          {categoryName && (
+            <Badge tone={categoryTone[categoryName] || 'neutral'}>{categoryName}</Badge>
+          )}
+        </div>
+        <NewsCopy
+          as="h1"
+          language={item.language}
+          text={item.title}
+          className={locale.lang === 'ur'
+            ? 'mt-4 text-[1.375rem] font-semibold leading-[1.8] text-mtext sm:text-[1.625rem]'
+            : 'mt-4 text-3xl font-black leading-tight tracking-tight text-mtext sm:text-5xl'}
+        >
+          {item.title}
+        </NewsCopy>
+        {item.excerpt && (
+          <NewsCopy
+            language={item.language}
+            text={item.excerpt}
+            className={locale.lang === 'ur'
+              ? 'mt-4 max-w-3xl text-[0.9375rem] leading-[2.4] text-stext'
+              : 'mt-4 max-w-3xl text-base leading-relaxed text-stext sm:text-lg'}
+          >
+            {item.excerpt}
+          </NewsCopy>
+        )}
+        <div className="mt-6 flex flex-wrap items-center gap-5 border-b border-lborder pb-6 text-xs text-stext">
+          <AuthorByline
+            name={item.author}
+            src={authorAvatarFromArticle(item)}
+            href={authorHref}
+            size={22}
+            className="text-xs"
+          />
+          {item.source ? (
+            <span className="flex items-center gap-1.5" title="Source">
+              <Radio size={14} /> {item.source}
+            </span>
+          ) : null}
+          <span className="flex items-center gap-1.5">
+            <Calendar size={14} /> {item.date}
+          </span>
+          <span className="flex items-center gap-1.5">
+            <Clock size={14} /> {item.readTime}
+          </span>
+          <span className="ms-auto inline-flex items-center gap-2">
+            <FavoriteButton targetType="news" targetId={String(item.id)} compact />
+            <ShareButton type="news" id={String(item.slug || item.id)} fallbackTitle={item.title} compact />
+          </span>
+        </div>
+      </header>
+
       <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-8">
         <article className="min-w-0">
-          <header className="mb-8">
-            <div className="flex flex-wrap items-center gap-2">
-              {categoryName && (
-                <Badge tone={categoryTone[categoryName] || 'neutral'}>{categoryName}</Badge>
-              )}
-            </div>
-            <NewsCopy
-              as="h1"
-              language={item.language}
-              text={item.title}
-              className={locale.lang === 'ur'
-                ? 'mt-4 text-[1.375rem] font-semibold leading-[1.8] text-mtext sm:text-[1.625rem]'
-                : 'mt-4 text-3xl font-black leading-tight tracking-tight text-mtext sm:text-5xl'}
-            >
-              {item.title}
-            </NewsCopy>
-            {item.excerpt && (
-              <NewsCopy
-                language={item.language}
-                text={item.excerpt}
-                className={locale.lang === 'ur'
-                  ? 'mt-4 max-w-3xl text-[0.9375rem] leading-[2.4] text-stext'
-                  : 'mt-4 max-w-3xl text-base leading-relaxed text-stext sm:text-lg'}
-              >
-                {item.excerpt}
-              </NewsCopy>
-            )}
-            <div className="mt-6 flex flex-wrap items-center gap-5 border-b border-lborder pb-6 text-xs text-stext">
-              <AuthorByline
-                name={item.author}
-                src={authorAvatarFromArticle(item)}
-                href={authorHref}
-                size={22}
-                className="text-xs"
-              />
-              {/* Stated on the article only when the editor recorded where it came from. */}
-              {item.source ? (
-                <span className="flex items-center gap-1.5" title="Source">
-                  <Radio size={14} /> {item.source}
-                </span>
-              ) : null}
-              <span className="flex items-center gap-1.5">
-                <Calendar size={14} /> {item.date}
-              </span>
-              <span className="flex items-center gap-1.5">
-                <Clock size={14} /> {item.readTime}
-              </span>
-              <span className="ms-auto inline-flex items-center gap-2">
-                <FavoriteButton targetType="news" targetId={String(item.id)} compact />
-                <ShareButton type="news" id={String(item.slug || item.id)} fallbackTitle={item.title} compact />
-              </span>
-            </div>
-          </header>
 
           <div className={`overflow-hidden rounded-3xl ${item.image ? 'bg-secondary' : 'media-fallback relative h-56 sm:h-80'}`}>
             {item.image ? (
@@ -235,8 +235,8 @@ export default function NewsDetailBody({ item, related = [], authorHref, related
           </div>
         </article>
 
-        <aside className="min-w-0 lg:sticky lg:top-16 lg:z-10 lg:self-start">
-          <div className="space-y-6 lg:max-h-[calc(100dvh-5rem)] lg:overflow-y-auto lg:pr-1">
+        <aside className="min-w-0 lg:sticky lg:top-20 lg:z-10 lg:self-start">
+          <div className="space-y-6">
             <div className="flex justify-center lg:justify-start">
               <AdSlot placement="news-detail-sidebar" />
             </div>
@@ -292,6 +292,10 @@ export default function NewsDetailBody({ item, related = [], authorHref, related
                 </div>
               </section>
             )}
+
+            <div className="hidden justify-center lg:flex">
+              <AdSlot placement="news-detail-skyscraper" />
+            </div>
           </div>
         </aside>
       </div>

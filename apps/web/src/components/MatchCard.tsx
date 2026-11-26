@@ -163,7 +163,7 @@ export default function MatchCard({
             dense ? 'mt-2 pt-1.5 text-[10px]' : 'mt-2.5 pt-2 text-xs'
           }`}
         >
-          <p className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+          <p className="flex min-w-0 shrink-0 items-center gap-x-2.5 whitespace-nowrap">
             {isLive && inn ? (
               <span className="truncate font-semibold tabular-nums text-danger">
                 <BlinkingDot className="mr-1.5 align-middle" />
@@ -202,14 +202,15 @@ export default function MatchCard({
             <span
               className={`min-w-0 text-right ${
                 footerRightIsVenue
-                  ? 'inline-flex max-w-[55%] shrink-0 items-center justify-end gap-1 truncate font-medium text-stext'
+                  ? 'inline-flex flex-1 items-center justify-end gap-1 font-medium text-stext'
                   : footerRightIsMeta
                     ? 'max-w-[55%] shrink-0 truncate text-xs font-semibold text-stext'
                     : 'max-w-[55%] shrink-0 truncate font-mono text-sm font-bold tabular-nums text-mtext'
               }`}
+              title={typeof footerRight === 'string' ? footerRight : undefined}
             >
-              {footerRightIsVenue && <MapPin size={12} aria-hidden />}
-              {footerRight}
+              {footerRightIsVenue && <MapPin size={12} className="shrink-0" aria-hidden />}
+              <span className="min-w-0 truncate">{footerRight}</span>
             </span>
           ) : null}
         </div>

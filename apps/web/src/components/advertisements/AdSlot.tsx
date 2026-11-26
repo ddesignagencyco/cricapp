@@ -2,9 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import HouseAd from './HouseAd';
 import { useAdConfig } from './AdProvider';
-import { resolveDummyAdCreative } from '../../lib/advertisements/placements';
 import { resolvePublisherId } from '../../lib/advertisements/adsConfig';
 import {
   DEFAULT_ADSTERRA_HOST,
@@ -164,8 +162,6 @@ function AdSenseUnit({
 
   if (collapsed) return null;
 
-  // Only used for the box model, so the reserved space matches `house` mode.
-  const creative = resolveDummyAdCreative(size, placement, size === 'leaderboard' ? 'desktop' : undefined);
   const isLeaderboard = size === 'leaderboard';
   const hideOnMobile = size === 'half-page';
   const isMultiplex = format === 'autorelaxed';
@@ -187,7 +183,7 @@ function AdSenseUnit({
       style={
         isMultiplex || isFluid || isLeaderboard
           ? { display: 'block' }
-          : { display: 'inline-block', width: creative.width, height: creative.height }
+          : { display: 'inline-block', width: ADSTERRA_DIMENSIONS[size].width, height: ADSTERRA_DIMENSIONS[size].height }
       }
     />
   );
@@ -212,7 +208,7 @@ function AdSenseUnit({
       ? { minHeight: 200 }
       : isLeaderboard
         ? undefined
-        : { maxWidth: Math.min(creative.width, 336) };
+        : { maxWidth: Math.min(ADSTERRA_DIMENSIONS[size].width, 336) };
 
   return (
     <aside
@@ -278,29 +274,58 @@ function AdsterraUnit({
       data-ad-placement={placement}
       data-ad-network="adsterra"
       aria-label="Advertisement"
-      className={`relative mx-auto flex w-full min-w-0 max-w-full items-center justify-center overflow-hidden ${
-        inFeed ? 'h-full' : ''
+      className={`relative mx-auto flex min-w-0 max-w-full items-center justify-center ${
+        inFeed ? 'h-full w-full' : ''
       } ${hideOnMobile ? 'hidden lg:flex' : ''} ${className}`.trim()}
     >
-      <iframe
-        title={`Adsterra advertisement (${placement})`}
-        srcDoc={srcDoc}
-        width={width}
-        height={height}
-        scrolling="no"
-        frameBorder="0"
-        className="max-w-full border-0"
+      <div
+        className="relative flex max-w-full items-center justify-center overflow-hidden bg-secondary/30"
         style={{ width, height, maxWidth: '100%' }}
-      />
+      >
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 flex select-none items-center justify-center text-xs font-medium tracking-wider text-stext/60"
+        >
+          Advertisement
+        </span>
+        <iframe
+          key={`${placement}:${size}:${zoneKey}`}
+          title={`Adsterra advertisement (${placement})`}
+          srcDoc={srcDoc}
+          width={width}
+          height={height}
+          scrolling="no"
+          frameBorder="0"
+          className="relative z-10 max-w-full border-0"
+          style={{ width, height, maxWidth: '100%' }}
+        />
+      </div>
     </aside>
   );
 }
 
 const EXPLICIT_SLOT_RE = /^\d{10,20}$/;
 
+function useIsMobileViewport(): boolean | null {
+  const [isMobile, setIsMobile] = useState<boolean | null>(null);
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      setIsMobile(false);
+      return;
+    }
+    const mq = window.matchMedia('(max-width: 767px)');
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
+  return isMobile;
+}
+
 export default function AdSlot({ placement, size, className = '', inFeed, slot, format, layout }: AdSlotProps) {
   const config = useAdConfig();
   const pathname = usePathname() ?? '/';
+  const isMobile = useIsMobileViewport();
 
   const registered = adPlacement(placement);
   const resolvedSize = size ?? registered?.size ?? adPlacementSize(placement);
@@ -317,18 +342,120 @@ export default function AdSlot({ placement, size, className = '', inFeed, slot, 
   if (!shouldRenderAd(config, placement, pathname, explicit)) return null;
 
   if (config.mode === 'house') {
-    return <HouseAd size={resolvedSize} placement={placement} className={className} inFeed={resolvedInFeed} />;
+    if (resolvedSize === 'half-page') {
+      return (
+        <aside
+          data-ad-placement={placement}
+          data-ad-network="house"
+          aria-label="Advertisement"
+          className={`relative mx-auto hidden min-w-0 max-w-full items-center justify-center lg:flex ${className}`.trim()}
+        >
+          <div className="relative flex h-[600px] w-[160px] items-center justify-center rounded-md border border-lborder/70 bg-secondary/40">
+            <span className="text-xs font-medium tracking-wider text-stext/70">Advertisement</span>
+          </div>
+        </aside>
+      );
+    }
+    const isHorizontal = resolvedSize === 'leaderboard' || resolvedSize === 'tablet-banner';
+    const boxClasses = isHorizontal
+      ? placement === 'global-top'
+        ? 'h-[50px] w-[320px] md:h-[90px] md:w-[728px]'
+        : 'h-[250px] w-[300px] md:h-[90px] md:w-[728px]'
+      : resolvedSize === 'mobile-banner'
+        ? 'h-[50px] w-[320px]'
+        : 'h-[250px] w-[300px]';
+    return (
+      <aside
+        data-ad-placement={placement}
+        data-ad-network="house"
+        aria-label="Advertisement"
+        className={`relative mx-auto flex min-w-0 max-w-full items-center justify-center ${
+          resolvedInFeed ? 'h-full w-full' : ''
+        } ${className}`.trim()}
+      >
+        <div
+          className={`relative flex max-w-full items-center justify-center rounded-md border border-lborder/70 bg-secondary/40 ${boxClasses}`}
+        >
+          <span className="text-xs font-medium tracking-wider text-stext/70">Advertisement</span>
+        </div>
+      </aside>
+    );
   }
 
   if (config.mode === 'adsterra') {
-    const zoneKey = resolveAdsterraKey(placement, resolvedSize, config);
+    // Reserve the exact ad height on SSR/initial paint while viewport width resolves
+    // so the page never jumps up and down during hydration or hot-reload.
+    if (isMobile === null) {
+      if (resolvedSize === 'half-page') {
+        return (
+          <aside
+            data-ad-placement={placement}
+            data-ad-network="adsterra"
+            aria-label="Advertisement"
+            className={`relative mx-auto hidden min-w-0 max-w-full items-center justify-center lg:flex ${className}`.trim()}
+          >
+            <div className="relative flex h-[600px] w-[160px] items-center justify-center bg-secondary/30">
+              <span className="text-xs font-medium tracking-wider text-stext/60">Advertisement</span>
+            </div>
+          </aside>
+        );
+      }
+      const isHorizontal = resolvedSize === 'leaderboard' || resolvedSize === 'tablet-banner';
+      const boxClasses = isHorizontal
+        ? placement === 'global-top'
+          ? 'h-[50px] w-[320px] md:h-[90px] md:w-[728px]'
+          : 'h-[250px] w-[300px] md:h-[90px] md:w-[728px]'
+        : resolvedSize === 'mobile-banner'
+          ? 'h-[50px] w-[320px]'
+          : 'h-[250px] w-[300px]';
+      return (
+        <aside
+          data-ad-placement={placement}
+          data-ad-network="adsterra"
+          aria-label="Advertisement"
+          className={`relative mx-auto flex min-w-0 max-w-full items-center justify-center ${
+            resolvedInFeed ? 'h-full w-full' : ''
+          } ${className}`.trim()}
+        >
+          <div className={`relative flex max-w-full items-center justify-center bg-secondary/30 ${boxClasses}`}>
+            <span className="text-xs font-medium tracking-wider text-stext/60">Advertisement</span>
+          </div>
+        </aside>
+      );
+    }
+
+    let effectiveSize: AdSize = resolvedSize;
+    let zoneKey = resolveAdsterraKey(placement, effectiveSize, config);
+
+    if (isMobile && (resolvedSize === 'leaderboard' || resolvedSize === 'tablet-banner')) {
+      const mobileKey = config.adsterra?.defaultKeys?.['mobile-banner'];
+      const rectKey = config.adsterra?.defaultKeys?.['medium-rectangle'];
+      // Keep global-top as 320x50 mobile banner and use 300x250 for in-page banners
+      // on mobile so two identical 320x50 ads never appear in the same viewport.
+      if (placement === 'global-top') {
+        if (mobileKey) {
+          effectiveSize = 'mobile-banner';
+          zoneKey = mobileKey;
+        } else if (rectKey) {
+          effectiveSize = 'medium-rectangle';
+          zoneKey = rectKey;
+        }
+      } else if (rectKey) {
+        effectiveSize = 'medium-rectangle';
+        zoneKey = rectKey;
+      } else if (mobileKey) {
+        effectiveSize = 'mobile-banner';
+        zoneKey = mobileKey;
+      }
+    }
+
     if (!zoneKey) return null;
     return (
       <AdsterraUnit
         placement={placement}
         zoneKey={zoneKey}
         scriptHost={config.adsterra?.scriptHost || DEFAULT_ADSTERRA_HOST}
-        size={resolvedSize}
+        size={effectiveSize}
         className={className}
         inFeed={resolvedInFeed}
       />

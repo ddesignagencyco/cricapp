@@ -61,7 +61,7 @@ export default function ProfilePage() {
 
   if (!isAuthenticated || !user) {
     return (
-      <div className="mx-auto flex min-h-[60vh] max-w-7xl flex-col items-center justify-center px-4 py-16 text-center sm:px-6">
+      <div className="mx-auto flex min-h-[60vh] max-w-site flex-col items-center justify-center px-4 py-16 text-center sm:px-6">
         <div className="grid h-16 w-16 place-items-center rounded-md bg-accent/10 text-accent ring-1 ring-accent/25">
           <User size={32} />
         </div>
@@ -162,7 +162,7 @@ export default function ProfilePage() {
   const photo = avatarUrl.trim() || user.avatarUrl || '';
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+    <div className="mx-auto max-w-site px-4 py-8 sm:px-6">
       <header className="mb-6">
         <h1 className="text-2xl font-semibold tracking-tight text-mtext sm:text-3xl">Profile settings</h1>
         <p className="mt-1 text-sm text-stext">Manage your personal information and account security.</p>

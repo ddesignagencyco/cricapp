@@ -83,7 +83,7 @@ export default function HomeStoriesRail() {
   const overflows = canScrollLeft || canScrollRight;
 
   return (
-    <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
+    <section className="mx-auto w-full max-w-site px-4 sm:px-6">
       <SectionHeader
         title="Stories"
         subtitle="Your daily dose of cricket"

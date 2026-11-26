@@ -89,4 +89,54 @@ export class AdSenseAdminController {
       currencyCode: query.currencyCode ?? null,
     });
   }
+
+  @Get('adsterra-stats')
+  @ApiOperation({
+    summary: 'Adsterra publisher statistics',
+    description: 'Fetches daily impressions, clicks, CTR, CPM and revenue from Adsterra Publisher API using ADSTERRA_API_KEY.',
+  })
+  async getAdsterraStats(
+    @Query('startDate') startDate?: string,
+    @Query('finishDate') finishDate?: string,
+  ) {
+    const apiKey = process.env.ADSTERRA_API_KEY?.trim();
+    if (!apiKey) {
+      return { configured: false, items: [], totals: { impression: 0, clicks: 0, revenue: 0, ctr: 0, cpm: 0 } };
+    }
+
+    const today = new Date();
+    const defaultEnd = today.toISOString().slice(0, 10);
+    const thirtyAgo = new Date(today.getTime() - 29 * 86400_000).toISOString().slice(0, 10);
+    const from = startDate && /^\d{4}-\d{2}-\d{2}$/.test(startDate) ? startDate : thirtyAgo;
+    const to = finishDate && /^\d{4}-\d{2}-\d{2}$/.test(finishDate) ? finishDate : defaultEnd;
+
+    const url = `https://api3.adsterratools.com/publisher/stats.json?start_date=${from}&finish_date=${to}&group_by[]=date`;
+    const res = await fetch(url, {
+      headers: {
+        Accept: 'application/json',
+        'X-API-Key': apiKey,
+      },
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      throw new BadRequestException(`Adsterra API error (${res.status}): ${body.slice(0, 200) || res.statusText}`);
+    }
+    const payload = (await res.json()) as {
+      items?: Array<{ date?: string; impression?: number; clicks?: number; ctr?: number; cpm?: number; revenue?: number }>;
+    };
+    const items = Array.isArray(payload.items) ? payload.items : [];
+    const totals = items.reduce<{ impression: number; clicks: number; revenue: number; ctr: number; cpm: number }>(
+      (acc, row) => {
+        acc.impression += Number(row.impression || 0);
+        acc.clicks += Number(row.clicks || 0);
+        acc.revenue += Number(row.revenue || 0);
+        return acc;
+      },
+      { impression: 0, clicks: 0, revenue: 0, ctr: 0, cpm: 0 },
+    );
+    totals.ctr = totals.impression > 0 ? (totals.clicks / totals.impression) * 100 : 0;
+    totals.cpm = totals.impression > 0 ? (totals.revenue / totals.impression) * 1000 : 0;
+
+    return { configured: true, startDate: from, finishDate: to, items, totals };
+  }
 }

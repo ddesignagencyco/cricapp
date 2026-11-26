@@ -4,6 +4,8 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { mergeLiveRows, mergeLiveUpdate, useMatchStream, withLatestLive } from '../../hooks/useMatchStream';
 import DirectoryPageHeader from '../DirectoryPageHeader';
+import AdSlot from '../advertisements/AdSlot';
+import EditorialSidebar from '../boards/EditorialSidebar';
 import PageToolbar from '../PageToolbar';
 import Badge from '../Badge';
 import EmptyState from '../EmptyState';
@@ -99,7 +101,7 @@ export default function PredictionsHub({
   };
 
   return (
-    <div className="mx-auto max-w-7xl space-y-5 px-4 py-6 sm:px-6">
+    <div className="mx-auto max-w-site space-y-5 px-4 py-6 sm:px-6">
       <DirectoryPageHeader
         eyebrow="Win probabilities"
         title="Predictions"
@@ -119,6 +121,8 @@ export default function PredictionsHub({
         />
       </PageToolbar>
 
+      <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="min-w-0 space-y-5">
       {hasPerformance && performance ? (
         <section className="prediction-card rounded-md border border-lborder bg-card p-4 sm:p-5">
           <div className="flex flex-wrap items-end justify-between gap-3">
@@ -162,7 +166,7 @@ export default function PredictionsHub({
 
       {visible.length > 0 ? (
         <section>
-          <div className="grid items-stretch gap-3 [grid-template-columns:repeat(auto-fill,minmax(min(100%,20rem),1fr))]">
+          <div className="grid items-stretch gap-3 [grid-template-columns:repeat(auto-fill,minmax(min(100%,18rem),1fr))]">
             {visible.map(({ match, predictions, chartPoints }) => (
               <PredictionMatchCard
                 key={String(match.matchId || match.id)}
@@ -172,22 +176,37 @@ export default function PredictionsHub({
               />
             ))}
           </div>
+          <div className="mt-6">
+            <AdSlot placement="predictions-bottom" />
+          </div>
           {tab === 'upcoming' ? (
             <PredictionsUpcomingPager page={upcomingPage} total={upcomingTotal} limit={upcomingLimit} />
           ) : null}
         </section>
       ) : (
-        <EmptyState
-          title={tab === 'live' ? 'No live matches' : 'No upcoming matches'}
-          message={
-            tab === 'live'
-              ? 'Live fixtures with predictions will appear here.'
-              : hasUpcoming
-                ? 'Try another page.'
-                : 'Upcoming fixtures will appear when scheduled.'
-          }
-        />
+        <>
+          <EmptyState
+            title={tab === 'live' ? 'No live matches' : 'No upcoming matches'}
+            message={
+              tab === 'live'
+                ? 'Live fixtures with predictions will appear here.'
+                : hasUpcoming
+                  ? 'Try another page.'
+                  : 'Upcoming fixtures will appear when scheduled.'
+            }
+          />
+          <div className="mt-6">
+            <AdSlot placement="predictions-bottom" />
+          </div>
+        </>
       )}
+        </div>
+        <EditorialSidebar
+          topPlacement="predictions-sidebar"
+          bottomPlacement="predictions-skyscraper"
+          widget="tools"
+        />
+      </div>
     </div>
   );
 }

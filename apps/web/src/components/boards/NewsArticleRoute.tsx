@@ -46,7 +46,7 @@ export default async function NewsArticleRoute({ id }: { id: string }) {
     ]);
   } catch {
     return (
-      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
+      <div className="mx-auto max-w-site px-4 py-10 sm:px-6">
         <ErrorState
           title="Server unavailable"
           message="Can't reach the API, so this story isn't loaded. Start the backend or try again."

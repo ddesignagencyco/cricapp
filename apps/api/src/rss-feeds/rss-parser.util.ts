@@ -139,6 +139,7 @@ export function sanitizeRssHtml(html: string | null | undefined): string {
     .replace(/<iframe[\s\S]*?<\/iframe>/gi, '')
     .replace(/<object[\s\S]*?<\/object>/gi, '')
     .replace(/<embed[^>]*>/gi, '')
+    .replace(/<a\b[^>]*>([\s\S]*?)<\/a>/gi, '$1')
     .replace(/\son[a-z]+\s*=\s*["'][^"']*["']/gi, '')
     .replace(/\sstyle\s*=\s*["'][^"']*["']/gi, '')
     .replace(/javascript:/gi, '')
@@ -260,8 +261,8 @@ export function buildSourceGuid(feedUrl: string, item: Pick<ParsedFeedItem, 'gui
 
 export function buildAttributionHtml(
   summaryText: string,
-  sourceName: string,
-  sourceUrl: string | null,
+  _sourceName: string,
+  _sourceUrl: string | null,
   paragraphs?: string[],
 ): string {
   const cleanParas = (paragraphs || []).map((p) => p.trim()).filter(Boolean);
@@ -270,10 +271,7 @@ export function buildAttributionHtml(
     : summaryText
       ? `<p>${htmlEscape(summaryText)}</p>`
       : '';
-  const sourceLink = sourceUrl
-    ? `<a href="${htmlEscape(sourceUrl)}" target="_blank" rel="noopener noreferrer nofollow">${htmlEscape(sourceName)}</a>`
-    : htmlEscape(sourceName);
-  return `${body}\n<p class="rss-attribution"><em>Originally reported by ${sourceLink}.</em></p>`.trim();
+  return body.trim();
 }
 
 const BOILERPLATE_RX =
@@ -552,13 +550,7 @@ export async function rewriteRssItemWithAi(input: {
       : [];
     if (!parsed.title || !paragraphs.length) return fallback;
 
-    const sourceLink = input.sourceUrl
-      ? `<a href="${htmlEscape(input.sourceUrl)}" target="_blank" rel="noopener noreferrer nofollow">${htmlEscape(input.sourceName)}</a>`
-      : htmlEscape(input.sourceName);
-    const htmlBody = [
-      ...paragraphs.map((p) => `<p>${htmlEscape(p)}</p>`),
-      `<p class="rss-attribution"><em>Source: ${sourceLink}</em></p>`,
-    ].join('\n');
+    const htmlBody = paragraphs.map((p) => `<p>${htmlEscape(p)}</p>`).join('\n');
 
     return {
       title: String(parsed.title).trim().slice(0, 140),

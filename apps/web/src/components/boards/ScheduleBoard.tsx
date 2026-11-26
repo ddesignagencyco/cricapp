@@ -7,6 +7,7 @@ import { Calendar, ChevronLeft, ChevronRight, Clock, MapPin } from 'lucide-react
 import { StatusBadge } from '../Badge';
 import LiveIndicator from '../LiveIndicator';
 import AdSlot from '../advertisements/AdSlot';
+import EditorialSidebar from './EditorialSidebar';
 import EmptyState from '../EmptyState';
 import ErrorState from '../ErrorState';
 import PageToolbar from '../PageToolbar';
@@ -227,28 +228,33 @@ export default function ScheduleBoard({
       ) : errorMessage ? (
         <ErrorState message={errorMessage} onRetry={onRetry} />
       ) : visibleEvents.length > 0 ? (
-        <>
-          <div className="fade-in grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {visibleEvents.map((record, index) => (
-              <div key={record.eventId} className="contents">
-                <ScheduleCard record={record} live={liveById.get(record.eventId)} />
-                {/* After six cards: a full row at both 2- and 3-column widths. */}
-                {visibleEvents.length > 6 && index === 5 ? (
-                  <div className="col-span-full py-1">
-                    <AdSlot placement="schedule-infeed" />
-                  </div>
-                ) : null}
-              </div>
-            ))}
+        <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+          <div className="min-w-0 space-y-6">
+            <div className="fade-in grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {visibleEvents.map((record, index) => (
+                <div key={record.eventId} className="contents">
+                  <ScheduleCard record={record} live={liveById.get(record.eventId)} />
+                  {(index + 1) % 6 === 0 && index < visibleEvents.length - 1 ? (
+                    <div className="col-span-full py-2">
+                      <AdSlot placement="schedule-infeed" />
+                    </div>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+            <Pagination
+              page={activeMeta.page}
+              totalPages={activeMeta.totalPages}
+              total={activeMeta.total}
+              limit={activeMeta.limit}
+              onPageChange={onPageChange}
+            />
           </div>
-          <Pagination
-            page={activeMeta.page}
-            totalPages={activeMeta.totalPages}
-            total={activeMeta.total}
-            limit={activeMeta.limit}
-            onPageChange={onPageChange}
+          <EditorialSidebar
+            topPlacement="schedule-sidebar"
+            bottomPlacement={visibleEvents.length >= 14 ? 'schedule-skyscraper' : undefined}
           />
-        </>
+        </div>
       ) : (
         <EmptyState
           title={`No ${tab === 'schedule' ? 'scheduled' : 'completed'} matches on this date`}

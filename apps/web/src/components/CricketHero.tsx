@@ -31,7 +31,7 @@ export default function CricketHero({ match: _match }: CricketHeroProps) {
       />
       <div className="hero-scrim pointer-events-none absolute inset-0" />
 
-      <div className="relative mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-12">
+      <div className="relative mx-auto w-full max-w-site px-4 py-6 sm:px-6 sm:py-12">
         {/* Phones: compact, so the live matches below start within the first screen. */}
         <div className="flex flex-col gap-5 sm:gap-8 lg:flex-row lg:items-center lg:justify-between">
           {/* Left content */}

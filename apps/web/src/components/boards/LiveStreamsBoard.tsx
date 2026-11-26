@@ -7,10 +7,14 @@ import LiveIndicator from '../LiveIndicator';
 import EmptyState from '../EmptyState';
 import ErrorState from '../ErrorState';
 import Pagination from '../Pagination';
+import Tabs from '../Tabs';
+import PageToolbar from '../PageToolbar';
 import { formatDate } from '../../utils/helpers';
 import { fetchStreamsPage } from '../../services/streams';
 import type { Stream } from '../../types/index';
 import CommentsSection from '../CommentsSection';
+import AdSlot from '../advertisements/AdSlot';
+import EditorialSidebar from './EditorialSidebar';
 import { StreamsBodySkeleton } from '../skeletons/Skeletons';
 import { toPlayerEmbedUrl } from '../../utils/streamEmbed';
 import RemoteImage from '../RemoteImage';
@@ -73,43 +77,47 @@ export default function LiveStreamsBoard() {
   const featured = streams.find((s) => s.id === activeId) || streams[0] || null;
 
   return (
-    <>
-      <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-xs font-medium uppercase tracking-widest text-stext">Live streaming</p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-mtext">Streams</h1>
-          <p className="mt-1 max-w-xl text-sm text-stext">
-            Watch streams published by the newsroom.
+    <div className="space-y-5">
+      <header>
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wider text-accent">Live streaming</p>
+            <h1 className="mt-1 text-2xl font-semibold text-mtext">Live Streams</h1>
+            <p className="mt-1 max-w-2xl text-sm text-stext">
+              Watch live, upcoming and archived cricket streams published by the newsroom.
+            </p>
+          </div>
+          <p className="text-xs text-stext">
+            <span className="font-semibold text-mtext">{total}</span> {status}
           </p>
         </div>
-        <div className="flex flex-wrap gap-1.5">
-          {TABS.map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => {
-                setStatus(tab.key);
-                setPage(1);
-              }}
-              className={`rounded-md px-3 py-1.5 text-xs font-semibold ${
-                status === tab.key ? 'btn-brand' : 'border border-lborder bg-card text-stext hover:text-mtext'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
       </header>
+
+      <PageToolbar>
+        <Tabs
+          tabs={TABS}
+          active={status}
+          onChange={(nextStatus) => {
+            setStatus(nextStatus);
+            setPage(1);
+          }}
+        />
+      </PageToolbar>
 
       {loading ? (
         <StreamsBodySkeleton />
       ) : error ? (
         <ErrorState message="Streams are temporarily unavailable." onRetry={() => setRetryKey((k) => k + 1)} />
       ) : !featured ? (
-        <EmptyState
-          title={`No ${status} streams`}
-          message="Streams appear here when an administrator publishes a stream URL."
-        />
+        <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+          <div className="min-w-0">
+            <EmptyState
+              title={`No ${status} streams`}
+              message="Streams appear here when an administrator publishes a stream URL."
+            />
+          </div>
+          <EditorialSidebar topPlacement="streams-sidebar" />
+        </div>
       ) : (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="space-y-4 lg:col-span-2">
@@ -188,10 +196,17 @@ export default function LiveStreamsBoard() {
             {totalPages > 1 && (
               <Pagination page={page} totalPages={totalPages} total={total} limit={20} onPageChange={setPage} />
             )}
+            <EditorialSidebar
+              topPlacement="streams-sidebar"
+              bottomPlacement="streams-skyscraper"
+            />
           </div>
         </div>
       )}
-    </>
+      <div className="mt-8">
+        <AdSlot placement="streams-bottom" />
+      </div>
+    </div>
   );
 }
 

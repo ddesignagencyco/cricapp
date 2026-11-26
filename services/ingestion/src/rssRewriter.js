@@ -98,13 +98,7 @@ export async function rewriteRssItem({
       : [];
     if (!parsed.title || !paragraphs.length) return fallback;
 
-    const sourceLink = sourceUrl
-      ? `<a href="${htmlEscape(sourceUrl)}" target="_blank" rel="noopener noreferrer nofollow">${htmlEscape(sourceName)}</a>`
-      : htmlEscape(sourceName);
-    const htmlBody = [
-      ...paragraphs.map((p) => `<p>${htmlEscape(p)}</p>`),
-      `<p class="rss-attribution"><em>Source: ${sourceLink}</em></p>`,
-    ].join('\n');
+    const htmlBody = paragraphs.map((p) => `<p>${htmlEscape(p)}</p>`).join('\n');
 
     return {
       title: String(parsed.title).trim().slice(0, 140),

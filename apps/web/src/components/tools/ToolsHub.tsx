@@ -7,6 +7,8 @@ import PageToolbar from '../PageToolbar';
 import Tabs from '../Tabs';
 import type { TabItem } from '../../types/index';
 import ToolDiamondCard from './ToolDiamondCard';
+import AdSlot from '../advertisements/AdSlot';
+import EditorialSidebar from '../boards/EditorialSidebar';
 
 type ToolsTabKey = ToolGroup | 'all';
 
@@ -71,43 +73,53 @@ export default function ToolsHub() {
         </div>
       </PageToolbar>
 
-      {activeGroup ? (
-        <p className="text-sm text-stext">{activeGroup.hint}</p>
-      ) : tab === 'all' ? (
-        <p className="text-sm text-stext">All calculators in one place, grouped by category below.</p>
-      ) : null}
+      <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="min-w-0 space-y-5">
+          {activeGroup ? (
+            <p className="text-sm text-stext">{activeGroup.hint}</p>
+          ) : null}
 
-      {tab === 'all' ? (
-        <div className="space-y-8">
-          {TOOL_GROUPS.map((group) => {
-            const tools = TOOLS.filter((tool) => tool.group === group.key);
-            if (tools.length === 0) return null;
-            return (
-              <section key={group.key}>
-                <div className="mb-3.5">
-                  <h2 className="text-sm font-bold tracking-tight text-mtext">{group.title}</h2>
-                  <p className="mt-0.5 text-xs text-stext">{group.hint}</p>
-                </div>
-                <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                  {tools.map((tool) => (
-                    <li key={tool.slug}>
-                      <ToolDiamondCard tool={tool} />
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            );
-          })}
+          {tab === 'all' ? (
+            <div className="space-y-8">
+              {TOOL_GROUPS.map((group) => {
+                const tools = TOOLS.filter((tool) => tool.group === group.key);
+                if (tools.length === 0) return null;
+                return (
+                  <section key={group.key}>
+                    <div className="mb-3.5">
+                      <h2 className="text-sm font-bold tracking-tight text-mtext">{group.title}</h2>
+                      <p className="mt-0.5 text-xs text-stext">{group.hint}</p>
+                    </div>
+                    <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      {tools.map((tool) => (
+                        <li key={tool.slug}>
+                          <ToolDiamondCard tool={tool} />
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                );
+              })}
+            </div>
+          ) : (
+            <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {filtered.map((tool) => (
+                <li key={tool.slug}>
+                  <ToolDiamondCard tool={tool} />
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <div className="pt-4">
+            <AdSlot placement="tools-bottom" />
+          </div>
         </div>
-      ) : (
-        <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((tool) => (
-            <li key={tool.slug}>
-              <ToolDiamondCard tool={tool} />
-            </li>
-          ))}
-        </ul>
-      )}
+        <EditorialSidebar
+          topPlacement="tools-sidebar"
+          bottomPlacement="tools-skyscraper"
+        />
+      </div>
     </div>
   );
 }

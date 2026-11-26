@@ -35,7 +35,7 @@ const footerCols = [
     span: 'lg:col-span-2',
     links: [
       { label: 'Urdu News', to: '/ur/news' },
-      { label: 'Pakistan Cricket', to: '/pakistan' },
+      { label: 'Pakistan Cricket', to: '/psl' },
       { label: 'Contact Us', to: '/contact' },
     ],
   },
@@ -52,7 +52,7 @@ export default function Footer({ settings }: { settings?: SiteSettings | null })
 
   return (
     <footer className="mt-12 border-t border-lborder bg-card sm:mt-16">
-      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12">
+      <div className="mx-auto max-w-site px-4 py-10 sm:px-6 sm:py-12">
         <div className="grid grid-cols-1 gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-12 lg:gap-y-12">
           <div className="sm:col-span-2 lg:col-span-5">
             <Logo size="footer" />
@@ -191,7 +191,7 @@ export default function Footer({ settings }: { settings?: SiteSettings | null })
       </div>
 
       <div className="border-t border-lborder">
-        <div className="mx-auto flex max-w-7xl flex-col items-center gap-1.5 px-4 py-5 text-center text-xs text-stext sm:flex-row sm:justify-between sm:px-6 sm:text-left">
+        <div className="mx-auto flex max-w-site flex-col items-center gap-1.5 px-4 py-5 text-center text-xs text-stext sm:flex-row sm:justify-between sm:px-6 sm:text-left">
           <p>&copy; {CURRENT_YEAR} CriczApp. All rights reserved.</p>
           <p className="text-muted-foreground">Every run. Every ball. Live.</p>
         </div>

@@ -38,7 +38,11 @@ const adsenseWith = (slotId = '1111111111'): AdConfig =>
   configWith({
     mode: 'adsense',
     clientId: 'pub-1234567890123456',
-    placements: { 'news-detail-after-related': { enabled: true, slotId } },
+    placements: {
+      'news-detail-after-related': { enabled: true, slotId },
+      'home-mid': { enabled: true, slotId },
+      'layout-sidebar': { enabled: true, slotId },
+    },
   });
 
 beforeEach(() => {
@@ -102,44 +106,26 @@ describe('adsConfig', () => {
 describe('AdBanner', () => {
   it('renders the placement and reserves vertical space against CLS', () => {
     const { container } = render(
-      <AdProvider config={configWith({ mode: 'house' })}>
+      <AdProvider config={adsenseWith()}>
         <AdBanner placement="home-mid" />
       </AdProvider>,
     );
     expect(container.querySelector('[data-ad-placement="home-mid"]')).not.toBeNull();
   });
 
-  it('renders every new placement as a house placeholder before approval', () => {
-    // No AdSense approval yet → `house` mode. Each placement added by this
-    // change must be visible on the site as a dummy placeholder, toggleable
-    // from the admin Ads manager.
+  it('renders nothing in off mode', () => {
     const placements: Array<{ placement: string; node: React.ReactNode }> = [
       { placement: 'news-detail-top', node: <AdBanner placement="news-detail-top" /> },
       { placement: 'home-multiplex', node: <AdMultiplex placement="home-multiplex" /> },
-      { placement: 'home-multiplex-alias', node: <AdMultiplex placement="news-detail-after-related" /> },
       { placement: 'search-bottom', node: <AdBanner placement="search-bottom" /> },
     ];
     for (const { placement, node } of placements) {
       const { container, unmount } = render(
-        <AdProvider config={configWith({ mode: 'house' })}>{node}</AdProvider>,
+        <AdProvider config={configWith({ mode: 'off' })}>{node}</AdProvider>,
       );
-      const key = placement === 'home-multiplex-alias' ? 'news-detail-after-related' : placement;
-      expect(container.querySelector(`[data-ad-placement="${key}"]`)).not.toBeNull();
-      // House placeholder carries the site badge; production units never do.
-      expect(container.querySelector('[data-ad-badge]')).not.toBeNull();
-      expect(container.querySelector('ins.adsbygoogle')).toBeNull();
+      expect(container.querySelector(`[data-ad-placement="${placement}"]`)).toBeNull();
       unmount();
     }
-  });
-
-  it('never renders a fake production ad in development', () => {
-    const { container } = render(
-      <AdProvider config={configWith({ mode: 'house' })}>
-        <AdBanner placement="home-mid" />
-      </AdProvider>,
-    );
-    expect(container.querySelector('ins.adsbygoogle')).toBeNull();
-    expect(container.textContent).not.toMatch(/click here|support us/i);
   });
 });
 
@@ -179,7 +165,7 @@ describe('AdMultiplex', () => {
 describe('AdSideRail', () => {
   it('is hidden below desktop widths and fixed-width on wide screens', () => {
     const { container } = render(
-      <AdProvider config={configWith({ mode: 'house' })}>
+      <AdProvider config={adsenseWith()}>
         <AdSideRail placement="layout-sidebar" />
       </AdProvider>,
     );
@@ -218,12 +204,12 @@ describe('AdAnchor / AdVignette', () => {
 });
 
 describe('preview simulators', () => {
-  it('shows labeled simulators in house mode only', async () => {
+  it('shows labeled simulators in off mode only', async () => {
     const { SimulatedAnchor, SimulatedVignette } = await import(
       '../components/advertisements/AdPreviewSimulators'
     );
     const { container, unmount } = render(
-      <AdProvider config={configWith({ mode: 'house' })}>
+      <AdProvider config={configWith({ mode: 'off' })}>
         <SimulatedAnchor />
         <SimulatedVignette />
       </AdProvider>,

@@ -155,7 +155,7 @@ export default function NotificationSettingsPage() {
 
   if (!isAuthenticated) {
     return (
-      <div className="mx-auto flex min-h-[60vh] max-w-7xl flex-col items-center justify-center px-4 py-16 text-center sm:px-6">
+      <div className="mx-auto flex min-h-[60vh] max-w-site flex-col items-center justify-center px-4 py-16 text-center sm:px-6">
         <div className="grid h-16 w-16 place-items-center rounded-md bg-accent/10 text-accent ring-1 ring-accent/25">
           <Bell size={32} />
         </div>
@@ -218,7 +218,7 @@ export default function NotificationSettingsPage() {
   };
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+    <div className="mx-auto max-w-site px-4 py-8 sm:px-6">
       <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-mtext sm:text-3xl">Notifications</h1>

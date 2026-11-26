@@ -225,12 +225,7 @@ function normalizeCricbuzzStory(story, detail) {
   const imageUrl = coverImageId ? cricbuzzImageUrl(coverImageId, { width: 1200, height: 0 }) : null;
   const publishedAt =
     parseEpochMs(d.publishTime || d.pubTime || s.publishTime || s.pubTime || s.lastUpdatedTime) || null;
-  const author =
-    (Array.isArray(d.authors) && d.authors.map((a) => a?.name).filter(Boolean).join(', ')) ||
-    d.author ||
-    s.author ||
-    s.source ||
-    'Cricbuzz';
+  const author = 'CriczApp Editorial';
   const rawContext = String(s.context || d.context || s.storyType || '').trim();
   const hay = `${rawContext} ${title}`.toLowerCase();
   const categoryName = /\bpsl\b|pakistan super league/.test(hay)
@@ -298,7 +293,25 @@ export async function ensureNewsCategory(name) {
   return r.rows[0]?.id ?? id;
 }
 
+export async function ensureDefaultEditorialAuthor() {
+  const existing = await query(`SELECT id, name FROM authors WHERE slug = 'criczapp-editorial' LIMIT 1`);
+  if (existing.rows.length) return existing.rows[0];
+
+  const id = crypto.randomUUID();
+  await query(
+    `INSERT INTO authors (id, name, slug, bio, created_at, updated_at)
+     VALUES ($1, 'CriczApp Editorial', 'criczapp-editorial',
+             'Official CriczApp cricket desk covering live matches, PSL updates, ICC tournaments, and breaking cricket news.',
+             NOW(), NOW())
+     ON CONFLICT (slug) DO NOTHING`,
+    [id],
+  );
+  const r = await query(`SELECT id, name FROM authors WHERE slug = 'criczapp-editorial' LIMIT 1`);
+  return r.rows[0] || { id, name: 'CriczApp Editorial' };
+}
+
 export async function saveNewsArticles(articles) {
+  const defaultAuthor = await ensureDefaultEditorialAuthor();
   let inserted = 0;
   let updated = 0;
   let duplicates = 0;
@@ -334,8 +347,8 @@ export async function saveNewsArticles(articles) {
       updated++;
     } else {
       const res = await query(
-        `INSERT INTO news_articles (id, title, slug, summary, content, image_url, author, source, category_id, published_at, is_published, created_at, updated_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, true, NOW(), NOW())
+        `INSERT INTO news_articles (id, title, slug, summary, content, image_url, author, author_id, source, category_id, published_at, is_published, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, true, NOW(), NOW())
          ON CONFLICT (slug) DO NOTHING`,
         [
           crypto.randomUUID(),
@@ -344,7 +357,8 @@ export async function saveNewsArticles(articles) {
           article.summary,
           article.content || `<p>${htmlEscape(article.title)}</p>`,
           article.imageUrl,
-          article.author,
+          article.author || defaultAuthor.name,
+          defaultAuthor.id,
           article.source,
           article.categoryId,
           article.publishedAt,
@@ -488,6 +502,7 @@ export async function syncDbRssFeed(feed) {
     const maxItems = Math.max(1, Math.min(50, Number(feed.max_items_per_poll || 10)));
     const entries = parseFeed(xml).slice(0, maxItems);
 
+    const defaultAuthor = !feed.author_id ? await ensureDefaultEditorialAuthor() : null;
     let inserted = 0;
     let skippedFilter = 0;
     let skippedDup = 0;
@@ -582,8 +597,8 @@ export async function syncDbRssFeed(feed) {
           summary,
           htmlContent,
           imageUrl,
-          feed.author_name || raw.author || feed.name,
-          feed.author_id || null,
+          feed.author_name || defaultAuthor?.name || 'CriczApp Editorial',
+          feed.author_id || defaultAuthor?.id || null,
           feed.name,
           sourceGuid,
           raw.link || null,
@@ -632,7 +647,7 @@ export async function syncDbRssFeed(feed) {
        SET last_synced_at = NOW(), last_status = 'error', last_error = $2, updated_at = NOW()
        WHERE id = $1`,
       [feed.id, String(err.message || err).slice(0, 500)],
-    ).catch(() => {});
+    ).catch(() => { });
     return null;
   }
 }

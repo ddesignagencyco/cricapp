@@ -122,7 +122,7 @@ export function AppSkeletonTheme({ children }: { children: ReactNode; theme?: st
 
 function Page({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
-    <div className={`mx-auto max-w-7xl px-4 py-8 sm:px-6 ${className}`} aria-busy="true" aria-label="Loading">
+    <div className={`mx-auto max-w-site px-4 py-8 sm:px-6 ${className}`} aria-busy="true" aria-label="Loading">
       {children}
     </div>
   );
@@ -315,7 +315,7 @@ export function HomeSkeleton() {
 
       {/* Cricket Hero */}
       <section className="relative flex items-center overflow-hidden border-b border-lborder bg-secondary/40 sm:min-h-[360px]">
-        <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-12">
+        <div className="mx-auto w-full max-w-site px-4 py-6 sm:px-6 sm:py-12">
           <div className="flex flex-col gap-5 sm:gap-8 lg:flex-row lg:items-center lg:justify-between">
             <div className="max-w-2xl flex-1 space-y-4">
               <Skeleton width="72%" height={44} />
@@ -344,7 +344,7 @@ export function HomeSkeleton() {
       {/* Main Homepage Sections */}
       <div className="flex flex-col gap-12 pt-12 pb-12">
         {/* Live Now */}
-        <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
+        <section className="mx-auto w-full max-w-site px-4 sm:px-6">
           <div className="mb-4 flex items-end justify-between gap-4">
             <SkeletonTextBlock titleWidth={150} titleHeight={22} subtitleWidth={120} />
             <Skeleton width={68} height={14} />
@@ -353,7 +353,7 @@ export function HomeSkeleton() {
         </section>
 
         {/* Upcoming Matches */}
-        <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
+        <section className="mx-auto w-full max-w-site px-4 sm:px-6">
           <div className="mb-4 flex items-end justify-between gap-4">
             <SkeletonTextBlock titleWidth={190} titleHeight={22} subtitleWidth={210} />
             <Skeleton width={68} height={14} />
@@ -362,7 +362,7 @@ export function HomeSkeleton() {
         </section>
 
         {/* PSL Spotlight + Points Table */}
-        <section className="mx-auto w-full max-w-7xl space-y-4 px-4 sm:px-6">
+        <section className="mx-auto w-full max-w-site space-y-4 px-4 sm:px-6">
           <Card className="overflow-hidden rounded-2xl">
             <Skeleton height={220} className="!block !rounded-none" />
             <div className="flex flex-col gap-3 p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
@@ -409,7 +409,7 @@ export function HomeSkeleton() {
         </section>
 
         {/* Recent Results */}
-        <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
+        <section className="mx-auto w-full max-w-site px-4 sm:px-6">
           <div className="mb-4 flex items-end justify-between gap-4">
             <SkeletonTextBlock titleWidth={165} titleHeight={22} subtitleWidth={150} />
             <Skeleton width={68} height={14} />
@@ -418,7 +418,7 @@ export function HomeSkeleton() {
         </section>
 
         {/* Latest News (1 featured + 4 side cards matching lg:h-[448px]) */}
-        <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
+        <section className="mx-auto w-full max-w-site px-4 sm:px-6">
           <div className="mb-4 flex items-end justify-between gap-4">
             <SkeletonTextBlock titleWidth={145} titleHeight={22} subtitleWidth={215} />
             <Skeleton width={74} height={14} />
@@ -451,7 +451,7 @@ export function HomeSkeleton() {
         </section>
 
         {/* Newsletter */}
-        <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
+        <section className="mx-auto w-full max-w-site px-4 sm:px-6">
           <Card className="p-6 sm:p-8">
             <div className="mx-auto flex max-w-xl flex-col items-center space-y-3 text-center">
               <Skeleton width={210} height={22} />
@@ -1024,7 +1024,7 @@ export function ArticlePageSkeleton() {
 
 export function AuthPageSkeleton() {
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-10" aria-busy="true" aria-label="Loading">
+    <div className="mx-auto w-full max-w-site px-4 py-6 sm:px-6 sm:py-10" aria-busy="true" aria-label="Loading">
       <Card className="grid overflow-hidden lg:grid-cols-2">
         <Skeleton height={280} className="!block !rounded-none lg:!h-full lg:min-h-[640px]" />
         <div className="space-y-4 p-6 sm:p-10">

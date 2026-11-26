@@ -15,6 +15,7 @@ import { DirectoryGridSkeleton } from '../skeletons/Skeletons';
 import { filterChipClass, filterChipCountClass } from '../ui/filterChip';
 import DirectoryPageHeader from '../DirectoryPageHeader';
 import AdSlot from '../advertisements/AdSlot';
+import EditorialSidebar from './EditorialSidebar';
 import { chunkForAds } from '../../lib/advertisements/chunkForAds';
 import TourCard from '../TourCard';
 import { parsePositiveInt, tourKeys } from '../../queries/keys';
@@ -123,8 +124,6 @@ export default function ToursBoard() {
         countLabel="tours"
       />
 
-      <AdSlot placement="tours-after-intro" />
-
       <div className="space-y-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <SearchField
@@ -186,33 +185,40 @@ export default function ToursBoard() {
       ) : query.isError ? (
         <ErrorState message="Tours are temporarily unavailable." onRetry={() => void query.refetch()} />
       ) : filtered.length > 0 ? (
-        <>
-          {/* Banners after the 6th and 18th cards, between grids so the equal-height
-              rows (auto-rows-fr) never stretch to fit an ad. */}
-          {chunkForAds(filtered).map((chunk, i, all) => (
-            <Fragment key={i}>
-              <div className={`fade-in grid auto-rows-fr grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3${i > 0 ? ' mt-3' : ''}`}>
-                {chunk.map((tour: Tour) => (
-                  <TourCard key={tour.id} tour={tour} />
-                ))}
-              </div>
-              {i < all.length - 1 ? (
-                <div className="py-4">
-                  <AdSlot placement="tours-infeed" />
+        <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+          <div className="min-w-0">
+            {/* Banners after the 6th and 18th cards, between grids so the equal-height
+                rows (auto-rows-fr) never stretch to fit an ad. */}
+            {chunkForAds(filtered).map((chunk, i, all) => (
+              <Fragment key={i}>
+                <div className={`fade-in grid auto-rows-fr grid-cols-1 gap-3 sm:grid-cols-2${i > 0 ? ' mt-3' : ''}`}>
+                  {chunk.map((tour: Tour) => (
+                    <TourCard key={tour.id} tour={tour} />
+                  ))}
                 </div>
-              ) : null}
-            </Fragment>
-          ))}
-          <div className="pt-4">
-            <Pagination
-              page={page}
-              totalPages={totalPages}
-              total={total}
-              limit={LIMIT}
-              onPageChange={handlePageChange}
-            />
+                {i < all.length - 1 ? (
+                  <div className="py-4">
+                    <AdSlot placement="tours-infeed" />
+                  </div>
+                ) : null}
+              </Fragment>
+            ))}
+            <div className="pt-4">
+              <Pagination
+                page={page}
+                totalPages={totalPages}
+                total={total}
+                limit={LIMIT}
+                onPageChange={handlePageChange}
+              />
+            </div>
           </div>
-        </>
+          <EditorialSidebar
+            topPlacement="tours-sidebar"
+            bottomPlacement={filtered.length >= 10 ? 'tours-skyscraper' : undefined}
+            widget="tools"
+          />
+        </div>
       ) : (
         <EmptyState
           title="No cricket tours found"

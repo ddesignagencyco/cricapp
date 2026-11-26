@@ -210,7 +210,7 @@ export default function Navbar() {
       >
         Skip to content
       </a>
-      <nav className="mx-auto flex h-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      <nav className="mx-auto flex h-full max-w-site items-center justify-between px-4 sm:px-6">
         <div className="flex shrink-0 items-center">
           <Logo size="lg" variant="auto" priority />
         </div>
