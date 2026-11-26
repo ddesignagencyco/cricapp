@@ -582,22 +582,20 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
             <p className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5" style={{ color: 'var(--admin-text)' }}>
               <Search size={12} className="shrink-0" style={{ color: 'var(--admin-accent)' }} /> SEO
             </p>
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-              <AdminField label="SEO title">
-                <AdminInput value={form.metaTitle} onChange={(e) => set('metaTitle', e.target.value)} placeholder={placeholders.metaTitle} {...copyField} />
-                <div className="mt-1 flex justify-end">
-                  <CharCount value={form.metaTitle} max={NEWS_META_TITLE_SUGGESTED} />
-                </div>
-              </AdminField>
-              <AdminField label="Canonical URL">
-                <AdminInput value={form.canonicalUrl} onChange={(e) => set('canonicalUrl', e.target.value)} placeholder="https://…" />
-              </AdminField>
-            </div>
+            <AdminField label="SEO title">
+              <AdminInput value={form.metaTitle} onChange={(e) => set('metaTitle', e.target.value)} placeholder={placeholders.metaTitle} {...copyField} />
+              <div className="mt-1 flex justify-end">
+                <CharCount value={form.metaTitle} max={NEWS_META_TITLE_SUGGESTED} />
+              </div>
+            </AdminField>
             <AdminField label="SEO description">
               <AdminInput value={form.metaDescription} onChange={(e) => set('metaDescription', e.target.value)} placeholder={placeholders.metaDescription} {...copyField} />
               <div className="mt-1 flex justify-end">
                 <CharCount value={form.metaDescription} max={NEWS_META_DESCRIPTION_SUGGESTED} />
               </div>
+            </AdminField>
+            <AdminField label="Canonical URL">
+              <AdminInput value={form.canonicalUrl} onChange={(e) => set('canonicalUrl', e.target.value)} placeholder="https://…" />
             </AdminField>
             {/* What a reader will actually see in a result, using the same fallbacks the
                 published page applies when the meta fields are blank. */}
