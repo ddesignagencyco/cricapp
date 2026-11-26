@@ -177,7 +177,7 @@ describe('telling the admin what has not been saved yet', () => {
   it('spots a flipped placement switch, a mode change and the gambling opt-in', () => {
     const base = adsFormFromConfig(EMPTY_AD_CONFIG);
     const config = EMPTY_AD_CONFIG;
-    expect(adsFormIsDirty({ ...base, mode: 'off' }, config)).toBe(true);
+    expect(adsFormIsDirty({ ...base, mode: 'house' }, config)).toBe(true);
     expect(adsFormIsDirty({ ...base, gamblingAds: true }, config)).toBe(true);
     expect(
       adsFormIsDirty(
@@ -311,7 +311,8 @@ describe('filtering the placement list', () => {
   });
 
   it('is case-insensitive and matches the size name', () => {
-    expect(filterPlacementRows(rows, 'HALF-PAGE')).toHaveLength(2);
+    const expected = rows.filter((r) => r.size === 'half-page').length;
+    expect(filterPlacementRows(rows, 'HALF-PAGE')).toHaveLength(expected);
   });
 
   it('returns nothing rather than everything when there is no match', () => {

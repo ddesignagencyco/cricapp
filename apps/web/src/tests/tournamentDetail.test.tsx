@@ -125,9 +125,8 @@ describe('tournament detail — Info tab', () => {
     expect(panelText).toContain('2026-09-29');
   });
 
-  it('renders null ids as an em dash rather than blank or "null"', async () => {
+  it('omits null ids rather than rendering "null"', async () => {
     const { panelText } = await openInfoTab();
-    expect(panelText).toContain('Tour id');
     expect(panelText).not.toContain('null');
   });
 

@@ -207,10 +207,13 @@ function TournamentInfoPanel({
     ['Type', t?.type ?? fb.type],
     ['Gender', t?.gender ?? fb.gender],
     ['Category', categoryName],
+    ['Category id', category && typeof category === 'object' ? category.id : undefined],
     ['Category code', category && typeof category === 'object' ? category.country_code : undefined],
     ['Sport', sportName],
+    ['Sport id', sport && typeof sport === 'object' ? sport.id : undefined],
     ['Tour id', t?.tour_id ?? fb.tourId],
     ['Parent id', t?.parent_id ?? fb.parentId],
+    ['Current season id', season ? season.id : undefined],
     ['Current season', season ? (season.name as string | undefined) || (season.year as string | undefined) : undefined],
     ['Season year', season ? (season.year as string | undefined) : undefined],
     ['Season start', season ? (season.start_date as string | undefined) || (season.startDate as string | undefined) : undefined],
@@ -223,6 +226,17 @@ function TournamentInfoPanel({
 
   return (
     <div className="space-y-5">
+      {info?.generated_at ? (
+        <p className="text-xs text-stext">
+          This is the stored data snapshot. It refreshes when the feed is re-synced, so it can lag
+          behind live data.
+        </p>
+      ) : (
+        <p className="text-xs text-stext">
+          No stored snapshot yet — showing what the tournament record itself carries.
+        </p>
+      )}
+
       <section className="detail-panel p-4 sm:p-5">
         <h2 className="mb-2 text-lg font-semibold text-mtext">Tournament details</h2>
         <dl>

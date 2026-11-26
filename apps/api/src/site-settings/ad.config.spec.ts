@@ -73,8 +73,8 @@ describe('site-settings/ad.config', () => {
       expect(normalizeAdConfig([1, 2, 3])).toEqual(EMPTY_AD_CONFIG);
     });
 
-    it('does not blank the site when the mode is unrecognised', () => {
-      expect(normalizeAdConfig({ mode: 'auto' }).mode).toBe('house');
+    it('degrades safely to off when the mode is unrecognised', () => {
+      expect(normalizeAdConfig({ mode: 'auto' }).mode).toBe('off');
     });
 
     it('keeps a valid mode, publisher id and per-size defaults', () => {

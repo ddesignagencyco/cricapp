@@ -1,7 +1,8 @@
 'use client';
 
+import { useContext, useState, type ReactNode } from 'react';
 import Link from 'next/link';
-import { useQuery } from '@tanstack/react-query';
+import { QueryClient, QueryClientContext, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import {
   ArrowRight,
   Calculator,
@@ -529,7 +530,24 @@ function UrduNewsCard() {
   );
 }
 
-export default function EditorialSidebar({
+function SidebarDataBoundary({ children }: { children: ReactNode }) {
+  const existing = useContext(QueryClientContext);
+  const [fallback] = useState(() =>
+    existing ? null : new QueryClient({ defaultOptions: { queries: { retry: false } } }),
+  );
+  if (existing || !fallback) return <>{children}</>;
+  return <QueryClientProvider client={fallback}>{children}</QueryClientProvider>;
+}
+
+export default function EditorialSidebar(props: EditorialSidebarProps) {
+  return (
+    <SidebarDataBoundary>
+      <EditorialSidebarInner {...props} />
+    </SidebarDataBoundary>
+  );
+}
+
+function EditorialSidebarInner({
   topPlacement,
   bottomPlacement,
   variant,
