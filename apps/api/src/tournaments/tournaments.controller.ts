@@ -1,8 +1,7 @@
 import { Controller, Get, Param, Query, UsePipes, ValidationPipe } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { TournamentsService } from './tournaments.service.js';
-import { TournamentDto, TournamentInfoDto } from './dto/tournament.dto.js';
-import { TextSearchQuery } from '../common/dto/text-search.query.js';
+import { ListTournamentsQuery, TournamentDto, TournamentInfoDto } from './dto/tournament.dto.js';
 import { PaginationQuery } from '../common/dto/pagination.query.js';
 
 @ApiTags('tournaments')
@@ -12,9 +11,9 @@ export class TournamentsController {
 
   @Get()
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
-  @ApiOperation({ summary: 'List tournaments / competitions (paginated)', description: 'Optional ?q= search by name.' })
-  @ApiResponse({ status: 200, description: 'Paginated tournaments.' })
-  list(@Query() query: TextSearchQuery) {
+  @ApiOperation({ summary: 'List tournaments / competitions (paginated)', description: 'Supports q, format, country, status and sortBy (name|type|latest).' })
+  @ApiResponse({ status: 200, description: 'Paginated tournaments with filter facets.' })
+  list(@Query() query: ListTournamentsQuery) {
     return this.tournamentsService.list(query);
   }
 

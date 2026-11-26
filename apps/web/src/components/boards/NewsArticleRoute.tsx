@@ -20,15 +20,16 @@ export async function newsArticleMetadata(id: string) {
   for (const alt of seo?.hreflang || []) {
     if (alt.language && alt.href) languages[alt.language] = alt.href;
   }
+  const articlePath = item ? newsHref(item) : `/news/${id}`;
   const meta = sharePageMetadata({
     title: item?.title || 'News',
     description: item?.excerpt || 'Cricket news and analysis from CriczApp.',
-    path: item ? newsHref(item) : `/news/${id}`,
+    path: articlePath,
   });
   return {
     ...meta,
     alternates: {
-      canonical: seo?.canonicalUrl,
+      canonical: seo?.canonicalUrl || articlePath,
       languages: Object.keys(languages).length ? languages : undefined,
     },
   };

@@ -267,6 +267,11 @@ export class NewsListQuery extends PaginationQuery {
   @IsIn(['en', 'ur'])
   language?: string;
 
+  @ApiPropertyOptional({ enum: ['published', 'draft'], description: 'Filter by publish status (admin only)' })
+  @IsOptional()
+  @IsIn(['published', 'draft'])
+  status?: 'published' | 'draft';
+
   @ApiPropertyOptional({ description: 'Filter articles linked to a player id' })
   @IsOptional()
   @IsString()

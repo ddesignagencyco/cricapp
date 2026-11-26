@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment, useMemo, useState } from 'react';
+import { Fragment, useMemo } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { X } from 'lucide-react';
 import SearchField from '../SearchField';
@@ -41,7 +41,7 @@ export default function TournamentsBoard({ initialCountry }: Props) {
   const { input: localSearch, setInput: setLocalSearch, query: searchQuery } = useDebouncedUrlQuery({ param: 'q' });
   const search = searchQuery.trim();
   const categoryFilter = searchParams.get('country') || initialCountry || 'all';
-  const [formatFilter, setFormatFilter] = useState('all');
+  const formatFilter = searchParams.get('format') || 'all';
 
   const listParams = {
     limit: LIMIT,
@@ -49,40 +49,39 @@ export default function TournamentsBoard({ initialCountry }: Props) {
     q: search || undefined,
     country: categoryFilter === 'all' ? undefined : categoryFilter,
     format: formatFilter === 'all' ? undefined : formatFilter,
+    sortBy: 'latest',
   };
   const query = useTournamentsQuery(listParams);
   const tournaments = query.data?.items ?? EMPTY_TOURNAMENTS;
   const total = query.data?.total || 0;
   const totalPages = Math.max(1, query.data?.totalPages || Math.ceil(total / LIMIT));
 
-  const formats = useMemo(() => {
+  const formats = useMemo<[string, number][]>(() => {
+    if (query.data?.facets?.formats?.length) {
+      return query.data.facets.formats.map((f) => [f.key, f.count]);
+    }
     const map = new Map<string, number>();
     tournaments.forEach((t) => {
       const f = str(t.type).toUpperCase() || 'Other';
       map.set(f, (map.get(f) || 0) + 1);
     });
     return [...map.entries()].sort((a, b) => b[1] - a[1]);
-  }, [tournaments]);
+  }, [query.data?.facets?.formats, tournaments]);
 
-  const categories = useMemo(() => {
+  const categories = useMemo<[string, number][]>(() => {
+    if (query.data?.facets?.categories?.length) {
+      return query.data.facets.categories.map((c) => [c.key, c.count]);
+    }
     const map = new Map<string, number>();
     tournaments.forEach((t) => {
       const c = str(t.category) || 'International';
       map.set(c, (map.get(c) || 0) + 1);
     });
     return [...map.entries()].sort((a, b) => b[1] - a[1]);
-  }, [tournaments]);
+  }, [query.data?.facets?.categories, tournaments]);
 
-  const filtered = useMemo(() => {
-    let list = tournaments;
-    if (formatFilter !== 'all') {
-      list = list.filter((t) => str(t.type).toUpperCase() === formatFilter);
-    }
-    if (categoryFilter !== 'all') {
-      list = list.filter((t) => str(t.category) === categoryFilter);
-    }
-    return list;
-  }, [tournaments, formatFilter, categoryFilter]);
+  // Filtering (q, country, format) is performed server-side across all pages.
+  const filtered = tournaments;
 
   const activeFilters = formatFilter !== 'all' || categoryFilter !== 'all';
 
@@ -92,8 +91,7 @@ export default function TournamentsBoard({ initialCountry }: Props) {
     totalPages,
     enabled: Boolean(query.data && !query.isPlaceholderData && query.isSuccess),
     queryKey: tournamentKeys.list(nextParams),
-    queryFn: (signal) =>
-      fetchTournamentsPage({ page: nextParams.page, limit: nextParams.limit, q: nextParams.q }, signal),
+    queryFn: (signal) => fetchTournamentsPage(nextParams, signal),
   });
 
   const updateUrl = (params: URLSearchParams) => {
@@ -119,15 +117,19 @@ export default function TournamentsBoard({ initialCountry }: Props) {
 
   const handleFormatFilter = (format: string) => {
     const next = formatFilter === format ? 'all' : format;
-    setFormatFilter(next);
-    if (page !== 1) handlePageChange(1);
+    const params = new URLSearchParams(searchParams.toString());
+    if (next === 'all') params.delete('format');
+    else params.set('format', next);
+    params.delete('page');
+    updateUrl(params);
   };
 
   const clearAll = () => {
-    setFormatFilter('all');
     setLocalSearch('');
     const params = new URLSearchParams(searchParams.toString());
     params.delete('country');
+    params.delete('format');
+    params.delete('q');
     params.delete('page');
     updateUrl(params);
   };
@@ -167,7 +169,7 @@ export default function TournamentsBoard({ initialCountry }: Props) {
           <div className="flex flex-wrap items-center gap-1.5">
             <button
               type="button"
-              onClick={() => setFormatFilter('all')}
+              onClick={() => handleFormatFilter('all')}
               aria-pressed={formatFilter === 'all'}
               className={filterChipClass(formatFilter === 'all')}
             >
@@ -254,7 +256,7 @@ export default function TournamentsBoard({ initialCountry }: Props) {
           <EditorialSidebar
             topPlacement="tournaments-sidebar"
             bottomPlacement={filtered.length >= 10 ? 'tournaments-skyscraper' : undefined}
-            widget="tools"
+            variant="competitions"
           />
         </div>
       ) : (

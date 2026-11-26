@@ -109,6 +109,7 @@ export class PlayersService {
   async search(params?: {
     q?: string;
     team?: string;
+    role?: string;
     sortBy?: string;
     sortOrder?: string;
     page?: number;
@@ -117,17 +118,22 @@ export class PlayersService {
   }) {
     const { page, limit, skip } = getPaginationOffset(params?.page, params?.limit, params?.offset);
 
-    const where: any = {};
+    const baseWhere: any = {};
     if (params?.q) {
-      where.OR = [
+      baseWhere.OR = [
         { fullName: { contains: params.q, mode: 'insensitive' } },
         { shortName: { contains: params.q, mode: 'insensitive' } },
         { nationality: { contains: params.q, mode: 'insensitive' } },
         { role: { contains: params.q, mode: 'insensitive' } },
+        { team: { name: { contains: params.q, mode: 'insensitive' } } },
       ];
     }
     if (params?.team) {
-      where.team = { abbr: params.team };
+      baseWhere.team = { abbr: params.team };
+    }
+    const where: any = { ...baseWhere };
+    if (params?.role) {
+      where.role = { equals: params.role, mode: 'insensitive' };
     }
 
     const dir: 'asc' | 'desc' = params?.sortOrder === 'desc' ? 'desc' : 'asc';
@@ -151,7 +157,7 @@ export class PlayersService {
         break;
     }
 
-    const [rows, total] = await Promise.all([
+    const [rows, total, roleGroups] = await Promise.all([
       this.prisma.player.findMany({
         where,
         take: limit,
@@ -173,9 +179,22 @@ export class PlayersService {
         },
       }),
       this.prisma.player.count({ where }),
+      this.prisma.player.groupBy({
+        by: ['role'],
+        where: { ...baseWhere, role: { not: null } },
+        _count: { _all: true },
+      }),
     ]);
 
-    return createPaginatedResponse(rows, total, page, limit);
+    const roles = roleGroups
+      .filter((g): g is { role: string; _count: { _all: number } } => Boolean(g.role && g.role.trim()))
+      .sort((a, b) => b._count._all - a._count._all)
+      .map((g) => ({ key: g.role, count: g._count._all }));
+
+    return {
+      ...createPaginatedResponse(rows, total, page, limit),
+      facets: { roles },
+    };
   }
 
   async getProfile(playerId: string, opts: { recent?: number } = {}): Promise<PlayerProfileDto> {

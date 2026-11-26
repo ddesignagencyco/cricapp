@@ -9,7 +9,8 @@ const LiveNowSection = dynamic(() => import('../../components/LiveNowSection'));
 import SectionHeader from '../../components/SectionHeader';
 import WatchNowSection from '../../components/WatchNowSection';
 import CricketHero from '../../components/CricketHero';
-import PslSpotlight from '../../components/PslSpotlight';
+import PointsTable from '../../components/PointsTable';
+import HomePredictions, { type HomePredictionPick } from '../../components/predictions/HomePredictions';
 import RecentResultCard from '../../components/RecentResultCard';
 // Client-fetched below-fold strip: renders null until its query resolves, so
 // splitting it into its own chunk changes no content, only when its JS loads.
@@ -32,6 +33,10 @@ import { fetchNews } from '../../services/news';
 import { newsHref } from '../../utils/newsConstraints';
 import { fetchPslLeaders, fetchPslStandings } from '../../services/psl';
 import { fetchStreams, isLiveStream } from '../../services/streams';
+import { fetchBulkPredictions } from '../../services/predictions';
+import { fetchTournaments } from '../../services/tournaments';
+import { featuredRun } from '../../lib/predictions';
+import { Trophy, ChevronRight } from 'lucide-react';
 
 export const revalidate = 60;
 
@@ -61,6 +66,7 @@ export default async function HomePage() {
       fetchPslLeaders(),
       // The page renders 3 stream cards, and only the ones actually broadcasting.
       fetchStreams({ status: 'live', limit: 3 }),
+      fetchTournaments({ limit: 6, sortBy: 'latest', status: 'active' }),
     ] as const);
   const liveMatches = results[0].status === 'fulfilled' ? results[0].value : [];
   const upcomingMatches = results[1].status === 'fulfilled' ? results[1].value : [];
@@ -69,6 +75,23 @@ export default async function HomePage() {
   const standings = results[4].status === 'fulfilled' ? results[4].value : [];
   const pslLeaders = results[5].status === 'fulfilled' ? results[5].value : [];
   const streams = results[6].status === 'fulfilled' ? results[6].value : [];
+  const activeTournaments = results[7].status === 'fulfilled' ? results[7].value : [];
+
+  const predictionPool = [...(liveMatches || []).slice(0, 4), ...(upcomingMatches || []).slice(0, 6)];
+  const predictionIds = predictionPool
+    .map((m: any) => String(m.matchId || m.id || ''))
+    .filter(Boolean);
+  const bulkPredictions = predictionIds.length
+    ? await fetchBulkPredictions(predictionIds).catch(() => new Map())
+    : new Map();
+  const predictionPicks: HomePredictionPick[] = [];
+  for (const m of predictionPool) {
+    const id = String((m as any).matchId || (m as any).id || '');
+    const pred = bulkPredictions.get(id);
+    const run = featuredRun(pred);
+    if (run) predictionPicks.push({ match: m, run });
+    if (predictionPicks.length >= 4) break;
+  }
 
   const live = liveMatches || [];
   const upcoming = (upcomingMatches || []).slice(0, 3);
@@ -144,8 +167,62 @@ export default async function HomePage() {
             {/* Cric Stories */}
             <HomeStoriesRail />
 
-            {/* PSL Spotlight (Points Table & Season Standings) */}
-            <PslSpotlight standings={pslStandings} />
+            {/* AI Match Predictions */}
+            {predictionPicks.length > 0 && <HomePredictions picks={predictionPicks} />}
+
+            {/* Active Series & Tournaments */}
+            {activeTournaments.length > 0 && (
+              <section className="w-full">
+                <SectionHeader
+                  title="Active Series & Tournaments"
+                  subtitle="Follow ongoing leagues and international tours"
+                  icon="trophy"
+                  to="/tournaments"
+                  actionLabel="All tournaments"
+                />
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {activeTournaments.slice(0, 6).map((t: any) => (
+                    <Link
+                      key={t.id}
+                      href={`/tournaments/${encodeURIComponent(t.id)}`}
+                      className="card-interactive group flex items-center justify-between gap-3 rounded-xl border border-lborder bg-card px-4 py-3.5"
+                    >
+                      <div className="flex min-w-0 items-center gap-3">
+                        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-accent/10 text-accent">
+                          <Trophy size={16} aria-hidden />
+                        </span>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-bold text-mtext group-hover:text-accent">
+                            {t.name}
+                          </p>
+                          <p className="mt-0.5 truncate text-xs text-stext">
+                            {t.category?.name || t.type || 'Tournament'}
+                          </p>
+                        </div>
+                      </div>
+                      <ChevronRight
+                        size={15}
+                        className="shrink-0 text-stext transition-transform group-hover:translate-x-0.5 group-hover:text-accent"
+                      />
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* PSL Points Table */}
+            {pslStandings.length > 0 && (
+              <section className="w-full">
+                <SectionHeader
+                  title="PSL Points Table"
+                  subtitle="Current season standings"
+                  icon="trophy"
+                  to="/psl"
+                  actionLabel="Full table"
+                />
+                <PointsTable rows={pslStandings} />
+              </section>
+            )}
 
             <section className="w-full">
               <AdSlot placement="home-mid" />
@@ -264,7 +341,7 @@ export default async function HomePage() {
           <EditorialSidebar
             topPlacement="home-sidebar"
             bottomPlacement="home-skyscraper"
-            widget="topics"
+            variant="home"
           />
         </div>
       </div>

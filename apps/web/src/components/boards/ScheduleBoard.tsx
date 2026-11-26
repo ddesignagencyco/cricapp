@@ -253,6 +253,7 @@ export default function ScheduleBoard({
           <EditorialSidebar
             topPlacement="schedule-sidebar"
             bottomPlacement={visibleEvents.length >= 14 ? 'schedule-skyscraper' : undefined}
+            variant="schedule"
           />
         </div>
       ) : (

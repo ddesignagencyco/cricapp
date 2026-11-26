@@ -327,8 +327,7 @@ export default function GalleryBoard({ initialTab = 'images' }: GalleryBoardProp
         <EditorialSidebar
           topPlacement="gallery-sidebar"
           bottomPlacement="gallery-skyscraper"
-          showNews
-          showGallery={false}
+          variant="media"
         />
       </div>
 

@@ -24,33 +24,50 @@ export class ToursService {
     limit?: number;
     offset?: number;
     q?: string;
+    category?: string;
     sortBy?: string;
     sortOrder?: string;
-  }): Promise<PaginatedResponse<TourSummary>> {
+  }) {
     const { page, limit, skip } = getPaginationOffset(
       query.page,
       query.limit,
       query.offset,
     );
-    const q = query.q?.trim();
-    const where = q
-      ? {
-          OR: [
-            { name: { contains: q, mode: 'insensitive' as const } },
-            { category: { path: ['country_code'], string_contains: q.toUpperCase() } },
-          ],
-        }
-      : {};
-    const dir = query.sortOrder === 'desc' ? 'desc' : 'asc';
-    const [tours, total] = await Promise.all([
-      this.prisma.tour.findMany({
-        where,
-        orderBy: [{ name: query.sortBy === 'name' || !query.sortBy ? dir : 'asc' }],
-        ...(query.sortBy && query.sortBy !== 'name' ? {} : { skip, take: limit }),
-      }),
-      this.prisma.tour.count({ where }),
-    ]);
-    const categoryIds = tours
+    const q = query.q?.trim().toLowerCase() || '';
+    const categoryFilter = query.category?.trim().toLowerCase() || '';
+
+    const allTours = await this.prisma.tour.findMany({
+      orderBy: [{ name: 'asc' }],
+    });
+
+    const catNameOf = (t: (typeof allTours)[number]): string => {
+      const c = t.category as { name?: unknown } | null;
+      return typeof c?.name === 'string' && c.name.trim() ? c.name.trim() : 'International';
+    };
+
+    const baseFiltered = allTours.filter((t) => {
+      if (!q) return true;
+      const c = t.category as { name?: unknown; country_code?: unknown } | null;
+      const s = t.sport as { name?: unknown } | null;
+      return (
+        t.name.toLowerCase().includes(q) ||
+        String(c?.name ?? '').toLowerCase().includes(q) ||
+        String(c?.country_code ?? '').toLowerCase().includes(q) ||
+        String(s?.name ?? '').toLowerCase().includes(q)
+      );
+    });
+
+    const categoryCounts = new Map<string, number>();
+    for (const t of baseFiltered) {
+      const cat = catNameOf(t);
+      categoryCounts.set(cat, (categoryCounts.get(cat) || 0) + 1);
+    }
+
+    const filtered = categoryFilter
+      ? baseFiltered.filter((t) => catNameOf(t).toLowerCase() === categoryFilter)
+      : baseFiltered;
+
+    const categoryIds = filtered
       .map((t) => (t.category as { id?: unknown } | null)?.id)
       .filter((id): id is string => typeof id === 'string');
     const counts = categoryIds.length
@@ -61,31 +78,42 @@ export class ToursService {
         )
       : [];
     const countById = new Map(counts.map((c) => [c.id, c.n]));
-    let data = tours.map((t) => ({
+
+    const dir = query.sortOrder === 'desc' ? -1 : 1;
+    const mapped: TourSummary[] = filtered.map((t) => ({
       id: t.id,
       name: t.name,
       category: t.category as Record<string, unknown> | null,
       sport: t.sport as Record<string, unknown> | null,
       tournamentCount: countById.get(String((t.category as { id?: unknown } | null)?.id ?? '')) ?? 0,
     }));
-    if (query.sortBy && query.sortBy !== 'name') {
-      const mul = dir === 'desc' ? -1 : 1;
-      data.sort((a, b) => {
-        if (query.sortBy === 'tournaments') {
-          return (a.tournamentCount - b.tournamentCount) * mul || a.name.localeCompare(b.name);
-        }
-        const av =
-          query.sortBy === 'country'
-            ? String((a.category as { country_code?: string } | null)?.country_code || '')
-            : String((a.sport as { name?: string } | null)?.name || 'Cricket');
-        const bv =
-          query.sortBy === 'country'
-            ? String((b.category as { country_code?: string } | null)?.country_code || '')
-            : String((b.sport as { name?: string } | null)?.name || 'Cricket');
-        return av.localeCompare(bv) * mul || a.name.localeCompare(b.name);
-      });
-      data = data.slice(skip, skip + limit);
-    }
-    return createPaginatedResponse(data, total, page, limit);
+
+    mapped.sort((a, b) => {
+      if (query.sortBy === 'tournaments') {
+        return (a.tournamentCount - b.tournamentCount) * dir || a.name.localeCompare(b.name);
+      }
+      if (query.sortBy === 'country') {
+        const av = String((a.category as { country_code?: string } | null)?.country_code || '');
+        const bv = String((b.category as { country_code?: string } | null)?.country_code || '');
+        return av.localeCompare(bv) * dir || a.name.localeCompare(b.name);
+      }
+      if (query.sortBy === 'sport') {
+        const av = String((a.sport as { name?: string } | null)?.name || 'Cricket');
+        const bv = String((b.sport as { name?: string } | null)?.name || 'Cricket');
+        return av.localeCompare(bv) * dir || a.name.localeCompare(b.name);
+      }
+      return a.name.localeCompare(b.name) * dir;
+    });
+
+    const total = mapped.length;
+    const pageRows = mapped.slice(skip, skip + limit);
+    return {
+      ...createPaginatedResponse(pageRows, total, page, limit),
+      facets: {
+        categories: [...categoryCounts.entries()]
+          .sort((a, b) => b[1] - a[1])
+          .map(([key, count]) => ({ key, count })),
+      },
+    };
   }
 }

@@ -1040,20 +1040,53 @@ export function AuthPageSkeleton() {
   );
 }
 
+function CricketBallSpinner({ size = 24 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 32 32"
+      fill="none"
+      aria-hidden="true"
+      className="animate-spin"
+      style={{ animationDuration: '1.15s' }}
+    >
+      <circle
+        cx="16"
+        cy="16"
+        r="13.5"
+        stroke="var(--admin-accent)"
+        strokeWidth="2.2"
+        fill="var(--admin-info-bg, transparent)"
+      />
+      {/* Cricket ball stitched seam */}
+      <path
+        d="M8.2 6.8C12.8 11.4 12.8 20.6 8.2 25.2"
+        stroke="var(--admin-accent)"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeDasharray="2.2 2.4"
+      />
+      <path
+        d="M23.8 6.8C19.2 11.4 19.2 20.6 23.8 25.2"
+        stroke="var(--admin-accent)"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeDasharray="2.2 2.4"
+      />
+    </svg>
+  );
+}
+
 export function AdminLoader({ fullPage = false }: { fullPage?: boolean }) {
   return (
     <div
-      className={`grid place-items-center ${fullPage ? 'min-h-screen' : 'min-h-[18rem]'}`}
+      className={`grid place-items-center ${fullPage ? 'min-h-screen' : 'min-h-[16rem]'}`}
       style={fullPage ? { background: 'var(--admin-bg)' } : undefined}
       aria-busy="true"
       aria-label="Loading"
     >
-      <Loader2
-        size={fullPage ? 28 : 24}
-        className="animate-spin"
-        style={{ color: 'var(--admin-accent)' }}
-        aria-hidden
-      />
+      <CricketBallSpinner size={fullPage ? 34 : 28} />
     </div>
   );
 }
@@ -1069,8 +1102,177 @@ export type AdminLoadingVariant =
   | 'editorial'
   | 'categories';
 
-export function AdminRouteSkeleton(_props: { variant?: AdminLoadingVariant }) {
-  return <AdminLoader />;
+const VARIANT_LABEL: Record<AdminLoadingVariant, string> = {
+  dashboard: 'Loading dashboard…',
+  table: 'Loading records…',
+  people: 'Loading directory…',
+  news: 'Loading articles…',
+  gallery: 'Loading media…',
+  editor: 'Preparing editor…',
+  form: 'Loading settings…',
+  editorial: 'Loading page…',
+  categories: 'Loading categories…',
+};
+
+function AdminShimmerBar({
+  w = '100%',
+  h = 12,
+  rounded = 'rounded',
+}: {
+  w?: string | number;
+  h?: number;
+  rounded?: string;
+}) {
+  return (
+    <span
+      className={`block animate-pulse ${rounded}`}
+      style={{
+        width: typeof w === 'number' ? `${w}px` : w,
+        height: `${h}px`,
+        background: 'var(--admin-input-bg, var(--color-lborder))',
+      }}
+    />
+  );
+}
+
+export function AdminRouteSkeleton({
+  variant = 'table',
+  text,
+}: {
+  variant?: AdminLoadingVariant;
+  text?: string;
+}) {
+  const label = text || VARIANT_LABEL[variant] || 'Loading…';
+
+  if (variant === 'dashboard') {
+    return (
+      <div className="space-y-5" aria-busy="true" aria-label={label}>
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div
+              key={i}
+              className="space-y-3 rounded-lg p-4"
+              style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}
+            >
+              <div className="flex items-center justify-between">
+                <AdminShimmerBar w="52%" h={10} />
+                <AdminShimmerBar w={28} h={28} rounded="rounded-md" />
+              </div>
+              <AdminShimmerBar w="40%" h={24} />
+              <AdminShimmerBar w="68%" h={10} />
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <div
+              key={i}
+              className="space-y-3 rounded-lg p-4"
+              style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}
+            >
+              <AdminShimmerBar w="36%" h={13} />
+              {Array.from({ length: 4 }).map((__, r) => (
+                <div key={r} className="flex items-center justify-between gap-3 py-1.5">
+                  <AdminShimmerBar w="62%" h={11} />
+                  <AdminShimmerBar w={52} h={11} />
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (variant === 'gallery') {
+    return (
+      <div className="space-y-4" aria-busy="true" aria-label={label}>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div
+              key={i}
+              className="overflow-hidden rounded-lg"
+              style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}
+            >
+              <div
+                className="aspect-[4/3] w-full animate-pulse"
+                style={{ background: 'var(--admin-input-bg, var(--color-lborder))' }}
+              />
+              <div className="space-y-2 p-3">
+                <AdminShimmerBar w="75%" h={11} />
+                <AdminShimmerBar w="45%" h={9} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (variant === 'editor' || variant === 'form' || variant === 'editorial') {
+    return (
+      <div
+        className="space-y-4 rounded-lg p-5"
+        style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}
+        aria-busy="true"
+        aria-label={label}
+      >
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <AdminShimmerBar w="30%" h={10} />
+            <AdminShimmerBar w="100%" h={36} rounded="rounded-md" />
+          </div>
+          <div className="space-y-2">
+            <AdminShimmerBar w="34%" h={10} />
+            <AdminShimmerBar w="100%" h={36} rounded="rounded-md" />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <AdminShimmerBar w="24%" h={10} />
+          <AdminShimmerBar w="100%" h={140} rounded="rounded-md" />
+        </div>
+      </div>
+    );
+  }
+
+  const showThumb = variant === 'news';
+  const showAvatar = variant === 'people';
+
+  return (
+    <div
+      className="overflow-hidden rounded-lg"
+      style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}
+      aria-busy="true"
+      aria-label={label}
+    >
+      <div
+        className="flex items-center justify-between gap-4 px-4 py-3"
+        style={{ borderBottom: '1px solid var(--admin-border)', background: 'var(--admin-table-header)' }}
+      >
+        <AdminShimmerBar w="28%" h={11} />
+        <AdminShimmerBar w={84} h={10} rounded="rounded-full" />
+      </div>
+      <div className="divide-y" style={{ borderColor: 'var(--admin-border)' }}>
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="flex items-center justify-between gap-4 px-4 py-3">
+            <div className="flex min-w-0 flex-1 items-center gap-3">
+              {showThumb ? (
+                <AdminShimmerBar w={48} h={34} rounded="rounded" />
+              ) : showAvatar ? (
+                <AdminShimmerBar w={30} h={30} rounded="rounded-full" />
+              ) : null}
+              <div className="min-w-0 flex-1 space-y-2">
+                <AdminShimmerBar w={`${58 + (i % 3) * 12}%`} h={12} />
+                <AdminShimmerBar w={`${32 + (i % 2) * 14}%`} h={9} />
+              </div>
+            </div>
+            <AdminShimmerBar w={72} h={20} rounded="rounded-full" />
+            <AdminShimmerBar w={64} h={11} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 export function PredictionMatchCardSkeleton() {
@@ -1233,7 +1435,7 @@ export function AdminPageSkeleton() {
 }
 
 export function AdminTableSkeleton() {
-  return <AdminLoader />;
+  return <AdminRouteSkeleton variant="table" />;
 }
 
 export function AdminChromeSkeleton() {
@@ -1241,5 +1443,5 @@ export function AdminChromeSkeleton() {
 }
 
 export function EditorSkeleton() {
-  return <AdminLoader />;
+  return <AdminRouteSkeleton variant="editor" />;
 }

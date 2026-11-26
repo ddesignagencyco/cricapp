@@ -174,6 +174,10 @@ export class NewsService {
     const where: Record<string, unknown> = {};
     if (!opts?.includeUnpublished) {
       where.isPublished = true;
+    } else if (query.status === 'published') {
+      where.isPublished = true;
+    } else if (query.status === 'draft') {
+      where.isPublished = false;
     }
     if (query.category) {
       where.category = { slug: query.category };
@@ -185,6 +189,7 @@ export class NewsService {
       where.OR = [
         { title: { contains: query.q, mode: 'insensitive' } },
         { summary: { contains: query.q, mode: 'insensitive' } },
+        { author: { contains: query.q, mode: 'insensitive' } },
       ];
     }
     if (query.playerId) {

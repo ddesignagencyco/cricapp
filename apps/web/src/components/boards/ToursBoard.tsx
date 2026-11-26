@@ -48,31 +48,20 @@ export default function ToursBoard() {
   const total = query.data?.total || 0;
   const totalPages = Math.max(1, query.data?.totalPages || Math.ceil(total / LIMIT));
 
-  const categories = useMemo(() => {
+  const categories = useMemo<[string, number][]>(() => {
+    if (query.data?.facets?.categories?.length) {
+      return query.data.facets.categories.map((c) => [c.key, c.count]);
+    }
     const map = new Map<string, number>();
     tours.forEach((t) => {
       const c = str(t.category) || 'International';
       map.set(c, (map.get(c) || 0) + 1);
     });
     return [...map.entries()].sort((a, b) => b[1] - a[1]);
-  }, [tours]);
+  }, [query.data?.facets?.categories, tours]);
 
-  const filtered = useMemo(() => {
-    let list = tours;
-    const q = search.toLowerCase();
-    if (q) {
-      list = list.filter(
-        (t) =>
-          (t.name || '').toLowerCase().includes(q) ||
-          str(t.category).toLowerCase().includes(q) ||
-          str(t.sport).toLowerCase().includes(q)
-      );
-    }
-    if (categoryFilter !== 'all') {
-      list = list.filter((t) => str(t.category) === categoryFilter);
-    }
-    return list;
-  }, [tours, search, categoryFilter]);
+  // Search + category filtering is performed server-side across all paginated records.
+  const filtered = tours;
 
   const activeFilters = categoryFilter !== 'all';
 
@@ -82,7 +71,7 @@ export default function ToursBoard() {
     totalPages,
     enabled: Boolean(query.data && !query.isPlaceholderData && query.isSuccess),
     queryKey: tourKeys.list(nextParams),
-    queryFn: (signal) => fetchToursPage({ page: nextParams.page, limit: nextParams.limit }, signal),
+    queryFn: (signal) => fetchToursPage(nextParams, signal),
   });
 
   const updateUrl = (params: URLSearchParams) => {
@@ -216,7 +205,7 @@ export default function ToursBoard() {
           <EditorialSidebar
             topPlacement="tours-sidebar"
             bottomPlacement={filtered.length >= 10 ? 'tours-skyscraper' : undefined}
-            widget="tools"
+            variant="competitions"
           />
         </div>
       ) : (

@@ -40,6 +40,7 @@ export default async function ToolPage({ params }: { params: Promise<{ slug: str
         </div>
         <EditorialSidebar
           topPlacement="tools-sidebar"
+          variant="tools"
         />
       </div>
     </div>

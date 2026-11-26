@@ -4,16 +4,28 @@ import type { TournamentApi, TournamentSeason, SportEventRecord } from '../types
 export interface TournamentsListParams {
   [key: string]: string | number | boolean | undefined;
   q?: string;
+  format?: string;
+  country?: string;
+  status?: 'active' | 'upcoming' | 'recent';
   sortBy?: string;
   sortOrder?: string;
   page?: number;
   limit?: number;
 }
 
+export interface TournamentFacetItem {
+  key: string;
+  count: number;
+}
+
 export interface TournamentPageResult {
   items: TournamentApi[];
   total: number;
   totalPages: number;
+  facets?: {
+    formats: TournamentFacetItem[];
+    categories: TournamentFacetItem[];
+  };
 }
 
 export async function fetchTournaments(
@@ -28,9 +40,13 @@ export async function fetchTournamentsPage(
   params: TournamentsListParams = {},
   signal?: AbortSignal
 ): Promise<TournamentPageResult> {
-  const res = await apiGet('/tournaments', params, { signal });
+  const res = await apiGet<Record<string, unknown>>('/tournaments', params, { signal });
   const { items, meta } = extractPage<TournamentApi>(res);
-  return { items, total: meta.total, totalPages: meta.totalPages };
+  const facets =
+    res && typeof res === 'object' && 'facets' in res
+      ? (res.facets as TournamentPageResult['facets'])
+      : undefined;
+  return { items, total: meta.total, totalPages: meta.totalPages, facets };
 }
 
 export async function fetchTournamentById(

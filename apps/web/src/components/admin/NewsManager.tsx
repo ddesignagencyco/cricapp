@@ -59,6 +59,7 @@ export default function NewsManager() {
         page,
         q: query.trim() || undefined,
         category: filterCategory === 'all' ? undefined : filterCategory,
+        status: filterStatus === 'all' ? undefined : filterStatus,
         sortBy,
         sortOrder,
       }),
@@ -75,7 +76,7 @@ export default function NewsManager() {
         setError('Could not load news. Check the API connection and try again.');
       })
       .finally(() => setLoading(false));
-  }, [filterCategory, page, query, sortBy, sortOrder]);
+  }, [filterCategory, filterStatus, page, query, sortBy, sortOrder]);
 
   useEffect(() => {
     const timer = window.setTimeout(load, 300);
@@ -141,12 +142,8 @@ export default function NewsManager() {
     }
   };
 
-  const filtered = articles.filter((a) => {
-    const q = query.toLowerCase().trim();
-    const matchesQuery = !q || a.title.toLowerCase().includes(q) || (a.summary || '').toLowerCase().includes(q) || (a.author || '').toLowerCase().includes(q);
-    const matchesStatus = filterStatus === 'all' || (filterStatus === 'published' ? a.isPublished : !a.isPublished);
-    return matchesQuery && matchesStatus;
-  });
+  // Filtering (search, category, status, sort) is performed server-side across all pages.
+  const filtered = articles;
 
   return (
     <div className="space-y-5">
