@@ -4450,3 +4450,12 @@ nav[aria-label='Breadcrumb'] a {
     animation: none !important;
   }
 }
+
+/* Admin tables already render inside a card — keep shared Pagination flat there. */
+.admin-shell .pagination-card {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+}

@@ -1,6 +1,7 @@
 import Link from 'next/link';
+import PersonAvatar from './PersonAvatar';
 import { formatPlayerName } from '../utils/helpers';
-import type { LeaderGroup } from '../types/index';
+import type { LeaderEntry, LeaderGroup } from '../types/index';
 
 interface Props {
   leaders: LeaderGroup[];
@@ -9,6 +10,37 @@ interface Props {
 function findGroup(leaders: LeaderGroup[], stat: string): LeaderGroup | undefined {
   return leaders.find((group) => group.stat === stat)
     || leaders.find((group) => group.stat === (stat === 'top_runs' ? 'highest_score' : stat));
+}
+
+function PerformerRow({ entry, index }: { entry: LeaderEntry; index: number }) {
+  const name = formatPlayerName(entry.playerName);
+  const content = (
+    <div className="flex min-w-0 items-center gap-2.5">
+      <PersonAvatar name={name} src={entry.profileUrl} size={32} />
+      <div className="min-w-0 flex-1">
+        <p className="truncate font-semibold text-mtext group-hover:text-accent">{name}</p>
+        {entry.teamName ? <p className="truncate text-xs text-stext">{entry.teamName}</p> : null}
+      </div>
+    </div>
+  );
+
+  return (
+    <tr className="border-b border-lborder/60 transition-colors last:border-0 hover:bg-[var(--color-row-hover)]">
+      <td className="px-3 py-2.5 text-center font-mono text-xs text-stext">{index + 1}</td>
+      <td className="max-w-[14rem] px-3 py-2.5">
+        {entry.playerId ? (
+          <Link href={`/players/${entry.playerId}`} className="group block min-w-0">
+            {content}
+          </Link>
+        ) : (
+          content
+        )}
+      </td>
+      <td className="px-4 py-2.5 text-right font-mono text-sm font-bold tabular-nums text-mtext">
+        {entry.value}
+      </td>
+    </tr>
+  );
 }
 
 export default function TopPerformers({ leaders }: Props) {
@@ -33,30 +65,9 @@ export default function TopPerformers({ leaders }: Props) {
               </tr>
             </thead>
             <tbody>
-              {runEntries.map((entry, index) => {
-                const name = formatPlayerName(entry.playerName);
-                return (
-                  <tr
-                    key={entry.playerId || `${entry.playerName}-${index}`}
-                    className="border-b border-lborder/60 last:border-0"
-                  >
-                    <td className="px-3 py-2.5 text-center font-mono text-xs text-stext">{index + 1}</td>
-                    <td className="max-w-[12rem] px-3 py-2.5">
-                      {entry.playerId ? (
-                        <Link href={`/players/${entry.playerId}`} className="block truncate font-semibold text-mtext hover:text-accent">
-                          {name}
-                        </Link>
-                      ) : (
-                        <p className="truncate font-semibold text-mtext">{name}</p>
-                      )}
-                      {entry.teamName ? <p className="truncate text-xs text-stext">{entry.teamName}</p> : null}
-                    </td>
-                    <td className="px-4 py-2.5 text-right font-mono text-sm font-bold tabular-nums text-mtext">
-                      {entry.value}
-                    </td>
-                  </tr>
-                );
-              })}
+              {runEntries.map((entry, index) => (
+                <PerformerRow key={entry.playerId || `${entry.playerName}-${index}`} entry={entry} index={index} />
+              ))}
             </tbody>
           </table>
         </div>
@@ -73,30 +84,9 @@ export default function TopPerformers({ leaders }: Props) {
               </tr>
             </thead>
             <tbody>
-              {wicketEntries.map((entry, index) => {
-                const name = formatPlayerName(entry.playerName);
-                return (
-                  <tr
-                    key={entry.playerId || `${entry.playerName}-${index}`}
-                    className="border-b border-lborder/60 last:border-0"
-                  >
-                    <td className="px-3 py-2.5 text-center font-mono text-xs text-stext">{index + 1}</td>
-                    <td className="max-w-[12rem] px-3 py-2.5">
-                      {entry.playerId ? (
-                        <Link href={`/players/${entry.playerId}`} className="block truncate font-semibold text-mtext hover:text-accent">
-                          {name}
-                        </Link>
-                      ) : (
-                        <p className="truncate font-semibold text-mtext">{name}</p>
-                      )}
-                      {entry.teamName ? <p className="truncate text-xs text-stext">{entry.teamName}</p> : null}
-                    </td>
-                    <td className="px-4 py-2.5 text-right font-mono text-sm font-bold tabular-nums text-mtext">
-                      {entry.value}
-                    </td>
-                  </tr>
-                );
-              })}
+              {wicketEntries.map((entry, index) => (
+                <PerformerRow key={entry.playerId || `${entry.playerName}-${index}`} entry={entry} index={index} />
+              ))}
             </tbody>
           </table>
         </div>

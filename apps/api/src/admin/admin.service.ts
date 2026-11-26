@@ -8,7 +8,7 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { RedisService } from '../redis/redis.service.js';
 import { NewsService } from '../news/news.service.js';
 import type { ListUsersQuery, UpdateUserDto, CreateStreamDto, ModerateCommentDto, ResolveReportDto } from './dto/admin.dto.js';
-import type { NewsListQuery, CreateAuthorDto, UpdateAuthorDto } from '../news/dto/news.dto.js';
+import type { NewsListQuery, BulkNewsActionDto, CreateAuthorDto, UpdateAuthorDto } from '../news/dto/news.dto.js';
 
 @Injectable()
 export class AdminService {
@@ -182,6 +182,10 @@ export class AdminService {
 
   async publishAllDraftNews() {
     return this.newsService.publishAllDrafts();
+  }
+
+  async bulkNewsAction(dto: BulkNewsActionDto) {
+    return this.newsService.bulkAction(dto);
   }
 
   async listAuthors() {

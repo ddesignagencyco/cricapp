@@ -151,8 +151,8 @@ export default function PlayerDirectory() {
       ) : query.isError ? (
         <ErrorState message="Players are temporarily unavailable." onRetry={() => void query.refetch()} />
       ) : filtered.length > 0 ? (
-        <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
-          <div className="min-w-0">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-stretch">
+          <div className="flex min-w-0 flex-col">
             <div className="fade-in grid grid-cols-1 gap-3 sm:grid-cols-2">
               {filtered.map((p: Player, index) => (
                 <Fragment key={p.id}>
@@ -166,13 +166,13 @@ export default function PlayerDirectory() {
               ))}
             </div>
 
-            <div className="pt-4">
-              <Pagination page={page} totalPages={totalPages} total={total} limit={LIMIT} onPageChange={handlePageChange} />
+            <div className="mt-auto pt-6">
+              <Pagination className="mt-0" page={page} totalPages={totalPages} total={total} limit={LIMIT} onPageChange={handlePageChange} />
             </div>
           </div>
           <EditorialSidebar
-            topPlacement="players-sidebar"
-            bottomPlacement={filtered.length >= 14 ? 'players-skyscraper' : undefined}
+            topPlacement={filtered.length >= 16 ? 'players-skyscraper' : 'players-sidebar'}
+            bottomPlacement={filtered.length >= 18 ? 'players-sidebar' : undefined}
             variant="directory"
           />
         </div>

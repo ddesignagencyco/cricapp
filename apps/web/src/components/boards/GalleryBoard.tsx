@@ -167,8 +167,8 @@ export default function GalleryBoard({ initialTab = 'images' }: GalleryBoardProp
         {activeQuery.isFetching && !activeQuery.isPending ? ' · Updating…' : ''}
       </p>
 
-      <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
-        <div className="min-w-0 space-y-5">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-stretch">
+        <div className="flex min-w-0 flex-col gap-5">
           {activeQuery.isPending ? (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
               {Array.from({ length: 12 }).map((_, index) => (
@@ -310,23 +310,23 @@ export default function GalleryBoard({ initialTab = 'images' }: GalleryBoardProp
             </div>
           )}
 
-          <div className="pt-2">
+          <div className="mt-auto space-y-4 pt-2">
             <AdSlot placement="gallery-bottom" />
+            <Pagination
+              className="mt-0"
+              page={page}
+              totalPages={totalPages}
+              total={total}
+              limit={LIMIT}
+              onPageChange={setPage}
+            />
           </div>
-
-          <Pagination
-            page={page}
-            totalPages={totalPages}
-            total={total}
-            limit={LIMIT}
-            onPageChange={setPage}
-          />
         </>
       )}
         </div>
         <EditorialSidebar
-          topPlacement="gallery-sidebar"
-          bottomPlacement="gallery-skyscraper"
+          topPlacement={items.length >= 16 ? 'gallery-skyscraper' : 'gallery-sidebar'}
+          bottomPlacement={items.length >= 18 ? 'gallery-sidebar' : undefined}
           variant="media"
         />
       </div>

@@ -1,4 +1,6 @@
 import {
+  ArrayMaxSize,
+  ArrayMinSize,
   IsString,
   IsOptional,
   IsBoolean,
@@ -306,6 +308,35 @@ export class NewsListQuery extends PaginationQuery {
   @IsOptional()
   @IsIn(['asc', 'desc'])
   sortOrder?: 'asc' | 'desc';
+}
+
+export class BulkNewsActionDto {
+  @ApiProperty({ type: [String], description: 'Article IDs to update or delete' })
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(100)
+  @IsString({ each: true })
+  ids: string[];
+
+  @ApiPropertyOptional({ enum: ['update', 'delete'], default: 'update' })
+  @IsOptional()
+  @IsIn(['update', 'delete'])
+  action?: 'update' | 'delete';
+
+  @ApiPropertyOptional({ format: 'uuid' })
+  @IsOptional()
+  @IsUUID()
+  categoryId?: string;
+
+  @ApiPropertyOptional({ format: 'uuid' })
+  @IsOptional()
+  @IsUUID()
+  authorId?: string;
+
+  @ApiPropertyOptional({ enum: ['published', 'draft'] })
+  @IsOptional()
+  @IsIn(['published', 'draft'])
+  status?: 'published' | 'draft';
 }
 
 export class NewsCategoryDto {

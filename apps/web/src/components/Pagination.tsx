@@ -15,7 +15,7 @@ export default function Pagination({ page, totalPages, total, limit, className =
   const safeTotalPages = Math.max(1, Number.isFinite(totalPages) ? Math.floor(totalPages) : 1);
   const safePage = Math.min(safeTotalPages, Math.max(1, Number.isFinite(page) ? Math.floor(page) : 1));
   const canPaginate = safeTotalPages > 1;
-  if (!canPaginate && total === undefined) return null;
+  if (!canPaginate) return null;
 
   const getPages = (): (number | 'dots')[] => {
     const result: (number | 'dots')[] = [];
@@ -48,8 +48,13 @@ export default function Pagination({ page, totalPages, total, limit, className =
     ? Math.min(safePage * limit, total)
     : null;
 
+  const marginClass = /\bmt-/.test(className) ? '' : 'mt-6';
+
   return (
-    <nav className={`mt-8 flex w-full min-w-0 flex-col items-center justify-between gap-3 sm:flex-row ${className}`} aria-label="Pagination">
+    <nav
+      className={`pagination-card ${marginClass} flex w-full min-w-0 flex-col items-center justify-between gap-3 rounded-xl border border-lborder bg-card px-4 py-3 shadow-sm sm:flex-row ${className}`.trim()}
+      aria-label="Pagination"
+    >
       <p className="text-center text-xs font-medium text-muted-foreground sm:text-left" aria-live="polite">
         {showingFrom !== null && showingTo !== null && total !== undefined
           ? `Showing ${showingFrom}–${showingTo} of ${total}`

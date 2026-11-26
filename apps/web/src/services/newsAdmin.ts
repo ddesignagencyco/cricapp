@@ -144,6 +144,22 @@ export function publishAllDraftNews(): Promise<{ published: number }> {
   return apiPost<{ published: number }>('/admin/news/publish-all', {}, { headers: authHeaders() });
 }
 
+export interface BulkNewsActionInput {
+  ids: string[];
+  action?: 'update' | 'delete';
+  categoryId?: string;
+  authorId?: string;
+  status?: 'published' | 'draft';
+}
+
+export function bulkNewsAction(
+  input: BulkNewsActionInput,
+): Promise<{ updated?: number; deleted?: number }> {
+  return apiPost<{ updated?: number; deleted?: number }>('/admin/news/bulk', input, {
+    headers: authHeaders(),
+  });
+}
+
 export function createCategory(name: string): Promise<NewsCategory> {
   return apiPost<NewsCategory>('/news/categories', { name }, { headers: authHeaders() });
 }

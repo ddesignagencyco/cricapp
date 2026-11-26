@@ -385,14 +385,16 @@ export default function NewsBoard({
             </div>
             <span className="text-xs text-stext">{total} published</span>
           </div>
-          <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
-            <div className="min-w-0">
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-stretch">
+            <div className="flex min-w-0 flex-col">
               <div className="fade-in grid grid-cols-1 gap-5 sm:grid-cols-2">
                 {filtered.map((item, index) => (
                   <Fragment key={item.id}>
                     <ArticleCard item={item} language={language} />
                     {filtered.length >= 4 && index === 3 ? (
-                      <AdSlot placement="news-list-infeed" />
+                      <div className="col-span-full py-1">
+                        <AdSlot placement="news-list-infeed" />
+                      </div>
                     ) : null}
                   </Fragment>
                 ))}
@@ -402,10 +404,20 @@ export default function NewsBoard({
                   <AdSlot placement="news-list-bottom" />
                 </div>
               ) : null}
+              <div className="mt-auto pt-6">
+                <Pagination
+                  className="mt-0"
+                  page={page}
+                  totalPages={totalPages}
+                  total={total}
+                  limit={limit}
+                  onPageChange={(nextPage) => updateQuery(selectedCategory, nextPage)}
+                />
+              </div>
             </div>
             <EditorialSidebar
-              topPlacement="news-list-sidebar"
-              bottomPlacement="news-list-skyscraper"
+              topPlacement={filtered.length >= 6 ? 'news-list-skyscraper' : 'news-list-sidebar'}
+              bottomPlacement={filtered.length >= 8 ? 'news-list-sidebar' : undefined}
               variant="news"
             />
           </div>
@@ -419,8 +431,7 @@ export default function NewsBoard({
               : `No news articles in "${selectedCategory}". Check back soon for new updates.`
           }
         />
-      ) : null}
-      {!loadError && (
+      ) : !loadError && totalPages > 1 ? (
         <Pagination
           page={page}
           totalPages={totalPages}
@@ -428,7 +439,7 @@ export default function NewsBoard({
           limit={limit}
           onPageChange={(nextPage) => updateQuery(selectedCategory, nextPage)}
         />
-      )}
+      ) : null}
     </>
   );
 }

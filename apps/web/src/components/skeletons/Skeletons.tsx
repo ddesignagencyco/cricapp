@@ -175,24 +175,74 @@ export function MatchCardSkeleton({ dense = false }: { dense?: boolean }) {
   );
 }
 
+export function EditorialSidebarSkeleton() {
+  return (
+    <aside className="hidden lg:flex lg:flex-col lg:gap-6">
+      <Skeleton height={250} borderRadius={12} />
+      <Card className="space-y-3 rounded-xl p-4">
+        <div className="flex items-center justify-between">
+          <Skeleton width={110} height={12} />
+          <Skeleton width={42} height={10} />
+        </div>
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="flex items-center gap-3 border-t border-lborder/60 pt-2.5 first:border-t-0 first:pt-0">
+            <Skeleton width={56} height={42} borderRadius={6} containerClassName="shrink-0" />
+            <div className="min-w-0 flex-1 space-y-1.5">
+              <Skeleton width="90%" height={11} />
+              <Skeleton width="55%" height={9} />
+            </div>
+          </div>
+        ))}
+      </Card>
+      <Card className="space-y-3 rounded-xl p-4">
+        <div className="flex items-center justify-between">
+          <Skeleton width={120} height={12} />
+          <Skeleton width={48} height={10} />
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {Array.from({ length: 7 }).map((_, i) => (
+            <Skeleton key={i} width={64 + (i % 3) * 18} height={24} borderRadius={999} />
+          ))}
+        </div>
+      </Card>
+    </aside>
+  );
+}
+
 export function MatchCardGridSkeleton({
   count = 6,
   dense = false,
   columns = 'default',
+  withSidebar = false,
 }: {
   count?: number;
   dense?: boolean;
   columns?: 'default' | 'four';
+  withSidebar?: boolean;
 }) {
-  const gridClass =
-    columns === 'four'
+  const gridClass = withSidebar
+    ? 'grid grid-cols-1 gap-3 sm:grid-cols-2'
+    : columns === 'four'
       ? 'grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4'
       : 'grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3';
-  return (
+  const grid = (
     <div className={gridClass}>
       {Array.from({ length: count }).map((_, i) => (
         <MatchCardSkeleton key={i} dense={dense} />
       ))}
+    </div>
+  );
+  if (!withSidebar) return grid;
+  return (
+    <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+      <div className="min-w-0 space-y-6">
+        {grid}
+        <Card className="flex items-center justify-between rounded-xl px-4 py-3">
+          <Skeleton width={120} height={12} />
+          <Skeleton width={160} height={28} borderRadius={6} />
+        </Card>
+      </div>
+      <EditorialSidebarSkeleton />
     </div>
   );
 }
@@ -209,12 +259,25 @@ export function DirectoryRowSkeleton() {
   );
 }
 
-export function DirectoryGridSkeleton({ count = 9 }: { count?: number }) {
-  return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+export function DirectoryGridSkeleton({ count = 10, withSidebar = true }: { count?: number; withSidebar?: boolean }) {
+  const grid = (
+    <div className={withSidebar ? 'grid grid-cols-1 gap-3 sm:grid-cols-2' : 'grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3'}>
       {Array.from({ length: count }).map((_, i) => (
         <DirectoryRowSkeleton key={i} />
       ))}
+    </div>
+  );
+  if (!withSidebar) return grid;
+  return (
+    <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+      <div className="min-w-0 space-y-6">
+        {grid}
+        <Card className="flex items-center justify-between rounded-xl px-4 py-3">
+          <Skeleton width={120} height={12} />
+          <Skeleton width={160} height={28} borderRadius={6} />
+        </Card>
+      </div>
+      <EditorialSidebarSkeleton />
     </div>
   );
 }
@@ -480,7 +543,7 @@ export function MatchesPageSkeleton() {
         </div>
         <Skeleton width={220} height={36} />
       </div>
-      <MatchCardGridSkeleton />
+      <MatchCardGridSkeleton withSidebar />
     </Page>
   );
 }
@@ -508,10 +571,13 @@ export function GalleryPageSkeleton() {
           <Skeleton key={i} width={96} height={18} />
         ))}
       </div>
-      <div className="columns-2 gap-3 sm:columns-3 lg:columns-4 [&>*]:mb-3">
-        {Array.from({ length: 10 }).map((_, i) => (
-          <Skeleton key={i} height={i % 3 === 0 ? 210 : 150} borderRadius={4} className="!block" />
-        ))}
+      <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          {Array.from({ length: 12 }).map((_, i) => (
+            <div key={i} className="aspect-square animate-pulse rounded-lg bg-[var(--color-skeleton)]" />
+          ))}
+        </div>
+        <EditorialSidebarSkeleton />
       </div>
     </Page>
   );
@@ -549,10 +615,13 @@ export function NewsPageSkeleton() {
           </div>
         </div>
       </Card>
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <NewsCardSkeleton key={i} />
-        ))}
+      <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <NewsCardSkeleton key={i} />
+          ))}
+        </div>
+        <EditorialSidebarSkeleton />
       </div>
     </Page>
   );
@@ -651,15 +720,7 @@ export function ToursPageSkeleton() {
         <Skeleton width={96} height={30} />
         <Skeleton width={88} height={30} />
       </div>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <Card key={i} className="p-4">
-            <Skeleton width="70%" height={16} />
-            <Skeleton width="40%" height={10} className="mt-3" />
-            <Skeleton width="55%" height={10} className="mt-2" />
-          </Card>
-        ))}
-      </div>
+      <DirectoryGridSkeleton count={8} />
     </Page>
   );
 }
@@ -687,21 +748,15 @@ export function SearchResultsSkeleton() {
 
 export function StreamsBodySkeleton() {
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-      <div className="lg:col-span-2">
-        <Skeleton height={256} />
-        <Card className="mt-4 p-5">
+    <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+      <div className="space-y-4">
+        <Skeleton height={256} borderRadius={16} />
+        <Card className="p-5">
           <Skeleton width="55%" height={18} />
           <Skeleton count={2} className="mt-3" />
         </Card>
       </div>
-      <div className="space-y-3">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Card key={i} className="p-3">
-            <Skeleton height={72} />
-          </Card>
-        ))}
-      </div>
+      <EditorialSidebarSkeleton />
     </div>
   );
 }
@@ -1040,41 +1095,19 @@ export function AuthPageSkeleton() {
   );
 }
 
-function CricketBallSpinner({ size = 24 }: { size?: number }) {
+function CleanRingSpinner({ size = 28 }: { size?: number }) {
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 32 32"
-      fill="none"
+    <span
+      className="inline-block animate-spin rounded-full border-2 border-solid"
       aria-hidden="true"
-      className="animate-spin"
-      style={{ animationDuration: '1.15s' }}
-    >
-      <circle
-        cx="16"
-        cy="16"
-        r="13.5"
-        stroke="var(--admin-accent)"
-        strokeWidth="2.2"
-        fill="var(--admin-info-bg, transparent)"
-      />
-      {/* Cricket ball stitched seam */}
-      <path
-        d="M8.2 6.8C12.8 11.4 12.8 20.6 8.2 25.2"
-        stroke="var(--admin-accent)"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeDasharray="2.2 2.4"
-      />
-      <path
-        d="M23.8 6.8C19.2 11.4 19.2 20.6 23.8 25.2"
-        stroke="var(--admin-accent)"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeDasharray="2.2 2.4"
-      />
-    </svg>
+      style={{
+        width: size,
+        height: size,
+        borderColor: 'var(--admin-border, rgba(148, 163, 184, 0.25))',
+        borderTopColor: 'var(--admin-accent, #16a34a)',
+        animationDuration: '0.75s',
+      }}
+    />
   );
 }
 
@@ -1086,7 +1119,7 @@ export function AdminLoader({ fullPage = false }: { fullPage?: boolean }) {
       aria-busy="true"
       aria-label="Loading"
     >
-      <CricketBallSpinner size={fullPage ? 34 : 28} />
+      <CleanRingSpinner size={fullPage ? 32 : 26} />
     </div>
   );
 }
@@ -1328,24 +1361,28 @@ export function PredictionMatchCardSkeleton() {
 
 export function PredictionsHubSkeleton() {
   return (
-    <Page className="space-y-6">
+    <Page className="space-y-5 py-6">
       <header>
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <Skeleton width={220} height={36} />
-            <Skeleton width={280} height={14} className="mt-3" />
+            <Skeleton width={110} height={11} />
+            <Skeleton width={200} height={30} className="mt-2" />
+            <Skeleton width={280} height={13} className="mt-2" />
           </div>
           <Skeleton width={72} height={12} />
         </div>
       </header>
       <div className="flex flex-wrap items-center gap-2 border-b border-lborder pb-3">
-        <Skeleton width={88} height={32} />
-        <Skeleton width={112} height={32} />
+        <Skeleton width={88} height={32} borderRadius={6} />
+        <Skeleton width={112} height={32} borderRadius={6} />
       </div>
-      <div className="grid items-stretch gap-4 [grid-template-columns:repeat(auto-fill,minmax(min(100%,20rem),1fr))]">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <PredictionMatchCardSkeleton key={i} />
-        ))}
+      <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="grid grid-cols-1 items-stretch gap-3 sm:grid-cols-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <PredictionMatchCardSkeleton key={i} />
+          ))}
+        </div>
+        <EditorialSidebarSkeleton />
       </div>
     </Page>
   );

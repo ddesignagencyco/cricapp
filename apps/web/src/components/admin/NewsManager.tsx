@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   FileEdit,
   FilePlus2,
@@ -12,9 +12,11 @@ import {
   Eye,
   CheckCircle2,
   Clock,
+  X,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
+  bulkNewsAction,
   deleteNews,
   fetchNewsAdmin,
   publishAllDraftNews,
@@ -23,6 +25,7 @@ import {
   type NewsArticleAdmin,
   type NewsCategory,
 } from '../../services/newsAdmin';
+import { fetchPublicAuthors, type PublicAuthor } from '../../services/authors';
 import { AdminAvatar, AdminSearchField, AdminSelect, AdminSortableHeader, ConfirmDialog, EmptyState, ErrorState, LoadingState, type SortDirection } from './AdminShared';
 import Pagination from './AdminPagination';
 import RemoteImage from '../RemoteImage';
@@ -35,6 +38,7 @@ type NewsSortKey = 'date' | 'title' | 'author' | 'category' | 'status';
 export default function NewsManager() {
   const [articles, setArticles] = useState<NewsArticleAdmin[]>([]);
   const [categories, setCategories] = useState<NewsCategory[]>([]);
+  const [authors, setAuthors] = useState<PublicAuthor[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [query, setQuery] = useState('');
@@ -50,6 +54,15 @@ export default function NewsManager() {
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
+  // Bulk selection (scoped to current page)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkCategoryId, setBulkCategoryId] = useState('');
+  const [bulkAuthorId, setBulkAuthorId] = useState('');
+  const [bulkStatus, setBulkStatus] = useState<'' | 'published' | 'draft'>('');
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
+  const selectAllRef = useRef<HTMLInputElement>(null);
+
   const load = useCallback(() => {
     setLoading(true);
     setError('');
@@ -64,15 +77,19 @@ export default function NewsManager() {
         sortOrder,
       }),
       fetchNewsCategories().catch(() => [] as NewsCategory[]),
+      fetchPublicAuthors().catch(() => [] as PublicAuthor[]),
     ])
-      .then(([res, cats]) => {
+      .then(([res, cats, auths]) => {
         setArticles(res.items);
         setTotal(res.total);
         setTotalPages(Math.max(1, res.totalPages));
         setCategories(cats);
+        setAuthors(auths);
+        setSelectedIds(new Set());
       })
       .catch(() => {
         setArticles([]);
+        setSelectedIds(new Set());
         setError('Could not load news. Check the API connection and try again.');
       })
       .finally(() => setLoading(false));
@@ -84,6 +101,85 @@ export default function NewsManager() {
   }, [load]);
 
   useEffect(() => { setPage(1); }, [query, filterCategory, filterStatus, sortBy, sortOrder]);
+
+  // Filtering (search, category, status, sort) is performed server-side across all pages.
+  const filtered = articles;
+  const selectedCount = selectedIds.size;
+  const allPageSelected = filtered.length > 0 && filtered.every((a) => selectedIds.has(a.id));
+  const somePageSelected = selectedCount > 0 && !allPageSelected;
+
+  useEffect(() => {
+    if (selectAllRef.current) {
+      selectAllRef.current.indeterminate = somePageSelected;
+    }
+  }, [somePageSelected]);
+
+  const toggleSelectAll = () => {
+    if (allPageSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filtered.map((a) => a.id)));
+    }
+  };
+
+  const toggleSelectOne = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const clearSelection = () => {
+    setSelectedIds(new Set());
+    setBulkCategoryId('');
+    setBulkAuthorId('');
+    setBulkStatus('');
+  };
+
+  const hasBulkChanges = Boolean(bulkCategoryId || bulkAuthorId || bulkStatus);
+
+  const handleBulkApply = async () => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0 || !hasBulkChanges) return;
+    setBulkBusy(true);
+    try {
+      const res = await bulkNewsAction({
+        ids,
+        action: 'update',
+        categoryId: bulkCategoryId || undefined,
+        authorId: bulkAuthorId || undefined,
+        status: bulkStatus || undefined,
+      });
+      const count = res?.updated ?? ids.length;
+      toast.success(`Updated ${count} ${count === 1 ? 'article' : 'articles'}.`);
+      clearSelection();
+      load();
+    } catch {
+      toast.error('Could not apply bulk changes.');
+    } finally {
+      setBulkBusy(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    setBulkBusy(true);
+    try {
+      const res = await bulkNewsAction({ ids, action: 'delete' });
+      const count = res?.deleted ?? ids.length;
+      toast.success(`Deleted ${count} ${count === 1 ? 'article' : 'articles'}.`);
+      clearSelection();
+      load();
+    } catch {
+      toast.error('Could not delete selected articles.');
+    } finally {
+      setBulkBusy(false);
+      setConfirmBulkDelete(false);
+    }
+  };
 
   const toggleSort = (key: NewsSortKey) => {
     if (sortBy === key) {
@@ -132,6 +228,12 @@ export default function NewsManager() {
     try {
       await deleteNews(deleteTarget.id);
       setArticles((list) => list.filter((a) => a.id !== deleteTarget.id));
+      setSelectedIds((prev) => {
+        if (!prev.has(deleteTarget.id)) return prev;
+        const next = new Set(prev);
+        next.delete(deleteTarget.id);
+        return next;
+      });
       setTotal((current) => Math.max(0, current - 1));
       toast.success('News deleted.');
     } catch {
@@ -141,9 +243,6 @@ export default function NewsManager() {
       setDeleteTarget(null);
     }
   };
-
-  // Filtering (search, category, status, sort) is performed server-side across all pages.
-  const filtered = articles;
 
   return (
     <div className="space-y-5">
@@ -209,6 +308,106 @@ export default function NewsManager() {
         </div>
       </div>
 
+      {/* Bulk Action Bar */}
+      {selectedCount > 0 ? (
+        <div
+          className="flex flex-wrap items-center justify-between gap-3 rounded-lg px-3.5 py-2.5"
+          style={{
+            border: '1px solid var(--admin-accent)',
+            background: 'var(--admin-card)',
+          }}
+        >
+          <div className="flex items-center gap-2.5">
+            <span
+              className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold"
+              style={{ background: 'var(--admin-info-bg)', color: 'var(--admin-accent)' }}
+            >
+              {selectedCount} selected
+            </span>
+            <button
+              type="button"
+              disabled={bulkBusy}
+              onClick={clearSelection}
+              className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-semibold transition-colors hover:opacity-80 disabled:opacity-50"
+              style={{ color: 'var(--admin-text-secondary)' }}
+            >
+              <X size={13} />
+              Clear
+            </button>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Bulk Category */}
+            {categories.length > 0 ? (
+              <AdminSelect
+                value={bulkCategoryId}
+                disabled={bulkBusy}
+                onChange={(e) => setBulkCategoryId(e.target.value)}
+                style={{ width: 'auto', minWidth: '10.5rem' }}
+                aria-label="Bulk change category"
+              >
+                <option value="">Set category…</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </AdminSelect>
+            ) : null}
+
+            {/* Bulk Author */}
+            {authors.length > 0 ? (
+              <AdminSelect
+                value={bulkAuthorId}
+                disabled={bulkBusy}
+                onChange={(e) => setBulkAuthorId(e.target.value)}
+                style={{ width: 'auto', minWidth: '10.5rem' }}
+                aria-label="Bulk change author"
+              >
+                <option value="">Set author…</option>
+                {authors.map((a) => (
+                  <option key={a.id} value={a.id}>{a.name}</option>
+                ))}
+              </AdminSelect>
+            ) : null}
+
+            {/* Bulk Status */}
+            <AdminSelect
+              value={bulkStatus}
+              disabled={bulkBusy}
+              onChange={(e) => setBulkStatus(e.target.value as '' | 'published' | 'draft')}
+              style={{ width: 'auto', minWidth: '9.5rem' }}
+              aria-label="Bulk change status"
+            >
+              <option value="">Set status…</option>
+              <option value="published">Published</option>
+              <option value="draft">Draft</option>
+            </AdminSelect>
+
+            {/* Single Apply button */}
+            <button
+              type="button"
+              disabled={bulkBusy || !hasBulkChanges}
+              onClick={() => void handleBulkApply()}
+              className="btn-brand inline-flex items-center gap-1.5 rounded-md px-3.5 py-1.5 text-xs font-bold transition-colors disabled:opacity-50"
+            >
+              {bulkBusy ? <Loader2 size={13} className="animate-spin" /> : null}
+              Apply
+            </button>
+
+            {/* Bulk Delete */}
+            <button
+              type="button"
+              disabled={bulkBusy}
+              onClick={() => setConfirmBulkDelete(true)}
+              className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-bold transition-colors disabled:opacity-50"
+              style={{ background: 'var(--admin-danger-bg)', color: 'var(--admin-danger)' }}
+            >
+              <Trash2 size={13} />
+              Delete
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       {/* Table */}
       {loading ? (
         <LoadingState variant="news" />
@@ -222,6 +421,16 @@ export default function NewsManager() {
             <table className="w-full text-left text-xs">
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--admin-border)', background: 'var(--admin-table-header)' }}>
+                  <th className="w-10 px-3 py-2.5">
+                    <input
+                      ref={selectAllRef}
+                      type="checkbox"
+                      checked={allPageSelected}
+                      onChange={toggleSelectAll}
+                      aria-label="Select all articles on this page"
+                      className="h-4 w-4 cursor-pointer rounded accent-[var(--admin-accent)]"
+                    />
+                  </th>
                   <AdminSortableHeader label="News" sortKey="title" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} />
                   <AdminSortableHeader label="Author" sortKey="author" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} />
                   <AdminSortableHeader label="Category" sortKey="category" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} />
@@ -234,13 +443,30 @@ export default function NewsManager() {
                 {filtered.map((a) => {
                   const authorName = a.authorRef?.name || a.author || '';
                   const authorImage = a.authorRef?.avatarUrl || null;
+                  const isSelected = selectedIds.has(a.id);
                   return (
                   <tr
                     key={a.id}
-                    style={{ borderBottom: '1px solid var(--admin-border)' }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = 'var(--admin-table-row-hover)'}
-                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                    style={{
+                      borderBottom: '1px solid var(--admin-border)',
+                      background: isSelected ? 'var(--admin-info-bg)' : 'transparent',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isSelected) e.currentTarget.style.background = 'var(--admin-table-row-hover)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = isSelected ? 'var(--admin-info-bg)' : 'transparent';
+                    }}
                   >
+                    <td className="w-10 px-3 py-3">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleSelectOne(a.id)}
+                        aria-label={`Select ${a.title}`}
+                        className="h-4 w-4 cursor-pointer rounded accent-[var(--admin-accent)]"
+                      />
+                    </td>
                     <td className="max-w-[10rem] px-4 py-3 sm:max-w-[18rem]">
                       <div className="flex min-w-0 items-center gap-3">
                         {a.imageUrl ? (
@@ -370,6 +596,17 @@ export default function NewsManager() {
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}
         loading={!!busyId}
+        danger
+      />
+
+      <ConfirmDialog
+        open={confirmBulkDelete}
+        title={`Delete ${selectedCount} selected ${selectedCount === 1 ? 'article' : 'articles'}?`}
+        message={`Are you sure you want to permanently delete ${selectedCount} selected news ${selectedCount === 1 ? 'article' : 'articles'}? This cannot be undone.`}
+        confirmLabel={`Delete (${selectedCount})`}
+        onConfirm={handleBulkDelete}
+        onCancel={() => { if (!bulkBusy) setConfirmBulkDelete(false); }}
+        loading={bulkBusy}
         danger
       />
     </div>
