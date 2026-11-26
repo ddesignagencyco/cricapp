@@ -196,6 +196,7 @@ export default function MatchBoard() {
           <EditorialSidebar
             topPlacement="matches-sidebar"
             bottomPlacement={visibleMatches.length >= 14 ? 'matches-skyscraper' : undefined}
+            variant="matches"
           />
         </div>
       ) : (

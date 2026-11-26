@@ -406,8 +406,7 @@ export default function NewsBoard({
             <EditorialSidebar
               topPlacement="news-list-sidebar"
               bottomPlacement="news-list-skyscraper"
-              showNews={false}
-              showGallery
+              variant="news"
             />
           </div>
         </>

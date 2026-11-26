@@ -3257,6 +3257,32 @@ h4.news-copy[dir="rtl"],
   outline-offset: -2px;
 }
 
+/* Light mode: crisp white admin sidebar matching the rest of the light editorial UI. */
+.light .admin-shell {
+  --admin-sidebar: #FFFFFF;
+  --admin-sidebar-hover: #F1F5F9;
+  --admin-sidebar-text: #0F172A;
+  --admin-sidebar-muted: #334155;
+  --admin-sidebar-border: #E2E8F0;
+  --admin-sidebar-active: #15803D;
+  --admin-sidebar-active-fg: #15803D;
+}
+
+.light .admin-nav-link[aria-current="page"] {
+  background: rgb(21 128 61 / 0.1) !important;
+  color: #15803D !important;
+  box-shadow: inset 3.5px 0 0 #15803D;
+}
+
+.light .admin-nav-link[aria-current="page"] svg {
+  color: #15803D !important;
+}
+
+.light .admin-nav-link:focus-visible {
+  outline: 2px solid #15803D;
+  outline-offset: -2px;
+}
+
 /* Admin inputs/selects: hover and focus are visible instead of suppressed. */
 .admin-control:hover:not(:disabled):not(:focus) {
   border-color: var(--admin-border-strong);

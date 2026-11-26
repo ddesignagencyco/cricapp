@@ -120,6 +120,7 @@ export default function TeamsDirectory() {
           <EditorialSidebar
             topPlacement="teams-sidebar"
             bottomPlacement={teams.length >= 14 ? 'teams-skyscraper' : undefined}
+            variant="directory"
           />
         </div>
       ) : (

@@ -118,6 +118,7 @@ export default function ToolsHub() {
         <EditorialSidebar
           topPlacement="tools-sidebar"
           bottomPlacement="tools-skyscraper"
+          variant="tools"
         />
       </div>
     </div>

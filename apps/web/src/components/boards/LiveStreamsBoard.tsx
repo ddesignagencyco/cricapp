@@ -116,7 +116,7 @@ export default function LiveStreamsBoard() {
               message="Streams appear here when an administrator publishes a stream URL."
             />
           </div>
-          <EditorialSidebar topPlacement="streams-sidebar" />
+          <EditorialSidebar topPlacement="streams-sidebar" variant="media" />
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -196,10 +196,9 @@ export default function LiveStreamsBoard() {
             {totalPages > 1 && (
               <Pagination page={page} totalPages={totalPages} total={total} limit={20} onPageChange={setPage} />
             )}
-            <EditorialSidebar
-              topPlacement="streams-sidebar"
-              bottomPlacement="streams-skyscraper"
-            />
+            <div className="flex justify-center empty:hidden">
+              <AdSlot placement="streams-sidebar" />
+            </div>
           </div>
         </div>
       )}

@@ -26,6 +26,9 @@ export class PlayersController {
     return this.playersService.search({
       q: query.q,
       team: query.team,
+      role: query.role,
+      sortBy: query.sortBy,
+      sortOrder: query.sortOrder,
       page: query.page,
       limit: query.limit,
     });

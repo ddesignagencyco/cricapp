@@ -67,6 +67,7 @@ export interface NewsAdminListParams {
   [key: string]: string | number | boolean | undefined | null;
   q?: string;
   category?: string;
+  status?: 'published' | 'draft';
   page?: number;
   limit?: number;
   playerId?: string;
