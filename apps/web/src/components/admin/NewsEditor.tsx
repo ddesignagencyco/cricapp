@@ -778,19 +778,19 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
               Draft copy stored with the article for a later push or social post. Leave blank to skip it.
             </p>
             <AdminField label="Push title">
-              <AdminInput value={form.pushNotificationTitle} onChange={(e) => set('pushNotificationTitle', e.target.value)} placeholder="Short line for the notification" {...copyField} />
+              <AdminInput value={form.pushNotificationTitle} onChange={(e) => set('pushNotificationTitle', e.target.value)} placeholder="Short line for the notification" />
               <div className="mt-1 flex justify-end">
                 <CharCount value={form.pushNotificationTitle} max={NEWS_PUSH_TITLE_MAX} limitIsApi />
               </div>
             </AdminField>
             <AdminField label="Push body">
-              <AdminInput value={form.pushNotificationBody} onChange={(e) => set('pushNotificationBody', e.target.value)} placeholder="One or two lines of detail" {...copyField} />
+              <AdminInput value={form.pushNotificationBody} onChange={(e) => set('pushNotificationBody', e.target.value)} placeholder="One or two lines of detail" />
               <div className="mt-1 flex justify-end">
                 <CharCount value={form.pushNotificationBody} max={NEWS_PUSH_BODY_MAX} limitIsApi />
               </div>
             </AdminField>
             <AdminField label="Social copy">
-              <AdminInput value={form.socialCopy} onChange={(e) => set('socialCopy', e.target.value)} placeholder="Caption for the social post" {...copyField} />
+              <AdminInput value={form.socialCopy} onChange={(e) => set('socialCopy', e.target.value)} placeholder="Caption for the social post" />
               <div className="mt-1 flex justify-end">
                 <CharCount value={form.socialCopy} max={NEWS_SOCIAL_COPY_MAX} limitIsApi />
               </div>
