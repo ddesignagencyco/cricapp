@@ -50,12 +50,18 @@ describe('mode gating', () => {
     expect(container.querySelector('[data-ad-placement]')).toBeNull();
   });
 
-  it('renders the house placeholder in house mode with nothing configured', () => {
-    const { container } = renderSlot(configWith({ mode: 'house' }), 'home-mid');
+  it('renders an Adsterra iframe when adsterra mode has a zone key', () => {
+    const config = configWith({
+      mode: 'adsterra',
+      adsterra: {
+        ...EMPTY_AD_CONFIG.adsterra,
+        defaultKeys: { ...EMPTY_AD_CONFIG.adsterra.defaultKeys, leaderboard: 'abc123def4567890' },
+      },
+    });
+    const { container } = renderSlot(config, 'home-mid');
     const region = container.querySelector('[data-ad-placement]');
     expect(region).not.toBeNull();
     expect(region).toHaveAttribute('aria-label', 'Advertisement');
-    expect(container.querySelector('[data-ad-badge]')).not.toBeNull();
   });
 
   it('renders a real unit in adsense mode when a slot id resolves', () => {
@@ -100,12 +106,24 @@ describe('mode gating', () => {
 describe('route and placement gating', () => {
   it('renders a shared placement on /predictions and /odds like all other pages', () => {
     pathname = '/predictions';
-    const { container } = renderSlot(configWith({ mode: 'house' }), 'layout-sidebar');
+    const { container } = renderSlot(
+      configWith({
+        mode: 'adsense',
+        clientId: 'pub-1234567890123456',
+        defaultSlots: { ...EMPTY_AD_CONFIG.defaultSlots, 'medium-rectangle': '2222222222' },
+      }),
+      'layout-sidebar',
+    );
     expect(container.querySelector('[data-ad-placement]')).not.toBeNull();
   });
 
   it('hides a placement that is switched off', () => {
-    const config = configWith({ mode: 'house', placements: { 'news-list-bottom': { enabled: false, slotId: null } } });
+    const config = configWith({
+      mode: 'adsense',
+      clientId: 'pub-1234567890123456',
+      defaultSlots: { ...EMPTY_AD_CONFIG.defaultSlots, leaderboard: '1111111111' },
+      placements: { 'news-list-bottom': { enabled: false, slotId: null } },
+    });
     const { container } = renderSlot(config, 'news-list-bottom');
     expect(container.querySelector('[data-ad-placement]')).toBeNull();
   });
@@ -241,7 +259,7 @@ describe('the provider', () => {
     expect(tag).toHaveAttribute('data-src', expect.stringContaining('pub-1234567890123456'));
 
     rerender(
-      <AdProvider config={configWith({ mode: 'house', clientId: 'pub-1234567890123456' })}>
+      <AdProvider config={configWith({ mode: 'off', clientId: 'pub-1234567890123456' })}>
         <span>child</span>
       </AdProvider>,
     );
@@ -257,13 +275,13 @@ describe('the provider', () => {
     expect(screen.queryByTestId('adsense-tag')).toBeNull();
   });
 
-  it('falls back to house mode when rendered without a config', () => {
+  it('falls back to off mode when rendered without a config', () => {
     const { container } = render(
       <AdProvider>
         <AdSlot placement="home-mid" />
       </AdProvider>,
     );
-    expect(container.querySelector('[data-ad-placement]')).not.toBeNull();
+    expect(container.querySelector('[data-ad-placement]')).toBeNull();
     expect(screen.queryByTestId('adsense-tag')).toBeNull();
   });
 });

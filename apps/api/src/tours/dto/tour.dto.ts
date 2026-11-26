@@ -9,6 +9,12 @@ export class ListToursQuery extends PaginationQuery {
   @MaxLength(100)
   q?: string;
 
+  @ApiPropertyOptional({ description: 'Filter by category name.' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  category?: string;
+
   @ApiPropertyOptional({ enum: ['name', 'country', 'sport', 'tournaments'] })
   @IsOptional()
   @IsIn(['name', 'country', 'sport', 'tournaments'])

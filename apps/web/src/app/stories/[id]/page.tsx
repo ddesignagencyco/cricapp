@@ -66,7 +66,7 @@ export default async function StoryPage({ params }: { params: Promise<{ id: stri
   ].filter(Boolean);
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+    <div className="mx-auto max-w-site px-4 py-8 sm:px-6">
       <nav aria-label="Breadcrumb" className="mb-5 flex items-center gap-1.5 text-xs text-stext">
         <Link href="/stories" className="font-semibold text-accent hover:underline">
           Stories

@@ -180,31 +180,49 @@ function TournamentInfoPanel({
   info?: TournamentInfo | null;
   fallbackTournament: Record<string, unknown>;
 }) {
-  // The info payload is the snapshot; fall back to the tournament record itself.
+  // The info payload is the snapshot; merge with the tournament record itself so
+  // sparse info snapshots (e.g. `{ tournament: { id } }`) still display all stored fields.
   const t = info?.tournament || null;
-  const category = t?.category;
-  const season = t?.current_season;
-  const sport = t?.sport;
+  const fb = fallbackTournament;
+  const category = (t?.category ?? fb.category) as Record<string, unknown> | string | null | undefined;
+  const season = (t?.current_season ?? fb.currentSeason ?? fb.current_season) as Record<string, unknown> | null | undefined;
+  const sport = (t?.sport ?? fb.sport) as Record<string, unknown> | string | null | undefined;
 
-  const rows: Array<[string, unknown]> = [
-    ['Tournament id', t?.id ?? fallbackTournament.id],
-    ['Name', t?.name ?? fallbackTournament.name],
-    ['Type', t?.type],
-    ['Gender', t?.gender],
-    ['Category', category],
-    ['Category id', typeof category === 'object' && category ? (category as { id?: string }).id : undefined],
-    ['Category code', typeof category === 'object' && category ? (category as { country_code?: string }).country_code : undefined],
-    ['Sport', sport],
-    ['Sport id', typeof sport === 'object' && sport ? (sport as { id?: string }).id : undefined],
-    ['Tour id', t?.tour_id],
-    ['Parent id', t?.parent_id],
-    ['Current season id', season?.id],
-    ['Current season', season ? season.name || season.year : undefined],
-    ['Season start', season ? (season as { start_date?: string }).start_date : undefined],
-    ['Season end', season ? (season as { end_date?: string }).end_date : undefined],
+  const categoryName =
+    typeof category === 'string'
+      ? category
+      : category && typeof category === 'object'
+        ? (category.name as string | undefined) || (category.country as string | undefined)
+        : undefined;
+  const sportName =
+    typeof sport === 'string'
+      ? sport
+      : sport && typeof sport === 'object'
+        ? (sport.name as string | undefined)
+        : undefined;
+
+  const allRows: Array<[string, unknown]> = [
+    ['Tournament id', t?.id ?? fb.id],
+    ['Name', t?.name ?? fb.name],
+    ['Type', t?.type ?? fb.type],
+    ['Gender', t?.gender ?? fb.gender],
+    ['Category', categoryName],
+    ['Category id', category && typeof category === 'object' ? category.id : undefined],
+    ['Category code', category && typeof category === 'object' ? category.country_code : undefined],
+    ['Sport', sportName],
+    ['Sport id', sport && typeof sport === 'object' ? sport.id : undefined],
+    ['Tour id', t?.tour_id ?? fb.tourId],
+    ['Parent id', t?.parent_id ?? fb.parentId],
+    ['Current season id', season ? season.id : undefined],
+    ['Current season', season ? (season.name as string | undefined) || (season.year as string | undefined) : undefined],
+    ['Season year', season ? (season.year as string | undefined) : undefined],
+    ['Season start', season ? (season.start_date as string | undefined) || (season.startDate as string | undefined) : undefined],
+    ['Season end', season ? (season.end_date as string | undefined) || (season.endDate as string | undefined) : undefined],
     ['Season coverage', t?.season_coverage_info],
     ['Generated at', info?.generated_at],
   ];
+
+  const rows = allRows.filter(([, value]) => value !== null && value !== undefined && value !== '');
 
   return (
     <div className="space-y-5">
@@ -310,7 +328,7 @@ export default function TournamentDetailPageClient({
   );
 
   return (
-    <div className="detail-page mx-auto max-w-7xl space-y-4 px-4 py-6 sm:space-y-5 sm:px-6 sm:py-8">
+    <div className="detail-page mx-auto max-w-site space-y-4 px-4 py-6 sm:space-y-5 sm:px-6 sm:py-8">
       <nav className="detail-breadcrumb" aria-label="Breadcrumb">
         <Link href="/tournaments" className="font-semibold text-accent transition-colors hover:text-mtext">
           Tournaments

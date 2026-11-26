@@ -17,6 +17,7 @@ import EmptyState from '../EmptyState';
 import ErrorState from '../ErrorState';
 import Pagination from '../Pagination';
 import AdSlot from '../advertisements/AdSlot';
+import EditorialSidebar from './EditorialSidebar';
 import RemoteImage from '../RemoteImage';
 import NewsCopy from '../NewsCopy';
 import { AuthorByline } from '../PersonAvatar';
@@ -384,21 +385,30 @@ export default function NewsBoard({
             </div>
             <span className="text-xs text-stext">{total} published</span>
           </div>
-          <div className="fade-in grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((item, index) => (
-            <Fragment key={item.id}>
-              <ArticleCard item={item} language={language} />
-              {filtered.length >= 4 && index === 3 ? (
-                <AdSlot placement="news-list-infeed" />
+          <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+            <div className="min-w-0">
+              <div className="fade-in grid grid-cols-1 gap-5 sm:grid-cols-2">
+                {filtered.map((item, index) => (
+                  <Fragment key={item.id}>
+                    <ArticleCard item={item} language={language} />
+                    {filtered.length >= 4 && index === 3 ? (
+                      <AdSlot placement="news-list-infeed" />
+                    ) : null}
+                  </Fragment>
+                ))}
+              </div>
+              {filtered.length >= 8 ? (
+                <div className="mt-8">
+                  <AdSlot placement="news-list-bottom" />
+                </div>
               ) : null}
-            </Fragment>
-          ))}
-          </div>
-          {filtered.length >= 8 ? (
-            <div className="mt-8">
-              <AdSlot placement="news-list-bottom" />
             </div>
-          ) : null}
+            <EditorialSidebar
+              topPlacement="news-list-sidebar"
+              bottomPlacement="news-list-skyscraper"
+              variant="news"
+            />
+          </div>
         </>
       ) : !loadError && !featured ? (
         <EmptyState
@@ -431,15 +441,16 @@ function ArticleCard({ item, language }: { item: NewsArticle; language: 'en' | '
       href={newsHref(item)}
       className="news-card card-interactive group flex h-full flex-col overflow-hidden rounded-md"
     >
-      <div className="news-card-media relative aspect-[16/9] bg-secondary media-fallback">
+      <div className="news-card-media relative aspect-[16/9] sm:aspect-auto sm:h-40 bg-secondary media-fallback">
         {item.image ? (
           <RemoteImage
             src={item.image}
             alt={item.title}
             fill
             sizes="(min-width: 768px) 33vw, 100vw"
-            fit="contain"
-            className="news-image"
+            fit="cover"
+            objectPosition="top"
+            className="news-image object-cover object-top"
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">
@@ -455,12 +466,12 @@ function ArticleCard({ item, language }: { item: NewsArticle; language: 'en' | '
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col p-4">
+      <div className="flex flex-1 flex-col p-3.5">
         <NewsCopy
           as="h3"
           language={(item.language as string | undefined) || language}
           text={item.title}
-          className="news-copy-card line-clamp-2 text-base font-semibold leading-snug text-mtext transition-colors group-hover:text-accent"
+          className="news-copy-card line-clamp-2 text-sm font-semibold leading-snug text-mtext transition-colors group-hover:text-accent"
         >
           {item.title}
         </NewsCopy>

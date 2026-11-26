@@ -8,7 +8,7 @@ import Badge, { StatusBadge as SharedStatusBadge } from '../Badge';
 import { getInitials } from '../../utils/helpers';
 import RemoteImage from '../RemoteImage';
 import EntityAvatar from '../EntityAvatar';
-import { AdminLoader, AdminTableSkeleton, type AdminLoadingVariant } from '../skeletons/Skeletons';
+import { AdminRouteSkeleton, AdminTableSkeleton, type AdminLoadingVariant } from '../skeletons/Skeletons';
 import useFocusTrap from '../../hooks/useFocusTrap';
 import SiteSelect, { selectChangeEvent } from '../ui/SiteSelect';
 import SearchField from '../SearchField';
@@ -133,12 +133,13 @@ export function StatCard({
 export { AdminTableSkeleton };
 
 export function LoadingState({
-  variant: _variant = 'table',
+  text,
+  variant = 'table',
 }: {
   text?: string;
   variant?: AdminLoadingVariant;
 }) {
-  return <AdminLoader />;
+  return <AdminRouteSkeleton variant={variant} text={text} />;
 }
 
 /* ─── Empty State ──────────────────────────────────────────── */

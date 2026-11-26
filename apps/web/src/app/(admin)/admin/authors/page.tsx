@@ -9,6 +9,7 @@ import {
   AdminIconButton,
   AdminInput,
   AdminPageHeader,
+  AdminSelect,
   AdminSortableHeader,
   ConfirmDialog,
   EmptyState,
@@ -38,6 +39,8 @@ export default function AuthorsPage() {
   const [file, setFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [deleteTarget, setDeleteTarget] = useState<AdminAuthor | null>(null);
+  const [reassignTargetId, setReassignTargetId] = useState('');
+  const [deleting, setDeleting] = useState(false);
   const [sortBy, setSortBy] = useState<'name' | 'slug' | 'bio'>('name');
   const [sortOrder, setSortOrder] = useState<SortDirection>('asc');
 
@@ -254,6 +257,7 @@ export default function AuthorsPage() {
                 <AdminSortableHeader label="Author" sortKey="name" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} className="px-4 py-3 text-xs font-bold uppercase tracking-wider" />
                 <AdminSortableHeader label="Slug" sortKey="slug" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} className="px-4 py-3 text-xs font-bold uppercase tracking-wider" />
                 <AdminSortableHeader label="Bio" sortKey="bio" activeKey={sortBy} direction={sortOrder} onSort={toggleSort} className="px-4 py-3 text-xs font-bold uppercase tracking-wider" />
+                <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Posts</th>
                 <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Actions</th>
               </tr>
             </thead>
@@ -278,12 +282,28 @@ export default function AuthorsPage() {
                   <td className="max-w-[10rem] truncate px-4 py-3 text-sm sm:max-w-[20rem]" style={{ color: 'var(--admin-text-secondary)' }} title={author.bio || undefined}>
                     {author.bio || '—'}
                   </td>
+                  <td className="whitespace-nowrap px-4 py-3 font-mono text-xs" style={{ color: 'var(--admin-text-secondary)' }}>
+                    {author.totalArticleCount ?? author.articleCount ?? 0}
+                  </td>
                   <td className="whitespace-nowrap px-4 py-3">
                     <div className="flex items-center justify-start gap-1.5">
                       <AdminIconButton label="Edit author" tone="accent" onClick={() => startEdit(author)}>
                         <FileEdit size={16} />
                       </AdminIconButton>
-                      <AdminIconButton label="Delete author" tone="danger" onClick={() => setDeleteTarget(author)}>
+                      <AdminIconButton
+                        label="Delete author"
+                        tone="danger"
+                        onClick={() => {
+                          const linked = author.totalArticleCount ?? author.articleCount ?? 0;
+                          const others = authors.filter((a) => a.id !== author.id);
+                          if (linked > 0 && others.length === 0) {
+                            toast.error(`Cannot delete ${author.name}: ${linked} linked post(s). Create another author first to reassign them.`);
+                            return;
+                          }
+                          setReassignTargetId(linked > 0 ? others[0]?.id || '' : '');
+                          setDeleteTarget(author);
+                        }}
+                      >
                         <Trash2 size={16} />
                       </AdminIconButton>
                     </div>
@@ -296,29 +316,105 @@ export default function AuthorsPage() {
         </div>
       )}
 
-      <ConfirmDialog
-        open={Boolean(deleteTarget)}
-        title="Delete author?"
-        message={`Remove ${deleteTarget?.name || 'this author'} from the newsroom. Articles keep their byline text.`}
-        confirmLabel="Delete"
-        danger
-        onCancel={() => setDeleteTarget(null)}
-        onConfirm={() => {
-          if (!deleteTarget) return;
-          void deleteAdminAuthor(deleteTarget.id)
-            .then(() => {
-              setAuthors((list) => list.filter((item) => item.id !== deleteTarget.id));
-              if (editing?.id === deleteTarget.id) {
-                setEditing(null);
-                setForm(emptyForm);
-                resetFile();
-              }
-              toast.success('Author deleted.');
-            })
-            .catch(() => toast.error('Could not delete the author.'))
-            .finally(() => setDeleteTarget(null));
-        }}
-      />
+      {deleteTarget && (deleteTarget.totalArticleCount ?? deleteTarget.articleCount ?? 0) > 0 ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="reassign-author-title"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+        >
+          <div
+            className="w-full max-w-md space-y-4 rounded-xl p-5 shadow-xl"
+            style={{ background: 'var(--admin-card)', border: '1px solid var(--admin-border)' }}
+          >
+            <h2 id="reassign-author-title" className="text-base font-bold" style={{ color: 'var(--admin-text)' }}>
+              Reassign posts before deleting {deleteTarget.name}
+            </h2>
+            <p className="text-sm" style={{ color: 'var(--admin-text-secondary)' }}>
+              This author has <strong>{deleteTarget.totalArticleCount ?? deleteTarget.articleCount ?? 0}</strong> linked
+              post(s). Choose another author to transfer all posts and feeds to before deleting.
+            </p>
+            <AdminField label="Transfer posts to" required>
+              <AdminSelect
+                value={reassignTargetId}
+                onChange={(e) => setReassignTargetId(e.target.value)}
+                aria-label="Transfer posts to"
+              >
+                {authors
+                  .filter((a) => a.id !== deleteTarget.id)
+                  .map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.name}
+                    </option>
+                  ))}
+              </AdminSelect>
+            </AdminField>
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={() => {
+                  setDeleteTarget(null);
+                  setReassignTargetId('');
+                }}
+                className="rounded-md px-3 py-1.5 text-sm font-semibold"
+                style={{ border: '1px solid var(--admin-border)', color: 'var(--admin-text-secondary)' }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={deleting || !reassignTargetId}
+                onClick={() => {
+                  if (!deleteTarget || !reassignTargetId) return;
+                  setDeleting(true);
+                  void deleteAdminAuthor(deleteTarget.id, reassignTargetId)
+                    .then(() => {
+                      toast.success('Posts transferred and author deleted.');
+                      if (editing?.id === deleteTarget.id) cancelEdit();
+                      setDeleteTarget(null);
+                      setReassignTargetId('');
+                      load();
+                    })
+                    .catch((err) => {
+                      toast.error(err instanceof Error && err.message ? err.message : 'Could not delete the author.');
+                    })
+                    .finally(() => setDeleting(false));
+                }}
+                className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-bold text-white hover:bg-red-700 disabled:opacity-60"
+              >
+                {deleting ? 'Transferring...' : 'Transfer & Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <ConfirmDialog
+          open={Boolean(deleteTarget)}
+          title="Delete author?"
+          message={`Remove ${deleteTarget?.name || 'this author'} from the newsroom.`}
+          confirmLabel="Delete"
+          danger
+          onCancel={() => setDeleteTarget(null)}
+          onConfirm={() => {
+            if (!deleteTarget) return;
+            void deleteAdminAuthor(deleteTarget.id)
+              .then(() => {
+                setAuthors((list) => list.filter((item) => item.id !== deleteTarget.id));
+                if (editing?.id === deleteTarget.id) {
+                  setEditing(null);
+                  setForm(emptyForm);
+                  resetFile();
+                }
+                toast.success('Author deleted.');
+              })
+              .catch((err) => {
+                toast.error(err instanceof Error && err.message ? err.message : 'Could not delete the author.');
+              })
+              .finally(() => setDeleteTarget(null));
+          }}
+        />
+      )}
 
     </div>
   );

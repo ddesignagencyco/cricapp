@@ -219,7 +219,7 @@ describe('SiteSettings ads (integration)', () => {
         data: { id: 'default', ads: { mode: 'nonsense' } },
       });
       const res = await ctx.agent.get('/site-settings').expect(200);
-      expect(res.body.ads.mode).toBe('house');
+      expect(res.body.ads.mode).toBe('off');
     });
 
     it('leaves ads untouched when the field is omitted', async () => {

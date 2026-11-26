@@ -135,7 +135,7 @@ const MODE_TITLES: Record<AdMode, string> = {
 
 const MODE_DESCRIPTIONS: Record<AdMode, string> = {
   off: 'No ad renders in any slot, on any page. Placement switches stay saved for later.',
-  house: 'Built-in CriczApp placeholder creatives render cleanly across every active slot.',
+  house: 'Show clean Advertisement placeholder cards sized to each slot (no external ad scripts).',
   adsterra: 'Serve live Adsterra banners, Social Bar & Popunder without needing AdSense approval.',
   adsense: 'Serve Google AdSense units. Requires an approved pub-… ID and numeric slot IDs.',
 };
@@ -180,7 +180,7 @@ export function adsFormFromConfig(config: AdConfig): AdsFormState {
   }
 
   return {
-    mode: config.mode ?? 'house',
+    mode: AD_MODES.includes(config.mode) ? config.mode : 'off',
     clientId: config.clientId ?? '',
     defaultSlots,
     placements,
@@ -430,7 +430,6 @@ export default function AdConfigPanel({
   const isAdsense = state.mode === 'adsense';
   const isAdsterra = state.mode === 'adsterra';
   const isOff = state.mode === 'off';
-  const isHouse = state.mode === 'house';
 
   const dirty = adsFormIsDirty(state, saved);
   const { on: enabledCount, total: totalPlacements } = enabledPlacementCount(state);
@@ -593,12 +592,6 @@ export default function AdConfigPanel({
           <Callout tone="info" icon={<Info size={14} aria-hidden />}>
             Ads are off, so no slot will render regardless of the switches below. They stay editable
             so you can set the site up before switching on.
-          </Callout>
-        ) : null}
-
-        {isHouse ? (
-          <Callout tone="info" icon={<Info size={14} aria-hidden />}>
-            Placeholder mode is active — built-in house banners render across all enabled placements without external scripts.
           </Callout>
         ) : null}
 
@@ -780,7 +773,7 @@ export default function AdConfigPanel({
 
             {saved.clientId && !state.clientId.trim() ? (
               <p className="mt-2 text-[11px] font-medium" style={{ color: 'var(--admin-warning, var(--color-warning))' }}>
-                Clearing this box will not remove the stored publisher id — switch mode to Off, Placeholder, or Adsterra instead.
+                Clearing this box will not remove the stored publisher id — switch mode to Off or Adsterra instead.
               </p>
             ) : null}
           </div>

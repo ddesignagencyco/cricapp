@@ -4,6 +4,8 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { mergeLiveRows, mergeLiveUpdate, useMatchStream, withLatestLive } from '../../hooks/useMatchStream';
 import DirectoryPageHeader from '../DirectoryPageHeader';
+import AdSlot from '../advertisements/AdSlot';
+import EditorialSidebar from '../boards/EditorialSidebar';
 import PageToolbar from '../PageToolbar';
 import Badge from '../Badge';
 import EmptyState from '../EmptyState';
@@ -64,7 +66,7 @@ export default function PredictionsHub({
    */
   const hasPerformance = isAccuracyPublishable(performance);
   const hasUpcoming = upcoming.length > 0 || upcomingTotal > 0;
-    // The page is server-rendered with a 30s cache, so a live card would sit on a stale
+  // The page is server-rendered with a 30s cache, so a live card would sit on a stale
   // score for the whole time a match is running. The homepage and the matches page
   // both patch in SSE updates; the predictions page did not, which is why live cards
   // here were the only place a live score could look frozen or missing.
@@ -99,7 +101,7 @@ export default function PredictionsHub({
   };
 
   return (
-    <div className="mx-auto max-w-7xl space-y-5 px-4 py-6 sm:px-6">
+    <div className="mx-auto max-w-site space-y-5 px-4 py-6 sm:px-6">
       <DirectoryPageHeader
         eyebrow="Win probabilities"
         title="Predictions"
@@ -119,75 +121,91 @@ export default function PredictionsHub({
         />
       </PageToolbar>
 
-      {hasPerformance && performance ? (
-        <section className="prediction-card rounded-md border border-lborder bg-card p-4 sm:p-5">
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wider text-accent">Track record</p>
-              <p className="mt-1 text-sm text-stext">{sample} settled matches</p>
-            </div>
-            <div className="flex items-end gap-4">
-              <AccuracyTrend performance={performance} history={performanceHistory} />
-              <p className="font-mono text-2xl font-semibold tabular-nums text-accent">
-                {asPercent(performance.accuracy)}
-              </p>
-            </div>
-          </div>
-          {(performance.byFormat.length > 0 || performance.byConfidenceBand.length > 0) && (
-            <div className="mt-4 grid grid-cols-1 gap-4 border-t border-lborder pt-4 lg:grid-cols-2">
-              <Breakdown
-                title="Format"
-                rows={performance.byFormat.map((row) => ({
-                  key: row.format,
-                  label: row.format.toUpperCase(),
-                  sample: row.sampleSize,
-                  accuracy: row.accuracy,
-                  tone: 'primary',
-                }))}
-              />
-              <Breakdown
-                title="Confidence"
-                rows={performance.byConfidenceBand.map((row) => ({
-                  key: row.band,
-                  label: row.band,
-                  sample: row.sampleSize,
-                  accuracy: row.accuracy,
-                  tone: bandTone(row.band),
-                }))}
-              />
-            </div>
-          )}
-        </section>
-      ) : null}
-
-      {visible.length > 0 ? (
-        <section>
-          <div className="grid items-stretch gap-3 [grid-template-columns:repeat(auto-fill,minmax(min(100%,20rem),1fr))]">
-            {visible.map(({ match, predictions, chartPoints }) => (
-              <PredictionMatchCard
-                key={String(match.matchId || match.id)}
-                match={match}
-                predictions={predictions}
-                chartPoints={chartPoints}
-              />
-            ))}
-          </div>
-          {tab === 'upcoming' ? (
-            <PredictionsUpcomingPager page={upcomingPage} total={upcomingTotal} limit={upcomingLimit} />
+      <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="min-w-0 space-y-5">
+          {hasPerformance && performance ? (
+            <section className="prediction-card rounded-md border border-lborder bg-card p-4 sm:p-5">
+              <div className="flex flex-wrap items-end justify-between gap-3">
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wider text-accent">Track record</p>
+                  <p className="mt-1 text-sm text-stext">{sample} settled matches</p>
+                </div>
+                <div className="flex items-end gap-4">
+                  <AccuracyTrend performance={performance} history={performanceHistory} />
+                  <p className="font-mono text-2xl font-semibold tabular-nums text-accent">
+                    {asPercent(performance.accuracy)}
+                  </p>
+                </div>
+              </div>
+              {(performance.byFormat.length > 0 || performance.byConfidenceBand.length > 0) && (
+                <div className="mt-4 grid grid-cols-1 gap-4 border-t border-lborder pt-4 lg:grid-cols-2">
+                  <Breakdown
+                    title="Format"
+                    rows={performance.byFormat.map((row) => ({
+                      key: row.format,
+                      label: row.format.toUpperCase(),
+                      sample: row.sampleSize,
+                      accuracy: row.accuracy,
+                      tone: 'primary',
+                    }))}
+                  />
+                  <Breakdown
+                    title="Confidence"
+                    rows={performance.byConfidenceBand.map((row) => ({
+                      key: row.band,
+                      label: row.band,
+                      sample: row.sampleSize,
+                      accuracy: row.accuracy,
+                      tone: bandTone(row.band),
+                    }))}
+                  />
+                </div>
+              )}
+            </section>
           ) : null}
-        </section>
-      ) : (
-        <EmptyState
-          title={tab === 'live' ? 'No live matches' : 'No upcoming matches'}
-          message={
-            tab === 'live'
-              ? 'Live fixtures with predictions will appear here.'
-              : hasUpcoming
-                ? 'Try another page.'
-                : 'Upcoming fixtures will appear when scheduled.'
-          }
+
+          {visible.length > 0 ? (
+            <section>
+              <div className="grid items-stretch gap-3 [grid-template-columns:repeat(auto-fill,minmax(min(100%,18rem),1fr))]">
+                {visible.map(({ match, predictions, chartPoints }) => (
+                  <PredictionMatchCard
+                    key={String(match.matchId || match.id)}
+                    match={match}
+                    predictions={predictions}
+                    chartPoints={chartPoints}
+                  />
+                ))}
+              </div>
+              <div className="mt-6">
+                <AdSlot placement="predictions-bottom" />
+              </div>
+              {tab === 'upcoming' ? (
+                <PredictionsUpcomingPager page={upcomingPage} total={upcomingTotal} limit={upcomingLimit} />
+              ) : null}
+            </section>
+          ) : (
+            <>
+              <EmptyState
+                title={tab === 'live' ? 'No live matches' : 'No upcoming matches'}
+                message={
+                  tab === 'live'
+                    ? 'Live fixtures with predictions will appear here.'
+                    : hasUpcoming
+                      ? 'Try another page.'
+                      : 'Upcoming fixtures will appear when scheduled.'
+                }
+              />
+              <div className="mt-6">
+                <AdSlot placement="predictions-bottom" />
+              </div>
+            </>
+          )}
+        </div>
+        <EditorialSidebar
+          topPlacement="predictions-sidebar"
+          variant="predictions"
         />
-      )}
+      </div>
     </div>
   );
 }

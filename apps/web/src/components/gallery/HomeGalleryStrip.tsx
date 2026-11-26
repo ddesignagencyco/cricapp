@@ -11,7 +11,7 @@ export default function HomeGalleryStrip() {
   if (query.isPending || query.isError || items.length === 0) return null;
 
   return (
-    <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
+    <section className="mx-auto w-full max-w-site px-4 sm:px-6">
       {/* No subtitle: this strip asks the API for images only, so the old
           "Images, shorts and videos" line described the full gallery page, not
           what is actually rendered here. */}

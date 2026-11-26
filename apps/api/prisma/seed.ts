@@ -53,6 +53,19 @@ async function seedEditorialCategories(): Promise<void> {
   console.log(`[seed] editorial categories ready: ${editorialCategories.length}`);
 }
 
+async function seedDefaultAuthor(): Promise<void> {
+  await prisma.author.upsert({
+    where: { slug: 'criczapp-editorial' },
+    update: { name: 'CriczApp Editorial' },
+    create: {
+      name: 'CriczApp Editorial',
+      slug: 'criczapp-editorial',
+      bio: 'Official CriczApp cricket desk covering live matches, PSL updates, ICC tournaments, and breaking cricket news.',
+    },
+  });
+  console.log('[seed] default editorial author ready: CriczApp Editorial');
+}
+
 async function seedSuperAdmin(): Promise<void> {
   const email = process.env.SUPERADMIN_EMAIL?.trim().toLowerCase();
   const password = process.env.SUPERADMIN_PASSWORD;
@@ -97,6 +110,7 @@ async function main(): Promise<void> {
   console.log('[seed] starting');
   await seedSuperAdmin();
   await seedEditorialCategories();
+  await seedDefaultAuthor();
   await seedTeamsAndPlayers();
   console.log('[seed] done');
 }

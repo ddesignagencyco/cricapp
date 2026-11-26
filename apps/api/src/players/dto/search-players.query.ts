@@ -13,6 +13,11 @@ export class SearchPlayersQuery extends PaginationQuery {
   @IsString()
   team?: string;
 
+  @ApiPropertyOptional({ description: 'Player role filter (e.g. batsman, bowler, all_rounder).' })
+  @IsOptional()
+  @IsString()
+  role?: string;
+
   @ApiPropertyOptional({ enum: ['name', 'team', 'nationality', 'role', 'birth'] })
   @IsOptional()
   @IsIn(['name', 'team', 'nationality', 'role', 'birth'])

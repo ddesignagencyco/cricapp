@@ -20,7 +20,7 @@ import { useAdConfig } from './AdProvider';
 export function SimulatedAnchor() {
   const config = useAdConfig();
   const [dismissed, setDismissed] = useState(false);
-  if (config.mode !== 'house' || dismissed) return null;
+  if (config.mode !== 'off' || dismissed) return null;
 
   return (
     <div
@@ -29,7 +29,7 @@ export function SimulatedAnchor() {
       className="fixed inset-x-0 bottom-0 z-[70] border-t-2 border-dashed border-accent bg-card px-4 py-3 shadow-2xl"
       style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
     >
-      <div className="mx-auto flex w-full max-w-7xl items-center gap-3">
+      <div className="mx-auto flex w-full max-w-site items-center gap-3">
         <span className="rounded bg-accent/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-accent">
           Simulated anchor · test only
         </span>
@@ -51,7 +51,7 @@ export function SimulatedAnchor() {
 export function SimulatedVignette() {
   const config = useAdConfig();
   const [open, setOpen] = useState(false);
-  if (config.mode !== 'house') return null;
+  if (config.mode !== 'off') return null;
 
   return (
     <>

@@ -45,7 +45,7 @@ export default function HomePredictions({ picks }: { picks: HomePredictionPick[]
   const callLabel = featured.run.stage === 'live' || featured.match.status === 'live' ? 'Live lean' : 'Clearest call';
 
   return (
-    <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
+    <section className="mx-auto w-full max-w-site px-4 sm:px-6">
       <SectionHeader
         title="Prediction desk"
         subtitle="Who the numbers favour right now — not a scorecard"

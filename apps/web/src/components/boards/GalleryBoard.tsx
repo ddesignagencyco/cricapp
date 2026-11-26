@@ -8,6 +8,10 @@ import EmptyState from '../EmptyState';
 import ErrorState from '../ErrorState';
 import MediaActions from '../MediaActions';
 import Pagination from '../Pagination';
+import PageToolbar from '../PageToolbar';
+import Tabs from '../Tabs';
+import AdSlot from '../advertisements/AdSlot';
+import EditorialSidebar from './EditorialSidebar';
 import PhotoLightbox from '../gallery/PhotoLightbox';
 import ShortsViewer from '../gallery/ShortsViewer';
 import type { GalleryPhoto, GalleryShort } from '../gallery/galleryTypes';
@@ -129,59 +133,60 @@ export default function GalleryBoard({ initialTab = 'images' }: GalleryBoardProp
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <header>
-          <p className="text-xs font-medium uppercase tracking-widest text-stext">Media</p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-mtext">Gallery</h1>
-          <p className="mt-1 max-w-xl text-sm text-stext">Photos, shorts, and videos.</p>
-        </header>
-        <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="Gallery media types">
-          {TABS.map((item) => {
-            const Icon = item.icon;
-            const selected = tab === item.key;
-            return (
-              <button
-                key={item.key}
-                type="button"
-                role="tab"
-                aria-selected={selected}
-                onClick={() => selectTab(item.key)}
-                className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold ${
-                  selected ? 'btn-brand' : 'border border-lborder bg-card text-stext hover:text-mtext'
-                }`}
-              >
-                <Icon size={14} />
-                {item.label}
-                <span className="tabular-nums opacity-80">{counts[item.key]}</span>
-              </button>
-            );
-          })}
+      <header>
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wider text-accent">Media</p>
+            <h1 className="mt-1 text-2xl font-semibold text-mtext">Gallery</h1>
+            <p className="mt-1 max-w-2xl text-sm text-stext">
+              Photos, shorts, and videos from around the cricket world.
+            </p>
+          </div>
+          <p className="text-xs text-stext">
+            <span className="font-semibold tabular-nums text-mtext">{total}</span>{' '}
+            {active.label.toLowerCase()}
+          </p>
         </div>
-      </div>
+      </header>
 
-      <p className="text-xs text-stext">
+      <PageToolbar>
+        <div className="no-scrollbar max-w-full overflow-x-auto">
+          <Tabs
+            tabs={TABS.map((item) => ({
+              key: item.key,
+              label: `${item.label} (${counts[item.key]})`,
+            }))}
+            active={tab}
+            onChange={(next) => selectTab(next as GalleryTab)}
+          />
+        </div>
+      </PageToolbar>
+
+      <p className="text-sm text-stext">
         {active.hint} · {total} {total === 1 ? 'item' : 'items'}
         {activeQuery.isFetching && !activeQuery.isPending ? ' · Updating…' : ''}
       </p>
 
-      {activeQuery.isPending ? (
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
-          {Array.from({ length: 12 }).map((_, index) => (
-            <div key={index} className="aspect-square animate-pulse rounded-lg bg-[var(--color-skeleton)]" />
-          ))}
-        </div>
-      ) : activeQuery.isError ? (
-        <ErrorState message="Gallery is temporarily unavailable." onRetry={() => void activeQuery.refetch()} />
-      ) : empty ? (
-        <EmptyState
-          icon={active.icon}
-          title={`No ${tab} yet`}
-          message="Items appear here after they are uploaded in Gallery."
-        />
-      ) : (
-        <>
-          {tab === 'images' && (
-            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
+      <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="min-w-0 space-y-5">
+          {activeQuery.isPending ? (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+              {Array.from({ length: 12 }).map((_, index) => (
+                <div key={index} className="aspect-square animate-pulse rounded-lg bg-[var(--color-skeleton)]" />
+              ))}
+            </div>
+          ) : activeQuery.isError ? (
+            <ErrorState message="Gallery is temporarily unavailable." onRetry={() => void activeQuery.refetch()} />
+          ) : empty ? (
+            <EmptyState
+              icon={active.icon}
+              title={`No ${tab} yet`}
+              message="Items appear here after they are uploaded in Gallery."
+            />
+          ) : (
+            <>
+              {tab === 'images' && (
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
               {images.map((photo, index) => (
                 <div key={photo.id} className="group relative overflow-hidden rounded-lg bg-secondary ring-1 ring-lborder">
                   <button
@@ -230,7 +235,7 @@ export default function GalleryBoard({ initialTab = 'images' }: GalleryBoardProp
           )}
 
           {tab === 'shorts' && (
-            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
               {shorts.map((short, index) => (
                 <div key={short.id} className="group relative overflow-hidden rounded-lg bg-secondary ring-1 ring-lborder">
                   <button
@@ -305,6 +310,10 @@ export default function GalleryBoard({ initialTab = 'images' }: GalleryBoardProp
             </div>
           )}
 
+          <div className="pt-2">
+            <AdSlot placement="gallery-bottom" />
+          </div>
+
           <Pagination
             page={page}
             totalPages={totalPages}
@@ -314,6 +323,13 @@ export default function GalleryBoard({ initialTab = 'images' }: GalleryBoardProp
           />
         </>
       )}
+        </div>
+        <EditorialSidebar
+          topPlacement="gallery-sidebar"
+          bottomPlacement="gallery-skyscraper"
+          variant="media"
+        />
+      </div>
 
       {photoIndex !== null && (
         <PhotoLightbox items={images} index={photoIndex} onClose={closePhoto} onIndexChange={setPhotoIndex} />

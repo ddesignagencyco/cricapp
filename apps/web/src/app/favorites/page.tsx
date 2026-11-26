@@ -222,7 +222,7 @@ export default function FavoritesPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl space-y-5 px-4 py-8 sm:px-6">
+    <div className="mx-auto max-w-site space-y-5 px-4 py-8 sm:px-6">
       <header className="rounded-md border border-lborder bg-card p-5 sm:p-6">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="max-w-2xl">

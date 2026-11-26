@@ -30,10 +30,8 @@ function showGlobalTopAd(pathname: string) {
   if (isCompanyPath(pathname)) return false;
   // These pages place their own banner right after the intro; the global one on top
   // put two ads in the first phone screen (Better Ads mobile density).
-  if (pathname === '/players' || pathname === '/teams') return false;
   if (pathname === '/psl' || pathname.startsWith('/psl/')) return false;
   if (pathname.startsWith('/tournaments/')) return false;
-  if (pathname === '/tournaments' || pathname === '/tours') return false;
   return true;
 }
 
@@ -56,8 +54,8 @@ export default function ClientLayout({
     <>
       <Navbar />
       {showGlobalTopAd(pathname) ? (
-        <div className="mx-auto w-full min-w-0 max-w-7xl px-4 py-5 sm:px-6">
-          <AdSlot placement="global-top" />
+        <div className="mx-auto w-full min-w-0 max-w-site px-4 pt-4 pb-1 sm:px-6">
+          <AdSlot key={pathname} placement="global-top" />
         </div>
       ) : null}
       <main id="main-content" className="min-h-screen min-w-0 flex-1 pb-16 lg:pb-0">

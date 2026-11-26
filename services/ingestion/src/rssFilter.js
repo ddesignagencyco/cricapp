@@ -26,6 +26,7 @@ export function sanitizeRssHtml(html) {
     .replace(/<iframe[\s\S]*?<\/iframe>/gi, '')
     .replace(/<object[\s\S]*?<\/object>/gi, '')
     .replace(/<embed[^>]*>/gi, '')
+    .replace(/<a\b[^>]*>([\s\S]*?)<\/a>/gi, '$1')
     .replace(/\son[a-z]+\s*=\s*["'][^"']*["']/gi, '')
     .replace(/\sstyle\s*=\s*["'][^"']*["']/gi, '')
     .replace(/javascript:/gi, '')
@@ -84,7 +85,7 @@ export function buildSourceGuid(feedUrl, item) {
   return `rss:${crypto.createHash('sha256').update(key).digest('hex').slice(0, 32)}`;
 }
 
-export function buildAttributionHtml(summaryText, sourceName, sourceUrl, paragraphs = []) {
+export function buildAttributionHtml(summaryText, _sourceName, _sourceUrl, paragraphs = []) {
   const cleanParas = Array.isArray(paragraphs)
     ? paragraphs.map((p) => String(p || '').trim()).filter(Boolean)
     : [];
@@ -93,14 +94,18 @@ export function buildAttributionHtml(summaryText, sourceName, sourceUrl, paragra
     : summaryText
       ? `<p>${htmlEscape(summaryText)}</p>`
       : '';
-  const link = sourceUrl
-    ? `<a href="${htmlEscape(sourceUrl)}" target="_blank" rel="noopener noreferrer nofollow">${htmlEscape(sourceName)}</a>`
-    : htmlEscape(sourceName);
-  return `${body}\n<p class="rss-attribution"><em>Originally reported by ${link}.</em></p>`.trim();
+  return body.trim();
 }
 
 const BOILERPLATE_RX =
-  /^(sign in|log in|subscribe|cookie|privacy policy|terms of|share this|follow us|advertisement|related topics|more on this story|watch:|listen:|get the latest|external link|bbc is not responsible|copyright|all rights reserved)/i;
+  /^(sign in|log in|subscribe|cookie|privacy policy|terms of|share this|follow us|advertisement|related topics|more on this story|watch:|listen:|get the latest|external link|bbc is not responsible|copyright|all rights reserved|also read:|read more:)/i;
+
+export function isGenericPlaceholderImage(url) {
+  if (!url) return true;
+  return /news\.google\.com|lh3\.googleusercontent\.com\/(J6_coFbogxhRI9iM864NL_liGXvsQp2AupsKei7z0cNNfDvGUmWUy20nuUhkREQyrpY4bEeIBuc|proxy\/)/i.test(
+    String(url),
+  );
+}
 
 function unescapeEntities(text) {
   return String(text || '')
@@ -121,13 +126,50 @@ function extractMetaImage(html) {
   ];
   for (const rx of patterns) {
     const m = String(html).match(rx);
-    if (m?.[1]) return unescapeEntities(m[1]).trim();
+    if (m?.[1]) {
+      const candidate = unescapeEntities(m[1]).trim();
+      if (!isGenericPlaceholderImage(candidate)) return candidate;
+    }
   }
   return null;
 }
 
 const BROWSER_USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
+
+function extractNextDataArticleBody(html) {
+  const m = String(html).match(/<script[^>]+id=["']__NEXT_DATA__["'][^>]*>([\s\S]*?)<\/script>/i);
+  if (!m?.[1]) return [];
+  const out = [];
+  const BODY_KEYS = new Set(['articleBody', 'body', 'content', 'contentHtml', 'html', 'storyContent', 'paragraphs']);
+  try {
+    const root = JSON.parse(m[1].trim());
+    const visit = (node, depth = 0) => {
+      if (!node || depth > 12 || out.length >= 25) return;
+      if (Array.isArray(node)) {
+        for (const item of node) visit(item, depth + 1);
+        return;
+      }
+      if (typeof node === 'object') {
+        for (const [k, v] of Object.entries(node)) {
+          if (BODY_KEYS.has(k) && typeof v === 'string' && v.length >= 60) {
+            const chunks = v
+              .split(/<\/p>|\n{2,}|\r\n\r\n/i)
+              .map((p) => unescapeEntities(stripHtmlToText(p)).trim())
+              .filter((p) => p.length >= 45 && !BOILERPLATE_RX.test(p));
+            out.push(...chunks);
+          } else if (v && typeof v === 'object') {
+            visit(v, depth + 1);
+          }
+        }
+      }
+    };
+    visit(root);
+  } catch {
+    /* ignore malformed __NEXT_DATA__ */
+  }
+  return out.slice(0, 25);
+}
 
 function extractJsonLdArticleBody(html) {
   const out = [];
@@ -173,7 +215,19 @@ export function extractArticleFromHtml(html) {
 
   for (const m of src.matchAll(/<div[^>]+class=["'][^"']*ci-html-content[^"']*["'][^>]*>([\s\S]*?)<\/div>/gi)) {
     pushPara(m[1]);
-    if (paragraphs.length >= 10) break;
+    if (paragraphs.length >= 25) break;
+  }
+
+  if (paragraphs.length < 2) {
+    const cmsRx =
+      /<(?:div|section)[^>]+class=["'][^"']*(?:story__content|article-content|article-body|entry-content|post-content|wp-block-post-content|td-post-content|story-detail|detail-content)[^"']*["'][^>]*>([\s\S]*?)<\/(?:div|section)>/gi;
+    for (const block of src.matchAll(cmsRx)) {
+      for (const p of block[1].matchAll(/<p(?:\s[^>]*)?>([\s\S]*?)<\/p>/gi)) {
+        pushPara(p[1]);
+        if (paragraphs.length >= 25) break;
+      }
+      if (paragraphs.length >= 25) break;
+    }
   }
 
   if (paragraphs.length < 2) {
@@ -191,14 +245,21 @@ export function extractArticleFromHtml(html) {
 
     for (const m of region.matchAll(/<p(?:\s[^>]*)?>([\s\S]*?)<\/p>/gi)) {
       pushPara(m[1]);
-      if (paragraphs.length >= 10) break;
+      if (paragraphs.length >= 25) break;
     }
   }
 
   if (paragraphs.length < 2) {
     for (const chunk of extractJsonLdArticleBody(src)) {
       pushPara(chunk);
-      if (paragraphs.length >= 10) break;
+      if (paragraphs.length >= 25) break;
+    }
+  }
+
+  if (paragraphs.length < 2) {
+    for (const chunk of extractNextDataArticleBody(src)) {
+      pushPara(chunk);
+      if (paragraphs.length >= 25) break;
     }
   }
 
@@ -213,7 +274,7 @@ export function extractArticleFromHtml(html) {
       .replace(/<figcaption[\s\S]*?<\/figcaption>/gi, ' ');
     for (const m of cleaned.matchAll(/<p(?:\s[^>]*)?>([\s\S]*?)<\/p>/gi)) {
       pushPara(m[1]);
-      if (paragraphs.length >= 10) break;
+      if (paragraphs.length >= 25) break;
     }
   }
 

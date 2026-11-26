@@ -12,7 +12,7 @@ export default async function ContactPage() {
   const settings = await loadSiteSettings();
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+    <div className="mx-auto max-w-site px-4 py-8 sm:px-6">
       <div className="space-y-10">
         <div>
           <h1 className="text-3xl font-black tracking-tight text-mtext sm:text-4xl">

@@ -54,7 +54,7 @@ export default function LiveNowSection({ matches }: { matches: Match[] }) {
   if (live.length === 0) return null;
 
   return (
-    <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
+    <section className="mx-auto w-full max-w-site px-4 sm:px-6">
       <SectionHeader
         title="Live Now"
         subtitle={`${live.length} match${live.length === 1 ? '' : 'es'} in progress`}
@@ -62,8 +62,8 @@ export default function LiveNowSection({ matches }: { matches: Match[] }) {
         to="/matches?tab=live"
         actionLabel="All live"
       />
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-        {live.slice(0, 3).map((m) => (
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        {live.slice(0, 4).map((m) => (
           <MatchCard key={m.matchId || m.id} match={m} />
         ))}
       </div>

@@ -6,6 +6,7 @@ import { BadgeDollarSign, ExternalLink, ShieldAlert } from 'lucide-react';
 import AdConfigPanel from '../../../../components/admin/AdConfigPanel';
 import AdSenseEarningsPanel from '../../../../components/admin/AdSenseEarningsPanel';
 import AdSensePolicyPanel from '../../../../components/admin/AdSensePolicyPanel';
+import AdsterraEarningsPanel from '../../../../components/admin/AdsterraEarningsPanel';
 import {
   AdminPageHeader,
   CardPanel,
@@ -32,8 +33,9 @@ export default function AdminAdsPage() {
 
   const status = statusQuery.data;
   const configured = status?.configured === true;
-  const activeMode = activeModeOverride ?? settingsQuery.data?.ads.mode ?? 'house';
+  const activeMode = activeModeOverride ?? settingsQuery.data?.ads.mode ?? 'off';
   const showAdsenseSections = activeMode === 'adsense';
+  const showAdsterraSections = activeMode === 'adsterra';
 
   // Only fetch the unit list once we know the Management API is set up AND AdSense is relevant.
   const adUnitsQuery = useAdSenseAdUnitsQuery(includeArchived, configured && showAdsenseSections);
@@ -122,6 +124,16 @@ export default function AdminAdsPage() {
                   </div>
                 </CardPanel>
               )}
+            </div>
+          ) : null}
+
+          {showAdsterraSections ? (
+            <div className="space-y-3">
+              <SectionHeading
+                title="Adsterra reporting"
+                hint="Read-only. Impressions, clicks, CTR, CPM and revenue fetched from Adsterra Publisher API."
+              />
+              <AdsterraEarningsPanel />
             </div>
           ) : null}
         </>

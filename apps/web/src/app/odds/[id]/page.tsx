@@ -39,7 +39,7 @@ export default async function MatchOddsPage({ params }: { params: Promise<{ id: 
   const pollLive = match?.status === 'live';
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+    <div className="mx-auto max-w-site px-4 py-8 sm:px-6">
       {match ? (
         <header className="mb-6">
           <p className="text-xs font-bold uppercase tracking-widest text-stext">Price comparison</p>

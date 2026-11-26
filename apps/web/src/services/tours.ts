@@ -7,6 +7,7 @@ export interface ToursListParams {
   limit?: number;
   /** Name or country-code search (GET /tours?q=). */
   q?: string;
+  category?: string;
   sortBy?: string;
   sortOrder?: string;
 }
@@ -15,6 +16,9 @@ export interface ToursPageResult {
   items: Tour[];
   total: number;
   totalPages: number;
+  facets?: {
+    categories: Array<{ key: string; count: number }>;
+  };
 }
 
 export async function fetchTours(signal?: AbortSignal): Promise<Tour[]> {
@@ -26,7 +30,11 @@ export async function fetchToursPage(
   params: ToursListParams = {},
   signal?: AbortSignal
 ): Promise<ToursPageResult> {
-  const res = await apiGet('/tours', { page: 1, limit: 20, ...params }, { signal });
+  const res = await apiGet<Record<string, unknown>>('/tours', { page: 1, limit: 20, ...params }, { signal });
   const { items, meta } = extractPage<Tour>(res);
-  return { items, total: meta.total, totalPages: meta.totalPages };
+  const facets =
+    res && typeof res === 'object' && 'facets' in res
+      ? (res.facets as ToursPageResult['facets'])
+      : undefined;
+  return { items, total: meta.total, totalPages: meta.totalPages, facets };
 }

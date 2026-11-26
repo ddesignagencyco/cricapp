@@ -89,7 +89,7 @@ export const EMPTY_ADSTERRA_CONFIG: AdsterraConfig = {
 
 /** Byte-identical to the API's `EMPTY_AD_CONFIG`, which is what an unconfigured site returns. */
 export const EMPTY_AD_CONFIG: AdConfig = {
-  mode: 'house',
+  mode: 'off',
   clientId: null,
   defaultSlots: {
     leaderboard: null,
@@ -166,38 +166,63 @@ export const AD_PLACEMENTS: readonly AdPlacement[] = [
   { key: 'global-top', label: 'Global top banner', size: 'leaderboard', group: 'site', perRoute: true },
   { key: 'layout-sidebar', label: 'Layout sidebar', size: 'medium-rectangle', group: 'site' },
   { key: 'search-bottom', label: 'Search — bottom', size: 'leaderboard', group: 'site' },
+  { key: 'streams-bottom', label: 'Streams — bottom', size: 'leaderboard', group: 'site' },
+  { key: 'streams-sidebar', label: 'Streams — sidebar', size: 'medium-rectangle', group: 'site' },
+  { key: 'streams-skyscraper', label: 'Streams — sidebar (tall)', size: 'half-page', group: 'site' },
+  { key: 'tools-bottom', label: 'Tools — bottom', size: 'leaderboard', group: 'site' },
+  { key: 'tools-sidebar', label: 'Tools — sidebar', size: 'medium-rectangle', group: 'site' },
+  { key: 'tools-skyscraper', label: 'Tools — sidebar (tall)', size: 'half-page', group: 'site' },
+  { key: 'gallery-bottom', label: 'Gallery — bottom', size: 'leaderboard', group: 'site' },
+  { key: 'gallery-sidebar', label: 'Gallery — sidebar', size: 'medium-rectangle', group: 'site' },
+  { key: 'gallery-skyscraper', label: 'Gallery — sidebar (tall)', size: 'half-page', group: 'site' },
 
   { key: 'home-top-mobile', label: 'Mobile top', size: 'leaderboard', group: 'home' },
   { key: 'home-mid', label: 'Mid page', size: 'leaderboard', group: 'home' },
   { key: 'home-footer', label: 'Footer', size: 'leaderboard', group: 'home' },
   { key: 'home-multiplex', label: 'Multiplex (bottom)', size: 'leaderboard', group: 'home' },
   { key: 'home-sidebar', label: 'Sidebar', size: 'medium-rectangle', group: 'home' },
+  { key: 'home-skyscraper', label: 'Sidebar (tall)', size: 'half-page', group: 'home' },
 
   { key: 'news-list-infeed', label: 'List — in feed', size: 'large-rectangle', group: 'news', inFeed: true },
+  { key: 'news-list-sidebar', label: 'List — sidebar', size: 'medium-rectangle', group: 'news' },
+  { key: 'news-list-skyscraper', label: 'List — sidebar (tall)', size: 'half-page', group: 'news' },
   { key: 'news-list-bottom', label: 'List — bottom', size: 'leaderboard', group: 'news' },
   { key: 'news-detail-top', label: 'Detail — top (after hero)', size: 'leaderboard', group: 'news' },
   { key: 'news-detail-inarticle', label: 'Detail — in article', size: 'large-rectangle', group: 'news' },
   { key: 'news-detail-sidebar', label: 'Detail — sidebar', size: 'medium-rectangle', group: 'news' },
+  { key: 'news-detail-skyscraper', label: 'Detail — sidebar (tall)', size: 'half-page', group: 'news' },
   { key: 'news-detail-after-related', label: 'Detail — after related', size: 'leaderboard', group: 'news' },
 
   { key: 'matches-infeed', label: 'Matches list — between rows', size: 'leaderboard', group: 'matches' },
+  { key: 'matches-sidebar', label: 'Matches list — sidebar', size: 'medium-rectangle', group: 'matches' },
+  { key: 'matches-skyscraper', label: 'Matches list — sidebar (tall)', size: 'half-page', group: 'matches' },
   { key: 'match-detail-leaderboard', label: 'Match detail — leaderboard', size: 'leaderboard', group: 'matches' },
   { key: 'match-detail-after-overview', label: 'Match detail — after overview', size: 'leaderboard', group: 'matches' },
   { key: 'match-detail-sidebar', label: 'Match detail — sidebar', size: 'medium-rectangle', group: 'matches' },
   { key: 'schedule-infeed', label: 'Schedule — between rows', size: 'leaderboard', group: 'matches' },
+  { key: 'schedule-sidebar', label: 'Schedule — sidebar', size: 'medium-rectangle', group: 'matches' },
+  { key: 'schedule-skyscraper', label: 'Schedule — sidebar (tall)', size: 'half-page', group: 'matches' },
 
   { key: 'players-after-intro', label: 'Players list — after intro', size: 'leaderboard', group: 'directory' },
   { key: 'players-infeed', label: 'Players list — between rows', size: 'leaderboard', group: 'directory' },
+  { key: 'players-sidebar', label: 'Players list — sidebar', size: 'medium-rectangle', group: 'directory' },
+  { key: 'players-skyscraper', label: 'Players list — sidebar (tall)', size: 'half-page', group: 'directory' },
   { key: 'player-detail-after-intro', label: 'Player detail — after intro', size: 'leaderboard', group: 'directory' },
   { key: 'teams-after-intro', label: 'Teams list — after intro', size: 'leaderboard', group: 'directory' },
   { key: 'teams-infeed', label: 'Teams list — between rows', size: 'leaderboard', group: 'directory' },
+  { key: 'teams-sidebar', label: 'Teams list — sidebar', size: 'medium-rectangle', group: 'directory' },
+  { key: 'teams-skyscraper', label: 'Teams list — sidebar (tall)', size: 'half-page', group: 'directory' },
   { key: 'team-detail-after-intro', label: 'Team detail — after intro', size: 'leaderboard', group: 'directory' },
   { key: 'author-after-intro', label: 'Author — after intro', size: 'leaderboard', group: 'directory' },
 
   { key: 'tournaments-after-intro', label: 'Tournaments list — after intro', size: 'leaderboard', group: 'competitions' },
   { key: 'tournaments-infeed', label: 'Tournaments list — between rows', size: 'leaderboard', group: 'competitions' },
+  { key: 'tournaments-sidebar', label: 'Tournaments list — sidebar', size: 'medium-rectangle', group: 'competitions' },
+  { key: 'tournaments-skyscraper', label: 'Tournaments list — sidebar (tall)', size: 'half-page', group: 'competitions' },
   { key: 'tours-after-intro', label: 'Tours list — after intro', size: 'leaderboard', group: 'competitions' },
   { key: 'tours-infeed', label: 'Tours list — between rows', size: 'leaderboard', group: 'competitions' },
+  { key: 'tours-sidebar', label: 'Tours list — sidebar', size: 'medium-rectangle', group: 'competitions' },
+  { key: 'tours-skyscraper', label: 'Tours list — sidebar (tall)', size: 'half-page', group: 'competitions' },
   { key: 'tournament-detail-after-intro', label: 'Tournament — after intro', size: 'leaderboard', group: 'competitions' },
   { key: 'tournament-detail-sidebar', label: 'Tournament — sidebar', size: 'medium-rectangle', group: 'competitions' },
   { key: 'psl-after-intro', label: 'PSL — after intro', size: 'leaderboard', group: 'competitions' },
@@ -205,6 +230,9 @@ export const AD_PLACEMENTS: readonly AdPlacement[] = [
 
   { key: 'prediction-detail-sidebar', label: 'Prediction detail — sidebar', size: 'half-page', group: 'betting' },
   { key: 'prediction-detail-sidebar-mid', label: 'Prediction detail — sidebar (medium)', size: 'medium-rectangle', group: 'betting' },
+  { key: 'predictions-bottom', label: 'Predictions — bottom', size: 'leaderboard', group: 'betting' },
+  { key: 'predictions-sidebar', label: 'Predictions — sidebar', size: 'medium-rectangle', group: 'betting' },
+  { key: 'predictions-skyscraper', label: 'Predictions — sidebar (tall)', size: 'half-page', group: 'betting' },
 ];
 
 /**

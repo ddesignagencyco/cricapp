@@ -225,7 +225,6 @@ export function ToolPage({
   return (
     <ToolDefProvider tool={tool}>
       <div className="space-y-5">
-        <ToolPageHeader tool={tool} />
         {note ? <ToolNote>{note}</ToolNote> : null}
         {children}
         <MoreTools currentSlug={tool.slug} />

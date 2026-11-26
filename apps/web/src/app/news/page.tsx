@@ -31,7 +31,7 @@ export default async function NewsPage({
   ]);
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+    <div className="mx-auto max-w-site px-4 py-8 sm:px-6">
       <NewsBoard
         items={newsResult.result.items}
         categories={categories}

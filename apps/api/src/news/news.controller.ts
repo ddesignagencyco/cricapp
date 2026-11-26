@@ -203,8 +203,8 @@ export class AuthorsAdminController {
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.newsService.removeAuthor(id);
+  remove(@Param('id') id: string, @Query('reassignTo') reassignTo?: string) {
+    return this.newsService.removeAuthor(id, reassignTo?.trim() || undefined);
   }
 }
 

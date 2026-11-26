@@ -1,4 +1,41 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
+import { PaginationQuery } from '../../common/dto/pagination.query.js';
+
+export class ListTournamentsQuery extends PaginationQuery {
+  @ApiPropertyOptional({ description: 'Search by tournament name.' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  q?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by format/type (e.g. t20, odi, test, league).' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(60)
+  format?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by category/country name or code.' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  country?: string;
+
+  @ApiPropertyOptional({ enum: ['active', 'upcoming', 'recent'] })
+  @IsOptional()
+  @IsIn(['active', 'upcoming', 'recent'])
+  status?: 'active' | 'upcoming' | 'recent';
+
+  @ApiPropertyOptional({ enum: ['name', 'type', 'latest'] })
+  @IsOptional()
+  @IsIn(['name', 'type', 'latest'])
+  sortBy?: 'name' | 'type' | 'latest';
+
+  @ApiPropertyOptional({ enum: ['asc', 'desc'] })
+  @IsOptional()
+  @IsIn(['asc', 'desc'])
+  sortOrder?: 'asc' | 'desc';
+}
 
 export class TournamentDto {
   @ApiProperty({ description: 'Sportradar tournament id.' })

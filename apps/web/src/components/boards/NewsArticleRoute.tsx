@@ -20,15 +20,16 @@ export async function newsArticleMetadata(id: string) {
   for (const alt of seo?.hreflang || []) {
     if (alt.language && alt.href) languages[alt.language] = alt.href;
   }
+  const articlePath = item ? newsHref(item) : `/news/${id}`;
   const meta = sharePageMetadata({
     title: item?.title || 'News',
     description: item?.excerpt || 'Cricket news and analysis from CriczApp.',
-    path: item ? newsHref(item) : `/news/${id}`,
+    path: articlePath,
   });
   return {
     ...meta,
     alternates: {
-      canonical: seo?.canonicalUrl,
+      canonical: seo?.canonicalUrl || articlePath,
       languages: Object.keys(languages).length ? languages : undefined,
     },
   };
@@ -46,7 +47,7 @@ export default async function NewsArticleRoute({ id }: { id: string }) {
     ]);
   } catch {
     return (
-      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
+      <div className="mx-auto max-w-site px-4 py-10 sm:px-6">
         <ErrorState
           title="Server unavailable"
           message="Can't reach the API, so this story isn't loaded. Start the backend or try again."

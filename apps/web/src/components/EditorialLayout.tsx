@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { ArrowLeft, ArrowRight, CalendarClock, ChevronRight, FileText, MessageSquare } from 'lucide-react';
 import EditorialToc from './EditorialToc';
+import AdSlot from './advertisements/AdSlot';
 import { COMPANY_PAGES as EDITORIAL_PAGES } from '../lib/companyPages';
 
 export type EditorialTocItem = { id: string; label: string };
@@ -38,7 +39,7 @@ export default function EditorialLayout({
       : undefined;
 
   return (
-    <div className="mx-auto max-w-7xl px-4 pb-14 pt-6 sm:px-6 lg:pb-20 lg:pt-10">
+    <div className="mx-auto max-w-site px-4 pb-14 pt-6 sm:px-6 lg:pb-20 lg:pt-10">
       <nav
         className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-stext"
         aria-label="Breadcrumb"
@@ -74,7 +75,7 @@ export default function EditorialLayout({
         })}
       </div>
 
-      <div className="mt-6 grid items-start gap-x-12 gap-y-10 lg:mt-10 lg:grid-cols-[minmax(0,1fr)_17rem]">
+      <div className="mt-6 grid items-start gap-x-10 gap-y-10 lg:mt-10 lg:grid-cols-[minmax(0,1fr)_300px]">
         <article className="min-w-0">
           <header className="overflow-hidden rounded-2xl border border-lborder bg-card">
             <div className="h-1 w-full bg-[linear-gradient(90deg,var(--color-brand),var(--color-accent))]" />
@@ -197,6 +198,10 @@ export default function EditorialLayout({
                 <EditorialToc items={toc} />
               </div>
             ) : null}
+
+            <div className="flex justify-center">
+              <AdSlot placement="layout-sidebar" />
+            </div>
 
             <div className="rounded-2xl border border-lborder bg-card p-4">
               <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-mtext">

@@ -15,7 +15,7 @@ export default function WatchNowSection({ streams }: { streams: Stream[] }) {
   const items = streams.slice(0, 3);
 
   return (
-    <section className="mx-auto w-full max-w-7xl px-4 sm:px-6">
+    <section className="mx-auto w-full max-w-site px-4 sm:px-6">
       <SectionHeader title="Watch Now" subtitle="Live right now" icon="video" to="/streams" actionLabel="All streams" />
       {items.length === 1 ? (
         <FeaturedStream stream={items[0]} />
@@ -72,10 +72,10 @@ function FeaturedStream({ stream }: { stream: Stream }) {
   return (
     <Link
       href="/streams"
-      className="card-interactive group grid overflow-hidden rounded-xl border border-lborder bg-card md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]"
+      className="card-interactive group grid overflow-hidden rounded-xl border border-lborder bg-card md:grid-cols-[minmax(0,440px)_minmax(0,1fr)]"
     >
-      <Thumbnail stream={stream} sizes="(min-width: 768px) 640px, 100vw" />
-      <div className="flex flex-col justify-center gap-3 p-5 sm:p-6 lg:p-8">
+      <Thumbnail stream={stream} sizes="(min-width: 768px) 440px, 100vw" />
+      <div className="flex flex-col justify-center gap-2.5 p-5 sm:p-6">
         <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-danger">
           <Radio size={14} aria-hidden="true" />
           Streaming now

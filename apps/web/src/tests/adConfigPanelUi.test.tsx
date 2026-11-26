@@ -186,8 +186,8 @@ describe('explaining what will actually render', () => {
     expect(screen.getByText(/no slot will render regardless of the switches below/)).toBeInTheDocument();
   });
 
-  it('does not show that warning in the default mode', () => {
-    renderPanel();
+  it('does not show that warning in placeholder mode', () => {
+    renderPanel(configWith({ mode: 'house' }));
     expect(screen.queryByText(/no slot will render regardless/)).not.toBeInTheDocument();
   });
 

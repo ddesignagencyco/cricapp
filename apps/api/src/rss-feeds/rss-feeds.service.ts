@@ -40,7 +40,7 @@ export class RssFeedsService implements OnModuleInit, OnModuleDestroy {
   constructor(
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
-  ) {}
+  ) { }
 
   onModuleInit() {
     if (process.env.NODE_ENV === 'test' || process.env.RSS_AUTO_SYNC === 'false') return;
@@ -208,6 +208,19 @@ export class RssFeedsService implements OnModuleInit, OnModuleDestroy {
       const xml = await fetchFeedXmlSafe(feed.url);
       const parsed = parseRssOrAtomXml(xml).slice(0, feed.maxItemsPerPoll);
 
+      const defaultAuthor = !feed.authorId
+        ? await this.prisma.author.upsert({
+            where: { slug: 'criczapp-editorial' },
+            update: {},
+            create: {
+              name: 'CriczApp Editorial',
+              slug: 'criczapp-editorial',
+              bio: 'Official CriczApp cricket desk covering live matches, PSL updates, ICC tournaments, and breaking cricket news.',
+            },
+            select: { id: true, name: true },
+          })
+        : null;
+
       let inserted = 0;
       let skippedFilter = 0;
       let skippedDuplicate = 0;
@@ -309,6 +322,9 @@ export class RssFeedsService implements OnModuleInit, OnModuleDestroy {
         const slug = `${slugifyText(title) || 'story'}-${hash}`;
         const parsedDate = item.pubDate ? new Date(item.pubDate) : new Date();
         const publishedAt = Number.isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
+        const plainBodyLength = stripHtmlToText(htmlContent).length;
+        const hasSubstantialBody = plainBodyLength >= 280 && (extractedParagraphs.length >= 2 || plainBodyLength >= 380);
+        const shouldPublish = Boolean(feed.autoPublish && hasSubstantialBody);
 
         const created = await this.prisma.newsArticle.create({
           data: {
@@ -317,18 +333,18 @@ export class RssFeedsService implements OnModuleInit, OnModuleDestroy {
             summary,
             content: htmlContent,
             imageUrl: coverImage,
-            author: feed.authorRef?.name || item.author || feed.name,
-            authorId: feed.authorId || null,
+            author: feed.authorRef?.name || defaultAuthor?.name || 'CriczApp Editorial',
+            authorId: feed.authorId || defaultAuthor?.id || null,
             source: feed.name,
             sourceGuid,
             sourceUrl: item.link || null,
-            canonicalUrl: item.link || null,
+            canonicalUrl: null,
             categoryId: feed.categoryId || null,
             language: feed.language || 'en',
             metaTitle,
             metaDescription,
             publishedAt,
-            isPublished: feed.autoPublish,
+            isPublished: shouldPublish,
           },
           select: { id: true },
         });
@@ -360,7 +376,7 @@ export class RssFeedsService implements OnModuleInit, OnModuleDestroy {
       });
 
       if (inserted > 0 && feed.autoPublish) {
-        await this.redis.cached.del(redisKeys.newsList()).catch(() => {});
+        await this.redis.cached.del(redisKeys.newsList()).catch(() => { });
       }
 
       return {

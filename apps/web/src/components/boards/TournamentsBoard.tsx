@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment, useMemo, useState } from 'react';
+import { Fragment, useMemo } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { X } from 'lucide-react';
 import SearchField from '../SearchField';
@@ -15,6 +15,7 @@ import { DirectoryGridSkeleton } from '../skeletons/Skeletons';
 import { filterChipClass, filterChipCountClass } from '../ui/filterChip';
 import DirectoryPageHeader from '../DirectoryPageHeader';
 import AdSlot from '../advertisements/AdSlot';
+import EditorialSidebar from './EditorialSidebar';
 import { chunkForAds } from '../../lib/advertisements/chunkForAds';
 import TournamentCard from '../TournamentCard';
 import { parsePositiveInt, tournamentKeys } from '../../queries/keys';
@@ -40,7 +41,7 @@ export default function TournamentsBoard({ initialCountry }: Props) {
   const { input: localSearch, setInput: setLocalSearch, query: searchQuery } = useDebouncedUrlQuery({ param: 'q' });
   const search = searchQuery.trim();
   const categoryFilter = searchParams.get('country') || initialCountry || 'all';
-  const [formatFilter, setFormatFilter] = useState('all');
+  const formatFilter = searchParams.get('format') || 'all';
 
   const listParams = {
     limit: LIMIT,
@@ -48,40 +49,39 @@ export default function TournamentsBoard({ initialCountry }: Props) {
     q: search || undefined,
     country: categoryFilter === 'all' ? undefined : categoryFilter,
     format: formatFilter === 'all' ? undefined : formatFilter,
+    sortBy: 'latest',
   };
   const query = useTournamentsQuery(listParams);
   const tournaments = query.data?.items ?? EMPTY_TOURNAMENTS;
   const total = query.data?.total || 0;
   const totalPages = Math.max(1, query.data?.totalPages || Math.ceil(total / LIMIT));
 
-  const formats = useMemo(() => {
+  const formats = useMemo<[string, number][]>(() => {
+    if (query.data?.facets?.formats?.length) {
+      return query.data.facets.formats.map((f) => [f.key, f.count]);
+    }
     const map = new Map<string, number>();
     tournaments.forEach((t) => {
       const f = str(t.type).toUpperCase() || 'Other';
       map.set(f, (map.get(f) || 0) + 1);
     });
     return [...map.entries()].sort((a, b) => b[1] - a[1]);
-  }, [tournaments]);
+  }, [query.data?.facets?.formats, tournaments]);
 
-  const categories = useMemo(() => {
+  const categories = useMemo<[string, number][]>(() => {
+    if (query.data?.facets?.categories?.length) {
+      return query.data.facets.categories.map((c) => [c.key, c.count]);
+    }
     const map = new Map<string, number>();
     tournaments.forEach((t) => {
       const c = str(t.category) || 'International';
       map.set(c, (map.get(c) || 0) + 1);
     });
     return [...map.entries()].sort((a, b) => b[1] - a[1]);
-  }, [tournaments]);
+  }, [query.data?.facets?.categories, tournaments]);
 
-  const filtered = useMemo(() => {
-    let list = tournaments;
-    if (formatFilter !== 'all') {
-      list = list.filter((t) => str(t.type).toUpperCase() === formatFilter);
-    }
-    if (categoryFilter !== 'all') {
-      list = list.filter((t) => str(t.category) === categoryFilter);
-    }
-    return list;
-  }, [tournaments, formatFilter, categoryFilter]);
+  // Filtering (q, country, format) is performed server-side across all pages.
+  const filtered = tournaments;
 
   const activeFilters = formatFilter !== 'all' || categoryFilter !== 'all';
 
@@ -91,8 +91,7 @@ export default function TournamentsBoard({ initialCountry }: Props) {
     totalPages,
     enabled: Boolean(query.data && !query.isPlaceholderData && query.isSuccess),
     queryKey: tournamentKeys.list(nextParams),
-    queryFn: (signal) =>
-      fetchTournamentsPage({ page: nextParams.page, limit: nextParams.limit, q: nextParams.q }, signal),
+    queryFn: (signal) => fetchTournamentsPage(nextParams, signal),
   });
 
   const updateUrl = (params: URLSearchParams) => {
@@ -118,15 +117,19 @@ export default function TournamentsBoard({ initialCountry }: Props) {
 
   const handleFormatFilter = (format: string) => {
     const next = formatFilter === format ? 'all' : format;
-    setFormatFilter(next);
-    if (page !== 1) handlePageChange(1);
+    const params = new URLSearchParams(searchParams.toString());
+    if (next === 'all') params.delete('format');
+    else params.set('format', next);
+    params.delete('page');
+    updateUrl(params);
   };
 
   const clearAll = () => {
-    setFormatFilter('all');
     setLocalSearch('');
     const params = new URLSearchParams(searchParams.toString());
     params.delete('country');
+    params.delete('format');
+    params.delete('q');
     params.delete('page');
     updateUrl(params);
   };
@@ -140,8 +143,6 @@ export default function TournamentsBoard({ initialCountry }: Props) {
         count={total || tournaments.length}
         countLabel="competitions"
       />
-
-      <AdSlot placement="tournaments-after-intro" />
 
       <div className="space-y-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -168,7 +169,7 @@ export default function TournamentsBoard({ initialCountry }: Props) {
           <div className="flex flex-wrap items-center gap-1.5">
             <button
               type="button"
-              onClick={() => setFormatFilter('all')}
+              onClick={() => handleFormatFilter('all')}
               aria-pressed={formatFilter === 'all'}
               className={filterChipClass(formatFilter === 'all')}
             >
@@ -229,28 +230,35 @@ export default function TournamentsBoard({ initialCountry }: Props) {
       ) : query.isError ? (
         <ErrorState message="Tournaments are temporarily unavailable." onRetry={() => void query.refetch()} />
       ) : filtered.length > 0 ? (
-        <>
-          {/* Banners after the 6th and 18th cards, between grids so the equal-height
-              rows (auto-rows-fr) never stretch to fit an ad. */}
-          {chunkForAds(filtered).map((chunk, i, all) => (
-            <Fragment key={i}>
-              <div className={`fade-in grid auto-rows-fr grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3${i > 0 ? ' mt-3' : ''}`}>
-                {chunk.map((tournament: TournamentApi) => (
-                  <TournamentCard key={tournament.id} tournament={tournament} />
-                ))}
-              </div>
-              {i < all.length - 1 ? (
-                <div className="py-4">
-                  <AdSlot placement="tournaments-infeed" />
+        <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+          <div className="min-w-0">
+            {/* Banners after the 6th and 18th cards, between grids so the equal-height
+                rows (auto-rows-fr) never stretch to fit an ad. */}
+            {chunkForAds(filtered).map((chunk, i, all) => (
+              <Fragment key={i}>
+                <div className={`fade-in grid auto-rows-fr grid-cols-1 gap-3 sm:grid-cols-2${i > 0 ? ' mt-3' : ''}`}>
+                  {chunk.map((tournament: TournamentApi) => (
+                    <TournamentCard key={tournament.id} tournament={tournament} />
+                  ))}
                 </div>
-              ) : null}
-            </Fragment>
-          ))}
+                {i < all.length - 1 ? (
+                  <div className="py-4">
+                    <AdSlot placement="tournaments-infeed" />
+                  </div>
+                ) : null}
+              </Fragment>
+            ))}
 
-          <div className="pt-4">
-            <Pagination page={page} totalPages={totalPages} total={total} limit={LIMIT} onPageChange={handlePageChange} />
+            <div className="pt-4">
+              <Pagination page={page} totalPages={totalPages} total={total} limit={LIMIT} onPageChange={handlePageChange} />
+            </div>
           </div>
-        </>
+          <EditorialSidebar
+            topPlacement="tournaments-sidebar"
+            bottomPlacement={filtered.length >= 10 ? 'tournaments-skyscraper' : undefined}
+            variant="competitions"
+          />
+        </div>
       ) : (
         <EmptyState
           title="No tournaments found"

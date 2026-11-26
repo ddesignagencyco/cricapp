@@ -68,6 +68,9 @@ export class TournamentsService {
 
   async list(params?: {
     q?: string;
+    format?: string;
+    country?: string;
+    status?: 'active' | 'upcoming' | 'recent';
     sortBy?: string;
     sortOrder?: string;
     page?: number;
@@ -76,28 +79,123 @@ export class TournamentsService {
   }) {
     const { page, limit, skip } = getPaginationOffset(params?.page, params?.limit, params?.offset);
 
-    const where: Record<string, unknown> = {};
-    if (params?.q) {
-      where.name = { contains: params.q, mode: 'insensitive' };
+    const allRows = await this.prisma.tournament.findMany({
+      orderBy: [{ name: 'asc' }, { id: 'asc' }],
+    });
+
+    const todayIso = new Date().toISOString().slice(0, 10);
+    const currentYear = Number(todayIso.slice(0, 4));
+    const q = params?.q?.trim().toLowerCase() || '';
+    const formatFilter = params?.format?.trim().toUpperCase() || '';
+    const countryFilter = params?.country?.trim().toLowerCase() || '';
+
+    const seasonDates = (row: (typeof allRows)[number]) => {
+      const s = (row.currentSeason ?? null) as Record<string, unknown> | null;
+      const start = String(s?.startDate ?? s?.start_date ?? '').slice(0, 10);
+      const end = String(s?.endDate ?? s?.end_date ?? '').slice(0, 10);
+      const yearRaw = String(s?.year ?? '');
+      const yearMatch = yearRaw.match(/\d{4}/) ?? row.name.match(/\b(20\d{2})\b/);
+      const year = yearMatch ? Number(yearMatch[0]) : 0;
+      return { start, end, year };
+    };
+
+    const categoryLabel = (row: (typeof allRows)[number]): string => {
+      const c = (row.category ?? null) as Record<string, unknown> | null;
+      const name = typeof c?.name === 'string' && c.name.trim() ? c.name.trim() : '';
+      return name || 'International';
+    };
+
+    const categoryCode = (row: (typeof allRows)[number]): string => {
+      const c = (row.category ?? null) as Record<string, unknown> | null;
+      return typeof c?.country_code === 'string' ? c.country_code.trim().toLowerCase() : '';
+    };
+
+    // Base filter (search + status) for computing global facets across all pages
+    const baseFiltered = allRows.filter((row) => {
+      if (q && !row.name.toLowerCase().includes(q) && !categoryLabel(row).toLowerCase().includes(q)) {
+        return false;
+      }
+      if (params?.status) {
+        const { start, end, year } = seasonDates(row);
+        if (params.status === 'active') {
+          // Exclude past seasons that already ended before today, or old years with no end date
+          if (end && end < todayIso) return false;
+          if (!end && year > 0 && year < currentYear) return false;
+          if (!end && !start && year === 0) return false;
+        } else if (params.status === 'upcoming') {
+          if (!start || start <= todayIso) return false;
+        } else if (params.status === 'recent') {
+          if (year > 0 && year < currentYear) return false;
+        }
+      }
+      return true;
+    });
+
+    const formatCounts = new Map<string, number>();
+    const categoryCounts = new Map<string, number>();
+    for (const row of baseFiltered) {
+      const fmt = (row.type || 'Other').toUpperCase();
+      formatCounts.set(fmt, (formatCounts.get(fmt) || 0) + 1);
+      const cat = categoryLabel(row);
+      categoryCounts.set(cat, (categoryCounts.get(cat) || 0) + 1);
     }
 
-    const dir: 'asc' | 'desc' = params?.sortOrder === 'desc' ? 'desc' : 'asc';
-    const orderBy: any[] =
-      params?.sortBy === 'type'
-        ? [{ type: { sort: dir, nulls: 'last' } }, { name: 'asc' }]
-        : [{ name: dir }, { id: 'asc' }];
+    const filtered = baseFiltered.filter((row) => {
+      if (formatFilter && (row.type || 'Other').toUpperCase() !== formatFilter) return false;
+      if (countryFilter) {
+        const cat = categoryLabel(row).toLowerCase();
+        const code = categoryCode(row);
+        if (cat !== countryFilter && code !== countryFilter) return false;
+      }
+      return true;
+    });
 
-    const [rows, total] = await Promise.all([
-      this.prisma.tournament.findMany({
-        where,
-        take: limit,
-        skip,
-        orderBy,
-      }),
-      this.prisma.tournament.count({ where }),
-    ]);
+    const dir = params?.sortOrder === 'desc' ? -1 : 1;
+    filtered.sort((a, b) => {
+      if (params?.sortBy === 'latest') {
+        const da = seasonDates(a);
+        const db = seasonDates(b);
+        const rank = (d: { start: string; end: string; year: number }) => {
+          // 0 = currently live/ongoing, 1 = upcoming, 2 = recent current-year, 3 = older
+          if (d.start && d.end && d.start <= todayIso && d.end >= todayIso) return 0;
+          if (d.start && d.start > todayIso) return 1;
+          if (d.year >= currentYear) return 2;
+          return 3;
+        };
+        const ra = rank(da);
+        const rb = rank(db);
+        if (ra !== rb) return ra - rb;
+        if (ra === 1) {
+          // Soonest upcoming first
+          return da.start.localeCompare(db.start) || a.name.localeCompare(b.name);
+        }
+        const keyA = da.end || da.start || `${da.year}`;
+        const keyB = db.end || db.start || `${db.year}`;
+        if (keyA !== keyB) return keyB.localeCompare(keyA);
+        return a.name.localeCompare(b.name);
+      }
+      if (params?.sortBy === 'type') {
+        const ta = a.type || '\uffff';
+        const tb = b.type || '\uffff';
+        return ta.localeCompare(tb) * dir || a.name.localeCompare(b.name);
+      }
+      return a.name.localeCompare(b.name) * dir || a.id.localeCompare(b.id);
+    });
 
-    return createPaginatedResponse(rows.map((t) => this.toSummary(t)), total, page, limit);
+    const total = filtered.length;
+    const pageRows = filtered.slice(skip, skip + limit);
+
+    return {
+      ...createPaginatedResponse(pageRows.map((t) => this.toSummary(t)), total, page, limit),
+      facets: {
+        formats: [...formatCounts.entries()]
+          .sort((a, b) => b[1] - a[1])
+          .map(([key, count]) => ({ key, count })),
+        categories: [...categoryCounts.entries()]
+          .sort((a, b) => b[1] - a[1])
+          .map(([key, count]) => ({ key, count })),
+      },
+    };
   }
 
   async search(params?: { q?: string; page?: number; limit?: number; offset?: number }) {

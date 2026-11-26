@@ -137,10 +137,14 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   const renderSidebar = (rail: boolean) => (
     <div
       className={`flex h-full min-h-0 w-full shrink-0 flex-col transition-[width] duration-200 ${rail ? 'lg:w-[72px]' : 'lg:w-[240px]'}`}
-      style={{ width: rail ? '72px' : 'min(240px, 84vw)', background: 'var(--admin-sidebar)' }}
+      style={{
+        width: rail ? '72px' : 'min(240px, 84vw)',
+        background: 'var(--admin-sidebar)',
+        borderRight: '1px solid var(--admin-sidebar-border)',
+      }}
     >
       <div className="flex h-16 shrink-0 items-center justify-center overflow-hidden px-3" style={{ borderBottom: '1px solid var(--admin-sidebar-border)' }}>
-        <Logo to="/admin" size={rail ? 'sm' : 'md'} variant={rail ? 'icon' : 'dark'} />
+        <Logo to="/admin" size={rail ? 'sm' : 'md'} variant={rail ? 'icon' : theme === 'light' ? 'light' : 'dark'} />
       </div>
 
       <nav className={`flex-1 overflow-y-auto no-scrollbar py-3 space-y-0.5 ${rail ? 'px-2' : 'px-3'}`} aria-label="Admin sections">
@@ -226,7 +230,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       {/* Main content */}
       <div className={`flex min-w-0 flex-1 flex-col transition-[padding] duration-200 ${collapsed ? 'lg:pl-[72px]' : 'lg:pl-[240px]'}`}>
         {/* Top bar */}
-        <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-2 px-3 sm:gap-4 sm:px-6" style={{ background: 'var(--admin-topbar)', borderBottom: '1px solid var(--admin-border)' }}>
+        <header className="sticky top-0 z-20 flex h-16 shrink-0 items-center gap-2 px-3 sm:gap-4 sm:px-6" style={{ background: 'var(--admin-topbar)', borderBottom: '1px solid var(--admin-border)' }}>
           <button type="button" onClick={() => setMobileOpen(true)}
             className="admin-icon-btn grid h-9 w-9 shrink-0 place-items-center rounded-md lg:hidden"
             aria-label="Open navigation" aria-expanded={mobileOpen} aria-controls="admin-mobile-nav">

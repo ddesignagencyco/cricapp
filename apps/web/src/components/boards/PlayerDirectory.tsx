@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment, useMemo, useState } from 'react';
+import { Fragment, useMemo } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import SearchField from '../SearchField';
 import DirectoryPageHeader from '../DirectoryPageHeader';
@@ -9,6 +9,7 @@ import EmptyState from '../EmptyState';
 import ErrorState from '../ErrorState';
 import Pagination from '../Pagination';
 import AdSlot from '../advertisements/AdSlot';
+import EditorialSidebar from './EditorialSidebar';
 import { DirectoryGridSkeleton } from '../skeletons/Skeletons';
 import { useDebouncedUrlQuery } from '../../hooks/useDebouncedUrlQuery';
 import { fetchPlayersPage } from '../../services/players';
@@ -36,26 +37,31 @@ export default function PlayerDirectory() {
   const page = parsePositiveInt(searchParams.get('page'), 1);
   const { input: localSearch, setInput: setLocalSearch, query: searchQuery } = useDebouncedUrlQuery({ param: 'search' });
   const search = searchQuery.trim();
-  const [roleFilter, setRoleFilter] = useState('all');
+  const roleFilter = searchParams.get('role') || 'all';
 
-  const listParams = { limit: LIMIT, page, q: search || undefined };
+  const listParams = {
+    limit: LIMIT,
+    page,
+    q: search || undefined,
+    role: roleFilter === 'all' ? undefined : roleFilter,
+  };
   const query = usePlayersQuery(listParams);
   const players = query.data?.items ?? EMPTY_PLAYERS;
   const total = query.data?.total || 0;
   const totalPages = Math.max(1, query.data?.totalPages || Math.ceil((total || 0) / LIMIT));
 
   const roles = useMemo(() => {
+    const serverRoles = query.data?.facets?.roles?.map((r) => r.key) ?? [];
+    if (serverRoles.length > 0) return ['all', ...serverRoles];
     const set = new Set<string>();
     for (const p of players) {
       if (p.role && typeof p.role === 'string') set.add(p.role);
     }
     return ['all', ...Array.from(set)];
-  }, [players]);
+  }, [query.data?.facets?.roles, players]);
 
-  const filtered = useMemo(() => {
-    if (roleFilter === 'all') return players;
-    return players.filter((p) => p.role?.toLowerCase() === roleFilter.toLowerCase());
-  }, [players, roleFilter]);
+  // Role + search filtering is performed server-side across all paginated records.
+  const filtered = players;
 
   const nextParams = { ...listParams, page: page + 1 };
   usePrefetchNextPage({
@@ -70,17 +76,27 @@ export default function PlayerDirectory() {
     const params = new URLSearchParams(searchParams.toString());
     if (p <= 1) params.delete('page');
     else params.set('page', String(p));
-    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+    const qs = params.toString();
+    router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   };
 
   const handleRoleFilterChange = (role: string) => {
-    setRoleFilter(role);
-    if (page !== 1) handlePageChange(1);
+    const params = new URLSearchParams(searchParams.toString());
+    if (role === 'all') params.delete('role');
+    else params.set('role', role);
+    params.delete('page');
+    const qs = params.toString();
+    router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   };
 
   const clearSearch = () => {
     setLocalSearch('');
-    if (page !== 1) handlePageChange(1);
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('search');
+    params.delete('role');
+    params.delete('page');
+    const qs = params.toString();
+    router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   };
 
   return (
@@ -92,10 +108,6 @@ export default function PlayerDirectory() {
         count={total}
         countLabel="players"
       />
-
-      {!query.isPending && !query.isError && filtered.length > 0 ? (
-        <AdSlot placement="players-after-intro" />
-      ) : null}
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <SearchField
@@ -139,26 +151,31 @@ export default function PlayerDirectory() {
       ) : query.isError ? (
         <ErrorState message="Players are temporarily unavailable." onRetry={() => void query.refetch()} />
       ) : filtered.length > 0 ? (
-        <>
-          <div className="fade-in grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {filtered.map((p: Player, index) => (
-              <Fragment key={p.id}>
-                <PlayerCard player={p} />
-                {/* A banner after the 6th and 18th cards: a full row at both 2- and 3-column
-                    widths, and only between rows (never after the last card). */}
-                {(index === 5 || index === 17) && index < filtered.length - 1 ? (
-                  <div className="col-span-full py-1">
-                    <AdSlot placement="players-infeed" />
-                  </div>
-                ) : null}
-              </Fragment>
-            ))}
-          </div>
+        <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+          <div className="min-w-0">
+            <div className="fade-in grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {filtered.map((p: Player, index) => (
+                <Fragment key={p.id}>
+                  <PlayerCard player={p} />
+                  {(index + 1) % 6 === 0 && index < filtered.length - 1 ? (
+                    <div className="col-span-full py-1">
+                      <AdSlot placement="players-infeed" />
+                    </div>
+                  ) : null}
+                </Fragment>
+              ))}
+            </div>
 
-          <div className="pt-4">
-            <Pagination page={page} totalPages={totalPages} total={total} limit={LIMIT} onPageChange={handlePageChange} />
+            <div className="pt-4">
+              <Pagination page={page} totalPages={totalPages} total={total} limit={LIMIT} onPageChange={handlePageChange} />
+            </div>
           </div>
-        </>
+          <EditorialSidebar
+            topPlacement="players-sidebar"
+            bottomPlacement={filtered.length >= 14 ? 'players-skyscraper' : undefined}
+            variant="directory"
+          />
+        </div>
       ) : (
         <EmptyState
           title="No players found"
@@ -173,10 +190,7 @@ export default function PlayerDirectory() {
           {search || roleFilter !== 'all' ? (
             <button
               type="button"
-              onClick={() => {
-                clearSearch();
-                setRoleFilter('all');
-              }}
+              onClick={clearSearch}
               className="rounded-md border border-lborder bg-card px-4 py-2 text-sm font-semibold text-mtext transition-colors hover:bg-[var(--color-row-hover)]"
             >
               Clear search and filters
