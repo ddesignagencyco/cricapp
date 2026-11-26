@@ -1,11 +1,9 @@
 import Link from 'next/link';
-import { Calendar, ChevronRight, MapPin } from 'lucide-react';
+import { Calendar, ChevronRight, MapPin, Trophy } from 'lucide-react';
 import { str } from '../utils/extract';
-import { getInitials } from '../utils/helpers';
 import type { TournamentApi } from '../types/index';
 import FavoriteButton from './FavoriteButton';
 import ShareButton from './ShareButton';
-import EntityAvatar from './EntityAvatar';
 import { directoryRowCard } from './ui/interaction';
 
 export default function TournamentCard({ tournament }: { tournament: TournamentApi }) {
@@ -28,9 +26,13 @@ export default function TournamentCard({ tournament }: { tournament: TournamentA
   return (
     <article className={directoryRowCard}>
       <Link href={href} className="flex min-w-0 flex-1 items-center gap-3">
-        <EntityAvatar className="h-12 w-12 text-sm" title={name}>
-          {getInitials(name)}
-        </EntityAvatar>
+        <span
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-accent/20 bg-accent/10 text-accent"
+          title={name}
+          aria-hidden="true"
+        >
+          <Trophy size={20} strokeWidth={1.9} />
+        </span>
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 items-center gap-2">
             <h2 className="truncate text-sm font-semibold text-mtext transition-colors group-hover:text-accent">

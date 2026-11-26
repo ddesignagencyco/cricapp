@@ -121,8 +121,8 @@ export default function PredictionsHub({
         />
       </PageToolbar>
 
-      <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
-        <div className="min-w-0 space-y-5">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-stretch">
+        <div className="flex min-w-0 flex-col gap-5">
           {hasPerformance && performance ? (
             <section className="prediction-card rounded-md border border-lborder bg-card p-4 sm:p-5">
               <div className="flex flex-wrap items-end justify-between gap-3">

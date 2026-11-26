@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { AdminSearchField } from './AdminShared';
 
 export interface EntityChoice {
@@ -69,7 +70,10 @@ export default function EntityIdPicker({ label, hint, values, onChange, search }
   }, [query, search]);
 
   const add = (item: EntityChoice) => {
-    if (values.some((row) => row.id === item.id)) return;
+    if (values.some((row) => row.id === item.id)) {
+      toast.error(`"${item.label || item.id}" is already selected.`);
+      return;
+    }
     onChange([...values, item]);
     setQuery('');
     setHits([]);
@@ -162,19 +166,32 @@ export default function EntityIdPicker({ label, hint, values, onChange, search }
           className="mt-1 max-h-40 overflow-auto rounded-md"
           style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-input-bg)' }}
         >
-          {hits.map((hit) => (
-            <li key={hit.id} role="option" aria-selected={false}>
+          {hits.map((hit) => {
+            const alreadySelected = values.some((row) => row.id === hit.id);
+            return (
+            <li key={hit.id} role="option" aria-selected={alreadySelected}>
               <button
                 type="button"
                 onClick={() => add(hit)}
-                className="flex w-full flex-col items-start px-2.5 py-1.5 text-left text-xs hover:opacity-80"
+                className="flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-left text-xs hover:opacity-80"
                 style={{ color: 'var(--admin-text)' }}
               >
-                <span className="max-w-full truncate font-semibold" title={hit.label}>{hit.label}</span>
-                <span className="max-w-full truncate" style={{ color: 'var(--admin-text-muted)' }} title={hit.id}>{hit.id}</span>
+                <span className="flex min-w-0 flex-1 flex-col items-start">
+                  <span className="max-w-full truncate font-semibold" title={hit.label}>{hit.label}</span>
+                  <span className="max-w-full truncate" style={{ color: 'var(--admin-text-muted)' }} title={hit.id}>{hit.id}</span>
+                </span>
+                {alreadySelected ? (
+                  <span
+                    className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold"
+                    style={{ background: 'var(--admin-info-bg)', color: 'var(--admin-accent)' }}
+                  >
+                    Selected
+                  </span>
+                ) : null}
               </button>
             </li>
-          ))}
+            );
+          })}
         </ul>
       )}
       {phase === 'loading' && (

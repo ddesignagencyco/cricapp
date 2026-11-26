@@ -16,6 +16,7 @@ import {
 import AdSlot from '../advertisements/AdSlot';
 import TeamLogo from '../TeamLogo';
 import NewsCopy from '../NewsCopy';
+import RemoteImage from '../RemoteImage';
 import { fetchLiveMatches, fetchMatches } from '../../services/matches';
 import { fetchTournaments } from '../../services/tournaments';
 import { fetchToursPage } from '../../services/tours';
@@ -354,7 +355,7 @@ function TopHeadlinesCard() {
 
   return (
     <section className="rounded-xl border border-lborder bg-card p-4 shadow-sm">
-      <div className="mb-3 flex items-center justify-between">
+      <div className="mb-3.5 flex items-center justify-between">
         <h3 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-mtext">
           <Newspaper size={13} className="text-accent" aria-hidden />
           Top Headlines
@@ -363,14 +364,31 @@ function TopHeadlinesCard() {
           All <ArrowRight size={11} />
         </Link>
       </div>
-      <ul className="divide-y divide-lborder/50">
+      <ul className="divide-y divide-lborder/60">
         {articles.slice(0, 4).map((item) => (
-          <li key={item.id}>
-            <Link href={newsHref(item)} className="group block py-2 first:pt-0 last:pb-0">
-              <p className="line-clamp-2 text-xs font-semibold leading-snug text-mtext group-hover:text-accent">
-                {item.title}
-              </p>
-              {item.date ? <p className="mt-1 text-[10px] text-stext">{item.date}</p> : null}
+          <li key={item.id} className="py-3 first:pt-0 last:pb-0">
+            <Link href={newsHref(item)} className="group flex items-start gap-3">
+              <div className="relative h-12 w-16 shrink-0 overflow-hidden rounded-md bg-secondary">
+                {item.image ? (
+                  <RemoteImage
+                    src={item.image}
+                    alt={item.title}
+                    fill
+                    sizes="64px"
+                    fit="cover"
+                    objectPosition="top"
+                    className="object-cover object-top transition-transform duration-200 group-hover:scale-105"
+                  />
+                ) : (
+                  <div className="media-fallback h-full w-full" />
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="line-clamp-2 text-xs font-semibold leading-snug text-mtext group-hover:text-accent">
+                  {item.title}
+                </p>
+                {item.date ? <p className="mt-1 text-[10px] text-stext">{item.date}</p> : null}
+              </div>
             </Link>
           </li>
         ))}
@@ -501,27 +519,44 @@ function UrduNewsCard() {
 
   return (
     <section className="rounded-xl border border-lborder bg-card p-4 shadow-sm">
-      <div className="mb-3 flex items-center justify-between">
+      <div className="mb-3.5 flex items-center justify-between">
         <h3 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-mtext">
           <Newspaper size={13} className="text-accent" aria-hidden />
-          Urdu News · اردو خبریں
+          Urdu News
         </h3>
         <Link href="/ur/news" className="inline-flex items-center gap-0.5 text-[11px] font-semibold text-accent hover:underline">
           All <ArrowRight size={11} />
         </Link>
       </div>
-      <ul className="divide-y divide-lborder/50">
+      <ul className="divide-y divide-lborder/60">
         {articles.slice(0, 4).map((item) => (
-          <li key={item.id}>
-            <Link href={newsHref(item)} className="group block py-2 first:pt-0 last:pb-0">
-              <NewsCopy
-                as="p"
-                language="ur"
-                text={item.title}
-                className="line-clamp-2 text-xs font-semibold leading-relaxed text-mtext group-hover:text-accent"
-              >
-                {item.title}
-              </NewsCopy>
+          <li key={item.id} className="py-3 first:pt-0 last:pb-0">
+            <Link href={newsHref(item)} className="group flex flex-row-reverse items-start gap-3">
+              <div className="relative h-12 w-16 shrink-0 overflow-hidden rounded-md bg-secondary">
+                {item.image ? (
+                  <RemoteImage
+                    src={item.image}
+                    alt={item.title}
+                    fill
+                    sizes="64px"
+                    fit="cover"
+                    objectPosition="top"
+                    className="object-cover object-top transition-transform duration-200 group-hover:scale-105"
+                  />
+                ) : (
+                  <div className="media-fallback h-full w-full" />
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <NewsCopy
+                  as="p"
+                  language="ur"
+                  text={item.title}
+                  className="line-clamp-2 text-xs font-semibold leading-relaxed text-mtext group-hover:text-accent"
+                >
+                  {item.title}
+                </NewsCopy>
+              </div>
             </Link>
           </li>
         ))}
@@ -557,7 +592,7 @@ function EditorialSidebarInner({
     variant ?? (widget === 'tools' ? 'predictions' : 'tools');
 
   return (
-    <aside className="hidden lg:sticky lg:top-20 lg:flex lg:flex-col lg:gap-6">
+    <aside className="hidden lg:self-start lg:sticky lg:top-20 lg:flex lg:flex-col lg:gap-6">
       <div className="flex justify-center empty:hidden">
         <AdSlot placement={topPlacement} />
       </div>

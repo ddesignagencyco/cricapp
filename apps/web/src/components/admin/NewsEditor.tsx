@@ -505,7 +505,7 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
             className="btn-brand inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-4 py-2 text-xs font-bold transition-colors disabled:opacity-50"
           >
             {saving ? <Loader2 size={12} className="shrink-0 animate-spin" /> : <Send size={12} className="shrink-0" />}
-            {mode === 'edit' ? 'Update News' : 'Publish Live'}
+            {mode === 'edit' ? 'Publish' : 'Publish Live'}
           </button>
         </div>
       </div>
@@ -575,6 +575,45 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
               placeholder={placeholders.content}
               language={form.language}
             />
+          </div>
+
+          {/* SEO (full width under content) */}
+          <div className="rounded-lg p-4 space-y-3 sm:p-5" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
+            <p className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5" style={{ color: 'var(--admin-text)' }}>
+              <Search size={12} className="shrink-0" style={{ color: 'var(--admin-accent)' }} /> SEO
+            </p>
+            <AdminField label="SEO title">
+              <AdminInput value={form.metaTitle} onChange={(e) => set('metaTitle', e.target.value)} placeholder={placeholders.metaTitle} {...copyField} />
+              <div className="mt-1 flex justify-end">
+                <CharCount value={form.metaTitle} max={NEWS_META_TITLE_SUGGESTED} />
+              </div>
+            </AdminField>
+            <AdminField label="SEO description">
+              <AdminInput value={form.metaDescription} onChange={(e) => set('metaDescription', e.target.value)} placeholder={placeholders.metaDescription} {...copyField} />
+              <div className="mt-1 flex justify-end">
+                <CharCount value={form.metaDescription} max={NEWS_META_DESCRIPTION_SUGGESTED} />
+              </div>
+            </AdminField>
+            <AdminField label="Canonical URL">
+              <AdminInput value={form.canonicalUrl} onChange={(e) => set('canonicalUrl', e.target.value)} placeholder="https://…" />
+            </AdminField>
+            {/* What a reader will actually see in a result, using the same fallbacks the
+                published page applies when the meta fields are blank. */}
+            <div className="rounded-md p-3" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-bg)' }}>
+              <p className="mb-1 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-muted)' }}>
+                Search preview
+              </p>
+              <p className="truncate text-sm font-medium" style={{ color: 'var(--color-brand)' }} title={form.metaTitle.trim() || form.title.trim() || 'Headline appears here'}>
+                {form.metaTitle.trim() || form.title.trim() || 'Headline appears here'}
+              </p>
+              <p className="break-all text-[11px]" style={{ color: 'var(--admin-text-muted)' }}>
+                {form.canonicalUrl.trim() ||
+                  `criczapp.com/${form.language === 'ur' ? 'ur/' : ''}news/${form.slug || slugifyNews(form.title) || '…'}`}
+              </p>
+              <p className="mt-1 line-clamp-2 break-words text-xs" style={{ color: 'var(--admin-text-secondary)' }}>
+                {form.metaDescription.trim() || form.summary.trim() || 'Meta description appears here. Leave it blank and the summary is used.'}
+              </p>
+            </div>
           </div>
         </div>
 
@@ -729,44 +768,6 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
             />
           </div>
 
-          <div className="rounded-lg p-3 space-y-3 sm:p-4" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
-            <p className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5" style={{ color: 'var(--admin-text)' }}>
-              <Search size={12} className="shrink-0" style={{ color: 'var(--admin-accent)' }} /> SEO
-            </p>
-            <AdminField label="SEO title">
-              <AdminInput value={form.metaTitle} onChange={(e) => set('metaTitle', e.target.value)} placeholder={placeholders.metaTitle} {...copyField} />
-              <div className="mt-1 flex justify-end">
-                <CharCount value={form.metaTitle} max={NEWS_META_TITLE_SUGGESTED} />
-              </div>
-            </AdminField>
-            <AdminField label="SEO description">
-              <AdminInput value={form.metaDescription} onChange={(e) => set('metaDescription', e.target.value)} placeholder={placeholders.metaDescription} {...copyField} />
-              <div className="mt-1 flex justify-end">
-                <CharCount value={form.metaDescription} max={NEWS_META_DESCRIPTION_SUGGESTED} />
-              </div>
-            </AdminField>
-            <AdminField label="Canonical URL">
-              <AdminInput value={form.canonicalUrl} onChange={(e) => set('canonicalUrl', e.target.value)} placeholder="https://…" />
-            </AdminField>
-            {/* What a reader will actually see in a result, using the same fallbacks the
-                published page applies when the meta fields are blank. */}
-            <div className="rounded-md p-3" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-bg)' }}>
-              <p className="mb-1 text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-muted)' }}>
-                Search preview
-              </p>
-              <p className="truncate text-sm font-medium" style={{ color: 'var(--color-brand)' }} title={form.metaTitle.trim() || form.title.trim() || 'Headline appears here'}>
-                {form.metaTitle.trim() || form.title.trim() || 'Headline appears here'}
-              </p>
-              <p className="break-all text-[11px]" style={{ color: 'var(--admin-text-muted)' }}>
-                {form.canonicalUrl.trim() ||
-                  `criczapp.com/${form.language === 'ur' ? 'ur/' : ''}news/${form.slug || slugifyNews(form.title) || '…'}`}
-              </p>
-              <p className="mt-1 line-clamp-2 break-words text-xs" style={{ color: 'var(--admin-text-secondary)' }}>
-                {form.metaDescription.trim() || form.summary.trim() || 'Meta description appears here. Leave it blank and the summary is used.'}
-              </p>
-            </div>
-          </div>
-
           {/* Push and social copy. The API has stored these columns all along, but the
               editor had no way to fill them, so they were always sent empty. */}
           <div className="rounded-lg p-3 space-y-3 sm:p-4" style={{ border: '1px solid var(--admin-border)', background: 'var(--admin-card)' }}>
@@ -777,19 +778,19 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
               Draft copy stored with the article for a later push or social post. Leave blank to skip it.
             </p>
             <AdminField label="Push title">
-              <AdminInput value={form.pushNotificationTitle} onChange={(e) => set('pushNotificationTitle', e.target.value)} placeholder="Short line for the notification" {...copyField} />
+              <AdminInput value={form.pushNotificationTitle} onChange={(e) => set('pushNotificationTitle', e.target.value)} placeholder="Short line for the notification" />
               <div className="mt-1 flex justify-end">
                 <CharCount value={form.pushNotificationTitle} max={NEWS_PUSH_TITLE_MAX} limitIsApi />
               </div>
             </AdminField>
             <AdminField label="Push body">
-              <AdminInput value={form.pushNotificationBody} onChange={(e) => set('pushNotificationBody', e.target.value)} placeholder="One or two lines of detail" {...copyField} />
+              <AdminInput value={form.pushNotificationBody} onChange={(e) => set('pushNotificationBody', e.target.value)} placeholder="One or two lines of detail" />
               <div className="mt-1 flex justify-end">
                 <CharCount value={form.pushNotificationBody} max={NEWS_PUSH_BODY_MAX} limitIsApi />
               </div>
             </AdminField>
             <AdminField label="Social copy">
-              <AdminInput value={form.socialCopy} onChange={(e) => set('socialCopy', e.target.value)} placeholder="Caption for the social post" {...copyField} />
+              <AdminInput value={form.socialCopy} onChange={(e) => set('socialCopy', e.target.value)} placeholder="Caption for the social post" />
               <div className="mt-1 flex justify-end">
                 <CharCount value={form.socialCopy} max={NEWS_SOCIAL_COPY_MAX} limitIsApi />
               </div>

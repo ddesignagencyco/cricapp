@@ -10,7 +10,7 @@ import {
   ResolveReportDto,
   CreateStreamDto,
 } from './dto/admin.dto.js';
-import { NewsListQuery, CreateAuthorDto, UpdateAuthorDto } from '../news/dto/news.dto.js';
+import { NewsListQuery, BulkNewsActionDto, CreateAuthorDto, UpdateAuthorDto } from '../news/dto/news.dto.js';
 
 @ApiTags('admin')
 @Controller('admin')
@@ -62,6 +62,13 @@ export class AdminController {
   @ApiResponse({ status: 200, description: 'Count of published draft articles.' })
   async publishAllDraftNews() {
     return this.adminService.publishAllDraftNews();
+  }
+
+  @Post('news/bulk')
+  @ApiOperation({ summary: 'Bulk update (category, author, status) or delete news articles (admin)' })
+  @ApiResponse({ status: 200, description: 'Count of updated or deleted articles.' })
+  async bulkNewsAction(@Body() dto: BulkNewsActionDto) {
+    return this.adminService.bulkNewsAction(dto);
   }
 
   @Get('authors')

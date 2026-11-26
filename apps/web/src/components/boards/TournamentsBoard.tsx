@@ -230,8 +230,8 @@ export default function TournamentsBoard({ initialCountry }: Props) {
       ) : query.isError ? (
         <ErrorState message="Tournaments are temporarily unavailable." onRetry={() => void query.refetch()} />
       ) : filtered.length > 0 ? (
-        <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
-          <div className="min-w-0">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-stretch">
+          <div className="flex min-w-0 flex-col">
             {/* Banners after the 6th and 18th cards, between grids so the equal-height
                 rows (auto-rows-fr) never stretch to fit an ad. */}
             {chunkForAds(filtered).map((chunk, i, all) => (
@@ -249,13 +249,13 @@ export default function TournamentsBoard({ initialCountry }: Props) {
               </Fragment>
             ))}
 
-            <div className="pt-4">
-              <Pagination page={page} totalPages={totalPages} total={total} limit={LIMIT} onPageChange={handlePageChange} />
+            <div className="mt-auto pt-6">
+              <Pagination className="mt-0" page={page} totalPages={totalPages} total={total} limit={LIMIT} onPageChange={handlePageChange} />
             </div>
           </div>
           <EditorialSidebar
-            topPlacement="tournaments-sidebar"
-            bottomPlacement={filtered.length >= 10 ? 'tournaments-skyscraper' : undefined}
+            topPlacement={filtered.length >= 16 ? 'tournaments-skyscraper' : 'tournaments-sidebar'}
+            bottomPlacement={filtered.length >= 18 ? 'tournaments-sidebar' : undefined}
             variant="competitions"
           />
         </div>

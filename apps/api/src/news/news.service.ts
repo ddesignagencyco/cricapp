@@ -15,6 +15,7 @@ import type {
   CreateNewsDto,
   UpdateNewsDto,
   NewsListQuery,
+  BulkNewsActionDto,
   CreateAuthorDto,
   UpdateAuthorDto,
   CreateCategoryDto,
@@ -579,6 +580,61 @@ ${urls}
     if (!existing) throw new NotFoundException(`Article ${id} not found`);
     await this.prisma.newsArticle.delete({ where: { id } });
     return { deleted: true };
+  }
+
+  async bulkAction(dto: BulkNewsActionDto) {
+    const uniqueIds = [...new Set(dto.ids.map((id) => id.trim()).filter(Boolean))];
+    if (uniqueIds.length === 0) {
+      throw new BadRequestException('At least one article ID is required');
+    }
+
+    if (dto.action === 'delete') {
+      const res = await this.prisma.newsArticle.deleteMany({
+        where: { id: { in: uniqueIds } },
+      });
+      return { deleted: res.count };
+    }
+
+    if (!dto.categoryId && !dto.authorId && !dto.status) {
+      throw new BadRequestException(
+        'Provide at least one field to update (categoryId, authorId, or status)',
+      );
+    }
+
+    const data: Record<string, unknown> = {};
+    if (dto.categoryId) {
+      await this.validateCategory(dto.categoryId);
+      data.categoryId = dto.categoryId;
+    }
+    if (dto.authorId) {
+      const author = await this.prisma.author.findUnique({
+        where: { id: dto.authorId },
+      });
+      if (!author) throw new BadRequestException(`Author ${dto.authorId} not found`);
+      data.authorId = author.id;
+      data.author = author.name;
+    }
+    if (dto.status === 'published') {
+      data.isPublished = true;
+    } else if (dto.status === 'draft') {
+      data.isPublished = false;
+    }
+
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const res = await tx.newsArticle.updateMany({
+        where: { id: { in: uniqueIds } },
+        data: data as any,
+      });
+      if (dto.status === 'published') {
+        await tx.newsArticle.updateMany({
+          where: { id: { in: uniqueIds }, publishedAt: null },
+          data: { publishedAt: new Date() },
+        });
+      }
+      return res.count;
+    });
+
+    return { updated };
   }
 
   async listCategories() {

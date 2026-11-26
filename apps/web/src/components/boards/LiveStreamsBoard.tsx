@@ -109,12 +109,15 @@ export default function LiveStreamsBoard() {
       ) : error ? (
         <ErrorState message="Streams are temporarily unavailable." onRetry={() => setRetryKey((k) => k + 1)} />
       ) : !featured ? (
-        <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
-          <div className="min-w-0">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-stretch">
+          <div className="flex min-w-0 flex-col gap-6">
             <EmptyState
               title={`No ${status} streams`}
               message="Streams appear here when an administrator publishes a stream URL."
             />
+            <div className="mt-auto">
+              <AdSlot placement="streams-bottom" />
+            </div>
           </div>
           <EditorialSidebar topPlacement="streams-sidebar" variant="media" />
         </div>
@@ -151,6 +154,9 @@ export default function LiveStreamsBoard() {
               targetId={featured.id}
               refreshIntervalMs={featured.status === 'live' ? STREAM_COMMENTS_REFRESH_MS : undefined}
             />
+            <div className="pt-2">
+              <AdSlot placement="streams-bottom" />
+            </div>
           </div>
           <div className="space-y-4">
             <div className="surface-card rounded-md p-4">
@@ -202,9 +208,6 @@ export default function LiveStreamsBoard() {
           </div>
         </div>
       )}
-      <div className="mt-8">
-        <AdSlot placement="streams-bottom" />
-      </div>
     </div>
   );
 }

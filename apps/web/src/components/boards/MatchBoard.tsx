@@ -162,7 +162,7 @@ export default function MatchBoard() {
       </PageToolbar>
 
       {activeQuery.isPending ? (
-        <MatchCardGridSkeleton />
+        <MatchCardGridSkeleton withSidebar />
       ) : activeQuery.isError ? (
         <ErrorState
           title="Server unavailable"
@@ -170,8 +170,8 @@ export default function MatchBoard() {
           onRetry={() => void activeQuery.refetch()}
         />
       ) : visibleMatches.length > 0 ? (
-        <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
-          <div className="min-w-0 space-y-6">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-stretch">
+          <div className="flex min-w-0 flex-col gap-6">
             <div className="fade-in grid grid-cols-1 gap-3 sm:grid-cols-2">
               {visibleMatches.map((m, index) => (
                 <Fragment key={`${m.matchId || m.id || 'match'}-${index}`}>
@@ -190,12 +190,14 @@ export default function MatchBoard() {
               </div>
             ) : null}
             {!liveEndpoint ? (
-              <Pagination page={page} totalPages={totalPages} total={total} limit={LIMIT} onPageChange={handlePageChange} />
+              <div className="mt-auto">
+                <Pagination className="mt-0" page={page} totalPages={totalPages} total={total} limit={LIMIT} onPageChange={handlePageChange} />
+              </div>
             ) : null}
           </div>
           <EditorialSidebar
-            topPlacement="matches-sidebar"
-            bottomPlacement={visibleMatches.length >= 14 ? 'matches-skyscraper' : undefined}
+            topPlacement={visibleMatches.length >= 14 ? 'matches-skyscraper' : 'matches-sidebar'}
+            bottomPlacement={visibleMatches.length >= 16 ? 'matches-sidebar' : undefined}
             variant="matches"
           />
         </div>

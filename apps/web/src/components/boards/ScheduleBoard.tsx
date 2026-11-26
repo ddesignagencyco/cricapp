@@ -1,7 +1,6 @@
 'use client';
 
 import TeamLogo from '../TeamLogo';
-import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Calendar, ChevronLeft, ChevronRight, Clock, MapPin } from 'lucide-react';
 import { StatusBadge } from '../Badge';
@@ -101,28 +100,7 @@ export default function ScheduleBoard({
   const goToToday = () => onDateChange(toKarachiISODate());
 
   const isToday = date === toKarachiISODate();
-  const [tournamentFilter, setTournamentFilter] = useState('all');
-
-  useEffect(() => {
-    setTournamentFilter('all');
-  }, [date, tab]);
-
-  const tournamentTabs = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const record of events) {
-      const name = tournamentNameFromRecord(record);
-      counts.set(name, (counts.get(name) || 0) + 1);
-    }
-    return [
-      { key: 'all', label: 'All', count: events.length },
-      ...[...counts.entries()].map(([name, count]) => ({ key: name, label: name, count })),
-    ];
-  }, [events]);
-
-  const visibleEvents =
-    tournamentFilter === 'all'
-      ? events
-      : events.filter((record) => tournamentNameFromRecord(record) === tournamentFilter);
+  const visibleEvents = events;
 
   // Live scores only when something on this day is in play.
   const hasLive = isToday && events.some((record) => record.status === 'live');
@@ -202,34 +180,23 @@ export default function ScheduleBoard({
         </div>
       </header>
 
-      <div className="space-y-3">
-        <PageToolbar
-          end={
-            <p className="text-xs text-stext">
-              <span className="font-semibold text-mtext">{visibleEvents.length}</span> matches
-            </p>
-          }
-        >
-          <Tabs tabs={tabs} active={tab} onChange={onTabChange} />
-        </PageToolbar>
-        {tournamentTabs.length > 2 ? (
-          <Tabs
-            tabs={tournamentTabs}
-            active={tournamentTabs.some((item) => item.key === tournamentFilter) ? tournamentFilter : 'all'}
-            onChange={setTournamentFilter}
-            variant="tags"
-            size="sm"
-          />
-        ) : null}
-      </div>
+      <PageToolbar
+        end={
+          <p className="text-xs text-stext">
+            <span className="font-semibold text-mtext">{visibleEvents.length}</span> matches
+          </p>
+        }
+      >
+        <Tabs tabs={tabs} active={tab} onChange={onTabChange} />
+      </PageToolbar>
 
       {loading ? (
-        <MatchCardGridSkeleton />
+        <MatchCardGridSkeleton withSidebar />
       ) : errorMessage ? (
         <ErrorState message={errorMessage} onRetry={onRetry} />
       ) : visibleEvents.length > 0 ? (
-        <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
-          <div className="min-w-0 space-y-6">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-stretch">
+          <div className="flex min-w-0 flex-col gap-6">
             <div className="fade-in grid grid-cols-1 gap-3 sm:grid-cols-2">
               {visibleEvents.map((record, index) => (
                 <div key={record.eventId} className="contents">
@@ -242,17 +209,20 @@ export default function ScheduleBoard({
                 </div>
               ))}
             </div>
-            <Pagination
-              page={activeMeta.page}
-              totalPages={activeMeta.totalPages}
-              total={activeMeta.total}
-              limit={activeMeta.limit}
-              onPageChange={onPageChange}
-            />
+            <div className="mt-auto">
+              <Pagination
+                className="mt-0"
+                page={activeMeta.page}
+                totalPages={activeMeta.totalPages}
+                total={activeMeta.total}
+                limit={activeMeta.limit}
+                onPageChange={onPageChange}
+              />
+            </div>
           </div>
           <EditorialSidebar
-            topPlacement="schedule-sidebar"
-            bottomPlacement={visibleEvents.length >= 14 ? 'schedule-skyscraper' : undefined}
+            topPlacement={visibleEvents.length >= 14 ? 'schedule-skyscraper' : 'schedule-sidebar'}
+            bottomPlacement={visibleEvents.length >= 16 ? 'schedule-sidebar' : undefined}
             variant="schedule"
           />
         </div>
@@ -334,11 +304,6 @@ function roundLabel(round: Record<string, unknown>, fallback?: unknown): string 
   const n = Number(round.number);
   if (!Number.isNaN(n) && n > 0) return `Round ${n}`;
   return '';
-}
-
-function tournamentNameFromRecord(record: SportEventRecord): string {
-  const { ev } = payloadEvent(record);
-  return tournamentNameFromEvent(ev);
 }
 
 function venueLabel(ev: Record<string, unknown>): string {

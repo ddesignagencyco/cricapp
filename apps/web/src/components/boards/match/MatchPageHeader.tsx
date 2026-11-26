@@ -77,19 +77,22 @@ export default function MatchPageHeader({
             competition and the match number are both in the metadata row below, where
             they belong.
           */}
-          <h1 className="mc-title">
-            <TeamLink
-              teamId={view.home.id}
-              name={view.home.name}
-              className="transition-colors hover:text-accent"
-            />
-            <span className="mc-title__vs">vs</span>
-            <TeamLink
-              teamId={view.away.id}
-              name={view.away.name}
-              className="transition-colors hover:text-accent"
-            />
-          </h1>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="mc-title">
+              <TeamLink
+                teamId={view.home.id}
+                name={view.home.name}
+                className="transition-colors hover:text-accent"
+              />
+              <span className="mc-title__vs">vs</span>
+              <TeamLink
+                teamId={view.away.id}
+                name={view.away.name}
+                className="transition-colors hover:text-accent"
+              />
+            </h1>
+            <StatusBadge status={view.status} />
+          </div>
 
           <ul className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-stext">
             {view.formatLabel ? (
@@ -134,7 +137,6 @@ export default function MatchPageHeader({
         </div>
 
         <div className="flex shrink-0 items-center gap-2">
-          <StatusBadge status={view.status} />
           <FavoriteButton targetType="match" targetId={matchId} compact />
           <ShareButton
             type="match"
