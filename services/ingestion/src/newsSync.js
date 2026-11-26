@@ -607,7 +607,7 @@ export async function syncDbRssFeed(feed) {
           feed.name,
           sourceGuid,
           raw.link || null,
-          raw.link || null,
+          null,
           feed.category_id || null,
           feed.language || 'en',
           metaTitle,

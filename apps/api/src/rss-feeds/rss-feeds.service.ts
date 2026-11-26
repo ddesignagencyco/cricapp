@@ -338,7 +338,7 @@ export class RssFeedsService implements OnModuleInit, OnModuleDestroy {
             source: feed.name,
             sourceGuid,
             sourceUrl: item.link || null,
-            canonicalUrl: item.link || null,
+            canonicalUrl: null,
             categoryId: feed.categoryId || null,
             language: feed.language || 'en',
             metaTitle,
