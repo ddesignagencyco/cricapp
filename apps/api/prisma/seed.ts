@@ -106,9 +106,72 @@ async function seedSuperAdmin(): Promise<void> {
   console.log(`[seed] superadmin ready: ${email}`);
 }
 
+async function seedEditorialAccounts(): Promise<void> {
+  const enableDemo =
+    process.env.SEED_EDITORIAL_DEMO === 'true' ||
+    process.env.NODE_ENV !== 'production';
+
+  const accounts = [
+    {
+      email: (process.env.AUTHOR_EMAIL || (enableDemo ? 'author@cricapp.local' : '')).trim().toLowerCase(),
+      password: process.env.AUTHOR_PASSWORD || (enableDemo ? 'Author@123' : ''),
+      username: 'author_ayesha',
+      displayName: 'Ayesha Khan',
+      editorialRole: 'AUTHOR',
+      authorSlug: 'ayesha-khan',
+      authorBio: 'Cricket journalist covering PSL and Pakistan international cricket.',
+    },
+    {
+      email: (process.env.EDITOR_EMAIL || (enableDemo ? 'editor@cricapp.local' : '')).trim().toLowerCase(),
+      password: process.env.EDITOR_PASSWORD || (enableDemo ? 'Editor@123' : ''),
+      username: 'editor_hamza',
+      displayName: 'Hamza Ali',
+      editorialRole: 'EDITOR',
+      authorSlug: 'hamza-ali',
+      authorBio: 'Senior Editorial Desk lead.',
+    },
+  ];
+
+  for (const acc of accounts) {
+    if (!acc.email || !acc.password) continue;
+    const author = await prisma.author.upsert({
+      where: { slug: acc.authorSlug },
+      update: { name: acc.displayName, bio: acc.authorBio },
+      create: {
+        name: acc.displayName,
+        slug: acc.authorSlug,
+        bio: acc.authorBio,
+      },
+    });
+    const passwordHash = await bcrypt.hash(acc.password, 12);
+    await prisma.user.upsert({
+      where: { email: acc.email },
+      update: {
+        passwordHash,
+        editorialRole: acc.editorialRole,
+        authorId: author.id,
+        emailVerified: true,
+      },
+      create: {
+        email: acc.email,
+        username: acc.username,
+        passwordHash,
+        displayName: acc.displayName,
+        isAdmin: false,
+        isSuperAdmin: false,
+        editorialRole: acc.editorialRole,
+        authorId: author.id,
+        emailVerified: true,
+      },
+    });
+    console.log(`[seed] ${acc.editorialRole.toLowerCase()} ready: ${acc.email}`);
+  }
+}
+
 async function main(): Promise<void> {
   console.log('[seed] starting');
   await seedSuperAdmin();
+  await seedEditorialAccounts();
   await seedEditorialCategories();
   await seedDefaultAuthor();
   await seedTeamsAndPlayers();
