@@ -177,6 +177,7 @@ const AUTH_PREFIXES = [
 /** Paths that never render dummy advertisements. */
 export function shouldHideDummyAds(pathname: string): boolean {
   if (pathname.startsWith('/admin')) return true;
+  if (pathname === '/editorial' || pathname.startsWith('/editorial/')) return true;
   if (pathname === '/404' || pathname === '/_not-found') return true;
   if (isCompanyPath(pathname)) return true;
   return AUTH_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));

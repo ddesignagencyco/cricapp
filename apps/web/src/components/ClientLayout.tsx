@@ -44,9 +44,12 @@ export default function ClientLayout({
   footer?: ReactNode;
 }) {
   const pathname = usePathname();
-  const isAdmin = pathname.startsWith('/admin');
+  const isShelllessStudio =
+    pathname.startsWith('/admin') ||
+    pathname === '/editorial' ||
+    pathname.startsWith('/editorial/');
 
-  if (isAdmin) {
+  if (isShelllessStudio) {
     return <>{children}</>;
   }
 
