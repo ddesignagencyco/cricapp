@@ -107,6 +107,7 @@ export class NewsService {
       translationGroupId: row.translationGroupId,
       ...(includeEditorialDrafts
         ? {
+            sourceUrl: row.sourceUrl ?? null,
             pushNotificationTitle: row.pushNotificationTitle,
             pushNotificationBody: row.pushNotificationBody,
             socialCopy: row.socialCopy,
@@ -344,9 +345,13 @@ export class NewsService {
       seriesIds: _s,
       ...scalars
     } = dto as CreateNewsDto;
-    return Object.fromEntries(
-      Object.entries(scalars).filter(([, value]) => value !== undefined && value !== ''),
-    );
+    const entries = Object.entries(scalars).flatMap(([key, value]) => {
+      if (value === undefined) return [];
+      if (key === 'sourceUrl' && value === '') return [[key, null]];
+      if (value === '') return [];
+      return [[key, value]];
+    });
+    return Object.fromEntries(entries);
   }
 
   private async validateLinkedEntities(dto: CreateNewsDto | UpdateNewsDto) {

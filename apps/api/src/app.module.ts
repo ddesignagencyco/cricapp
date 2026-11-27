@@ -38,6 +38,7 @@ import { RequestLogger } from './common/request-logger.middleware.js';
 import { MetricsModule } from './common/metrics.module.js';
 import { LandingModule } from './landing/landing.module.js';
 import { RssFeedsModule } from './rss-feeds/rss-feeds.module.js';
+import { EditorialModule } from './editorial/editorial.module.js';
 
 @Module({
   imports: [
@@ -88,6 +89,7 @@ import { RssFeedsModule } from './rss-feeds/rss-feeds.module.js';
     MetricsModule,
     LandingModule,
     RssFeedsModule,
+    EditorialModule,
   ],
   providers: [
     RequestLogger,

@@ -15,6 +15,8 @@ import {
   assertSafeFeedUrl,
   buildAttributionHtml,
   buildSourceGuid,
+  dissolveOutboundLinks,
+  dissolvePlainTextLinks,
   evaluateTopicFilter,
   extractArticleFromHtml,
   fetchFeedXmlSafe,
@@ -318,6 +320,8 @@ export class RssFeedsService implements OnModuleInit, OnModuleDestroy {
                 : htmlContent;
         }
 
+        htmlContent = dissolveOutboundLinks(htmlContent);
+
         const hash = crypto.createHash('sha256').update(sourceGuid).digest('hex').slice(0, 8);
         const slug = `${slugifyText(title) || 'story'}-${hash}`;
         const parsedDate = item.pubDate ? new Date(item.pubDate) : new Date();
@@ -401,5 +405,39 @@ export class RssFeedsService implements OnModuleInit, OnModuleDestroy {
       });
       throw err;
     }
+  }
+
+  async dissolveExistingOutboundLinks(): Promise<{ scanned: number; updated: number }> {
+    const articles = await this.prisma.newsArticle.findMany({
+      where: {
+        OR: [
+          { sourceGuid: { not: null } },
+          { sourceUrl: { not: null } },
+        ],
+      },
+      select: { id: true, content: true, summary: true, sourceUrl: true },
+    });
+
+    let updated = 0;
+    for (const article of articles) {
+      const nextContent = dissolveOutboundLinks(article.content);
+      const nextSummary = article.summary ? dissolvePlainTextLinks(article.summary) : article.summary;
+      if (
+        nextContent !== article.content ||
+        nextSummary !== article.summary ||
+        article.sourceUrl !== null
+      ) {
+        await this.prisma.newsArticle.update({
+          where: { id: article.id },
+          data: {
+            content: nextContent,
+            summary: nextSummary,
+            sourceUrl: null,
+          },
+        });
+        updated += 1;
+      }
+    }
+    return { scanned: articles.length, updated };
   }
 }

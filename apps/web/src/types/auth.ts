@@ -33,6 +33,8 @@ export interface AuthUser {
   avatarUrl: string | null;
   isAdmin: boolean;
   isSuperAdmin?: boolean;
+  editorialRole?: 'USER' | 'AUTHOR' | 'EDITOR';
+  authorId?: string | null;
   emailVerified?: boolean;
   createdAt?: string;
 }

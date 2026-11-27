@@ -9,6 +9,8 @@ export interface AdminUser {
   avatarUrl: string | null;
   isAdmin: boolean;
   isSuperAdmin?: boolean;
+  editorialRole?: 'USER' | 'AUTHOR' | 'EDITOR';
+  authorId?: string | null;
   emailVerified: boolean;
   createdAt: string;
   updatedAt?: string;
@@ -81,7 +83,7 @@ export async function fetchAdminUsers(
     page?: number;
     limit?: number;
     q?: string;
-    role?: 'all' | 'superadmin' | 'admin' | 'user';
+    role?: 'all' | 'superadmin' | 'admin' | 'editor' | 'author' | 'user';
     sortBy?: 'role' | 'name' | 'email' | 'verified' | 'createdAt';
     sortOrder?: 'asc' | 'desc';
   } = {}
@@ -93,7 +95,12 @@ export async function fetchAdminUsers(
 
 export function updateAdminUser(
   id: string,
-  input: { isAdmin?: boolean; emailVerified?: boolean }
+  input: {
+    isAdmin?: boolean;
+    editorialRole?: 'USER' | 'AUTHOR' | 'EDITOR';
+    authorId?: string | null;
+    emailVerified?: boolean;
+  }
 ): Promise<AdminUser> {
   return apiPatch<AdminUser>(`/admin/users/${id}`, input, { headers: authHeaders() });
 }

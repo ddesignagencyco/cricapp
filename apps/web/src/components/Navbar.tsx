@@ -132,7 +132,7 @@ export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const { theme, toggle, mounted } = useTheme();
-  const { user, isAdmin, isSuperAdmin, isAuthenticated, logout } = useAuth();
+  const { user, isAdmin, isSuperAdmin, isEditor, isAuthor, hasEditorialAccess, isAuthenticated, logout } = useAuth();
 
   useEffect(() => {
     setMobileOpen(false);
@@ -352,6 +352,14 @@ export default function Navbar() {
                         <span className="inline-flex items-center gap-1 rounded bg-accent/10 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-accent">
                           <ShieldCheck size={10} /> Admin
                         </span>
+                      ) : isEditor ? (
+                        <span className="inline-flex items-center gap-1 rounded bg-accent/10 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-accent">
+                          <PenLine size={10} /> Editor
+                        </span>
+                      ) : isAuthor ? (
+                        <span className="inline-flex items-center gap-1 rounded bg-accent/10 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-accent">
+                          <PenLine size={10} /> Author
+                        </span>
                       ) : (
                         <span className="inline-flex items-center rounded bg-secondary px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-stext">
                           Member
@@ -368,6 +376,9 @@ export default function Navbar() {
                     <ProfileMenuLink href="/profile" icon={User} label="Profile" hint="Account details" active={pathname.startsWith('/profile')} />
                     <ProfileMenuLink href="/favorites" icon={Heart} label="Favorites" hint="Saved teams and players" active={pathname.startsWith('/favorites')} />
                     <ProfileMenuLink href="/settings/notifications" icon={Bell} label="Notifications" hint="Alerts and devices" active={pathname.startsWith('/settings/notifications')} />
+                    {hasEditorialAccess && (
+                      <ProfileMenuLink href="/editorial" icon={PenLine} label="Editorial Studio" hint="Write & manage articles" active={pathname.startsWith('/editorial')} />
+                    )}
                     {isAdmin && (
                       <ProfileMenuLink href="/admin" icon={LayoutDashboard} label="CMS Dashboard" hint="Manage the site" active={pathname.startsWith('/admin')} />
                     )}

@@ -10,6 +10,9 @@ interface AuthContextValue {
   user: AuthUser | null;
   isAdmin: boolean;
   isSuperAdmin: boolean;
+  isAuthor: boolean;
+  isEditor: boolean;
+  hasEditorialAccess: boolean;
   isAuthenticated: boolean;
   loading: boolean;
   refresh: () => Promise<void>;
@@ -79,6 +82,14 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
         user,
         isAdmin: Boolean(user?.isAdmin || user?.isSuperAdmin),
         isSuperAdmin: Boolean(user?.isSuperAdmin),
+        isAuthor: user?.editorialRole === 'AUTHOR',
+        isEditor: Boolean(user?.isAdmin || user?.isSuperAdmin || user?.editorialRole === 'EDITOR'),
+        hasEditorialAccess: Boolean(
+          user?.isAdmin ||
+            user?.isSuperAdmin ||
+            user?.editorialRole === 'AUTHOR' ||
+            user?.editorialRole === 'EDITOR',
+        ),
         isAuthenticated: Boolean(user),
         loading,
         refresh,

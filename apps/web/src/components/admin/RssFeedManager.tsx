@@ -17,6 +17,7 @@ import toast from 'react-hot-toast';
 import {
   createRssFeed,
   deleteRssFeed,
+  dissolveExistingRssLinks,
   fetchRssFeeds,
   previewRssFeed,
   syncRssFeed,
@@ -229,14 +230,30 @@ export default function RssFeedManager() {
             Configure topic-filtered RSS/Atom sources, AI editorial rewriting, and draft or auto-publish rules.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={openCreate}
-          className="inline-flex items-center gap-1.5 rounded-md bg-brand px-3.5 py-2 text-xs font-semibold text-white hover:opacity-95"
-        >
-          <Plus size={15} />
-          Add RSS Feed
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              void dissolveExistingRssLinks()
+                .then((res) =>
+                  toast.success(`Cleaned ${res.updated} of ${res.scanned} RSS article(s).`),
+                )
+                .catch(() => toast.error('Could not clean existing RSS articles.'));
+            }}
+            className="inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-xs font-semibold transition-colors"
+            style={{ border: '1px solid var(--admin-border)', color: 'var(--admin-text-secondary)' }}
+          >
+            Dissolve Outbound Links
+          </button>
+          <button
+            type="button"
+            onClick={openCreate}
+            className="inline-flex items-center gap-1.5 rounded-md bg-brand px-3.5 py-2 text-xs font-semibold text-white hover:opacity-95"
+          >
+            <Plus size={15} />
+            Add RSS Feed
+          </button>
+        </div>
       </div>
 
       {formOpen && (

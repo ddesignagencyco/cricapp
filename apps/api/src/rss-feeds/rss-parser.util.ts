@@ -130,10 +130,44 @@ export function stripHtmlToText(html: string | null | undefined): string {
     .trim();
 }
 
+/**
+ * Dissolves outbound hyperlinks (http/https/protocol-relative) into plain text
+ * and strips common copyright/attribution boilerplate paragraphs from RSS HTML
+ * while preserving safe internal links and <img> tags.
+ */
+export function dissolveOutboundLinks(html: string | null | undefined): string {
+  if (!html) return '';
+  let out = String(html)
+    // Unwrap external <a href="http(s)://..."> or <a href="//..."> keeping inner text
+    .replace(/<a\b[^>]*\bhref\s*=\s*["'](?:https?:)?\/\/[^"']*["'][^>]*>([\s\S]*?)<\/a>/gi, '$1')
+    // Unwrap any remaining <a> tags without a relative / or # href
+    .replace(/<a\b(?![^>]*\bhref\s*=\s*["'][/#])[^>]*>([\s\S]*?)<\/a>/gi, '$1');
+
+  // Remove standalone boilerplate/copyright paragraphs
+  out = out.replace(
+    /<p\b[^>]*>\s*(?:read more|also read|more on this story|originally published|source\s*:|copyright\s*©?|©\s*\d{4}|all rights reserved|click here to read|continue reading|follow us on)[\s\S]*?<\/p>/gi,
+    '',
+  );
+
+  // Strip bare external URLs inside text (outside HTML tag attributes)
+  out = out.replace(/(?<=>|^)([^<]*)/g, (seg) => seg.replace(/https?:\/\/[^\s<]+/gi, ''));
+
+  return out.replace(/\n{3,}/g, '\n\n').trim();
+}
+
+export function dissolvePlainTextLinks(text: string | null | undefined): string {
+  if (!text) return '';
+  return String(text)
+    .replace(/https?:\/\/\S+/gi, '')
+    .replace(/\b(?:read more|also read|originally published|click here to read|continue reading)\s*(?:at|on|:)?\s*$/gi, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
 /** Strict sanitizer for RSS HTML snippets: removes scripts, iframes, styles, and event handlers. */
 export function sanitizeRssHtml(html: string | null | undefined): string {
   if (!html) return '';
-  return String(html)
+  const cleaned = String(html)
     .replace(/<script[\s\S]*?<\/script>/gi, '')
     .replace(/<style[\s\S]*?<\/style>/gi, '')
     .replace(/<iframe[\s\S]*?<\/iframe>/gi, '')
@@ -144,6 +178,7 @@ export function sanitizeRssHtml(html: string | null | undefined): string {
     .replace(/\sstyle\s*=\s*["'][^"']*["']/gi, '')
     .replace(/javascript:/gi, '')
     .trim();
+  return dissolveOutboundLinks(cleaned);
 }
 
 export function parseRssOrAtomXml(xml: string): ParsedFeedItem[] {

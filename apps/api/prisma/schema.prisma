@@ -317,9 +317,12 @@ model User {
   avatarUrl    String?  @map("avatar_url")
   isAdmin      Boolean  @default(false) @map("is_admin")
   isSuperAdmin Boolean  @default(false) @map("is_super_admin")
+  editorialRole String  @default("USER") @map("editorial_role")
+  authorId     String?  @unique @map("author_id")
   emailVerified Boolean @default(false) @map("email_verified")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
+  authorProfile Author? @relation(fields: [authorId], references: [id], onDelete: SetNull)
   favorites    Favorite[]
   comments     Comment[]
   reactions    Reaction[]
@@ -344,6 +347,7 @@ model Author {
   updatedAt DateTime @updatedAt @map("updated_at")
   articles  NewsArticle[]
   rssFeeds  RssFeedSource[]
+  user      User?
 
   @@map("authors")
 }

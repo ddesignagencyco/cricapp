@@ -13,6 +13,8 @@ export interface JwtPayload {
   username: string;
   isAdmin: boolean;
   isSuperAdmin: boolean;
+  editorialRole?: string;
+  authorId?: string | null;
   emailVerified: boolean;
 }
 
@@ -48,6 +50,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       username: payload.username,
       isAdmin: payload.isAdmin,
       isSuperAdmin: payload.isSuperAdmin ?? false,
+      editorialRole: payload.editorialRole ?? 'USER',
+      authorId: payload.authorId ?? null,
       emailVerified: payload.emailVerified ?? false,
     };
   }

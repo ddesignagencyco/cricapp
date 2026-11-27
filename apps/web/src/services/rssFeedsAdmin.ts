@@ -113,3 +113,11 @@ export async function syncRssFeed(id: string): Promise<RssSyncResponse> {
     headers: authHeaders(),
   });
 }
+
+export async function dissolveExistingRssLinks(): Promise<{ scanned: number; updated: number }> {
+  return apiPost<{ scanned: number; updated: number }>(
+    '/admin/rss-feeds/dissolve-existing',
+    {},
+    { headers: authHeaders() },
+  );
+}

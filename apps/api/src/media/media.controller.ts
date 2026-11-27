@@ -18,12 +18,12 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
-import { AdminGuard } from '../auth/admin.guard.js';
+import { EditorialGuard } from '../auth/editorial.guard.js';
 import { MediaService } from './media.service.js';
 
 @ApiTags('admin')
 @ApiCookieAuth()
-@UseGuards(JwtAuthGuard, AdminGuard)
+@UseGuards(JwtAuthGuard, EditorialGuard)
 @Controller('admin/media')
 export class MediaController {
   constructor(private readonly mediaService: MediaService) {}

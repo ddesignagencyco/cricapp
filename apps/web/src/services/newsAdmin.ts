@@ -17,6 +17,7 @@ export interface NewsArticleAdmin {
   author: string | null;
   authorId?: string | null;
   source: string | null;
+  sourceUrl?: string | null;
   categoryId: string | null;
   language?: string;
   metaTitle?: string | null;
@@ -47,6 +48,7 @@ export interface NewsInput {
   author?: string;
   authorId?: string;
   source?: string;
+  sourceUrl?: string | null;
   categoryId?: string;
   language?: string;
   metaTitle?: string;

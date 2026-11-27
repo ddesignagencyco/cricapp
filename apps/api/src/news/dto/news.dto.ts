@@ -55,6 +55,11 @@ export class CreateNewsDto {
   @IsString()
   source?: string;
 
+  @ApiPropertyOptional({ nullable: true })
+  @IsOptional()
+  @IsString()
+  sourceUrl?: string | null;
+
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
@@ -174,6 +179,11 @@ export class UpdateNewsDto {
   @IsOptional()
   @IsString()
   source?: string;
+
+  @ApiPropertyOptional({ nullable: true })
+  @IsOptional()
+  @IsString()
+  sourceUrl?: string | null;
 
   @ApiPropertyOptional()
   @IsOptional()

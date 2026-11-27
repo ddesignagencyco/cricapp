@@ -49,6 +49,12 @@ export class RssFeedsController {
     return this.rssFeedsService.preview(dto);
   }
 
+  @Post('dissolve-existing')
+  @ApiOperation({ summary: 'Strip outbound hyperlinks and copyright boilerplate from existing RSS-imported articles' })
+  async dissolveExisting() {
+    return this.rssFeedsService.dissolveExistingOutboundLinks();
+  }
+
   @Patch(':id')
   @ApiOperation({ summary: 'Update an RSS feed source' })
   async update(@Param('id') id: string, @Body() dto: UpdateRssFeedDto) {

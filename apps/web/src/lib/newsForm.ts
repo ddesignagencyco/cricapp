@@ -144,7 +144,7 @@ export interface NewsFormValues extends NewsDraft {
  * own defaults instead of storing a blank. `title`, `content` and `isPublished` are
  * always present; the API requires the first two.
  */
-export function buildNewsPayload(form: NewsFormValues, publish: boolean): NewsInput {
+export function buildNewsPayload(form: NewsFormValues & { sourceUrl?: string }, publish: boolean): NewsInput {
   const title = form.title.trim();
   const slug = slugifyNews(form.slug.trim() || title);
   const payload: NewsInput = {
@@ -159,6 +159,7 @@ export function buildNewsPayload(form: NewsFormValues, publish: boolean): NewsIn
   if (form.author.trim()) payload.author = form.author.trim();
   if (form.authorId.trim()) payload.authorId = form.authorId.trim();
   if (form.source.trim()) payload.source = form.source.trim();
+  if (form.sourceUrl !== undefined) payload.sourceUrl = form.sourceUrl.trim() || null;
   if (form.categoryId.trim()) payload.categoryId = form.categoryId.trim();
   if (form.language.trim()) payload.language = form.language.trim();
   if (form.metaTitle.trim()) payload.metaTitle = form.metaTitle.trim();

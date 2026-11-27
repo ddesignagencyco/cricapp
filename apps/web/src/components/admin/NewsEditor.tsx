@@ -28,6 +28,15 @@ import {
   type NewsArticleAdmin,
   type NewsCategory,
 } from '../../services/newsAdmin';
+import {
+  createEditorialArticle,
+  createEditorialCategory,
+  createEditorialTranslation,
+  fetchEditorialArticle,
+  fetchEditorialAuthors,
+  fetchEditorialCategories,
+  updateEditorialArticle,
+} from '../../services/editorialStudio';
 import RichTextEditor from './RichTextEditor';
 import MediaPicker from './MediaPicker';
 import { AdminField, AdminInput, AdminSelect } from './AdminShared';
@@ -65,6 +74,7 @@ import { translateNewsCopy } from '../../lib/machineTranslate';
 interface NewsEditorProps {
   mode: 'create' | 'edit';
   id?: string;
+  scope?: 'admin' | 'editorial';
 }
 
 interface FormState {
@@ -76,6 +86,7 @@ interface FormState {
   author: string;
   authorId: string;
   source: string;
+  sourceUrl: string;
   categoryId: string;
   language: string;
   metaTitle: string;
@@ -99,6 +110,7 @@ const emptyForm: FormState = {
   author: '',
   authorId: '',
   source: '',
+  sourceUrl: '',
   categoryId: '',
   language: 'en',
   metaTitle: '',
@@ -189,7 +201,10 @@ async function resolveLinkedEntities(
   return { players, teams, matches, series };
 }
 
-export default function NewsEditor({ mode, id }: NewsEditorProps) {
+export default function NewsEditor({ mode, id, scope = 'admin' }: NewsEditorProps) {
+  const isEditorialScope = scope === 'editorial';
+  const backHref = isEditorialScope ? '/editorial/articles' : '/admin/news';
+  const newHrefBase = isEditorialScope ? '/editorial/articles/new' : '/admin/news/new';
   const router = useRouter();
   const searchParams = useSearchParams();
   const translateFrom = searchParams.get('translateFrom') || '';
@@ -213,14 +228,17 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
   const bylineAutoRef = useRef(true);
 
   useEffect(() => {
-    fetchNewsCategories().then(setCategories).catch(() => setCategories([]));
-    fetchAdminAuthors().then(setAuthors).catch(() => setAuthors([]));
+    const loadCats = isEditorialScope ? fetchEditorialCategories : fetchNewsCategories;
+    const loadAuthors = isEditorialScope ? fetchEditorialAuthors : fetchAdminAuthors;
+    const loadArticle = isEditorialScope ? fetchEditorialArticle : fetchNewsArticle;
+    loadCats().then(setCategories).catch(() => setCategories([]));
+    loadAuthors().then(setAuthors).catch(() => setAuthors([]));
     const initialCategory = searchParams.get('category');
     if (mode === 'create' && initialCategory && !translateFrom) {
       setForm((current) => ({ ...current, categoryId: initialCategory }));
     }
     if (mode === 'create' && translateFrom) {
-      fetchNewsArticle(translateFrom)
+      loadArticle(translateFrom)
         .then(async (article) => {
           const sourceLang = isUrduLanguage(article.language) ? 'ur' : 'en';
           const target = otherNewsLanguage(article.language);
@@ -251,6 +269,7 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
             author: article.author || '',
             authorId: article.authorId || '',
             source: article.source || '',
+            sourceUrl: article.sourceUrl || '',
             categoryId: article.categoryId || '',
             language: target,
             metaTitle: copy.metaTitle,
@@ -265,7 +284,8 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
       return;
     }
     if (mode === 'edit' && id) {
-      fetchNewsArticle(id)
+      const loadArticle = isEditorialScope ? fetchEditorialArticle : fetchNewsArticle;
+      loadArticle(id)
         .then((article) => {
           const currentLang = article.language || 'en';
           setHasOtherTranslation(
@@ -280,6 +300,7 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
             author: article.author || '',
             authorId: article.authorId || '',
             source: article.source || '',
+            sourceUrl: article.sourceUrl || '',
             categoryId: article.categoryId || '',
             language: currentLang,
             metaTitle: article.metaTitle || '',
@@ -394,7 +415,10 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
       toast.error('Name is required.');
       return;
     }
-    createCategory(name)
+    const createCat = isEditorialScope
+      ? (catName: string) => createEditorialCategory({ name: catName })
+      : createCategory;
+    createCat(name)
       .then((category) => {
         setCategories((list) => [...list, category]);
         set('categoryId', category.id);
@@ -422,16 +446,16 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
 
     try {
       if (mode === 'create' && sourceId) {
-        await createNewsTranslation(sourceId, payload);
+        await (isEditorialScope ? createEditorialTranslation : createNewsTranslation)(sourceId, payload);
         toast.success(publish ? 'Translation published!' : 'Translation draft saved.');
       } else if (mode === 'create') {
-        await createNews(payload);
+        await (isEditorialScope ? createEditorialArticle : createNews)(payload);
         toast.success(publish ? 'News published!' : 'Draft saved.');
       } else if (id) {
-        await updateNews(id, payload);
+        await (isEditorialScope ? updateEditorialArticle : updateNews)(id, payload);
         toast.success(publish ? 'News updated!' : 'Draft updated.');
       }
-      router.push('/admin/news');
+      router.push(backHref);
     } catch (err: unknown) {
       let errMsg = 'Could not save the article.';
       const error = err && typeof err === 'object' ? err as Record<string, unknown> : null;
@@ -457,7 +481,7 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pb-4" style={{ borderBottom: '1px solid var(--admin-border)' }}>
         <div className="flex min-w-0 items-center gap-3">
           <Link
-            href="/admin/news"
+            href={backHref}
             className="grid h-8 w-8 shrink-0 place-items-center rounded-md transition-colors"
             style={{ border: '1px solid var(--admin-border)', color: 'var(--admin-text-secondary)' }}
             title="Back to News"
@@ -480,7 +504,7 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
         <div className="flex flex-wrap items-center gap-2">
           {mode === 'edit' && id && !hasOtherTranslation ? (
             <Link
-              href={`/admin/news/new?translateFrom=${id}`}
+              href={`${newHrefBase}?translateFrom=${id}`}
               className="inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-xs font-bold transition-colors"
               style={{ border: '1px solid var(--admin-border)', color: 'var(--admin-text-secondary)' }}
             >
@@ -566,9 +590,41 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--admin-text-secondary)' }}>
-              Content <span style={{ color: 'var(--admin-danger)' }}>*</span>
-            </label>
+            <div className="mb-1 flex items-center justify-between gap-2">
+              <label className="block text-xs font-semibold" style={{ color: 'var(--admin-text-secondary)' }}>
+                Content <span style={{ color: 'var(--admin-danger)' }}>*</span>
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  const stripHtmlLinks = (html: string) =>
+                    html
+                      .replace(/<a\b[^>]*\bhref\s*=\s*["'](?:https?:)?\/\/[^"']*["'][^>]*>([\s\S]*?)<\/a>/gi, '$1')
+                      .replace(/<a\b(?![^>]*\bhref\s*=\s*["'][/#])[^>]*>([\s\S]*?)<\/a>/gi, '$1')
+                      .replace(/<p\b[^>]*>\s*(?:read more|also read|more on this story|originally published|source\s*:|copyright\s*©?|©\s*\d{4}|all rights reserved|click here to read|continue reading|follow us on)[\s\S]*?<\/p>/gi, '')
+                      .replace(/(?<=>|^)([^<]*)/g, (seg) => seg.replace(/https?:\/\/[^\s<]+/gi, ''))
+                      .trim();
+                  const stripPlainLinks = (text: string) =>
+                    text
+                      .replace(/https?:\/\/\S+/gi, '')
+                      .replace(/\b(?:read more|also read|originally published|click here to read|continue reading)\s*(?:at|on|:)?\s*$/gi, '')
+                      .replace(/\s{2,}/g, ' ')
+                      .trim();
+                  setForm((cur) => ({
+                    ...cur,
+                    content: stripHtmlLinks(cur.content),
+                    summary: stripPlainLinks(cur.summary),
+                    sourceUrl: '',
+                  }));
+                  toast.success('Outbound links & source URL dissolved.');
+                }}
+                className="rounded px-2 py-0.5 text-[11px] font-semibold transition-colors"
+                style={{ border: '1px solid var(--admin-border)', color: 'var(--admin-text-secondary)' }}
+                title="Strip external hyperlinks, copyright boilerplate, and clear source URL"
+              >
+                Dissolve Outbound Links
+              </button>
+            </div>
             <RichTextEditor
               value={form.content}
               onChange={(v) => set('content', v)}
@@ -727,6 +783,30 @@ export default function NewsEditor({ mode, id }: NewsEditorProps) {
               </div>
               <p className="mt-1 text-xs" style={{ color: 'var(--admin-text-muted)' }}>
                 Shown beside the byline on the article. Blank hides it.
+              </p>
+            </div>
+            <div>
+              <div className="mb-1 flex items-center justify-between">
+                <label className="block text-xs font-semibold" style={{ color: 'var(--admin-text-secondary)' }}>Source URL (RSS)</label>
+                {form.sourceUrl && (
+                  <button
+                    type="button"
+                    onClick={() => set('sourceUrl', '')}
+                    className="text-[11px] font-semibold hover:underline"
+                    style={{ color: 'var(--admin-danger)' }}
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+              <AdminInput
+                type="url"
+                value={form.sourceUrl}
+                onChange={(e) => set('sourceUrl', e.target.value)}
+                placeholder="Cleared (no outbound source URL)"
+              />
+              <p className="mt-1 text-xs" style={{ color: 'var(--admin-text-muted)' }}>
+                Original feed link. Clear this to remove the external source reference.
               </p>
             </div>
           </div>

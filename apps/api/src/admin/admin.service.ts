@@ -40,9 +40,14 @@ export class AdminService {
     } else if (query.role === 'admin') {
       where.isAdmin = true;
       where.isSuperAdmin = false;
+    } else if (query.role === 'editor') {
+      where.editorialRole = 'EDITOR';
+    } else if (query.role === 'author') {
+      where.editorialRole = 'AUTHOR';
     } else if (query.role === 'user') {
       where.isAdmin = false;
       where.isSuperAdmin = false;
+      where.editorialRole = 'USER';
     }
 
     const dir: 'asc' | 'desc' = query.sortOrder === 'asc' ? 'asc' : 'desc';
@@ -80,6 +85,8 @@ export class AdminService {
           avatarUrl: true,
           isAdmin: true,
           isSuperAdmin: true,
+          editorialRole: true,
+          authorId: true,
           emailVerified: true,
           createdAt: true,
           updatedAt: true,
@@ -118,6 +125,8 @@ export class AdminService {
       where: { id: userId },
       data: {
         ...(dto.isAdmin !== undefined && { isAdmin: dto.isAdmin }),
+        ...(dto.editorialRole !== undefined && { editorialRole: dto.editorialRole }),
+        ...(dto.authorId !== undefined && { authorId: dto.authorId }),
         ...(dto.emailVerified !== undefined && { emailVerified: dto.emailVerified }),
       },
       select: {
@@ -127,6 +136,8 @@ export class AdminService {
         displayName: true,
         isAdmin: true,
         isSuperAdmin: true,
+        editorialRole: true,
+        authorId: true,
         emailVerified: true,
         updatedAt: true,
       },

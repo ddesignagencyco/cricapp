@@ -97,6 +97,8 @@ export class AuthService {
       avatarUrl: user.avatarUrl,
       isAdmin: user.isAdmin,
       isSuperAdmin: user.isSuperAdmin,
+      editorialRole: user.editorialRole,
+      authorId: user.authorId,
       emailVerified: user.emailVerified,
       createdAt: user.createdAt,
     };
@@ -127,6 +129,8 @@ export class AuthService {
       avatarUrl: user.avatarUrl,
       isAdmin: user.isAdmin,
       isSuperAdmin: user.isSuperAdmin,
+      editorialRole: user.editorialRole,
+      authorId: user.authorId,
       emailVerified: user.emailVerified,
       createdAt: user.createdAt,
     };
@@ -474,6 +478,8 @@ CriczApp — Every run. Every ball. Live.`;
     avatarUrl: string | null;
     isAdmin: boolean;
     isSuperAdmin: boolean;
+    editorialRole?: string;
+    authorId?: string | null;
     emailVerified?: boolean;
   }) {
     return {
@@ -484,6 +490,8 @@ CriczApp — Every run. Every ball. Live.`;
       avatarUrl: user.avatarUrl,
       isAdmin: user.isAdmin,
       isSuperAdmin: user.isSuperAdmin,
+      editorialRole: user.editorialRole ?? 'USER',
+      authorId: user.authorId ?? null,
       emailVerified: user.emailVerified ?? false,
     };
   }
@@ -495,6 +503,8 @@ CriczApp — Every run. Every ball. Live.`;
       username: user.username,
       isAdmin: user.isAdmin,
       isSuperAdmin: user.isSuperAdmin,
+      editorialRole: user.editorialRole ?? 'USER',
+      authorId: user.authorId ?? null,
       emailVerified: user.emailVerified ?? false,
     };
     return {

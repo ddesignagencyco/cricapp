@@ -26,6 +26,8 @@ const ROLE_FILTERS = [
   { key: 'all', label: 'All' },
   { key: 'superadmin', label: 'Superadmin' },
   { key: 'admin', label: 'Admins' },
+  { key: 'editor', label: 'Editors' },
+  { key: 'author', label: 'Authors' },
   { key: 'user', label: 'Users' },
 ] as const;
 
@@ -143,7 +145,10 @@ export default function UsersPage() {
     }
   };
 
-  const patch = async (user: AdminUser, input: { isAdmin?: boolean; emailVerified?: boolean }) => {
+  const patch = async (
+    user: AdminUser,
+    input: { isAdmin?: boolean; editorialRole?: 'USER' | 'AUTHOR' | 'EDITOR'; emailVerified?: boolean },
+  ) => {
     if (user.isSuperAdmin) return;
     setBusyId(user.id);
     try {
@@ -262,6 +267,7 @@ export default function UsersPage() {
                     onSort={toggleSort}
                     className="px-4 py-3 text-xs font-bold uppercase tracking-wider"
                   />
+                  <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--admin-text-secondary)' }}>Editorial Role</th>
                   <AdminSortableHeader
                     label="Verified"
                     sortKey="verified"
@@ -311,6 +317,27 @@ export default function UsersPage() {
                             </Badge>
                           </div>
                         )}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3">
+                        <select
+                          value={user.editorialRole ?? 'USER'}
+                          disabled={busy || locked}
+                          aria-label={`Editorial role for ${name}`}
+                          onChange={(e) => {
+                            const nextRole = e.target.value as 'USER' | 'AUTHOR' | 'EDITOR';
+                            void patch(user, { editorialRole: nextRole });
+                          }}
+                          className="rounded-md px-2 py-1 text-xs font-semibold outline-none"
+                          style={{
+                            border: '1px solid var(--admin-border)',
+                            background: 'var(--admin-input-bg)',
+                            color: 'var(--admin-text)',
+                          }}
+                        >
+                          <option value="USER">None</option>
+                          <option value="AUTHOR">Author</option>
+                          <option value="EDITOR">Editor</option>
+                        </select>
                       </td>
                       <td className="whitespace-nowrap px-4 py-3">
                         {locked ? (

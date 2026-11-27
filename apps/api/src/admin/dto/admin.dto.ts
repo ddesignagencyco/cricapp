@@ -23,10 +23,10 @@ export class ListUsersQuery {
   @IsString()
   q?: string;
 
-  @ApiPropertyOptional({ enum: ['all', 'superadmin', 'admin', 'user'] })
+  @ApiPropertyOptional({ enum: ['all', 'superadmin', 'admin', 'editor', 'author', 'user'] })
   @IsOptional()
-  @IsIn(['all', 'superadmin', 'admin', 'user'])
-  role?: 'all' | 'superadmin' | 'admin' | 'user';
+  @IsIn(['all', 'superadmin', 'admin', 'editor', 'author', 'user'])
+  role?: 'all' | 'superadmin' | 'admin' | 'editor' | 'author' | 'user';
 
   @ApiPropertyOptional({ enum: ['role', 'name', 'email', 'verified', 'createdAt'] })
   @IsOptional()
@@ -44,6 +44,15 @@ export class UpdateUserDto {
   @IsOptional()
   @IsBoolean()
   isAdmin?: boolean;
+
+  @ApiPropertyOptional({ enum: ['USER', 'AUTHOR', 'EDITOR'] })
+  @IsOptional()
+  @IsIn(['USER', 'AUTHOR', 'EDITOR'])
+  editorialRole?: 'USER' | 'AUTHOR' | 'EDITOR';
+
+  @ApiPropertyOptional({ example: 'author-uuid-or-null', nullable: true })
+  @IsOptional()
+  authorId?: string | null;
 
   @ApiPropertyOptional({ example: true })
   @IsOptional()
